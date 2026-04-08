@@ -24,7 +24,6 @@ tailwind.config = {
 if (matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   document.documentElement.classList.toggle('dark', e.matches);
-  if (chart) renderChart(); // re-render chart with correct colors
 });
 </script>
 <style>
@@ -85,6 +84,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <div class="flex flex-wrap justify-center gap-3 mt-8">
       <a href="#tariffer" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Tariffer</a>
       <a href="#automation" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Automation</a>
+      <a href="#shelly-tariff" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Shelly Live Tariff</a>
       <a href="https://www.danskenergi.dk/vejledning/nettilslutning/find-dit-netselskab" target="_blank" rel="noopener" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Find dit netselskab &rarr;</a>
     </div>
   </div>
@@ -109,16 +109,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       </button>
     </nav>
   </div>
-  <p class="text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2" id="avgPrices"></p>
-  <div class="flex items-center justify-center gap-2 mb-2">
-    <button onclick="changeWeek(-1)" class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs">← Forrige</button>
-    <span id="weekLabel" class="text-xs text-gray-500 dark:text-gray-400 w-24 text-center">Denne uge</span>
-    <button id="nextWeekBtn" onclick="changeWeek(1)" disabled class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs disabled:opacity-30 disabled:cursor-not-allowed">Næste →</button>
-  </div>
-  <div class="flex justify-center gap-2 mb-3" id="viewTabs">
-    <button class="tab-btn active" data-view="table">Tabel</button>
-    <button class="tab-btn" data-view="chart">Graf</button>
-  </div>
   <div id="tableView">
     <div class="text-center py-12 text-gray-400 dark:text-gray-500" id="loadingIndicator">
       <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>
@@ -128,8 +118,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <table class="mx-auto text-sm sm:text-base tabular" id="priceTable"></table>
     </div>
   </div>
-  <div id="chartView" style="display:none" class="max-w-2xl mx-auto">
-    <canvas id="priceChart" height="300"></canvas>
+  <div class="flex items-center justify-center gap-2 mt-4">
+    <button onclick="changeWeek(-1)" class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs">← Forrige</button>
+    <span id="weekLabel" class="text-xs text-gray-500 dark:text-gray-400 w-24 text-center">Denne uge</span>
+    <button id="nextWeekBtn" onclick="changeWeek(1)" disabled class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs disabled:opacity-30 disabled:cursor-not-allowed">Næste →</button>
   </div>
   <p class="text-center text-xs text-gray-400 dark:text-gray-600 mt-6">Tip: Bogmærk denne sides URL for nem adgang</p>
 </main>
@@ -251,6 +243,106 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
 </main>
 
+<!-- ═══════ SHELLY LIVE TARIFF PAGE ═══════ -->
+<main data-page="shelly-tariff" class="max-w-2xl mx-auto px-4 py-6">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white">Shelly Live Tariff</h2>
+      <p class="text-xs text-gray-500 dark:text-gray-400">Vis aktuelle elpriser direkte på din Shelly</p>
+    </div>
+    <a href="#" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+      <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+
+  <!-- Intro -->
+  <div class="bg-blue-50 dark:bg-blue-950/40 rounded-2xl p-4 border border-blue-200 dark:border-blue-900 mb-4 text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
+    <strong>Sådan virker det:</strong> Shelly giver dig en unik API-adresse. Et lille script på din Shelly henter prisen fra elpriser.org én gang i timen og sender den til Shelly-appen via den API-adresse. Kræver Shelly Gen2+ med firmware ≥ 1.4.
+  </div>
+
+  <!-- Step 1: priszone -->
+  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
+    <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-1">Trin 1 — Aktiver Live Tariff i Shelly-appen</h3>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Find og kopiér din personlige API-adresse.</p>
+    <ol class="space-y-3">
+      <li class="flex gap-3">
+        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-400 text-xs font-bold flex items-center justify-center">1</span>
+        <div><p class="text-sm text-gray-800 dark:text-gray-200">Åbn Shelly-appen → vælg din enhed</p></div>
+      </li>
+      <li class="flex gap-3">
+        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-400 text-xs font-bold flex items-center justify-center">2</span>
+        <div><p class="text-sm text-gray-800 dark:text-gray-200">Tryk på fanen <strong>Electricity Tariff</strong> (Real Time / History / Monthly Reports / <u>Electricity Tariff</u>)</p></div>
+      </li>
+      <li class="flex gap-3">
+        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-400 text-xs font-bold flex items-center justify-center">3</span>
+        <div><p class="text-sm text-gray-800 dark:text-gray-200">Under <strong>Tariff</strong> — skift fra <em>Default</em> til <strong>Live</strong></p></div>
+      </li>
+      <li class="flex gap-3">
+        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-400 text-xs font-bold flex items-center justify-center">4</span>
+        <div><p class="text-sm text-gray-800 dark:text-gray-200">Kopiér den lange <strong>API URL</strong> under "With the tokenized url…"</p></div>
+      </li>
+    </ol>
+  </div>
+
+  <!-- Step 2: URL input + script -->
+  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
+    <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-1">Trin 2 — Lav scriptet</h3>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Vælg dit prisområde og indsæt din Shelly API URL — scriptet opdateres automatisk.</p>
+    <div class="grid sm:grid-cols-2 gap-3 mb-4">
+      <div>
+        <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Priszone / netselskab</label>
+        <select id="shellySelect" oninput="onShellySelect()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"></select>
+      </div>
+      <div>
+        <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Din Shelly API URL <span class="text-gray-400">(valgfri)</span></label>
+        <input id="shellyCloudUrl" oninput="updateShellyScript()" placeholder="https://shelly-11-eu.shelly.cloud/v2/…" class="w-full text-xs border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 font-mono">
+      </div>
+    </div>
+    <div class="relative">
+      <pre id="shellyScript" class="text-xs bg-gray-950 dark:bg-gray-950 text-green-300 rounded-xl p-4 overflow-x-auto leading-relaxed whitespace-pre pr-20 border border-gray-800"></pre>
+      <button onclick="copyShellyScript()" id="shellyScriptCopyBtn" class="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded transition">Kopiér</button>
+    </div>
+  </div>
+
+  <!-- Step 3: install -->
+  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
+    <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-1">Trin 3 — Installér scriptet</h3>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Scriptet kører på selve Shelly-enheden og opdaterer prisen automatisk hver time.</p>
+    <ol class="space-y-3">
+      <li class="flex gap-3">
+        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-400 text-xs font-bold flex items-center justify-center">1</span>
+        <div><p class="text-sm text-gray-800 dark:text-gray-200">Shelly-appen → din enhed → <strong>Scripts</strong> → <strong>Create Script</strong></p></div>
+      </li>
+      <li class="flex gap-3">
+        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-400 text-xs font-bold flex items-center justify-center">2</span>
+        <div><p class="text-sm text-gray-800 dark:text-gray-200">Indsæt scriptet fra Trin 2 og giv det et navn, f.eks. <em>Elpris</em></p></div>
+      </li>
+      <li class="flex gap-3">
+        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-400 text-xs font-bold flex items-center justify-center">3</span>
+        <div><p class="text-sm text-gray-800 dark:text-gray-200">Slå <strong>Run on startup</strong> til og tryk <strong>Save</strong></p></div>
+      </li>
+      <li class="flex gap-3">
+        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-400 text-xs font-bold flex items-center justify-center">4</span>
+        <div><p class="text-sm text-gray-800 dark:text-gray-200">Tryk <strong>Start</strong> — Live Tariff i appen opdateres inden for få sekunder</p></div>
+      </li>
+    </ol>
+  </div>
+
+  <!-- Live preview -->
+  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
+    <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-3">Prisoversigt — i dag og i morgen</h3>
+    <div id="shellyTariffLoading" class="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">
+      <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>Henter data...
+    </div>
+    <div id="shellyTariffTable" style="display:none" class="overflow-x-auto -mx-2 sm:mx-0">
+      <table class="mx-auto text-sm tabular">
+        <thead><tr id="shellyTariffHead"></tr></thead>
+        <tbody id="shellyTariffBody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
 <!-- ═══════ PRICE DETAIL POPUP ═══════ -->
 <dialog id="priceDetail" class="rounded-2xl shadow-2xl p-0 max-w-xs w-[88vw] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 backdrop:bg-black/40 dark:backdrop:bg-black/60">
   <div class="flex items-center justify-between px-5 pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
@@ -288,7 +380,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 const NETS={DK1:[
   {name:'N1',slug:'n1',gln:'5790001089030',match:['N1','Elnetselskabet N1']},
@@ -311,6 +402,7 @@ function netBySlug(area,slug){return(NETS[area]||[]).find(n=>n.slug===slug)||nul
 const ENERGINET_GLN='5790000432752';
 const DAY=['sø','ma','ti','on','to','fr','lø'];
 const MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+const MON_FULL=['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
 const ZONE_BTNS=[
   {mode:'spot_inkl',label:'Elspot inkl moms',cls:'bg-brand-600 hover:bg-brand-700 text-white'},
   {mode:'spot_ex',label:'Elspot ex moms',cls:'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200'},
@@ -320,19 +412,8 @@ const ZONE_BTNS=[
 const isDark=()=>document.documentElement.classList.contains('dark');
 
 let S={area:'DK1',mode:'spot_inkl',gln:null,netName:'',view:'table',_loadId:0,weekOffset:0};
-let priceData={},co2Data=[],tariffCache={},allTariffsLoaded=false,enCharges=null,chart=null;
+let priceData={},tariffCache={},allTariffsLoaded=false,enCharges=null;
 
-async function fetchCO2(dateStr,area){
-  try{
-    const end=fmt(new Date(new Date(dateStr).getTime()+86400000));
-    const f=encodeURIComponent(JSON.stringify({PriceArea:area}));
-    const r=await fetch(`https://api.energidataservice.dk/dataset/CO2EmisProg?start=${dateStr}&end=${end}&filter=${f}&sort=Minutes5DK%20asc&limit=300`);
-    const j=await r.json();
-    const sum=Array(24).fill(0),cnt=Array(24).fill(0);
-    for(const rec of(j.records||[])){const h=new Date(rec.Minutes5DK).getHours();sum[h]+=rec.CO2Emission;cnt[h]++;}
-    return sum.map((v,i)=>cnt[i]?Math.round(v/cnt[i]):null);
-  }catch(e){return Array(24).fill(null);}
-}
 
 // ═══ GPS — auto-navigate on detection ═══
 async function detectLocation(){
@@ -379,16 +460,17 @@ function route(){
   }
   if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Elpris — Tariffer';loadTariffPage();return;}
   if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpris — Automation';loadAutomationPage();return;}
+  if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Elpris — Shelly Live Tariff';loadShellyTariffPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){location.hash='';return;}
-  S.area=area;S.mode=mode;S.view='table';S.weekOffset=0;
+  S.area=area;S.mode=mode;S.weekOffset=0;
   const slugOrGln=p[2]||null;
   const net=slugOrGln?netBySlug(area,slugOrGln):null;
   S.gln=net?net.gln:(slugOrGln||null);
   S.netName=net?net.name:(p[3]?decodeURIComponent(p[3]):'');
   localStorage.setItem('lastHash',location.hash);
   document.querySelector('[data-page="prices"]').classList.add('active');
-  updateHeader();resetViewTabs();updateWeekNav();S._loadId++;loadPriceData(S._loadId);
+  updateHeader();updateWeekNav();S._loadId++;loadPriceData(S._loadId);
 }
 window.addEventListener('hashchange',route);
 
@@ -446,11 +528,8 @@ function updateHeader(){
   const ml={spot_inkl:'Elspot inkl moms',spot_ex:'Elspot ex moms',inkl_alt:'Inkl alt',inkl_alt_minus:'Inkl alt minus afgift',net_inkl_alt:`${S.netName} Inkl alt`,net_inkl_tarif:`${S.netName} Inkl tarif`};
   const t=al+' '+(ml[S.mode]||'Elspot');
   document.title='Elpris — '+t;
-  document.getElementById('avgPrices').textContent='';
   syncPriceSelector();
 }
-function resetViewTabs(){S.view='table';document.getElementById('tableView').style.display='block';document.getElementById('chartView').style.display='none';document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===0));}
-document.getElementById('viewTabs').addEventListener('click',e=>{const btn=e.target.closest('.tab-btn');if(!btn)return;S.view=btn.dataset.view;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('tableView').style.display=S.view==='table'?'block':'none';document.getElementById('chartView').style.display=S.view==='chart'?'block':'none';if(S.view==='chart')renderChart();});
 
 // ═══ DATA ═══
 const fmt=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -505,12 +584,11 @@ function bg(p) {
   return lerpColor(t);
 }
 function fg(p) {
-  const t = (_cMax === _cMin) ? 0.5 : (p - _cMin) / (_cMax - _cMin);
-  return t >= 0.8 ? '#fff' : '#000';
+  return '#000';
 }
 
 // ═══ LOAD & RENDER ═══
-async function loadPriceData(loadId){const li=document.getElementById('loadingIndicator'),tw=document.getElementById('tableWrapper');li.style.display='block';tw.style.display='none';const needs=['inkl_alt','inkl_alt_minus','net_inkl_alt','net_inkl_tarif'];const proms=[];if(needs.includes(S.mode))proms.push(fetchEnCharges());if(S.mode.startsWith('net_'))proms.push(loadAllNettarifC());if(proms.length)await Promise.all(proms);if(loadId!==S._loadId)return;const now=new Date();const center=new Date(now);center.setDate(center.getDate()+S.weekOffset*7);const s=new Date(center),e=new Date(center);s.setDate(s.getDate()-7);e.setDate(e.getDate()+2);const f=encodeURIComponent(JSON.stringify({PriceArea:S.area}));try{const r=await fetch(`https://api.energidataservice.dk/dataset/DayAheadPrices?start=${fmt(s)}&end=${fmt(e)}&filter=${f}&sort=TimeDK%20asc&limit=0`);if(loadId!==S._loadId)return;const j=await r.json();priceData=processRecords(j.records||[]);renderTable();computeAvg(j.records||[]);const dates=Object.keys(priceData).sort();const chartDate=S.weekOffset===0?fmt(now):(dates[dates.length-1]||fmt(now));fetchCO2(chartDate,S.area).then(d=>{co2Data=d;if(S.view==='chart')renderChart();});}catch(err){if(loadId===S._loadId)li.innerHTML='<span class="text-red-500">Fejl ved hentning af data</span>';}}
+async function loadPriceData(loadId){const li=document.getElementById('loadingIndicator'),tw=document.getElementById('tableWrapper');li.style.display='block';tw.style.display='none';const needs=['inkl_alt','inkl_alt_minus','net_inkl_alt','net_inkl_tarif'];const proms=[];if(needs.includes(S.mode))proms.push(fetchEnCharges());if(S.mode.startsWith('net_'))proms.push(loadAllNettarifC());if(proms.length)await Promise.all(proms);if(loadId!==S._loadId)return;const now=new Date();const center=new Date(now);center.setDate(center.getDate()+S.weekOffset*7);const s=new Date(center),e=new Date(center);s.setDate(s.getDate()-7);e.setDate(e.getDate()+2);const f=encodeURIComponent(JSON.stringify({PriceArea:S.area}));try{const r=await fetch(`https://api.energidataservice.dk/dataset/DayAheadPrices?start=${fmt(s)}&end=${fmt(e)}&filter=${f}&sort=TimeDK%20asc&limit=0`);if(loadId!==S._loadId)return;const j=await r.json();priceData=processRecords(j.records||[]);renderTable();}catch(err){if(loadId===S._loadId)li.innerHTML='<span class="text-red-500">Fejl ved hentning af data</span>';}}
 
 function renderTable(){
   const dates=Object.keys(priceData).sort().slice(-8);
@@ -530,41 +608,24 @@ function renderTable(){
 
   let h='';
   const fd=new Date(dates[0]);
-  h+=`<tr><th class="pr-3 text-right text-xs ${thSub} font-normal">Md-År</th><th colspan="${dates.length}" class="text-xs ${thSub} font-normal">${fd.getMonth()+1}-${String(fd.getFullYear()).slice(-2)}</th></tr>`;
+  h+=`<tr><th class="pr-3 text-right text-xs ${thSub} font-normal"></th><th colspan="${dates.length}" class="text-xs ${thSub} font-normal">${MON_FULL[fd.getMonth()]} ${fd.getFullYear()}</th></tr>`;
   h+=`<tr><th class="pr-3 text-right text-xs ${thSub} font-normal">Dag</th>`;
-  dates.forEach(d=>{const dt=new Date(d);const isToday=S.weekOffset===0&&d===today;h+=`<th class="px-1.5 sm:px-2 text-sm ${isToday?thDayToday:thDay}">${dt.getDate()}</th>`;});
+  dates.forEach(d=>{const dt=new Date(d);h+=`<th class="px-1.5 sm:px-2 text-sm ${thDay}">${dt.getDate()}</th>`;});
   h+=`</tr><tr><th class="pr-3 text-right text-xs ${thSub} font-normal">Time</th>`;
-  dates.forEach(d=>{const dt=new Date(d);const l=(S.weekOffset===0&&d===today)?'I dag':DAY[dt.getDay()];const isToday=S.weekOffset===0&&d===today;h+=`<th class="px-1.5 sm:px-2 text-xs font-normal ${isToday?thDayToday:thSub}">${l}</th>`;});
+  dates.forEach(d=>{const dt=new Date(d);const l=(S.weekOffset===0&&d===today)?'I dag':DAY[dt.getDay()];const isToday=S.weekOffset===0&&d===today;h+=`<th class="px-1.5 sm:px-2 text-xs font-normal ${isToday?thDay:thSub}">${l}</th>`;});
   h+='</tr>';
   const curHour=new Date().getHours();
   for(let hr=0;hr<24;hr++){
     const lb=String(hr).padStart(2,'0')+'-'+String(hr+1===24?0:hr+1).padStart(2,'0');
     const isNow=S.weekOffset===0&&hr===curHour;
-    h+=`<tr><td class="pr-3 text-right text-sm ${tdHour} py-0.5${isNow?' font-bold':''}">${lb}</td>`;
-    dates.forEach(d=>{const raw=priceData[d]?.[hr];if(raw!==undefined){const p=cvt(raw,hr,d),b2=bg(p),f2=fg(p),v=p.toFixed(2).replace('.',',');h+=`<td class="px-1 sm:px-2 py-0.5 text-center text-sm cursor-pointer hover:ring-2 hover:ring-inset hover:ring-white/60 active:opacity-80 transition-opacity" style="background:${b2};color:${f2}" data-d="${d}" data-hr="${hr}" onclick="showPriceDetail(this)">${v}</td>`;}else h+=`<td class="px-1 py-0.5 ${emptyBg}"></td>`;});
+    h+=`<tr><td class="pr-3 text-right text-sm ${tdHour} py-0.5">${lb}</td>`;
+    dates.forEach(d=>{const raw=priceData[d]?.[hr];if(raw!==undefined){const p=cvt(raw,hr,d),b2=bg(p),f2=fg(p),v=p.toFixed(2).replace('.',',');const isCurCell=isNow&&S.weekOffset===0&&d===today;h+=`<td class="px-1 sm:px-2 py-0.5 text-center text-sm cursor-pointer hover:ring-2 hover:ring-inset hover:ring-white/60 active:opacity-80 transition-opacity${isCurCell?' ring-2 ring-inset ring-gray-800/40 dark:ring-white/50':''}" style="background:${b2};color:${f2}" data-d="${d}" data-hr="${hr}" onclick="showPriceDetail(this)">${v}</td>`;}else h+=`<td class="px-1 py-0.5 ${emptyBg}"></td>`;});
     h+='</tr>';
   }
   tbl.innerHTML=h;document.getElementById('loadingIndicator').style.display='none';document.getElementById('tableWrapper').style.display='block';
 }
 
-// ═══ AVERAGES ═══
-async function computeAvg(recs){const now=new Date(),cm=now.getMonth(),cy=now.getFullYear(),pm=cm===0?11:cm-1,py=cm===0?cy-1:cy;let ct=0,cc=0;recs.forEach(r=>{const dt=new Date(r.TimeDK);if(dt.getMonth()===cm&&dt.getFullYear()===cy){ct+=cvt(r.DayAheadPriceDKK,dt.getHours(),fmt(dt));cc++;}});const ca=cc>0?(ct/cc).toFixed(2):'-';let ot=0,oc=0;for(const d in priceData){const dd=new Date(d);if(dd.getMonth()!==cm)continue;for(const hr in priceData[d]){const hh=+hr;if(hh>=23||hh<6){ot+=cvt(priceData[d][hr],hh,d);oc++;}}}const oa=oc>0?(ot/oc).toFixed(2):'-';let pa='-';try{const ms=`${py}-${String(pm+1).padStart(2,'0')}-01`,em2=pm===11?0:pm+1,ey2=pm===11?py+1:py,me=`${ey2}-${String(em2+1).padStart(2,'0')}-01`;const ff=encodeURIComponent(JSON.stringify({PriceArea:S.area}));const r=await fetch(`https://api.energidataservice.dk/dataset/DayAheadPrices?start=${ms}&end=${me}&filter=${ff}&limit=0&columns=DayAheadPriceDKK,TimeDK`);const j=await r.json();if(j.records?.length){const t=j.records.reduce((s,r2)=>{const dt2=new Date(r2.TimeDK);return s+cvt(r2.DayAheadPriceDKK,dt2.getHours(),fmt(dt2));},0);pa=(t/j.records.length).toFixed(2);}}catch(e){}document.getElementById('avgPrices').innerHTML=`Gns pris ${MON[cm]}: ${ca.replace('.',',')} &nbsp; kl. 23-06: ${oa.replace('.',',')}<br>Gns pris ${MON[pm]}: ${pa.replace('.',',')}`;}
 
-// ═══ CHART (theme-aware) ═══
-function renderChart(){
-  const dates=Object.keys(priceData).sort();
-  const chartDate=S.weekOffset===0?fmt(new Date()):(dates[dates.length-1]||fmt(new Date()));
-  const d=priceData[chartDate];if(!d)return;
-  const dk=isDark();
-  const labels=[],vals=[],cols=[];
-  for(let h=0;h<24;h++){labels.push(String(h).padStart(2,'0'));const r=d[h];if(r!==undefined){const p=cvt(r,h,chartDate);vals.push(+p.toFixed(2));cols.push(bg(p));}else{vals.push(null);cols.push(dk?'#374151':'#e5e7eb');}}
-  if(chart)chart.destroy();
-  const txtCol=dk?'#9ca3af':'#6b7280';const gridCol=dk?'#1f2937':'#f3f4f6';const titleCol=dk?'#e5e7eb':'#1f2937';
-  const co2Col=dk?'rgba(52,211,153,0.8)':'rgba(5,150,105,0.8)';
-  const datasets=[{label:'DKK/kWh',data:vals,backgroundColor:cols,borderRadius:4,yAxisID:'y'}];
-  if(co2Data&&co2Data.some(v=>v!=null)){datasets.push({label:'g CO₂/kWh',data:co2Data,type:'line',borderColor:co2Col,backgroundColor:'transparent',pointRadius:2,pointHoverRadius:4,borderWidth:2,tension:0.3,yAxisID:'y2'});}
-  chart=new Chart(document.getElementById('priceChart'),{type:'bar',data:{labels,datasets},options:{responsive:true,plugins:{legend:{display:co2Data&&co2Data.some(v=>v!=null),labels:{color:txtCol,boxWidth:12,padding:12}},title:{display:true,text:`Elpriser ${chartDate}`,font:{size:15},color:titleCol}},scales:{y:{beginAtZero:true,title:{display:true,text:'DKK/kWh',color:txtCol},ticks:{color:txtCol},grid:{color:gridCol}},y2:{position:'right',title:{display:true,text:'g CO₂/kWh',color:co2Col},ticks:{color:co2Col},grid:{display:false}},x:{title:{display:true,text:'Time',color:txtCol},ticks:{color:txtCol},grid:{color:gridCol}}}}});
-}
 
 // ═══ TARIFF PAGE ═══
 async function loadTariffPage(){
@@ -866,6 +927,113 @@ function showPriceDetail(cell){
   document.getElementById('pdTotal').textContent=total.toFixed(2).replace('.',',')+' kr/kWh';
   document.getElementById('pdRows').innerHTML=html;
   document.getElementById('priceDetail').showModal();
+}
+
+// ═══ SHELLY LIVE TARIFF PAGE ═══
+let _shellyVal='DK1';
+function buildShellySelect(){
+  const sel=document.getElementById('shellySelect');
+  if(sel.options.length>0)return;
+  for(const area of['DK1','DK2']){
+    const label=area==='DK1'?'DK1 Vest':'DK2 Øst';
+    const grp=document.createElement('optgroup');
+    grp.label=label+' — Spotpris';
+    const opt=document.createElement('option');
+    opt.value=area;opt.textContent=label+' — Spotpris (inkl. moms)';
+    grp.appendChild(opt);sel.appendChild(grp);
+    const grp2=document.createElement('optgroup');
+    grp2.label=label+' — Med netselskab';
+    for(const n of(NETS[area]||[])){
+      const o=document.createElement('option');
+      o.value=`${area}/${n.slug}`;o.textContent=n.name;
+      grp2.appendChild(o);
+    }
+    sel.appendChild(grp2);
+  }
+  sel.value=_shellyVal;
+}
+function elpriserNowUrl(val){
+  const p=val.split('/'),area=p[0],slug=p[1];
+  if(!slug)return`https://elpriser.org/api/now?area=${area}&mode=inkl_alt`;
+  const net=netBySlug(area,slug);
+  return`https://elpriser.org/api/now?area=${area}&mode=net_inkl_alt&gln=${net.gln}`;
+}
+function updateShellyScript(){
+  const elUrl=elpriserNowUrl(_shellyVal);
+  const cloudUrl=(document.getElementById('shellyCloudUrl').value.trim())||'DIN_SHELLY_API_URL';
+  document.getElementById('shellyScript').textContent=
+`// Shelly Script — Live Tariff via elpriser.org
+// Opdaterer prisen én gang i timen automatisk.
+
+var ELPRISER_URL = "${elUrl}";
+var SHELLY_API   = "${cloudUrl}";
+
+function pushPrice() {
+  Shelly.call("HTTP.GET", {url: ELPRISER_URL, timeout: 15},
+    function(res, err) {
+      if (err !== 0 || !res || res.code !== 200) return;
+      var data  = JSON.parse(res.body);
+      var price = String(Math.round(data.price * 100) / 100);
+      Shelly.call("HTTP.POST", {
+        url:          SHELLY_API,
+        content_type: "application/json",
+        body:         JSON.stringify({price: price})
+      }, null);
+    }
+  );
+}
+
+pushPrice();                          // kør med det samme
+Timer.set(3600000, true, pushPrice); // opdater hver time`;
+}
+function copyShellyScript(){
+  navigator.clipboard?.writeText(document.getElementById('shellyScript').textContent);
+  const btn=document.getElementById('shellyScriptCopyBtn');
+  btn.textContent='Kopieret!';setTimeout(()=>btn.textContent='Kopiér',1500);
+}
+function onShellySelect(){
+  _shellyVal=document.getElementById('shellySelect').value;
+  updateShellyScript();
+  renderShellyTariffTable();
+}
+const LEVEL_COLOR={'VERY_CHEAP':'text-emerald-600 dark:text-emerald-400','CHEAP':'text-green-600 dark:text-green-400','NORMAL':'text-yellow-600 dark:text-yellow-400','EXPENSIVE':'text-orange-500 dark:text-orange-400','VERY_EXPENSIVE':'text-red-600 dark:text-red-400'};
+const LEVEL_DA={'VERY_CHEAP':'Meget billig','CHEAP':'Billig','NORMAL':'Normal','EXPENSIVE':'Dyr','VERY_EXPENSIVE':'Meget dyr'};
+async function loadShellyTariffPage(){
+  buildShellySelect();
+  updateShellyScript();
+  await renderShellyTariffTable();
+}
+async function renderShellyTariffTable(){
+  const loading=document.getElementById('shellyTariffLoading'),tbl=document.getElementById('shellyTariffTable');
+  loading.style.display='';tbl.style.display='none';
+  try{
+    const p=_shellyVal.split('/'),area=p[0],slug=p[1];
+    const qs=slug?`area=${area}&mode=net_inkl_alt&gln=${netBySlug(area,slug).gln}`:`area=${area}`;
+    const r=await fetch(`/api/shelly/tariff?${qs}`);
+    const j=await r.json();
+    const info=j.data.viewer.homes[0].currentSubscription.priceInfo;
+    const now=new Date().getHours();
+    const th='px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 text-right';
+    document.getElementById('shellyTariffHead').innerHTML=
+      `<th class="${th} text-left">Time</th><th class="${th}">Pris</th><th class="${th}">Klasse</th>`;
+    const rows=(info.today||[]).concat(info.tomorrow||[]);
+    let h='';
+    for(const row of rows){
+      const d=new Date(row.startsAt);
+      const hr=d.getHours();
+      const day=d.toLocaleDateString('da-DK',{weekday:'short'});
+      const isNow=(d.getDate()===new Date().getDate()&&hr===now);
+      const bg=isNow?'bg-brand-50 dark:bg-brand-950/40 font-semibold':'';
+      const col=LEVEL_COLOR[row.level]||'';
+      h+=`<tr class="${bg}">
+        <td class="px-3 py-1 text-xs text-gray-700 dark:text-gray-300">${day} ${String(hr).padStart(2,'0')}–${String((hr+1)%24).padStart(2,'0')}${isNow?' ←':''}</td>
+        <td class="px-3 py-1 text-xs text-right tabular text-gray-700 dark:text-gray-300">${row.total.toFixed(2).replace('.',',')} kr</td>
+        <td class="px-3 py-1 text-xs text-right font-medium ${col}">${LEVEL_DA[row.level]||row.level}</td>
+      </tr>`;
+    }
+    document.getElementById('shellyTariffBody').innerHTML=h;
+    loading.style.display='none';tbl.style.display='';
+  }catch(e){loading.innerHTML='<span class="text-red-500 text-xs">Fejl ved hentning</span>';}
 }
 
 // ═══ INIT ═══
