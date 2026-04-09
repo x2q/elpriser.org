@@ -115,7 +115,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       Henter priser&hellip;
     </div>
     <div class="overflow-x-auto -mx-2 sm:mx-0" id="tableWrapper" style="display:none">
-      <table class="mx-auto text-sm sm:text-base tabular" id="priceTable"></table>
+      <table class="mx-auto text-xs sm:text-sm tabular" id="priceTable"></table>
     </div>
   </div>
   <div class="flex items-center justify-center gap-2 mt-4">
@@ -563,27 +563,35 @@ const STOPS = [
   [0.88, [251,177,177]], // red-400 pastel
   [1.00, [217,130,130]], // red-700 pastel
 ];
-function lerpColor(t) {
+function lerpColor(t, dim) {
   t = Math.max(0, Math.min(1, t));
+  let r, g, b;
   for (let i = 0; i < STOPS.length - 1; i++) {
     const [t0, c0] = STOPS[i], [t1, c1] = STOPS[i + 1];
     if (t >= t0 && t <= t1) {
       const f = (t - t0) / (t1 - t0);
-      const r = Math.round(c0[0] + (c1[0] - c0[0]) * f);
-      const g = Math.round(c0[1] + (c1[1] - c0[1]) * f);
-      const b = Math.round(c0[2] + (c1[2] - c0[2]) * f);
-      return `rgb(${r},${g},${b})`;
+      r = c0[0] + (c1[0] - c0[0]) * f;
+      g = c0[1] + (c1[1] - c0[1]) * f;
+      b = c0[2] + (c1[2] - c0[2]) * f;
+      break;
     }
   }
-  const last = STOPS[STOPS.length - 1][1];
-  return `rgb(${last[0]},${last[1]},${last[2]})`;
+  if (r === undefined) { const last = STOPS[STOPS.length - 1][1]; r = last[0]; g = last[1]; b = last[2]; }
+  if (dim) {
+    // Mix toward dark background (rgb(3,7,18) = gray-950)
+    const m = 0.6;
+    r = r * m + 3 * (1 - m);
+    g = g * m + 7 * (1 - m);
+    b = b * m + 18 * (1 - m);
+  }
+  return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
 }
 function bg(p) {
   const t = (_cMax === _cMin) ? 0.5 : (p - _cMin) / (_cMax - _cMin);
-  return lerpColor(t);
+  return lerpColor(t, isDark());
 }
 function fg(p) {
-  return '#000';
+  return isDark() ? 'rgba(255,255,255,0.85)' : '#000';
 }
 
 // ═══ LOAD & RENDER ═══
@@ -607,18 +615,19 @@ function renderTable(){
 
   let h='';
   const fd=new Date(dates[0]);
-  h+=`<tr><th class="pr-3 text-right text-xs ${thSub} font-normal"></th><th colspan="${dates.length}" class="text-xs ${thSub} font-normal">${MON_FULL[fd.getMonth()]} ${fd.getFullYear()}</th></tr>`;
-  h+=`<tr><th class="pr-3 text-right text-xs ${thSub} font-normal">Dag</th>`;
-  dates.forEach(d=>{const dt=new Date(d);h+=`<th class="px-1.5 sm:px-2 text-sm ${thDay}">${dt.getDate()}</th>`;});
-  h+=`</tr><tr><th class="pr-3 text-right text-xs ${thSub} font-normal">Time</th>`;
-  dates.forEach(d=>{const dt=new Date(d);const l=(S.weekOffset===0&&d===today)?'I dag':DAY[dt.getDay()];const isToday=S.weekOffset===0&&d===today;h+=`<th class="px-1.5 sm:px-2 text-xs font-normal ${isToday?thDay:thSub}">${l}</th>`;});
+  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal"></th><th colspan="${dates.length}" class="text-xs ${thSub} font-normal">${MON_FULL[fd.getMonth()]} ${fd.getFullYear()}</th></tr>`;
+  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Dag</th>`;
+  dates.forEach(d=>{const dt=new Date(d);h+=`<th class="px-0.5 sm:px-1.5 ${thDay}">${dt.getDate()}</th>`;});
+  h+=`</tr><tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Time</th>`;
+  dates.forEach(d=>{const dt=new Date(d);const l=(S.weekOffset===0&&d===today)?'I dag':DAY[dt.getDay()];const isToday=S.weekOffset===0&&d===today;h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${isToday?thDay:thSub}">${l}</th>`;});
   h+='</tr>';
   const curHour=new Date().getHours();
+  const isMobile=window.innerWidth<640;
   for(let hr=0;hr<24;hr++){
-    const lb=String(hr).padStart(2,'0')+'-'+String(hr+1===24?0:hr+1).padStart(2,'0');
+    const lb=isMobile?String(hr):String(hr).padStart(2,'0')+'-'+String(hr+1===24?0:hr+1).padStart(2,'0');
     const isNow=S.weekOffset===0&&hr===curHour;
-    h+=`<tr><td class="pr-3 text-right text-sm ${tdHour} py-0.5">${lb}</td>`;
-    dates.forEach(d=>{const raw=priceData[d]?.[hr];if(raw!==undefined){const p=cvt(raw,hr,d),b2=bg(p),f2=fg(p),v=p.toFixed(2).replace('.',',');const isCurCell=isNow&&S.weekOffset===0&&d===today;h+=`<td class="px-1 sm:px-2 py-0.5 text-center text-sm cursor-pointer hover:ring-2 hover:ring-inset hover:ring-white/60 active:opacity-80 transition-opacity${isCurCell?' ring-2 ring-inset ring-gray-800/40 dark:ring-white/50':''}" style="background:${b2};color:${f2}" data-d="${d}" data-hr="${hr}" onclick="showPriceDetail(this)">${v}</td>`;}else h+=`<td class="px-1 py-0.5 ${emptyBg}"></td>`;});
+    h+=`<tr><td class="pr-1 sm:pr-3 text-right text-xs ${tdHour} py-0.5">${lb}</td>`;
+    dates.forEach(d=>{const raw=priceData[d]?.[hr];if(raw!==undefined){const p=cvt(raw,hr,d),b2=bg(p),f2=fg(p),v=p.toFixed(2).replace('.',',');const isCurCell=isNow&&S.weekOffset===0&&d===today;h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center cursor-pointer hover:ring-2 hover:ring-inset hover:ring-white/60 active:opacity-80 transition-opacity${isCurCell?' ring-2 ring-inset ring-gray-800/40 dark:ring-white/50':''}" style="background:${b2};color:${f2}" data-d="${d}" data-hr="${hr}" onclick="showPriceDetail(this)">${v}</td>`;}else h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;});
     h+='</tr>';
   }
   tbl.innerHTML=h;document.getElementById('loadingIndicator').style.display='none';document.getElementById('tableWrapper').style.display='block';
