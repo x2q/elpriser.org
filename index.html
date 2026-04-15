@@ -1163,59 +1163,57 @@ function renderForecastTable(data){
   const dk=isDark();
   const days=data.days||[];
   if(!days.length)return;
-  // Collect all prices for color range
   const allP=[];
   days.forEach(d=>d.prices.forEach(p=>{if(p.price!=null)allP.push(p.price);}));
   setColorRange(allP);
   const today=fmt(new Date());
+  // Use exact same classes as renderTable
   const thSub=dk?'text-gray-500':'text-gray-400';
   const thDay=dk?'text-gray-300':'text-gray-700';
-  const thToday=dk?'text-brand-400':'text-brand-600';
-  let h='<table class="mx-auto text-xs sm:text-sm tabular">';
-  // Header: day names
-  h+='<tr><th class="pr-1 sm:pr-3 text-right text-xs '+thSub+' font-normal">Dag</th>';
+  const thDayToday=dk?'text-brand-400':'text-brand-600';
+  const tdHour=dk?'text-gray-500':'text-gray-500';
+  const emptyBg=dk?'bg-gray-800':'bg-gray-100';
+
+  let h='';
+  // Month+year header — same as renderTable
+  const fd=new Date(days[0].date);
+  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal"></th><th colspan="${days.length}" class="text-xs ${thSub} font-normal">${MON_FULL[fd.getMonth()]} ${fd.getFullYear()}</th></tr>`;
+  // Day number row
+  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Dag</th>`;
+  days.forEach(d=>{const dt=new Date(d.date);h+=`<th class="px-0.5 sm:px-1.5 ${d.date===today?thDayToday:thDay}">${dt.getDate()}</th>`;});
+  h+='</tr>';
+  // Weekday + type row
+  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Time</th>`;
   days.forEach(d=>{
     const dt=new Date(d.date);
     const isT=d.date===today;
     const lbl=isT?'I dag':DAY[dt.getDay()];
-    const cls=isT?thToday:d.type==='actual'?thDay:thSub;
-    h+=`<th class="px-0.5 sm:px-1.5 ${cls} font-normal">${lbl}<br>${dt.getDate()}</th>`;
+    const isFc=d.type==='forecast';
+    h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${isT?thDayToday:thSub}">${lbl}</th>`;
   });
   h+='</tr>';
-  // Type row
-  h+='<tr><th class="pr-1 sm:pr-3"></th>';
+  // Type indicator row
+  h+=`<tr><th class="pr-1 sm:pr-3"></th>`;
   days.forEach(d=>{
     const isFc=d.type==='forecast';
-    h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${isFc?(dk?'text-gray-500':'text-gray-400'):(dk?'text-emerald-400':'text-emerald-600')}">${isFc?'prognose':'faktisk'}</th>`;
+    h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${isFc?thSub:(dk?'text-emerald-400':'text-emerald-600')}" style="font-size:0.6rem">${isFc?'prognose':'faktisk'}</th>`;
   });
   h+='</tr>';
-  // Hourly rows
+  // Hourly rows — matches renderTable cell pattern exactly
   const curHour=new Date().getHours();
   const isMobile=window.innerWidth<640;
   for(let hr=0;hr<24;hr++){
     const lb=isMobile?String(hr):String(hr).padStart(2,'0')+'-'+String(hr+1===24?0:hr+1).padStart(2,'0');
     const isNow=hr===curHour;
-    h+=`<tr><td class="pr-1 sm:pr-3 text-right text-xs ${dk?'text-gray-500':'text-gray-500'} py-0.5">${lb}</td>`;
+    h+=`<tr><td class="pr-1 sm:pr-3 text-right text-xs ${tdHour} py-0.5">${lb}</td>`;
     days.forEach(d=>{
       const p=d.prices.find(x=>x.hour===hr);
-      if(!p||p.price==null){
-        h+=`<td class="px-0.5 py-0.5 ${dk?'bg-gray-800':'bg-gray-100'}"></td>`;
-        return;
-      }
+      if(!p||p.price==null){h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;return;}
       const v=p.price.toFixed(2).replace('.',',');
       const b2=bg(p.price),f2=fg(p.price);
+      const isCurCell=isNow&&d.date===today;
       const isFc=d.type==='forecast';
-      const isToday=d.date===today&&isNow;
-      const border=isFc?'border border-dashed border-white/20':'';
-      const opacity=isFc?'opacity-80':'';
-      const ring=isToday?' ring-2 ring-inset ring-gray-800/40 dark:ring-white/50':'';
-      // Show range for forecasts
-      let rangeHtml='';
-      if(isFc&&p.min!=null&&p.max!=null){
-        const rng=(p.max-p.min).toFixed(1).replace('.',',');
-        rangeHtml=`<div class="text-xs leading-none mt-0.5" style="font-size:0.55rem;opacity:0.6">±${rng}</div>`;
-      }
-      h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center ${border} ${opacity} ${ring}" style="background:${b2};color:${f2}">${v}${rangeHtml}</td>`;
+      h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center${isCurCell?' ring-2 ring-inset ring-gray-800/40 dark:ring-white/50':''}${isFc?' opacity-80':''}" style="background:${b2};color:${f2}">${v}</td>`;
     });
     h+='</tr>';
   }
@@ -1225,11 +1223,10 @@ function renderForecastTable(data){
     const valid=d.prices.filter(p=>p.price!=null);
     if(!valid.length){h+='<td></td>';return;}
     const avg=(valid.reduce((s,p)=>s+p.price,0)/valid.length).toFixed(2).replace('.',',');
-    const cls=d.type==='forecast'?(dk?'text-gray-400':'text-gray-500'):(dk?'text-gray-200':'text-gray-800');
-    h+=`<td class="px-0.5 sm:px-1.5 pt-1 text-center text-xs font-bold ${cls}">${avg}</td>`;
+    h+=`<td class="px-0.5 sm:px-1.5 pt-1 text-center text-xs font-bold ${d.date===today?thDayToday:thDay}">${avg}</td>`;
   });
-  h+='</tr></table>';
-  document.getElementById('fcTableWrapper').innerHTML=h;
+  h+='</tr>';
+  document.getElementById('fcTableWrapper').innerHTML='<table class="mx-auto text-xs sm:text-sm tabular" id="fcTable">'+h+'</table>';
   document.getElementById('fcLoading').style.display='none';
   document.getElementById('fcTableWrapper').style.display='block';
 }

@@ -412,30 +412,87 @@ async function fetchHistoricalPrices(area, startDate, endDate) {
   return out;
 }
 
-async function fetchWindForecasts(area) {
-  try {
-    const f = encodeURIComponent(JSON.stringify({ PriceArea: area }));
-    const res = await fetch(
-      `https://api.energidataservice.dk/dataset/Forecasts_Hour` +
-      `?filter=${f}&sort=HourDK%20desc&limit=200&columns=HourDK,ForecastType,ForecastDayAhead,ForecastCurrent`
-    );
-    const j = await res.json();
-    // Sum all wind types per hour
-    const wind = {};
-    for (const r of (j.records || [])) {
-      if (!r.ForecastType.includes('Wind')) continue;
-      const dt = new Date(r.HourDK);
-      const dk = fmtUTC(dt);
-      const h  = dt.getUTCHours();
-      const key = `${dk}:${h}`;
-      const val = r.ForecastDayAhead ?? r.ForecastCurrent ?? 0;
-      wind[key] = (wind[key] || 0) + val;
-    }
-    return wind;
-  } catch { return {}; }
+// Fetch wind+solar from Energi Data Service (1-2 days ahead) + Open-Meteo (7 days)
+async function fetchWeatherForecasts(area) {
+  // Coordinates: DK1 = central Jutland, DK2 = central Zealand
+  const coords = area === 'DK1' ? { lat: 56.0, lon: 9.5 } : { lat: 55.5, lon: 12.0 };
+
+  const [edsData, meteoData] = await Promise.all([
+    // Energi Data Service: actual production forecasts (MW) for 1-2 days
+    (async () => {
+      try {
+        const f = encodeURIComponent(JSON.stringify({ PriceArea: area }));
+        const res = await fetch(
+          `https://api.energidataservice.dk/dataset/Forecasts_Hour` +
+          `?filter=${f}&sort=HourDK%20desc&limit=200&columns=HourDK,ForecastType,ForecastDayAhead,ForecastCurrent`
+        );
+        const j = await res.json();
+        const wind = {}, solar = {};
+        for (const r of (j.records || [])) {
+          const dt = new Date(r.HourDK);
+          const dk = fmtUTC(dt);
+          const h  = dt.getUTCHours();
+          const key = `${dk}:${h}`;
+          const val = r.ForecastDayAhead ?? r.ForecastCurrent ?? 0;
+          if (r.ForecastType.includes('Wind')) wind[key] = (wind[key] || 0) + val;
+          if (r.ForecastType === 'Solar') solar[key] = (solar[key] || 0) + val;
+        }
+        return { wind, solar };
+      } catch { return { wind: {}, solar: {} }; }
+    })(),
+    // Open-Meteo: wind speed + solar radiation for 7 days (free, no key)
+    (async () => {
+      try {
+        const res = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}` +
+          `&hourly=wind_speed_80m,direct_radiation&forecast_days=7&timezone=Europe/Copenhagen`
+        );
+        const j = await res.json();
+        const times = j.hourly?.time || [];
+        const wind = j.hourly?.wind_speed_80m || [];
+        const solar = j.hourly?.direct_radiation || [];
+        const result = {};
+        for (let i = 0; i < times.length; i++) {
+          // times[i] format: "2026-04-15T14:00"
+          const dt = new Date(times[i]);
+          const dk = fmtUTC(dt);
+          const h  = dt.getUTCHours();
+          result[`${dk}:${h}`] = { windSpeed: wind[i] || 0, solarRad: solar[i] || 0 };
+        }
+        return result;
+      } catch { return {}; }
+    })(),
+  ]);
+
+  // Merge: EDS production data takes priority for wind (MW), Open-Meteo fills gaps
+  // For days beyond EDS range, convert Open-Meteo wind speed to estimated production
+  // Rough conversion: DK1 ~150 MW per m/s average, DK2 ~80 MW per m/s
+  const windMwPerMs = area === 'DK1' ? 150 : 80;
+  const solarPeakMw = area === 'DK1' ? 3000 : 2000; // rough installed capacity
+
+  const combined = {};
+  // Collect all keys from both sources
+  const allKeys = new Set([...Object.keys(edsData.wind), ...Object.keys(edsData.solar), ...Object.keys(meteoData)]);
+  for (const key of allKeys) {
+    const edsWind = edsData.wind[key];
+    const edsSolar = edsData.solar[key];
+    const meteo = meteoData[key];
+
+    // Wind: prefer EDS production forecast (MW), fallback to Open-Meteo estimate
+    const windMw = edsWind !== undefined ? edsWind
+      : (meteo ? meteo.windSpeed * windMwPerMs : 0);
+
+    // Solar: prefer EDS, fallback to Open-Meteo estimate
+    // Convert W/m² radiation to estimated MW: radiation/1000 * capacity * efficiency
+    const solarMw = edsSolar !== undefined ? edsSolar
+      : (meteo ? (meteo.solarRad / 1000) * solarPeakMw * 0.15 : 0);
+
+    combined[key] = { wind: windMw, solar: solarMw, total: windMw + solarMw };
+  }
+  return combined;
 }
 
-function buildForecast(historicalPrices, windForecasts, area, mode, enCharges) {
+function buildForecast(historicalPrices, weatherForecasts, area, mode, enCharges) {
   const dkNow = danishNow();
   const today = fmtUTC(dkNow);
   const dates = Object.keys(historicalPrices).sort();
@@ -469,16 +526,6 @@ function buildForecast(historicalPrices, windForecasts, area, mode, enCharges) {
     }
   }
 
-  // Compute average wind production from historical data
-  let totalWindHist = 0, windHistCount = 0;
-  for (const d of dates) {
-    if (d >= today) continue;
-    for (let h = 0; h < 24; h++) {
-      const wKey = `${d}:${h}`;
-      // We don't have historical wind in windForecasts (only recent), skip wind correction if no data
-    }
-  }
-
   // Build 7-day output
   const days = [];
   for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
@@ -501,16 +548,16 @@ function buildForecast(historicalPrices, windForecasts, area, mode, enCharges) {
         if (stats && stats.wCount > 0) {
           let forecast = stats.wSum / stats.wCount;
 
-          // Wind correction: check if we have wind forecast for this hour
+          // Weather correction: wind + solar production reduces prices
           const wKey = `${d}:${h}`;
-          const windFc = windForecasts[wKey];
-          if (windFc !== undefined && windFc > 0) {
-            // More wind → lower prices. Simple inverse scaling.
-            // Typical DK1 total wind: ~2000-4000 MW. Use 3000 as baseline.
-            const baseline = area === 'DK1' ? 2500 : 1500;
-            const windRatio = windFc / baseline;
-            // Cap adjustment between 0.7x and 1.3x
-            const adj = Math.max(0.7, Math.min(1.3, 1 / Math.sqrt(windRatio)));
+          const weather = weatherForecasts[wKey];
+          if (weather && weather.total > 0) {
+            // More renewable production → lower prices
+            // Baseline: typical combined wind+solar production
+            const baseline = area === 'DK1' ? 3000 : 1800;
+            const ratio = weather.total / baseline;
+            // Cap adjustment between 0.6x and 1.4x
+            const adj = Math.max(0.6, Math.min(1.4, 1 / Math.sqrt(ratio)));
             forecast *= adj;
           }
 
@@ -554,15 +601,15 @@ async function handleForecast(area, mode) {
   const start = new Date(dkNow.getTime() - 28 * 86_400_000);
   const end   = new Date(dkNow.getTime() + 2 * 86_400_000); // Include tomorrow
 
-  const [historicalPrices, windForecasts, enCharges] = await Promise.all([
+  const [historicalPrices, weatherForecasts, enCharges] = await Promise.all([
     cached(`forecast-prices-${area}-${fmtUTC(start)}-${fmtUTC(end)}`, 30 * 60_000,
       () => fetchHistoricalPrices(area, fmtUTC(start), fmtUTC(end))),
-    cached(`forecast-wind-${area}`, 30 * 60_000,
-      () => fetchWindForecasts(area)),
+    cached(`forecast-weather-${area}`, 30 * 60_000,
+      () => fetchWeatherForecasts(area)),
     cached('encharges', 60 * 60_000, fetchEnCharges),
   ]);
 
-  const days = buildForecast(historicalPrices, windForecasts, area, mode, enCharges);
+  const days = buildForecast(historicalPrices, weatherForecasts, area, mode, enCharges);
 
   return ok({
     area,
