@@ -6,6 +6,14 @@
 <title>Elpris</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 <meta name="description" content="Se aktuelle elpriser for DK1 og DK2 med netselskab-tariffer.">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3WE5CL1ZTV"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3WE5CL1ZTV');
+</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
@@ -104,7 +112,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <a href="#automation" title="Automation" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
         <svg class="ico" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4l3 3"/></svg>
       </a>
-      <button onclick="document.getElementById('infoModal').showModal()" title="Info" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+      <button onclick="gtag('event','open_info_modal');document.getElementById('infoModal').showModal()" title="Info" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
         <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
       </button>
     </nav>
@@ -419,6 +427,7 @@ async function detectLocation(){
   const svg=document.getElementById('gpsIconSvg');
   const text=document.getElementById('gpsText');
   const btn=document.getElementById('gpsBtn');
+  gtag('event','gps_detect_start');
   svg.style.animation='spin .7s linear infinite';
   text.textContent='Finder din position...';
   btn.disabled=true; btn.classList.add('opacity-50');
@@ -433,6 +442,7 @@ async function detectLocation(){
     svg.style.animation='';
     if(m){
       text.textContent=`${m.net.name} (${m.area}) — navigerer...`;
+      gtag('event','gps_detect_success',{net:m.net.name,area:m.area});
       // Auto-navigate directly to the detected netselskab page
       location.hash=`${m.area}/net_inkl_alt/${m.net.slug}`;
     }else{
@@ -442,6 +452,7 @@ async function detectLocation(){
     }
   }catch(err){
     svg.style.animation='';
+    gtag('event','gps_detect_error',{reason:err.code===1?'denied':err.code===2?'unavailable':err.message});
     text.textContent=err.code===1?'Lokation nægtet':err.code===2?'Position ikke tilgængelig':'Fejl: '+(err.message||'Ukendt');
   }
   btn.disabled=false; btn.classList.remove('opacity-50');
@@ -457,9 +468,9 @@ function route(){
     if(saved){location.hash=saved;return;}
     document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpris';return;
   }
-  if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Elpris — Tariffer';loadTariffPage();return;}
-  if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpris — Automation';loadAutomationPage();return;}
-  if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Elpris — Shelly Live Tariff';loadShellyTariffPage();return;}
+  if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Elpris — Tariffer';gtag('event','page_view',{page_title:'Tariffer',page_location:location.href});loadTariffPage();return;}
+  if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpris — Automation';gtag('event','page_view',{page_title:'Automation',page_location:location.href});loadAutomationPage();return;}
+  if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Elpris — Shelly Live Tariff';gtag('event','page_view',{page_title:'Shelly Live Tariff',page_location:location.href});loadShellyTariffPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){location.hash='';return;}
   S.area=area;S.mode=mode;S.weekOffset=0;
@@ -469,6 +480,7 @@ function route(){
   S.netName=net?net.name:(p[3]?decodeURIComponent(p[3]):'');
   localStorage.setItem('lastHash',location.hash);
   document.querySelector('[data-page="prices"]').classList.add('active');
+  gtag('event','page_view',{page_title:'Priser — '+S.area+' '+S.mode+(S.netName?' '+S.netName:''),page_location:location.href});
   updateHeader();updateWeekNav();S._loadId++;loadPriceData(S._loadId);
 }
 window.addEventListener('hashchange',route);
@@ -520,7 +532,7 @@ function syncPriceSelector(){
 }
 function onPriceSelectorChange(){
   const val=document.getElementById('priceSelector').value;
-  if(val)location.hash=val;
+  if(val){gtag('event','select_price_view',{value:val});location.hash=val;}
 }
 function updateHeader(){
   const al=S.area==='DK1'?'DK1 Vest':'DK2 Øst';
@@ -654,6 +666,7 @@ function changeWeek(delta){
   const next=S.weekOffset+delta;
   if(next>0)return;
   S.weekOffset=next;
+  gtag('event','change_week',{direction:delta>0?'next':'previous',offset:next});
   updateWeekNav();
   S._loadId++;loadPriceData(S._loadId);
 }
@@ -667,6 +680,7 @@ function updateWeekNav(){
 // ═══ AUTOMATION ═══
 function onAutoStrategyChange(){
   const s=document.getElementById('autoStrategy').value;
+  gtag('event','auto_strategy_change',{strategy:s});
   const div=document.getElementById('autoParamDiv');
   const lbl=document.getElementById('autoParamLabel');
   const inp=document.getElementById('autoParam');
@@ -677,6 +691,7 @@ function onAutoStrategyChange(){
 }
 function onAutoModeChange(){
   const mode=document.getElementById('autoMode').value;
+  gtag('event','auto_mode_change',{mode:mode});
   const netRow=document.getElementById('autoNetRow');
   const isNet=mode.startsWith('net_');
   netRow.style.display=isNet?'':'none';
@@ -860,19 +875,21 @@ check();
 Timer.set(CHECK_INTERVAL_MS, true, check);`;
 }
 function switchExport(tab){
+  gtag('event','switch_export_tab',{tab:tab});
   document.getElementById('exportHA').style.display=tab==='ha'?'':'none';
   document.getElementById('exportShelly').style.display=tab==='shelly'?'':'none';
   document.getElementById('exportBtnHA').classList.toggle('active',tab==='ha');
   document.getElementById('exportBtnShelly').classList.toggle('active',tab==='shelly');
 }
-function copyExport(tab){navigator.clipboard?.writeText(document.getElementById(tab==='ha'?'exportHACode':'exportShellyCode').textContent);}
-function copyApiUrl(){navigator.clipboard?.writeText(document.getElementById('apiUrlDisplay').textContent);}
+function copyExport(tab){gtag('event','copy_export',{tab:tab});navigator.clipboard?.writeText(document.getElementById(tab==='ha'?'exportHACode':'exportShellyCode').textContent);}
+function copyApiUrl(){gtag('event','copy_api_url');navigator.clipboard?.writeText(document.getElementById('apiUrlDisplay').textContent);}
 
 // ═══ PRICE DETAIL POPUP ═══
 function showPriceDetail(cell){
   const d=cell.dataset.d,hr=+cell.dataset.hr;
   const raw=priceData[d]?.[hr];
   if(raw===undefined)return;
+  gtag('event','view_price_detail',{date:d,hour:hr,area:S.area,mode:S.mode});
   const en=enCharges||{sys:0.072,trans:0.043,afg:0.008};
   const tariffH=S.mode.startsWith('net_')?getTariff(S.gln,d):null;
   // All component values ex moms (DKK/kWh)
@@ -995,12 +1012,14 @@ pushPrice();                          // kør med det samme
 Timer.set(3600000, true, pushPrice); // opdater hver time`;
 }
 function copyShellyScript(){
+  gtag('event','copy_shelly_script');
   navigator.clipboard?.writeText(document.getElementById('shellyScript').textContent);
   const btn=document.getElementById('shellyScriptCopyBtn');
   btn.textContent='Kopieret!';setTimeout(()=>btn.textContent='Kopiér',1500);
 }
 function onShellySelect(){
   _shellyVal=document.getElementById('shellySelect').value;
+  gtag('event','shelly_select_change',{value:_shellyVal});
   updateShellyScript();
   renderShellyTariffTable();
 }
