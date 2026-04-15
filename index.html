@@ -967,8 +967,10 @@ function updateAutoViz(){
   const savingsEl=document.getElementById('autoSavings');
   if(countDays>0&&totalAlways>0){
     const pct=((1-totalSmart/totalAlways)*100).toFixed(0);
-    const avgSaved=((totalAlways-totalSmart)/countDays).toFixed(2).replace('.',',');
-    savingsEl.innerHTML=`Estimeret besparelse: <strong class="text-emerald-600 dark:text-emerald-400">${pct}%</strong> vs. altid tændt (gns. ${avgSaved} kr/kWh sparet pr. dag over ${countDays} dage)`;
+    const dailySaved=(totalAlways-totalSmart)/countDays;
+    const monthlySaved=(dailySaved*30.44).toFixed(1).replace('.',',');
+    const yearlySaved=(dailySaved*365).toFixed(0);
+    savingsEl.innerHTML=`Estimeret besparelse: <strong class="text-emerald-600 dark:text-emerald-400">${pct}%</strong> vs. altid tændt<br>~${monthlySaved} kr/kWh pr. måned · ~${yearlySaved} kr/kWh pr. år <span class="text-gray-400 dark:text-gray-600">(baseret på ${countDays} dages data)</span>`;
   } else savingsEl.textContent='';
   // Show strategy help
   document.getElementById('autoStrategyHelp').textContent=STRATEGY_HELP[strategy]||'';
