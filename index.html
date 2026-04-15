@@ -7,6 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 <meta name="description" content="Se dagens elpriser time for time i Danmark. Aktuelle spotpriser for DK1 (Vest) og DK2 (Øst) inkl. netselskab-tariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.">
 <link rel="canonical" href="https://elpriser.org/">
+<link rel="alternate" hreflang="da" href="https://elpriser.org/">
 <meta name="robots" content="index, follow">
 <!-- Open Graph -->
 <meta property="og:type" content="website">
@@ -15,8 +16,12 @@
 <meta property="og:url" content="https://elpriser.org/">
 <meta property="og:locale" content="da_DK">
 <meta property="og:site_name" content="elpriser.org">
+<meta property="og:image" content="https://elpriser.org/og-image">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <!-- Twitter -->
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://elpriser.org/og-image">
 <meta name="twitter:title" content="Elpriser i dag - Aktuelle spotpriser for Danmark">
 <meta name="twitter:description" content="Se dagens elpriser time for time. Spotpriser for DK1 og DK2 inkl. tariffer og moms.">
 <!-- Structured Data -->
@@ -49,26 +54,14 @@
   gtag('js', new Date());
   gtag('config', 'G-3WE5CL1ZTV');
 </script>
-<script src="https://cdn.tailwindcss.com"></script>
 <script>
-tailwind.config = {
-  darkMode: 'class',
-  theme: {
-    extend: {
-      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-      colors: {
-        brand: { 50:'#eef6ff',100:'#d9ebff',200:'#bcdaff',300:'#8ec2ff',400:'#59a0ff',500:'#3378ff',600:'#1b57f5',700:'#1543e1',800:'#1837b6',900:'#19338f',950:'#142157' },
-        accent: { 50:'#ecfdf5',100:'#d1fae5',400:'#34d399',500:'#10b981',600:'#059669' },
-      }
-    }
-  }
-}
 // Apply dark class based on system preference
 if (matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   document.documentElement.classList.toggle('dark', e.matches);
 });
 </script>
+<link rel="stylesheet" href="/style.css">
 <style>
   @keyframes spin{to{transform:rotate(360deg)}}
   .spinner{animation:spin .7s linear infinite}
@@ -130,6 +123,50 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <a href="#shelly-tariff" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Shelly Live Tariff</a>
       <a href="https://www.danskenergi.dk/vejledning/nettilslutning/find-dit-netselskab" target="_blank" rel="noopener" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Find dit netselskab &rarr;</a>
     </div>
+
+    <!-- FAQ — static crawlable content for SEO -->
+    <section class="mt-10 max-w-2xl mx-auto">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Ofte stillede spørgsmål om elpriser</h2>
+      <div class="space-y-2">
+        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+          <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
+            Hvad er elprisen i dag?
+            <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </summary>
+          <div class="px-5 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p>Elprisen i Danmark skifter time for time og fastsættes dagen i forvejen på den nordiske elbørs Nord Pool. Prisen kaldes <strong>spotprisen</strong> og offentliggøres dagligt omkring kl. 13 for det kommende døgn. Her på elpriser.org kan du se den aktuelle elpris live for både DK1 (Vestdanmark) og DK2 (Østdanmark), opdateret med data fra Energi Data Service.</p>
+          </div>
+        </details>
+        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+          <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
+            Hvad er forskellen på DK1 og DK2?
+            <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </summary>
+          <div class="px-5 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p>Danmark er delt i to prisområder: <strong>DK1</strong> dækker Vestdanmark (Jylland og Fyn) og <strong>DK2</strong> dækker Østdanmark (Sjælland, Lolland-Falster og Bornholm). Priserne kan variere mellem de to områder, da de har forskellige forbindelser til nabolande og forskellige produktionsforhold med vindmøller og solceller.</p>
+          </div>
+        </details>
+        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+          <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
+            Hvornår er strømmen billigst?
+            <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </summary>
+          <div class="px-5 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p>Strømmen er typisk billigst om natten mellem kl. 00 og 06, og dyrest i spidstimerne kl. 17-21 hvor mange husholdninger bruger mest energi. Men den faktiske pris afhænger af vejr, vind og forbrug, så det kan variere fra dag til dag. Med elpriser.org kan du se præcis hvilke timer der er billigst i dag og planlægge dit forbrug — f.eks. opladning af elbil, varmepumpe eller vaskemaskine.</p>
+          </div>
+        </details>
+        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+          <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
+            Hvad indgår i den samlede elpris?
+            <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </summary>
+          <div class="px-5 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p>Den samlede elpris består af flere dele: <strong>spotprisen</strong> (den rene markedspris fra Nord Pool), <strong>nettariffer</strong> (betaling til dit lokale netselskab for transport af strøm), <strong>systemtarif og transmissionstarif</strong> (til Energinet for det overordnede elnet), <strong>elafgift</strong> (statslig afgift) og <strong>moms</strong> (25%). På elpriser.org kan du se prisen med alle dele inkluderet, så du kender den reelle pris du betaler per kWh.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
   </div>
 </main>
 
