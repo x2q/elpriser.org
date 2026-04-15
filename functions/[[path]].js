@@ -39,9 +39,14 @@ const SEO_PAGES = {
     description: 'Forstå din elpris: spotpris, nettarif, systemtarif, elafgift og moms. Lær om prisområder DK1 og DK2, og hvordan du finder dit netselskab i Danmark.',
     hash: '#om-elpriser',
   },
+  '/prognose': {
+    title: 'Elprisprognose - Forventede elpriser de næste 7 dage | elpriser.org',
+    description: 'Se forventede elpriser for DK1 og DK2 de næste 7 dage. Prognose baseret på historiske prismønstre og vindprognoser fra Energi Data Service.',
+    hash: '#prognose',
+  },
 };
 
-const SITEMAP_URLS = ['/', '/dk1', '/dk2', '/tariffer', '/automation', '/om-elpriser'];
+const SITEMAP_URLS = ['/', '/dk1', '/dk2', '/tariffer', '/automation', '/prognose', '/om-elpriser'];
 
 const STATIC_ROUTES = {
   '/sitemap.xml': {

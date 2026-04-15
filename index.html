@@ -120,6 +120,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <div class="flex flex-wrap justify-center gap-3 mt-8">
       <a href="/dk1" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">DK1 Vest</a>
       <a href="/dk2" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">DK2 Øst</a>
+      <a href="/prognose" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Prognose</a>
       <a href="/tariffer" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Tariffer</a>
       <a href="/automation" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Automation</a>
       <a href="#shelly-tariff" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Shelly Live Tariff</a>
@@ -471,6 +472,47 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
 </dialog>
 
+<!-- ═══════ FORECAST PAGE ═══════ -->
+<main data-page="prognose" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
+  <div class="flex items-center justify-between mb-3">
+    <div>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white">Elprisprognose</h2>
+      <p class="text-xs text-gray-500 dark:text-gray-400">Forventede elpriser de næste 7 dage</p>
+    </div>
+    <div class="flex items-center gap-1">
+      <a href="#" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+        <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </a>
+    </div>
+  </div>
+  <!-- Config -->
+  <div class="flex flex-wrap gap-2 mb-4">
+    <select id="fcArea" onchange="loadForecastPage()" class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+      <option value="DK1">DK1 Vest</option><option value="DK2">DK2 Øst</option>
+    </select>
+    <select id="fcMode" onchange="loadForecastPage()" class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+      <option value="spot_inkl">Elspot inkl moms</option>
+      <option value="inkl_alt" selected>Inkl alt</option>
+      <option value="inkl_alt_minus">Inkl alt minus afgift</option>
+    </select>
+  </div>
+  <!-- Legend -->
+  <div class="flex gap-4 text-xs text-gray-500 dark:text-gray-400 mb-3">
+    <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded border-2 border-brand-400"></span> Faktisk pris</span>
+    <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded border-2 border-dashed border-gray-400"></span> Prognose</span>
+  </div>
+  <!-- Table -->
+  <div id="fcLoading" class="text-center py-12 text-gray-400 dark:text-gray-500">
+    <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>Beregner prognose&hellip;
+  </div>
+  <div id="fcTableWrapper" class="overflow-x-auto -mx-2 sm:mx-0" style="display:none"></div>
+  <!-- Info -->
+  <div class="mt-4 text-xs text-gray-400 dark:text-gray-600 space-y-1">
+    <p>Prognosen er baseret på gennemsnitspriser for samme ugedag og time fra de sidste 4 uger, korrigeret for vindprognoser fra Energi Data Service. Faktiske priser kan afvige.</p>
+    <p>Se også <a href="https://elforbrug.nu/elpriser-og-elprisprognose-for-de-kommende-dage/" target="_blank" rel="noopener" class="text-brand-500 underline">elforbrug.nu's elprisprognose</a> for en alternativ prognose.</p>
+  </div>
+</main>
+
 <!-- ═══════ ABOUT PAGE ═══════ -->
 <main data-page="om-elpriser" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
@@ -623,6 +665,7 @@ function route(){
   if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Automation — elpriser.org';pv('Automation','/automation');loadAutomationPage();return;}
   if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — elpriser.org';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}
   if(h==='om-elpriser'){document.querySelector('[data-page="om-elpriser"]').classList.add('active');document.title='Om elpriser i Danmark — elpriser.org';pv('Om elpriser','/om-elpriser');return;}
+  if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elprisprognose — elpriser.org';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){location.hash='';return;}
   S.area=area;S.mode=mode;S.weekOffset=0;
@@ -1095,6 +1138,100 @@ async function testApiUrl(){
     gtag('event','test_api',{success:false});
   }
   btn.textContent='Test API';btn.disabled=false;
+}
+
+// ═══ FORECAST PAGE ═══
+const DAY_FULL=['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+let _fcLoadId=0;
+async function loadForecastPage(){
+  const loadId=++_fcLoadId;
+  const area=document.getElementById('fcArea')?.value||S.area||'DK1';
+  const mode=document.getElementById('fcMode')?.value||'inkl_alt';
+  document.getElementById('fcLoading').style.display='';
+  document.getElementById('fcTableWrapper').style.display='none';
+  try{
+    const r=await fetch(`/api/forecast?area=${area}&mode=${mode}`);
+    if(loadId!==_fcLoadId)return;
+    const data=await r.json();
+    if(data.error){document.getElementById('fcLoading').innerHTML='<span class="text-red-500">'+data.error+'</span>';return;}
+    renderForecastTable(data);
+  }catch(e){
+    if(loadId===_fcLoadId)document.getElementById('fcLoading').innerHTML='<span class="text-red-500">Fejl ved hentning</span>';
+  }
+}
+function renderForecastTable(data){
+  const dk=isDark();
+  const days=data.days||[];
+  if(!days.length)return;
+  // Collect all prices for color range
+  const allP=[];
+  days.forEach(d=>d.prices.forEach(p=>{if(p.price!=null)allP.push(p.price);}));
+  setColorRange(allP);
+  const today=fmt(new Date());
+  const thSub=dk?'text-gray-500':'text-gray-400';
+  const thDay=dk?'text-gray-300':'text-gray-700';
+  const thToday=dk?'text-brand-400':'text-brand-600';
+  let h='<table class="mx-auto text-xs sm:text-sm tabular">';
+  // Header: day names
+  h+='<tr><th class="pr-1 sm:pr-3 text-right text-xs '+thSub+' font-normal">Dag</th>';
+  days.forEach(d=>{
+    const dt=new Date(d.date);
+    const isT=d.date===today;
+    const lbl=isT?'I dag':DAY[dt.getDay()];
+    const cls=isT?thToday:d.type==='actual'?thDay:thSub;
+    h+=`<th class="px-0.5 sm:px-1.5 ${cls} font-normal">${lbl}<br>${dt.getDate()}</th>`;
+  });
+  h+='</tr>';
+  // Type row
+  h+='<tr><th class="pr-1 sm:pr-3"></th>';
+  days.forEach(d=>{
+    const isFc=d.type==='forecast';
+    h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${isFc?(dk?'text-gray-500':'text-gray-400'):(dk?'text-emerald-400':'text-emerald-600')}">${isFc?'prognose':'faktisk'}</th>`;
+  });
+  h+='</tr>';
+  // Hourly rows
+  const curHour=new Date().getHours();
+  const isMobile=window.innerWidth<640;
+  for(let hr=0;hr<24;hr++){
+    const lb=isMobile?String(hr):String(hr).padStart(2,'0')+'-'+String(hr+1===24?0:hr+1).padStart(2,'0');
+    const isNow=hr===curHour;
+    h+=`<tr><td class="pr-1 sm:pr-3 text-right text-xs ${dk?'text-gray-500':'text-gray-500'} py-0.5">${lb}</td>`;
+    days.forEach(d=>{
+      const p=d.prices.find(x=>x.hour===hr);
+      if(!p||p.price==null){
+        h+=`<td class="px-0.5 py-0.5 ${dk?'bg-gray-800':'bg-gray-100'}"></td>`;
+        return;
+      }
+      const v=p.price.toFixed(2).replace('.',',');
+      const b2=bg(p.price),f2=fg(p.price);
+      const isFc=d.type==='forecast';
+      const isToday=d.date===today&&isNow;
+      const border=isFc?'border border-dashed border-white/20':'';
+      const opacity=isFc?'opacity-80':'';
+      const ring=isToday?' ring-2 ring-inset ring-gray-800/40 dark:ring-white/50':'';
+      // Show range for forecasts
+      let rangeHtml='';
+      if(isFc&&p.min!=null&&p.max!=null){
+        const rng=(p.max-p.min).toFixed(1).replace('.',',');
+        rangeHtml=`<div class="text-xs leading-none mt-0.5" style="font-size:0.55rem;opacity:0.6">±${rng}</div>`;
+      }
+      h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center ${border} ${opacity} ${ring}" style="background:${b2};color:${f2}">${v}${rangeHtml}</td>`;
+    });
+    h+='</tr>';
+  }
+  // Daily average row
+  h+='<tr class="border-t border-gray-300 dark:border-gray-600"><td class="pr-1 sm:pr-3 text-right text-xs font-bold pt-1 '+thSub+'">Gns.</td>';
+  days.forEach(d=>{
+    const valid=d.prices.filter(p=>p.price!=null);
+    if(!valid.length){h+='<td></td>';return;}
+    const avg=(valid.reduce((s,p)=>s+p.price,0)/valid.length).toFixed(2).replace('.',',');
+    const cls=d.type==='forecast'?(dk?'text-gray-400':'text-gray-500'):(dk?'text-gray-200':'text-gray-800');
+    h+=`<td class="px-0.5 sm:px-1.5 pt-1 text-center text-xs font-bold ${cls}">${avg}</td>`;
+  });
+  h+='</tr></table>';
+  document.getElementById('fcTableWrapper').innerHTML=h;
+  document.getElementById('fcLoading').style.display='none';
+  document.getElementById('fcTableWrapper').style.display='block';
 }
 
 // ═══ PRICE DETAIL POPUP ═══

@@ -281,6 +281,16 @@ export async function onRequest({ request }) {
   const seg1  = parts[1]; // 'now' | 'prices' | 'schedule' | 'shelly'
   const seg2  = parts[2]; // 'tariff' (when seg1==='shelly')
 
+  // ── /api/forecast ───────────────────────────────────────────────────────
+  if (seg1 === 'forecast') {
+    try {
+      return await handleForecast(area, mode);
+    } catch (e) {
+      console.error(e);
+      return fail(500, String(e.message || e));
+    }
+  }
+
   try {
     const { priceData, enCharges, tariffRecords } = await loadData(area, mode, gln);
 
@@ -366,9 +376,198 @@ export async function onRequest({ request }) {
       });
     }
 
-    return fail(404, 'Unknown endpoint. Try /api/now  /api/prices  /api/schedule  /api/shelly/tariff');
+    return fail(404, 'Unknown endpoint. Try /api/now  /api/prices  /api/schedule  /api/forecast  /api/shelly/tariff');
   } catch (e) {
     console.error(e);
     return fail(500, String(e.message || e));
   }
+}
+
+// ── Forecast endpoint ────────────────────────────────────────────────────────
+
+async function fetchHistoricalPrices(area, startDate, endDate) {
+  const f = encodeURIComponent(JSON.stringify({ PriceArea: area }));
+  const res = await fetch(
+    `https://api.energidataservice.dk/dataset/DayAheadPrices` +
+    `?start=${startDate}&end=${endDate}&filter=${f}&sort=TimeDK%20asc&limit=0`
+  );
+  const j = await res.json();
+  // Group by date → hour → average price (DKK/MWh)
+  const g = {};
+  for (const r of (j.records || [])) {
+    const dt = new Date(r.TimeDK);
+    const dk = fmtUTC(dt);
+    const h  = dt.getUTCHours();
+    (g[dk] ??= {})[h] ??= [];
+    g[dk][h].push(r.DayAheadPriceDKK);
+  }
+  const out = {};
+  for (const dk in g) {
+    out[dk] = {};
+    for (const h in g[dk]) {
+      const v = g[dk][h];
+      out[dk][h] = v.reduce((a, b) => a + b, 0) / v.length;
+    }
+  }
+  return out;
+}
+
+async function fetchWindForecasts(area) {
+  try {
+    const f = encodeURIComponent(JSON.stringify({ PriceArea: area }));
+    const res = await fetch(
+      `https://api.energidataservice.dk/dataset/Forecasts_Hour` +
+      `?filter=${f}&sort=HourDK%20desc&limit=200&columns=HourDK,ForecastType,ForecastDayAhead,ForecastCurrent`
+    );
+    const j = await res.json();
+    // Sum all wind types per hour
+    const wind = {};
+    for (const r of (j.records || [])) {
+      if (!r.ForecastType.includes('Wind')) continue;
+      const dt = new Date(r.HourDK);
+      const dk = fmtUTC(dt);
+      const h  = dt.getUTCHours();
+      const key = `${dk}:${h}`;
+      const val = r.ForecastDayAhead ?? r.ForecastCurrent ?? 0;
+      wind[key] = (wind[key] || 0) + val;
+    }
+    return wind;
+  } catch { return {}; }
+}
+
+function buildForecast(historicalPrices, windForecasts, area, mode, enCharges) {
+  const dkNow = danishNow();
+  const today = fmtUTC(dkNow);
+  const dates = Object.keys(historicalPrices).sort();
+
+  // Find which dates have actual data for today/tomorrow
+  const tomorrow = fmtUTC(new Date(dkNow.getTime() + 86_400_000));
+  const hasToday = historicalPrices[today] && Object.keys(historicalPrices[today]).length > 12;
+  const hasTomorrow = historicalPrices[tomorrow] && Object.keys(historicalPrices[tomorrow]).length > 12;
+
+  // Build historical averages by weekday + hour (last 28 days)
+  // Weight recent week 2x vs older weeks
+  const weekdayHourSums = {};  // {weekday: {hour: {wSum, wCount, min, max}}}
+  const sevenDaysAgo = fmtUTC(new Date(dkNow.getTime() - 7 * 86_400_000));
+
+  for (const d of dates) {
+    if (d >= today) continue; // Don't include today/future in historical
+    const dt = new Date(d);
+    const wd = dt.getUTCDay(); // 0=Sun
+    const weight = d >= sevenDaysAgo ? 2 : 1;
+    for (let h = 0; h < 24; h++) {
+      const raw = historicalPrices[d]?.[h];
+      if (raw === undefined) continue;
+      const p = cvtForecast(raw, h, mode, enCharges);
+      if (!weekdayHourSums[wd]) weekdayHourSums[wd] = {};
+      if (!weekdayHourSums[wd][h]) weekdayHourSums[wd][h] = { wSum: 0, wCount: 0, min: Infinity, max: -Infinity };
+      const s = weekdayHourSums[wd][h];
+      s.wSum += p * weight;
+      s.wCount += weight;
+      s.min = Math.min(s.min, p);
+      s.max = Math.max(s.max, p);
+    }
+  }
+
+  // Compute average wind production from historical data
+  let totalWindHist = 0, windHistCount = 0;
+  for (const d of dates) {
+    if (d >= today) continue;
+    for (let h = 0; h < 24; h++) {
+      const wKey = `${d}:${h}`;
+      // We don't have historical wind in windForecasts (only recent), skip wind correction if no data
+    }
+  }
+
+  // Build 7-day output
+  const days = [];
+  for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+    const d = fmtUTC(new Date(dkNow.getTime() + dayOffset * 86_400_000));
+    const isActual = (dayOffset === 0 && hasToday) || (dayOffset === 1 && hasTomorrow);
+
+    const prices = [];
+    for (let h = 0; h < 24; h++) {
+      if (isActual) {
+        const raw = historicalPrices[d]?.[h];
+        if (raw !== undefined) {
+          prices.push({ hour: h, price: +cvtForecast(raw, h, mode, enCharges).toFixed(4) });
+        } else {
+          prices.push({ hour: h, price: null });
+        }
+      } else {
+        const dt = new Date(d);
+        const wd = dt.getUTCDay();
+        const stats = weekdayHourSums[wd]?.[h];
+        if (stats && stats.wCount > 0) {
+          let forecast = stats.wSum / stats.wCount;
+
+          // Wind correction: check if we have wind forecast for this hour
+          const wKey = `${d}:${h}`;
+          const windFc = windForecasts[wKey];
+          if (windFc !== undefined && windFc > 0) {
+            // More wind → lower prices. Simple inverse scaling.
+            // Typical DK1 total wind: ~2000-4000 MW. Use 3000 as baseline.
+            const baseline = area === 'DK1' ? 2500 : 1500;
+            const windRatio = windFc / baseline;
+            // Cap adjustment between 0.7x and 1.3x
+            const adj = Math.max(0.7, Math.min(1.3, 1 / Math.sqrt(windRatio)));
+            forecast *= adj;
+          }
+
+          prices.push({
+            hour: h,
+            price: +forecast.toFixed(4),
+            min: +stats.min.toFixed(4),
+            max: +stats.max.toFixed(4),
+          });
+        } else {
+          prices.push({ hour: h, price: null });
+        }
+      }
+    }
+
+    days.push({
+      date: d,
+      type: isActual ? 'actual' : 'forecast',
+      weekday: new Date(d).getUTCDay(),
+      prices,
+    });
+  }
+
+  return days;
+}
+
+/** Simplified cvt for forecast — uses mode + enCharges but no tariff (too variable per user) */
+function cvtForecast(dkkMwh, h, mode, en) {
+  const spot = dkkMwh / 1000;
+  switch (mode) {
+    case 'spot_ex':        return spot;
+    case 'spot_inkl':      return spot * 1.25;
+    case 'inkl_alt':       return (spot + en.sys + en.trans + en.afg) * 1.25;
+    case 'inkl_alt_minus': return (spot + en.sys + en.trans) * 1.25;
+    default:               return spot * 1.25;
+  }
+}
+
+async function handleForecast(area, mode) {
+  const dkNow = danishNow();
+  const start = new Date(dkNow.getTime() - 28 * 86_400_000);
+  const end   = new Date(dkNow.getTime() + 2 * 86_400_000); // Include tomorrow
+
+  const [historicalPrices, windForecasts, enCharges] = await Promise.all([
+    cached(`forecast-prices-${area}-${fmtUTC(start)}-${fmtUTC(end)}`, 30 * 60_000,
+      () => fetchHistoricalPrices(area, fmtUTC(start), fmtUTC(end))),
+    cached(`forecast-wind-${area}`, 30 * 60_000,
+      () => fetchWindForecasts(area)),
+    cached('encharges', 60 * 60_000, fetchEnCharges),
+  ]);
+
+  const days = buildForecast(historicalPrices, windForecasts, area, mode, enCharges);
+
+  return ok({
+    area,
+    mode,
+    generated: new Date().toISOString(),
+    days,
+  });
 }
