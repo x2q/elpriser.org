@@ -596,15 +596,17 @@ function matchNet(n){const l=n.toLowerCase();for(const a of['DK1','DK2'])for(con
 function route(){
   const h=decodeURIComponent(location.hash.slice(1));
   document.querySelectorAll('[data-page]').forEach(p=>p.classList.remove('active'));
+  // Helper: send page_view with clean path for GA4
+  const pv=(title,path)=>gtag('event','page_view',{page_title:title,page_location:location.origin+(path||location.pathname)});
   if(!h){
     const saved=localStorage.getItem('lastHash');
     if(saved){location.hash=saved;return;}
-    document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpris';return;
+    document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpriser i dag — elpriser.org';pv('Start','/');return;
   }
-  if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Elpris — Tariffer';gtag('event','page_view',{page_title:'Tariffer',page_location:location.href});loadTariffPage();return;}
-  if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpris — Automation';gtag('event','page_view',{page_title:'Automation',page_location:location.href});loadAutomationPage();return;}
-  if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Elpris — Shelly Live Tariff';gtag('event','page_view',{page_title:'Shelly Live Tariff',page_location:location.href});loadShellyTariffPage();return;}
-  if(h==='om-elpriser'){document.querySelector('[data-page="om-elpriser"]').classList.add('active');document.title='Om elpriser i Danmark — elpriser.org';gtag('event','page_view',{page_title:'Om elpriser',page_location:location.href});return;}
+  if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Tariffer — elpriser.org';pv('Tariffer','/tariffer');loadTariffPage();return;}
+  if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Automation — elpriser.org';pv('Automation','/automation');loadAutomationPage();return;}
+  if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — elpriser.org';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}
+  if(h==='om-elpriser'){document.querySelector('[data-page="om-elpriser"]').classList.add('active');document.title='Om elpriser i Danmark — elpriser.org';pv('Om elpriser','/om-elpriser');return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){location.hash='';return;}
   S.area=area;S.mode=mode;S.weekOffset=0;
@@ -614,7 +616,9 @@ function route(){
   S.netName=net?net.name:(p[3]?decodeURIComponent(p[3]):'');
   localStorage.setItem('lastHash',location.hash);
   document.querySelector('[data-page="prices"]').classList.add('active');
-  gtag('event','page_view',{page_title:'Priser — '+S.area+' '+S.mode+(S.netName?' '+S.netName:''),page_location:location.href});
+  const pTitle=S.area+(S.netName?' '+S.netName:'')+' — '+mode;
+  document.title=pTitle+' — elpriser.org';
+  pv(pTitle,'/'+(S.area==='DK1'?'dk1':'dk2'));
   updateHeader();updateWeekNav();S._loadId++;loadPriceData(S._loadId);
 }
 window.addEventListener('hashchange',route);
