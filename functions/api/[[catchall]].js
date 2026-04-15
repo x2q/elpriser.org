@@ -197,6 +197,14 @@ function computeSchedule(prices, strategy, param) {
   } else if (strategy === 'cheapest_pct') {
     const n = Math.max(1, Math.round(valid.length * (+param / 100)));
     [...valid].sort((a, b) => a.p - b.p).slice(0, n).forEach(x => on[x.h] = true);
+  } else if (strategy === 'avoid_expensive_n') {
+    const n = Math.min(Math.max(1, +param), valid.length);
+    const expensive = new Set([...valid].sort((a, b) => b.p - a.p).slice(0, n).map(x => x.h));
+    for (const x of valid) on[x.h] = !expensive.has(x.h);
+  } else if (strategy === 'avoid_expensive_pct') {
+    const n = Math.max(1, Math.round(valid.length * (+param / 100)));
+    const expensive = new Set([...valid].sort((a, b) => b.p - a.p).slice(0, n).map(x => x.h));
+    for (const x of valid) on[x.h] = !expensive.has(x.h);
   } else if (strategy === 'avoid_peak') {
     for (let h = 0; h < 24; h++) on[h] = (h < 17 || h >= 21);
   } else if (strategy === 'night_cheap') {

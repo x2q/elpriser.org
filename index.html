@@ -258,7 +258,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       </div>
       <div>
         <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Enhed</label>
-        <select id="autoDevice" oninput="updateAutoViz()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+        <select id="autoDevice" oninput="onAutoDeviceChange()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
           <option>Varmepumpe</option><option>Elbil</option><option>Opvaskemaskine</option><option>Vaskemaskine</option><option>Affugter</option><option>Varmtvandsbeholder</option>
         </select>
       </div>
@@ -266,16 +266,18 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <!-- Netselskab row — only shown for net_ modes -->
     <div id="autoNetRow" class="mb-3" style="display:none">
       <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Netselskab</label>
-      <select id="autoNet" oninput="updateAutoViz()" class="w-full sm:w-64 text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200" id="autoNet"></select>
+      <select id="autoNet" oninput="updateAutoViz()" class="w-full sm:w-64 text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"></select>
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <div class="sm:col-span-2">
         <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Strategi</label>
         <select id="autoStrategy" oninput="onAutoStrategyChange()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-          <option value="cheapest_n">Billigste N timer/dag — EV, varmepumpe, opvaskemaskine</option>
-          <option value="cheapest_pct">Billigste X% af timer — affugter, varmtvandsbeholder</option>
-          <option value="avoid_peak">Undgå spidstimer 17-21 — reducer netbelastning</option>
-          <option value="night_cheap">Kun nattetimer 23-06 — lavt forbrug, stille drift</option>
+          <option value="cheapest_n">Billigste N timer/dag</option>
+          <option value="cheapest_pct">Billigste X% af timer</option>
+          <option value="avoid_expensive_n">Undgå dyreste N timer/dag</option>
+          <option value="avoid_expensive_pct">Undgå dyreste X% af timer</option>
+          <option value="avoid_peak">Undgå spidstimer 17-21</option>
+          <option value="night_cheap">Kun nattetimer 23-06</option>
         </select>
       </div>
       <div id="autoParamDiv">
@@ -283,6 +285,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         <input type="number" id="autoParam" value="6" min="1" max="23" oninput="updateAutoViz()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
       </div>
     </div>
+    <p id="autoStrategyHelp" class="text-xs text-gray-400 dark:text-gray-500 mt-2"></p>
   </div>
   <!-- Weekly visualization -->
   <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
@@ -297,19 +300,24 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>Henter data...
     </div>
     <div id="autoTableWrapper" class="overflow-x-auto -mx-2 sm:mx-0" style="display:none"></div>
+    <p id="autoSavings" class="text-xs text-center mt-3 text-gray-500 dark:text-gray-400"></p>
   </div>
   <!-- API URL -->
   <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
     <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-2">API-adresse</h3>
-    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Brug denne URL i Shelly-scripts eller Home Assistant REST-sensorer. Erstat <code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">localhost</code> med serverens IP-adresse på dit netværk.</p>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Brug denne URL direkte i Shelly-scripts eller Home Assistant REST-sensorer.</p>
     <div class="relative">
       <pre id="apiUrlDisplay" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 overflow-x-auto text-brand-600 dark:text-brand-400 leading-relaxed font-mono whitespace-pre-wrap"></pre>
       <button onclick="copyApiUrl()" class="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition">Kopiér</button>
     </div>
-    <p class="text-xs text-gray-400 dark:text-gray-600 mt-1">Returnerer: <code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">{"on": true/false, "price": 1.23, "hour": 14}</code> — opdateres hvert minut.</p>
+    <div class="flex items-center gap-3 mt-2">
+      <p class="text-xs text-gray-400 dark:text-gray-600 flex-1">Returnerer: <code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">{"on": true/false, "price": 1.23, "hour": 14}</code></p>
+      <button onclick="testApiUrl()" id="testApiBtn" class="text-xs px-3 py-1 bg-brand-600 hover:bg-brand-700 text-white rounded-full transition">Test API</button>
+    </div>
+    <pre id="testApiResult" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 mt-2 text-gray-700 dark:text-gray-300 font-mono" style="display:none"></pre>
   </div>
   <!-- Export -->
-  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
+  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
     <div class="flex gap-2 mb-4">
       <button onclick="switchExport('ha')" id="exportBtnHA" class="tab-btn active">Home Assistant</button>
       <button onclick="switchExport('shelly')" id="exportBtnShelly" class="tab-btn">Shelly</button>
@@ -322,6 +330,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Shelly Plus/Pro script — kalder API hvert minut og sætter output til ON/OFF. Indsæt via <strong>Scripts → Create Script</strong>. Sæt "Run on startup" til ON.</p>
       <div class="relative"><pre id="exportShellyCode" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"></pre><button onclick="copyExport('shelly')" class="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition">Kopiér</button></div>
     </div>
+  </div>
+  <!-- Cross-links -->
+  <div class="text-center text-xs text-gray-400 dark:text-gray-500">
+    Se også: <a href="#shelly-tariff" class="text-brand-500 underline">Shelly Live Tariff</a> — Tibber-kompatibelt API til Shelly med timepriser
   </div>
 </main>
 
@@ -422,6 +434,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         <tbody id="shellyTariffBody"></tbody>
       </table>
     </div>
+  </div>
+  <!-- Cross-link -->
+  <div class="text-center text-xs text-gray-400 dark:text-gray-500 mt-4">
+    Se også: <a href="/automation" class="text-brand-500 underline">Automation</a> — styr enheder automatisk efter de billigste timer
   </div>
 </main>
 
@@ -816,15 +832,34 @@ function updateWeekNav(){
 }
 
 // ═══ AUTOMATION ═══
+const DEVICE_DEFAULTS={Varmepumpe:{strategy:'cheapest_n',param:6},Elbil:{strategy:'cheapest_n',param:6},Opvaskemaskine:{strategy:'cheapest_n',param:2},Vaskemaskine:{strategy:'cheapest_n',param:2},Affugter:{strategy:'cheapest_pct',param:30},Varmtvandsbeholder:{strategy:'avoid_expensive_n',param:4}};
+const STRATEGY_HELP={cheapest_n:'Tænder kun i de N billigste timer. Velegnet til enheder der skal køre et bestemt antal timer dagligt.',cheapest_pct:'Tænder i den billigste andel af døgnets timer. God til enheder med fleksibelt forbrug.',avoid_expensive_n:'Slukker i de N dyreste timer, tændt resten af døgnet. God til enheder der skal køre det meste af tiden.',avoid_expensive_pct:'Slukker i den dyreste andel af timer. Reducerer omkostning uden at begrænse for meget.',avoid_peak:'Fast tidsplan: slukker kl. 17-21 hvor nettariffen og forbruget typisk er højest.',night_cheap:'Kører kun kl. 23-06 hvor priserne typisk er lavest. Ideel til støjende enheder.'};
 function onAutoStrategyChange(){
   const s=document.getElementById('autoStrategy').value;
   gtag('event','auto_strategy_change',{strategy:s});
   const div=document.getElementById('autoParamDiv');
   const lbl=document.getElementById('autoParamLabel');
   const inp=document.getElementById('autoParam');
-  if(s==='cheapest_n'){div.style.display='';lbl.textContent='Timer/dag';inp.value=6;inp.max=23;}
-  else if(s==='cheapest_pct'){div.style.display='';lbl.textContent='Procent (%)';inp.value=20;inp.max=100;}
+  if(s==='cheapest_n'||s==='avoid_expensive_n'){div.style.display='';lbl.textContent='Timer/dag';inp.max=23;if(!inp._userSet)inp.value=s==='avoid_expensive_n'?4:6;}
+  else if(s==='cheapest_pct'||s==='avoid_expensive_pct'){div.style.display='';lbl.textContent='Procent (%)';inp.max=100;if(!inp._userSet)inp.value=s==='avoid_expensive_pct'?20:20;}
   else div.style.display='none';
+  document.getElementById('autoStrategyHelp').textContent=STRATEGY_HELP[s]||'';
+  inp._userSet=false;
+  updateAutoViz();
+}
+function onAutoDeviceChange(){
+  const d=document.getElementById('autoDevice').value;
+  const def=DEVICE_DEFAULTS[d];
+  if(def){
+    document.getElementById('autoStrategy').value=def.strategy;
+    // Set param visibility/label first, then override with device default
+    const s=def.strategy,div=document.getElementById('autoParamDiv'),lbl=document.getElementById('autoParamLabel'),inp=document.getElementById('autoParam');
+    if(s==='cheapest_n'||s==='avoid_expensive_n'){div.style.display='';lbl.textContent='Timer/dag';inp.max=23;}
+    else if(s==='cheapest_pct'||s==='avoid_expensive_pct'){div.style.display='';lbl.textContent='Procent (%)';inp.max=100;}
+    else div.style.display='none';
+    inp.value=def.param;
+    document.getElementById('autoStrategyHelp').textContent=STRATEGY_HELP[s]||'';
+  }
   updateAutoViz();
 }
 function onAutoModeChange(){
@@ -853,6 +888,8 @@ function getStrategyHours(dailyPrices,strategy,param){
   const valid=dailyPrices.map((p,h)=>({h,p})).filter(x=>x.p!=null);
   if(strategy==='cheapest_n'){const n=Math.min(Math.max(1,+param),valid.length);[...valid].sort((a,b)=>a.p-b.p).slice(0,n).forEach(x=>res[x.h]=true);}
   else if(strategy==='cheapest_pct'){const n=Math.max(1,Math.round(valid.length*(+param/100)));[...valid].sort((a,b)=>a.p-b.p).slice(0,n).forEach(x=>res[x.h]=true);}
+  else if(strategy==='avoid_expensive_n'){const n=Math.min(Math.max(1,+param),valid.length);const exp=new Set([...valid].sort((a,b)=>b.p-a.p).slice(0,n).map(x=>x.h));valid.forEach(x=>res[x.h]=!exp.has(x.h));}
+  else if(strategy==='avoid_expensive_pct'){const n=Math.max(1,Math.round(valid.length*(+param/100)));const exp=new Set([...valid].sort((a,b)=>b.p-a.p).slice(0,n).map(x=>x.h));valid.forEach(x=>res[x.h]=!exp.has(x.h));}
   else if(strategy==='avoid_peak'){for(let h=0;h<24;h++)res[h]=(h<17||h>=21);}
   else if(strategy==='night_cheap'){for(let h=0;h<24;h++)res[h]=(h>=23||h<6);}
   return res;
@@ -913,13 +950,36 @@ function updateAutoViz(){
   }
   h+='</table>';
   document.getElementById('autoTableWrapper').innerHTML=h;
+  // Calculate savings estimate
+  let totalAlways=0,totalSmart=0,countDays=0;
+  dates.forEach(d=>{
+    let dayAll=0,daySmart=0,hasData=false;
+    for(let hr=0;hr<24;hr++){
+      const raw=priceData[d]?.[hr];
+      if(raw==null)continue;
+      hasData=true;
+      const p=cvt(raw,hr,d);
+      dayAll+=p;
+      if(daySchedules[d][hr])daySmart+=p;
+    }
+    if(hasData){totalAlways+=dayAll;totalSmart+=daySmart;countDays++;}
+  });
+  const savingsEl=document.getElementById('autoSavings');
+  if(countDays>0&&totalAlways>0){
+    const pct=((1-totalSmart/totalAlways)*100).toFixed(0);
+    const avgSaved=((totalAlways-totalSmart)/countDays).toFixed(2).replace('.',',');
+    savingsEl.innerHTML=`Estimeret besparelse: <strong class="text-emerald-600 dark:text-emerald-400">${pct}%</strong> vs. altid tændt (gns. ${avgSaved} kr/kWh sparet pr. dag over ${countDays} dage)`;
+  } else savingsEl.textContent='';
+  // Show strategy help
+  document.getElementById('autoStrategyHelp').textContent=STRATEGY_HELP[strategy]||'';
   // Restore state
   S.mode=_mode;S.gln=_gln;
   generateExports(strategy,param,daySchedules,dates,autoMode,autoGln);
 }
 function buildApiUrl(mode,area,strategy,param,gln){
-  const base=`/api/now?area=${area}&mode=${mode}&strategy=${strategy}`;
-  const p=strategy==='cheapest_pct'?`&pct=${param}`:(strategy==='cheapest_n'?`&hours=${param}`:'');
+  const base=`https://elpriser.org/api/now?area=${area}&mode=${mode}&strategy=${strategy}`;
+  const needsParam=['cheapest_n','cheapest_pct','avoid_expensive_n','avoid_expensive_pct'];
+  const p=(strategy==='cheapest_pct'||strategy==='avoid_expensive_pct')?`&pct=${param}`:((strategy==='cheapest_n'||strategy==='avoid_expensive_n')?`&hours=${param}`:'');
   const g=gln?`&gln=${gln}`:'';
   return base+p+g;
 }
@@ -927,23 +987,21 @@ function generateExports(strategy,param,daySchedules,dates,mode,gln){
   const device=document.getElementById('autoDevice')?.value||'Enhed';
   const area=document.getElementById('autoArea')?.value||'DK1';
   const entityId=device.toLowerCase().replace(/[æøå]/g,c=>({æ:'ae',ø:'oe',å:'aa'}[c])).replace(/[^a-z0-9]/g,'_');
-  const labels={cheapest_n:`Billigste ${param} timer/dag`,cheapest_pct:`Billigste ${param}% af timer`,avoid_peak:'Undgå spidstimer (17-21)',night_cheap:'Kun nattetimer (23-06)'};
+  const labels={cheapest_n:`Billigste ${param} timer/dag`,cheapest_pct:`Billigste ${param}% af timer`,avoid_expensive_n:`Undgå dyreste ${param} timer/dag`,avoid_expensive_pct:`Undgå dyreste ${param}% af timer`,avoid_peak:'Undgå spidstimer (17-21)',night_cheap:'Kun nattetimer (23-06)'};
   const stratLabel=labels[strategy]||strategy;
-  const apiPath=buildApiUrl(mode,area,strategy,param,gln);
-  const apiUrl=`http://localhost:8080${apiPath}`;
+  const apiUrl=buildApiUrl(mode,area,strategy,param,gln);
   // Show API URL
   document.getElementById('apiUrlDisplay').textContent=apiUrl;
   // ── HA export (REST sensor + automation) ──────────────────────────────────
   document.getElementById('exportHACode').textContent=
-`# ── Option 1: REST sensor (bruger Elpris API) ───────────────────────────
+`# ── Option 1: REST sensor (bruger elpriser.org API) ──────────────────────
 # Tilføj til configuration.yaml eller en pakke-fil.
-# Erstat 192.168.x.x med Elpris-serverens IP-adresse.
 
 sensor:
   - platform: rest
     name: "${device} elpris on"
     unique_id: elpris_${entityId}_on
-    resource: "http://192.168.x.x:8080${apiPath}"
+    resource: "${apiUrl}"
     value_template: "{{ value_json.on | lower }}"
     json_attributes:
       - price
@@ -988,11 +1046,10 @@ automation:
   // ── Shelly export (Script, not Schedule — dynamic per API) ─────────────────
   document.getElementById('exportShellyCode').textContent=
 `// Shelly Plus/Pro Script — ${stratLabel}
-// Bruger Elpris API til at bestemme ON/OFF dynamisk.
-// Erstat IP_ADRESSE med din servers IP.
+// Bruger elpriser.org API til at bestemme ON/OFF dynamisk.
 // Aktiver "Run on startup" i Scripts-menuen.
 
-var API = "http://IP_ADRESSE:8080${apiPath}";
+var API = "${apiUrl}";
 var OUTPUT_ID = 0;  // Shelly output nummer (0 = første relæ)
 var CHECK_INTERVAL_MS = 60000;  // Tjek hvert minut
 
@@ -1021,6 +1078,22 @@ function switchExport(tab){
 }
 function copyExport(tab){gtag('event','copy_export',{tab:tab});navigator.clipboard?.writeText(document.getElementById(tab==='ha'?'exportHACode':'exportShellyCode').textContent);}
 function copyApiUrl(){gtag('event','copy_api_url');navigator.clipboard?.writeText(document.getElementById('apiUrlDisplay').textContent);}
+async function testApiUrl(){
+  const btn=document.getElementById('testApiBtn'),res=document.getElementById('testApiResult');
+  const url=document.getElementById('apiUrlDisplay').textContent;
+  btn.textContent='Tester...';btn.disabled=true;res.style.display='block';res.textContent='Henter...';
+  try{
+    const r=await fetch(url);const j=await r.json();
+    res.textContent=JSON.stringify(j,null,2);
+    res.classList.remove('text-red-500');res.classList.add('text-gray-700','dark:text-gray-300');
+    gtag('event','test_api',{success:true});
+  }catch(e){
+    res.textContent='Fejl: '+e.message;
+    res.classList.add('text-red-500');res.classList.remove('text-gray-700','dark:text-gray-300');
+    gtag('event','test_api',{success:false});
+  }
+  btn.textContent='Test API';btn.disabled=false;
+}
 
 // ═══ PRICE DETAIL POPUP ═══
 function showPriceDetail(cell){
