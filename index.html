@@ -729,7 +729,7 @@ function lerpColor(t, dim) {
   if (r === undefined) { const last = STOPS[STOPS.length - 1][1]; r = last[0]; g = last[1]; b = last[2]; }
   if (dim) {
     // Mix toward dark background (rgb(3,7,18) = gray-950)
-    const m = 0.6;
+    const m = 0.75;
     r = r * m + 3 * (1 - m);
     g = g * m + 7 * (1 - m);
     b = b * m + 18 * (1 - m);
