@@ -34,9 +34,14 @@ const SEO_PAGES = {
     description: 'Automatiser dit elforbrug efter de billigste timer. Klar-til-brug kode til Home Assistant, Shelly og andre smart home systemer.',
     hash: '#automation',
   },
+  '/om-elpriser': {
+    title: 'Om elpriser i Danmark - Hvad koster strøm og hvordan beregnes prisen | elpriser.org',
+    description: 'Forstå din elpris: spotpris, nettarif, systemtarif, elafgift og moms. Lær om prisområder DK1 og DK2, og hvordan du finder dit netselskab i Danmark.',
+    hash: '#om-elpriser',
+  },
 };
 
-const SITEMAP_URLS = ['/', '/dk1', '/dk2', '/tariffer', '/automation'];
+const SITEMAP_URLS = ['/', '/dk1', '/dk2', '/tariffer', '/automation', '/om-elpriser'];
 
 const STATIC_ROUTES = {
   '/sitemap.xml': {
