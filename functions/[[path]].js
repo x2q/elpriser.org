@@ -30,5 +30,6 @@ export async function onRequest(context) {
       },
     });
   }
+  // Fall through to static asset (index.html)
   return context.next();
 }
