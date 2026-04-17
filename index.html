@@ -794,6 +794,410 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
 </main>
 
+<!-- ═══════ BLOG: Forstå din elpris ═══════ -->
+<main data-page="blog-forsta-din-elpris" class="max-w-2xl mx-auto px-4 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Forstå din elpris: Hvad bestemmer elprisen i Danmark?</h1>
+    </div>
+    <a href="#" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
+      <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+  <article class="space-y-5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+    <p class="text-base text-gray-700 dark:text-gray-300">Mange danskere undrer sig over, hvorfor elprisen svinger så meget fra time til time. I denne guide forklarer vi præcis hvad der bestemmer elprisen, hvordan den er sammensat, og hvordan du kan bruge det til at spare penge.</p>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Spotprisen — markedets puls</h2>
+      <p>Spotprisen fastsættes på den nordiske elbørs <strong class="text-gray-800 dark:text-gray-200">Nord Pool</strong> dagen før levering. Hver dag omkring kl. 13 offentliggøres priserne for det kommende døgns 24 timer. Prisen bestemmes af udbud og efterspørgsel:</p>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li><strong class="text-gray-800 dark:text-gray-200">Udbud:</strong> Vindmøller, solceller, biomasse, og import fra nabolande (Norge, Sverige, Tyskland). Når det blæser meget, stiger udbuddet og prisen falder — nogle gange til under 0 kr/kWh.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Efterspørgsel:</strong> Industri, husholdninger og varmepumper. Om morgenen (kl. 7-9) og aftenen (kl. 17-21) er efterspørgslen højest, og priserne stiger tilsvarende.</li>
+      </ul>
+      <p class="mt-2">I 2024 lå den gennemsnitlige spotpris i Danmark på ca. <strong class="text-gray-800 dark:text-gray-200">0,55 kr/kWh</strong> — et markant fald fra rekordåret 2022, hvor gennemsnittet var over 2 kr/kWh pga. energikrisen.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">DK1 vs. DK2 — hvorfor er prisen forskellig?</h2>
+      <p>Danmark er delt i to prisområder: <strong class="text-gray-800 dark:text-gray-200">DK1</strong> (Jylland og Fyn) og <strong class="text-gray-800 dark:text-gray-200">DK2</strong> (Sjælland, Lolland-Falster og Bornholm). Priserne kan variere betydeligt mellem de to områder:</p>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li><strong class="text-gray-800 dark:text-gray-200">DK1</strong> har stærke forbindelser til Tyskland og Norge og en høj andel vindenergi. Ved kraftig blæst kan DK1 have markant lavere priser end DK2.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">DK2</strong> er tættere forbundet til Sverige og har Øresundsforbindelsen. Prisen følger ofte det svenske prisniveau, som kan afvige fra det tyske.</li>
+      </ul>
+      <p class="mt-2">Se aktuelle priser for <a href="/dk1" class="text-brand-500 underline">DK1 Vest</a> og <a href="/dk2" class="text-brand-500 underline">DK2 Øst</a>.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">De skjulte omkostninger: tariffer og afgifter</h2>
+      <p>Spotprisen udgør typisk kun <strong class="text-gray-800 dark:text-gray-200">25-30%</strong> af den samlede elpris. Resten er faste tariffer og afgifter:</p>
+      <div class="mt-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+        <div class="flex justify-between px-4 py-2.5">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Nettarif</span>
+          <span>15-65 øre/kWh — varierer efter netselskab og tidspunkt</span>
+        </div>
+        <div class="flex justify-between px-4 py-2.5">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Systemtarif</span>
+          <span>7,2 øre/kWh — til Energinet</span>
+        </div>
+        <div class="flex justify-between px-4 py-2.5">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Transmissionstarif</span>
+          <span>4,3 øre/kWh — til Energinet</span>
+        </div>
+        <div class="flex justify-between px-4 py-2.5">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Elafgift</span>
+          <span>76,1 øre/kWh — statslig afgift</span>
+        </div>
+        <div class="flex justify-between px-4 py-2.5">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Moms</span>
+          <span>25% af den samlede pris</span>
+        </div>
+      </div>
+      <p class="mt-3">Det betyder, at selvom spotprisen er 0 kr, betaler du stadig ca. <strong class="text-gray-800 dark:text-gray-200">1,50-2,00 kr/kWh</strong> i tariffer og afgifter. Sammenlign <a href="/tariffer" class="text-brand-500 underline">nettariffer for alle netselskaber</a>.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hvornår er strømmen billigst? — de gyldne timer</h2>
+      <p>Elprisen følger forudsigelige mønstre, som du kan udnytte:</p>
+      <div class="mt-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div>
+            <div class="text-2xl mb-1">🌙</div>
+            <p class="font-bold text-green-600 dark:text-green-400 text-xs">Billigst</p>
+            <p class="text-xs mt-1">Kl. 00-06</p>
+            <p class="text-xs text-gray-400">Lavt forbrug, vind kører</p>
+          </div>
+          <div>
+            <div class="text-2xl mb-1">☀️</div>
+            <p class="font-bold text-yellow-600 dark:text-yellow-400 text-xs">Middel</p>
+            <p class="text-xs mt-1">Kl. 10-16</p>
+            <p class="text-xs text-gray-400">Solenergi, moderat forbrug</p>
+          </div>
+          <div>
+            <div class="text-2xl mb-1">🔥</div>
+            <p class="font-bold text-red-600 dark:text-red-400 text-xs">Dyrest</p>
+            <p class="text-xs mt-1">Kl. 17-21</p>
+            <p class="text-xs text-gray-400">Spidslast, høj nettarif</p>
+          </div>
+        </div>
+      </div>
+      <p class="mt-3"><strong class="text-gray-800 dark:text-gray-200">Pro tip:</strong> Weekender er typisk 10-20% billigere end hverdage. Og blæsende dage kan give 50-80% lavere spotpriser. Tjek <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> for at planlægge dit forbrug.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Negative elpriser — du får penge for at bruge strøm</h2>
+      <p>Det lyder for godt til at være sandt, men det sker faktisk: når vindproduktionen er høj og forbruget lavt (typisk blæsende sommernætter), falder spotprisen til under 0 kr/kWh. Producenterne betaler bogstaveligt talt forbrugerne for at aftage strøm.</p>
+      <p class="mt-2">Den laveste spotpris nogensinde i Danmark var <strong class="text-gray-800 dark:text-gray-200">−2,76 kr/kWh</strong> (DK1, 2. juli 2023). Med en variabel elaftale kan du altså tjene penge på at oplade elbilen eller køre varmepumpen i de timer.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Sådan sparer du penge på elpriser</h2>
+      <ol class="space-y-2 ml-4 list-decimal">
+        <li><strong class="text-gray-800 dark:text-gray-200">Vælg en variabel elaftale</strong> — med spotpris betaler du markedspris i stedet for fastpris. I de fleste år er det billigst.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Flyt forbrug til billige timer</strong> — opvaskemaskine, vaskemaskine og elbil om natten. Spar 30-50% vs. aftenspids.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Automatiser med smart home</strong> — <a href="/blog/shelly-elpris-automation" class="text-brand-500 underline">Shelly</a> og <a href="/blog/home-assistant-elpriser" class="text-brand-500 underline">Home Assistant</a> kan automatisk styre forbrug efter elprisen.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Hold øje med prognosen</strong> — <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> viser forventede priser 7 dage frem.</li>
+      </ol>
+    </section>
+
+    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+      <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Læs også:</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="/blog/shelly-elpris-automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Shelly og elpriser →</a>
+        <a href="/blog/home-assistant-elpriser" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Home Assistant guide →</a>
+      </div>
+    </div>
+  </article>
+</main>
+
+<!-- ═══════ BLOG: Shelly automation ═══════ -->
+<main data-page="blog-shelly-elpris-automation" class="max-w-2xl mx-auto px-4 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Shelly og elpriser: Automatisk tænd og sluk efter spotprisen</h1>
+    </div>
+    <a href="#" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
+      <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+  <article class="space-y-5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+    <p class="text-base text-gray-700 dark:text-gray-300">Shelly er en af de mest populære smart home-enheder i Danmark. Med en Shelly-relæ og elpriser.org's gratis API kan du automatisk tænde og slukke for apparater baseret på den aktuelle elpris — uden cloud-abonnement eller Home Assistant.</p>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hvad kan du automatisere?</h2>
+      <p>En Shelly-relæ (f.eks. Shelly Plus 1, Shelly Pro 4PM) kan styre stort set alt med et stik eller en fast tilslutning:</p>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li><strong class="text-gray-800 dark:text-gray-200">Elbil-oplader</strong> — oplad kun i de billigste timer om natten. Spar 30-50% vs. aftenopladning.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Varmepumpe</strong> — kør ekstra i billige timer, reducer i dyre. Huset holder varmen med forsinkelse.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Elpatron/vandvarmer</strong> — varm vandet op når strømmen er billigst.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Pool-pumpe</strong> — kør filtreringen i de billigste timer.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Bitcoin-miner / server</strong> — kør tung computing kun når el er billigt.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Metode 1: Shelly-scriptbaseret automation (anbefalet)</h2>
+      <p>Shelly Gen2+ enheder (Plus, Pro, Mini) kan køre JavaScript-scripts direkte på enheden. Scriptet henter priser fra elpriser.org's API og styrer relæet automatisk.</p>
+
+      <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-2">Trin 1: Find dit prisområde</h3>
+      <p>Bor du i Jylland eller på Fyn? Brug <strong class="text-gray-800 dark:text-gray-200">DK1</strong>. Sjælland, Lolland-Falster eller Bornholm? Brug <strong class="text-gray-800 dark:text-gray-200">DK2</strong>.</p>
+
+      <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-2">Trin 2: Brug Schedule API'et</h3>
+      <p>Elpriser.org har et dedikeret schedule-endpoint, der returnerer præcis hvilke timer din Shelly skal være tændt:</p>
+      <div class="mt-2 bg-gray-900 dark:bg-gray-950 rounded-xl p-4 overflow-x-auto">
+        <code class="text-xs text-green-400 whitespace-pre">GET https://elpriser.org/api/schedule?area=DK1&amp;hours=6</code>
+      </div>
+      <p class="mt-2">Parameteren <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">hours=6</code> angiver hvor mange timer enheden skal køre. API'et finder automatisk de 6 billigste timer i det kommende døgn.</p>
+
+      <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-2">Trin 3: Shelly Live Tariff (alternativ)</h3>
+      <p>Elpriser.org tilbyder også et Tibber-kompatibelt tariff-endpoint, som Shelly-enheder kan bruge direkte:</p>
+      <div class="mt-2 bg-gray-900 dark:bg-gray-950 rounded-xl p-4 overflow-x-auto">
+        <code class="text-xs text-green-400 whitespace-pre">https://elpriser.org/api/shelly/tariff?area=DK1</code>
+      </div>
+      <p class="mt-2">Indsæt URL'en i din Shellys <strong class="text-gray-800 dark:text-gray-200">Settings → Live Tariff</strong> for at se den aktuelle elpris direkte på enheden og bruge den til at styre tærskelværdier.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Metode 2: Tidsbaseret med Shelly-appen</h2>
+      <p>Hvis du ikke vil bruge scripts, kan du oprette tidsbaserede skemaer i Shelly-appen baseret på de typiske billige timer:</p>
+      <div class="mt-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="font-bold text-green-600 dark:text-green-400 text-xs mb-1">✓ Tænd (billige timer)</p>
+            <p class="text-xs">Kl. 00:00 — 06:00</p>
+            <p class="text-xs">Kl. 10:00 — 15:00</p>
+          </div>
+          <div>
+            <p class="font-bold text-red-600 dark:text-red-400 text-xs mb-1">✗ Sluk (dyre timer)</p>
+            <p class="text-xs">Kl. 06:00 — 10:00</p>
+            <p class="text-xs">Kl. 17:00 — 21:00</p>
+          </div>
+        </div>
+      </div>
+      <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">Bemærk: Fast tidsplan er mindre præcis end API-baseret styring, da de billigste timer skifter dag til dag. Tjek <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> for at se om mønsteret passer.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hvor meget kan du spare?</h2>
+      <p>Den faktiske besparelse afhænger af dit forbrug og prisforskellen mellem billige og dyre timer. Typiske eksempler:</p>
+      <div class="mt-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+        <div class="flex justify-between px-4 py-3">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Elbil (3.000 kWh/år)</span>
+          <span class="font-bold text-green-600 dark:text-green-400">~1.500-3.000 kr/år</span>
+        </div>
+        <div class="flex justify-between px-4 py-3">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Varmepumpe (5.000 kWh/år)</span>
+          <span class="font-bold text-green-600 dark:text-green-400">~2.000-4.000 kr/år</span>
+        </div>
+        <div class="flex justify-between px-4 py-3">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Vandvarmer (1.500 kWh/år)</span>
+          <span class="font-bold text-green-600 dark:text-green-400">~500-1.000 kr/år</span>
+        </div>
+      </div>
+      <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">Estimater baseret på prisforskelle mellem billigste og dyreste timer. Se mere på <a href="/automation" class="text-brand-500 underline">automation-siden</a>.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Populære Shelly-modeller til elpris-automation</h2>
+      <ul class="space-y-1 ml-4 list-disc">
+        <li><strong class="text-gray-800 dark:text-gray-200">Shelly Plus 1 / 1PM</strong> — kompakt relæ med strømmåling. Perfekt til vandvarmer, pumpe eller enkeltstående apparat.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Shelly Plus 2PM</strong> — dobbelt relæ med strømmåling. Styr to apparater fra én enhed.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Shelly Pro 4PM</strong> — 4 kanaler med DIN-skinne montering. Til eltavlen for at styre flere kredsløb.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Shelly Plug S</strong> — stikdåse med strømmåling. Nemmest at installere — bare sæt i stikkontakten.</li>
+      </ul>
+    </section>
+
+    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+      <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Læs også:</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="/blog/forsta-din-elpris" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">← Forstå din elpris</a>
+        <a href="/blog/home-assistant-elpriser" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Home Assistant guide →</a>
+      </div>
+    </div>
+  </article>
+</main>
+
+<!-- ═══════ BLOG: Home Assistant ═══════ -->
+<main data-page="blog-home-assistant-elpriser" class="max-w-2xl mx-auto px-4 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Home Assistant og elpriser: Komplet guide til smart elforbrug</h1>
+    </div>
+    <a href="#" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
+      <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+  <article class="space-y-5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+    <p class="text-base text-gray-700 dark:text-gray-300">Home Assistant er det ultimative værktøj til at styre dit hjem efter elprisen. Med elpriser.org's gratis REST API kan du oprette sensorer, automations og dashboards, der automatisk optimerer dit elforbrug — og spare tusindvis af kroner om året.</p>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Trin 1: Opret en elpris-sensor</h2>
+      <p>Tilføj følgende til din <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">configuration.yaml</code> for at hente den aktuelle elpris:</p>
+      <div class="mt-2 bg-gray-900 dark:bg-gray-950 rounded-xl p-4 overflow-x-auto">
+        <pre class="text-xs text-green-400"><code>rest:
+  - resource: "https://elpriser.org/api/now?area=DK1"
+    scan_interval: 300
+    sensor:
+      - name: "Elpris nu"
+        value_template: "{{ value_json.price | round(2) }}"
+        unit_of_measurement: "kr/kWh"
+        device_class: monetary
+      - name: "Elpris niveau"
+        value_template: "{{ value_json.level }}"</code></pre>
+      </div>
+      <p class="mt-2">Sensoren opdateres hvert 5. minut og viser den aktuelle elpris inkl. alle afgifter. <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">level</code> returnerer "LOW", "NORMAL" eller "HIGH" baseret på dagens prisfordeling.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Trin 2: Hent alle dagens priser</h2>
+      <p>For at se hele dagens prisoversigt og morgendagens priser (efter kl. 13):</p>
+      <div class="mt-2 bg-gray-900 dark:bg-gray-950 rounded-xl p-4 overflow-x-auto">
+        <pre class="text-xs text-green-400"><code>rest:
+  - resource: "https://elpriser.org/api/prices?area=DK1"
+    scan_interval: 3600
+    sensor:
+      - name: "Elpriser i dag"
+        value_template: "{{ value_json.prices | length }} timer"
+        json_attributes:
+          - prices
+          - min
+          - max
+          - average</code></pre>
+      </div>
+      <p class="mt-2">Attributterne <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">min</code>, <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">max</code> og <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">average</code> giver dig et hurtigt overblik over dagens prisniveauer.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Trin 3: Find de billigste timer (Schedule API)</h2>
+      <p>Schedule-endpointet finder automatisk de billigste sammenhængende timer — perfekt til at planlægge opladning eller opvarmning:</p>
+      <div class="mt-2 bg-gray-900 dark:bg-gray-950 rounded-xl p-4 overflow-x-auto">
+        <pre class="text-xs text-green-400"><code>rest:
+  - resource: "https://elpriser.org/api/schedule?area=DK1&amp;hours=4"
+    scan_interval: 3600
+    binary_sensor:
+      - name: "Billig strøm nu"
+        value_template: "{{ value_json.active }}"
+        device_class: power</code></pre>
+      </div>
+      <p class="mt-2">Binary sensoren er <strong class="text-gray-800 dark:text-gray-200">ON</strong> i de 4 billigste timer og <strong class="text-gray-800 dark:text-gray-200">OFF</strong> resten af tiden. Brug den som trigger i dine automations.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Trin 4: Automation-eksempler</h2>
+
+      <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-2">Eksempel 1: Tænd varmepumpe i billige timer</h3>
+      <div class="mt-2 bg-gray-900 dark:bg-gray-950 rounded-xl p-4 overflow-x-auto">
+        <pre class="text-xs text-green-400"><code>automation:
+  - alias: "Varmepumpe billig strøm"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.billig_strom_nu
+    action:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: binary_sensor.billig_strom_nu
+                state: "on"
+            sequence:
+              - service: climate.set_temperature
+                target:
+                  entity_id: climate.varmepumpe
+                data:
+                  temperature: 22
+          - conditions:
+              - condition: state
+                entity_id: binary_sensor.billig_strom_nu
+                state: "off"
+            sequence:
+              - service: climate.set_temperature
+                target:
+                  entity_id: climate.varmepumpe
+                data:
+                  temperature: 19</code></pre>
+      </div>
+
+      <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-2">Eksempel 2: Notifikation ved billig strøm</h3>
+      <div class="mt-2 bg-gray-900 dark:bg-gray-950 rounded-xl p-4 overflow-x-auto">
+        <pre class="text-xs text-green-400"><code>automation:
+  - alias: "Billig strøm notifikation"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.elpris_nu
+        below: 1.0
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "⚡ Billig strøm!"
+          message: >
+            Elprisen er {{ states('sensor.elpris_nu') }} kr/kWh.
+            Godt tidspunkt for vaskemaskine eller opladning.</code></pre>
+      </div>
+
+      <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-2">Eksempel 3: Styr Shelly via Home Assistant</h3>
+      <div class="mt-2 bg-gray-900 dark:bg-gray-950 rounded-xl p-4 overflow-x-auto">
+        <pre class="text-xs text-green-400"><code>automation:
+  - alias: "Vandvarmer via Shelly"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.billig_strom_nu
+        to: "on"
+    action:
+      - service: switch.turn_on
+        entity_id: switch.shelly_vandvarmer
+  - alias: "Vandvarmer sluk"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.billig_strom_nu
+        to: "off"
+    action:
+      - service: switch.turn_off
+        entity_id: switch.shelly_vandvarmer</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Dashboard: Vis elpriser i Home Assistant</h2>
+      <p>Tilføj et Lovelace-kort til dit dashboard for at se dagens priser visuelt:</p>
+      <div class="mt-2 bg-gray-900 dark:bg-gray-950 rounded-xl p-4 overflow-x-auto">
+        <pre class="text-xs text-green-400"><code>type: entities
+title: "⚡ Elpriser"
+entities:
+  - entity: sensor.elpris_nu
+    name: "Pris lige nu"
+    icon: mdi:flash
+  - entity: sensor.elpris_niveau
+    name: "Prisniveau"
+    icon: mdi:chart-bar
+  - entity: binary_sensor.billig_strom_nu
+    name: "Billig strøm aktiv"
+    icon: mdi:cash-check</code></pre>
+      </div>
+      <p class="mt-2">For grafer kan du bruge <strong class="text-gray-800 dark:text-gray-200">ApexCharts Card</strong> (via HACS) til at plotte timepriserne fra <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">sensor.elpriser_i_dag</code> attributterne.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Tips og best practices</h2>
+      <ul class="space-y-1 ml-4 list-disc">
+        <li><strong class="text-gray-800 dark:text-gray-200">Brug DK1 eller DK2</strong> — sørg for at vælge det korrekte prisområde. Brug GPS-funktionen på <a href="/" class="text-brand-500 underline">forsiden</a> hvis du er i tvivl.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Undgå for mange API-kald</strong> — sæt <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">scan_interval</code> til mindst 300 sekunder. Priserne ændrer sig kun time for time.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Brug schedule til opladning</strong> — schedule-endpointet finder de billigste sammenhængende timer, som er ideelt til elbil-opladning.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Kombiner med vejrdata</strong> — brug Home Assistants vejr-integration til at justere varmepumpen baseret på både elpris og temperatur.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Test med Developer Tools</strong> — brug Home Assistants Developer Tools → States til at verificere at sensorerne opdateres korrekt.</li>
+      </ul>
+    </section>
+
+    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+      <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Læs også:</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="/blog/forsta-din-elpris" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">← Forstå din elpris</a>
+        <a href="/blog/shelly-elpris-automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Shelly automation →</a>
+      </div>
+    </div>
+  </article>
+</main>
+
 <footer class="mt-10 py-6 border-t border-gray-200 dark:border-gray-800">
   <div class="max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-600">
     <nav class="flex flex-wrap justify-center gap-x-4 gap-y-1 mb-3" aria-label="Sider">
@@ -803,6 +1207,11 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <a href="/prognose" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elprisprognose</a>
       <a href="/automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Automation</a>
       <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser</a>
+    </nav>
+    <nav class="flex flex-wrap justify-center gap-x-4 gap-y-1 mb-3" aria-label="Guides">
+      <a href="/blog/forsta-din-elpris" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Forstå din elpris</a>
+      <a href="/blog/shelly-elpris-automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Shelly automation</a>
+      <a href="/blog/home-assistant-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Home Assistant guide</a>
     </nav>
     <p>&copy; Elpriser.org &mdash; Data fra <a href="https://www.energidataservice.dk" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Energi Data Service</a> (Energinet).</p>
   </div>
@@ -895,6 +1304,9 @@ function route(){
   if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Automation — elpriser.org';pv('Automation','/automation');loadAutomationPage();return;}
   if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — elpriser.org';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}
   if(h==='om-elpriser'){document.querySelector('[data-page="om-elpriser"]').classList.add('active');document.title='Om elpriser i Danmark — elpriser.org';pv('Om elpriser','/om-elpriser');return;}
+  if(h==='blog/forsta-din-elpris'){document.querySelector('[data-page="blog-forsta-din-elpris"]').classList.add('active');document.title='Forstå din elpris — elpriser.org';pv('Blog: Forstå din elpris','/blog/forsta-din-elpris');return;}
+  if(h==='blog/shelly-elpris-automation'){document.querySelector('[data-page="blog-shelly-elpris-automation"]').classList.add('active');document.title='Shelly og elpriser — elpriser.org';pv('Blog: Shelly automation','/blog/shelly-elpris-automation');return;}
+  if(h==='blog/home-assistant-elpriser'){document.querySelector('[data-page="blog-home-assistant-elpriser"]').classList.add('active');document.title='Home Assistant og elpriser — elpriser.org';pv('Blog: Home Assistant','/blog/home-assistant-elpriser');return;}
   if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elprisprognose — elpriser.org';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){location.hash='';return;}

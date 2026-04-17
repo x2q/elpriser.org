@@ -44,9 +44,24 @@ const SEO_PAGES = {
     description: 'Se forventede elpriser for DK1 og DK2 de næste 7 dage. Prognose baseret på historiske prismønstre og vindprognoser fra Energi Data Service.',
     hash: '#prognose',
   },
+  '/blog/forsta-din-elpris': {
+    title: 'Forstå din elpris: Hvad bestemmer elprisen i Danmark? | elpriser.org',
+    description: 'Komplet guide til elpriser i Danmark. Lær om spotpriser, nettariffer, elafgift, DK1 vs DK2, hvornår strømmen er billigst, og hvordan du sparer penge.',
+    hash: '#blog/forsta-din-elpris',
+  },
+  '/blog/shelly-elpris-automation': {
+    title: 'Shelly og elpriser: Automatisk tænd og sluk efter spotprisen | elpriser.org',
+    description: 'Styr din Shelly efter elprisen med elpriser.org gratis API. Guide til Shelly Plus, Pro og Plug — automatiser elbil, varmepumpe og vandvarmer efter billig strøm.',
+    hash: '#blog/shelly-elpris-automation',
+  },
+  '/blog/home-assistant-elpriser': {
+    title: 'Home Assistant og elpriser: Komplet guide til smart elforbrug | elpriser.org',
+    description: 'Opsæt Home Assistant med danske elpriser fra elpriser.org. REST sensorer, automations og dashboard til at spare penge på strøm automatisk.',
+    hash: '#blog/home-assistant-elpriser',
+  },
 };
 
-const SITEMAP_URLS = ['/', '/dk1', '/dk2', '/tariffer', '/automation', '/prognose', '/om-elpriser'];
+const SITEMAP_URLS = ['/', '/dk1', '/dk2', '/tariffer', '/automation', '/prognose', '/om-elpriser', '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser'];
 
 function buildSitemap() {
   const today = new Date().toISOString().split('T')[0];
@@ -76,6 +91,9 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser de næste 7 dage baseret på historik og vindprognoser.
 - [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home.
 - [Om elpriser](https://elpriser.org/om-elpriser): Forklaring af priskomponenter, prisområder og datakilder.
+- [Forstå din elpris](https://elpriser.org/blog/forsta-din-elpris): Guide til hvad der bestemmer elprisen, spotpriser, tariffer, afgifter og sparetips.
+- [Shelly automation](https://elpriser.org/blog/shelly-elpris-automation): Guide til Shelly-styring efter elprisen med gratis API.
+- [Home Assistant guide](https://elpriser.org/blog/home-assistant-elpriser): Komplet opsætning af Home Assistant med elpriser, sensorer og automations.
 
 ## API
 
