@@ -243,25 +243,50 @@ async function startServer() {
       .forEach(m => assert.ok(vals.includes(m), `#autoMode missing "${m}"`));
   });
 
-  await test('automation: selecting a net_ mode reveals #autoNetRow + populates #autoNet', async () => {
+  await test('automation: selecting a net_ mode reveals #autoNetRow + populates all nets from DK1+DK2', async () => {
     await page.goto(BASE + '/#automation');
     await page.waitForSelector('#autoMode');
-    // Force area=DK1 (13+ nets); DK2 only has 3 and would flake the ≥10 assertion.
-    await page.selectOption('#autoArea', 'DK1');
     await page.selectOption('#autoMode', 'net_inkl_alt');
     await page.waitForFunction(() =>
       getComputedStyle(document.getElementById('autoNetRow')).display !== 'none');
+    // Dropdown should have every net across DK1+DK2 (13 + 3 = 16+)
     await page.waitForFunction(() =>
-      document.querySelectorAll('#autoNet option').length >= 10);
+      document.querySelectorAll('#autoNet option').length >= 14);
     const netCount = await page.locator('#autoNet option').count();
-    assert.ok(netCount >= 10, `#autoNet has ${netCount} options, expected ≥10`);
+    assert.ok(netCount >= 14, `#autoNet has ${netCount} options, expected ≥14 (all DK1+DK2 nets)`);
   });
 
-  await test('automation: #autoDevice exposes multiple device types', async () => {
+  await test('automation: picking a DK2 net auto-switches priszone to DK2', async () => {
     await page.goto(BASE + '/#automation');
-    const vals = await page.locator('#autoDevice option').allTextContents();
-    ['Varmepumpe','Elbil','Opvaskemaskine'].forEach(d =>
-      assert.ok(vals.some(v => v.includes(d)), `#autoDevice missing "${d}"`));
+    await page.selectOption('#autoMode', 'net_inkl_alt');
+    await page.waitForFunction(() =>
+      document.querySelectorAll('#autoNet option[data-area="DK2"]').length > 0);
+    const dk2Gln = await page.locator('#autoNet option[data-area="DK2"]').first().getAttribute('value');
+    await page.selectOption('#autoNet', dk2Gln);
+    await page.waitForFunction(() => document.getElementById('autoArea').value === 'DK2');
+  });
+
+  await test('automation: #autoDevice dropdown is removed', async () => {
+    await page.goto(BASE + '/#automation');
+    const count = await page.locator('#autoDevice').count();
+    assert.equal(count, 0, 'Enhed dropdown should be gone');
+  });
+
+  await test('automation: code examples are syntax-highlighted (hl-* spans present)', async () => {
+    await page.goto(BASE + '/#automation');
+    await page.waitForFunction(() =>
+      document.querySelectorAll('#exportHACode .hl-attr').length > 0);
+    const haSpans = await page.locator('#exportHACode .hl-attr, #exportHACode .hl-str, #exportHACode .hl-com').count();
+    assert.ok(haSpans > 10, `HA code should have many highlighted tokens, got ${haSpans}`);
+  });
+
+  await test('automation: Copy preserves raw text (no span markup in clipboard)', async () => {
+    await page.goto(BASE + '/#automation');
+    await page.waitForFunction(() =>
+      document.getElementById('exportHACode').dataset.raw);
+    const raw = await page.locator('#exportHACode').evaluate(el => el.dataset.raw);
+    assert.ok(!raw.includes('<span'), 'raw text should NOT contain span markup');
+    assert.ok(raw.includes('sensor:'), 'raw YAML should include sensor:');
   });
 
   await test('automation: #autoStrategy exposes all 6 strategies', async () => {

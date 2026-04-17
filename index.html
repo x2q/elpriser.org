@@ -290,6 +290,22 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   /* Breathing room inside card stacks */
   .zone-stack{display:flex;flex-direction:column;align-items:center;gap:.625rem;padding:.25rem 0 .5rem}
   .net-list{display:flex;flex-direction:column;gap:.125rem;padding:.5rem 0}
+
+  /* ═══ Light syntax highlighting (YAML / JS / URL) ═══ */
+  .hl-attr{color:#0969da}     /* YAML keys, URL query params — blue */
+  .hl-str{color:#0a7a48}      /* string literals — green */
+  .hl-num{color:#cf5900}      /* numbers, URL values — orange */
+  .hl-kw{color:#8250df}       /* keywords, booleans, protocol — purple */
+  .hl-com{color:#6b7280;font-style:italic}  /* comments — gray italic */
+  .hl-tpl{color:#b15c00}      /* jinja {% %} templates — amber */
+  .hl-type{color:#953800}     /* JS class-like identifiers */
+  .dark .hl-attr{color:#79c0ff}
+  .dark .hl-str{color:#7ee787}
+  .dark .hl-num{color:#ffa657}
+  .dark .hl-kw{color:#d2a8ff}
+  .dark .hl-com{color:#8b949e}
+  .dark .hl-tpl{color:#ffa657}
+  .dark .hl-type{color:#ff9e64}
 </style>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-950 dark:text-gray-100 min-h-screen font-sans transition-colors">
@@ -593,10 +609,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
   <!-- Strategy config — all fields auto-update on change -->
   <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
       <div>
         <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Priszone</label>
-        <select id="autoArea" oninput="updateAutoViz()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+        <select id="autoArea" oninput="onAutoAreaChange()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
           <option value="DK1">DK1 Vest</option><option value="DK2">DK2 Øst</option>
         </select>
       </div>
@@ -610,17 +626,12 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
           <option value="net_inkl_tarif">Netselskab inkl tarif</option>
         </select>
       </div>
-      <div>
-        <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Enhed</label>
-        <select id="autoDevice" oninput="onAutoDeviceChange()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-          <option>Varmepumpe</option><option>Elbil</option><option>Opvaskemaskine</option><option>Vaskemaskine</option><option>Affugter</option><option>Varmtvandsbeholder</option>
-        </select>
-      </div>
     </div>
-    <!-- Netselskab row — only shown for net_ modes -->
+    <!-- Netselskab row — only shown for net_ modes. Shows every net across DK1+DK2;
+         picking a net auto-switches the priszone to match. -->
     <div id="autoNetRow" class="mb-3" style="display:none">
       <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Netselskab</label>
-      <select id="autoNet" oninput="updateAutoViz()" class="w-full sm:w-64 text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"></select>
+      <select id="autoNet" oninput="onAutoNetChange()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"></select>
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <div class="sm:col-span-2">
@@ -661,7 +672,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-2">API-adresse</h3>
     <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Brug denne URL direkte i Shelly-scripts eller Home Assistant REST-sensorer.</p>
     <div class="relative">
-      <pre id="apiUrlDisplay" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 overflow-x-auto text-brand-600 dark:text-brand-400 leading-relaxed font-mono whitespace-pre-wrap"></pre>
+      <pre id="apiUrlDisplay" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 overflow-x-auto text-gray-700 dark:text-gray-300 leading-relaxed font-mono whitespace-pre-wrap"></pre>
       <button onclick="copyApiUrl()" class="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition">Kopiér</button>
     </div>
     <div class="flex items-center gap-3 mt-2">
@@ -1640,7 +1651,6 @@ function updateWeekNav(){
 }
 
 // ═══ AUTOMATION ═══
-const DEVICE_DEFAULTS={Varmepumpe:{strategy:'cheapest_n',param:6},Elbil:{strategy:'cheapest_n',param:6},Opvaskemaskine:{strategy:'cheapest_n',param:2},Vaskemaskine:{strategy:'cheapest_n',param:2},Affugter:{strategy:'cheapest_pct',param:30},Varmtvandsbeholder:{strategy:'avoid_expensive_n',param:4}};
 const STRATEGY_HELP={cheapest_n:'Tænder kun i de N billigste timer. Velegnet til enheder der skal køre et bestemt antal timer dagligt.',cheapest_pct:'Tænder i den billigste andel af døgnets timer. God til enheder med fleksibelt forbrug.',avoid_expensive_n:'Slukker i de N dyreste timer, tændt resten af døgnet. God til enheder der skal køre det meste af tiden.',avoid_expensive_pct:'Slukker i den dyreste andel af timer. Reducerer omkostning uden at begrænse for meget.',avoid_peak:'Fast tidsplan: slukker kl. 17-21 hvor nettariffen og forbruget typisk er højest.',night_cheap:'Kører kun kl. 23-06 hvor priserne typisk er lavest. Ideel til støjende enheder.'};
 function onAutoStrategyChange(){
   const s=document.getElementById('autoStrategy').value;
@@ -1655,18 +1665,34 @@ function onAutoStrategyChange(){
   inp._userSet=false;
   updateAutoViz();
 }
-function onAutoDeviceChange(){
-  const d=document.getElementById('autoDevice').value;
-  const def=DEVICE_DEFAULTS[d];
-  if(def){
-    document.getElementById('autoStrategy').value=def.strategy;
-    // Set param visibility/label first, then override with device default
-    const s=def.strategy,div=document.getElementById('autoParamDiv'),lbl=document.getElementById('autoParamLabel'),inp=document.getElementById('autoParam');
-    if(s==='cheapest_n'||s==='avoid_expensive_n'){div.style.display='';lbl.textContent='Timer/dag';inp.max=23;}
-    else if(s==='cheapest_pct'||s==='avoid_expensive_pct'){div.style.display='';lbl.textContent='Procent (%)';inp.max=100;}
-    else div.style.display='none';
-    inp.value=def.param;
-    document.getElementById('autoStrategyHelp').textContent=STRATEGY_HELP[s]||'';
+// Populate the netselskab dropdown with ALL nets across DK1+DK2, grouped,
+// with the currently-relevant area pre-selected. Picking a net auto-syncs
+// the priszone, so user never needs to change area first.
+function populateAutoNet(){
+  const sel=document.getElementById('autoNet');
+  if(!sel)return;
+  const area=document.getElementById('autoArea')?.value||'DK1';
+  const opt=(n,a)=>`<option value="${n.gln}" data-area="${a}">${n.name} — ${a}</option>`;
+  sel.innerHTML=
+    `<optgroup label="DK1 Vest">${NETS.DK1.map(n=>opt(n,'DK1')).join('')}</optgroup>`+
+    `<optgroup label="DK2 Øst">${NETS.DK2.map(n=>opt(n,'DK2')).join('')}</optgroup>`;
+  // Default-select the first net matching the current area
+  const first=(NETS[area]||NETS.DK1)[0];
+  if(first)sel.value=first.gln;
+}
+function onAutoAreaChange(){
+  // When priszone changes and we're in a net_ mode, jump to the first net in that area
+  const mode=document.getElementById('autoMode').value;
+  if(mode.startsWith('net_'))populateAutoNet();
+  updateAutoViz();
+}
+function onAutoNetChange(){
+  // Reverse sync: picking a DK2 net switches priszone to DK2
+  const sel=document.getElementById('autoNet');
+  const area=sel.options[sel.selectedIndex]?.dataset.area;
+  if(area){
+    const areaSel=document.getElementById('autoArea');
+    if(areaSel.value!==area)areaSel.value=area;
   }
   updateAutoViz();
 }
@@ -1676,20 +1702,8 @@ function onAutoModeChange(){
   const netRow=document.getElementById('autoNetRow');
   const isNet=mode.startsWith('net_');
   netRow.style.display=isNet?'':'none';
-  if(isNet){
-    const area=document.getElementById('autoArea').value||'DK1';
-    const sel=document.getElementById('autoNet');
-    sel.innerHTML=[...NETS.DK1,...NETS.DK2].filter(n=>
-      NETS.DK1.includes(n)?area==='DK1':area==='DK2'
-    ).map(n=>`<option value="${n.gln}">${n.name} (${NETS.DK1.includes(n)?'DK1':'DK2'})</option>`).join('');
-  }
+  if(isNet)populateAutoNet();
   updateAutoViz();
-}
-function buildAutoNetSelector(){
-  const area=document.getElementById('autoArea')?.value||'DK1';
-  const sel=document.getElementById('autoNet');
-  if(!sel)return;
-  sel.innerHTML=NETS[area].map(n=>`<option value="${n.gln}">${n.name}</option>`).join('');
 }
 function getStrategyHours(dailyPrices,strategy,param){
   const res=Array(24).fill(false);
@@ -1705,7 +1719,7 @@ function getStrategyHours(dailyPrices,strategy,param){
 async function loadAutomationPage(){
   const areaEl=document.getElementById('autoArea');
   areaEl.value=S.area||'DK1';
-  buildAutoNetSelector();
+  populateAutoNet();
   document.getElementById('autoLoading').style.display='';
   document.getElementById('autoTableWrapper').style.display='none';
   if(!Object.keys(priceData).length){
@@ -1721,8 +1735,8 @@ function updateAutoViz(){
   const strategy=document.getElementById('autoStrategy')?.value||'cheapest_n';
   const param=+(document.getElementById('autoParam')?.value||6);
   const mode=document.getElementById('autoMode')?.value||'inkl_alt';
-  // rebuild net selector when area changes
-  if(mode.startsWith('net_'))buildAutoNetSelector();
+  // Ensure the net dropdown is populated (runs once per mode toggle)
+  if(mode.startsWith('net_') && !document.getElementById('autoNet').options.length)populateAutoNet();
   const dates=Object.keys(priceData).sort().slice(-7);
   document.getElementById('autoLoading').style.display='none';
   document.getElementById('autoTableWrapper').style.display='block';
@@ -1794,23 +1808,22 @@ function buildApiUrl(mode,area,strategy,param,gln){
   return base+p+g;
 }
 function generateExports(strategy,param,daySchedules,dates,mode,gln){
-  const device=document.getElementById('autoDevice')?.value||'Enhed';
   const area=document.getElementById('autoArea')?.value||'DK1';
-  const entityId=device.toLowerCase().replace(/[æøå]/g,c=>({æ:'ae',ø:'oe',å:'aa'}[c])).replace(/[^a-z0-9]/g,'_');
+  const entityId='elpris';
   const labels={cheapest_n:`Billigste ${param} timer/dag`,cheapest_pct:`Billigste ${param}% af timer`,avoid_expensive_n:`Undgå dyreste ${param} timer/dag`,avoid_expensive_pct:`Undgå dyreste ${param}% af timer`,avoid_peak:'Undgå spidstimer (17-21)',night_cheap:'Kun nattetimer (23-06)'};
   const stratLabel=labels[strategy]||strategy;
   const apiUrl=buildApiUrl(mode,area,strategy,param,gln);
-  // Show API URL
-  document.getElementById('apiUrlDisplay').textContent=apiUrl;
+  // Show API URL (highlighted)
+  setHighlighted(document.getElementById('apiUrlDisplay'),apiUrl,'url');
   // ── HA export (REST sensor + automation) ──────────────────────────────────
-  document.getElementById('exportHACode').textContent=
+  const haCode=
 `# ── Option 1: REST sensor (bruger elpriser.org API) ──────────────────────
 # Tilføj til configuration.yaml eller en pakke-fil.
 
 sensor:
   - platform: rest
-    name: "${device} elpris on"
-    unique_id: elpris_${entityId}_on
+    name: "Elpris on"
+    unique_id: ${entityId}_on
     resource: "${apiUrl}"
     value_template: "{{ value_json.on | lower }}"
     json_attributes:
@@ -1820,10 +1833,10 @@ sensor:
 
 # Automation der reagerer på sensor-opdatering:
 automation:
-  - alias: "${device} - ${stratLabel}"
+  - alias: "${stratLabel}"
     trigger:
       - platform: state
-        entity_id: sensor.${entityId}_elpris_on
+        entity_id: sensor.${entityId}_on
     action:
       - service: "switch.turn_{{ trigger.to_state.state }}"
         target:
@@ -1832,7 +1845,7 @@ automation:
 # ── Option 2: Template-automation (kræver Energi Data Service integration) ─
 
 automation:
-  - alias: "${device} - ${stratLabel} (template)"
+  - alias: "${stratLabel} (template)"
     trigger:
       - platform: time_pattern
         hours: "/1"
@@ -1853,8 +1866,9 @@ automation:
           {% else %}switch.turn_off{% endif %}
         target:
           entity_id: switch.${entityId}`;
+  setHighlighted(document.getElementById('exportHACode'),haCode,'yaml');
   // ── Shelly export (Script, not Schedule — dynamic per API) ─────────────────
-  document.getElementById('exportShellyCode').textContent=
+  const shellyCode=
 `// Shelly Plus/Pro Script — ${stratLabel}
 // Bruger elpriser.org API til at bestemme ON/OFF dynamisk.
 // Aktiver "Run on startup" i Scripts-menuen.
@@ -1878,6 +1892,7 @@ function check() {
 
 check();
 Timer.set(CHECK_INTERVAL_MS, true, check);`;
+  setHighlighted(document.getElementById('exportShellyCode'),shellyCode,'js');
 }
 function switchExport(tab){
   gtag('event','switch_export_tab',{tab:tab});
@@ -1886,8 +1901,92 @@ function switchExport(tab){
   document.getElementById('exportBtnHA').classList.toggle('active',tab==='ha');
   document.getElementById('exportBtnShelly').classList.toggle('active',tab==='shelly');
 }
-function copyExport(tab){gtag('event','copy_export',{tab:tab});navigator.clipboard?.writeText(document.getElementById(tab==='ha'?'exportHACode':'exportShellyCode').textContent);}
-function copyApiUrl(){gtag('event','copy_api_url');navigator.clipboard?.writeText(document.getElementById('apiUrlDisplay').textContent);}
+function copyExport(tab){
+  gtag('event','copy_export',{tab:tab});
+  const el=document.getElementById(tab==='ha'?'exportHACode':'exportShellyCode');
+  navigator.clipboard?.writeText(el.dataset.raw||el.textContent);
+}
+function copyApiUrl(){
+  gtag('event','copy_api_url');
+  const el=document.getElementById('apiUrlDisplay');
+  navigator.clipboard?.writeText(el.dataset.raw||el.textContent);
+}
+// ═══ Light syntax highlighting — no dependencies ═══
+// Tokenizes first, then wraps — avoids the "regex eats its own output" bug
+// where `<span class="hl-com">` gets re-matched as a YAML string.
+// Stores raw text on dataset.raw so Copy grabs the unstyled string.
+function escHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+// Build a patterns list for a language; `highlightTokens` consumes them in
+// priority order, wrapping each match and advancing past it — so tokens can't
+// overlap or re-match substrings inside already-styled output.
+const HL_PATTERNS={
+  yaml:[
+    {cls:'hl-com',re:/#[^\n]*/y},
+    {cls:'hl-str',re:/"(?:[^"\\]|\\.)*"/y},
+    {cls:'hl-tpl',re:/\{[%{][\s\S]*?[%}]\}/y},
+    {cls:'hl-attr',re:/[A-Za-z_][\w]*(?=\s*:)/y},
+    {cls:'hl-kw',re:/\b(?:true|false|null|on|off|yes|no)\b/iy},
+    {cls:'hl-num',re:/\b\d+(?:\.\d+)?\b/y},
+  ],
+  js:[
+    {cls:'hl-com',re:/\/\/[^\n]*/y},
+    {cls:'hl-str',re:/"(?:[^"\\]|\\.)*"/y},
+    {cls:'hl-kw',re:/\b(?:var|let|const|function|return|if|else|for|while|true|false|null|undefined|new|typeof)\b/y},
+    {cls:'hl-num',re:/\b\d+(?:\.\d+)?\b/y},
+    {cls:'hl-type',re:/\b[A-Z][\w]*\b/y},
+  ],
+};
+
+function highlightTokens(text,patterns){
+  let out='',i=0;
+  const n=text.length;
+  while(i<n){
+    let matched=false;
+    for(const p of patterns){
+      p.re.lastIndex=i;
+      const m=p.re.exec(text);
+      if(m && m.index===i){
+        out+=`<span class="${p.cls}">${escHtml(m[0])}</span>`;
+        i+=m[0].length;
+        matched=true;
+        break;
+      }
+    }
+    if(!matched){
+      out+=escHtml(text[i]);
+      i++;
+    }
+  }
+  return out;
+}
+
+function highlightUrl(text){
+  const m=text.match(/^(https?:\/\/)([^\/?]+)([^?]*)(\?.*)?$/);
+  if(!m)return escHtml(text);
+  const [,proto,host,path,qs]=m;
+  let out=`<span class="hl-kw">${escHtml(proto)}</span>`+
+          `<span class="hl-str">${escHtml(host)}</span>`+
+          escHtml(path||'');
+  if(qs){
+    // qs starts with '?' then pairs k=v separated by &
+    out+=qs.replace(/(\?|&)([^=&]+)=([^&]*)/g,(_,sep,k,v)=>
+      `${escHtml(sep)}<span class="hl-attr">${escHtml(k)}</span>=<span class="hl-num">${escHtml(v)}</span>`);
+  }
+  return out;
+}
+
+function highlight(text,lang){
+  if(lang==='url')return highlightUrl(text);
+  if(HL_PATTERNS[lang])return highlightTokens(text,HL_PATTERNS[lang]);
+  return escHtml(text);
+}
+
+function setHighlighted(el,text,lang){
+  if(!el)return;
+  el.dataset.raw=text;
+  el.innerHTML=highlight(text,lang);
+}
 async function testApiUrl(){
   const btn=document.getElementById('testApiBtn'),res=document.getElementById('testApiResult');
   const url=document.getElementById('apiUrlDisplay').textContent;
