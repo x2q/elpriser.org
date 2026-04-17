@@ -186,12 +186,14 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   /* ═══ Hero — layered mesh gradient with floating orbs ═══ */
   .hero{
     position:relative; overflow:hidden; isolation:isolate;
+    padding-top:5rem; padding-bottom:5rem; padding-left:1rem; padding-right:1rem;
     background:
       radial-gradient(1200px 600px at 15% -10%, rgba(89,160,255,.45), transparent 60%),
       radial-gradient(900px 500px at 110% 20%, rgba(16,185,129,.28), transparent 60%),
       radial-gradient(800px 400px at 50% 120%, rgba(27,87,245,.4), transparent 60%),
       linear-gradient(180deg, #0e2a8f 0%, #1b57f5 55%, #1543e1 100%);
   }
+  @media (max-width:640px){ .hero{ padding-top:3.75rem; padding-bottom:3.75rem } }
   .dark .hero{
     background:
       radial-gradient(1200px 600px at 15% -10%, rgba(89,160,255,.25), transparent 60%),
@@ -263,13 +265,26 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   details.faq summary{padding:.875rem 1.25rem}
   details.faq summary:hover{background:rgba(27,87,245,.03);border-radius:1rem}
   .dark details.faq summary:hover{background:rgba(89,160,255,.04)}
+
+  /* ═══ Spacing utilities (missing from compiled Tailwind) ═══ */
+  .mt-12{margin-top:3rem}
+  .mt-14{margin-top:3.5rem}
+  .mb-5{margin-bottom:1.25rem}
+  .mb-6{margin-bottom:1.5rem}
+  .mb-7{margin-bottom:1.75rem}
+  .gap-4{gap:1rem}
+  .py-14{padding-top:3.5rem;padding-bottom:3.5rem}
+
+  /* Breathing room inside card stacks */
+  .zone-stack{display:flex;flex-direction:column;align-items:center;gap:.625rem;padding:.25rem 0 .5rem}
+  .net-list{display:flex;flex-direction:column;gap:.125rem;padding:.5rem 0}
 </style>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-950 dark:text-gray-100 min-h-screen font-sans transition-colors">
 
 <!-- ═══════ START PAGE ═══════ -->
 <main data-page="start" class="active">
-  <div class="hero pt-14 pb-16 px-4">
+  <div class="hero">
     <div class="hero-orb hero-orb-1"></div>
     <div class="hero-orb hero-orb-2"></div>
     <div class="max-w-4xl mx-auto text-center relative">
@@ -293,26 +308,26 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     </div>
   </div>
 
-  <div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="max-w-4xl mx-auto px-4 py-12">
     <div class="grid sm:grid-cols-2 gap-6">
       <section class="card p-6">
-        <div class="flex items-center justify-center gap-2 mb-5">
+        <div class="flex items-center justify-center gap-2 mb-6">
           <span class="text-xs uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">Prisområde</span>
           <h2 class="section-title text-lg font-bold text-brand-600 dark:text-brand-400">DK1 Vest</h2>
         </div>
-        <div class="flex flex-col items-center gap-2.5" id="dk1-zone"></div>
-        <div class="mt-5 -mx-2" id="dk1-nets"></div>
+        <div class="zone-stack" id="dk1-zone"></div>
+        <div class="net-list mt-6 -mx-2" id="dk1-nets"></div>
       </section>
       <section class="card p-6">
-        <div class="flex items-center justify-center gap-2 mb-5">
+        <div class="flex items-center justify-center gap-2 mb-6">
           <span class="text-xs uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">Prisområde</span>
           <h2 class="section-title text-lg font-bold text-brand-600 dark:text-brand-400">DK2 Øst</h2>
         </div>
-        <div class="flex flex-col items-center gap-2.5" id="dk2-zone"></div>
-        <div class="mt-5 -mx-2" id="dk2-nets"></div>
+        <div class="zone-stack" id="dk2-zone"></div>
+        <div class="net-list mt-6 -mx-2" id="dk2-nets"></div>
       </section>
     </div>
-    <div class="flex flex-wrap justify-center gap-2.5 mt-10">
+    <div class="flex flex-wrap justify-center gap-2.5 mt-12">
       <a href="/dk1" class="nav-pill">DK1 Vest</a>
       <a href="/dk2" class="nav-pill">DK2 Øst</a>
       <a href="/prognose" class="nav-pill">Prognose</a>
@@ -323,9 +338,9 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     </div>
 
     <!-- FAQ — static crawlable content for SEO -->
-    <section class="mt-10 max-w-2xl mx-auto">
-      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Ofte stillede spørgsmål om elpriser</h2>
-      <div class="space-y-2">
+    <section class="mt-14 max-w-2xl mx-auto">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Ofte stillede spørgsmål om elpriser</h2>
+      <div class="space-y-3">
         <details class="group faq">
           <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
             Hvad er elprisen i dag?
@@ -393,8 +408,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     </section>
 
     <!-- Statistics — static crawlable content for SEO + AI -->
-    <section class="mt-10 max-w-2xl mx-auto">
-      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Elpriser i Danmark — nøgletal og statistik</h2>
+    <section class="mt-14 max-w-2xl mx-auto">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Elpriser i Danmark — nøgletal og statistik</h2>
       <div class="text-sm leading-relaxed text-gray-600 dark:text-gray-400 space-y-5">
 
         <div>
