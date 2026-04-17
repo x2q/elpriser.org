@@ -149,6 +149,16 @@ test('crawlable: sitemap includes per-net URLs with reduced priority', () => {
   assert.ok(indexNets.DK1.length > 0 && indexNets.DK2.length > 0);
 });
 
+test('crawlable: _routes.json includes /dk1/* and /dk2/* (not just /dk1, /dk2)', () => {
+  // Cloudflare Pages only runs the function for paths listed here.
+  // /dk1/n1 needs /dk1/* — an exact match on /dk1 doesn't cover sub-paths.
+  const routes = JSON.parse(fs.readFileSync(path.join(ROOT, '_routes.json'), 'utf8'));
+  assert.ok(routes.include.includes('/dk1/*'),
+    '_routes.json must include "/dk1/*" — per-net URLs will not be rendered by the function');
+  assert.ok(routes.include.includes('/dk2/*'),
+    '_routes.json must include "/dk2/*" — per-net URLs will not be rendered by the function');
+});
+
 test('crawlable: net-URL pattern in functions matches /dk[12]/slug', () => {
   assert.ok(/\/\^\\\/\(dk\[12\]\)\\\/\(\[a-z0-9-\]\+\)\$\//.test(ROUTES),
     'functions/[[path]].js must match /dk[12]/<slug> for per-net crawlable URLs');

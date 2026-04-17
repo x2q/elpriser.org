@@ -1,5 +1,5 @@
 {
   "version": 1,
-  "include": ["/api/*", "/sitemap.xml", "/robots.txt", "/llms.txt", "/llms-full.txt", "/og-image", "/dk1", "/dk2", "/tariffer", "/automation", "/prognose", "/om-elpriser", "/blog/*"],
+  "include": ["/api/*", "/sitemap.xml", "/robots.txt", "/llms.txt", "/llms-full.txt", "/og-image", "/dk1", "/dk2", "/dk1/*", "/dk2/*", "/tariffer", "/automation", "/prognose", "/om-elpriser", "/blog/*"],
   "exclude": []
 }
