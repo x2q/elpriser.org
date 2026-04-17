@@ -1,0 +1,207 @@
+#!/usr/bin/env node
+/**
+ * Static integrity tests for elpriser.org
+ * Run: node test-static.js (or `npm run test:static`)
+ *
+ * These are fast, synchronous checks that read source files and verify
+ * regression-prone invariants. They require no server or network, so they
+ * are safe to run as a pre-commit hook.
+ */
+
+'use strict';
+
+const assert = require('node:assert/strict');
+const fs     = require('node:fs');
+const path   = require('node:path');
+
+const ROOT = __dirname;
+const INDEX = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const STYLE = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+const ROUTES = fs.readFileSync(path.join(ROOT, 'functions', '[[path]].js'), 'utf8');
+
+let _passed = 0, _failed = 0;
+const results = [];
+
+function test(name, fn) {
+  try { fn(); _passed++; results.push({ ok: true, name }); }
+  catch (e) { _failed++; results.push({ ok: false, name, msg: e.message }); }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEO / Google SERP regression guards
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('seo: <title> contains "Elpriser i dag"', () => {
+  const m = INDEX.match(/<title>([^<]+)<\/title>/);
+  assert.ok(m, '<title> tag missing');
+  assert.ok(m[1].includes('Elpriser i dag'),
+    `title is "${m[1]}" — must include "Elpriser i dag"`);
+});
+
+test('seo: <h1> on start page is "Elpriser i dag" (not "Elpris")', () => {
+  // Fixed in commit ef47a0b — Google was picking up the one-word H1
+  const m = INDEX.match(/<h1[^>]*>([^<]+)<\/h1>/);
+  assert.ok(m, 'missing <h1>');
+  assert.equal(m[1].trim(), 'Elpriser i dag',
+    `h1 is "${m[1]}" — a short/ambiguous H1 causes Google to use it as SERP title`);
+});
+
+test('seo: meta description present and non-trivial', () => {
+  const m = INDEX.match(/<meta\s+name="description"\s+content="([^"]+)"/);
+  assert.ok(m, 'meta description missing');
+  assert.ok(m[1].length >= 80, `meta description too short (${m[1].length} chars)`);
+});
+
+test('seo: canonical link present', () => {
+  assert.ok(/<link\s+rel="canonical"\s+href="https:\/\/elpriser\.org/.test(INDEX),
+    'canonical link missing or incorrect');
+});
+
+test('seo: Open Graph image present', () => {
+  assert.ok(/property="og:image"/.test(INDEX), 'og:image missing');
+});
+
+test('seo: every SEO_PAGES entry has distinct title', () => {
+  // functions/[[path]].js serves unique <title>/<meta> per path
+  const titles = [...ROUTES.matchAll(/title:\s*'([^']+)'/g)].map(m => m[1]);
+  assert.ok(titles.length >= 5, 'expected multiple SEO_PAGES entries');
+  const dup = titles.find((t, i) => titles.indexOf(t) !== i);
+  assert.ok(!dup, `duplicate title in SEO_PAGES: "${dup}"`);
+});
+
+test('seo: sitemap includes all SEO pages', () => {
+  const urls = ROUTES.match(/SITEMAP_URLS\s*=\s*\[([^\]]+)\]/);
+  assert.ok(urls, 'SITEMAP_URLS not found');
+  ['/', '/dk1', '/dk2', '/tariffer', '/automation', '/prognose']
+    .forEach(p => assert.ok(urls[1].includes(`'${p}'`), `sitemap missing ${p}`));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Routing — localStorage redirect regression
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('router: empty hash lands on start page, does NOT redirect to lastHash', () => {
+  // Fixed in commit 37262b9 (follow-up): user reported that after clicking
+  // "Find dit netselskab automatisk", the router always redirected them back
+  // to the detected netselskab page. Home link must always show /.
+  const routeFn = INDEX.match(/function route\(\)\{[\s\S]*?^\}/m);
+  assert.ok(routeFn, 'route() function not found');
+  assert.ok(!/localStorage\.getItem\(['"]lastHash['"]\)/.test(routeFn[0]),
+    'router must not auto-redirect from / to localStorage.lastHash');
+});
+
+test('router: all data-page slugs in the router have a matching <main>', () => {
+  const routed = [...INDEX.matchAll(/data-page="([^"]+)"\]'\)\.classList\.add/g)]
+    .map(m => m[1]);
+  assert.ok(routed.length >= 7, `expected multiple routed pages, got ${routed.length}`);
+  routed.forEach(slug => {
+    assert.ok(new RegExp(`<main\\s+data-page="${slug}"`).test(INDEX),
+      `no <main data-page="${slug}"> found for router slug`);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Design system — spacing utilities must exist (either in compiled Tailwind
+// or in the <style> block). Missing classes silently collapse to 0, which
+// is how the hero top-padding bug shipped.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function classDefined(cls) {
+  // Check for .cls in style.css OR in the inline <style> block. Matches
+  // both plain `.cls{` and compound selectors like `.cls > :not(...)`.
+  const esc = cls.replace(/\./g, '\\.');
+  const pattern = new RegExp(`\\.${esc}(?=[\\s>{:,])`);
+  return pattern.test(STYLE) || pattern.test(INDEX);
+}
+
+const REQUIRED_SPACING = [
+  'mt-12', 'mt-14',       // used on nav pills / FAQ / stats spacing
+  'mb-5', 'mb-6', 'mb-7', // heading → body spacing
+  'gap-4', 'py-14',
+  'space-y-5', 'space-y-8', 'space-y-10',
+];
+
+REQUIRED_SPACING.forEach(cls => {
+  test(`css: class .${cls} is defined (missing → silent 0 padding)`, () => {
+    assert.ok(classDefined(cls), `.${cls} is used in HTML but not defined in style.css or inline <style>`);
+  });
+});
+
+test('css: .hero has padding-top (regression: pt-14 class did not exist in compiled Tailwind)', () => {
+  const hero = INDEX.match(/\.hero\{([^}]+)\}/);
+  assert.ok(hero, '.hero class not found');
+  assert.ok(/padding-top:\s*[0-9.]+rem/.test(hero[1]),
+    '.hero must set padding-top explicitly (do not rely on Tailwind utility classes)');
+});
+
+test('css: heading-binding rule — .stats-section and .prose-article gap ≥ 2rem', () => {
+  // Headings inside these containers need visibly more space ABOVE than BELOW
+  // so they bind with the following content. If this rule disappears, section
+  // headings look orphaned.
+  const stats = INDEX.match(/\.stats-section\s*>\s*div\s*\+\s*div\{margin-top:\s*([0-9.]+)rem/);
+  assert.ok(stats, '.stats-section sibling gap rule missing');
+  assert.ok(parseFloat(stats[1]) >= 2, `stats-section gap is ${stats[1]}rem, should be ≥ 2rem`);
+  const article = INDEX.match(/\.prose-article\s*>\s*section\s*\+\s*section\{margin-top:\s*([0-9.]+)rem/);
+  assert.ok(article, '.prose-article sibling gap rule missing');
+  assert.ok(parseFloat(article[1]) >= 2, `prose-article gap is ${article[1]}rem, should be ≥ 2rem`);
+});
+
+test('design: GPS bar has generous top margin (regression: was mt-7 = cramped)', () => {
+  const gpsBar = INDEX.match(/id="gpsBar"\s+class="gps-bar\s+mt-(\d+)/);
+  assert.ok(gpsBar, 'gpsBar not found or top margin removed');
+  assert.ok(parseInt(gpsBar[1], 10) >= 10,
+    `gpsBar uses mt-${gpsBar[1]} — should be mt-10 or larger for breathing room`);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Design system — zone button classes
+// ─────────────────────────────────────────────────────────────────────────────
+
+['zone-btn', 'zone-btn-primary', 'zone-btn-soft', 'zone-btn-ghost',
+ 'net-row', 'net-chip', 'nav-pill', 'card', 'faq']
+  .forEach(cls => {
+    test(`css: .${cls} (design system) is defined`, () => {
+      assert.ok(classDefined(cls), `.${cls} used but not defined`);
+    });
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Accessibility / fundamentals
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('a11y: <html lang="da"> set for Danish content', () => {
+  assert.ok(/<html\s+lang="da"/.test(INDEX), '<html> missing lang="da"');
+});
+
+test('a11y: each <main data-page> contains at most one <h1>', () => {
+  // Multiple H1s in source are OK because only one <main> is active at a time
+  // (SPA pattern). But each page block should still have ≤1 H1.
+  const pages = [...INDEX.matchAll(/<main\s+data-page="[^"]+"[^>]*>([\s\S]*?)<\/main>/g)];
+  assert.ok(pages.length > 0, 'no <main data-page> blocks found');
+  pages.forEach((m, i) => {
+    const h1s = m[1].match(/<h1[^>]*>/g) || [];
+    assert.ok(h1s.length <= 1, `page #${i} has ${h1s.length} <h1> tags (max 1)`);
+  });
+});
+
+test('a11y: buttons with onclick also have readable text', () => {
+  // A button with `onclick` but empty/icon-only text fails screen readers
+  const buttons = [...INDEX.matchAll(/<button[^>]*onclick="[^"]+"[^>]*>([\s\S]*?)<\/button>/g)];
+  buttons.forEach((m, i) => {
+    const inner = m[1].replace(/<[^>]*>/g, '').trim();
+    assert.ok(inner.length > 0 || /aria-label="/.test(m[0]),
+      `button #${i} has onclick but no visible text or aria-label`);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Run & report
+// ─────────────────────────────────────────────────────────────────────────────
+
+console.log('\n⚡ Static integrity tests\n' + '─'.repeat(50));
+for (const r of results) {
+  console.log(`${r.ok ? '✅' : '❌'} ${r.name}${r.ok ? '' : '\n   └─ ' + r.msg}`);
+}
+console.log('─'.repeat(50));
+console.log(`\n${_passed} passed, ${_failed} failed\n`);
+process.exit(_failed > 0 ? 1 : 0);

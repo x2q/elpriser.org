@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "test": "node test.js",
+    "test:static": "node test-static.js",
+    "test:pre-commit": "node test-static.js",
     "deploy": "npx wrangler pages deploy ."
   }
 }

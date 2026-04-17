@@ -309,7 +309,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         Aktuelle spotpriser for Danmark &mdash; time for time, opdateret hver dag
       </p>
       <!-- GPS bar -->
-      <div id="gpsBar" class="gps-bar mt-7 inline-flex items-center gap-2.5 rounded-full px-5 py-2.5 text-sm text-white/90">
+      <div id="gpsBar" class="gps-bar mt-10 inline-flex items-center gap-2.5 rounded-full px-5 py-2.5 text-sm text-white/90">
         <svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
         <span id="gpsText">Find dit netselskab automatisk</span>
         <button id="gpsBtn" onclick="detectLocation()" class="ml-1 px-3.5 py-1 bg-accent-500 hover:bg-accent-600 text-white text-xs font-semibold rounded-full transition shrink-0">Find mig</button>
@@ -872,7 +872,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     </a>
   </div>
-  <div class="space-y-6 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+  <div class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
     <section>
       <h3 class="font-bold text-gray-900 dark:text-white mb-2">Hvad er elpriser.org?</h3>
       <p>Elpriser.org viser aktuelle elpriser (spotpriser) for Danmark, opdateret dagligt med data fra <a href="https://www.energidataservice.dk" target="_blank" class="text-brand-500 underline">Energi Data Service</a> (Energinet). Du kan se den reelle pris du betaler per kWh, inkl. nettariffer, systemtarif, transmissionstarif, elafgift og moms.</p>
@@ -1418,8 +1418,6 @@ function route(){
   // Helper: send page_view with clean path for GA4
   const pv=(title,path)=>gtag('event','page_view',{page_title:title,page_location:location.origin+(path||location.pathname)});
   if(!h){
-    const saved=localStorage.getItem('lastHash');
-    if(saved){location.hash=saved;return;}
     document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpriser i dag — elpriser.org';pv('Start','/');return;
   }
   if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Tariffer — elpriser.org';pv('Tariffer','/tariffer');loadTariffPage();return;}
@@ -1437,7 +1435,6 @@ function route(){
   const net=slugOrGln?netBySlug(area,slugOrGln):null;
   S.gln=net?net.gln:(slugOrGln||null);
   S.netName=net?net.name:(p[3]?decodeURIComponent(p[3]):'');
-  localStorage.setItem('lastHash',location.hash);
   document.querySelector('[data-page="prices"]').classList.add('active');
   const pTitle=S.area+(S.netName?' '+S.netName:'')+' — '+mode;
   document.title=pTitle+' — elpriser.org';
