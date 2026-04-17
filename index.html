@@ -151,9 +151,29 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   document.documentElement.classList.toggle('dark', e.matches);
 });
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
 <style>
+  :root{
+    --brand:#1b57f5; --brand-dark:#1543e1; --brand-deep:#0e2a8f;
+    --ink:#0b1220; --ink-soft:#1e293b;
+    --surface:#ffffff; --surface-muted:#f8fafc;
+    --ring:0 1px 2px rgba(15,23,42,.04), 0 8px 24px -8px rgba(15,23,42,.08);
+    --ring-hover:0 2px 4px rgba(15,23,42,.06), 0 16px 40px -12px rgba(15,23,42,.14);
+  }
+  .dark{
+    --ink:#f1f5f9; --ink-soft:#cbd5e1;
+    --surface:#0f172a; --surface-muted:#0b1220;
+    --ring:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -8px rgba(0,0,0,.5);
+    --ring-hover:0 2px 4px rgba(0,0,0,.4), 0 16px 40px -12px rgba(0,0,0,.7);
+  }
+  html,body{font-family:'Inter',system-ui,sans-serif;font-feature-settings:'cv02','cv03','cv04','cv11','ss01';-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
   @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes float-slow{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,-14px) scale(1.06)}}
+  @keyframes float-slower{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-18px,16px) scale(1.08)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
   .spinner{animation:spin .7s linear infinite}
   .tabular{font-variant-numeric:tabular-nums}
   [data-page]{display:none}[data-page].active{display:block}
@@ -162,23 +182,110 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .tab-btn.active{background:#1b57f5;color:#fff}
   .tab-btn:hover{opacity:.8}
   .ico{width:1.25rem;height:1.25rem;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ═══ Hero — layered mesh gradient with floating orbs ═══ */
+  .hero{
+    position:relative; overflow:hidden; isolation:isolate;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(89,160,255,.45), transparent 60%),
+      radial-gradient(900px 500px at 110% 20%, rgba(16,185,129,.28), transparent 60%),
+      radial-gradient(800px 400px at 50% 120%, rgba(27,87,245,.4), transparent 60%),
+      linear-gradient(180deg, #0e2a8f 0%, #1b57f5 55%, #1543e1 100%);
+  }
+  .dark .hero{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(89,160,255,.25), transparent 60%),
+      radial-gradient(900px 500px at 110% 20%, rgba(16,185,129,.15), transparent 60%),
+      radial-gradient(800px 400px at 50% 120%, rgba(27,87,245,.3), transparent 60%),
+      linear-gradient(180deg, #030712 0%, #0b1746 55%, #0e2a8f 100%);
+  }
+  .hero::before{
+    content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background-image:
+      radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size:22px 22px;
+    mask-image:radial-gradient(ellipse 80% 60% at 50% 40%, #000 40%, transparent 100%);
+  }
+  .hero-orb{position:absolute; border-radius:9999px; filter:blur(60px); opacity:.55; z-index:-1; pointer-events:none}
+  .hero-orb-1{width:320px;height:320px;left:-80px;top:-60px;background:#59a0ff;animation:float-slow 14s ease-in-out infinite}
+  .hero-orb-2{width:280px;height:280px;right:-60px;top:30px;background:#10b981;opacity:.32;animation:float-slower 18s ease-in-out infinite}
+
+  .hero h1{letter-spacing:-0.035em;text-shadow:0 2px 30px rgba(0,0,0,.18)}
+  .hero-sub{color:rgba(236,244,255,.82);letter-spacing:-0.005em}
+  .gps-bar{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 8px 28px -12px rgba(0,0,0,.35)}
+
+  /* ═══ Card polish ═══ */
+  .card{background:var(--surface);border:1px solid rgba(15,23,42,.08);border-radius:1.25rem;box-shadow:var(--ring);transition:box-shadow .2s ease, transform .2s ease, border-color .2s ease}
+  .dark .card{background:var(--surface);border-color:rgba(255,255,255,.06)}
+  .card:hover{box-shadow:var(--ring-hover)}
+
+  .section-title{letter-spacing:-0.02em}
+
+  /* ═══ Zone button group — refined segmented feel ═══ */
+  .zone-btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:14rem;max-width:100%;padding:.625rem 1rem;border-radius:9999px;
+    font-size:.875rem;font-weight:600;letter-spacing:-0.01em;
+    transition:all .18s cubic-bezier(.4,0,.2,1);
+    border:1px solid transparent;
+  }
+  .zone-btn-primary{background:linear-gradient(180deg,#1b57f5,#1543e1);color:#fff;box-shadow:0 1px 0 rgba(255,255,255,.15) inset,0 8px 20px -6px rgba(27,87,245,.55)}
+  .zone-btn-primary:hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.15) inset,0 12px 24px -6px rgba(27,87,245,.65)}
+  .zone-btn-soft{background:rgba(27,87,245,.08);color:#1543e1;border-color:rgba(27,87,245,.18)}
+  .zone-btn-soft:hover{background:rgba(27,87,245,.13);border-color:rgba(27,87,245,.32)}
+  .dark .zone-btn-soft{background:rgba(89,160,255,.12);color:#93b8ff;border-color:rgba(89,160,255,.22)}
+  .dark .zone-btn-soft:hover{background:rgba(89,160,255,.18);border-color:rgba(89,160,255,.38)}
+  .zone-btn-ghost{background:transparent;color:#475569;border-color:rgba(15,23,42,.14)}
+  .zone-btn-ghost:hover{background:rgba(15,23,42,.04);border-color:rgba(15,23,42,.22);color:#0f172a}
+  .dark .zone-btn-ghost{color:#94a3b8;border-color:rgba(255,255,255,.12)}
+  .dark .zone-btn-ghost:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.22);color:#e2e8f0}
+
+  /* ═══ Net row polish ═══ */
+  .net-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.5rem .75rem;border-radius:.75rem;transition:background .15s ease}
+  .net-row:hover{background:rgba(27,87,245,.05)}
+  .dark .net-row:hover{background:rgba(89,160,255,.06)}
+  .net-chip{font-size:.75rem;font-weight:600;padding:.25rem .7rem;border-radius:9999px;border:1px solid rgba(27,87,245,.28);color:#1543e1;transition:all .15s ease;letter-spacing:-0.005em}
+  .net-chip:hover{background:rgba(27,87,245,.08);border-color:rgba(27,87,245,.4)}
+  .dark .net-chip{color:#93b8ff;border-color:rgba(89,160,255,.35)}
+  .dark .net-chip:hover{background:rgba(89,160,255,.1);border-color:rgba(89,160,255,.5)}
+
+  /* ═══ Nav pills (bottom links) ═══ */
+  .nav-pill{display:inline-flex;align-items:center;gap:.35rem;padding:.55rem 1.15rem;border-radius:9999px;font-size:.8125rem;font-weight:500;color:#64748b;border:1px solid rgba(15,23,42,.1);background:var(--surface);transition:all .18s ease;box-shadow:var(--ring)}
+  .nav-pill:hover{color:#1543e1;border-color:rgba(27,87,245,.32);transform:translateY(-1px);box-shadow:var(--ring-hover)}
+  .dark .nav-pill{color:#94a3b8;border-color:rgba(255,255,255,.08);background:var(--surface)}
+  .dark .nav-pill:hover{color:#93b8ff;border-color:rgba(89,160,255,.4)}
+
+  /* ═══ FAQ polish ═══ */
+  details.faq{background:var(--surface);border:1px solid rgba(15,23,42,.08);border-radius:1rem;transition:border-color .15s,box-shadow .15s}
+  .dark details.faq{border-color:rgba(255,255,255,.06)}
+  details.faq[open]{border-color:rgba(27,87,245,.35);box-shadow:var(--ring)}
+  .dark details.faq[open]{border-color:rgba(89,160,255,.35)}
+  details.faq summary{padding:.875rem 1.25rem}
+  details.faq summary:hover{background:rgba(27,87,245,.03);border-radius:1rem}
+  .dark details.faq summary:hover{background:rgba(89,160,255,.04)}
 </style>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-950 dark:text-gray-100 min-h-screen font-sans transition-colors">
 
 <!-- ═══════ START PAGE ═══════ -->
 <main data-page="start" class="active">
-  <div class="bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 dark:from-brand-950 dark:via-brand-900 dark:to-gray-950 pt-10 pb-14 px-4">
-    <div class="max-w-4xl mx-auto text-center">
-      <div class="flex items-center justify-center gap-3 mb-3">
-        <span class="text-4xl">⚡</span>
-        <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-white">Elpriser i dag</h1>
+  <div class="hero pt-14 pb-16 px-4">
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="max-w-4xl mx-auto text-center relative">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium text-white/90 mb-5" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
+        <span style="width:.375rem;height:.375rem;border-radius:9999px;background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.9);animation:pulse 2s ease-in-out infinite"></span>
+        Live data fra Energi Data Service
       </div>
-      <p class="text-brand-200 text-sm sm:text-base max-w-md mx-auto">
-        Aktuelle elpriser for Danmark &mdash; opdateret dagligt fra Energi Data Service
+      <div class="flex items-center justify-center gap-3 mb-4">
+        <span class="text-4xl sm:text-5xl">⚡</span>
+        <h1 class="text-4xl sm:text-5xl font-black text-white">Elpriser i dag</h1>
+      </div>
+      <p class="hero-sub text-sm sm:text-base max-w-md mx-auto">
+        Aktuelle spotpriser for Danmark &mdash; time for time, opdateret hver dag
       </p>
       <!-- GPS bar -->
-      <div id="gpsBar" class="mt-6 inline-flex items-center gap-2.5 bg-white/15 backdrop-blur-sm rounded-full px-5 py-2.5 text-sm text-white/90">
+      <div id="gpsBar" class="gps-bar mt-7 inline-flex items-center gap-2.5 rounded-full px-5 py-2.5 text-sm text-white/90">
         <svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
         <span id="gpsText">Find dit netselskab automatisk</span>
         <button id="gpsBtn" onclick="detectLocation()" class="ml-1 px-3.5 py-1 bg-accent-500 hover:bg-accent-600 text-white text-xs font-semibold rounded-full transition shrink-0">Find mig</button>
@@ -188,32 +295,38 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
   <div class="max-w-4xl mx-auto px-4 py-8">
     <div class="grid sm:grid-cols-2 gap-6">
-      <section class="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm">
-        <h2 class="text-lg font-bold text-center mb-4 text-brand-600 dark:text-brand-400">DK1 Vest</h2>
-        <div class="flex flex-col items-center gap-2" id="dk1-zone"></div>
-        <div class="mt-5 space-y-2" id="dk1-nets"></div>
+      <section class="card p-6">
+        <div class="flex items-center justify-center gap-2 mb-5">
+          <span class="text-xs uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">Prisområde</span>
+          <h2 class="section-title text-lg font-bold text-brand-600 dark:text-brand-400">DK1 Vest</h2>
+        </div>
+        <div class="flex flex-col items-center gap-2.5" id="dk1-zone"></div>
+        <div class="mt-5 -mx-2" id="dk1-nets"></div>
       </section>
-      <section class="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm">
-        <h2 class="text-lg font-bold text-center mb-4 text-brand-600 dark:text-brand-400">DK2 Øst</h2>
-        <div class="flex flex-col items-center gap-2" id="dk2-zone"></div>
-        <div class="mt-5 space-y-2" id="dk2-nets"></div>
+      <section class="card p-6">
+        <div class="flex items-center justify-center gap-2 mb-5">
+          <span class="text-xs uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">Prisområde</span>
+          <h2 class="section-title text-lg font-bold text-brand-600 dark:text-brand-400">DK2 Øst</h2>
+        </div>
+        <div class="flex flex-col items-center gap-2.5" id="dk2-zone"></div>
+        <div class="mt-5 -mx-2" id="dk2-nets"></div>
       </section>
     </div>
-    <div class="flex flex-wrap justify-center gap-3 mt-8">
-      <a href="/dk1" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">DK1 Vest</a>
-      <a href="/dk2" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">DK2 Øst</a>
-      <a href="/prognose" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Prognose</a>
-      <a href="/tariffer" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Tariffer</a>
-      <a href="/automation" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Automation</a>
-      <a href="#shelly-tariff" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Shelly Live Tariff</a>
-      <a href="https://www.danskenergi.dk/vejledning/nettilslutning/find-dit-netselskab" target="_blank" rel="noopener" class="px-5 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Find dit netselskab &rarr;</a>
+    <div class="flex flex-wrap justify-center gap-2.5 mt-10">
+      <a href="/dk1" class="nav-pill">DK1 Vest</a>
+      <a href="/dk2" class="nav-pill">DK2 Øst</a>
+      <a href="/prognose" class="nav-pill">Prognose</a>
+      <a href="/tariffer" class="nav-pill">Tariffer</a>
+      <a href="/automation" class="nav-pill">Automation</a>
+      <a href="#shelly-tariff" class="nav-pill">Shelly Live Tariff</a>
+      <a href="https://www.danskenergi.dk/vejledning/nettilslutning/find-dit-netselskab" target="_blank" rel="noopener" class="nav-pill">Find dit netselskab &rarr;</a>
     </div>
 
     <!-- FAQ — static crawlable content for SEO -->
     <section class="mt-10 max-w-2xl mx-auto">
       <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Ofte stillede spørgsmål om elpriser</h2>
       <div class="space-y-2">
-        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+        <details class="group faq">
           <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
             Hvad er elprisen i dag?
             <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -222,7 +335,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             <p>Elprisen i Danmark skifter time for time og fastsættes dagen i forvejen på den nordiske elbørs Nord Pool. Prisen kaldes <strong>spotprisen</strong> og offentliggøres dagligt omkring kl. 13 for det kommende døgn. Her på elpriser.org kan du se den aktuelle elpris live for både DK1 (Vestdanmark) og DK2 (Østdanmark), opdateret med data fra Energi Data Service.</p>
           </div>
         </details>
-        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+        <details class="group faq">
           <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
             Hvad er forskellen på DK1 og DK2?
             <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -231,7 +344,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             <p>Danmark er delt i to prisområder: <strong>DK1</strong> dækker Vestdanmark (Jylland og Fyn) og <strong>DK2</strong> dækker Østdanmark (Sjælland, Lolland-Falster og Bornholm). Priserne kan variere mellem de to områder, da de har forskellige forbindelser til nabolande og forskellige produktionsforhold med vindmøller og solceller.</p>
           </div>
         </details>
-        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+        <details class="group faq">
           <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
             Hvornår er strømmen billigst?
             <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -240,7 +353,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             <p>Strømmen er typisk billigst om natten mellem kl. 00 og 06, og dyrest i spidstimerne kl. 17-21 hvor mange husholdninger bruger mest energi. Men den faktiske pris afhænger af vejr, vind og forbrug, så det kan variere fra dag til dag. Med elpriser.org kan du se præcis hvilke timer der er billigst i dag og planlægge dit forbrug — f.eks. opladning af elbil, varmepumpe eller vaskemaskine.</p>
           </div>
         </details>
-        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+        <details class="group faq">
           <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
             Hvad indgår i den samlede elpris?
             <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -249,7 +362,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             <p>Den samlede elpris består af flere dele: <strong>spotprisen</strong> (den rene markedspris fra Nord Pool), <strong>nettariffer</strong> (betaling til dit lokale netselskab for transport af strøm), <strong>systemtarif og transmissionstarif</strong> (til Energinet for det overordnede elnet), <strong>elafgift</strong> (statslig afgift) og <strong>moms</strong> (25%). På elpriser.org kan du se prisen med alle dele inkluderet, så du kender den reelle pris du betaler per kWh.</p>
           </div>
         </details>
-        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+        <details class="group faq">
           <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
             Hvad er den aktuelle spotpris på el lige nu?
             <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -258,7 +371,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             <p>Spotprisen på el opdateres time for time og varierer mellem DK1 (Vest) og DK2 (Øst). Prisen offentliggøres dagen før af Nord Pool. Tjek den aktuelle spotpris live på <a href="/dk1" class="text-brand-500 underline">DK1 Vest</a> eller <a href="/dk2" class="text-brand-500 underline">DK2 Øst</a>. Du kan også se prisen inkl. nettariffer, elafgift og moms — den reelle pris du betaler per kWh.</p>
           </div>
         </details>
-        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+        <details class="group faq">
           <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
             Hvad er nettariffen hos Trefor, RAH, N1 og Radius?
             <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -267,7 +380,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             <p>Nettariffen varierer efter dit netselskab og tidspunkt på dagen (lav-, mellem- og spidslast). De største netselskaber i Danmark er <strong>N1</strong> og <strong>Trefor</strong> (DK1/Vest) samt <strong>Radius</strong> og <strong>Cerius</strong> (DK2/Øst). Mindre selskaber som <strong>RAH Net</strong>, <strong>Konstant</strong>, <strong>Nord Energi</strong> og <strong>Vores Elnet</strong> har egne tariffer. Se og sammenlign alle tariffer på <a href="/tariffer" class="text-brand-500 underline">nettarif-siden</a>, eller vælg dit netselskab på prissiden for at se din reelle elpris inkl. nettarif.</p>
           </div>
         </details>
-        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+        <details class="group faq">
           <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
             Kan jeg se elpriser live og time for time?
             <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -1226,10 +1339,10 @@ const DAY=['sø','ma','ti','on','to','fr','lø'];
 const MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 const MON_FULL=['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
 const ZONE_BTNS=[
-  {mode:'spot_inkl',label:'Elspot inkl moms',cls:'bg-brand-600 hover:bg-brand-700 text-white'},
-  {mode:'spot_ex',label:'Elspot ex moms',cls:'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200'},
-  {mode:'inkl_alt',label:'Inkl alt',cls:'bg-accent-500 hover:bg-accent-600 text-white'},
-  {mode:'inkl_alt_minus',label:'Inkl alt minus afgift',cls:'border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'},
+  {mode:'inkl_alt',label:'Inkl alt',cls:'zone-btn-primary'},
+  {mode:'spot_inkl',label:'Elspot inkl moms',cls:'zone-btn-soft'},
+  {mode:'spot_ex',label:'Elspot ex moms',cls:'zone-btn-ghost'},
+  {mode:'inkl_alt_minus',label:'Inkl alt minus afgift',cls:'zone-btn-ghost'},
 ];
 const isDark=()=>document.documentElement.classList.contains('dark');
 
@@ -1313,13 +1426,15 @@ window.addEventListener('hashchange',route);
 function buildStart(){
   ['DK1','DK2'].forEach(area=>{
     document.getElementById(area.toLowerCase()+'-zone').innerHTML=ZONE_BTNS.map(b=>
-      `<a href="#${area}/${b.mode}" class="w-56 text-center py-2.5 rounded-full text-sm font-medium transition ${b.cls}">${b.label}</a>`
+      `<a href="#${area}/${b.mode}" class="zone-btn ${b.cls}">${b.label}</a>`
     ).join('');
     document.getElementById(area.toLowerCase()+'-nets').innerHTML=NETS[area].map(n=>
-      `<div class="flex items-center justify-center gap-2">
-        <span class="text-sm font-semibold w-24 text-right text-gray-600 dark:text-gray-300">${n.name}</span>
-        <a href="#${area}/net_inkl_alt/${n.slug}" class="text-xs px-3 py-1 rounded-full border border-brand-400/40 text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition">Inkl alt</a>
-        <a href="#${area}/net_inkl_tarif/${n.slug}" class="text-xs px-3 py-1 rounded-full border border-brand-400/40 text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition">Inkl tarif</a>
+      `<div class="net-row">
+        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">${n.name}</span>
+        <div class="flex items-center gap-1.5">
+          <a href="#${area}/net_inkl_alt/${n.slug}" class="net-chip">Inkl alt</a>
+          <a href="#${area}/net_inkl_tarif/${n.slug}" class="net-chip">Inkl tarif</a>
+        </div>
       </div>`
     ).join('');
   });
