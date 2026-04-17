@@ -46,6 +46,96 @@
   }
 }
 </script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "elpriser.org",
+  "url": "https://elpriser.org",
+  "inLanguage": "da",
+  "description": "Aktuelle elpriser og spotpriser for Danmark - DK1 og DK2 time for time."
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Hvad er elprisen i dag?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Elprisen i Danmark skifter time for time og fastsættes dagen i forvejen på den nordiske elbørs Nord Pool. Prisen kaldes spotprisen og offentliggøres dagligt omkring kl. 13 for det kommende døgn. På elpriser.org kan du se den aktuelle elpris live for både DK1 (Vestdanmark) og DK2 (Østdanmark), opdateret med data fra Energi Data Service."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad er forskellen på DK1 og DK2?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Danmark er delt i to prisområder: DK1 dækker Vestdanmark (Jylland og Fyn) og DK2 dækker Østdanmark (Sjælland, Lolland-Falster og Bornholm). Priserne kan variere mellem de to områder, da de har forskellige forbindelser til nabolande og forskellige produktionsforhold med vindmøller og solceller."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvornår er strømmen billigst?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Strømmen er typisk billigst om natten mellem kl. 00 og 06, og dyrest i spidstimerne kl. 17-21 hvor mange husholdninger bruger mest energi. Den faktiske pris afhænger af vejr, vind og forbrug, så det kan variere fra dag til dag. Med elpriser.org kan du se præcis hvilke timer der er billigst og planlægge dit forbrug."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad indgår i den samlede elpris?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Den samlede elpris består af: spotprisen (markedsprisen fra Nord Pool), nettariffer (betaling til dit lokale netselskab), systemtarif og transmissionstarif (til Energinet), elafgift (statslig afgift) og moms (25%). På elpriser.org kan du se prisen med alle dele inkluderet."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad er den aktuelle spotpris på el lige nu?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Spotprisen på el opdateres time for time og varierer mellem DK1 (Vest) og DK2 (Øst). Prisen offentliggøres dagen før af Nord Pool. Tjek den aktuelle spotpris live på elpriser.org for DK1 Vest eller DK2 Øst. Du kan også se prisen inkl. nettariffer, elafgift og moms — den reelle pris du betaler per kWh."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad er nettariffen hos Trefor, RAH, N1 og Radius?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nettariffen varierer efter dit netselskab og tidspunkt på dagen (lav-, mellem- og spidslast). De største netselskaber i Danmark er N1 og Trefor (DK1/Vest) samt Radius og Cerius (DK2/Øst). Mindre selskaber som RAH Net, Konstant, Nord Energi og Vores Elnet har egne tariffer. Se og sammenlign alle tariffer på elpriser.org."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Kan jeg se elpriser live og time for time?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja. Elpriser.org viser elpriser live, opdateret time for time med data fra Energi Data Service. Du kan se priserne for hele dagens 24 timer som tabel eller graf, sammenligne med morgendagens priser (tilgængelige efter kl. 13), og se historiske priser uge for uge."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad er den dyreste og billigste elpris nogensinde i Danmark?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Den dyreste elpris i Danmark var 16,69 kr/kWh (spotpris ex. moms) i DK2 den 5. september 2022 kl. 19 under energikrisen. Den billigste var −2,76 kr/kWh i DK1 den 2. juli 2023 kl. 14. Negative elpriser opstår ved høj vindproduktion og lavt forbrug, hvor producenter betaler forbrugere for at aftage strøm."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad er det billigste netselskab i Danmark?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nettariffen varierer mellem netselskaber med op til 15-25 øre/kWh forskel, svarende til ca. 500-1.000 kr/år for en typisk husstand. I DK1 (Vest) har RAH Net og Trefor typisk de laveste spidstariffer (33-37 øre), mens N1 ligger højere (46 øre). I DK2 (Øst) er Cerius billigst (47 øre spids), mens Radius er dyrest (65 øre). Du kan ikke selv vælge netselskab, men du kan spare ved at flytte forbrug til lavsats-timerne."
+      }
+    }
+  ]
+}
+</script>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3WE5CL1ZTV"></script>
 <script>
@@ -167,6 +257,138 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             <p>Den samlede elpris består af flere dele: <strong>spotprisen</strong> (den rene markedspris fra Nord Pool), <strong>nettariffer</strong> (betaling til dit lokale netselskab for transport af strøm), <strong>systemtarif og transmissionstarif</strong> (til Energinet for det overordnede elnet), <strong>elafgift</strong> (statslig afgift) og <strong>moms</strong> (25%). På elpriser.org kan du se prisen med alle dele inkluderet, så du kender den reelle pris du betaler per kWh.</p>
           </div>
         </details>
+        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+          <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
+            Hvad er den aktuelle spotpris på el lige nu?
+            <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </summary>
+          <div class="px-5 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p>Spotprisen på el opdateres time for time og varierer mellem DK1 (Vest) og DK2 (Øst). Prisen offentliggøres dagen før af Nord Pool. Tjek den aktuelle spotpris live på <a href="/dk1" class="text-brand-500 underline">DK1 Vest</a> eller <a href="/dk2" class="text-brand-500 underline">DK2 Øst</a>. Du kan også se prisen inkl. nettariffer, elafgift og moms — den reelle pris du betaler per kWh.</p>
+          </div>
+        </details>
+        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+          <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
+            Hvad er nettariffen hos Trefor, RAH, N1 og Radius?
+            <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </summary>
+          <div class="px-5 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p>Nettariffen varierer efter dit netselskab og tidspunkt på dagen (lav-, mellem- og spidslast). De største netselskaber i Danmark er <strong>N1</strong> og <strong>Trefor</strong> (DK1/Vest) samt <strong>Radius</strong> og <strong>Cerius</strong> (DK2/Øst). Mindre selskaber som <strong>RAH Net</strong>, <strong>Konstant</strong>, <strong>Nord Energi</strong> og <strong>Vores Elnet</strong> har egne tariffer. Se og sammenlign alle tariffer på <a href="/tariffer" class="text-brand-500 underline">nettarif-siden</a>, eller vælg dit netselskab på prissiden for at se din reelle elpris inkl. nettarif.</p>
+          </div>
+        </details>
+        <details class="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+          <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
+            Kan jeg se elpriser live og time for time?
+            <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </summary>
+          <div class="px-5 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p>Ja. Elpriser.org viser elpriser live, opdateret time for time med data fra Energi Data Service. Du kan se priserne for hele dagens 24 timer som tabel eller graf, sammenligne med morgendagens priser (tilgængelige efter kl. 13), og se historiske priser uge for uge. Vælg dit prisområde — <a href="/dk1" class="text-brand-500 underline">DK1 Vest</a> eller <a href="/dk2" class="text-brand-500 underline">DK2 Øst</a> — for at se live elpriser.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- Statistics — static crawlable content for SEO + AI -->
+    <section class="mt-10 max-w-2xl mx-auto">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Elpriser i Danmark — nøgletal og statistik</h2>
+      <div class="text-sm leading-relaxed text-gray-600 dark:text-gray-400 space-y-5">
+
+        <div>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Hvad koster el i Danmark?</h3>
+          <p>Den gennemsnitlige elpris i Danmark ligger typisk mellem <strong class="text-gray-800 dark:text-gray-200">1,50 og 4,00 kr/kWh</strong> inkl. alle afgifter og moms, afhængig af sæson, vejr og netselskab. Spotprisen (ex. afgifter) svinger fra under 0 kr til over 10 kr/kWh i ekstreme timer. I 2024 lå den gennemsnitlige spotpris på ca. <strong class="text-gray-800 dark:text-gray-200">0,55 kr/kWh</strong> (ex. moms) — markant lavere end rekordåret 2022.</p>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Prisrekorder — dyreste og billigste elpriser</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-red-50 dark:bg-red-950/30 rounded-xl p-4 border border-red-200 dark:border-red-900/50">
+              <p class="text-xs text-red-500 dark:text-red-400 font-medium mb-1">Dyreste time nogensinde</p>
+              <p class="text-xl font-black text-red-700 dark:text-red-300">16,69 kr/kWh</p>
+              <p class="text-xs text-red-400 dark:text-red-500 mt-1">DK2 — 5. sep 2022, kl. 19</p>
+            </div>
+            <div class="bg-green-50 dark:bg-green-950/30 rounded-xl p-4 border border-green-200 dark:border-green-900/50">
+              <p class="text-xs text-green-500 dark:text-green-400 font-medium mb-1">Billigste time nogensinde</p>
+              <p class="text-xl font-black text-green-700 dark:text-green-300">−2,76 kr/kWh</p>
+              <p class="text-xs text-green-400 dark:text-green-500 mt-1">DK1 — 2. jul 2023, kl. 14</p>
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">Spotpris ex. moms og afgifter. Negative elpriser opstår typisk ved høj vindproduktion og lavt forbrug — producenter betaler forbrugere for at aftage strøm.</p>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Prisfordeling — hvad betaler du egentlig for?</h3>
+          <p>Ved en typisk elpris på <strong class="text-gray-800 dark:text-gray-200">2,50 kr/kWh</strong> fordeler omkostningen sig omtrent sådan:</p>
+          <div class="mt-3 space-y-2">
+            <div>
+              <div class="flex justify-between text-xs mb-0.5"><span>Spotpris (Nord Pool)</span><span class="text-gray-800 dark:text-gray-200 font-medium">~0,65 kr · 26%</span></div>
+              <div class="h-2 rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-2 rounded-full bg-brand-500" style="width:26%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-0.5"><span>Nettarif (netselskab)</span><span class="text-gray-800 dark:text-gray-200 font-medium">~0,45 kr · 18%</span></div>
+              <div class="h-2 rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-2 rounded-full bg-accent-500" style="width:18%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-0.5"><span>System- og transmissionstarif (Energinet)</span><span class="text-gray-800 dark:text-gray-200 font-medium">~0,14 kr · 6%</span></div>
+              <div class="h-2 rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-2 rounded-full bg-yellow-500" style="width:6%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-0.5"><span>Elafgift (staten)</span><span class="text-gray-800 dark:text-gray-200 font-medium">~0,76 kr · 30%</span></div>
+              <div class="h-2 rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-2 rounded-full bg-orange-500" style="width:30%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-0.5"><span>Moms (25%)</span><span class="text-gray-800 dark:text-gray-200 font-medium">~0,50 kr · 20%</span></div>
+              <div class="h-2 rounded-full bg-gray-200 dark:bg-gray-800"><div class="h-2 rounded-full bg-red-500" style="width:20%"></div></div>
+            </div>
+          </div>
+          <p class="mt-2">Over halvdelen af din elpris er <strong class="text-gray-800 dark:text-gray-200">afgifter, tariffer og moms</strong> — kun ca. en fjerdedel er den faktiske spotpris fra elbørsen.</p>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Billigste og dyreste netselskab i Danmark</h3>
+          <p>Nettariffen varierer betydeligt mellem netselskaber. Forskellen på det billigste og dyreste netselskab kan være op til <strong class="text-gray-800 dark:text-gray-200">15-25 øre/kWh</strong>, svarende til ca. <strong class="text-gray-800 dark:text-gray-200">500-1.000 kr/år</strong> for en typisk husstand (4.000 kWh). De største netselskaber:</p>
+          <div class="mt-2 overflow-x-auto -mx-2 sm:mx-0">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="border-b border-gray-200 dark:border-gray-700 text-left">
+                  <th class="py-1.5 px-2 font-medium text-gray-500 dark:text-gray-400">Netselskab</th>
+                  <th class="py-1.5 px-2 font-medium text-gray-500 dark:text-gray-400">Område</th>
+                  <th class="py-1.5 px-2 font-medium text-gray-500 dark:text-gray-400 text-right">Spidstarif</th>
+                  <th class="py-1.5 px-2 font-medium text-gray-500 dark:text-gray-400 text-right">Lavlast</th>
+                </tr>
+              </thead>
+              <tbody class="text-gray-700 dark:text-gray-300">
+                <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5 px-2 font-medium">N1</td><td class="py-1.5 px-2">DK1</td><td class="py-1.5 px-2 text-right">~46 øre</td><td class="py-1.5 px-2 text-right">~16 øre</td></tr>
+                <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5 px-2 font-medium">Trefor</td><td class="py-1.5 px-2">DK1</td><td class="py-1.5 px-2 text-right">~37 øre</td><td class="py-1.5 px-2 text-right">~13 øre</td></tr>
+                <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5 px-2 font-medium">Radius</td><td class="py-1.5 px-2">DK2</td><td class="py-1.5 px-2 text-right">~65 øre</td><td class="py-1.5 px-2 text-right">~16 øre</td></tr>
+                <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5 px-2 font-medium">Cerius</td><td class="py-1.5 px-2">DK2</td><td class="py-1.5 px-2 text-right">~47 øre</td><td class="py-1.5 px-2 text-right">~13 øre</td></tr>
+                <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5 px-2 font-medium">RAH Net</td><td class="py-1.5 px-2">DK1</td><td class="py-1.5 px-2 text-right">~33 øre</td><td class="py-1.5 px-2 text-right">~11 øre</td></tr>
+                <tr><td class="py-1.5 px-2 font-medium">Konstant</td><td class="py-1.5 px-2">DK1</td><td class="py-1.5 px-2 text-right">~37 øre</td><td class="py-1.5 px-2 text-right">~14 øre</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">Nettarif C (forbrug) ex. moms. Tariffer afhænger af sæson og tidspunkt. Se aktuelle tariffer på <a href="/tariffer" class="text-brand-500 underline">tarifsiden</a>.</p>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Hvornår er elpriser billigst og dyrest?</h3>
+          <p>Elpriser i Danmark følger tydelige mønstre:</p>
+          <ul class="mt-2 space-y-1 ml-4 list-disc">
+            <li><strong class="text-gray-800 dark:text-gray-200">Timer</strong> — billigst kl. 00-06 (nat), dyrest kl. 17-21 (aftenspids). Nettariffen er også højest i spidstimerne.</li>
+            <li><strong class="text-gray-800 dark:text-gray-200">Ugedage</strong> — weekender er typisk 10-20% billigere end hverdage pga. lavere erhvervsforbrug.</li>
+            <li><strong class="text-gray-800 dark:text-gray-200">Sæson</strong> — vinteren (dec-mar) har de højeste elpriser pga. varme og belysning. Sommeren har lavest priser, især i blæsende perioder med høj vindproduktion.</li>
+            <li><strong class="text-gray-800 dark:text-gray-200">Vind</strong> — Danmark har Europas højeste vindandel (~55% af elproduktionen). Blæsende dage giver markant lavere elpriser — ofte 50-80% under gennemsnittet.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-2">Spar penge på elpriser — tips</h3>
+          <ul class="space-y-1 ml-4 list-disc">
+            <li>Flyt forbrug til <strong class="text-gray-800 dark:text-gray-200">de billigste timer</strong> — oplad elbil, kør vaskemaskine og opvaskemaskine om natten.</li>
+            <li>Tjek <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> og planlæg dit forbrug efter de kommende dages priser.</li>
+            <li>Brug <a href="/automation" class="text-brand-500 underline">automation</a> til at styre varmepumpe, Shelly og smart home efter de billigste timer.</li>
+            <li>Sammenlign <a href="/tariffer" class="text-brand-500 underline">nettariffer</a> — du kan ikke vælge netselskab, men du kan tilpasse forbruget til lavsats-timerne.</li>
+            <li>Overvej variabel elpris (spotaftale) fremfor fastpris — i de fleste år er spotpris billigst.</li>
+          </ul>
+        </div>
       </div>
     </section>
 
@@ -574,7 +796,15 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
 <footer class="mt-10 py-6 border-t border-gray-200 dark:border-gray-800">
   <div class="max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-600">
-    <p>&copy; Elpriser.org &mdash; Data fra <a href="https://www.energidataservice.dk" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Energi Data Service</a> (Energinet). <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser.org</a></p>
+    <nav class="flex flex-wrap justify-center gap-x-4 gap-y-1 mb-3" aria-label="Sider">
+      <a href="/dk1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK1</a>
+      <a href="/dk2" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK2</a>
+      <a href="/tariffer" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Nettariffer</a>
+      <a href="/prognose" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elprisprognose</a>
+      <a href="/automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Automation</a>
+      <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser</a>
+    </nav>
+    <p>&copy; Elpriser.org &mdash; Data fra <a href="https://www.energidataservice.dk" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Energi Data Service</a> (Energinet).</p>
   </div>
 </footer>
 
