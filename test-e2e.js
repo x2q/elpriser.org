@@ -104,6 +104,23 @@ async function startServer() {
     });
   }
 
+  // Per-netselskab crawlable URLs — /dk1/<slug>, /dk2/<slug> must land on
+  // the prices page with the correct net pre-selected via hash.
+  for (const [url, expectedHash] of [
+    ['/dk1/n1',       '#DK1/net_inkl_alt/n1'],
+    ['/dk1/trefor',   '#DK1/net_inkl_alt/trefor'],
+    ['/dk2/radius',   '#DK2/net_inkl_alt/radius'],
+    ['/dk2/cerius',   '#DK2/net_inkl_alt/cerius'],
+  ]) {
+    await test(`crawlable: ${url} → hash=${expectedHash}`, async () => {
+      await page.goto(BASE + url);
+      await page.waitForSelector('main[data-page="prices"].active');
+      const hash = await page.evaluate(() => location.hash);
+      assert.equal(hash, expectedHash,
+        `${url} should set hash to ${expectedHash}, got ${hash}`);
+    });
+  }
+
   // ── 2. Start page — GPS button, zone anchors, net chips, nav pills, FAQ ────
 
   await page.goto(BASE + '/');

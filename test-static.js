@@ -91,6 +91,83 @@ test('dev-server: SPA_ROUTES covers every production SEO_PAGES entry', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Per-netselskab crawlable URLs — Google can't follow hash fragments, so
+// each net must have its own clean URL (/dk1/<slug>, /dk2/<slug>) baked into
+// functions/[[path]].js + mirrored in server.js + listed in the sitemap.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getNetsFromIndex() {
+  // Pull NETS object from index.html source
+  const m = INDEX.match(/const NETS=\{DK1:\[([\s\S]*?)\],DK2:\[([\s\S]*?)\]\};/);
+  assert.ok(m, 'NETS object not found in index.html');
+  const slugs = s => [...s.matchAll(/slug:'([^']+)'/g)].map(x => x[1]);
+  return { DK1: slugs(m[1]), DK2: slugs(m[2]) };
+}
+
+test('crawlable: functions/[[path]].js NETS list matches index.html', () => {
+  const indexNets = getNetsFromIndex();
+  const routesNets = {
+    DK1: [...ROUTES.matchAll(/slug:\s*'([^']+)'\s*}/g)].map(m => m[1]),
+  };
+  // Both DK1 and DK2 nets appear in that single slug regex; split by section
+  const dk1Block = ROUTES.match(/DK1:\s*\[([\s\S]*?)\],\s*DK2:/);
+  const dk2Block = ROUTES.match(/DK2:\s*\[([\s\S]*?)\],?\s*\}/);
+  assert.ok(dk1Block && dk2Block, 'NETS DK1/DK2 blocks not found in functions/[[path]].js');
+  const fnSlugs = s => [...s.matchAll(/slug:\s*'([^']+)'/g)].map(x => x[1]);
+  const fnNets = { DK1: fnSlugs(dk1Block[1]), DK2: fnSlugs(dk2Block[1]) };
+  ['DK1','DK2'].forEach(area => {
+    indexNets[area].forEach(slug => {
+      assert.ok(fnNets[area].includes(slug),
+        `functions/[[path]].js NETS.${area} missing "${slug}" — /${area.toLowerCase()}/${slug} will 404`);
+    });
+  });
+});
+
+test('crawlable: server.js NET_SLUGS matches index.html', () => {
+  const indexNets = getNetsFromIndex();
+  const match = SERVER.match(/NET_SLUGS\s*=\s*\{([\s\S]*?)\};/);
+  assert.ok(match, 'NET_SLUGS not found in server.js');
+  ['DK1','DK2'].forEach(area => {
+    indexNets[area].forEach(slug => {
+      assert.ok(match[1].includes(`'${slug}'`),
+        `server.js NET_SLUGS.${area} missing "${slug}"`);
+    });
+  });
+});
+
+test('crawlable: sitemap includes per-net URLs with reduced priority', () => {
+  const indexNets = getNetsFromIndex();
+  // NET_URLS is computed from NETS in functions/[[path]].js, so we just
+  // assert the generator logic exists (NET_URLS + ...NET_URLS in SITEMAP_URLS).
+  assert.ok(/NET_URLS\.push\(/.test(ROUTES),
+    'functions/[[path]].js must populate NET_URLS for sitemap');
+  assert.ok(/\.\.\.NET_URLS/.test(ROUTES),
+    'SITEMAP_URLS must spread NET_URLS');
+  assert.ok(/priority>0\.6/.test(ROUTES) || /'0\.6'/.test(ROUTES),
+    'per-net URLs should get <priority>0.6</priority> (less than area/root)');
+  // Sanity: at least one DK1 net + one DK2 net appear in the source
+  assert.ok(indexNets.DK1.length > 0 && indexNets.DK2.length > 0);
+});
+
+test('crawlable: net-URL pattern in functions matches /dk[12]/slug', () => {
+  assert.ok(/\/\^\\\/\(dk\[12\]\)\\\/\(\[a-z0-9-\]\+\)\$\//.test(ROUTES),
+    'functions/[[path]].js must match /dk[12]/<slug> for per-net crawlable URLs');
+});
+
+test('crawlable: renderSPA helper injects title + canonical + hash redirect', () => {
+  // renderSPA must (a) rewrite <title>, <meta description>, canonical,
+  // (b) inject the hash-redirect <script>. Without these, crawlers see the
+  // generic home meta for every net page and search engines dedupe them.
+  const body = ROUTES.match(/async function renderSPA[\s\S]*?^}/m);
+  assert.ok(body, 'renderSPA function not found');
+  ['<title>', 'description', 'canonical', 'og:title', 'og:description',
+   'location.replace'].forEach(needle => {
+    assert.ok(body[0].includes(needle),
+      `renderSPA missing "${needle}" — crawlers will see stale metadata`);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Routing — localStorage redirect regression
 // ─────────────────────────────────────────────────────────────────────────────
 

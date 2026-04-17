@@ -396,6 +396,23 @@ const SPA_ROUTES = {
   '/blog/home-assistant-elpriser': '#blog/home-assistant-elpriser',
 };
 
+// Mirrors NETS in index.html and functions/[[path]].js. Used to map
+// /dk1/<slug> / /dk2/<slug> to their SPA hash for local dev.
+const NET_SLUGS = {
+  DK1: ['n1','trefor','konstant','vores-elnet','rah-net','elvaerk','nord-energi','noe-net','elnet-midt','flow-elnet','lnet'],
+  DK2: ['cerius','trefor-ost','radius'],
+};
+
+function hashForNetPath(pathname) {
+  const m = pathname.match(/^\/(dk[12])\/([a-z0-9-]+)$/);
+  if (!m) return null;
+  const area = m[1].toUpperCase();
+  if ((NET_SLUGS[area] || []).includes(m[2])) {
+    return `#${area}/net_inkl_alt/${m[2]}`;
+  }
+  return null;
+}
+
 function serveSPA(res, hash) {
   fs.readFile(path.join(__dir, 'index.html'), 'utf8', (err, html) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
@@ -413,6 +430,10 @@ function serveStatic(req, res) {
 
   // Clean-URL SPA routes — inject hash redirect (same as production functions)
   if (SPA_ROUTES[pathname]) return serveSPA(res, SPA_ROUTES[pathname]);
+
+  // Per-netselskab clean URLs /dk[12]/<slug>
+  const netHash = hashForNetPath(pathname);
+  if (netHash) return serveSPA(res, netHash);
 
   let fp = path.join(__dir, pathname === '/' ? 'index.html' : pathname);
   if (!fp.startsWith(__dir)) { res.writeHead(403); return res.end('Forbidden'); }

@@ -61,17 +61,69 @@ const SEO_PAGES = {
   },
 };
 
-const SITEMAP_URLS = ['/', '/dk1', '/dk2', '/tariffer', '/automation', '/prognose', '/om-elpriser', '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser'];
+// Mirrors NETS in index.html. Used to (a) mint per-net clean URLs
+// /dk1/<slug> and /dk2/<slug> that are crawlable, and (b) include those
+// URLs in the sitemap so Google/Bing find them. Keep in sync with index.html.
+const NETS = {
+  DK1: [
+    { name: 'N1',          slug: 'n1'           },
+    { name: 'Trefor',      slug: 'trefor'       },
+    { name: 'Konstant',    slug: 'konstant'     },
+    { name: 'Vores Elnet', slug: 'vores-elnet'  },
+    { name: 'RAH Net',     slug: 'rah-net'      },
+    { name: 'Elværk',      slug: 'elvaerk'      },
+    { name: 'Nord Energi', slug: 'nord-energi'  },
+    { name: 'NOE Net',     slug: 'noe-net'      },
+    { name: 'Elnet Midt',  slug: 'elnet-midt'   },
+    { name: 'Flow Elnet',  slug: 'flow-elnet'   },
+    { name: 'LNet',        slug: 'lnet'         },
+  ],
+  DK2: [
+    { name: 'Cerius',      slug: 'cerius'       },
+    { name: 'Trefor Øst',  slug: 'trefor-ost'   },
+    { name: 'Radius',      slug: 'radius'       },
+  ],
+};
+const AREA_LABEL = { DK1: 'DK1 Vest', DK2: 'DK2 Øst' };
+const AREA_REGION = { DK1: 'Vestdanmark (Jylland og Fyn)', DK2: 'Østdanmark (Sjælland, Lolland-Falster og Bornholm)' };
+
+function netPageMeta(area, net) {
+  const areaLabel = AREA_LABEL[area];
+  const region = AREA_REGION[area];
+  return {
+    title:       `Elpris ${net.name} (${areaLabel}) i dag - Aktuelle priser inkl. netselskab | elpriser.org`,
+    description: `Se dagens elpriser for netselskab ${net.name} i ${areaLabel}. Komplet pris pr. kWh inkl. spotpris, ${net.name}-nettarif, systemtarif, elafgift og moms — time for time, opdateret dagligt fra Energi Data Service. Gælder ${region}.`,
+    hash:        `#${area}/net_inkl_alt/${net.slug}`,
+  };
+}
+
+const NET_URLS = [];
+for (const area of ['DK1', 'DK2']) {
+  for (const net of NETS[area]) {
+    NET_URLS.push('/' + area.toLowerCase() + '/' + net.slug);
+  }
+}
+
+const SITEMAP_URLS = [
+  '/', '/dk1', '/dk2', '/tariffer', '/automation', '/prognose', '/om-elpriser',
+  '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
+  ...NET_URLS,
+];
 
 function buildSitemap() {
   const today = new Date().toISOString().split('T')[0];
+  const priorityFor = p => {
+    if (p === '/') return '1.0';
+    if (/^\/(dk[12])\/[a-z0-9-]+$/.test(p)) return '0.6'; // per-net long-tail pages
+    return '0.8';
+  };
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${SITEMAP_URLS.map(p => `  <url>
     <loc>https://elpriser.org${p}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
-    <priority>${p === '/' ? '1.0' : '0.8'}</priority>
+    <priority>${priorityFor(p)}</priority>
   </url>`).join('\n')}
 </urlset>`;
 }
@@ -87,6 +139,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Forside](https://elpriser.org/): Overblik over dagens elpriser for DK1 og DK2 med aktuel pris og netselskaber.
 - [Elpriser DK1 Vest](https://elpriser.org/dk1): Time-for-time spotpriser for Vestdanmark (Jylland og Fyn).
 - [Elpriser DK2 Øst](https://elpriser.org/dk2): Time-for-time spotpriser for Østdanmark (Sjælland, Lolland-Falster, Bornholm).
+- Per-netselskab priser: \`/dk1/<slug>\` eller \`/dk2/<slug>\` viser dagens pris inkl. nettarif for det valgte netselskab (fx https://elpriser.org/dk1/n1, https://elpriser.org/dk2/radius).
 - [Nettariffer](https://elpriser.org/tariffer): Sammenligning af nettariffer for alle danske netselskaber.
 - [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser de næste 7 dage baseret på historik og vindprognoser.
 - [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home.
@@ -276,65 +329,80 @@ export async function onRequest(context) {
     });
   }
 
+  // Per-netselskab clean URLs: /dk1/<slug> and /dk2/<slug>
+  // These are indexable entry points — Google can't follow hash fragments
+  // (#DK1/net_inkl_alt/n1 is invisible to crawlers), so each net gets its
+  // own crawlable URL that hydrates to the same SPA view.
+  const netMatch = url.pathname.match(/^\/(dk[12])\/([a-z0-9-]+)$/);
+  if (netMatch) {
+    const area = netMatch[1].toUpperCase();
+    const net  = NETS[area].find(n => n.slug === netMatch[2]);
+    if (net) {
+      return renderSPA(context, url.pathname, netPageMeta(area, net));
+    }
+    // Unknown net under a valid area → 404 not redirect, so we don't serve
+    // a generic index with wrong metadata.
+    return new Response('Not found', { status: 404 });
+  }
+
   // SEO sub-pages — serve index.html with modified metadata for crawlers
   const page = SEO_PAGES[url.pathname];
   if (page) {
-    const pageUrl = `https://elpriser.org${url.pathname}`;
-    const indexUrl = new URL('/', context.request.url);
-    const res = await context.env.ASSETS.fetch(indexUrl);
-    let html = await res.text();
-    // Core SEO tags
-    html = html.replace(
-      /<title>[^<]*<\/title>/,
-      `<title>${page.title}</title>`
-    );
-    html = html.replace(
-      /<meta name="description" content="[^"]*">/,
-      `<meta name="description" content="${page.description}">`
-    );
-    html = html.replace(
-      /<link rel="canonical" href="[^"]*">/,
-      `<link rel="canonical" href="${pageUrl}">`
-    );
-    // Update hreflang for this page
-    html = html.replace(
-      /<link rel="alternate" hreflang="da" href="[^"]*">/,
-      `<link rel="alternate" hreflang="da" href="${pageUrl}">`
-    );
-    // Open Graph tags
-    html = html.replace(
-      /<meta property="og:title" content="[^"]*">/,
-      `<meta property="og:title" content="${page.title}">`
-    );
-    html = html.replace(
-      /<meta property="og:description" content="[^"]*">/,
-      `<meta property="og:description" content="${page.description}">`
-    );
-    html = html.replace(
-      /<meta property="og:url" content="[^"]*">/,
-      `<meta property="og:url" content="${pageUrl}">`
-    );
-    // Twitter tags
-    html = html.replace(
-      /<meta name="twitter:title" content="[^"]*">/,
-      `<meta name="twitter:title" content="${page.title}">`
-    );
-    html = html.replace(
-      /<meta name="twitter:description" content="[^"]*">/,
-      `<meta name="twitter:description" content="${page.description}">`
-    );
-    // Inject script to set hash route for SPA navigation
-    html = html.replace(
-      '</head>',
-      `<script>if(!location.hash)location.replace('/${page.hash}');</script>\n</head>`
-    );
-    return new Response(html, {
-      headers: {
-        ...Object.fromEntries(res.headers.entries()),
-        'Content-Type': 'text/html; charset=utf-8',
-      },
-    });
+    return renderSPA(context, url.pathname, page);
   }
 
   return context.next();
+}
+
+async function renderSPA(context, pathname, meta) {
+  const pageUrl = `https://elpriser.org${pathname}`;
+  const indexUrl = new URL('/', context.request.url);
+  const res = await context.env.ASSETS.fetch(indexUrl);
+  let html = await res.text();
+  html = html.replace(
+    /<title>[^<]*<\/title>/,
+    `<title>${meta.title}</title>`
+  );
+  html = html.replace(
+    /<meta name="description" content="[^"]*">/,
+    `<meta name="description" content="${meta.description}">`
+  );
+  html = html.replace(
+    /<link rel="canonical" href="[^"]*">/,
+    `<link rel="canonical" href="${pageUrl}">`
+  );
+  html = html.replace(
+    /<link rel="alternate" hreflang="da" href="[^"]*">/,
+    `<link rel="alternate" hreflang="da" href="${pageUrl}">`
+  );
+  html = html.replace(
+    /<meta property="og:title" content="[^"]*">/,
+    `<meta property="og:title" content="${meta.title}">`
+  );
+  html = html.replace(
+    /<meta property="og:description" content="[^"]*">/,
+    `<meta property="og:description" content="${meta.description}">`
+  );
+  html = html.replace(
+    /<meta property="og:url" content="[^"]*">/,
+    `<meta property="og:url" content="${pageUrl}">`
+  );
+  html = html.replace(
+    /<meta name="twitter:title" content="[^"]*">/,
+    `<meta name="twitter:title" content="${meta.title}">`
+  );
+  html = html.replace(
+    /<meta name="twitter:description" content="[^"]*">/,
+    `<meta name="twitter:description" content="${meta.description}">`
+  );
+  html = html.replace(
+    '</head>',
+    `<script>if(!location.hash)location.replace('/${meta.hash}');</script>\n</head>`
+  );
+  return new Response(html, {
+    headers: {
+      ...Object.fromEntries(res.headers.entries()),
+      'Content-Type': 'text/html; charset=utf-8',
+    },
+  });
 }
