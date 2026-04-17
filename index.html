@@ -274,6 +274,15 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .mb-7{margin-bottom:1.75rem}
   .gap-4{gap:1rem}
   .py-14{padding-top:3.5rem;padding-bottom:3.5rem}
+  .space-y-5 > :not([hidden]) ~ :not([hidden]){margin-top:1.25rem}
+  .space-y-8 > :not([hidden]) ~ :not([hidden]){margin-top:2rem}
+  .space-y-10 > :not([hidden]) ~ :not([hidden]){margin-top:2.5rem}
+
+  /* Section sub-headings — more space above to bind heading with its content below */
+  .stats-section > div + div{margin-top:2.5rem}
+  .stats-section h3{margin-bottom:.5rem}
+  .prose-article > section + section{margin-top:2.5rem}
+  .prose-article > p + section{margin-top:2rem}
 
   /* Breathing room inside card stacks */
   .zone-stack{display:flex;flex-direction:column;align-items:center;gap:.625rem;padding:.25rem 0 .5rem}
@@ -410,7 +419,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <!-- Statistics — static crawlable content for SEO + AI -->
     <section class="mt-14 max-w-2xl mx-auto">
       <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Elpriser i Danmark — nøgletal og statistik</h2>
-      <div class="text-sm leading-relaxed text-gray-600 dark:text-gray-400 space-y-5">
+      <div class="stats-section text-sm leading-relaxed text-gray-600 dark:text-gray-400">
 
         <div>
           <h3 class="font-bold text-gray-900 dark:text-white mb-2">Hvad koster el i Danmark?</h3>
@@ -925,7 +934,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     </a>
   </div>
-  <article class="space-y-5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+  <article class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
     <p class="text-base text-gray-700 dark:text-gray-300">Mange danskere undrer sig over, hvorfor elprisen svinger så meget fra time til time. I denne guide forklarer vi præcis hvad der bestemmer elprisen, hvordan den er sammensat, og hvordan du kan bruge det til at spare penge.</p>
 
     <section>
@@ -1041,7 +1050,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     </a>
   </div>
-  <article class="space-y-5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+  <article class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
     <p class="text-base text-gray-700 dark:text-gray-300">Shelly er en af de mest populære smart home-enheder i Danmark. Med en Shelly-relæ og elpriser.org's gratis API kan du automatisk tænde og slukke for apparater baseret på den aktuelle elpris — uden cloud-abonnement eller Home Assistant.</p>
 
     <section>
@@ -1149,7 +1158,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     </a>
   </div>
-  <article class="space-y-5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+  <article class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
     <p class="text-base text-gray-700 dark:text-gray-300">Home Assistant er det ultimative værktøj til at styre dit hjem efter elprisen. Med elpriser.org's gratis REST API kan du oprette sensorer, automations og dashboards, der automatisk optimerer dit elforbrug — og spare tusindvis af kroner om året.</p>
 
     <section>
