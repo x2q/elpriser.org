@@ -312,7 +312,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         Aktuelle spotpriser for Danmark &mdash; time for time, opdateret hver dag
       </p>
       <!-- GPS detect — single button -->
-      <button id="gpsBtn" onclick="detectLocation()" class="gps-bar mt-10 inline-flex items-center gap-2.5 rounded-full px-6 py-3 text-sm font-medium text-white">
+      <button id="gpsBtn" onclick="detectLocation()" class="gps-bar mt-10 inline-flex items-center gap-3 rounded-full text-sm font-medium text-white" style="padding:1rem 2rem">
         <svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
         <span id="gpsText">Find dit netselskab automatisk</span>
       </button>
