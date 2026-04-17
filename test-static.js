@@ -146,11 +146,23 @@ test('css: heading-binding rule — .stats-section and .prose-article gap ≥ 2r
   assert.ok(parseFloat(article[1]) >= 2, `prose-article gap is ${article[1]}rem, should be ≥ 2rem`);
 });
 
-test('design: GPS bar has generous top margin (regression: was mt-7 = cramped)', () => {
-  const gpsBar = INDEX.match(/id="gpsBar"\s+class="gps-bar\s+mt-(\d+)/);
-  assert.ok(gpsBar, 'gpsBar not found or top margin removed');
-  assert.ok(parseInt(gpsBar[1], 10) >= 10,
-    `gpsBar uses mt-${gpsBar[1]} — should be mt-10 or larger for breathing room`);
+test('design: GPS button has generous top margin (regression: was mt-7 = cramped)', () => {
+  // GPS bar and "Find mig" were merged into one button (gpsBtn carries gps-bar class)
+  const gpsBtn = INDEX.match(/id="gpsBtn"[^>]*class="gps-bar\s+mt-(\d+)/);
+  assert.ok(gpsBtn, 'gpsBtn not found or gps-bar class/top margin removed');
+  assert.ok(parseInt(gpsBtn[1], 10) >= 10,
+    `gpsBtn uses mt-${gpsBtn[1]} — should be mt-10 or larger for breathing room`);
+});
+
+test('design: GPS button is a single <button> (not a bar + separate button)', () => {
+  // Previously was <div id="gpsBar"> wrapping a small "Find mig" button.
+  // Merged for clarity — one clickable affordance.
+  assert.ok(/<button\s+id="gpsBtn"[^>]*onclick="detectLocation\(\)"/.test(INDEX),
+    'gpsBtn must be a <button> with onclick=detectLocation');
+  assert.ok(!/id="gpsBar"/.test(INDEX),
+    'gpsBar wrapper should be removed — button carries the gps-bar class directly');
+  assert.ok(!/Find mig<\/button>/.test(INDEX),
+    '"Find mig" child button should be removed (merged into the parent)');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
