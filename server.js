@@ -380,11 +380,45 @@ const MIME = {
   '.png': 'image/png',  '.ico': 'image/x-icon', '.svg': 'image/svg+xml',
 };
 
+// Clean-URL → hash mapping. Mirrors functions/[[path]].js so the dev server
+// behaves the same as Cloudflare Pages: visiting /prognose loads the SPA and
+// sets location.hash to #prognose so the correct page activates.
+const SPA_ROUTES = {
+  '/dk1': '#DK1/spot_inkl',
+  '/dk2': '#DK2/spot_inkl',
+  '/tariffer': '#tariffer',
+  '/automation': '#automation',
+  '/om-elpriser': '#om-elpriser',
+  '/prognose': '#prognose',
+  '/shelly-tariff': '#shelly-tariff',
+  '/blog/forsta-din-elpris': '#blog/forsta-din-elpris',
+  '/blog/shelly-elpris-automation': '#blog/shelly-elpris-automation',
+  '/blog/home-assistant-elpriser': '#blog/home-assistant-elpriser',
+};
+
+function serveSPA(res, hash) {
+  fs.readFile(path.join(__dir, 'index.html'), 'utf8', (err, html) => {
+    if (err) { res.writeHead(404); return res.end('Not found'); }
+    const injected = html.replace(
+      '</head>',
+      `<script>if(!location.hash)location.replace('/${hash}');</script>\n</head>`
+    );
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(injected);
+  });
+}
+
 function serveStatic(req, res) {
-  let fp = path.join(__dir, req.url === '/' ? 'index.html' : req.url.split('?')[0]);
+  const pathname = req.url.split('?')[0];
+
+  // Clean-URL SPA routes — inject hash redirect (same as production functions)
+  if (SPA_ROUTES[pathname]) return serveSPA(res, SPA_ROUTES[pathname]);
+
+  let fp = path.join(__dir, pathname === '/' ? 'index.html' : pathname);
   if (!fp.startsWith(__dir)) { res.writeHead(403); return res.end('Forbidden'); }
   fs.readFile(fp, (err, data) => {
     if (err) {
+      // Unknown path — fall back to start page (no hash redirect)
       fs.readFile(path.join(__dir, 'index.html'), (e2, d) => {
         if (e2) { res.writeHead(404); return res.end('Not found'); }
         res.writeHead(200, { 'Content-Type': 'text/html' });

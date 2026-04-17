@@ -15,9 +15,10 @@ const fs     = require('node:fs');
 const path   = require('node:path');
 
 const ROOT = __dirname;
-const INDEX = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-const STYLE = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+const INDEX  = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const STYLE  = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
 const ROUTES = fs.readFileSync(path.join(ROOT, 'functions', '[[path]].js'), 'utf8');
+const SERVER = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
 
 let _passed = 0, _failed = 0;
 const results = [];
@@ -74,6 +75,19 @@ test('seo: sitemap includes all SEO pages', () => {
   assert.ok(urls, 'SITEMAP_URLS not found');
   ['/', '/dk1', '/dk2', '/tariffer', '/automation', '/prognose']
     .forEach(p => assert.ok(urls[1].includes(`'${p}'`), `sitemap missing ${p}`));
+});
+
+test('dev-server: SPA_ROUTES covers every production SEO_PAGES entry', () => {
+  // server.js must mirror functions/[[path]].js so `npm start` behaves like
+  // Cloudflare Pages for clean URLs (e.g. /prognose).
+  const seoPaths = [...ROUTES.matchAll(/'(\/[\w\-\/]+)':\s*{[^}]*hash:/g)].map(m => m[1]);
+  assert.ok(seoPaths.length >= 6, `expected ≥6 SEO paths, got ${seoPaths.length}`);
+  const spaBlock = SERVER.match(/SPA_ROUTES\s*=\s*\{([\s\S]*?)\};/);
+  assert.ok(spaBlock, 'SPA_ROUTES not found in server.js');
+  seoPaths.forEach(p => {
+    assert.ok(spaBlock[1].includes(`'${p}'`),
+      `server.js SPA_ROUTES missing "${p}" — visiting http://localhost:8080${p} will silently fall back to the start page`);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
