@@ -15,48 +15,48 @@ const OG_IMAGE = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="6
 // Pages with unique SEO metadata, served as modified index.html
 const SEO_PAGES = {
   '/dk1': {
-    title: 'Elpriser DK1 Vest i dag - Spotpriser Jylland og Fyn | elpriser.org',
-    description: 'Se dagens elpriser for DK1 (Vestdanmark) time for time. Aktuelle spotpriser for Jylland og Fyn inkl. tariffer, elafgift og moms.',
+    title: 'Elpriser DK1 Vest i dag — Spotpriser Jylland og Fyn',
+    description: 'Se aktuelle elpriser for DK1 (Vestdanmark) time for time. Spotpriser for Jylland og Fyn inkl. nettariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.',
     hash: '#DK1/spot_inkl',
   },
   '/dk2': {
-    title: 'Elpriser DK2 Øst i dag - Spotpriser Sjælland | elpriser.org',
-    description: 'Se dagens elpriser for DK2 (Østdanmark) time for time. Aktuelle spotpriser for Sjælland, Lolland-Falster og Bornholm inkl. tariffer og moms.',
+    title: 'Elpriser DK2 Øst i dag — Spotpriser Sjælland og Øer',
+    description: 'Se aktuelle elpriser for DK2 (Østdanmark) time for time. Spotpriser for Sjælland, Lolland-Falster og Bornholm inkl. nettariffer, elafgift og moms.',
     hash: '#DK2/spot_inkl',
   },
   '/tariffer': {
-    title: 'Nettariffer - Tariffer for alle danske netselskaber | elpriser.org',
-    description: 'Sammenlign nettariffer (Nettarif C) for alle danske netselskaber. Se lav-, mellem- og spidstariffer for N1, Radius, Trefor, Cerius og flere.',
+    title: 'Nettariffer i Danmark — Sammenlign alle netselskaber',
+    description: 'Sammenlign nettariffer (Nettarif C) for alle danske netselskaber — lav-, mellem- og spidstariffer for N1, Radius, Trefor, Cerius, RAH, Konstant m.fl.',
     hash: '#tariffer',
   },
   '/automation': {
-    title: 'Elpris Automation - Styr elforbrug efter spotpriser | elpriser.org',
-    description: 'Automatiser dit elforbrug efter de billigste timer. Klar-til-brug kode til Home Assistant, Shelly og andre smart home systemer.',
+    title: 'Elpris Automation — Home Assistant, Shelly & REST API',
+    description: 'Automatisér elforbrug efter de billigste timer. Gratis REST API og klar-til-brug kode til Home Assistant, Shelly, Tibber-kompatibel tariff og smart home.',
     hash: '#automation',
   },
   '/om-elpriser': {
-    title: 'Om elpriser i Danmark - Hvad koster strøm og hvordan beregnes prisen | elpriser.org',
-    description: 'Forstå din elpris: spotpris, nettarif, systemtarif, elafgift og moms. Lær om prisområder DK1 og DK2, og hvordan du finder dit netselskab i Danmark.',
+    title: 'Om elpriser i Danmark — Spotpris, tariffer og afgifter',
+    description: 'Forstå din elpris: spotpris, nettarif, systemtarif, elafgift og moms. Sådan fungerer prisområderne DK1 og DK2, og sådan finder du dit netselskab.',
     hash: '#om-elpriser',
   },
   '/prognose': {
-    title: 'Elprisprognose - Forventede elpriser de næste 7 dage | elpriser.org',
+    title: 'Elprisprognose — Forventede elpriser næste 7 dage',
     description: 'Se forventede elpriser for DK1 og DK2 de næste 7 dage. Prognose baseret på historiske prismønstre og vindprognoser fra Energi Data Service.',
     hash: '#prognose',
   },
   '/blog/forsta-din-elpris': {
-    title: 'Forstå din elpris: Hvad bestemmer elprisen i Danmark? | elpriser.org',
-    description: 'Komplet guide til elpriser i Danmark. Lær om spotpriser, nettariffer, elafgift, DK1 vs DK2, hvornår strømmen er billigst, og hvordan du sparer penge.',
+    title: 'Forstå din elpris — Guide til spotpris og tariffer',
+    description: 'Komplet guide til elpriser i Danmark: spotpris, nettarif, elafgift, DK1 vs DK2, hvornår strømmen er billigst, negative elpriser og sådan sparer du penge.',
     hash: '#blog/forsta-din-elpris',
   },
   '/blog/shelly-elpris-automation': {
-    title: 'Shelly og elpriser: Automatisk tænd og sluk efter spotprisen | elpriser.org',
-    description: 'Styr din Shelly efter elprisen med elpriser.org gratis API. Guide til Shelly Plus, Pro og Plug — automatiser elbil, varmepumpe og vandvarmer efter billig strøm.',
+    title: 'Shelly & elpriser — Automatisér forbrug efter spotpris',
+    description: 'Styr Shelly Plus, Pro og Plug efter elprisen med gratis API. Script- og tidsbaseret automation af elbil, varmepumpe og vandvarmer efter billig strøm.',
     hash: '#blog/shelly-elpris-automation',
   },
   '/blog/home-assistant-elpriser': {
-    title: 'Home Assistant og elpriser: Komplet guide til smart elforbrug | elpriser.org',
-    description: 'Opsæt Home Assistant med danske elpriser fra elpriser.org. REST sensorer, automations og dashboard til at spare penge på strøm automatisk.',
+    title: 'Home Assistant & elpriser — Smart elforbrug i Danmark',
+    description: 'Opsæt Home Assistant med danske elpriser: REST-sensorer, schedule-automations og dashboards — spar automatisk penge på strøm efter de billigste timer.',
     hash: '#blog/home-assistant-elpriser',
   },
 };
@@ -91,8 +91,8 @@ function netPageMeta(area, net) {
   const areaLabel = AREA_LABEL[area];
   const region = AREA_REGION[area];
   return {
-    title:       `Elpris ${net.name} (${areaLabel}) i dag - Aktuelle priser inkl. netselskab | elpriser.org`,
-    description: `Se dagens elpriser for netselskab ${net.name} i ${areaLabel}. Komplet pris pr. kWh inkl. spotpris, ${net.name}-nettarif, systemtarif, elafgift og moms — time for time, opdateret dagligt fra Energi Data Service. Gælder ${region}.`,
+    title:       `Elpris ${net.name} ${areaLabel} i dag — Spotpris inkl. nettarif`,
+    description: `Se dagens elpriser hos ${net.name} i ${region}. Komplet pris pr. kWh inkl. spotpris, ${net.name}-nettarif, elafgift og moms — time for time, opdateret dagligt fra Energi Data Service.`,
     hash:        `#${area}/net_inkl_alt/${net.slug}`,
   };
 }

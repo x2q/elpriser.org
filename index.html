@@ -3,15 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Elpriser i dag - Aktuelle spotpriser for DK1 og DK2 | elpriser.org</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<title>Elpriser i dag — DK1 og DK2 spotpriser time for time</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <meta name="description" content="Se dagens elpriser time for time i Danmark. Aktuelle spotpriser for DK1 (Vest) og DK2 (Øst) inkl. netselskab-tariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.">
 <link rel="canonical" href="https://elpriser.org/">
 <link rel="alternate" hreflang="da" href="https://elpriser.org/">
 <meta name="robots" content="index, follow">
 <!-- Open Graph -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Elpriser i dag - Aktuelle spotpriser for Danmark">
+<meta property="og:title" content="Elpriser i dag — DK1 og DK2 spotpriser time for time">
 <meta property="og:description" content="Se dagens elpriser time for time. Spotpriser for DK1 og DK2 inkl. tariffer og moms.">
 <meta property="og:url" content="https://elpriser.org/">
 <meta property="og:locale" content="da_DK">
@@ -22,7 +26,7 @@
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://elpriser.org/og-image">
-<meta name="twitter:title" content="Elpriser i dag - Aktuelle spotpriser for Danmark">
+<meta name="twitter:title" content="Elpriser i dag — DK1 og DK2 spotpriser time for time">
 <meta name="twitter:description" content="Se dagens elpriser time for time. Spotpriser for DK1 og DK2 inkl. tariffer og moms.">
 <!-- Structured Data -->
 <script type="application/ld+json">
@@ -324,8 +328,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         <span class="text-4xl sm:text-5xl">⚡</span>
         <h1 class="text-4xl sm:text-5xl font-black text-white">Elpriser i dag</h1>
       </div>
-      <p class="hero-sub text-sm sm:text-base max-w-md mx-auto">
-        Aktuelle spotpriser for Danmark &mdash; time for time, opdateret hver dag
+      <p class="hero-sub text-sm sm:text-base max-w-xl mx-auto">
+        Se dagens elpriser time for time for DK1 (Vestdanmark) og DK2 (Østdanmark). Aktuelle spotpriser inkl. netselskab-tariffer, elafgift og moms &mdash; opdateret dagligt fra Energi Data Service.
       </p>
       <!-- GPS detect — single button -->
       <button id="gpsBtn" onclick="detectLocation()" class="gps-bar mt-10 inline-flex items-center gap-3 rounded-full text-sm font-medium text-white" style="padding:1rem 2rem">
@@ -1431,16 +1435,16 @@ function route(){
   // Helper: send page_view with clean path for GA4
   const pv=(title,path)=>gtag('event','page_view',{page_title:title,page_location:location.origin+(path||location.pathname)});
   if(!h){
-    document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpriser i dag — elpriser.org';pv('Start','/');return;
+    document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpriser i dag — DK1 og DK2 spotpriser time for time';pv('Start','/');return;
   }
-  if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Tariffer — elpriser.org';pv('Tariffer','/tariffer');loadTariffPage();return;}
-  if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Automation — elpriser.org';pv('Automation','/automation');loadAutomationPage();return;}
-  if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — elpriser.org';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}
-  if(h==='om-elpriser'){document.querySelector('[data-page="om-elpriser"]').classList.add('active');document.title='Om elpriser i Danmark — elpriser.org';pv('Om elpriser','/om-elpriser');return;}
-  if(h==='blog/forsta-din-elpris'){document.querySelector('[data-page="blog-forsta-din-elpris"]').classList.add('active');document.title='Forstå din elpris — elpriser.org';pv('Blog: Forstå din elpris','/blog/forsta-din-elpris');return;}
-  if(h==='blog/shelly-elpris-automation'){document.querySelector('[data-page="blog-shelly-elpris-automation"]').classList.add('active');document.title='Shelly og elpriser — elpriser.org';pv('Blog: Shelly automation','/blog/shelly-elpris-automation');return;}
-  if(h==='blog/home-assistant-elpriser'){document.querySelector('[data-page="blog-home-assistant-elpriser"]').classList.add('active');document.title='Home Assistant og elpriser — elpriser.org';pv('Blog: Home Assistant','/blog/home-assistant-elpriser');return;}
-  if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elprisprognose — elpriser.org';pv('Prognose','/prognose');loadForecastPage();return;}
+  if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Nettariffer i Danmark — Sammenlign alle netselskaber';pv('Tariffer','/tariffer');loadTariffPage();return;}
+  if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpris Automation — Home Assistant, Shelly & REST API';pv('Automation','/automation');loadAutomationPage();return;}
+  if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — Tibber-kompatibel elpris-JSON';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}
+  if(h==='om-elpriser'){document.querySelector('[data-page="om-elpriser"]').classList.add('active');document.title='Om elpriser i Danmark — Spotpris, tariffer og afgifter';pv('Om elpriser','/om-elpriser');return;}
+  if(h==='blog/forsta-din-elpris'){document.querySelector('[data-page="blog-forsta-din-elpris"]').classList.add('active');document.title='Forstå din elpris — Guide til spotpris og tariffer';pv('Blog: Forstå din elpris','/blog/forsta-din-elpris');return;}
+  if(h==='blog/shelly-elpris-automation'){document.querySelector('[data-page="blog-shelly-elpris-automation"]').classList.add('active');document.title='Shelly & elpriser — Automatisér forbrug efter spotpris';pv('Blog: Shelly automation','/blog/shelly-elpris-automation');return;}
+  if(h==='blog/home-assistant-elpriser'){document.querySelector('[data-page="blog-home-assistant-elpriser"]').classList.add('active');document.title='Home Assistant & elpriser — Smart elforbrug i Danmark';pv('Blog: Home Assistant','/blog/home-assistant-elpriser');return;}
+  if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elprisprognose — Forventede elpriser næste 7 dage';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){location.hash='';return;}
   S.area=area;S.mode=mode;S.weekOffset=0;
@@ -1509,9 +1513,16 @@ function onPriceSelectorChange(){
 }
 function updateHeader(){
   const al=S.area==='DK1'?'DK1 Vest':'DK2 Øst';
+  const region=S.area==='DK1'?'Jylland og Fyn':'Sjælland og Øer';
   const ml={spot_inkl:'Elspot inkl moms',spot_ex:'Elspot ex moms',inkl_alt:'Inkl alt',inkl_alt_minus:'Inkl alt minus afgift',net_inkl_alt:`${S.netName} Inkl alt`,net_inkl_tarif:`${S.netName} Inkl tarif`};
-  const t=al+' '+(ml[S.mode]||'Elspot');
-  document.title='Elpris — '+t;
+  // SEO-aligned titles for crawlable URLs (/dk1, /dk2, /dk1/<slug>, /dk2/<slug>)
+  if(S.netName && (S.mode==='net_inkl_alt'||S.mode==='net_inkl_tarif')){
+    document.title=`Elpris ${S.netName} ${al} i dag — Spotpris inkl. nettarif`;
+  } else if(S.mode==='spot_inkl'){
+    document.title=`Elpriser ${al} i dag — Spotpriser ${region}`;
+  } else {
+    document.title=`Elpriser ${al} — ${ml[S.mode]||'Elspot'}`;
+  }
   syncPriceSelector();
 }
 
