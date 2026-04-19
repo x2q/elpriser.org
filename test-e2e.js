@@ -413,14 +413,21 @@ async function startServer() {
 
   // ── 7. Page-level home-link regression ─────────────────────────────────────
 
-  await test('routing: clicking a home-icon link returns to start page', async () => {
-    await page.goto(BASE + '/#automation');
-    await page.waitForSelector('main[data-page="automation"].active');
-    // Home icon <a href="#"> on automation page
-    await page.locator('[data-page="automation"] a[href="#"]').first().click();
-    await page.waitForFunction(() =>
-      document.querySelector('[data-page="start"].active') !== null);
-  });
+  // Regression: href="#" sat pathname-routed pages to nowhere, because
+  // clicking `#` on /blog/... didn't fire hashchange, and even if it had,
+  // the pathname-fallback in route() mapped it right back to the same page.
+  // Home icon must navigate to /.
+  for (const url of ['/automation', '/blog/shelly-elpris-automation', '/dk1/n1']) {
+    await test(`routing: home-icon on ${url} returns to start page`, async () => {
+      await page.goto(BASE + url);
+      const dp = await page.evaluate(() =>
+        document.querySelector('main.active')?.dataset.page);
+      await page.locator(`[data-page="${dp}"] a[title="Startside"]`).first().click();
+      await page.waitForSelector('main[data-page="start"].active');
+      assert.equal(await page.evaluate(() => location.pathname), '/',
+        'home icon must land on / (not keep sub-page pathname)');
+    });
+  }
 
   await test('routing: visiting / does NOT redirect away (no localStorage bounce)', async () => {
     // Simulate the reported bug: trigger a save-like state then go home
