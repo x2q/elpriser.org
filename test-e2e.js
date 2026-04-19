@@ -105,19 +105,44 @@ async function startServer() {
   }
 
   // Per-netselskab crawlable URLs — /dk1/<slug>, /dk2/<slug> must land on
-  // the prices page with the correct net pre-selected via hash.
-  for (const [url, expectedHash] of [
-    ['/dk1/n1',       '#DK1/net_inkl_alt/n1'],
-    ['/dk1/trefor',   '#DK1/net_inkl_alt/trefor'],
-    ['/dk2/radius',   '#DK2/net_inkl_alt/radius'],
-    ['/dk2/cerius',   '#DK2/net_inkl_alt/cerius'],
+  // the prices page with the correct net pre-selected. URL must stay clean
+  // (no /#hash redirect) and state must be derived from the pathname.
+  for (const [url, expectedArea, expectedSlug] of [
+    ['/dk1/n1',       'DK1', 'n1'],
+    ['/dk1/trefor',   'DK1', 'trefor'],
+    ['/dk2/radius',   'DK2', 'radius'],
+    ['/dk2/cerius',   'DK2', 'cerius'],
   ]) {
-    await test(`crawlable: ${url} → hash=${expectedHash}`, async () => {
+    await test(`crawlable: ${url} keeps clean URL + activates correct net`, async () => {
       await page.goto(BASE + url);
       await page.waitForSelector('main[data-page="prices"].active');
-      const hash = await page.evaluate(() => location.hash);
-      assert.equal(hash, expectedHash,
-        `${url} should set hash to ${expectedHash}, got ${hash}`);
+      const state = await page.evaluate(() => ({
+        pathname: location.pathname,
+        hash: location.hash,
+        area: typeof S !== 'undefined' ? S.area : undefined,
+        mode: typeof S !== 'undefined' ? S.mode : undefined,
+        netName: typeof S !== 'undefined' ? S.netName : undefined,
+      }));
+      assert.equal(state.pathname, url, `pathname must stay ${url}, got ${state.pathname}`);
+      assert.equal(state.hash, '', `hash must be empty (clean URL), got ${state.hash}`);
+      assert.equal(state.area, expectedArea);
+      assert.equal(state.mode, 'net_inkl_alt');
+      assert.ok(state.netName, `expected netName to be set for ${expectedSlug}, got "${state.netName}"`);
+    });
+  }
+
+  // Clean-URL SEO pages must stay clean (regression: hash-redirect previously
+  // clobbered /blog/shelly-elpris-automation → /#blog/shelly-elpris-automation)
+  for (const url of ['/blog/shelly-elpris-automation', '/blog/forsta-din-elpris',
+                     '/blog/home-assistant-elpriser', '/tariffer', '/automation',
+                     '/om-elpriser', '/prognose', '/dk1', '/dk2']) {
+    await test(`clean-URL: ${url} does NOT redirect to /#hash`, async () => {
+      await page.goto(BASE + url);
+      const state = await page.evaluate(() => ({
+        pathname: location.pathname, hash: location.hash,
+      }));
+      assert.equal(state.pathname, url, `${url} pathname must persist, got ${state.pathname}`);
+      assert.equal(state.hash, '', `${url} must not add hash, got ${state.hash}`);
     });
   }
 
@@ -184,16 +209,16 @@ async function startServer() {
   });
 
   // Nav pills
-  for (const [label, expectedHash] of [
-    ['Prognose',             '#prognose'],
-    ['Tariffer',             '#tariffer'],
-    ['Automation',           '#automation'],
-    ['Shelly Live Tariff',   '#shelly-tariff'],
+  for (const [label, dataPage] of [
+    ['Prognose',             'prognose'],
+    ['Tariffer',             'tariffer'],
+    ['Automation',           'automation'],
+    ['Shelly Live Tariff',   'shelly-tariff'],
   ]) {
-    await test(`nav pill: "${label}" → ${expectedHash}`, async () => {
+    await test(`nav pill: "${label}" activates data-page="${dataPage}"`, async () => {
       await page.goto(BASE + '/');
       await page.locator(`.nav-pill:has-text("${label}")`).click();
-      await page.waitForURL(u => u.hash === expectedHash);
+      await page.waitForSelector(`main[data-page="${dataPage}"].active`);
     });
   }
 

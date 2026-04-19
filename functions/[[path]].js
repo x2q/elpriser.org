@@ -395,10 +395,6 @@ async function renderSPA(context, pathname, meta) {
     /<meta name="twitter:description" content="[^"]*">/,
     `<meta name="twitter:description" content="${meta.description}">`
   );
-  html = html.replace(
-    '</head>',
-    `<script>if(!location.hash)location.replace('/${meta.hash}');</script>\n</head>`
-  );
   return new Response(html, {
     headers: {
       ...Object.fromEntries(res.headers.entries()),

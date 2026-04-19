@@ -164,17 +164,34 @@ test('crawlable: net-URL pattern in functions matches /dk[12]/slug', () => {
     'functions/[[path]].js must match /dk[12]/<slug> for per-net crawlable URLs');
 });
 
-test('crawlable: renderSPA helper injects title + canonical + hash redirect', () => {
-  // renderSPA must (a) rewrite <title>, <meta description>, canonical,
-  // (b) inject the hash-redirect <script>. Without these, crawlers see the
-  // generic home meta for every net page and search engines dedupe them.
+test('crawlable: renderSPA helper rewrites title + canonical + OG metadata', () => {
+  // renderSPA must rewrite the SEO-critical meta so each clean URL ships with
+  // its own metadata. Hash-redirects are NOT injected (that clobbered the
+  // clean URL to /#hash); pathname routing is handled client-side by route().
   const body = ROUTES.match(/async function renderSPA[\s\S]*?^}/m);
   assert.ok(body, 'renderSPA function not found');
-  ['<title>', 'description', 'canonical', 'og:title', 'og:description',
-   'location.replace'].forEach(needle => {
-    assert.ok(body[0].includes(needle),
-      `renderSPA missing "${needle}" — crawlers will see stale metadata`);
-  });
+  ['<title>', 'description', 'canonical', 'og:title', 'og:description']
+    .forEach(needle => {
+      assert.ok(body[0].includes(needle),
+        `renderSPA missing "${needle}" — crawlers will see stale metadata`);
+    });
+  assert.ok(!body[0].includes('location.replace'),
+    'renderSPA must NOT inject location.replace — it clobbers the clean URL to /#hash');
+});
+
+test('router: pathToHash maps every SEO clean URL to a hash route', () => {
+  // The crawlable URLs (/dk1, /blog/*, etc.) load without a hash. route() falls
+  // back to pathname routing via pathToHash — so every SEO_PAGES entry must
+  // have a corresponding pathToHash mapping, or the page renders as Start.
+  const seoBlock = ROUTES.match(/const SEO_PAGES = \{[\s\S]*?^\};/m);
+  assert.ok(seoBlock, 'SEO_PAGES block not found in functions/[[path]].js');
+  const seoPaths = [...seoBlock[0].matchAll(/^  '(\/[^']+)':\s*\{/gm)].map(m => m[1]);
+  assert.ok(seoPaths.length >= 9, `expected 9+ SEO_PAGES entries, got ${seoPaths.length}`);
+  for (const p of seoPaths) {
+    const needle = `'${p}':`;
+    assert.ok(INDEX.includes(needle),
+      `PATH_ROUTES in index.html missing "${p}" — clean URL ${p} will render Start page`);
+  }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -413,15 +413,11 @@ function hashForNetPath(pathname) {
   return null;
 }
 
-function serveSPA(res, hash) {
+function serveSPA(res, _hash) {
   fs.readFile(path.join(__dir, 'index.html'), 'utf8', (err, html) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
-    const injected = html.replace(
-      '</head>',
-      `<script>if(!location.hash)location.replace('/${hash}');</script>\n</head>`
-    );
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(injected);
+    res.end(html);
   });
 }
 

@@ -1429,8 +1429,25 @@ async function detectLocation(){
 function matchNet(n){const l=n.toLowerCase();for(const a of['DK1','DK2'])for(const net of NETS[a])for(const m of net.match)if(l.includes(m.toLowerCase()))return{area:a,net};return null;}
 
 // ═══ ROUTER ═══
+// Clean-URL → hash equivalents. Crawlable URLs (/dk1, /blog/…) load without a
+// hash; we derive the SPA route from the pathname instead of doing a redirect
+// that would clobber the clean URL to /#hash.
+const PATH_ROUTES={
+  '/dk1':'DK1/spot_inkl','/dk2':'DK2/spot_inkl',
+  '/tariffer':'tariffer','/automation':'automation','/shelly-tariff':'shelly-tariff',
+  '/om-elpriser':'om-elpriser','/prognose':'prognose',
+  '/blog/forsta-din-elpris':'blog/forsta-din-elpris',
+  '/blog/shelly-elpris-automation':'blog/shelly-elpris-automation',
+  '/blog/home-assistant-elpriser':'blog/home-assistant-elpriser',
+};
+function pathToHash(p){
+  if(PATH_ROUTES[p])return PATH_ROUTES[p];
+  const m=p.match(/^\/(dk[12])\/([a-z0-9-]+)$/);
+  return m?m[1].toUpperCase()+'/net_inkl_alt/'+m[2]:'';
+}
 function route(){
-  const h=decodeURIComponent(location.hash.slice(1));
+  let h=decodeURIComponent(location.hash.slice(1));
+  if(!h)h=pathToHash(location.pathname);
   document.querySelectorAll('[data-page]').forEach(p=>p.classList.remove('active'));
   // Helper: send page_view with clean path for GA4
   const pv=(title,path)=>gtag('event','page_view',{page_title:title,page_location:location.origin+(path||location.pathname)});
