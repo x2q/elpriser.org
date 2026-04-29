@@ -1401,7 +1401,19 @@ async function detectLocation(){
   text.textContent='Finder din position...';
   btn.disabled=true; btn.classList.add('opacity-50');
   try{
-    const pos=await new Promise((ok,no)=>navigator.geolocation.getCurrentPosition(ok,no,{timeout:10000}));
+    // Use watchPosition (not getCurrentPosition) to survive transient
+    // kCLErrorLocationUnknown failures from macOS CoreLocation: it streams
+    // updates and ignores transient POSITION_UNAVAILABLE until a fix arrives.
+    const pos=await new Promise((ok,no)=>{
+      let id,timer;
+      const done=fn=>v=>{navigator.geolocation.clearWatch(id);clearTimeout(timer);fn(v);};
+      timer=setTimeout(done(no),15000,{code:3,message:'Timeout'});
+      id=navigator.geolocation.watchPosition(
+        done(ok),
+        e=>{if(e.code===1)done(no)(e);}, // fail fast only on PERMISSION_DENIED
+        {timeout:15000,maximumAge:60000}
+      );
+    });
     const{latitude:lat,longitude:lng}=pos.coords;
     text.textContent='Slår adresse op...';
     const addr=(await(await fetch(`https://dawa.aws.dk/adgangsadresser/reverse?x=${lng}&y=${lat}&srid=4326`)).json()).adressebetegnelse;
