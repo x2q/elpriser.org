@@ -291,6 +291,18 @@ export async function onRequest({ request }) {
     }
   }
 
+  // ── /api/supplierlookup ─────────────────────────────────────────────────
+  // Reverse-geocodes (lat,lng) → DK address → net company. Proxied through
+  // here because the upstream GreenPowerDenmark API has no CORS headers.
+  if (seg1 === 'supplierlookup') {
+    try {
+      return await handleSupplierLookup(q.get('lat'), q.get('lng'));
+    } catch (e) {
+      console.error(e);
+      return fail(500, String(e.message || e));
+    }
+  }
+
   try {
     const { priceData, enCharges, tariffRecords } = await loadData(area, mode, gln);
 
@@ -594,6 +606,59 @@ function cvtForecast(dkkMwh, h, mode, en) {
     case 'inkl_alt_minus': return (spot + en.sys + en.trans) * 1.25;
     default:               return spot * 1.25;
   }
+}
+
+// ── Supplier lookup (GPS → address → net company) ───────────────────────────
+
+/**
+ * Build a GPD-friendly address string from DAWA structured fields.
+ *
+ *   DAWA's `adressebetegnelse` includes `supplerendebynavn` (parish), e.g.
+ *   "P.O. Pedersens Vej 2, Skejby, 8200 Aarhus N" — GPD's API returns 404 for
+ *   that. It also chokes on dots in street names ("P.O." → 404). Constructing
+ *   the address from structured fields and stripping dots fixes both.
+ */
+function buildGpdAddress(dawa) {
+  // Replace dots with spaces (not strip): "P.O." → "P O", not "PO" — GPD treats
+  // those differently and "PO Pedersens Vej" returns 500 while "P O" returns 200.
+  const street = (dawa?.vejstykke?.navn || '').replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
+  const husnr  = dawa?.husnr || '';
+  const postnr = dawa?.postnummer?.nr || '';
+  const town   = dawa?.postnummer?.navn || '';
+  if (!street || !husnr || !postnr || !town) return null;
+  return `${street} ${husnr}, ${postnr} ${town}`;
+}
+
+async function handleSupplierLookup(lat, lng) {
+  const flat = parseFloat(lat), flng = parseFloat(lng);
+  if (!isFinite(flat) || !isFinite(flng)) return fail(400, 'lat,lng required');
+
+  // Cache by ~11m grid (5 decimals) so nearby clicks share a result.
+  const key = `gps-${flat.toFixed(5)}-${flng.toFixed(5)}`;
+  return ok(await cached(key, 24 * 60 * 60_000, async () => {
+    // 1. Reverse-geocode via DAWA (CORS-friendly upstream, but server-side
+    //    here so we get structured fields and one round-trip from the client).
+    const dawa = await fetch(
+      `https://dawa.aws.dk/adgangsadresser/reverse?x=${flng}&y=${flat}&srid=4326`
+    ).then(r => r.json()).catch(() => null);
+
+    const fullAddr  = dawa?.adressebetegnelse || null;
+    const cleanAddr = buildGpdAddress(dawa);
+    if (!cleanAddr) return { address: fullAddr, name: null, error: 'no_address' };
+
+    // 2. Look up net company. Treat 404/500 as "unknown net" rather than fatal —
+    //    the client falls back to area-based navigation.
+    const r = await fetch(
+      `https://api.elnet.greenpowerdenmark.dk/api/supplierlookup/${encodeURIComponent(cleanAddr)}`
+    );
+    if (!r.ok) return { address: fullAddr, name: null, error: `gpd_${r.status}` };
+
+    const ct = r.headers.get('content-type') || '';
+    if (!ct.includes('json')) return { address: fullAddr, name: null, error: 'gpd_nonjson' };
+
+    const j = await r.json().catch(() => null);
+    return { address: fullAddr, name: j?.name || null };
+  }));
 }
 
 async function handleForecast(area, mode) {

@@ -1415,11 +1415,11 @@ async function detectLocation(){
       );
     });
     const{latitude:lat,longitude:lng}=pos.coords;
-    text.textContent='Slår adresse op...';
-    const addr=(await(await fetch(`https://dawa.aws.dk/adgangsadresser/reverse?x=${lng}&y=${lat}&srid=4326`)).json()).adressebetegnelse;
     text.textContent='Finder netselskab...';
-    const net=await(await fetch(`https://api.elnet.greenpowerdenmark.dk/api/supplierlookup/${encodeURIComponent(addr)}`)).json();
-    const m=matchNet(net.name);
+    // Server-side proxy: DAWA reverse → address normalisation → GPD lookup.
+    // Single round-trip; avoids GPD's missing CORS headers.
+    const net=await(await fetch(`/api/supplierlookup?lat=${lat}&lng=${lng}`)).json();
+    const m=net.name?matchNet(net.name):null;
     svg.style.animation='';
     if(m){
       text.textContent=`${m.net.name} (${m.area}) — navigerer...`;
@@ -1428,7 +1428,7 @@ async function detectLocation(){
       location.hash=`${m.area}/net_inkl_alt/${m.net.slug}`;
     }else{
       const area=lng>11.0?'DK2':'DK1';
-      text.textContent=`${net.name} (${area})`;
+      text.textContent=net.name?`${net.name} (${area})`:`Kunne ikke finde netselskab — viser ${area}`;
       location.hash=`${area}/inkl_alt`;
     }
   }catch(err){
