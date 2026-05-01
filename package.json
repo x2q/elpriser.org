@@ -8,7 +8,8 @@
     "test": "node test.js",
     "test:static": "node test-static.js",
     "test:e2e": "node test-e2e.js",
-    "test:pre-commit": "node test-static.js && node test-e2e.js",
+    "test:regressions": "node test-regressions.js",
+    "test:pre-commit": "node test-static.js && node test-e2e.js && node test-regressions.js",
     "deploy": "npx wrangler pages deploy ."
   },
   "devDependencies": {

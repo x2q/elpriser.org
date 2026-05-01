@@ -299,8 +299,9 @@ Sitemap: https://elpriser.org/sitemap.xml`,
 export async function onRequest(context) {
   const url = new URL(context.request.url);
 
-  // HTTP → HTTPS redirect
-  if (url.protocol === 'http:') {
+  // HTTP → HTTPS redirect (skip on localhost — wrangler dev is HTTP-only,
+  // and Cloudflare's edge terminates HTTPS before the function runs in prod).
+  if (url.protocol === 'http:' && !/^(localhost|127\.|\[::1\])/.test(url.hostname)) {
     url.protocol = 'https:';
     return new Response(null, {
       status: 301,
