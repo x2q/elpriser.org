@@ -3,7 +3,7 @@
  *
  * Endpoints:
  *   /api/now?area=DK1&mode=inkl_alt&strategy=cheapest_n&hours=6[&gln=...]
- *   /api/now?area=DK1&strategy=fridge&hours=4&max_off=2[&gln=...]
+ *   /api/now?area=DK1&strategy=smart&hours=4&max_off=2[&gln=...]
  *   /api/prices?area=DK1&mode=inkl_alt[&gln=...][&date=YYYY-MM-DD]
  *   /api/schedule?area=DK1&mode=inkl_alt&strategy=cheapest_n&hours=6[&gln=...][&date=YYYY-MM-DD]
  *   /api/shelly/tariff?area=DK1&mode=inkl_alt[&gln=...]   → Tibber-compatible JSON
@@ -210,9 +210,10 @@ function computeSchedule(prices, strategy, param, param2) {
     for (let h = 0; h < 24; h++) on[h] = (h < 17 || h >= 21);
   } else if (strategy === 'night_cheap') {
     for (let h = 0; h < 24; h++) on[h] = (h >= 23 || h < 6);
-  } else if (strategy === 'fridge') {
+  } else if (strategy === 'smart') {
     // Turn OFF the most expensive hours, but never more than `maxRun`
-    // consecutive hours — protects fridges/freezers from warming up too much.
+    // consecutive hours — protects fridges/freezers from warming up and
+    // heat pumps / heated rooms from cooling down during pause windows.
     // Greedy: sort desc by price, mark OFF in turn, skip any hour whose
     // marking would extend a run beyond maxRun. Stops at `total` OFF hours.
     const total  = Math.min(Math.max(1, +param), valid.length);
@@ -410,7 +411,7 @@ export async function onRequest({ request }) {
 
     const strategy = q.get('strategy') || 'cheapest_n';
     const param    = +(q.get('hours') ?? q.get('pct') ?? 6);
-    // Second param — currently only `fridge` uses it (max consecutive OFF hours).
+    // Second param — currently only `smart` uses it (max consecutive OFF hours).
     const param2   = q.get('max_off') != null ? +q.get('max_off') : null;
     const schedule = computeSchedule(hourlyPrices, strategy, param, param2);
 

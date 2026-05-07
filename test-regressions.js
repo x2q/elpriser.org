@@ -317,10 +317,10 @@ async function apiTests() {
       assert.equal(r2.status, 400);
     });
 
-  // ── fridge strategy (max consecutive OFF constraint) ─────────────────────
-  await test('strategy=fridge respects max_off — no run > Y consecutive OFF hours',
+  // ── smart strategy (max consecutive OFF constraint) ──────────────────────
+  await test('strategy=smart respects max_off — no run > Y consecutive OFF hours',
     async () => {
-      const r = await json('/api/schedule?area=DK1&mode=spot_inkl&strategy=fridge&hours=8&max_off=2');
+      const r = await json('/api/schedule?area=DK1&mode=spot_inkl&strategy=smart&hours=8&max_off=2');
       assert.equal(r.status, 200);
       const sched = r.body.schedule;
       // Find runs of consecutive OFF
@@ -330,15 +330,15 @@ async function apiTests() {
         else cur = 0;
       }
       assert.ok(maxRun <= 2,
-        `fridge strategy produced run of ${maxRun} consecutive OFF hours, ` +
+        `smart strategy produced run of ${maxRun} consecutive OFF hours, ` +
         `exceeds max_off=2. Greedy algorithm broken.`);
       const offCount = sched.filter(h => !h.on).length;
       assert.equal(offCount, 8, `expected 8 OFF hours, got ${offCount}`);
     });
 
-  await test('strategy=fridge max_off=1 produces no adjacent OFF hours',
+  await test('strategy=smart max_off=1 produces no adjacent OFF hours',
     async () => {
-      const r = await json('/api/schedule?area=DK1&mode=spot_inkl&strategy=fridge&hours=4&max_off=1');
+      const r = await json('/api/schedule?area=DK1&mode=spot_inkl&strategy=smart&hours=4&max_off=1');
       const sched = r.body.schedule;
       for (let i = 1; i < sched.length; i++) {
         assert.ok(sched[i].on || sched[i-1].on,
@@ -346,9 +346,9 @@ async function apiTests() {
       }
     });
 
-  await test('strategy=fridge picks the most expensive hours OFF (not random)',
+  await test('strategy=smart picks the most expensive hours OFF (not random)',
     async () => {
-      const r = await json('/api/schedule?area=DK1&mode=spot_inkl&strategy=fridge&hours=4&max_off=4');
+      const r = await json('/api/schedule?area=DK1&mode=spot_inkl&strategy=smart&hours=4&max_off=4');
       const sched = r.body.schedule;
       const offPrices = sched.filter(h => !h.on).map(h => h.price);
       const onPrices  = sched.filter(h =>  h.on).map(h => h.price);

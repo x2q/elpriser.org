@@ -679,7 +679,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             </button>
             <button type="button" class="cs-opt" data-value="cheapest_pct" onclick="csPick(this)">
               <span class="cs-l">Lavpris-andel</span>
-              <span class="cs-r">Elbil, varmepumpe</span>
+              <span class="cs-r">Elbil, varmtvandsbeholder</span>
             </button>
             <button type="button" class="cs-opt" data-value="avoid_expensive_n" onclick="csPick(this)">
               <span class="cs-l">Drop topprisen</span>
@@ -697,9 +697,9 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
               <span class="cs-l">Natkører</span>
               <span class="cs-r">Elbil-opladning, tørretumbler</span>
             </button>
-            <button type="button" class="cs-opt" data-value="fridge" onclick="csPick(this)">
-              <span class="cs-l">Smart køling</span>
-              <span class="cs-r">Køleskab, fryser, vinkøl</span>
+            <button type="button" class="cs-opt" data-value="smart" onclick="csPick(this)">
+              <span class="cs-l">Smart Køling/Varme</span>
+              <span class="cs-r">Køleskab, varmepumpe, fryser</span>
             </button>
           </div>
           <input type="hidden" id="autoStrategy" value="cheapest_n">
@@ -1793,7 +1793,7 @@ function updateWeekNav(){
 }
 
 // ═══ AUTOMATION ═══
-const STRATEGY_HELP={cheapest_n:'Tænder kun i de N billigste timer. Velegnet til enheder der skal køre et bestemt antal timer dagligt.',cheapest_pct:'Tænder i den billigste andel af døgnets timer. God til enheder med fleksibelt forbrug.',avoid_expensive_n:'Slukker i de N dyreste timer, tændt resten af døgnet. God til enheder der skal køre det meste af tiden.',avoid_expensive_pct:'Slukker i den dyreste andel af timer. Reducerer omkostning uden at begrænse for meget.',avoid_peak:'Fast tidsplan: slukker kl. 17-21 hvor nettariffen og forbruget typisk er højest.',night_cheap:'Kører kun kl. 23-06 hvor priserne typisk er lavest. Ideel til støjende enheder.',fridge:'Slukker i de X dyreste timer per døgn, men aldrig mere end Y timer i træk. Ideel til køleskab/fryser, der ikke må stå slukket for længe.'};
+const STRATEGY_HELP={cheapest_n:'Tænder kun i de N billigste timer. Velegnet til enheder der skal køre et bestemt antal timer dagligt.',cheapest_pct:'Tænder i den billigste andel af døgnets timer. God til enheder med fleksibelt forbrug.',avoid_expensive_n:'Slukker i de N dyreste timer, tændt resten af døgnet. God til enheder der skal køre det meste af tiden.',avoid_expensive_pct:'Slukker i den dyreste andel af timer. Reducerer omkostning uden at begrænse for meget.',avoid_peak:'Fast tidsplan: slukker kl. 17-21 hvor nettariffen og forbruget typisk er højest.',night_cheap:'Kører kun kl. 23-06 hvor priserne typisk er lavest. Ideel til støjende enheder.',smart:'Slukker i de X dyreste timer per døgn, men aldrig mere end Y timer i træk. Ideel til køleskab, fryser og varmepumpe, der ikke må stå slukket for længe.'};
 // ═══ Custom strategy dropdown ═══
 function csToggle(){
   const m=document.getElementById('autoStrategyMenu');
@@ -1844,7 +1844,7 @@ function onAutoStrategyChange(){
   div2.style.display='none';
   if(s==='cheapest_n'||s==='avoid_expensive_n'){div.style.display='';lbl.textContent='Timer/dag';inp.max=23;if(!inp._userSet)inp.value=s==='avoid_expensive_n'?4:6;}
   else if(s==='cheapest_pct'||s==='avoid_expensive_pct'){div.style.display='';lbl.textContent='Procent (%)';inp.max=100;if(!inp._userSet)inp.value=s==='avoid_expensive_pct'?20:20;}
-  else if(s==='fridge'){
+  else if(s==='smart'){
     div.style.display='';lbl.textContent='Slukket-timer/dag';inp.max=23;if(!inp._userSet)inp.value=4;
     div2.style.display='';if(!inp2._userSet)inp2.value=2;
   }
@@ -1903,7 +1903,7 @@ function getStrategyHours(dailyPrices,strategy,param,param2){
   else if(strategy==='avoid_expensive_pct'){const n=Math.max(1,Math.round(valid.length*(+param/100)));const exp=new Set([...valid].sort((a,b)=>b.p-a.p).slice(0,n).map(x=>x.h));valid.forEach(x=>res[x.h]=!exp.has(x.h));}
   else if(strategy==='avoid_peak'){for(let h=0;h<24;h++)res[h]=(h<17||h>=21);}
   else if(strategy==='night_cheap'){for(let h=0;h<24;h++)res[h]=(h>=23||h<6);}
-  else if(strategy==='fridge'){
+  else if(strategy==='smart'){
     // Mark the X most expensive hours OFF, but skip any hour whose marking
     // would create a run of >Y consecutive OFF hours. Greedy by price desc.
     const total=Math.min(Math.max(1,+param),valid.length);
@@ -2011,14 +2011,14 @@ function buildApiUrl(mode,area,strategy,param,param2,gln){
   let p='';
   if(strategy==='cheapest_pct'||strategy==='avoid_expensive_pct')p=`&pct=${param}`;
   else if(strategy==='cheapest_n'||strategy==='avoid_expensive_n')p=`&hours=${param}`;
-  else if(strategy==='fridge')p=`&hours=${param}&max_off=${param2}`;
+  else if(strategy==='smart')p=`&hours=${param}&max_off=${param2}`;
   const g=gln?`&gln=${gln}`:'';
   return base+p+g;
 }
 function generateExports(strategy,param,param2,daySchedules,dates,mode,gln){
   const area=document.getElementById('autoArea')?.value||'DK1';
   const entityId='elpris';
-  const labels={cheapest_n:`Lavpris-jæger (${param} timer)`,cheapest_pct:`Lavpris-andel (${param}%)`,avoid_expensive_n:`Drop topprisen (${param} timer)`,avoid_expensive_pct:`Drop dyre timer (${param}%)`,avoid_peak:'Aftenpause (17-21)',night_cheap:'Natkører (23-06)',fridge:`Smart køling (${param}t slukket, maks ${param2}t i træk)`};
+  const labels={cheapest_n:`Lavpris-jæger (${param} timer)`,cheapest_pct:`Lavpris-andel (${param}%)`,avoid_expensive_n:`Drop topprisen (${param} timer)`,avoid_expensive_pct:`Drop dyre timer (${param}%)`,avoid_peak:'Aftenpause (17-21)',night_cheap:'Natkører (23-06)',smart:`Smart Køling/Varme (${param}t slukket, maks ${param2}t i træk)`};
   const stratLabel=labels[strategy]||strategy;
   const apiUrl=buildApiUrl(mode,area,strategy,param,param2,gln);
   // Show API URL (highlighted)
@@ -2068,8 +2068,8 @@ automation:
               `{% set n = ([1,((sorted|length)*(${+param}/100))|round(0,'floor')|int]|max) %}\n            {% set ok = prices[now().hour]['price'] | float <= sorted[n-1] | float %}`
             :strategy==='avoid_peak'?
               `{% set ok = now().hour < 17 or now().hour >= 21 %}`
-            :strategy==='fridge'?
-              `{# Smart køling kræver streak-bevidst logik der ikke kan udtrykkes #}\n            {# rent i en Jinja-template. Brug Option 1 (REST-sensor) i stedet — #}\n            {# den kalder /api/now som beregner det korrekt. #}\n            {% set ok = false %}`
+            :strategy==='smart'?
+              `{# Smart Køling/Varme kræver streak-bevidst logik der ikke kan udtrykkes #}\n            {# rent i en Jinja-template. Brug Option 1 (REST-sensor) i stedet — #}\n            {# den kalder /api/now som beregner det korrekt. #}\n            {% set ok = false %}`
             :
               `{% set ok = now().hour >= 23 or now().hour < 6 %}`}
             {{ 'switch.turn_on' if ok else 'switch.turn_off' }}

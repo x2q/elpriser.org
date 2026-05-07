@@ -351,7 +351,7 @@ async function startServer() {
         useCase: e.querySelector('.cs-r')?.textContent,
       })));
     const vals = opts.map(o => o.value);
-    ['cheapest_n','cheapest_pct','avoid_expensive_n','avoid_expensive_pct','avoid_peak','night_cheap','fridge']
+    ['cheapest_n','cheapest_pct','avoid_expensive_n','avoid_expensive_pct','avoid_peak','night_cheap','smart']
       .forEach(s => assert.ok(vals.includes(s), `#autoStrategy missing "${s}"`));
     // Every option must have non-empty use-case text on the right side
     opts.forEach(o => assert.ok(o.useCase && o.useCase.trim().length > 0,
