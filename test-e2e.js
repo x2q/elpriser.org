@@ -364,7 +364,7 @@ async function startServer() {
     assert.equal(await page.locator('#autoStrategy').inputValue(), 'night_cheap');
     // Visible button label reflects selection
     const display = (await page.locator('#autoStrategyDisplay').textContent()).trim();
-    assert.match(display, /nattetimer/i);
+    assert.match(display, /natkører/i);
   });
 
   await test('automation: #autoParam accepts numeric input', async () => {
