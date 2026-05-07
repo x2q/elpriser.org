@@ -748,8 +748,13 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <div class="relative"><pre id="exportHACode" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"></pre><button onclick="copyExport('ha')" class="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition">Kopiér</button></div>
     </div>
     <div id="exportShelly" style="display:none">
-      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Shelly Plus/Pro script — kalder API hvert minut og sætter output til ON/OFF. Indsæt via <strong>Scripts → Create Script</strong>. Sæt "Run on startup" til ON.</p>
-      <div class="relative"><pre id="exportShellyCode" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"></pre><button onclick="copyExport('shelly')" class="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition">Kopiér</button></div>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Shelly Plus/Pro script — kalder API hvert minut og sætter output til ON/OFF. Indsæt via <strong>Scripts → Create Script</strong>, brug navnet nedenfor, indsæt koden og sæt "Run on startup" til ON.</p>
+      <div class="flex items-center gap-2 mb-2 flex-wrap">
+        <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">Scriptnavn:</span>
+        <code id="exportShellyName" class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-gray-700 dark:text-gray-300 flex-1 min-w-0 truncate"></code>
+        <button onclick="copyShellyName()" class="shrink-0 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition">Kopiér navn</button>
+      </div>
+      <div class="relative"><pre id="exportShellyCode" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"></pre><button onclick="copyExport('shelly')" class="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition">Kopiér kode</button></div>
     </div>
   </div>
   <!-- Cross-links -->
@@ -2070,8 +2075,13 @@ automation:
           entity_id: switch.${entityId}`;
   setHighlighted(document.getElementById('exportHACode'),haCode,'yaml');
   // ── Shelly export (Script, not Schedule — dynamic per API) ─────────────────
+  // Suggested name follows the same shape as the HA alias: "Elpris {area} — {strategy}".
+  // Users likely have multiple Shelly scripts (one per device), so the
+  // strategy descriptor in the name disambiguates them at a glance.
+  const shellyName=`Elpris ${area} — ${stratLabel}`;
+  document.getElementById('exportShellyName').textContent=shellyName;
   const shellyCode=
-`// Shelly Plus/Pro Script — ${stratLabel}
+`// ${shellyName}
 // Bruger elpriser.org API til at bestemme ON/OFF dynamisk.
 // Aktiver "Run on startup" i Scripts-menuen.
 
@@ -2107,6 +2117,11 @@ function copyExport(tab){
   gtag('event','copy_export',{tab:tab});
   const el=document.getElementById(tab==='ha'?'exportHACode':'exportShellyCode');
   navigator.clipboard?.writeText(el.dataset.raw||el.textContent);
+}
+function copyShellyName(){
+  gtag('event','copy_shelly_name');
+  const el=document.getElementById('exportShellyName');
+  navigator.clipboard?.writeText(el.textContent);
 }
 function copyApiUrl(){
   gtag('event','copy_api_url');
