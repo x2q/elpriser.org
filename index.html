@@ -273,6 +273,31 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   details.faq summary:hover{background:rgba(27,87,245,.03);border-radius:1rem}
   .dark details.faq summary:hover{background:rgba(89,160,255,.04)}
 
+  /* ═══ Custom strategy dropdown (left label, right use-case) ═══ */
+  .cs-wrap{position:relative}
+  .cs-btn{cursor:pointer;text-align:left}
+  .cs-btn:hover{border-color:rgba(27,87,245,.35)}
+  .dark .cs-btn:hover{border-color:rgba(89,160,255,.35)}
+  .cs-menu{max-height:60vh;overflow-y:auto}
+  .cs-opt{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
+    width:100%;padding:.5rem .75rem;text-align:left;cursor:pointer;
+    background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,.04)}
+  .cs-opt:last-child{border-bottom:none}
+  .dark .cs-opt{border-bottom-color:rgba(255,255,255,.04)}
+  .cs-opt:hover{background:rgba(27,87,245,.06)}
+  .dark .cs-opt:hover{background:rgba(89,160,255,.08)}
+  .cs-opt[data-selected="1"]{background:rgba(27,87,245,.08)}
+  .dark .cs-opt[data-selected="1"]{background:rgba(89,160,255,.12)}
+  .cs-l{font-size:.875rem;color:#1f2937;font-weight:500}
+  .dark .cs-l{color:#e5e7eb}
+  .cs-r{font-size:.75rem;color:#6b7280;white-space:nowrap;flex-shrink:0}
+  .dark .cs-r{color:#9ca3af}
+  /* On narrow screens the use-case text wraps under the label rather than overflow */
+  @media (max-width:480px){
+    .cs-opt{flex-direction:column;gap:.125rem;align-items:flex-start}
+    .cs-r{white-space:normal}
+  }
+
   /* ═══ Spacing utilities (missing from compiled Tailwind) ═══ */
   .mt-12{margin-top:3rem}
   .mt-14{margin-top:3.5rem}
@@ -639,16 +664,46 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <div class="sm:col-span-2">
-        <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Strategi</label>
-        <select id="autoStrategy" oninput="onAutoStrategyChange()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-          <option value="cheapest_n">Billigste N timer/dag</option>
-          <option value="cheapest_pct">Billigste X% af timer</option>
-          <option value="avoid_expensive_n">Undgå dyreste N timer/dag</option>
-          <option value="avoid_expensive_pct">Undgå dyreste X% af timer</option>
-          <option value="avoid_peak">Undgå spidstimer 17-21</option>
-          <option value="night_cheap">Kun nattetimer 23-06</option>
-          <option value="fridge">Køleskab/fryser — undgå dyre timer, maks Y i træk</option>
-        </select>
+        <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1" for="autoStrategyBtn">Strategi</label>
+        <div class="cs-wrap" id="autoStrategyWrap">
+          <button type="button" id="autoStrategyBtn" onclick="csToggle()" aria-haspopup="listbox" aria-expanded="false"
+            class="cs-btn w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex items-center justify-between gap-2">
+            <span id="autoStrategyDisplay">Billigste N timer/dag</span>
+            <svg class="w-4 h-4 shrink-0 opacity-60" viewBox="0 0 20 20" fill="currentColor"><path d="M5.5 7.5 10 12l4.5-4.5"/></svg>
+          </button>
+          <div id="autoStrategyMenu" role="listbox" hidden
+            class="cs-menu absolute left-0 right-0 z-30 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
+            <button type="button" class="cs-opt" data-value="cheapest_n" onclick="csPick(this)" data-selected="1">
+              <span class="cs-l">Billigste N timer/dag</span>
+              <span class="cs-r">Vaskemaskine, opvaskemaskine</span>
+            </button>
+            <button type="button" class="cs-opt" data-value="cheapest_pct" onclick="csPick(this)">
+              <span class="cs-l">Billigste X% af timer</span>
+              <span class="cs-r">Elbil, varmepumpe</span>
+            </button>
+            <button type="button" class="cs-opt" data-value="avoid_expensive_n" onclick="csPick(this)">
+              <span class="cs-l">Undgå dyreste N timer/dag</span>
+              <span class="cs-r">Tilskudsvarmer, panelovn</span>
+            </button>
+            <button type="button" class="cs-opt" data-value="avoid_expensive_pct" onclick="csPick(this)">
+              <span class="cs-l">Undgå dyreste X% af timer</span>
+              <span class="cs-r">Pool-pumpe, akvariefilter</span>
+            </button>
+            <button type="button" class="cs-opt" data-value="avoid_peak" onclick="csPick(this)">
+              <span class="cs-l">Undgå spidstimer 17-21</span>
+              <span class="cs-r">Komfur, ovn, vandvarmer</span>
+            </button>
+            <button type="button" class="cs-opt" data-value="night_cheap" onclick="csPick(this)">
+              <span class="cs-l">Kun nattetimer 23-06</span>
+              <span class="cs-r">Elbil-opladning, tørretumbler</span>
+            </button>
+            <button type="button" class="cs-opt" data-value="fridge" onclick="csPick(this)">
+              <span class="cs-l">Køleskab/fryser-mode</span>
+              <span class="cs-r">Køleskab, fryser, vinkøl</span>
+            </button>
+          </div>
+          <input type="hidden" id="autoStrategy" value="cheapest_n">
+        </div>
       </div>
       <div id="autoParamDiv">
         <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1" id="autoParamLabel">Timer/dag</label>
@@ -1739,6 +1794,45 @@ function updateWeekNav(){
 
 // ═══ AUTOMATION ═══
 const STRATEGY_HELP={cheapest_n:'Tænder kun i de N billigste timer. Velegnet til enheder der skal køre et bestemt antal timer dagligt.',cheapest_pct:'Tænder i den billigste andel af døgnets timer. God til enheder med fleksibelt forbrug.',avoid_expensive_n:'Slukker i de N dyreste timer, tændt resten af døgnet. God til enheder der skal køre det meste af tiden.',avoid_expensive_pct:'Slukker i den dyreste andel af timer. Reducerer omkostning uden at begrænse for meget.',avoid_peak:'Fast tidsplan: slukker kl. 17-21 hvor nettariffen og forbruget typisk er højest.',night_cheap:'Kører kun kl. 23-06 hvor priserne typisk er lavest. Ideel til støjende enheder.',fridge:'Slukker i de X dyreste timer per døgn, men aldrig mere end Y timer i træk. Ideel til køleskab/fryser, der ikke må stå slukket for længe.'};
+// ═══ Custom strategy dropdown ═══
+function csToggle(){
+  const m=document.getElementById('autoStrategyMenu');
+  const btn=document.getElementById('autoStrategyBtn');
+  const open=m.hidden;
+  m.hidden=!open;
+  btn.setAttribute('aria-expanded',open?'true':'false');
+}
+function csPick(el){
+  const v=el.dataset.value;
+  const label=el.querySelector('.cs-l').textContent;
+  document.getElementById('autoStrategyDisplay').textContent=label;
+  document.getElementById('autoStrategy').value=v;
+  document.querySelectorAll('#autoStrategyMenu .cs-opt').forEach(o=>{
+    if(o.dataset.value===v)o.dataset.selected='1';else delete o.dataset.selected;
+  });
+  document.getElementById('autoStrategyMenu').hidden=true;
+  document.getElementById('autoStrategyBtn').setAttribute('aria-expanded','false');
+  onAutoStrategyChange();
+}
+// Outside click + Esc close the menu
+document.addEventListener('click',e=>{
+  const wrap=document.getElementById('autoStrategyWrap');
+  const menu=document.getElementById('autoStrategyMenu');
+  if(wrap && menu && !menu.hidden && !wrap.contains(e.target)){
+    menu.hidden=true;
+    document.getElementById('autoStrategyBtn').setAttribute('aria-expanded','false');
+  }
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    const m=document.getElementById('autoStrategyMenu');
+    if(m && !m.hidden){
+      m.hidden=true;
+      document.getElementById('autoStrategyBtn')?.setAttribute('aria-expanded','false');
+    }
+  }
+});
+
 function onAutoStrategyChange(){
   const s=document.getElementById('autoStrategy').value;
   gtag('event','auto_strategy_change',{strategy:s});

@@ -331,24 +331,47 @@ async function startServer() {
     assert.ok(raw.includes('sensor:'), 'raw YAML should include sensor:');
   });
 
-  await test('automation: #autoStrategy exposes all 6 strategies', async () => {
+  // Helper: set the custom strategy dropdown's value (replaces page.selectOption,
+  // which only works on native <select>). The visible label is bound via JS so
+  // we drive csPick() directly to mirror a real user click.
+  const pickStrategy = async (value) => {
+    await page.evaluate(v => {
+      const el = document.querySelector(`#autoStrategyMenu .cs-opt[data-value="${v}"]`);
+      if (!el) throw new Error(`strategy option ${v} not found`);
+      el.click();
+    }, value);
+  };
+
+  await test('automation: #autoStrategy exposes all 7 strategies (with use-case text)', async () => {
     await page.goto(BASE + '/#automation');
-    const vals = await page.locator('#autoStrategy option').evaluateAll(opts => opts.map(o => o.value));
-    ['cheapest_n','cheapest_pct','avoid_expensive_n','avoid_expensive_pct','avoid_peak','night_cheap']
+    const opts = await page.locator('#autoStrategyMenu .cs-opt').evaluateAll(els =>
+      els.map(e => ({
+        value: e.dataset.value,
+        label: e.querySelector('.cs-l')?.textContent,
+        useCase: e.querySelector('.cs-r')?.textContent,
+      })));
+    const vals = opts.map(o => o.value);
+    ['cheapest_n','cheapest_pct','avoid_expensive_n','avoid_expensive_pct','avoid_peak','night_cheap','fridge']
       .forEach(s => assert.ok(vals.includes(s), `#autoStrategy missing "${s}"`));
+    // Every option must have non-empty use-case text on the right side
+    opts.forEach(o => assert.ok(o.useCase && o.useCase.trim().length > 0,
+      `strategy "${o.value}" missing use-case text on the right`));
   });
 
   await test('automation: changing #autoStrategy updates label/help text', async () => {
     await page.goto(BASE + '/#automation');
-    await page.selectOption('#autoStrategy', 'night_cheap');
+    await pickStrategy('night_cheap');
     assert.equal(await page.locator('#autoStrategy').inputValue(), 'night_cheap');
+    // Visible button label reflects selection
+    const display = (await page.locator('#autoStrategyDisplay').textContent()).trim();
+    assert.match(display, /nattetimer/i);
   });
 
   await test('automation: #autoParam accepts numeric input', async () => {
     await page.goto(BASE + '/#automation');
     // autoParam is only visible for strategies that need a number. cheapest_n is
     // the default; make sure we reset to it so the param field is shown.
-    await page.selectOption('#autoStrategy', 'cheapest_n');
+    await pickStrategy('cheapest_n');
     await page.waitForSelector('#autoParam:visible');
     await page.fill('#autoParam', '12');
     assert.equal(await page.locator('#autoParam').inputValue(), '12');
@@ -357,7 +380,7 @@ async function startServer() {
   await test('automation: changing inputs updates #apiUrlDisplay', async () => {
     await page.goto(BASE + '/#automation');
     await page.waitForSelector('#apiUrlDisplay');
-    await page.selectOption('#autoStrategy', 'cheapest_n');
+    await pickStrategy('cheapest_n');
     await page.waitForSelector('#autoParam:visible');
     await page.selectOption('#autoArea', 'DK2');
     await page.fill('#autoParam', '4');
