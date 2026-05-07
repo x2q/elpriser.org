@@ -3,6 +3,7 @@
  *
  * Endpoints:
  *   /api/now?area=DK1&mode=inkl_alt&strategy=cheapest_n&hours=6[&gln=...]
+ *   /api/now?area=DK1&strategy=fridge&hours=4&max_off=2[&gln=...]
  *   /api/prices?area=DK1&mode=inkl_alt[&gln=...][&date=YYYY-MM-DD]
  *   /api/schedule?area=DK1&mode=inkl_alt&strategy=cheapest_n&hours=6[&gln=...][&date=YYYY-MM-DD]
  *   /api/shelly/tariff?area=DK1&mode=inkl_alt[&gln=...]   → Tibber-compatible JSON
@@ -188,7 +189,7 @@ function cvt(dkkMwh, h, mode, en, tariff) {
 
 // ── Schedule strategy ─────────────────────────────────────────────────────────
 
-function computeSchedule(prices, strategy, param) {
+function computeSchedule(prices, strategy, param, param2) {
   const valid = prices.map((p, h) => ({ h, p })).filter(x => x.p !== null);
   const on = Array(24).fill(false);
   if (strategy === 'cheapest_n') {
@@ -209,6 +210,26 @@ function computeSchedule(prices, strategy, param) {
     for (let h = 0; h < 24; h++) on[h] = (h < 17 || h >= 21);
   } else if (strategy === 'night_cheap') {
     for (let h = 0; h < 24; h++) on[h] = (h >= 23 || h < 6);
+  } else if (strategy === 'fridge') {
+    // Turn OFF the most expensive hours, but never more than `maxRun`
+    // consecutive hours — protects fridges/freezers from warming up too much.
+    // Greedy: sort desc by price, mark OFF in turn, skip any hour whose
+    // marking would extend a run beyond maxRun. Stops at `total` OFF hours.
+    const total  = Math.min(Math.max(1, +param), valid.length);
+    const maxRun = Math.max(1, +(param2 || 2));
+    const off = Array(24).fill(false);
+    const sorted = [...valid].sort((a, b) => b.p - a.p);
+    let count = 0;
+    for (const { h } of sorted) {
+      if (count >= total) break;
+      let runLeft = 0;
+      for (let i = h - 1; i >= 0 && off[i]; i--) runLeft++;
+      let runRight = 0;
+      for (let i = h + 1; i < 24 && off[i]; i++) runRight++;
+      if (runLeft + 1 + runRight <= maxRun) { off[h] = true; count++; }
+    }
+    // Default ON for hours without price data — safer for cooling appliances.
+    for (let h = 0; h < 24; h++) on[h] = !off[h];
   }
   return on;
 }
@@ -389,7 +410,9 @@ export async function onRequest({ request }) {
 
     const strategy = q.get('strategy') || 'cheapest_n';
     const param    = +(q.get('hours') ?? q.get('pct') ?? 6);
-    const schedule = computeSchedule(hourlyPrices, strategy, param);
+    // Second param — currently only `fridge` uses it (max consecutive OFF hours).
+    const param2   = q.get('max_off') != null ? +q.get('max_off') : null;
+    const schedule = computeSchedule(hourlyPrices, strategy, param, param2);
 
     if (seg1 === 'now') {
       return ok({

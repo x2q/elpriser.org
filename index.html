@@ -647,11 +647,16 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
           <option value="avoid_expensive_pct">Undgå dyreste X% af timer</option>
           <option value="avoid_peak">Undgå spidstimer 17-21</option>
           <option value="night_cheap">Kun nattetimer 23-06</option>
+          <option value="fridge">Køleskab/fryser — undgå dyre timer, maks Y i træk</option>
         </select>
       </div>
       <div id="autoParamDiv">
         <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1" id="autoParamLabel">Timer/dag</label>
         <input type="number" id="autoParam" value="6" min="1" max="23" oninput="updateAutoViz()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+      </div>
+      <div id="autoParam2Div" style="display:none">
+        <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1" id="autoParam2Label">Maks. timer i træk</label>
+        <input type="number" id="autoParam2" value="2" min="1" max="12" oninput="updateAutoViz()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
       </div>
     </div>
     <p id="autoStrategyHelp" class="text-xs text-gray-400 dark:text-gray-500 mt-2"></p>
@@ -1733,18 +1738,26 @@ function updateWeekNav(){
 }
 
 // ═══ AUTOMATION ═══
-const STRATEGY_HELP={cheapest_n:'Tænder kun i de N billigste timer. Velegnet til enheder der skal køre et bestemt antal timer dagligt.',cheapest_pct:'Tænder i den billigste andel af døgnets timer. God til enheder med fleksibelt forbrug.',avoid_expensive_n:'Slukker i de N dyreste timer, tændt resten af døgnet. God til enheder der skal køre det meste af tiden.',avoid_expensive_pct:'Slukker i den dyreste andel af timer. Reducerer omkostning uden at begrænse for meget.',avoid_peak:'Fast tidsplan: slukker kl. 17-21 hvor nettariffen og forbruget typisk er højest.',night_cheap:'Kører kun kl. 23-06 hvor priserne typisk er lavest. Ideel til støjende enheder.'};
+const STRATEGY_HELP={cheapest_n:'Tænder kun i de N billigste timer. Velegnet til enheder der skal køre et bestemt antal timer dagligt.',cheapest_pct:'Tænder i den billigste andel af døgnets timer. God til enheder med fleksibelt forbrug.',avoid_expensive_n:'Slukker i de N dyreste timer, tændt resten af døgnet. God til enheder der skal køre det meste af tiden.',avoid_expensive_pct:'Slukker i den dyreste andel af timer. Reducerer omkostning uden at begrænse for meget.',avoid_peak:'Fast tidsplan: slukker kl. 17-21 hvor nettariffen og forbruget typisk er højest.',night_cheap:'Kører kun kl. 23-06 hvor priserne typisk er lavest. Ideel til støjende enheder.',fridge:'Slukker i de X dyreste timer per døgn, men aldrig mere end Y timer i træk. Ideel til køleskab/fryser, der ikke må stå slukket for længe.'};
 function onAutoStrategyChange(){
   const s=document.getElementById('autoStrategy').value;
   gtag('event','auto_strategy_change',{strategy:s});
   const div=document.getElementById('autoParamDiv');
   const lbl=document.getElementById('autoParamLabel');
   const inp=document.getElementById('autoParam');
+  const div2=document.getElementById('autoParam2Div');
+  const inp2=document.getElementById('autoParam2');
+  div2.style.display='none';
   if(s==='cheapest_n'||s==='avoid_expensive_n'){div.style.display='';lbl.textContent='Timer/dag';inp.max=23;if(!inp._userSet)inp.value=s==='avoid_expensive_n'?4:6;}
   else if(s==='cheapest_pct'||s==='avoid_expensive_pct'){div.style.display='';lbl.textContent='Procent (%)';inp.max=100;if(!inp._userSet)inp.value=s==='avoid_expensive_pct'?20:20;}
+  else if(s==='fridge'){
+    div.style.display='';lbl.textContent='Slukket-timer/dag';inp.max=23;if(!inp._userSet)inp.value=4;
+    div2.style.display='';if(!inp2._userSet)inp2.value=2;
+  }
   else div.style.display='none';
   document.getElementById('autoStrategyHelp').textContent=STRATEGY_HELP[s]||'';
   inp._userSet=false;
+  if(inp2)inp2._userSet=false;
   updateAutoViz();
 }
 // Populate the netselskab dropdown with ALL nets across DK1+DK2, grouped,
@@ -1787,7 +1800,7 @@ function onAutoModeChange(){
   if(isNet)populateAutoNet();
   updateAutoViz();
 }
-function getStrategyHours(dailyPrices,strategy,param){
+function getStrategyHours(dailyPrices,strategy,param,param2){
   const res=Array(24).fill(false);
   const valid=dailyPrices.map((p,h)=>({h,p})).filter(x=>x.p!=null);
   if(strategy==='cheapest_n'){const n=Math.min(Math.max(1,+param),valid.length);[...valid].sort((a,b)=>a.p-b.p).slice(0,n).forEach(x=>res[x.h]=true);}
@@ -1796,6 +1809,23 @@ function getStrategyHours(dailyPrices,strategy,param){
   else if(strategy==='avoid_expensive_pct'){const n=Math.max(1,Math.round(valid.length*(+param/100)));const exp=new Set([...valid].sort((a,b)=>b.p-a.p).slice(0,n).map(x=>x.h));valid.forEach(x=>res[x.h]=!exp.has(x.h));}
   else if(strategy==='avoid_peak'){for(let h=0;h<24;h++)res[h]=(h<17||h>=21);}
   else if(strategy==='night_cheap'){for(let h=0;h<24;h++)res[h]=(h>=23||h<6);}
+  else if(strategy==='fridge'){
+    // Mark the X most expensive hours OFF, but skip any hour whose marking
+    // would create a run of >Y consecutive OFF hours. Greedy by price desc.
+    const total=Math.min(Math.max(1,+param),valid.length);
+    const maxRun=Math.max(1,+(param2||2));
+    const off=Array(24).fill(false);
+    const sorted=[...valid].sort((a,b)=>b.p-a.p);
+    let count=0;
+    for(const{h} of sorted){
+      if(count>=total)break;
+      let runLeft=0;for(let i=h-1;i>=0&&off[i];i--)runLeft++;
+      let runRight=0;for(let i=h+1;i<24&&off[i];i++)runRight++;
+      if(runLeft+1+runRight<=maxRun){off[h]=true;count++;}
+    }
+    // ON = NOT off; default ON for hours with no price data (safer for cooling).
+    for(let h=0;h<24;h++)res[h]=!off[h];
+  }
   return res;
 }
 async function loadAutomationPage(){
@@ -1815,6 +1845,7 @@ async function loadAutomationPage(){
 function updateAutoViz(){
   const strategy=document.getElementById('autoStrategy')?.value||'cheapest_n';
   const param=+(document.getElementById('autoParam')?.value||6);
+  const param2=+(document.getElementById('autoParam2')?.value||2);
   const mode=document.getElementById('autoMode')?.value||'inkl_alt';
   // Ensure the net dropdown is populated (runs once per mode toggle)
   if(mode.startsWith('net_') && !document.getElementById('autoNet').options.length)populateAutoNet();
@@ -1832,7 +1863,7 @@ function updateAutoViz(){
   S.mode=autoMode;S.gln=autoGln;
   dates.forEach(d=>{
     const prices=Array.from({length:24},(_,hr)=>{const raw=priceData[d]?.[hr];return raw!=null?cvt(raw,hr,d):null;});
-    daySchedules[d]=getStrategyHours(prices,strategy,param);
+    daySchedules[d]=getStrategyHours(prices,strategy,param,param2);
   });
   let h='<table class="mx-auto text-xs tabular"><tr><th class="pr-2 text-right font-normal '+thSub+'">Time</th>';
   dates.forEach(d=>{const dt=new Date(d);const isT=d===today;const l=isT?'I dag':DAY[dt.getDay()];h+=`<th class="px-1.5 font-normal ${isT?thToday:thSub}">${l}<br><span class="${isT?thToday:thDay}">${dt.getDate()}</span></th>`;});
@@ -1879,21 +1910,23 @@ function updateAutoViz(){
   document.getElementById('autoStrategyHelp').textContent=STRATEGY_HELP[strategy]||'';
   // Restore state
   S.mode=_mode;S.gln=_gln;
-  generateExports(strategy,param,daySchedules,dates,autoMode,autoGln);
+  generateExports(strategy,param,param2,daySchedules,dates,autoMode,autoGln);
 }
-function buildApiUrl(mode,area,strategy,param,gln){
+function buildApiUrl(mode,area,strategy,param,param2,gln){
   const base=`https://elpriser.org/api/now?area=${area}&mode=${mode}&strategy=${strategy}`;
-  const needsParam=['cheapest_n','cheapest_pct','avoid_expensive_n','avoid_expensive_pct'];
-  const p=(strategy==='cheapest_pct'||strategy==='avoid_expensive_pct')?`&pct=${param}`:((strategy==='cheapest_n'||strategy==='avoid_expensive_n')?`&hours=${param}`:'');
+  let p='';
+  if(strategy==='cheapest_pct'||strategy==='avoid_expensive_pct')p=`&pct=${param}`;
+  else if(strategy==='cheapest_n'||strategy==='avoid_expensive_n')p=`&hours=${param}`;
+  else if(strategy==='fridge')p=`&hours=${param}&max_off=${param2}`;
   const g=gln?`&gln=${gln}`:'';
   return base+p+g;
 }
-function generateExports(strategy,param,daySchedules,dates,mode,gln){
+function generateExports(strategy,param,param2,daySchedules,dates,mode,gln){
   const area=document.getElementById('autoArea')?.value||'DK1';
   const entityId='elpris';
-  const labels={cheapest_n:`Billigste ${param} timer/dag`,cheapest_pct:`Billigste ${param}% af timer`,avoid_expensive_n:`Undgå dyreste ${param} timer/dag`,avoid_expensive_pct:`Undgå dyreste ${param}% af timer`,avoid_peak:'Undgå spidstimer (17-21)',night_cheap:'Kun nattetimer (23-06)'};
+  const labels={cheapest_n:`Billigste ${param} timer/dag`,cheapest_pct:`Billigste ${param}% af timer`,avoid_expensive_n:`Undgå dyreste ${param} timer/dag`,avoid_expensive_pct:`Undgå dyreste ${param}% af timer`,avoid_peak:'Undgå spidstimer (17-21)',night_cheap:'Kun nattetimer (23-06)',fridge:`Køleskab/fryser — slukket ${param} dyreste timer (maks ${param2} i træk)`};
   const stratLabel=labels[strategy]||strategy;
-  const apiUrl=buildApiUrl(mode,area,strategy,param,gln);
+  const apiUrl=buildApiUrl(mode,area,strategy,param,param2,gln);
   // Show API URL (highlighted)
   setHighlighted(document.getElementById('apiUrlDisplay'),apiUrl,'url');
   // ── HA export (REST sensor + automation) ──────────────────────────────────
@@ -1941,6 +1974,8 @@ automation:
               `{% set n = ([1,((sorted|length)*(${+param}/100))|round(0,'floor')|int]|max) %}\n            {% set ok = prices[now().hour]['price'] | float <= sorted[n-1] | float %}`
             :strategy==='avoid_peak'?
               `{% set ok = now().hour < 17 or now().hour >= 21 %}`
+            :strategy==='fridge'?
+              `{# Køleskab/fryser-strategien kræver streak-bevidst logik der ikke #}\n            {# kan udtrykkes rent i en Jinja-template. Brug Option 1 (REST-sensor) #}\n            {# i stedet — den kalder /api/now som beregner det korrekt. #}\n            {% set ok = false %}`
             :
               `{% set ok = now().hour >= 23 or now().hour < 6 %}`}
             {{ 'switch.turn_on' if ok else 'switch.turn_off' }}
