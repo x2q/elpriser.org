@@ -690,7 +690,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
               <span class="cs-r">Pool-pumpe, akvariefilter</span>
             </button>
             <button type="button" class="cs-opt" data-value="smart" onclick="csPick(this)">
-              <span class="cs-l">Smart</span>
+              <span class="cs-l">Undgå dyreste N timer, men maks Y i træk</span>
               <span class="cs-r">Køleskab, varmepumpe, fryser</span>
             </button>
           </div>
@@ -2010,7 +2010,7 @@ function buildApiUrl(mode,area,strategy,param,param2,gln){
 function generateExports(strategy,param,param2,daySchedules,dates,mode,gln){
   const area=document.getElementById('autoArea')?.value||'DK1';
   const entityId='elpris';
-  const labels={cheapest_n:`Billigste ${param} timer/dag`,cheapest_pct:`Billigste ${param}% af timer`,avoid_expensive_n:`Undgå dyreste ${param} timer/dag`,avoid_expensive_pct:`Undgå dyreste ${param}% af timer`,avoid_peak:'Undgå spidstimer (17-21)',night_cheap:'Kun nattetimer (23-06)',smart:`Smart (${param}t slukket, maks ${param2}t i træk)`};
+  const labels={cheapest_n:`Billigste ${param} timer/dag`,cheapest_pct:`Billigste ${param}% af timer`,avoid_expensive_n:`Undgå dyreste ${param} timer/dag`,avoid_expensive_pct:`Undgå dyreste ${param}% af timer`,avoid_peak:'Undgå spidstimer (17-21)',night_cheap:'Kun nattetimer (23-06)',smart:`Undgå dyreste ${param} timer, men maks ${param2} i træk`};
   const stratLabel=labels[strategy]||strategy;
   const apiUrl=buildApiUrl(mode,area,strategy,param,param2,gln);
   // Show API URL (highlighted)
