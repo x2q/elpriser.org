@@ -115,6 +115,24 @@ async function staticChecks() {
         'detectLocation must call /api/supplierlookup');
     });
 
+  // ── No browser-side fetches to api.energidataservice.dk (guards "Fejl ved hentning af data") ─
+  // EDS returns empty 200 with no CORS headers when an Origin header is sent.
+  // All EDS access must go through /api/raw/* on our origin instead.
+  await test('no inline scripts fetch api.energidataservice.dk directly — guards EDS-CORS',
+    () => {
+      // Only inspect <script>…</script> blocks (the live HTML body has prose
+      // mentions of energidataservice.dk in <a href="…"> which are fine).
+      const scriptBlocks = [...indexHtml.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+        .map(m => m[1]).join('\n');
+      const offending = [...scriptBlocks.matchAll(/api\.energidataservice\.dk[^\s"'`)]*/g)]
+        .map(m => m[0]);
+      assert.deepEqual(offending, [],
+        `Inline script(s) still call api.energidataservice.dk directly — EDS returns ` +
+        `empty 200 with no CORS headers when Origin is sent, surfacing as ` +
+        `"Fejl ved hentning af data". Route through /api/raw/* instead.\n` +
+        `Found: ${offending.slice(0, 3).join(', ')}`);
+    });
+
   // ── 75fd5c9: Server-side address normalisation guard ─────────────────────
   await test('buildGpdAddress replaces dots with spaces (not strips) — guards 75fd5c9',
     () => {
@@ -236,6 +254,77 @@ async function apiTests() {
       await json(url);
       const elapsed = Date.now() - t0;
       assert.ok(elapsed < 200, `cached call took ${elapsed}ms, expected <200ms`);
+    });
+
+  // ── /api/raw/* — guards EDS-CORS bug ("Fejl ved hentning af data") ──
+  section('API endpoint /api/raw/* (Energi Data Service proxy)');
+
+  await test('GET /api/raw/prices returns DayAhead records with CORS + cache headers',
+    async () => {
+      const today = new Date(), s = new Date(today), e = new Date(today);
+      s.setUTCDate(s.getUTCDate() - 7); e.setUTCDate(e.getUTCDate() + 2);
+      const fmt = d => d.toISOString().slice(0, 10);
+      const r = await json(`/api/raw/prices?area=DK1&start=${fmt(s)}&end=${fmt(e)}`);
+      assert.equal(r.status, 200);
+      assert.equal(r.headers.get('access-control-allow-origin'), '*',
+        'CORS header missing — direct EDS calls fail without this proxy.');
+      assert.match(r.headers.get('cache-control') || '', /s-maxage=\d+/,
+        'edge cache TTL missing — server cache must be configured.');
+      assert.ok(Array.isArray(r.body.records),
+        'response must have a records array');
+      assert.ok(r.body.records.length > 0,
+        'expected non-empty records (proxied response empty? check upstream).');
+    });
+
+  await test('GET /api/raw/prices missing params → 400',
+    async () => {
+      const r = await json('/api/raw/prices?area=DK1');
+      assert.equal(r.status, 400);
+    });
+
+  await test('GET /api/raw/prices invalid date format → 400',
+    async () => {
+      const r = await json('/api/raw/prices?area=DK1&start=foo&end=bar');
+      assert.equal(r.status, 400);
+    });
+
+  await test('GET /api/raw/encharges returns charge records',
+    async () => {
+      const r = await json('/api/raw/encharges');
+      assert.equal(r.status, 200);
+      assert.equal(r.headers.get('access-control-allow-origin'), '*');
+      assert.ok(Array.isArray(r.body.records));
+    });
+
+  await test('GET /api/raw/tariff?gln= returns single-net tariff (not all nets)',
+    async () => {
+      // Konstant — same GLN that was the failing case end-to-end
+      const r = await json('/api/raw/tariff?gln=5790000704842');
+      assert.equal(r.status, 200);
+      assert.ok(Array.isArray(r.body.records));
+      // Single-net response should be tiny (a few currently-active records).
+      // If we accidentally regress to all-nets we'd see thousands of records.
+      assert.ok(r.body.records.length < 50,
+        `single-net tariff returned ${r.body.records.length} records — ` +
+        `>50 suggests regression to all-nets behaviour.`);
+    });
+
+  await test('GET /api/raw/tariff missing/bad gln → 400',
+    async () => {
+      const r1 = await json('/api/raw/tariff');
+      assert.equal(r1.status, 400);
+      const r2 = await json('/api/raw/tariff?gln=foo');
+      assert.equal(r2.status, 400);
+    });
+
+  await test('/api/raw/tariff edge-cached: second call < 50ms',
+    async () => {
+      const url = '/api/raw/tariff?gln=5790000704842';
+      await json(url); // warm
+      const t0 = Date.now();
+      await json(url);
+      const elapsed = Date.now() - t0;
+      assert.ok(elapsed < 100, `cached call took ${elapsed}ms — edge cache broken?`);
     });
 }
 

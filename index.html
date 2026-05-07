@@ -1558,10 +1558,52 @@ function updateHeader(){
 // ═══ DATA ═══
 const fmt=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 function processRecords(recs){const g={};recs.forEach(r=>{const dt=new Date(r.TimeDK),dk=fmt(dt),h=dt.getHours();(g[dk]??={})[h]??=[];g[dk][h].push(r.DayAheadPriceDKK);});const o={};for(const d in g){o[d]={};for(const h in g[d]){const v=g[d][h];o[d][h]=v.reduce((a,b)=>a+b,0)/v.length;}}return o;}
-async function loadAllNettarifC(){if(allTariffsLoaded)return;const f=encodeURIComponent(JSON.stringify({ChargeType:'D03',Note:'Nettarif C'}));const cols='GLN_Number,ValidFrom,ValidTo,ResolutionDuration,'+Array.from({length:24},(_,i)=>'Price'+(i+1)).join(',');try{const r=await fetch(`https://api.energidataservice.dk/dataset/DatahubPricelist?filter=${f}&sort=ValidFrom%20desc&limit=0&columns=${cols}`);const j=await r.json();const now=new Date();const horizon=new Date(now);horizon.setDate(horizon.getDate()+3);for(const rec of(j.records||[])){const gln=rec.GLN_Number;if(rec.ResolutionDuration!=='PT1H')continue;const vf=new Date(rec.ValidFrom);if(vf>horizon)continue;if(rec.ValidTo&&new Date(rec.ValidTo)<=now)continue;if(!tariffCache[gln])tariffCache[gln]=[];tariffCache[gln].push({fromStr:rec.ValidFrom.slice(0,10),toStr:rec.ValidTo?rec.ValidTo.slice(0,10):null,hourly:Array.from({length:24},(_,i)=>rec['Price'+(i+1)]||0)});}allTariffsLoaded=true;}catch(e){console.error('Tariff load failed',e);}}
+
+// Server is the cache (Cloudflare edge + per-isolate). Browser leans on the
+// HTTP cache via Cache-Control on /api/* responses. We just dedupe inflight
+// requests so two parallel callers share one network round-trip.
+const _inflight=new Map();
+function dedupedFetch(url){
+  if(_inflight.has(url))return _inflight.get(url);
+  const p=fetch(url).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .finally(()=>_inflight.delete(url));
+  _inflight.set(url,p);return p;
+}
+
+// Per-net tariff for the table view — only fetches the one net the user
+// picked (~1 KB), not all 17 (~48 KB). Cached in tariffCache by GLN.
+async function loadNetTariff(gln){
+  if(tariffCache[gln])return;
+  try{
+    const j=await dedupedFetch(`/api/raw/tariff?gln=${gln}`);
+    tariffCache[gln]=(j.records||[]).map(rec=>({
+      fromStr:rec.ValidFrom.slice(0,10),
+      toStr:rec.ValidTo?rec.ValidTo.slice(0,10):null,
+      hourly:Array.from({length:24},(_,i)=>rec['Price'+(i+1)]||0),
+    }));
+  }catch(e){console.error('Tariff load failed',e);tariffCache[gln]=[];}
+}
+// All-nets bulk loader — only used by the Tariff comparison page where the
+// user actually sees every net. Hydrates tariffCache for every GLN.
+async function loadAllNettarifC(){
+  if(allTariffsLoaded)return;
+  try{
+    const j=await dedupedFetch('/api/raw/tariffs');
+    for(const rec of(j.records||[])){
+      const gln=rec.GLN_Number;
+      if(!tariffCache[gln])tariffCache[gln]=[];
+      tariffCache[gln].push({
+        fromStr:rec.ValidFrom.slice(0,10),
+        toStr:rec.ValidTo?rec.ValidTo.slice(0,10):null,
+        hourly:Array.from({length:24},(_,i)=>rec['Price'+(i+1)]||0),
+      });
+    }
+    allTariffsLoaded=true;
+  }catch(e){console.error('Tariff load failed',e);}
+}
 // Compare YYYY-MM-DD strings — avoids DST/timezone bugs with new Date() parsing
 function getTariff(gln,dateStr){const recs=tariffCache[gln]||[];for(const rec of recs){if(rec.fromStr>dateStr)continue;if(rec.toStr&&rec.toStr<=dateStr)continue;return rec.hourly;}return Array(24).fill(0);}
-async function fetchEnCharges(){if(enCharges)return enCharges;const f=encodeURIComponent(JSON.stringify({GLN_Number:ENERGINET_GLN,ChargeType:'D03',ResolutionDuration:'P1D'}));const defaults={sys:0.072,trans:0.043,afg:0.008};try{const r=await fetch(`https://api.energidataservice.dk/dataset/DatahubPricelist?filter=${f}&sort=ValidFrom%20desc&limit=20&columns=ChargeTypeCode,ValidFrom,ValidTo,Price1`);const j=await r.json();const now=new Date(),c={...defaults};for(const rec of(j.records||[])){if(new Date(rec.ValidFrom)>now)continue;if(rec.ValidTo&&new Date(rec.ValidTo)<now)continue;if(rec.ChargeTypeCode==='41000')c.sys=rec.Price1||0;else if(rec.ChargeTypeCode==='40000')c.trans=rec.Price1||0;else if(rec.ChargeTypeCode==='EA-001')c.afg=rec.Price1||0;}enCharges=c;return c;}catch(e){enCharges=defaults;return defaults;}}
+async function fetchEnCharges(){if(enCharges)return enCharges;const defaults={sys:0.072,trans:0.043,afg:0.008};try{const j=await dedupedFetch('/api/raw/encharges');const now=new Date(),c={...defaults};for(const rec of(j.records||[])){if(new Date(rec.ValidFrom)>now)continue;if(rec.ValidTo&&new Date(rec.ValidTo)<now)continue;if(rec.ChargeTypeCode==='41000')c.sys=rec.Price1||0;else if(rec.ChargeTypeCode==='40000')c.trans=rec.Price1||0;else if(rec.ChargeTypeCode==='EA-001')c.afg=rec.Price1||0;}enCharges=c;return c;}catch(e){enCharges=defaults;return defaults;}}
 
 // ═══ PRICE CONVERSION + COLORS ═══
 function cvt(dkkMwh,h,date){const spot=dkkMwh/1000,en=enCharges||{sys:0.072,trans:0.043,afg:0.008};const d=date||fmt(new Date());switch(S.mode){case 'spot_ex':return spot;case 'spot_inkl':return spot*1.25;case 'inkl_alt':return(spot+en.sys+en.trans+en.afg)*1.25;case 'inkl_alt_minus':return(spot+en.sys+en.trans)*1.25;case 'net_inkl_alt':{const nt=getTariff(S.gln,d)[h]||0;return(spot+nt+en.sys+en.trans+en.afg)*1.25;}case 'net_inkl_tarif':{const nt=getTariff(S.gln,d)[h]||0;return(spot+nt+en.sys+en.trans)*1.25;}default:return spot*1.25;}}
@@ -1620,7 +1662,7 @@ function fg(p) {
 }
 
 // ═══ LOAD & RENDER ═══
-async function loadPriceData(loadId){const li=document.getElementById('loadingIndicator'),tw=document.getElementById('tableWrapper');li.style.display='block';tw.style.display='none';const needs=['inkl_alt','inkl_alt_minus','net_inkl_alt','net_inkl_tarif'];const proms=[];if(needs.includes(S.mode))proms.push(fetchEnCharges());if(S.mode.startsWith('net_'))proms.push(loadAllNettarifC());if(proms.length)await Promise.all(proms);if(loadId!==S._loadId)return;const now=new Date();const center=new Date(now);center.setDate(center.getDate()+S.weekOffset*7);const s=new Date(center),e=new Date(center);s.setDate(s.getDate()-7);e.setDate(e.getDate()+2);const f=encodeURIComponent(JSON.stringify({PriceArea:S.area}));try{const r=await fetch(`https://api.energidataservice.dk/dataset/DayAheadPrices?start=${fmt(s)}&end=${fmt(e)}&filter=${f}&sort=TimeDK%20asc&limit=0`);if(loadId!==S._loadId)return;const j=await r.json();priceData=processRecords(j.records||[]);renderTable();}catch(err){if(loadId===S._loadId)li.innerHTML='<span class="text-red-500">Fejl ved hentning af data</span>';}}
+async function loadPriceData(loadId){const li=document.getElementById('loadingIndicator'),tw=document.getElementById('tableWrapper');li.style.display='block';tw.style.display='none';const needs=['inkl_alt','inkl_alt_minus','net_inkl_alt','net_inkl_tarif'];const proms=[];if(needs.includes(S.mode))proms.push(fetchEnCharges());if(S.mode.startsWith('net_')&&S.gln)proms.push(loadNetTariff(S.gln));if(proms.length)await Promise.all(proms);if(loadId!==S._loadId)return;const now=new Date();const center=new Date(now);center.setDate(center.getDate()+S.weekOffset*7);const s=new Date(center),e=new Date(center);s.setDate(s.getDate()-7);e.setDate(e.getDate()+2);try{const j=await dedupedFetch(`/api/raw/prices?area=${S.area}&start=${fmt(s)}&end=${fmt(e)}`);if(loadId!==S._loadId)return;priceData=processRecords(j.records||[]);renderTable();}catch(err){console.error('Price load failed',err);if(loadId===S._loadId)li.innerHTML='<span class="text-red-500">Fejl ved hentning af data</span>';}}
 
 function renderTable(){
   const dates=Object.keys(priceData).sort().slice(-8);
@@ -1765,8 +1807,7 @@ async function loadAutomationPage(){
   if(!Object.keys(priceData).length){
     const area=areaEl.value,now=new Date(),s=new Date(now),e=new Date(now);
     s.setDate(s.getDate()-7);e.setDate(e.getDate()+2);
-    const f=encodeURIComponent(JSON.stringify({PriceArea:area}));
-    try{const r=await fetch(`https://api.energidataservice.dk/dataset/DayAheadPrices?start=${fmt(s)}&end=${fmt(e)}&filter=${f}&sort=TimeDK%20asc&limit=0`);const j=await r.json();priceData=processRecords(j.records||[]);}catch(e){}
+    try{const j=await dedupedFetch(`/api/raw/prices?area=${area}&start=${fmt(s)}&end=${fmt(e)}`);priceData=processRecords(j.records||[]);}catch(e){}
   }
   if(enCharges===null)await fetchEnCharges();
   updateAutoViz();

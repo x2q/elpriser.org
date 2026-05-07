@@ -303,6 +303,26 @@ export async function onRequest({ request }) {
     }
   }
 
+  // ── /api/raw/* ──────────────────────────────────────────────────────────
+  // Raw passthrough to Energi Data Service. Required because EDS returns
+  // empty 200 responses with no CORS headers when the browser sends an
+  // Origin header — the response is then blocked client-side and surfaces
+  // as "Fejl ved hentning af data". Proxying server-side bypasses this:
+  // Workers don't send a browser-style Origin, so EDS replies with the
+  // real body, and we tack on our own CORS + Cache-Control on the way out.
+  if (seg1 === 'raw') {
+    try {
+      if (seg2 === 'prices')    return await handleRawPrices(area, q.get('start'), q.get('end'));
+      if (seg2 === 'encharges') return await handleRawEnCharges();
+      if (seg2 === 'tariff')    return await handleRawTariff(q.get('gln'));
+      if (seg2 === 'tariffs')   return await handleRawTariffs();
+      return fail(404, 'Unknown raw endpoint');
+    } catch (e) {
+      console.error(e);
+      return fail(500, String(e.message || e));
+    }
+  }
+
   try {
     const { priceData, enCharges, tariffRecords } = await loadData(area, mode, gln);
 
@@ -606,6 +626,161 @@ function cvtForecast(dkkMwh, h, mode, en) {
     case 'inkl_alt_minus': return (spot + en.sys + en.trans) * 1.25;
     default:               return spot * 1.25;
   }
+}
+
+// ── Raw passthrough endpoints (CORS-proxy for Energi Data Service) ──────────
+//
+// Two-layer server cache:
+//   1. Cloudflare Cache API (caches.default) — persists across isolates +
+//      deploys, shared by all clients hitting any edge POP.
+//   2. Per-isolate in-memory `cached()` — micro-cache for hot paths within
+//      a single Worker.
+//
+// Both honour the same TTL. Clients see a fresh-looking response with a
+// short browser TTL (so revised prices propagate within minutes) but never
+// hit upstream EDS for a key that's already in our edge cache.
+
+/** Build a JSON Response with CORS + Cache-Control. maxAge in seconds. */
+function cachedJson(data, maxAge) {
+  return new Response(JSON.stringify(data), {
+    headers: {
+      'Content-Type': 'application/json',
+      // s-maxage is for our edge cache; max-age is for the browser. We let
+      // the edge hold the value much longer than the browser does.
+      'Cache-Control': `public, max-age=60, s-maxage=${maxAge}`,
+      ...CORS,
+    },
+  });
+}
+
+/**
+ * Two-layer fetch: in-memory micro-cache → Cloudflare Cache API → upstream.
+ * `key` must be a stable URL-shaped string. `ttlSec` controls both layers.
+ *
+ *   In-memory caches across calls within the same isolate (instant).
+ *   Cache API persists across isolates within a colo (one fetch per ~ttl per
+ *   POP). Upstream is hit only when both miss.
+ */
+async function edgeCached(key, ttlSec, build) {
+  // 1. In-memory (peek directly — `cached()` would store the null sentinel)
+  const now = Date.now(), mem = _cache.get(key);
+  if (mem && now - mem.ts < ttlSec * 1000) return mem.v;
+
+  // 2. Cloudflare Cache API (shared across isolates within a colo)
+  const cache = caches.default;
+  const cacheKey = new Request(`https://cache.local/${encodeURIComponent(key)}`);
+  const hit = await cache.match(cacheKey);
+  if (hit) {
+    const data = await hit.json();
+    _cache.set(key, { ts: now, v: data });
+    return data;
+  }
+
+  // 3. Upstream
+  const data = await build();
+  _cache.set(key, { ts: Date.now(), v: data });
+  await cache.put(cacheKey, new Response(JSON.stringify(data), {
+    headers: { 'Cache-Control': `public, max-age=${ttlSec}` },
+  }));
+  return data;
+}
+
+async function handleRawPrices(area, start, end) {
+  if (!start || !end) return fail(400, 'start, end required (YYYY-MM-DD)');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end))
+    return fail(400, 'start, end must be YYYY-MM-DD');
+
+  // Past dates are immutable → cache for a day. Current/future may revise → 5 min.
+  const today = fmtUTC(new Date());
+  const ttlSec = end < today ? 86400 : 300;
+
+  const records = await edgeCached(`raw-prices-${area}-${start}-${end}`, ttlSec, async () => {
+    const f = encodeURIComponent(JSON.stringify({ PriceArea: area }));
+    const r = await fetch(
+      `https://api.energidataservice.dk/dataset/DayAheadPrices` +
+      `?start=${start}&end=${end}&filter=${f}&sort=TimeDK%20asc&limit=0`
+    );
+    const j = await r.json();
+    return j.records || [];
+  });
+  return cachedJson({ records }, ttlSec);
+}
+
+async function handleRawEnCharges() {
+  // Energinet system/transmission/electricity-tax charges. Change rarely.
+  const records = await edgeCached('raw-encharges', 3600, async () => {
+    const GLN = '5790000432752';
+    const f = encodeURIComponent(JSON.stringify({
+      GLN_Number: GLN, ChargeType: 'D03', ResolutionDuration: 'P1D',
+    }));
+    const r = await fetch(
+      `https://api.energidataservice.dk/dataset/DatahubPricelist` +
+      `?filter=${f}&sort=ValidFrom%20desc&limit=20` +
+      `&columns=ChargeTypeCode,ValidFrom,ValidTo,Price1`
+    );
+    const j = await r.json();
+    return j.records || [];
+  });
+  return cachedJson({ records }, 3600);
+}
+
+/**
+ * Single-net Nettarif C for the table view — needs only the user's chosen
+ * net, not all 17. Returns ~1 KB instead of ~48 KB.
+ */
+async function handleRawTariff(gln) {
+  if (!gln || !/^\d{13}$/.test(gln)) return fail(400, 'gln required (13 digits)');
+
+  const records = await edgeCached(`raw-tariff-${gln}`, 3600, async () => {
+    const f = encodeURIComponent(JSON.stringify({
+      GLN_Number: gln, ChargeType: 'D03', Note: 'Nettarif C',
+    }));
+    const cols = 'ValidFrom,ValidTo,ResolutionDuration,' +
+      Array.from({ length: 24 }, (_, i) => 'Price' + (i + 1)).join(',');
+    const r = await fetch(
+      `https://api.energidataservice.dk/dataset/DatahubPricelist` +
+      `?filter=${f}&sort=ValidFrom%20desc&limit=200&columns=${cols}`
+    );
+    const j = await r.json();
+    // Some nets schedule many future revisions, pushing the currently-active
+    // record out of a small `limit`. We over-fetch (200) and filter to records
+    // active now or within the next 3 days. Trims to a handful of rows.
+    const now = new Date(), horizon = new Date(now);
+    horizon.setUTCDate(horizon.getUTCDate() + 3);
+    return (j.records || []).filter(rec =>
+      rec.ResolutionDuration === 'PT1H' &&
+      new Date(rec.ValidFrom) <= horizon &&
+      (!rec.ValidTo || new Date(rec.ValidTo) > now)
+    );
+  });
+  return cachedJson({ records }, 3600);
+}
+
+/**
+ * All-nets Nettarif C — used ONLY by the Tariff comparison page. The table
+ * view should call /api/raw/tariff?gln=… for a single net instead.
+ */
+async function handleRawTariffs() {
+  const records = await edgeCached('raw-tariffs', 3600, async () => {
+    const f = encodeURIComponent(JSON.stringify({
+      ChargeType: 'D03', Note: 'Nettarif C',
+    }));
+    const cols = 'GLN_Number,ValidFrom,ValidTo,ResolutionDuration,' +
+      Array.from({ length: 24 }, (_, i) => 'Price' + (i + 1)).join(',');
+    const r = await fetch(
+      `https://api.energidataservice.dk/dataset/DatahubPricelist` +
+      `?filter=${f}&sort=ValidFrom%20desc&limit=0&columns=${cols}`
+    );
+    const j = await r.json();
+    const now = new Date(), horizon = new Date(now);
+    horizon.setUTCDate(horizon.getUTCDate() + 3);
+    return (j.records || []).filter(rec =>
+      rec.ResolutionDuration === 'PT1H' &&
+      new Date(rec.ValidFrom) <= horizon &&
+      (!rec.ValidTo || new Date(rec.ValidTo) > now)
+    );
+  });
+  return cachedJson({ records }, 3600);
 }
 
 // ── Supplier lookup (GPS → address → net company) ───────────────────────────
