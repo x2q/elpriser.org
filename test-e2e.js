@@ -342,7 +342,7 @@ async function startServer() {
     }, value);
   };
 
-  await test('automation: #autoStrategy exposes all 7 strategies (with use-case text)', async () => {
+  await test('automation: #autoStrategy exposes the 5 visible strategies (with use-case text)', async () => {
     await page.goto(BASE + '/#automation');
     const opts = await page.locator('#autoStrategyMenu .cs-opt').evaluateAll(els =>
       els.map(e => ({
@@ -351,7 +351,7 @@ async function startServer() {
         useCase: e.querySelector('.cs-r')?.textContent,
       })));
     const vals = opts.map(o => o.value);
-    ['cheapest_n','cheapest_pct','avoid_expensive_n','avoid_expensive_pct','avoid_peak','night_cheap','smart']
+    ['cheapest_n','cheapest_pct','avoid_expensive_n','avoid_expensive_pct','smart']
       .forEach(s => assert.ok(vals.includes(s), `#autoStrategy missing "${s}"`));
     // Every option must have non-empty use-case text on the right side
     opts.forEach(o => assert.ok(o.useCase && o.useCase.trim().length > 0,
@@ -360,11 +360,11 @@ async function startServer() {
 
   await test('automation: changing #autoStrategy updates label/help text', async () => {
     await page.goto(BASE + '/#automation');
-    await pickStrategy('night_cheap');
-    assert.equal(await page.locator('#autoStrategy').inputValue(), 'night_cheap');
+    await pickStrategy('avoid_expensive_n');
+    assert.equal(await page.locator('#autoStrategy').inputValue(), 'avoid_expensive_n');
     // Visible button label reflects selection
     const display = (await page.locator('#autoStrategyDisplay').textContent()).trim();
-    assert.match(display, /natkører/i);
+    assert.match(display, /undgå dyreste/i);
   });
 
   await test('automation: #autoParam accepts numeric input', async () => {

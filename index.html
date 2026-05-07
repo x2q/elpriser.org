@@ -668,37 +668,29 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         <div class="cs-wrap" id="autoStrategyWrap">
           <button type="button" id="autoStrategyBtn" onclick="csToggle()" aria-haspopup="listbox" aria-expanded="false"
             class="cs-btn w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex items-center justify-between gap-2">
-            <span id="autoStrategyDisplay">Lavpris-jæger</span>
+            <span id="autoStrategyDisplay">Billigste N timer/dag</span>
             <svg class="w-4 h-4 shrink-0 opacity-60" viewBox="0 0 20 20" fill="currentColor"><path d="M5.5 7.5 10 12l4.5-4.5"/></svg>
           </button>
           <div id="autoStrategyMenu" role="listbox" hidden
             class="cs-menu absolute left-0 right-0 z-30 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
             <button type="button" class="cs-opt" data-value="cheapest_n" onclick="csPick(this)" data-selected="1">
-              <span class="cs-l">Lavpris-jæger</span>
+              <span class="cs-l">Billigste N timer/dag</span>
               <span class="cs-r">Vaskemaskine, opvaskemaskine</span>
             </button>
             <button type="button" class="cs-opt" data-value="cheapest_pct" onclick="csPick(this)">
-              <span class="cs-l">Lavpris-andel</span>
+              <span class="cs-l">Billigste X% af timer</span>
               <span class="cs-r">Elbil, varmtvandsbeholder</span>
             </button>
             <button type="button" class="cs-opt" data-value="avoid_expensive_n" onclick="csPick(this)">
-              <span class="cs-l">Drop topprisen</span>
+              <span class="cs-l">Undgå dyreste N timer/dag</span>
               <span class="cs-r">Tilskudsvarmer, panelovn</span>
             </button>
             <button type="button" class="cs-opt" data-value="avoid_expensive_pct" onclick="csPick(this)">
-              <span class="cs-l">Drop dyre timer</span>
+              <span class="cs-l">Undgå dyreste X% af timer</span>
               <span class="cs-r">Pool-pumpe, akvariefilter</span>
             </button>
-            <button type="button" class="cs-opt" data-value="avoid_peak" onclick="csPick(this)">
-              <span class="cs-l">Aftenpause</span>
-              <span class="cs-r">Komfur, ovn, vandvarmer</span>
-            </button>
-            <button type="button" class="cs-opt" data-value="night_cheap" onclick="csPick(this)">
-              <span class="cs-l">Natkører</span>
-              <span class="cs-r">Elbil-opladning, tørretumbler</span>
-            </button>
             <button type="button" class="cs-opt" data-value="smart" onclick="csPick(this)">
-              <span class="cs-l">Smart Køling/Varme</span>
+              <span class="cs-l">Smart</span>
               <span class="cs-r">Køleskab, varmepumpe, fryser</span>
             </button>
           </div>
@@ -2018,7 +2010,7 @@ function buildApiUrl(mode,area,strategy,param,param2,gln){
 function generateExports(strategy,param,param2,daySchedules,dates,mode,gln){
   const area=document.getElementById('autoArea')?.value||'DK1';
   const entityId='elpris';
-  const labels={cheapest_n:`Lavpris-jæger (${param} timer)`,cheapest_pct:`Lavpris-andel (${param}%)`,avoid_expensive_n:`Drop topprisen (${param} timer)`,avoid_expensive_pct:`Drop dyre timer (${param}%)`,avoid_peak:'Aftenpause (17-21)',night_cheap:'Natkører (23-06)',smart:`Smart Køling/Varme (${param}t slukket, maks ${param2}t i træk)`};
+  const labels={cheapest_n:`Billigste ${param} timer/dag`,cheapest_pct:`Billigste ${param}% af timer`,avoid_expensive_n:`Undgå dyreste ${param} timer/dag`,avoid_expensive_pct:`Undgå dyreste ${param}% af timer`,avoid_peak:'Undgå spidstimer (17-21)',night_cheap:'Kun nattetimer (23-06)',smart:`Smart (${param}t slukket, maks ${param2}t i træk)`};
   const stratLabel=labels[strategy]||strategy;
   const apiUrl=buildApiUrl(mode,area,strategy,param,param2,gln);
   // Show API URL (highlighted)
@@ -2069,7 +2061,7 @@ automation:
             :strategy==='avoid_peak'?
               `{% set ok = now().hour < 17 or now().hour >= 21 %}`
             :strategy==='smart'?
-              `{# Smart Køling/Varme kræver streak-bevidst logik der ikke kan udtrykkes #}\n            {# rent i en Jinja-template. Brug Option 1 (REST-sensor) i stedet — #}\n            {# den kalder /api/now som beregner det korrekt. #}\n            {% set ok = false %}`
+              `{# Smart-strategien kræver streak-bevidst logik der ikke kan udtrykkes #}\n            {# rent i en Jinja-template. Brug Option 1 (REST-sensor) i stedet — #}\n            {# den kalder /api/now som beregner det korrekt. #}\n            {% set ok = false %}`
             :
               `{% set ok = now().hour >= 23 or now().hour < 6 %}`}
             {{ 'switch.turn_on' if ok else 'switch.turn_off' }}
