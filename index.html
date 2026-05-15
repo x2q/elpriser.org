@@ -62,10 +62,11 @@
 </script>
 <!--
   Local relevance signal: explicit Service entity with areaServed listing
-  Denmark plus the 30 biggest cities by population, each with geo coordinates
-  and a containedInPlace pointing at its price zone (DK1 Vest / DK2 Øst).
-  Helps search engines surface elpriser.org for queries like
-  "elpriser Aarhus", "spotpris Odense", "elpris Sønderborg" etc.
+  Denmark plus every Danish city with ≥ ~5,000 inhabitants (~75 cities),
+  each with geo coordinates and a containedInPlace pointing at its price
+  zone (DK1 Vest / DK2 Øst). Helps search engines surface elpriser.org
+  for queries like "elpriser Aarhus", "spotpris Odense", "elpris
+  Sønderborg", "elpriser Hvidovre" etc.
 -->
 <script type="application/ld+json">
 {
@@ -113,7 +114,53 @@
     { "@type": "City", "name": "Ringsted",         "geo": { "@type": "GeoCoordinates", "latitude": 55.4422, "longitude": 11.7902 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
     { "@type": "City", "name": "Haderslev",        "geo": { "@type": "GeoCoordinates", "latitude": 55.2522, "longitude":  9.4942 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
     { "@type": "City", "name": "Skive",            "geo": { "@type": "GeoCoordinates", "latitude": 56.5667, "longitude":  9.0333 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Nykøbing Falster", "geo": { "@type": "GeoCoordinates", "latitude": 54.7691, "longitude": 11.8744 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } }
+    { "@type": "City", "name": "Nykøbing Falster", "geo": { "@type": "GeoCoordinates", "latitude": 54.7691, "longitude": 11.8744 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+
+    { "@type": "City", "name": "Hvidovre",          "geo": { "@type": "GeoCoordinates", "latitude": 55.6500, "longitude": 12.4667 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Greve",             "geo": { "@type": "GeoCoordinates", "latitude": 55.5833, "longitude": 12.3000 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Ballerup",          "geo": { "@type": "GeoCoordinates", "latitude": 55.7314, "longitude": 12.3636 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Albertslund",       "geo": { "@type": "GeoCoordinates", "latitude": 55.6878, "longitude": 12.3661 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Hørsholm",          "geo": { "@type": "GeoCoordinates", "latitude": 55.8800, "longitude": 12.5042 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Ishøj",             "geo": { "@type": "GeoCoordinates", "latitude": 55.6167, "longitude": 12.3500 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Glostrup",          "geo": { "@type": "GeoCoordinates", "latitude": 55.6667, "longitude": 12.4000 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Birkerød",          "geo": { "@type": "GeoCoordinates", "latitude": 55.8421, "longitude": 12.4321 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Allerød",           "geo": { "@type": "GeoCoordinates", "latitude": 55.8694, "longitude": 12.3667 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Frederikssund",     "geo": { "@type": "GeoCoordinates", "latitude": 55.8378, "longitude": 12.0578 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Kalundborg",        "geo": { "@type": "GeoCoordinates", "latitude": 55.6810, "longitude": 11.0903 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Solrød Strand",     "geo": { "@type": "GeoCoordinates", "latitude": 55.5333, "longitude": 12.2167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Korsør",            "geo": { "@type": "GeoCoordinates", "latitude": 55.3322, "longitude": 11.1372 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Værløse",           "geo": { "@type": "GeoCoordinates", "latitude": 55.7833, "longitude": 12.3667 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Rønne",             "geo": { "@type": "GeoCoordinates", "latitude": 55.0985, "longitude": 14.7058 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Vordingborg",       "geo": { "@type": "GeoCoordinates", "latitude": 55.0103, "longitude": 11.9069 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Nakskov",           "geo": { "@type": "GeoCoordinates", "latitude": 54.8311, "longitude": 11.1394 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Sorø",              "geo": { "@type": "GeoCoordinates", "latitude": 55.4319, "longitude": 11.5572 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Maribo",            "geo": { "@type": "GeoCoordinates", "latitude": 54.7733, "longitude": 11.4992 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+
+    { "@type": "City", "name": "Skanderborg",       "geo": { "@type": "GeoCoordinates", "latitude": 56.0386, "longitude":  9.9333 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Aabenraa",          "geo": { "@type": "GeoCoordinates", "latitude": 55.0444, "longitude":  9.4218 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Nyborg",            "geo": { "@type": "GeoCoordinates", "latitude": 55.3127, "longitude": 10.7926 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Middelfart",        "geo": { "@type": "GeoCoordinates", "latitude": 55.5036, "longitude":  9.7397 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Ikast",             "geo": { "@type": "GeoCoordinates", "latitude": 56.1369, "longitude":  9.1542 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Grenaa",            "geo": { "@type": "GeoCoordinates", "latitude": 56.4147, "longitude": 10.8814 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Varde",             "geo": { "@type": "GeoCoordinates", "latitude": 55.6225, "longitude":  8.4806 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Thisted",           "geo": { "@type": "GeoCoordinates", "latitude": 56.9558, "longitude":  8.6962 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Brønderslev",       "geo": { "@type": "GeoCoordinates", "latitude": 57.2700, "longitude":  9.9436 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Hobro",             "geo": { "@type": "GeoCoordinates", "latitude": 56.6394, "longitude":  9.7944 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Struer",            "geo": { "@type": "GeoCoordinates", "latitude": 56.4928, "longitude":  8.5933 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Ringkøbing",        "geo": { "@type": "GeoCoordinates", "latitude": 56.0905, "longitude":  8.2429 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Vejen",             "geo": { "@type": "GeoCoordinates", "latitude": 55.4806, "longitude":  9.1469 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Sæby",              "geo": { "@type": "GeoCoordinates", "latitude": 57.3303, "longitude": 10.5253 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Skjern",            "geo": { "@type": "GeoCoordinates", "latitude": 55.9472, "longitude":  8.4972 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Aars",              "geo": { "@type": "GeoCoordinates", "latitude": 56.8000, "longitude":  9.5167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Støvring",          "geo": { "@type": "GeoCoordinates", "latitude": 56.8833, "longitude":  9.8333 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Ribe",              "geo": { "@type": "GeoCoordinates", "latitude": 55.3308, "longitude":  8.7647 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Tønder",            "geo": { "@type": "GeoCoordinates", "latitude": 54.9333, "longitude":  8.8667 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Bjerringbro",       "geo": { "@type": "GeoCoordinates", "latitude": 56.3756, "longitude":  9.6606 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Faaborg",           "geo": { "@type": "GeoCoordinates", "latitude": 55.1000, "longitude": 10.2417 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Lemvig",            "geo": { "@type": "GeoCoordinates", "latitude": 56.5469, "longitude":  8.3083 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Hadsten",           "geo": { "@type": "GeoCoordinates", "latitude": 56.3286, "longitude": 10.0481 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Kerteminde",        "geo": { "@type": "GeoCoordinates", "latitude": 55.4503, "longitude": 10.6597 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Hadsund",           "geo": { "@type": "GeoCoordinates", "latitude": 56.7167, "longitude": 10.1167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } }
   ]
 }
 </script>
