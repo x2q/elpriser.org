@@ -1458,13 +1458,258 @@ entities:
   </article>
 </main>
 
+<!-- ═══════ BLOG: V2G/V2H/V2L explainer ═══════ -->
+<main data-page="blog-v2g-v2h-bidirektional-opladning" class="max-w-2xl mx-auto px-4 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">V2G, V2H og V2L: Bidirektional elbilopladning forklaret</h1>
+    </div>
+    <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
+      <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+  <article class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+    <p class="text-base text-gray-700 dark:text-gray-300">Din elbil er ikke kun et transportmiddel — den er et stort batteri på hjul. Med <strong class="text-gray-800 dark:text-gray-200">V2X-teknologi</strong> (Vehicle-to-X) kan du sende strøm ud af bilen igen: forsyne dit hus, sælge strøm til elnettet eller drive el-værktøj i baghaven. Her får du den korte version af hvad V2L, V2H og V2G betyder, og hvordan det hænger sammen med spotpriserne på el.</p>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hvad er V2X — overblik over V2L, V2H og V2G</h2>
+      <p>V2X er et samlet navn for alle "Vehicle-to-..."-teknologier. De tre vigtigste niveauer:</p>
+      <div class="mt-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+        <div class="px-4 py-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">V2L — Vehicle-to-Load</p>
+          <p class="text-xs mt-1">Bilens egen 230V-udgang. Stik en kaffemaskine, en boremaskine eller en mobil køleboks i bilen. Typisk 2,3-3,6 kW. Ingen særlig installation kræves.</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">V2H — Vehicle-to-Home</p>
+          <p class="text-xs mt-1">Bilen forsyner hele huset via en bidirektional lader. Bruges som backup ved strømsvigt eller til at flytte spotpris-billig nattestrøm til dyre aftentimer. Kræver V2H-godkendt bil og lader.</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">V2G — Vehicle-to-Grid</p>
+          <p class="text-xs mt-1">Bilen sælger strøm til elnettet i de dyreste timer. Kræver V2G-godkendt bil, lader, aftale med en aggregator og godkendelse fra netselskabet. Kan tjene 3.000-7.000 kr om året i Danmark.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Sammenhæng med elpriser — det er her du tjener penge</h2>
+      <p>Forskellen mellem den billigste og dyreste time på et døgn ligger typisk på <strong class="text-gray-800 dark:text-gray-200">1-3 kr/kWh</strong> i Danmark. Med en 60 kWh elbil og V2H kan du i praksis:</p>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li>Lade bilen kl. 02-05 til ca. 0,50 kr/kWh (spot + tarif + afgift + moms)</li>
+        <li>Aflade til huset kl. 17-21 og spare 2,50-3,50 kr/kWh</li>
+        <li>Nettogevinst per cyklus: ~1,5-2 kr/kWh × 20-30 kWh = <strong class="text-gray-800 dark:text-gray-200">30-60 kr om dagen</strong></li>
+      </ul>
+      <p class="mt-2">Det giver 1.000-1.800 kr om måneden — minus batteriaslidtage (typisk 0,30-0,50 kr/kWh) og indkøb af en bidirektional lader. <a href="/prognose" class="text-brand-500 underline">Elprisprognosen</a> kan hjælpe dig planlægge de bedste cykler.</p>
+      <p class="mt-2">Med V2G får du yderligere indkomst ved at sælge regulérstrøm til nettet i akutte situationer — typisk 2-5 kr/kWh i flekstilbud, men kun udvalgte timer.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Tekniske forudsætninger</h2>
+      <p>Ikke alle elbiler kan udsende strøm igen. Det kræver:</p>
+      <ol class="mt-2 space-y-2 ml-4 list-decimal">
+        <li><strong class="text-gray-800 dark:text-gray-200">Bidirektional onboard-charger</strong> — bilens interne elektronik skal kunne både modtage og sende strøm. Det er en hardware-egenskab, ikke noget der kan opgraderes via firmware.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Understøttet ladestik</strong> — CHAdeMO (den gamle Nissan Leaf-løsning) eller CCS2 med ISO 15118-20 (den nye standard fra 2023). Type 2 alene er ikke nok.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Bidirektional lader</strong> — Wallbox Quasar 2, Sigenergy SigenStor, FerroAmp osv. Skal matche bilens stik og protokol.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Backup-tavle eller transferswitch</strong> — for V2H skal huset kunne isoleres fra nettet under strømsvigt (kræves af danske eltavleregler).</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hvor langt er Danmark med V2G og V2H?</h2>
+      <p>Danmark har været tidlig med V2G-pilotprojekter (Parker-projektet 2016-2019, Frederiksberg Forsyning), men kommerciel udrulning er stadig begrænset. Vigtige punkter:</p>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li><strong class="text-gray-800 dark:text-gray-200">Dobbeltbeskatning af elafgift</strong> — solgte elkWh er fritaget for afgift som producent, men kun via specifikke ordninger. Tjek altid med din elhandler først.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Netselskabsgodkendelse</strong> — installation af bidirektional lader skal anmeldes til dit lokale netselskab på samme måde som solceller. Se <a href="/tariffer" class="text-brand-500 underline">listen over netselskaber</a>.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Markedsadgang via aggregator</strong> — for at sælge V2G-strøm skal du tilmelde dig en aggregator (FlexPower, NodeEnergy, Carconnex). Selvstændig handel er ikke muligt for husholdninger.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Batterigaranti</strong> — nogle bilproducenter har tidligere udelukket V2G-brug fra garantien. Tjek bilens garantibetingelser — Nissan, Hyundai, Kia og Volkswagen har nu eksplicit V2G-godkendelse for udvalgte modeller.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hvad kan jeg gøre i dag?</h2>
+      <ol class="space-y-2 ml-4 list-decimal">
+        <li><strong class="text-gray-800 dark:text-gray-200">Start med V2L</strong> — hvis din bil har en 230V-udgang (de fleste nye EV'er) kan du allerede bruge den til havefester, byggeprojekter og strømsvigt-køleskab.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Vælg V2H-klar bil ved næste indkøb</strong> — se den <a href="/blog/biler-ladere-v2h-v2g" class="text-brand-500 underline">opdaterede liste over V2H/V2G-biler og ladere</a>.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Optimér først med smart opladning</strong> — selv uden bidirektional teknologi kan du spare 30-50% ved kun at oplade i de billigste timer. Se vores <a href="/automation" class="text-brand-500 underline">automation-guide</a>.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Følg med i pilotprojekter</strong> — Energinet, Andel og NRGi har løbende V2G-forsøg i Danmark.</li>
+      </ol>
+    </section>
+
+    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+      <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Læs også:</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="/blog/biler-ladere-v2h-v2g" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Biler & ladere med V2H/V2G →</a>
+        <a href="/blog/forsta-din-elpris" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Forstå din elpris →</a>
+        <a href="/blog/home-assistant-elpriser" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Home Assistant guide →</a>
+      </div>
+    </div>
+  </article>
+</main>
+
+<!-- ═══════ BLOG: V2H/V2G cars & chargers list ═══════ -->
+<main data-page="blog-biler-ladere-v2h-v2g" class="max-w-2xl mx-auto px-4 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <p class="text-xs text-brand-500 font-medium mb-1">Liste · 2026</p>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Elbiler og ladere med V2H/V2G — Komplet liste 2026</h1>
+    </div>
+    <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
+      <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+  <article class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+    <p class="text-base text-gray-700 dark:text-gray-300">Skal du købe en elbil eller en ny lader, og vil du have bidirektional opladning? Her er en opdateret liste over hvilke biler og ladere der understøtter V2L, V2H og V2G i 2026. Hvis du ikke er sikker på hvad de forskellige niveauer betyder, så start med <a href="/blog/v2g-v2h-bidirektional-opladning" class="text-brand-500 underline">forklaringen af V2X-teknologi</a>.</p>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hurtig sammenfatning af niveauer</h2>
+      <div class="mt-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+        <div class="flex justify-between px-4 py-2.5">
+          <span class="font-medium text-gray-800 dark:text-gray-200">V2L</span>
+          <span>2-3,6 kW · 230V-udgang i bilen · de fleste nye EV'er</span>
+        </div>
+        <div class="flex justify-between px-4 py-2.5">
+          <span class="font-medium text-gray-800 dark:text-gray-200">V2H</span>
+          <span>3-11 kW · forsyner hus via bidirektional lader · udvalgte modeller</span>
+        </div>
+        <div class="flex justify-between px-4 py-2.5">
+          <span class="font-medium text-gray-800 dark:text-gray-200">V2G</span>
+          <span>3-11 kW · sælger strøm til nettet · få modeller, aggregator-aftale</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Elbiler med V2L (230V-udgang)</h2>
+      <p>De fleste nye elbiler har en 230V-stikdåse eller en adapter til Type 2-stikket. Effekt typisk 2,3-3,6 kW.</p>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li><strong class="text-gray-800 dark:text-gray-200">Hyundai Ioniq 5 / Ioniq 6</strong> — 3,6 kW V2L, indvendigt + udvendigt stik</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Kia EV6 / EV9 / Niro EV</strong> — 3,6 kW V2L</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Genesis GV60 / GV70 Electrified</strong> — 3,6 kW V2L</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Ford F-150 Lightning</strong> — 9,6 kW Pro Power Onboard (kraftigste i klassen)</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">MG4 / MG ZS EV / MG Cyberster</strong> — 2,2 kW V2L</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">BYD Atto 3 / Han / Seal / Dolphin</strong> — 3 kW V2L</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Volvo EX30 / EX90</strong> — V2L via Type 2-adapter (kommer 2026)</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Polestar 3 / 4</strong> — V2L via Type 2-adapter</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Renault 5 E-Tech / Mégane E-Tech / Scénic E-Tech</strong> — 3,7 kW V2L</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Mercedes EQS / EQS SUV</strong> — V2L via Mercedes-Benz Wallbox</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Tesla Cybertruck</strong> — 9,6 kW Powershare (kun USA i 2026)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Elbiler med V2H (Vehicle-to-Home)</h2>
+      <p>V2H kræver at bilens elektronik kan styre AC/DC-konvertering bidirektionalt og at ladestikket understøtter det. Færre modeller end V2L.</p>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li><strong class="text-gray-800 dark:text-gray-200">Nissan Leaf (alle modelår fra 2013)</strong> — CHAdeMO + Wallbox Quasar. Veteranen og stadig den mest gennemprøvede V2H-løsning.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Hyundai Ioniq 5 / 6 (fra 2024)</strong> — CCS2 ISO 15118-20, V2H via Wallbox Quasar 2 eller Volvo Wallbox</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Kia EV6 / EV9 (fra 2024)</strong> — CCS2 ISO 15118-20</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Genesis GV60 / GV70 Electrified</strong> — CCS2 ISO 15118-20</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Ford F-150 Lightning (med Intelligent Backup Power)</strong> — kun USA, kræver Ford Charge Station Pro + Home Integration System</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">GM Silverado EV / Equinox EV / Blazer EV (Bidirectional Charging package)</strong> — Ultium-platformen, USA 2025+</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Volkswagen ID.3 / ID.4 / ID.5 / ID.7 (med 77 kWh+ batteri, software 3.5+)</strong> — V2H via Elli Wallbox</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Polestar 3 (fra 2026)</strong> — CCS2 ISO 15118-20, V2H via Volvo Bidirectional Wallbox</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Volvo EX90 (fra 2026)</strong> — CCS2 ISO 15118-20, V2H via Volvo Wallbox</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">BYD Atto 3 / Seal (modelår 2024+)</strong> — V2H understøttet</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Renault 5 E-Tech (Iconic Cinq / Techno udstyr)</strong> — V2G/V2H fra fabrikken, kun via Mobilize Powerbox</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Elbiler med V2G (sælg til elnettet)</h2>
+      <p>V2G kræver samme bilteknik som V2H, men derudover at bilen er typegodkendt til at sælge til nettet via en aggregator. Liste pr. 2026:</p>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li><strong class="text-gray-800 dark:text-gray-200">Nissan Leaf</strong> — CHAdeMO, eneste model med kommerciel V2G i flere år</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Volkswagen ID.3 / ID.4 / ID.7 (med 77 kWh+ batteri)</strong> — V2G via Elli + Plug &amp; Charge</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Hyundai Ioniq 5 / 6, Kia EV6 / EV9</strong> — V2G-godkendt via VW/Kia-Hyundai-konsortiet, kræver aggregator</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Renault 5 E-Tech</strong> — V2G fra fabrikken, Mobilize-aftale i Frankrig, kommer til DK 2026</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">BYD Atto 3 / Seal (fra modelår 2024)</strong> — V2G annonceret, dansk certificering kommer</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Polestar 3 (fra 2026)</strong> — V2G annonceret, kræver Volvo Wallbox</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Volvo EX90 (fra 2026)</strong> — V2G annonceret</li>
+      </ul>
+      <p class="mt-2 text-xs">Bemærk: V2G-funktioner kan kræve software-opdatering og/eller tilmelding hos en aggregator (FlexPower, NodeEnergy, Carconnex) i Danmark.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Bidirektionale ladere på det danske marked</h2>
+      <p>Selve laderen skal kunne både modtage og sende strøm. Disse er pt. tilgængelige eller annonceret i Danmark/Norden:</p>
+      <div class="mt-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+        <div class="px-4 py-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">Wallbox Quasar 2</p>
+          <p class="text-xs mt-1">CCS2 · 11,5 kW · V2H + V2G · ISO 15118-20 · 30.000-40.000 kr</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">Sigenergy SigenStor</p>
+          <p class="text-xs mt-1">Kombi solceller + batteri + EV-lader · CCS2 · 12 kW · V2H · 60.000-100.000 kr afhængig af konfiguration</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">FerroAmp EnergyHub + EV-add-on</p>
+          <p class="text-xs mt-1">Svensk · CCS2 · 11 kW · V2H · integration med solceller + hjemmebatteri</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">Volvo Bidirectional Wallbox</p>
+          <p class="text-xs mt-1">CCS2 · 11 kW · V2H + V2G · kun til Volvo EX90 og Polestar 3 (kommer 2026)</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">Elli Wallbox (Volkswagen-konsortium)</p>
+          <p class="text-xs mt-1">CCS2 · 11 kW · V2H + V2G · til VW/Skoda/Audi/Cupra/Porsche med 77 kWh+ batteri</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">dcbel r16</p>
+          <p class="text-xs mt-1">CCS2 + CHAdeMO · 15 kW · V2H + integreret solcelle-inverter · kommer til EU 2026</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">Indra V2H Smart PRO</p>
+          <p class="text-xs mt-1">CHAdeMO + CCS2 · 7,4 kW · V2H · UK/EU, distribueret af Indra Renewable Technologies</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">Mobilize Powerbox (Renault)</p>
+          <p class="text-xs mt-1">CCS2 · 11 kW · V2H + V2G · kun til Renault-modeller med Plug &amp; Charge</p>
+        </div>
+      </div>
+      <p class="mt-3 text-xs">De fleste bidirektionale ladere kræver installation af en kvalificeret elektriker og anmeldelse til netselskabet, præcis som solceller.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Kompatibilitetsmatrix — hvad spiller sammen?</h2>
+      <p>Bil og lader skal tale samme protokol. De vigtigste kombinationer i Danmark:</p>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li><strong class="text-gray-800 dark:text-gray-200">Hyundai/Kia/Genesis</strong> ↔ Wallbox Quasar 2, Sigenergy SigenStor, FerroAmp</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">VW/Skoda/Audi/Cupra (77 kWh+)</strong> ↔ Elli Wallbox, Wallbox Quasar 2</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Volvo EX90 / Polestar 3</strong> ↔ Volvo Bidirectional Wallbox (officiel partner)</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Nissan Leaf</strong> ↔ Wallbox Quasar 1 (CHAdeMO), Indra V2H</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Renault 5</strong> ↔ Mobilize Powerbox</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">BYD-modeller</strong> ↔ Wallbox Quasar 2, FerroAmp (afhænger af bilens softwareversion)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Indkøbsråd til 2026</h2>
+      <ol class="space-y-2 ml-4 list-decimal">
+        <li><strong class="text-gray-800 dark:text-gray-200">Vil du blot teste V2X?</strong> Køb en bil med V2L. Du har 230V-strøm allerede i bilen og kan eksperimentere uden installation.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Vil du have backup ved strømsvigt?</strong> V2H med en pålidelig bil (Nissan Leaf eller Hyundai Ioniq 5/6) og en Wallbox Quasar 2. Husk transferswitch.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Vil du tjene penge?</strong> Det kræver V2G-godkendt bil, lader og en aggregator-aftale. Realistisk indtægt ligger i dag på 3.000-7.000 kr om året, før batteriaslidtage.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Vil du kombinere med solceller?</strong> Sigenergy SigenStor eller FerroAmp EnergyHub. Begge giver dig én samlet styreenhed for solceller, hjemmebatteri og elbil.</li>
+      </ol>
+    </section>
+
+    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+      <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Læs også:</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="/blog/v2g-v2h-bidirektional-opladning" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">← V2G, V2H & V2L forklaret</a>
+        <a href="/blog/forsta-din-elpris" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Forstå din elpris →</a>
+        <a href="/automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Automation API →</a>
+      </div>
+    </div>
+  </article>
+</main>
+
 <footer class="mt-10 py-6 border-t border-gray-200 dark:border-gray-800">
   <div class="max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-600">
     <nav class="mb-3" aria-label="Sider">
       <a href="/dk1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK1</a> · <a href="/dk2" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK2</a> · <a href="/tariffer" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Nettariffer</a> · <a href="/prognose" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elprisprognose</a> · <a href="/automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Automation</a> · <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser</a>
     </nav>
     <nav class="mb-3" aria-label="Guides">
-      <a href="/blog/forsta-din-elpris" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Forstå din elpris</a> · <a href="/blog/shelly-elpris-automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Shelly automation</a> · <a href="/blog/home-assistant-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Home Assistant guide</a>
+      <a href="/blog/forsta-din-elpris" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Forstå din elpris</a> · <a href="/blog/shelly-elpris-automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Shelly automation</a> · <a href="/blog/home-assistant-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Home Assistant guide</a> · <a href="/blog/v2g-v2h-bidirektional-opladning" class="hover:text-gray-600 dark:hover:text-gray-400 underline">V2G &amp; V2H</a> · <a href="/blog/biler-ladere-v2h-v2g" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Biler &amp; ladere</a>
     </nav>
     <p>&copy; Elpriser.org &mdash; Data fra <a href="https://www.energidataservice.dk" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Energi Data Service</a> (Energinet).</p>
   </div>
@@ -1565,6 +1810,8 @@ const PATH_ROUTES={
   '/blog/forsta-din-elpris':'blog/forsta-din-elpris',
   '/blog/shelly-elpris-automation':'blog/shelly-elpris-automation',
   '/blog/home-assistant-elpriser':'blog/home-assistant-elpriser',
+  '/blog/v2g-v2h-bidirektional-opladning':'blog/v2g-v2h-bidirektional-opladning',
+  '/blog/biler-ladere-v2h-v2g':'blog/biler-ladere-v2h-v2g',
 };
 function pathToHash(p){
   if(PATH_ROUTES[p])return PATH_ROUTES[p];
@@ -1587,6 +1834,8 @@ function route(){
   if(h==='blog/forsta-din-elpris'){document.querySelector('[data-page="blog-forsta-din-elpris"]').classList.add('active');document.title='Forstå din elpris — Guide til spotpris og tariffer';pv('Blog: Forstå din elpris','/blog/forsta-din-elpris');return;}
   if(h==='blog/shelly-elpris-automation'){document.querySelector('[data-page="blog-shelly-elpris-automation"]').classList.add('active');document.title='Shelly & elpriser — Automatisér forbrug efter spotpris';pv('Blog: Shelly automation','/blog/shelly-elpris-automation');return;}
   if(h==='blog/home-assistant-elpriser'){document.querySelector('[data-page="blog-home-assistant-elpriser"]').classList.add('active');document.title='Home Assistant & elpriser — Smart elforbrug i Danmark';pv('Blog: Home Assistant','/blog/home-assistant-elpriser');return;}
+  if(h==='blog/v2g-v2h-bidirektional-opladning'){document.querySelector('[data-page="blog-v2g-v2h-bidirektional-opladning"]').classList.add('active');document.title='V2G, V2H & V2L — Bidirektional elbilopladning forklaret';pv('Blog: V2G & V2H','/blog/v2g-v2h-bidirektional-opladning');return;}
+  if(h==='blog/biler-ladere-v2h-v2g'){document.querySelector('[data-page="blog-biler-ladere-v2h-v2g"]').classList.add('active');document.title='Elbiler og ladere med V2H/V2G — Liste 2026';pv('Blog: Biler & ladere V2H/V2G','/blog/biler-ladere-v2h-v2g');return;}
   if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elprisprognose — Forventede elpriser næste 7 dage';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){location.hash='';return;}

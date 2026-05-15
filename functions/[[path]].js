@@ -59,6 +59,16 @@ const SEO_PAGES = {
     description: 'Opsæt Home Assistant med danske elpriser: REST-sensorer, schedule-automations og dashboards — spar automatisk penge på strøm efter de billigste timer.',
     hash: '#blog/home-assistant-elpriser',
   },
+  '/blog/v2g-v2h-bidirektional-opladning': {
+    title: 'V2G, V2H og V2L — Bidirektional elbilopladning forklaret',
+    description: 'Forstå Vehicle-to-Grid (V2G), Vehicle-to-Home (V2H) og Vehicle-to-Load (V2L). Sådan kan din elbil sælge strøm til nettet eller forsyne dit hus, og hvordan det fungerer med spotpriser i Danmark.',
+    hash: '#blog/v2g-v2h-bidirektional-opladning',
+  },
+  '/blog/biler-ladere-v2h-v2g': {
+    title: 'Elbiler og ladere med V2H/V2G — Komplet liste 2026',
+    description: 'Opdateret liste over elbiler og bidirektionale ladere der understøtter V2L, V2H og V2G. Inkluderer Hyundai Ioniq 5, Kia EV9, Nissan Leaf, Wallbox Quasar 2, Sigenergy og flere.',
+    hash: '#blog/biler-ladere-v2h-v2g',
+  },
 };
 
 // Mirrors NETS in index.html. Used to (a) mint per-net clean URLs
@@ -107,6 +117,7 @@ for (const area of ['DK1', 'DK2']) {
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/prognose', '/om-elpriser',
   '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
+  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g',
   ...NET_URLS,
 ];
 
@@ -147,6 +158,8 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Forstå din elpris](https://elpriser.org/blog/forsta-din-elpris): Guide til hvad der bestemmer elprisen, spotpriser, tariffer, afgifter og sparetips.
 - [Shelly automation](https://elpriser.org/blog/shelly-elpris-automation): Guide til Shelly-styring efter elprisen med gratis API.
 - [Home Assistant guide](https://elpriser.org/blog/home-assistant-elpriser): Komplet opsætning af Home Assistant med elpriser, sensorer og automations.
+- [V2G & V2H](https://elpriser.org/blog/v2g-v2h-bidirektional-opladning): Forklaring af bidirektional elbilopladning (V2G/V2H/V2L) og hvordan det udnytter spotpriser.
+- [Biler & ladere med V2H/V2G](https://elpriser.org/blog/biler-ladere-v2h-v2g): Opdateret liste over elbiler og bidirektionale ladere der understøtter V2H/V2G i Danmark.
 
 ## API
 

@@ -394,6 +394,8 @@ const SPA_ROUTES = {
   '/blog/forsta-din-elpris': '#blog/forsta-din-elpris',
   '/blog/shelly-elpris-automation': '#blog/shelly-elpris-automation',
   '/blog/home-assistant-elpriser': '#blog/home-assistant-elpriser',
+  '/blog/v2g-v2h-bidirektional-opladning': '#blog/v2g-v2h-bidirektional-opladning',
+  '/blog/biler-ladere-v2h-v2g': '#blog/biler-ladere-v2h-v2g',
 };
 
 // Mirrors NETS in index.html and functions/[[path]].js. Used to map

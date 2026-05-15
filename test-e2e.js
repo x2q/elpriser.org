@@ -94,9 +94,11 @@ async function startServer() {
     ['/om-elpriser',                   'om-elpriser'],
     ['/dk1',                           'prices'],
     ['/dk2',                           'prices'],
-    ['/blog/forsta-din-elpris',        'blog-forsta-din-elpris'],
-    ['/blog/shelly-elpris-automation', 'blog-shelly-elpris-automation'],
-    ['/blog/home-assistant-elpriser',  'blog-home-assistant-elpriser'],
+    ['/blog/forsta-din-elpris',                  'blog-forsta-din-elpris'],
+    ['/blog/shelly-elpris-automation',           'blog-shelly-elpris-automation'],
+    ['/blog/home-assistant-elpriser',            'blog-home-assistant-elpriser'],
+    ['/blog/v2g-v2h-bidirektional-opladning',    'blog-v2g-v2h-bidirektional-opladning'],
+    ['/blog/biler-ladere-v2h-v2g',               'blog-biler-ladere-v2h-v2g'],
   ]) {
     await test(`nav: ${url} → data-page="${dataPage}" is active`, async () => {
       await page.goto(BASE + url);
@@ -134,7 +136,8 @@ async function startServer() {
   // Clean-URL SEO pages must stay clean (regression: hash-redirect previously
   // clobbered /blog/shelly-elpris-automation → /#blog/shelly-elpris-automation)
   for (const url of ['/blog/shelly-elpris-automation', '/blog/forsta-din-elpris',
-                     '/blog/home-assistant-elpriser', '/tariffer', '/automation',
+                     '/blog/home-assistant-elpriser', '/blog/v2g-v2h-bidirektional-opladning',
+                     '/blog/biler-ladere-v2h-v2g', '/tariffer', '/automation',
                      '/om-elpriser', '/prognose', '/dk1', '/dk2']) {
     await test(`clean-URL: ${url} does NOT redirect to /#hash`, async () => {
       await page.goto(BASE + url);
