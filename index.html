@@ -260,6 +260,42 @@
   ]
 }
 </script>
+<!--
+  Dataset schema — surfaces the price feed in Google Dataset Search and gives
+  LLMs an unambiguous machine-readable description of what's available.
+  Distribution links point at the live JSON API endpoints.
+-->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  "name": "Danish hourly electricity prices (DK1 og DK2)",
+  "description": "Hourly day-ahead spot prices and totals (spot + nettarif + systemtarif + transmissionstarif + elafgift + moms) for the Danish price zones DK1 (Vestdanmark) and DK2 (Østdanmark). Updated daily from Energi Data Service (Energinet).",
+  "url": "https://elpriser.org/",
+  "inLanguage": "da",
+  "isAccessibleForFree": true,
+  "license": "https://www.energidataservice.dk/legal-information",
+  "creator":   { "@type": "Organization", "name": "Energinet", "url": "https://energidataservice.dk" },
+  "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
+  "keywords": ["elpriser", "spotpris", "elpris", "DK1", "DK2", "Denmark", "electricity prices", "Nord Pool"],
+  "spatialCoverage": { "@type": "Country", "name": "Denmark" },
+  "temporalCoverage": "2020-01-01/..",
+  "variableMeasured": [
+    { "@type": "PropertyValue", "name": "Spot price",                "unitText": "DKK/kWh" },
+    { "@type": "PropertyValue", "name": "Spot price incl. VAT",      "unitText": "DKK/kWh" },
+    { "@type": "PropertyValue", "name": "Total price incl. tariffs", "unitText": "DKK/kWh" }
+  ],
+  "distribution": [
+    { "@type": "DataDownload", "name": "Current price (DK1) — JSON", "contentUrl": "https://elpriser.org/api/now?area=DK1&mode=inkl_alt",   "encodingFormat": "application/json" },
+    { "@type": "DataDownload", "name": "Current price (DK2) — JSON", "contentUrl": "https://elpriser.org/api/now?area=DK2&mode=inkl_alt",   "encodingFormat": "application/json" },
+    { "@type": "DataDownload", "name": "24h prices (DK1) — JSON",    "contentUrl": "https://elpriser.org/api/prices?area=DK1&mode=inkl_alt", "encodingFormat": "application/json" },
+    { "@type": "DataDownload", "name": "24h prices (DK2) — JSON",    "contentUrl": "https://elpriser.org/api/prices?area=DK2&mode=inkl_alt", "encodingFormat": "application/json" },
+    { "@type": "DataDownload", "name": "Tibber-compatible JSON",     "contentUrl": "https://elpriser.org/api/shelly/tariff?area=DK1&mode=inkl_alt", "encodingFormat": "application/json" }
+  ]
+}
+</script>
+<!-- Server-injected live price JSON-LD (homepage only, see functions/[[path]].js). -->
+<!--SSR_LIVE_PRICE_JSONLD-->
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3WE5CL1ZTV"></script>
 <script>
@@ -338,6 +374,17 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
   .hero h1{letter-spacing:-0.035em;text-shadow:0 2px 30px rgba(0,0,0,.18)}
   .hero-sub{color:rgba(236,244,255,.82);letter-spacing:-0.005em}
+  /* Server-rendered live-price pill (homepage only). Matches the GPS button's
+     frosted-glass treatment so it reads as a coherent hero element. */
+  .ssr-live-price{display:inline-flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:.5rem;
+    margin-top:1.5rem;padding:.55rem 1.15rem;
+    font-size:.8125rem;color:rgba(255,255,255,.92);letter-spacing:-0.005em;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:9999px;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .ssr-live-price strong{color:#fff;font-weight:600}
+  .ssr-live-unit{color:rgba(255,255,255,.55);font-size:.7rem;margin-left:.25rem}
+  .ssr-live-pulse{width:.45rem;height:.45rem;border-radius:9999px;background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.9);
+    animation:pulse 2s ease-in-out infinite;display:inline-block;align-self:center}
   .gps-bar{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 8px 28px -12px rgba(0,0,0,.35);cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease;letter-spacing:-0.005em}
   button.gps-bar:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.32);transform:translateY(-1px);box-shadow:0 12px 32px -10px rgba(0,0,0,.45)}
   button.gps-bar:active{transform:translateY(0);background:rgba(255,255,255,.16)}
@@ -476,6 +523,11 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <p class="hero-sub text-sm sm:text-base max-w-xl mx-auto">
         Tjek aktuel elpris lige nu — spotpriser time for time for DK1 (Vestdanmark) og DK2 (Østdanmark). Den reelle pris på el du betaler per kWh, inkl. netselskab-tariffer, elafgift og moms &mdash; opdateret dagligt fra Energi Data Service.
       </p>
+      <!-- Server-rendered live price snapshot (homepage only). Replaced by
+           functions/[[path]].js with a small frosted pill showing the
+           current DK1/DK2 spot + total prices, so Google and LLM crawlers
+           see the actual numbers in the first HTML response. -->
+      <!--SSR_LIVE_PRICE-->
       <!-- GPS detect — single button -->
       <button id="gpsBtn" onclick="detectLocation()" class="gps-bar mt-10 inline-flex items-center gap-3 rounded-full text-sm font-medium text-white" style="padding:1rem 2rem">
         <svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>

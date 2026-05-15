@@ -161,18 +161,45 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [V2G & V2H](https://elpriser.org/blog/v2g-v2h-bidirektional-opladning): Forklaring af bidirektional elbilopladning (V2G/V2H/V2L) og hvordan det udnytter spotpriser.
 - [Biler & ladere med V2H/V2G](https://elpriser.org/blog/biler-ladere-v2h-v2g): Opdateret liste over elbiler og bidirektionale ladere der understøtter V2H/V2G i Danmark.
 
-## API
+## Live data API (for AI assistants and agents)
 
-- \`GET /api/prices?area=DK1&date=YYYY-MM-DD\` — Timepriser for et prisområde og dato
-- \`GET /api/now?area=DK1\` — Aktuel elpris lige nu
-- \`GET /api/schedule?area=DK1&hours=4\` — De billigste timer i dag
+If a user asks "hvad er elprisen lige nu?" or "what's the current Danish
+electricity price?" these endpoints return live JSON. CORS-enabled, no key,
+edge-cached at 1-5 min so calling repeatedly is fine.
+
+- \`GET /api/now?area=DK1&mode=inkl_alt\` — Current total price right now (DKK/kWh, incl. all tariffs + VAT)
+- \`GET /api/now?area=DK1&mode=spot_inkl\` — Current raw spot price incl. VAT
+- \`GET /api/prices?area=DK1&mode=inkl_alt&date=YYYY-MM-DD\` — 24 hourly prices for a date
+- \`GET /api/schedule?area=DK1&strategy=cheapest_n&hours=6\` — The N cheapest hours of the day
+- \`GET /api/forecast?area=DK1&mode=inkl_alt\` — 7-day price forecast
+- \`GET /api/shelly/tariff?area=DK1&mode=inkl_alt\` — Tibber-compatible 24h JSON
+- \`GET /api/raw/prices?area=DK1&start=YYYY-MM-DD&end=YYYY-MM-DD\` — Raw DayAheadPrices records
+- \`GET /api/raw/tariff?gln=5790000704842\` — Single net company's Nettarif C (24 values)
+- \`GET /api/supplierlookup?lat=…&lng=…\` — Reverse-geocode an address to a netselskab
+
+### Example: /api/now?area=DK1&mode=inkl_alt
+
+\`\`\`json
+{
+  "on": true,
+  "price": 1.23,
+  "hour": 14,
+  "area": "DK1",
+  "mode": "inkl_alt",
+  "strategy": "cheapest_n"
+}
+\`\`\`
+
+\`price\` is DKK/kWh including spotpris + Energinet system & transmission
+tariffs + elafgift + 25 % VAT. \`hour\` is the current Danish local hour
+(0-23). To get the pure market spot price use \`mode=spot_ex\`.
 
 ## Detaljer
 
 - Opdateres dagligt ca. kl. 13 når Nord Pool offentliggør næste døgns priser
 - Datakilde: [Energi Data Service](https://www.energidataservice.dk) (Energinet)
 - Gratis, ingen registrering påkrævet
-- Sprog: Dansk
+- Sprog: Dansk · CORS-headers: \`Access-Control-Allow-Origin: *\`
 `;
 
 const LLMS_FULL_TXT = LLMS_TXT + `
@@ -359,6 +386,14 @@ export async function onRequest(context) {
     return new Response('Not found', { status: 404 });
   }
 
+  // Homepage — server-render the live price snapshot into the HTML.
+  // Lets Google / Bing / LLMs index the actual current spot price + total
+  // without waiting for client-side JS. ~5-20ms overhead per request,
+  // edge-cached at 5 min so most requests skip even that.
+  if (url.pathname === '/') {
+    return renderHomepage(context);
+  }
+
   // SEO sub-pages — serve index.html with modified metadata for crawlers
   const page = SEO_PAGES[url.pathname];
   if (page) {
@@ -366,6 +401,83 @@ export async function onRequest(context) {
   }
 
   return context.next();
+}
+
+// ─── Homepage SSR with live-price injection ────────────────────────────────
+
+/** Fetch the current (spot, total) price for one area via our own /api/now. */
+async function fetchAreaSnapshot(context, area) {
+  const origin = new URL(context.request.url).origin;
+  const get = (mode) => fetch(`${origin}/api/now?area=${area}&mode=${mode}`)
+    .then(r => r.ok ? r.json() : null).catch(() => null);
+  const [spot, total] = await Promise.all([get('spot_inkl'), get('inkl_alt')]);
+  if (!spot || !total) return null;
+  return {
+    spot:  spot.price,
+    total: total.price,
+    hour:  spot.hour,
+  };
+}
+
+/** Build the visible live-price strip + the price JSON-LD block. */
+function buildLivePriceMarkup(dk1, dk2) {
+  const hh = String(dk1.hour).padStart(2, '0');
+  const fmt = (p) => p == null ? '—' : p.toFixed(2).replace('.', ',');
+  const strip = `<div class="ssr-live-price">
+    <span class="ssr-live-pulse" aria-hidden="true"></span>
+    <span>Lige nu kl. ${hh}:00:</span>
+    <span><strong>DK1</strong> ${fmt(dk1.spot)} spot · ${fmt(dk1.total)} inkl. alt</span>
+    <span aria-hidden="true">·</span>
+    <span><strong>DK2</strong> ${fmt(dk2.spot)} spot · ${fmt(dk2.total)} inkl. alt</span>
+    <span class="ssr-live-unit">kr/kWh</span>
+  </div>`;
+
+  const iso = new Date().toISOString();
+  const priceLd = (name, price) => ({
+    "@type": "PriceSpecification",
+    name,
+    price: price.toFixed(4),
+    priceCurrency: "DKK",
+    unitText: "kWh",
+    validFrom: iso,
+  });
+  const jsonLd = `<script type="application/ld+json">
+${JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "WebPage", "@id": "https://elpriser.org/", "dateModified": iso },
+      priceLd("Aktuel spotpris DK1 (Vestdanmark) inkl. moms", dk1.spot),
+      priceLd("Aktuel spotpris DK2 (Østdanmark) inkl. moms", dk2.spot),
+      { ...priceLd("Samlet elpris DK1 (Vestdanmark) inkl. alt", dk1.total),
+        description: "Spotpris + nettarif + systemtarif + transmissionstarif + elafgift + moms" },
+      { ...priceLd("Samlet elpris DK2 (Østdanmark) inkl. alt", dk2.total),
+        description: "Spotpris + nettarif + systemtarif + transmissionstarif + elafgift + moms" },
+    ],
+  }, null, 2)}
+</script>`;
+  return { strip, jsonLd };
+}
+
+async function renderHomepage(context) {
+  const indexUrl = new URL('/', context.request.url);
+  const [resHtml, dk1, dk2] = await Promise.all([
+    context.env.ASSETS.fetch(indexUrl),
+    fetchAreaSnapshot(context, 'DK1'),
+    fetchAreaSnapshot(context, 'DK2'),
+  ]);
+  let html = await resHtml.text();
+  if (dk1 && dk2) {
+    const { strip, jsonLd } = buildLivePriceMarkup(dk1, dk2);
+    html = html.replace('<!--SSR_LIVE_PRICE-->', strip);
+    html = html.replace('<!--SSR_LIVE_PRICE_JSONLD-->', jsonLd);
+  }
+  return new Response(html, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      // 60s browser cache, 5min edge cache — prices revise hourly so this is fine
+      'Cache-Control': 'public, max-age=60, s-maxage=300',
+    },
+  });
 }
 
 async function renderSPA(context, pathname, meta) {
