@@ -115,7 +115,7 @@ for (const area of ['DK1', 'DK2']) {
 }
 
 const SITEMAP_URLS = [
-  '/', '/dk1', '/dk2', '/tariffer', '/automation', '/prognose', '/om-elpriser',
+  '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser',
   '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
   '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g',
   ...NET_URLS,
@@ -166,6 +166,10 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 If a user asks "hvad er elprisen lige nu?" or "what's the current Danish
 electricity price?" these endpoints return live JSON. CORS-enabled, no key,
 edge-cached at 1-5 min so calling repeatedly is fine.
+
+**Machine-readable spec**: [/api/openapi.json](https://elpriser.org/api/openapi.json) — OpenAPI 3.1.
+Every \`/api/*\` response also sends \`Link: </api/openapi.json>; rel="describedby"\`.
+Human-readable docs: [/api](https://elpriser.org/api).
 
 - \`GET /api/now?area=DK1&mode=inkl_alt\` — Current total price right now (DKK/kWh, incl. all tariffs + VAT)
 - \`GET /api/now?area=DK1&mode=spot_inkl\` — Current raw spot price incl. VAT

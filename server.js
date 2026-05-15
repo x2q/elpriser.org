@@ -388,6 +388,7 @@ const SPA_ROUTES = {
   '/dk2': '#DK2/spot_inkl',
   '/tariffer': '#tariffer',
   '/automation': '#automation',
+  '/api': '#api',
   '/om-elpriser': '#om-elpriser',
   '/prognose': '#prognose',
   '/shelly-tariff': '#shelly-tariff',

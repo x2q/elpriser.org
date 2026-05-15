@@ -1115,6 +1115,112 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
 </main>
 
+<!-- ═══════ API DOCS PAGE ═══════ -->
+<main data-page="api" class="max-w-3xl mx-auto px-4 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white">elpriser.org API</h2>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Gratis JSON API for danske elpriser — ingen nøgle, fuld CORS, OpenAPI 3.1</p>
+    </div>
+    <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
+      <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+
+  <article class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+    <p class="text-base text-gray-700 dark:text-gray-300">Alle data på elpriser.org er tilgængelige via et public JSON API. Kalder du fra en browser, Shelly, Home Assistant, en LLM-agent eller et eget script, så slipper du for et abonnement — bare hit en URL.</p>
+
+    <section>
+      <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Hovedpunkter</h3>
+      <ul class="space-y-1 ml-4 list-disc">
+        <li><strong class="text-gray-700 dark:text-gray-300">Ingen nøgle, ingen rate limit</strong> — Cloudflare-edge cacher 1-5 min, så hyppige kald er gratis.</li>
+        <li><strong class="text-gray-700 dark:text-gray-300">Fuld CORS</strong> (<code>Access-Control-Allow-Origin: *</code>) — kald direkte fra en webapp uden proxy.</li>
+        <li><strong class="text-gray-700 dark:text-gray-300">OpenAPI 3.1 spec</strong> på <a href="/api/openapi.json" class="text-brand-500 underline">/api/openapi.json</a> — importér i Postman, Bruno eller en ChatGPT/MCP-klient.</li>
+        <li><strong class="text-gray-700 dark:text-gray-300">Tibber-kompatibel</strong> JSON for HA / Shelly via <code>/api/shelly/tariff</code>.</li>
+        <li><strong class="text-gray-700 dark:text-gray-300">Discovery</strong>: hver <code>/api/*</code>-response sender et <code>Link: &lt;/api/openapi.json&gt;; rel="describedby"</code> header.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Endpoints</h3>
+      <div class="mt-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+        <div class="px-4 py-3">
+          <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/now?area=DK1&amp;mode=inkl_alt</p>
+          <p class="text-xs mt-1">Aktuel pris (DKK/kWh) for nuværende time + om en schedule-strategi siger ON eller OFF.</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/prices?area=DK1&amp;mode=inkl_alt[&amp;date=YYYY-MM-DD]</p>
+          <p class="text-xs mt-1">24 timepriser for én dato (default i dag, dansk lokaltid).</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/schedule?area=DK1&amp;strategy=cheapest_n&amp;hours=6</p>
+          <p class="text-xs mt-1">Hele døgnets ON/OFF-plan for den valgte strategi (se <a href="/automation" class="text-brand-500 underline">automation-siden</a>).</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/forecast?area=DK1&amp;mode=inkl_alt</p>
+          <p class="text-xs mt-1">7-dages prognose — kombinerer faktiske day-ahead-priser med vejrkorrigeret forecast.</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/shelly/tariff?area=DK1&amp;mode=inkl_alt</p>
+          <p class="text-xs mt-1">Tibber-kompatibel JSON med i dag + i morgen — drop-in til alle Tibber-aware integrationer.</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/supplierlookup?lat=…&amp;lng=…</p>
+          <p class="text-xs mt-1">Reverse-geocode af koordinater til adresse + netselskab (CORS-fri proxy over DAWA + GPD).</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/raw/{prices,encharges,tariff,tariffs}</p>
+          <p class="text-xs mt-1">Rå EDS-data (DayAheadPrices, DatahubPricelist) som CORS-proxy. Mest for udviklere der vil egne beregninger.</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/openapi.json</p>
+          <p class="text-xs mt-1">Maskin-læsbar OpenAPI 3.1-spec for alle endpoints — denne side i JSON-form.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Eksempel — <code>curl</code></h3>
+      <pre class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 whitespace-pre-wrap">curl -sS "https://elpriser.org/api/now?area=DK1&amp;mode=inkl_alt"</pre>
+      <p class="text-xs mt-2">Returnerer:</p>
+      <pre class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 whitespace-pre">{
+  "on": true,
+  "price": 1.23,
+  "hour": 14,
+  "area": "DK1",
+  "mode": "inkl_alt",
+  "strategy": "cheapest_n"
+}</pre>
+    </section>
+
+    <section>
+      <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Brug i LLM / AI-agent</h3>
+      <p>Spørg en LLM "hvad er elprisen lige nu i Danmark?" og giv den denne URL:</p>
+      <pre class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 whitespace-pre-wrap">https://elpriser.org/api/now?area=DK1&amp;mode=inkl_alt</pre>
+      <p class="mt-2">For Claude Desktop, ChatGPT plugins, og MCP-klienter kan du pege på OpenAPI-spec'en på <a href="/api/openapi.json" class="text-brand-500 underline">/api/openapi.json</a> — den indeholder alle endpoints og parametre.</p>
+    </section>
+
+    <section>
+      <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Vilkår</h3>
+      <ul class="space-y-1 ml-4 list-disc">
+        <li>Gratis for ethvert brug (kommercielt eller ej)</li>
+        <li>Datakilde: <a href="https://www.energidataservice.dk" target="_blank" rel="noopener" class="text-brand-500 underline">Energi Data Service</a> (Energinet) — egen <a href="https://www.energidataservice.dk/legal-information" target="_blank" rel="noopener" class="text-brand-500 underline">licens</a></li>
+        <li>Best-effort uptime — ingen SLA. Edge-cacher graceful, så kortvarige udfald hos EDS påvirker ikke API'et</li>
+        <li>Spørgsmål / fejl: brug GitHub-issues (link i footeren) eller skriv direkte</li>
+      </ul>
+    </section>
+
+    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+      <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Se også:</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="/automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Automation guide →</a>
+        <a href="/blog/shelly-elpris-automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Shelly-script →</a>
+        <a href="/blog/home-assistant-elpriser" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Home Assistant guide →</a>
+      </div>
+    </div>
+  </article>
+</main>
+
 <!-- ═══════ ABOUT PAGE ═══════ -->
 <main data-page="om-elpriser" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
@@ -1826,7 +1932,7 @@ entities:
 <footer class="mt-10 py-6 border-t border-gray-200 dark:border-gray-800">
   <div class="max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-600">
     <nav class="mb-3" aria-label="Sider">
-      <a href="/dk1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK1</a> · <a href="/dk2" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK2</a> · <a href="/tariffer" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Nettariffer</a> · <a href="/prognose" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elprisprognose</a> · <a href="/automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Automation</a> · <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser</a>
+      <a href="/dk1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK1</a> · <a href="/dk2" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK2</a> · <a href="/tariffer" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Nettariffer</a> · <a href="/prognose" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elprisprognose</a> · <a href="/automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Automation</a> · <a href="/api" class="hover:text-gray-600 dark:hover:text-gray-400 underline">API</a> · <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser</a>
     </nav>
     <nav class="mb-3" aria-label="Guides">
       <a href="/blog/forsta-din-elpris" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Forstå din elpris</a> · <a href="/blog/shelly-elpris-automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Shelly automation</a> · <a href="/blog/home-assistant-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Home Assistant guide</a> · <a href="/blog/v2g-v2h-bidirektional-opladning" class="hover:text-gray-600 dark:hover:text-gray-400 underline">V2G &amp; V2H</a> · <a href="/blog/biler-ladere-v2h-v2g" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Biler &amp; ladere</a>
@@ -1925,7 +2031,7 @@ function matchNet(n){const l=n.toLowerCase();for(const a of['DK1','DK2'])for(con
 // that would clobber the clean URL to /#hash.
 const PATH_ROUTES={
   '/dk1':'DK1/spot_inkl','/dk2':'DK2/spot_inkl',
-  '/tariffer':'tariffer','/automation':'automation','/shelly-tariff':'shelly-tariff',
+  '/tariffer':'tariffer','/automation':'automation','/api':'api','/shelly-tariff':'shelly-tariff',
   '/om-elpriser':'om-elpriser','/prognose':'prognose',
   '/blog/forsta-din-elpris':'blog/forsta-din-elpris',
   '/blog/shelly-elpris-automation':'blog/shelly-elpris-automation',
@@ -1949,6 +2055,7 @@ function route(){
   }
   if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Nettariffer i Danmark — Sammenlign alle netselskaber';pv('Tariffer','/tariffer');loadTariffPage();return;}
   if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpris Automation — Home Assistant, Shelly & REST API';pv('Automation','/automation');loadAutomationPage();return;}
+  if(h==='api'){document.querySelector('[data-page="api"]').classList.add('active');document.title='elpriser.org API — Gratis JSON API for danske elpriser';pv('API','/api');return;}
   if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — Tibber-kompatibel elpris-JSON';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}
   if(h==='om-elpriser'){document.querySelector('[data-page="om-elpriser"]').classList.add('active');document.title='Om elpriser i Danmark — Spotpris, tariffer og afgifter';pv('Om elpriser','/om-elpriser');return;}
   if(h==='blog/forsta-din-elpris'){document.querySelector('[data-page="blog-forsta-din-elpris"]').classList.add('active');document.title='Forstå din elpris — Guide til spotpris og tariffer';pv('Blog: Forstå din elpris','/blog/forsta-din-elpris');return;}

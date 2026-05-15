@@ -91,6 +91,7 @@ async function startServer() {
     ['/prognose',                      'prognose'],
     ['/tariffer',                      'tariffer'],
     ['/automation',                    'automation'],
+    ['/api',                           'api'],
     ['/om-elpriser',                   'om-elpriser'],
     ['/dk1',                           'prices'],
     ['/dk2',                           'prices'],
@@ -137,7 +138,7 @@ async function startServer() {
   // clobbered /blog/shelly-elpris-automation → /#blog/shelly-elpris-automation)
   for (const url of ['/blog/shelly-elpris-automation', '/blog/forsta-din-elpris',
                      '/blog/home-assistant-elpriser', '/blog/v2g-v2h-bidirektional-opladning',
-                     '/blog/biler-ladere-v2h-v2g', '/tariffer', '/automation',
+                     '/blog/biler-ladere-v2h-v2g', '/tariffer', '/automation', '/api',
                      '/om-elpriser', '/prognose', '/dk1', '/dk2']) {
     await test(`clean-URL: ${url} does NOT redirect to /#hash`, async () => {
       await page.goto(BASE + url);

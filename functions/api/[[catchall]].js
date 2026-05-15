@@ -13,6 +13,9 @@ const CORS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
+  // Discoverability: every /api/* response points machines at the OpenAPI spec.
+  // RFC 8631 + many tool ecosystems (Postman, MCP, ChatGPT plugins) consume this.
+  'Link': '</api/openapi.json>; rel="describedby"; type="application/json"',
 };
 
 function ok(data) {
@@ -283,25 +286,217 @@ async function loadData(area, mode, gln) {
   return { priceData, enCharges, tariffRecords };
 }
 
+// ── OpenAPI 3.1 spec (served at /api/openapi.json) ───────────────────────────
+//
+// One source of truth for every endpoint. Consumed by ChatGPT plugins, MCP
+// clients, Postman, Bruno, openapi-generator, and now LLMs that crawl us
+// looking for tool descriptions. Keep in sync when adding/changing endpoints.
+
+const PRICE_MODES = ['spot_ex', 'spot_inkl', 'inkl_alt', 'inkl_alt_minus', 'net_inkl_alt', 'net_inkl_tarif'];
+const STRATEGIES  = ['cheapest_n', 'cheapest_pct', 'avoid_expensive_n', 'avoid_expensive_pct', 'avoid_peak', 'night_cheap', 'smart'];
+
+const AREA_PARAM     = { name: 'area',     in: 'query', schema: { type: 'string', enum: ['DK1','DK2'], default: 'DK1' }, description: 'Danish price zone — DK1 (Vestdanmark) or DK2 (Østdanmark).' };
+const MODE_PARAM     = { name: 'mode',     in: 'query', schema: { type: 'string', enum: PRICE_MODES, default: 'inkl_alt' }, description: 'Price view: raw spot, spot incl. moms, or total incl. all tariffs.' };
+const GLN_PARAM      = { name: 'gln',      in: 'query', schema: { type: 'string' }, description: 'Net company GLN (13 digits). Required when mode is `net_inkl_alt` or `net_inkl_tarif`.' };
+const STRATEGY_PARAM = { name: 'strategy', in: 'query', schema: { type: 'string', enum: STRATEGIES, default: 'cheapest_n' }, description: 'Schedule strategy. See /automation for descriptions.' };
+const HOURS_PARAM    = { name: 'hours',    in: 'query', schema: { type: 'integer', minimum: 1, maximum: 23, default: 6 }, description: 'For strategies that take an hour count.' };
+const PCT_PARAM      = { name: 'pct',      in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 }, description: 'For percentage-based strategies.' };
+const DATE_PARAM     = { name: 'date',     in: 'query', schema: { type: 'string', format: 'date' }, description: 'YYYY-MM-DD. Defaults to today (DK local).' };
+const MAXOFF_PARAM   = { name: 'max_off',  in: 'query', schema: { type: 'integer', minimum: 1, maximum: 12 }, description: 'For `strategy=smart`: max consecutive OFF hours.' };
+
+const OPENAPI_SPEC = {
+  openapi: '3.1.0',
+  info: {
+    title: 'elpriser.org API',
+    version: '1.0',
+    summary: 'Live Danish electricity prices, schedules, forecasts and Tibber-compatible JSON.',
+    description: [
+      'Free, public API serving aktuelle elpriser (current electricity prices) for the Danish',
+      'price zones DK1 (Vestdanmark) and DK2 (Østdanmark). Data is sourced daily from Energi',
+      'Data Service (Energinet) and updated when Nord Pool publishes next-day prices.',
+      '',
+      '**No key, no rate limit, full CORS** (`Access-Control-Allow-Origin: *`). Responses are',
+      'edge-cached at Cloudflare for 1–5 min so calling /api/now every minute from a Shelly',
+      'or Home Assistant is free and fine.',
+      '',
+      'Designed to be consumed by:',
+      '- Browser apps (CORS-friendly JSON, no preflight needed for simple GETs)',
+      '- Home automation (Shelly Plus/Pro scripts, Home Assistant REST sensors)',
+      '- LLM agents (Tibber-compatible `/api/shelly/tariff` matches the schema Tibber publishes)',
+      '- Smart-home aggregators (machine-readable spec at `/api/openapi.json`)',
+    ].join('\n'),
+    contact: { url: 'https://elpriser.org/api' },
+    license: { name: 'Free for any use', url: 'https://elpriser.org/' },
+  },
+  servers: [{ url: 'https://elpriser.org', description: 'Production' }],
+  externalDocs: { description: 'API documentation (Danish)', url: 'https://elpriser.org/api' },
+  paths: {
+    '/api/now': {
+      get: {
+        operationId: 'getCurrentPrice',
+        summary: 'Current electricity price + on/off for a schedule',
+        description: 'Returns the price for the current Danish-local hour and a boolean `on` indicating whether the chosen schedule strategy says the device should be ON right now.',
+        parameters: [AREA_PARAM, MODE_PARAM, GLN_PARAM, STRATEGY_PARAM, HOURS_PARAM, PCT_PARAM, MAXOFF_PARAM],
+        responses: { '200': {
+          description: 'Current hour status.',
+          content: { 'application/json': { example: { on: true, price: 1.23, hour: 14, area: 'DK1', mode: 'inkl_alt', strategy: 'cheapest_n' } } }
+        } },
+      },
+    },
+    '/api/prices': {
+      get: {
+        operationId: 'getDailyPrices',
+        summary: '24 hourly prices for one date',
+        parameters: [AREA_PARAM, MODE_PARAM, GLN_PARAM, DATE_PARAM],
+        responses: { '200': {
+          description: '24 hourly prices.',
+          content: { 'application/json': { example: { area: 'DK1', mode: 'inkl_alt', date: '2026-05-15', unit: 'DKK/kWh', prices: [{ hour: 0, price: 0.84 }, { hour: 1, price: 0.79 }], current_hour: 14, current_price: 1.23 } } }
+        } },
+      },
+    },
+    '/api/schedule': {
+      get: {
+        operationId: 'getSchedule',
+        summary: 'Full 24h on/off schedule for a strategy',
+        parameters: [AREA_PARAM, MODE_PARAM, GLN_PARAM, STRATEGY_PARAM, HOURS_PARAM, PCT_PARAM, MAXOFF_PARAM, DATE_PARAM],
+        responses: { '200': {
+          description: 'Hour-by-hour schedule.',
+          content: { 'application/json': { example: { area: 'DK1', mode: 'inkl_alt', strategy: 'cheapest_n', param: 6, date: '2026-05-15', on_now: true, schedule: [{ hour: 0, price: 0.84, on: true }, { hour: 1, price: 0.79, on: true }] } } }
+        } },
+      },
+    },
+    '/api/forecast': {
+      get: {
+        operationId: 'getForecast',
+        summary: '7-day electricity price forecast',
+        description: 'Combines actual day-ahead prices for today/tomorrow with a weather-corrected forecast for days 3-7 using EDS production forecasts + Open-Meteo wind/solar.',
+        parameters: [AREA_PARAM, MODE_PARAM],
+        responses: { '200': {
+          description: '7 days × 24 hours of forecasted prices.',
+          content: { 'application/json': { example: { area: 'DK1', mode: 'inkl_alt', generated: '2026-05-15T13:00:00Z', days: [{ date: '2026-05-15', type: 'actual', weekday: 5, prices: [{ hour: 0, price: 0.84 }] }] } } }
+        } },
+      },
+    },
+    '/api/shelly/tariff': {
+      get: {
+        operationId: 'getShellyTariff',
+        summary: 'Tibber-compatible JSON for Shelly/HA',
+        description: 'Returns today + tomorrow prices in the exact GraphQL response shape Tibber publishes, so any Tibber-aware integration works as a drop-in.',
+        parameters: [AREA_PARAM, MODE_PARAM, GLN_PARAM],
+        responses: { '200': { description: 'Tibber-compatible response.' } },
+      },
+    },
+    '/api/raw/prices': {
+      get: {
+        operationId: 'getRawPrices',
+        summary: 'Raw DayAheadPrices records (passthrough)',
+        description: 'CORS-proxied passthrough to Energi Data Service `DayAheadPrices`. Use when you want the un-processed records (TimeUTC, TimeDK, PriceArea, DayAheadPriceDKK, DayAheadPriceEUR).',
+        parameters: [AREA_PARAM, { name: 'start', in: 'query', required: true, schema: { type: 'string', format: 'date' }, description: 'YYYY-MM-DD inclusive.' }, { name: 'end', in: 'query', required: true, schema: { type: 'string', format: 'date' }, description: 'YYYY-MM-DD exclusive.' }],
+        responses: { '200': { description: 'Records array.' } },
+      },
+    },
+    '/api/raw/encharges': {
+      get: {
+        operationId: 'getRawEnCharges',
+        summary: 'Energinet system/transmission/elafgift charges',
+        responses: { '200': { description: 'Records array.' } },
+      },
+    },
+    '/api/raw/tariff': {
+      get: {
+        operationId: 'getRawNetTariff',
+        summary: 'Single net company\'s Nettarif C (24 hourly values)',
+        parameters: [{ ...GLN_PARAM, required: true }],
+        responses: { '200': { description: 'Records array.' } },
+      },
+    },
+    '/api/raw/tariffs': {
+      get: {
+        operationId: 'getRawAllTariffs',
+        summary: 'All Danish net companies\' Nettarif C (used by /tariffer page)',
+        responses: { '200': { description: 'Records array — ~48 KB.' } },
+      },
+    },
+    '/api/supplierlookup': {
+      get: {
+        operationId: 'lookupSupplier',
+        summary: 'Lat/lng → DK address → net company',
+        description: 'Reverse-geocodes coordinates via DAWA and looks up the netselskab via GreenPowerDenmark. Proxied here because GPD returns no CORS headers.',
+        parameters: [
+          { name: 'lat', in: 'query', required: true, schema: { type: 'number' } },
+          { name: 'lng', in: 'query', required: true, schema: { type: 'number' } },
+        ],
+        responses: { '200': {
+          description: 'Address + resolved net name.',
+          content: { 'application/json': { example: { address: 'Hasle Ringvej 110B, 8200 Aarhus N', name: 'KONSTANT Net A/S' } } }
+        } },
+      },
+    },
+    '/api/openapi.json': {
+      get: {
+        operationId: 'getOpenApiSpec',
+        summary: 'This document',
+        responses: { '200': { description: 'OpenAPI 3.1 spec.' } },
+      },
+    },
+  },
+};
+
 // ── Main handler ──────────────────────────────────────────────────────────────
 
-export async function onRequest({ request }) {
+export async function onRequest(context) {
+  const { request } = context;
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS });
   }
 
   const u    = new URL(request.url);
   const q    = u.searchParams;
+
+  // Path segments after leading slash, e.g. /api/shelly/tariff → ['api','shelly','tariff']
+  const parts = u.pathname.split('/').filter(Boolean);
+  const seg1  = parts[1]; // 'now' | 'prices' | 'schedule' | 'shelly' | 'openapi.json' | …
+  const seg2  = parts[2]; // 'tariff' (when seg1==='shelly')
+
+  // Plain `/api` (no sub-path) is the human-readable docs page. Pages Functions
+  // don't chain across files, so we serve the modified index.html here.
+  if (!seg1) {
+    const indexUrl = new URL('/', request.url);
+    const res = await context.env.ASSETS.fetch(indexUrl);
+    let html = await res.text();
+    const title = 'elpriser.org API — Gratis JSON API for danske elpriser';
+    const desc  = 'Gratis public JSON API for danske elpriser (DK1 og DK2). Aktuel pris, 24h timepriser, 7-dages prognose, Tibber-kompatibel tariff. CORS-fri, ingen nøgle, OpenAPI 3.1 spec.';
+    const url   = 'https://elpriser.org/api';
+    html = html.replace(/<title>[^<]*<\/title>/,                         `<title>${title}</title>`);
+    html = html.replace(/<meta name="description" content="[^"]*">/,    `<meta name="description" content="${desc}">`);
+    html = html.replace(/<link rel="canonical" href="[^"]*">/,          `<link rel="canonical" href="${url}">`);
+    html = html.replace(/<meta property="og:title" content="[^"]*">/,   `<meta property="og:title" content="${title}">`);
+    html = html.replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${desc}">`);
+    html = html.replace(/<meta property="og:url" content="[^"]*">/,     `<meta property="og:url" content="${url}">`);
+    html = html.replace(/<meta name="twitter:title" content="[^"]*">/,  `<meta name="twitter:title" content="${title}">`);
+    html = html.replace(/<meta name="twitter:description" content="[^"]*">/, `<meta name="twitter:description" content="${desc}">`);
+    return new Response(html, {
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=3600' },
+    });
+  }
+
+  // ── /api/openapi.json — machine-readable API spec (served before area check) ─
+  if (seg1 === 'openapi.json') {
+    return new Response(JSON.stringify(OPENAPI_SPEC, null, 2), {
+      headers: {
+        'Content-Type': 'application/json',
+        // Spec rarely changes — cache hard at the edge.
+        'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+        ...CORS,
+      },
+    });
+  }
+
   const area = (q.get('area') || 'DK1').toUpperCase();
   if (!['DK1', 'DK2'].includes(area)) return fail(400, 'area must be DK1 or DK2');
 
   const mode = q.get('mode') || 'inkl_alt';
   const gln  = q.get('gln')  || null;
-
-  // Path segments after leading slash, e.g. /api/shelly/tariff → ['api','shelly','tariff']
-  const parts = u.pathname.split('/').filter(Boolean);
-  const seg1  = parts[1]; // 'now' | 'prices' | 'schedule' | 'shelly'
-  const seg2  = parts[2]; // 'tariff' (when seg1==='shelly')
 
   // ── /api/forecast ───────────────────────────────────────────────────────
   if (seg1 === 'forecast') {
