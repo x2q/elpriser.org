@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Elpriser i dag — DK1 og DK2 spotpriser time for time</title>
+<title>Elpriser i dag — Aktuel spotpris lige nu (DK1 og DK2)</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<meta name="description" content="Se dagens elpriser time for time i Danmark. Aktuelle spotpriser for DK1 (Vest) og DK2 (Øst) inkl. netselskab-tariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.">
+<meta name="description" content="Aktuelle elpriser og spotpriser lige nu — time for time for DK1 (Vest) og DK2 (Øst). Den reelle pris på el inkl. nettariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.">
 <link rel="canonical" href="https://elpriser.org/">
 <link rel="alternate" hreflang="da" href="https://elpriser.org/">
 <meta name="robots" content="index, follow">
 <!-- Open Graph -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Elpriser i dag — DK1 og DK2 spotpriser time for time">
-<meta property="og:description" content="Se dagens elpriser time for time. Spotpriser for DK1 og DK2 inkl. tariffer og moms.">
+<meta property="og:title" content="Elpriser i dag — Aktuel spotpris lige nu (DK1 og DK2)">
+<meta property="og:description" content="Aktuelle elpriser og spotpriser lige nu — time for time for DK1 og DK2. Den reelle pris på el inkl. nettariffer, elafgift og moms.">
 <meta property="og:url" content="https://elpriser.org/">
 <meta property="og:locale" content="da_DK">
 <meta property="og:site_name" content="elpriser.org">
@@ -26,8 +26,8 @@
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://elpriser.org/og-image">
-<meta name="twitter:title" content="Elpriser i dag — DK1 og DK2 spotpriser time for time">
-<meta name="twitter:description" content="Se dagens elpriser time for time. Spotpriser for DK1 og DK2 inkl. tariffer og moms.">
+<meta name="twitter:title" content="Elpriser i dag — Aktuel spotpris lige nu (DK1 og DK2)">
+<meta name="twitter:description" content="Aktuelle elpriser og spotpriser lige nu — time for time for DK1 og DK2 inkl. tariffer og moms.">
 <!-- Structured Data -->
 <script type="application/ld+json">
 {
@@ -193,6 +193,69 @@
         "@type": "Answer",
         "text": "Nettariffen varierer mellem netselskaber med op til 15-25 øre/kWh forskel, svarende til ca. 500-1.000 kr/år for en typisk husstand. I DK1 (Vest) har RAH Net og Trefor typisk de laveste spidstariffer (33-37 øre), mens N1 ligger højere (46 øre). I DK2 (Øst) er Cerius billigst (47 øre spids), mens Radius er dyrest (65 øre). Du kan ikke selv vælge netselskab, men du kan spare ved at flytte forbrug til lavsats-timerne."
       }
+    }
+  ]
+}
+</script>
+<!--
+  Article markup for the 5 blog guides. Each entry tells Google "this is a
+  long-form article, here's its author/publisher". Helps with rich snippets
+  (date, author byline) in SERPs. The pages themselves are SPA routes
+  served by functions/[[path]].js with per-route <title> + <meta>.
+-->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "headline": "Forstå din elpris: Hvad bestemmer elprisen i Danmark?",
+      "description": "Komplet guide til elpriser i Danmark: spotpris, nettarif, elafgift, DK1 vs DK2, hvornår strømmen er billigst, negative elpriser og sådan sparer du penge.",
+      "url": "https://elpriser.org/blog/forsta-din-elpris",
+      "inLanguage": "da",
+      "author":    { "@type": "Organization", "name": "elpriser.org" },
+      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/forsta-din-elpris" }
+    },
+    {
+      "@type": "Article",
+      "headline": "Shelly og elpriser: Automatisk tænd og sluk efter spotprisen",
+      "description": "Styr Shelly Plus, Pro og Plug efter elprisen med gratis API. Script- og tidsbaseret automation af elbil, varmepumpe og vandvarmer efter billig strøm.",
+      "url": "https://elpriser.org/blog/shelly-elpris-automation",
+      "inLanguage": "da",
+      "author":    { "@type": "Organization", "name": "elpriser.org" },
+      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/shelly-elpris-automation" }
+    },
+    {
+      "@type": "Article",
+      "headline": "Home Assistant og elpriser: Komplet guide til smart elforbrug",
+      "description": "Opsæt Home Assistant med danske elpriser: REST-sensorer, schedule-automations og dashboards — spar automatisk penge på strøm efter de billigste timer.",
+      "url": "https://elpriser.org/blog/home-assistant-elpriser",
+      "inLanguage": "da",
+      "author":    { "@type": "Organization", "name": "elpriser.org" },
+      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/home-assistant-elpriser" }
+    },
+    {
+      "@type": "Article",
+      "headline": "V2G, V2H og V2L: Bidirektional elbilopladning forklaret",
+      "description": "Forstå Vehicle-to-Grid (V2G), Vehicle-to-Home (V2H) og Vehicle-to-Load (V2L). Sådan kan din elbil sælge strøm til nettet eller forsyne dit hus, og hvordan det fungerer med spotpriser i Danmark.",
+      "url": "https://elpriser.org/blog/v2g-v2h-bidirektional-opladning",
+      "inLanguage": "da",
+      "author":    { "@type": "Organization", "name": "elpriser.org" },
+      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/v2g-v2h-bidirektional-opladning" }
+    },
+    {
+      "@type": "Article",
+      "headline": "Elbiler og ladere med V2H/V2G — Komplet liste 2026",
+      "description": "Opdateret liste over elbiler og bidirektionale ladere der understøtter V2L, V2H og V2G. Inkluderer Hyundai Ioniq 5, Kia EV9, Nissan Leaf, Wallbox Quasar 2, Sigenergy og flere.",
+      "url": "https://elpriser.org/blog/biler-ladere-v2h-v2g",
+      "inLanguage": "da",
+      "author":    { "@type": "Organization", "name": "elpriser.org" },
+      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/biler-ladere-v2h-v2g" }
     }
   ]
 }
@@ -411,7 +474,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         <h1 class="text-4xl sm:text-5xl font-black text-white">Elpriser i dag</h1>
       </div>
       <p class="hero-sub text-sm sm:text-base max-w-xl mx-auto">
-        Se dagens elpriser time for time for DK1 (Vestdanmark) og DK2 (Østdanmark). Aktuelle spotpriser inkl. netselskab-tariffer, elafgift og moms &mdash; opdateret dagligt fra Energi Data Service.
+        Tjek aktuel elpris lige nu — spotpriser time for time for DK1 (Vestdanmark) og DK2 (Østdanmark). Den reelle pris på el du betaler per kWh, inkl. netselskab-tariffer, elafgift og moms &mdash; opdateret dagligt fra Energi Data Service.
       </p>
       <!-- GPS detect — single button -->
       <button id="gpsBtn" onclick="detectLocation()" class="gps-bar mt-10 inline-flex items-center gap-3 rounded-full text-sm font-medium text-white" style="padding:1rem 2rem">
@@ -450,9 +513,14 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <a href="https://www.danskenergi.dk/vejledning/nettilslutning/find-dit-netselskab" target="_blank" rel="noopener" class="nav-pill">Find dit netselskab &rarr;</a>
     </div>
 
+    <!-- Intro paragraph — natural keyword coverage for "elpris lige nu", "strømpris", "pris på el" etc. -->
+    <section class="max-w-2xl mx-auto px-2 mt-12 mb-2 text-center text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+      <p>Spotprisen på el — også kaldet strømprisen — skifter time for time og fastsættes dagen i forvejen. På elpriser.org ser du den aktuelle elpris lige nu, både den rå spotpris og den samlede pris på el pr. kWh inkl. nettariffer, elafgift og moms. Vælg dit netselskab ovenfor for en præcis pris for din adresse, eller tjek <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> for de kommende 7 dage.</p>
+    </section>
+
     <!-- FAQ — static crawlable content for SEO -->
-    <section class="mt-14 max-w-2xl mx-auto">
-      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Ofte stillede spørgsmål om elpriser</h2>
+    <section class="mt-10 max-w-2xl mx-auto">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Ofte stillede spørgsmål om elpriser og spotpriser</h2>
       <div class="space-y-3">
         <details class="group faq">
           <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">

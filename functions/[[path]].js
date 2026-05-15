@@ -15,13 +15,13 @@ const OG_IMAGE = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="6
 // Pages with unique SEO metadata, served as modified index.html
 const SEO_PAGES = {
   '/dk1': {
-    title: 'Elpriser DK1 Vest i dag — Spotpriser Jylland og Fyn',
-    description: 'Se aktuelle elpriser for DK1 (Vestdanmark) time for time. Spotpriser for Jylland og Fyn inkl. nettariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.',
+    title: 'Elpriser DK1 Vest i dag — Aktuel spotpris lige nu (Jylland og Fyn)',
+    description: 'Aktuel elpris og spotpris lige nu for DK1 (Vestdanmark) — time for time for Jylland og Fyn. Den reelle pris på el inkl. nettariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.',
     hash: '#DK1/spot_inkl',
   },
   '/dk2': {
-    title: 'Elpriser DK2 Øst i dag — Spotpriser Sjælland og Øer',
-    description: 'Se aktuelle elpriser for DK2 (Østdanmark) time for time. Spotpriser for Sjælland, Lolland-Falster og Bornholm inkl. nettariffer, elafgift og moms.',
+    title: 'Elpriser DK2 Øst i dag — Aktuel spotpris lige nu (Sjælland)',
+    description: 'Aktuel elpris og spotpris lige nu for DK2 (Østdanmark) — time for time for Sjælland, Lolland-Falster og Bornholm. Den reelle pris på el inkl. nettariffer, elafgift og moms.',
     hash: '#DK2/spot_inkl',
   },
   '/tariffer': {
@@ -101,8 +101,8 @@ function netPageMeta(area, net) {
   const areaLabel = AREA_LABEL[area];
   const region = AREA_REGION[area];
   return {
-    title:       `Elpris ${net.name} ${areaLabel} i dag — Spotpris inkl. nettarif`,
-    description: `Se dagens elpriser hos ${net.name} i ${region}. Komplet pris pr. kWh inkl. spotpris, ${net.name}-nettarif, elafgift og moms — time for time, opdateret dagligt fra Energi Data Service.`,
+    title:       `Elpris ${net.name} ${areaLabel} i dag — Aktuel pris lige nu inkl. nettarif`,
+    description: `Aktuel elpris og spotpris lige nu hos ${net.name} i ${region} — time for time. Den reelle pris pr. kWh du betaler inkl. ${net.name}-nettarif, elafgift og moms. Opdateret dagligt fra Energi Data Service.`,
     hash:        `#${area}/net_inkl_alt/${net.slug}`,
   };
 }
