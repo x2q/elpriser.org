@@ -60,6 +60,48 @@
   "description": "Aktuelle elpriser og spotpriser for Danmark - DK1 og DK2 time for time."
 }
 </script>
+<!--
+  Local relevance signal: explicit Service entity with areaServed listing
+  Denmark plus the 15 biggest cities by population, each with geo coordinates
+  and a containedInPlace pointing at its price zone (DK1 Vest / DK2 Øst).
+  Helps search engines surface elpriser.org for queries like
+  "elpriser Aarhus", "spotpris Odense" etc.
+-->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "Elpriser i Danmark",
+  "serviceType": "Electricity price information",
+  "description": "Aktuelle spotpriser og samlede elpriser time for time for hele Danmark, opdelt på prisområderne DK1 (Vestdanmark) og DK2 (Østdanmark).",
+  "url": "https://elpriser.org",
+  "inLanguage": "da",
+  "provider": {
+    "@type": "Organization",
+    "name": "elpriser.org",
+    "url": "https://elpriser.org"
+  },
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "DKK" },
+  "areaServed": [
+    { "@type": "Country", "name": "Denmark", "alternateName": "Danmark" },
+    { "@type": "City", "name": "København",  "geo": { "@type": "GeoCoordinates", "latitude": 55.6761, "longitude": 12.5683 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Aarhus",     "geo": { "@type": "GeoCoordinates", "latitude": 56.1629, "longitude": 10.2039 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Odense",     "geo": { "@type": "GeoCoordinates", "latitude": 55.4038, "longitude": 10.4024 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Aalborg",    "geo": { "@type": "GeoCoordinates", "latitude": 57.0488, "longitude":  9.9217 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Esbjerg",    "geo": { "@type": "GeoCoordinates", "latitude": 55.4761, "longitude":  8.4602 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Randers",    "geo": { "@type": "GeoCoordinates", "latitude": 56.4607, "longitude": 10.0369 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Kolding",    "geo": { "@type": "GeoCoordinates", "latitude": 55.4904, "longitude":  9.4722 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Horsens",    "geo": { "@type": "GeoCoordinates", "latitude": 55.8607, "longitude":  9.8503 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Vejle",      "geo": { "@type": "GeoCoordinates", "latitude": 55.7099, "longitude":  9.5359 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Roskilde",   "geo": { "@type": "GeoCoordinates", "latitude": 55.6415, "longitude": 12.0803 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Herning",    "geo": { "@type": "GeoCoordinates", "latitude": 56.1364, "longitude":  8.9744 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Silkeborg",  "geo": { "@type": "GeoCoordinates", "latitude": 56.1697, "longitude":  9.5450 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Næstved",    "geo": { "@type": "GeoCoordinates", "latitude": 55.2300, "longitude": 11.7600 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Fredericia", "geo": { "@type": "GeoCoordinates", "latitude": 55.5667, "longitude":  9.7500 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Viborg",     "geo": { "@type": "GeoCoordinates", "latitude": 56.4519, "longitude":  9.4006 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } }
+  ]
+}
+</script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
