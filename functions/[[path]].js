@@ -525,10 +525,14 @@ async function renderSPA(context, pathname, meta) {
     /<meta name="twitter:description" content="[^"]*">/,
     `<meta name="twitter:description" content="${meta.description}">`
   );
+  // Explicit headers only — spreading the asset's headers previously produced
+  // a duplicated `Content-Type` (the asset's lowercase `content-type` plus our
+  // `Content-Type`). Short max-age keeps the inline SPA JS from going stale on
+  // returning visitors while still allowing cheap edge/browser caching.
   return new Response(html, {
     headers: {
-      ...Object.fromEntries(res.headers.entries()),
       'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=300, must-revalidate',
     },
   });
 }

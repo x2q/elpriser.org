@@ -282,6 +282,42 @@ async function apiTests() {
       assert.equal(r.status, 400);
     });
 
+  // ── ETag / conditional requests — "only fetch when there's actually new data" ──
+  await test('/api/raw/prices sends an ETag and 304s on If-None-Match',
+    async () => {
+      const today = new Date(), s = new Date(today), e = new Date(today);
+      s.setUTCDate(s.getUTCDate() - 7); e.setUTCDate(e.getUTCDate() + 2);
+      const fmt = d => d.toISOString().slice(0, 10);
+      const url = `/api/raw/prices?area=DK1&start=${fmt(s)}&end=${fmt(e)}`;
+      const first = await json(url);
+      const etag = first.headers.get('etag');
+      assert.ok(etag, 'response must carry an ETag');
+      // Raw fetch — a 304 has an empty body the json() helper can't parse.
+      const second = await fetch(BASE + url, { headers: { 'If-None-Match': etag } });
+      assert.equal(second.status, 304,
+        `re-request with matching If-None-Match must 304 (got ${second.status}) — ` +
+        `otherwise we re-transfer unchanged data.`);
+    });
+
+  await test('/api/raw/prices caches until next publication, not 60s',
+    async () => {
+      const today = new Date(), s = new Date(today), e = new Date(today);
+      s.setUTCDate(s.getUTCDate() - 7); e.setUTCDate(e.getUTCDate() + 2);
+      const fmt = d => d.toISOString().slice(0, 10);
+      const r = await json(`/api/raw/prices?area=DK1&start=${fmt(s)}&end=${fmt(e)}`);
+      const m = (r.headers.get('cache-control') || '').match(/max-age=(\d+)/);
+      assert.ok(m, 'cache-control max-age missing');
+      assert.ok(+m[1] >= 300,
+        `max-age was ${m && m[1]}s — day-ahead prices are stable for hours, ` +
+        `should cache well beyond the old flat 60s.`);
+    });
+
+  await test('/api/now carries an ETag (conditional revalidation)',
+    async () => {
+      const r = await json('/api/now?area=DK1&mode=inkl_alt');
+      assert.ok(r.headers.get('etag'), '/api/now must send an ETag');
+    });
+
   await test('GET /api/raw/prices invalid date format → 400',
     async () => {
       const r = await json('/api/raw/prices?area=DK1&start=foo&end=bar');

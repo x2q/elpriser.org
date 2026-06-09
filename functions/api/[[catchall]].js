@@ -18,11 +18,51 @@ const CORS = {
   'Link': '</api/openapi.json>; rel="describedby"; type="application/json"',
 };
 
-function ok(data) {
-  return new Response(JSON.stringify(data, null, 2), {
-    headers: { 'Content-Type': 'application/json', ...CORS },
-  });
+// ── Conditional-request (ETag) JSON responder ───────────────────────────────
+// Day-ahead prices are immutable once published; the only reason to transfer
+// the body again is when the data has actually changed. We derive a weak ETag
+// from the body and honour `If-None-Match`, so a client/CDN that already has
+// the current data gets an empty `304 Not Modified` instead of a re-download.
+// `maxAge` (seconds) is how long the browser may serve from its own cache
+// before even revalidating — tune per endpoint to "time until data can change".
+
+// Fast, stable 32-bit string hash (FNV-1a) for ETag generation.
+function hash32(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+  }
+  return h.toString(16).padStart(8, '0');
 }
+
+/**
+ * Build a cache-aware JSON response.
+ * @param data       any JSON-serialisable value
+ * @param opts.maxAge browser cache seconds (default 0 → always revalidate)
+ * @param opts.sMaxAge edge cache seconds (defaults to maxAge)
+ * @param opts.request the incoming Request — enables 304 when If-None-Match hits
+ * @param opts.pretty  2-space indent (default true, matches old `ok()`)
+ */
+function jsonResponse(data, opts = {}) {
+  const { maxAge = 0, request = null, pretty = true } = opts;
+  const sMaxAge = opts.sMaxAge != null ? opts.sMaxAge : maxAge;
+  const body = JSON.stringify(data, null, pretty ? 2 : 0);
+  const etag = `"${hash32(body)}"`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'Cache-Control': `public, max-age=${maxAge}, s-maxage=${sMaxAge}`,
+    'ETag': etag,
+    ...CORS,
+  };
+  // Conditional request — client already has this exact data.
+  const inm = request && request.headers.get('if-none-match');
+  if (inm && inm === etag) {
+    return new Response(null, { status: 304, headers });
+  }
+  return new Response(body, { headers });
+}
+
 function fail(status, msg) {
   return new Response(JSON.stringify({ error: msg }), {
     status,
@@ -64,6 +104,27 @@ function danishNow() {
   const utc = new Date();
   const off = danishOffset(fmtUTC(utc), utc.getUTCHours());
   return new Date(utc.getTime() + off * 3_600_000);
+}
+
+// ── Cache-freshness windows ──────────────────────────────────────────────────
+// Day-ahead prices for the next day are published around 13:00 (CET/CEST) and
+// are immutable until the next day's publication. So there is genuinely no new
+// data to fetch between publications — we cache until the next ~13:00 window.
+
+/** Seconds until the next 13:00 Danish local time (clamped 5 min … 6 h). */
+function secondsUntilNextPublish() {
+  const dk  = danishNow(); // DK-local components readable via UTC getters
+  const sec = dk.getUTCHours() * 3600 + dk.getUTCMinutes() * 60 + dk.getUTCSeconds();
+  const target = 13 * 3600;
+  const delta  = sec < target ? target - sec : (86400 - sec) + target;
+  return Math.max(300, Math.min(delta, 6 * 3600));
+}
+
+/** Seconds until the top of the next hour (clamped 30 s … 1 h). Used where the
+ *  response depends on the current hour (e.g. /api/now's current price). */
+function secondsUntilNextHour() {
+  const d = new Date();
+  return Math.max(30, Math.min(3600 - (d.getUTCMinutes() * 60 + d.getUTCSeconds()), 3600));
 }
 
 /**
@@ -482,14 +543,8 @@ export async function onRequest(context) {
 
   // ── /api/openapi.json — machine-readable API spec (served before area check) ─
   if (seg1 === 'openapi.json') {
-    return new Response(JSON.stringify(OPENAPI_SPEC, null, 2), {
-      headers: {
-        'Content-Type': 'application/json',
-        // Spec rarely changes — cache hard at the edge.
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400',
-        ...CORS,
-      },
-    });
+    // Spec rarely changes — cache hard at the edge; ETag enables cheap 304s.
+    return jsonResponse(OPENAPI_SPEC, { maxAge: 3600, sMaxAge: 86400, request });
   }
 
   const area = (q.get('area') || 'DK1').toUpperCase();
@@ -501,7 +556,7 @@ export async function onRequest(context) {
   // ── /api/forecast ───────────────────────────────────────────────────────
   if (seg1 === 'forecast') {
     try {
-      return await handleForecast(area, mode);
+      return await handleForecast(area, mode, request);
     } catch (e) {
       console.error(e);
       return fail(500, String(e.message || e));
@@ -513,7 +568,7 @@ export async function onRequest(context) {
   // here because the upstream GreenPowerDenmark API has no CORS headers.
   if (seg1 === 'supplierlookup') {
     try {
-      return await handleSupplierLookup(q.get('lat'), q.get('lng'));
+      return await handleSupplierLookup(q.get('lat'), q.get('lng'), request);
     } catch (e) {
       console.error(e);
       return fail(500, String(e.message || e));
@@ -529,10 +584,10 @@ export async function onRequest(context) {
   // real body, and we tack on our own CORS + Cache-Control on the way out.
   if (seg1 === 'raw') {
     try {
-      if (seg2 === 'prices')    return await handleRawPrices(area, q.get('start'), q.get('end'));
-      if (seg2 === 'encharges') return await handleRawEnCharges();
-      if (seg2 === 'tariff')    return await handleRawTariff(q.get('gln'));
-      if (seg2 === 'tariffs')   return await handleRawTariffs();
+      if (seg2 === 'prices')    return await handleRawPrices(area, q.get('start'), q.get('end'), request);
+      if (seg2 === 'encharges') return await handleRawEnCharges(request);
+      if (seg2 === 'tariff')    return await handleRawTariff(q.get('gln'), request);
+      if (seg2 === 'tariffs')   return await handleRawTariffs(request);
       return fail(404, 'Unknown raw endpoint');
     } catch (e) {
       console.error(e);
@@ -569,7 +624,8 @@ export async function onRequest(context) {
           .filter(Boolean);
       }
 
-      return ok({
+      // Today+tomorrow entries are stable until the next ~13:00 publication.
+      return jsonResponse({
         data: {
           viewer: {
             homes: [{
@@ -582,7 +638,7 @@ export async function onRequest(context) {
             }],
           },
         },
-      });
+      }, { maxAge: secondsUntilNextPublish(), request });
     }
 
     // ── /api/prices | /api/now | /api/schedule ──────────────────────────────
@@ -596,12 +652,14 @@ export async function onRequest(context) {
     });
 
     if (seg1 === 'prices') {
-      return ok({
+      // The 24 hourly prices are stable for the day; current_hour/current_price
+      // change hourly → cap freshness at the next hour boundary.
+      return jsonResponse({
         area, mode, date: dateStr, unit: 'DKK/kWh',
         prices: hourlyPrices.map((price, hour) => ({ hour, price })),
         current_hour:  curHour,
         current_price: hourlyPrices[curHour],
-      });
+      }, { maxAge: secondsUntilNextHour(), request });
     }
 
     const strategy = q.get('strategy') || 'cheapest_n';
@@ -611,20 +669,22 @@ export async function onRequest(context) {
     const schedule = computeSchedule(hourlyPrices, strategy, param, param2);
 
     if (seg1 === 'now') {
-      return ok({
+      // Reflects the current hour → fresh until the next hour boundary.
+      return jsonResponse({
         on:       schedule[curHour],
         price:    hourlyPrices[curHour],
         hour:     curHour,
         area, mode, strategy,
-      });
+      }, { maxAge: secondsUntilNextHour(), request });
     }
 
     if (seg1 === 'schedule') {
-      return ok({
+      // schedule[] is stable for the day; on_now depends on the current hour.
+      return jsonResponse({
         area, mode, strategy, param, date: dateStr,
         on_now:   schedule[curHour],
         schedule: hourlyPrices.map((price, hour) => ({ hour, price, on: schedule[hour] })),
-      });
+      }, { maxAge: secondsUntilNextHour(), request });
     }
 
     return fail(404, 'Unknown endpoint. Try /api/now  /api/prices  /api/schedule  /api/forecast  /api/shelly/tariff');
@@ -859,17 +919,10 @@ function cvtForecast(dkkMwh, h, mode, en) {
 // short browser TTL (so revised prices propagate within minutes) but never
 // hit upstream EDS for a key that's already in our edge cache.
 
-/** Build a JSON Response with CORS + Cache-Control. maxAge in seconds. */
-function cachedJson(data, maxAge) {
-  return new Response(JSON.stringify(data), {
-    headers: {
-      'Content-Type': 'application/json',
-      // s-maxage is for our edge cache; max-age is for the browser. We let
-      // the edge hold the value much longer than the browser does.
-      'Cache-Control': `public, max-age=60, s-maxage=${maxAge}`,
-      ...CORS,
-    },
-  });
+/** Build a cache + ETag aware JSON Response. `maxAge` in seconds is used for
+ *  both the browser and the edge; pass `request` to enable 304 responses. */
+function cachedJson(data, maxAge, request) {
+  return jsonResponse(data, { maxAge, request, pretty: false });
 }
 
 /**
@@ -904,16 +957,20 @@ async function edgeCached(key, ttlSec, build) {
   return data;
 }
 
-async function handleRawPrices(area, start, end) {
+async function handleRawPrices(area, start, end, request) {
   if (!start || !end) return fail(400, 'start, end required (YYYY-MM-DD)');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end))
     return fail(400, 'start, end must be YYYY-MM-DD');
 
-  // Past dates are immutable → cache for a day. Current/future may revise → 5 min.
-  const today = fmtUTC(new Date());
-  const ttlSec = end < today ? 86400 : 300;
+  // Past-only ranges are immutable → cache a day. Ranges touching today/future
+  // only change at the next ~13:00 publication → cache until then (+ ETag means
+  // even after that, an unchanged body returns 304 with no transfer).
+  const today  = fmtUTC(new Date());
+  const ttlSec = end < today ? 86400 : secondsUntilNextPublish();
 
-  const records = await edgeCached(`raw-prices-${area}-${start}-${end}`, ttlSec, async () => {
+  // Edge/in-memory key uses a fixed bucket for the volatile slice so a fetch is
+  // shared across users; the TTL above controls when we re-pull from upstream.
+  const records = await edgeCached(`raw-prices-${area}-${start}-${end}`, end < today ? 86400 : 300, async () => {
     const f = encodeURIComponent(JSON.stringify({ PriceArea: area }));
     const r = await fetch(
       `https://api.energidataservice.dk/dataset/DayAheadPrices` +
@@ -922,10 +979,10 @@ async function handleRawPrices(area, start, end) {
     const j = await r.json();
     return j.records || [];
   });
-  return cachedJson({ records }, ttlSec);
+  return cachedJson({ records }, ttlSec, request);
 }
 
-async function handleRawEnCharges() {
+async function handleRawEnCharges(request) {
   // Energinet system/transmission/electricity-tax charges. Change rarely.
   const records = await edgeCached('raw-encharges', 3600, async () => {
     const GLN = '5790000432752';
@@ -940,14 +997,14 @@ async function handleRawEnCharges() {
     const j = await r.json();
     return j.records || [];
   });
-  return cachedJson({ records }, 3600);
+  return cachedJson({ records }, 3600, request);
 }
 
 /**
  * Single-net Nettarif C for the table view — needs only the user's chosen
  * net, not all 17. Returns ~1 KB instead of ~48 KB.
  */
-async function handleRawTariff(gln) {
+async function handleRawTariff(gln, request) {
   if (!gln || !/^\d{13}$/.test(gln)) return fail(400, 'gln required (13 digits)');
 
   const records = await edgeCached(`raw-tariff-${gln}`, 3600, async () => {
@@ -972,14 +1029,14 @@ async function handleRawTariff(gln) {
       (!rec.ValidTo || new Date(rec.ValidTo) > now)
     );
   });
-  return cachedJson({ records }, 3600);
+  return cachedJson({ records }, 3600, request);
 }
 
 /**
  * All-nets Nettarif C — used ONLY by the Tariff comparison page. The table
  * view should call /api/raw/tariff?gln=… for a single net instead.
  */
-async function handleRawTariffs() {
+async function handleRawTariffs(request) {
   const records = await edgeCached('raw-tariffs', 3600, async () => {
     const f = encodeURIComponent(JSON.stringify({
       ChargeType: 'D03', Note: 'Nettarif C',
@@ -999,7 +1056,7 @@ async function handleRawTariffs() {
       (!rec.ValidTo || new Date(rec.ValidTo) > now)
     );
   });
-  return cachedJson({ records }, 3600);
+  return cachedJson({ records }, 3600, request);
 }
 
 // ── Supplier lookup (GPS → address → net company) ───────────────────────────
@@ -1023,13 +1080,13 @@ function buildGpdAddress(dawa) {
   return `${street} ${husnr}, ${postnr} ${town}`;
 }
 
-async function handleSupplierLookup(lat, lng) {
+async function handleSupplierLookup(lat, lng, request) {
   const flat = parseFloat(lat), flng = parseFloat(lng);
   if (!isFinite(flat) || !isFinite(flng)) return fail(400, 'lat,lng required');
 
   // Cache by ~11m grid (5 decimals) so nearby clicks share a result.
   const key = `gps-${flat.toFixed(5)}-${flng.toFixed(5)}`;
-  return ok(await cached(key, 24 * 60 * 60_000, async () => {
+  const result = await cached(key, 24 * 60 * 60_000, async () => {
     // 1. Reverse-geocode via DAWA (CORS-friendly upstream, but server-side
     //    here so we get structured fields and one round-trip from the client).
     const dawa = await fetch(
@@ -1052,10 +1109,12 @@ async function handleSupplierLookup(lat, lng) {
 
     const j = await r.json().catch(() => null);
     return { address: fullAddr, name: j?.name || null };
-  }));
+  });
+  // Address → net mapping is effectively static → cache a day, ETag for 304s.
+  return jsonResponse(result, { maxAge: 86400, request });
 }
 
-async function handleForecast(area, mode) {
+async function handleForecast(area, mode, request) {
   const dkNow = danishNow();
   const start = new Date(dkNow.getTime() - 28 * 86_400_000);
   const end   = new Date(dkNow.getTime() + 2 * 86_400_000); // Include tomorrow
@@ -1070,10 +1129,12 @@ async function handleForecast(area, mode) {
 
   const days = buildForecast(historicalPrices, weatherForecasts, area, mode, enCharges);
 
-  return ok({
+  // `generated` is bucketed to the date (not the millisecond) so the ETag is
+  // stable within a caching window and conditional requests can 304.
+  return jsonResponse({
     area,
     mode,
-    generated: new Date().toISOString(),
+    generated: fmtUTC(dkNow),
     days,
-  });
+  }, { maxAge: 1800, request });
 }

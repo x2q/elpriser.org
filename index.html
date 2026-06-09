@@ -2299,7 +2299,45 @@ function fg(p) {
 }
 
 // ═══ LOAD & RENDER ═══
-async function loadPriceData(loadId){const li=document.getElementById('loadingIndicator'),tw=document.getElementById('tableWrapper');li.style.display='block';tw.style.display='none';const needs=['inkl_alt','inkl_alt_minus','net_inkl_alt','net_inkl_tarif'];const proms=[];if(needs.includes(S.mode))proms.push(fetchEnCharges());if(S.mode.startsWith('net_')&&S.gln)proms.push(loadNetTariff(S.gln));if(proms.length)await Promise.all(proms);if(loadId!==S._loadId)return;const now=new Date();const center=new Date(now);center.setDate(center.getDate()+S.weekOffset*7);const s=new Date(center),e=new Date(center);s.setDate(s.getDate()-7);e.setDate(e.getDate()+2);try{const j=await dedupedFetch(`/api/raw/prices?area=${S.area}&start=${fmt(s)}&end=${fmt(e)}`);if(loadId!==S._loadId)return;priceData=processRecords(j.records||[]);renderTable();}catch(err){console.error('Price load failed',err);if(loadId===S._loadId)li.innerHTML='<span class="text-red-500">Fejl ved hentning af data</span>';}}
+// Fetch JSON with one automatic retry on failure/empty. Transient mobile-network
+// blips and the occasional empty upstream response previously surfaced as a dead
+// "no data" screen; retrying once recovers silently in the common case.
+async function fetchPricesWithRetry(url,tries=2){
+  let lastErr;
+  for(let i=0;i<tries;i++){
+    try{
+      const j=await dedupedFetch(url);
+      if(j&&Array.isArray(j.records)&&j.records.length)return j;
+      lastErr=new Error('empty');
+    }catch(e){lastErr=e;}
+    if(i<tries-1)await new Promise(r=>setTimeout(r,700*(i+1)));
+  }
+  throw lastErr;
+}
+// Re-trigger a price load (used by the "Prøv igen" button on the error state).
+function reloadPrices(){loadPriceData(++S._loadId);}
+async function loadPriceData(loadId){
+  const li=document.getElementById('loadingIndicator'),tw=document.getElementById('tableWrapper');
+  li.style.display='block';li.innerHTML='Henter priser…';tw.style.display='none';
+  const needs=['inkl_alt','inkl_alt_minus','net_inkl_alt','net_inkl_tarif'];
+  const proms=[];
+  if(needs.includes(S.mode))proms.push(fetchEnCharges());
+  if(S.mode.startsWith('net_')&&S.gln)proms.push(loadNetTariff(S.gln));
+  if(proms.length)await Promise.all(proms);
+  if(loadId!==S._loadId)return;
+  const now=new Date();const center=new Date(now);center.setDate(center.getDate()+S.weekOffset*7);
+  const s=new Date(center),e=new Date(center);s.setDate(s.getDate()-7);e.setDate(e.getDate()+2);
+  try{
+    const j=await fetchPricesWithRetry(`/api/raw/prices?area=${S.area}&start=${fmt(s)}&end=${fmt(e)}`);
+    if(loadId!==S._loadId)return;
+    priceData=processRecords(j.records||[]);
+    if(!Object.keys(priceData).length)throw new Error('no parseable records');
+    renderTable();
+  }catch(err){
+    console.error('Price load failed',err);
+    if(loadId===S._loadId)li.innerHTML='<div class="text-sm text-gray-600 dark:text-gray-400 mb-3">Kunne ikke hente elpriser lige nu.</div><button onclick="reloadPrices()" class="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-full bg-brand-600 hover:bg-brand-700 text-white transition">Prøv igen</button>';
+  }
+}
 
 function renderTable(){
   const dates=Object.keys(priceData).sort().slice(-8);
