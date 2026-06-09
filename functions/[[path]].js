@@ -463,6 +463,15 @@ ${JSON.stringify({
 }
 
 async function renderHomepage(context) {
+  // Edge-cache the fully-rendered homepage. Pages Function responses aren't
+  // CDN-cached automatically (cf-cache-status: DYNAMIC), so without this every
+  // hit re-runs the render + the live-price subrequests. The Cache API holds it
+  // for s-maxage (5 min) — fine since the SSR'd price is a "lige nu" snapshot.
+  const cache = caches.default;
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v1');
+  const cached = await cache.match(cacheKey);
+  if (cached) return cached;
+
   const indexUrl = new URL('/', context.request.url);
   const [resHtml, dk1, dk2] = await Promise.all([
     context.env.ASSETS.fetch(indexUrl),
@@ -475,13 +484,19 @@ async function renderHomepage(context) {
     html = html.replace('<!--SSR_LIVE_PRICE-->', strip);
     html = html.replace('<!--SSR_LIVE_PRICE_JSONLD-->', jsonLd);
   }
-  return new Response(html, {
+  const res = new Response(html, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      // 60s browser cache, 5min edge cache — prices revise hourly so this is fine
+      // 60s browser cache, 5min edge cache — prices revise hourly so this is fine.
       'Cache-Control': 'public, max-age=60, s-maxage=300',
     },
   });
+  // Only cache a fully-rendered page (both snapshots present); never cache a
+  // fallback that's missing the live strip.
+  if (dk1 && dk2) {
+    try { await cache.put(cacheKey, res.clone()); } catch {}
+  }
+  return res;
 }
 
 async function renderSPA(context, pathname, meta) {

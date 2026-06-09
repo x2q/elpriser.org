@@ -360,8 +360,14 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!-- Critical same-origin CSS first so it isn't queued behind the cross-origin font CSS. -->
 <link rel="stylesheet" href="/style.css">
+<!-- Inter (single variable woff2, weights 400–900). Loaded non-render-blocking:
+     display=swap paints the system-ui fallback instantly, then swaps to Inter,
+     so the font fetch is off the critical render path. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&display=swap"></noscript>
 <style>
   :root{
     --brand:#1b57f5; --brand-dark:#1543e1; --brand-deep:#0e2a8f;
