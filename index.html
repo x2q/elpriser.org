@@ -358,16 +358,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   document.documentElement.classList.toggle('dark', e.matches);
 });
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Critical same-origin CSS first so it isn't queued behind the cross-origin font CSS. -->
+<!-- Native system-font stack — no webfont download, no cross-origin connection,
+     no FOUT/swap: text paints instantly with the OS UI font (SF Pro on Apple,
+     Segoe UI on Windows, Roboto on Android). -->
 <link rel="stylesheet" href="/style.css">
-<!-- Inter (single variable woff2, weights 400–900). Loaded non-render-blocking:
-     display=swap paints the system-ui fallback instantly, then swaps to Inter,
-     so the font fetch is off the critical render path. -->
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&display=swap" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&display=swap"></noscript>
 <style>
   :root{
     --brand:#1b57f5; --brand-dark:#1543e1; --brand-deep:#0e2a8f;
@@ -382,7 +376,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     --ring:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -8px rgba(0,0,0,.5);
     --ring-hover:0 2px 4px rgba(0,0,0,.4), 0 16px 40px -12px rgba(0,0,0,.7);
   }
-  html,body{font-family:'Inter',system-ui,sans-serif;font-feature-settings:'cv02','cv03','cv04','cv11','ss01';-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+  html,body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes float-slow{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,-14px) scale(1.06)}}
   @keyframes float-slower{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-18px,16px) scale(1.08)}}
