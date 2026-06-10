@@ -371,10 +371,13 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     --ring-hover:0 2px 4px rgba(15,23,42,.06), 0 16px 40px -12px rgba(15,23,42,.14);
   }
   .dark{
-    --ink:#f1f5f9; --ink-soft:#cbd5e1;
-    --surface:#0f172a; --surface-muted:#0b1220;
-    --ring:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -8px rgba(0,0,0,.5);
-    --ring-hover:0 2px 4px rgba(0,0,0,.4), 0 16px 40px -12px rgba(0,0,0,.7);
+    /* Fresher blue-slate dark theme: page = deep slate (not pure black),
+       cards a clear step lighter, brighter ink. Matches the dark:bg-gray-*
+       ramp retuned in style.css (page 950 #0d1221, card 900 #161d30). */
+    --ink:#eef2f9; --ink-soft:#c2cce0;
+    --surface:#161d30; --surface-muted:#0d1221;
+    --ring:0 1px 2px rgba(0,0,0,.35), 0 8px 24px -8px rgba(0,0,0,.55);
+    --ring-hover:0 2px 4px rgba(0,0,0,.45), 0 18px 40px -12px rgba(7,12,30,.8);
   }
   html,body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -2282,11 +2285,11 @@ function lerpColor(t, dim) {
   }
   if (r === undefined) { const last = STOPS[STOPS.length - 1][1]; r = last[0]; g = last[1]; b = last[2]; }
   if (dim) {
-    // Mix toward dark background (rgb(3,7,18) = gray-950)
+    // Mix toward the dark page background (rgb(13,18,33) = fresh blue-slate)
     const m = 0.75;
-    r = r * m + 3 * (1 - m);
-    g = g * m + 7 * (1 - m);
-    b = b * m + 18 * (1 - m);
+    r = r * m + 13 * (1 - m);
+    g = g * m + 18 * (1 - m);
+    b = b * m + 33 * (1 - m);
   }
   return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
 }
