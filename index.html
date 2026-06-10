@@ -9,7 +9,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<meta name="description" content="Aktuelle elpriser og spotpriser lige nu — time for time for DK1 (Vest) og DK2 (Øst). Den reelle pris på el inkl. nettariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.">
+<meta name="description" content="Aktuelle elpriser og energipriser lige nu — se hvad strøm koster time for time for DK1 (Vest) og DK2 (Øst). Den reelle pris på el inkl. nettariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.">
 <link rel="canonical" href="https://elpriser.org/">
 <link rel="alternate" hreflang="da" href="https://elpriser.org/">
 <meta name="robots" content="index, follow">
@@ -175,6 +175,14 @@
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "Elprisen i Danmark skifter time for time og fastsættes dagen i forvejen på den nordiske elbørs Nord Pool. Prisen kaldes spotprisen og offentliggøres dagligt omkring kl. 13 for det kommende døgn. På elpriser.org kan du se den aktuelle elpris live for både DK1 (Vestdanmark) og DK2 (Østdanmark), opdateret med data fra Energi Data Service."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Er energipriser det samme som elpriser?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Energipriser bruges ofte i daglig tale om elpriser — altså prisen på strøm (el) per kWh. Strengt taget dækker energipriser bredt over al energi (el, gas og fjernvarme), men når folk søger på energipriser mener de typisk den aktuelle elpris. På elpriser.org viser vi elpriser og strømpriser time for time for hele Danmark, inkl. nettariffer, elafgift og moms, så du kan se hvad strøm reelt koster lige nu."
       }
     },
     {
@@ -617,7 +625,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
     <!-- Intro paragraph — natural keyword coverage for "elpris lige nu", "strømpris", "pris på el" etc. -->
     <section class="max-w-2xl mx-auto px-2 mt-12 mb-2 text-center text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-      <p>Spotprisen på el — også kaldet strømprisen — skifter time for time og fastsættes dagen i forvejen. På elpriser.org ser du den aktuelle elpris lige nu, både den rå spotpris og den samlede pris på el pr. kWh inkl. nettariffer, elafgift og moms. Vælg dit netselskab ovenfor for en præcis pris for din adresse, eller tjek <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> for de kommende 7 dage.</p>
+      <p>Elpriser — også kaldet energipriser eller strømpriser — skifter time for time og fastsættes dagen i forvejen. På elpriser.org ser du hvad strøm koster lige nu: den aktuelle elpris time for time, både den rå spotpris og den samlede pris på el pr. kWh inkl. nettariffer, elafgift og moms. Vælg dit netselskab ovenfor for en præcis pris for din adresse, eller tjek <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> for de kommende 7 dage.</p>
     </section>
 
     <!-- FAQ — static crawlable content for SEO -->
@@ -631,6 +639,15 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
           </summary>
           <div class="px-5 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
             <p>Elprisen i Danmark skifter time for time og fastsættes dagen i forvejen på den nordiske elbørs Nord Pool. Prisen kaldes <strong>spotprisen</strong> og offentliggøres dagligt omkring kl. 13 for det kommende døgn. Her på elpriser.org kan du se den aktuelle elpris live for både DK1 (Vestdanmark) og DK2 (Østdanmark), opdateret med data fra Energi Data Service.</p>
+          </div>
+        </details>
+        <details class="group faq">
+          <summary class="px-5 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">
+            Er energipriser det samme som elpriser?
+            <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </summary>
+          <div class="px-5 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p>"Energipriser" bruges ofte i daglig tale om <strong>elpriser</strong> — altså prisen på strøm (el) per kWh. Strengt taget dækker energipriser bredt over al energi (el, gas og fjernvarme), men når folk søger på energipriser mener de typisk den aktuelle elpris. På elpriser.org viser vi netop elpriser/strømpriser time for time for hele Danmark, inkl. nettariffer, elafgift og moms — så du kan se hvad strøm reelt koster lige nu.</p>
           </div>
         </details>
         <details class="group faq">
