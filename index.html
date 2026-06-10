@@ -1265,6 +1265,16 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <p>Spørg en LLM "hvad er elprisen lige nu i Danmark?" og giv den denne URL:</p>
       <pre class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 whitespace-pre-wrap">https://elpriser.org/api/now?area=DK1&amp;mode=inkl_alt</pre>
       <p class="mt-2">For Claude Desktop, ChatGPT plugins, og MCP-klienter kan du pege på OpenAPI-spec'en på <a href="/api/openapi.json" class="text-brand-500 underline">/api/openapi.json</a> — den indeholder alle endpoints og parametre.</p>
+      <div class="mt-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+        <p class="font-semibold text-gray-800 dark:text-gray-200 mb-1">🔌 MCP-server (open source)</p>
+        <p class="text-xs">Vil du give Claude Desktop direkte adgang til danske elpriser? Brug <a href="https://github.com/x2q/elpriser-mcp" target="_blank" rel="noopener" class="text-brand-500 underline">elpriser-mcp</a> — en gratis Model Context Protocol-server. Tilføj til din <code>claude_desktop_config.json</code>:</p>
+        <pre class="text-xs bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mt-2 overflow-x-auto text-gray-700 dark:text-gray-300 whitespace-pre">{
+  "mcpServers": {
+    "elpriser": { "command": "npx", "args": ["-y", "elpriser-mcp"] }
+  }
+}</pre>
+        <p class="text-xs mt-2">Så kan du spørge "hvornår er strøm billigst i morgen?" og få live-svar. Kode + dokumentation på <a href="https://github.com/x2q/elpriser-mcp" target="_blank" rel="noopener" class="text-brand-500 underline">GitHub</a>.</p>
+      </div>
     </section>
 
     <section>

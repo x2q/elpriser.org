@@ -171,6 +171,10 @@ edge-cached at 1-5 min so calling repeatedly is fine.
 Every \`/api/*\` response also sends \`Link: </api/openapi.json>; rel="describedby"\`.
 Human-readable docs: [/api](https://elpriser.org/api).
 
+**MCP server**: [elpriser-mcp](https://github.com/x2q/elpriser-mcp) — a free Model Context
+Protocol server (run \`npx -y elpriser-mcp\`) gives Claude Desktop and other MCP clients
+native tools for current price, cheapest hours and the 7-day forecast.
+
 - \`GET /api/now?area=DK1&mode=inkl_alt\` — Current total price right now (DKK/kWh, incl. all tariffs + VAT)
 - \`GET /api/now?area=DK1&mode=spot_inkl\` — Current raw spot price incl. VAT
 - \`GET /api/prices?area=DK1&mode=inkl_alt&date=YYYY-MM-DD\` — 24 hourly prices for a date
