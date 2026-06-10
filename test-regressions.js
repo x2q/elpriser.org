@@ -282,6 +282,23 @@ async function apiTests() {
       assert.equal(r.status, 400);
     });
 
+  // ── Cache-poisoning guard: an empty upstream result must NOT be cached ──
+  // A transient EDS blip once returned [], which got stored in the edge cache
+  // (and sent with a 6h max-age the browser honoured) → "Kunne ikke hente
+  // elpriser" stuck for hours. Empty responses must be max-age=0.
+  await test('empty /api/raw/prices result is not cached (max-age=0) — guards cache-poisoning',
+    async () => {
+      // A far-future window has no published prices → empty records.
+      const r = await json('/api/raw/prices?area=DK1&start=2035-01-01&end=2035-01-05');
+      assert.equal(r.status, 200);
+      assert.equal(r.body.records.length, 0, 'far-future window should be empty');
+      const m = (r.headers.get('cache-control') || '').match(/max-age=(\d+)/);
+      assert.ok(m, 'cache-control present');
+      assert.equal(+m[1], 0,
+        `empty result was sent with max-age=${m[1]} — must be 0 so a transient ` +
+        `empty never sticks in the browser/edge cache.`);
+    });
+
   // ── ETag / conditional requests — "only fetch when there's actually new data" ──
   await test('/api/raw/prices sends an ETag and 304s on If-None-Match',
     async () => {

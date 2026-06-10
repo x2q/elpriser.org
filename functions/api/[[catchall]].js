@@ -933,27 +933,44 @@ function cachedJson(data, maxAge, request) {
  *   Cache API persists across isolates within a colo (one fetch per ~ttl per
  *   POP). Upstream is hit only when both miss.
  */
+// A result worth caching: a non-empty array, or a non-empty object. We must
+// NEVER cache an empty array — that's the signature of a transient upstream
+// (EDS) blip, and caching it poisons the key for the whole TTL, surfacing as
+// "Kunne ikke hente elpriser" until the cache expires.
+function isCacheable(d) {
+  if (Array.isArray(d)) return d.length > 0;
+  if (d && typeof d === 'object') return Object.keys(d).length > 0;
+  return d != null;
+}
+
 async function edgeCached(key, ttlSec, build) {
   // 1. In-memory (peek directly — `cached()` would store the null sentinel)
   const now = Date.now(), mem = _cache.get(key);
   if (mem && now - mem.ts < ttlSec * 1000) return mem.v;
 
-  // 2. Cloudflare Cache API (shared across isolates within a colo)
+  // 2. Cloudflare Cache API (shared across isolates within a colo).
+  //    `/v2/` namespace abandons any poisoned (empty) entries cached by the
+  //    pre-fix code; the isCacheable guard means new poison can't form.
   const cache = caches.default;
-  const cacheKey = new Request(`https://cache.local/${encodeURIComponent(key)}`);
+  const cacheKey = new Request(`https://cache.local/v2/${encodeURIComponent(key)}`);
   const hit = await cache.match(cacheKey);
   if (hit) {
     const data = await hit.json();
-    _cache.set(key, { ts: now, v: data });
-    return data;
+    if (isCacheable(data)) { _cache.set(key, { ts: now, v: data }); return data; }
+    // Defensive: an empty slipped in somehow — drop it and re-fetch.
+    await cache.delete(cacheKey);
   }
 
   // 3. Upstream
   const data = await build();
-  _cache.set(key, { ts: Date.now(), v: data });
-  await cache.put(cacheKey, new Response(JSON.stringify(data), {
-    headers: { 'Cache-Control': `public, max-age=${ttlSec}` },
-  }));
+  // Only cache real data. A transient empty is returned to this caller but
+  // never stored, so the very next request retries upstream.
+  if (isCacheable(data)) {
+    _cache.set(key, { ts: Date.now(), v: data });
+    await cache.put(cacheKey, new Response(JSON.stringify(data), {
+      headers: { 'Cache-Control': `public, max-age=${ttlSec}` },
+    }));
+  }
   return data;
 }
 
@@ -979,7 +996,9 @@ async function handleRawPrices(area, start, end, request) {
     const j = await r.json();
     return j.records || [];
   });
-  return cachedJson({ records }, ttlSec, request);
+  // Never tell the browser to cache an empty result — force revalidation so a
+  // transient empty self-heals on the next request instead of sticking around.
+  return cachedJson({ records }, records.length ? ttlSec : 0, request);
 }
 
 async function handleRawEnCharges(request) {
@@ -997,7 +1016,7 @@ async function handleRawEnCharges(request) {
     const j = await r.json();
     return j.records || [];
   });
-  return cachedJson({ records }, 3600, request);
+  return cachedJson({ records }, records.length ? 3600 : 0, request);
 }
 
 /**
@@ -1029,7 +1048,7 @@ async function handleRawTariff(gln, request) {
       (!rec.ValidTo || new Date(rec.ValidTo) > now)
     );
   });
-  return cachedJson({ records }, 3600, request);
+  return cachedJson({ records }, records.length ? 3600 : 0, request);
 }
 
 /**
@@ -1056,7 +1075,7 @@ async function handleRawTariffs(request) {
       (!rec.ValidTo || new Date(rec.ValidTo) > now)
     );
   });
-  return cachedJson({ records }, 3600, request);
+  return cachedJson({ records }, records.length ? 3600 : 0, request);
 }
 
 // ── Supplier lookup (GPS → address → net company) ───────────────────────────
