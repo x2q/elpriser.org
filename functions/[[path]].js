@@ -503,11 +503,49 @@ async function renderHomepage(context) {
   return res;
 }
 
+// Mirrors the client router's hash → data-page mapping (index.html's
+// PATH_ROUTES/route()). Without this, every SEO_PAGES route served the exact
+// same body markup as the homepage (only <head> differed) until client JS
+// hydrated and picked the right section — Google's crawl-time HTML showed a
+// <title> for e.g. "Tariffer" wrapped around the *homepage's* visible content,
+// which is a plausible cause of it collapsing these URLs onto one canonical.
+const HASH_TO_DATA_PAGE = {
+  'tariffer': 'tariffer',
+  'automation': 'automation',
+  'api': 'api',
+  'shelly-tariff': 'shelly-tariff',
+  'om-elpriser': 'om-elpriser',
+  'prognose': 'prognose',
+  'blog/forsta-din-elpris': 'blog-forsta-din-elpris',
+  'blog/shelly-elpris-automation': 'blog-shelly-elpris-automation',
+  'blog/home-assistant-elpriser': 'blog-home-assistant-elpriser',
+  'blog/v2g-v2h-bidirektional-opladning': 'blog-v2g-v2h-bidirektional-opladning',
+  'blog/biler-ladere-v2h-v2g': 'blog-biler-ladere-v2h-v2g',
+};
+
+function dataPageForHash(hash) {
+  const h = (hash || '').replace(/^#/, '');
+  if (HASH_TO_DATA_PAGE[h]) return HASH_TO_DATA_PAGE[h];
+  if (/^DK[12]\//.test(h)) return 'prices';
+  return 'start';
+}
+
+// Server-side equivalent of route()'s `classList.add('active')` — makes the
+// pre-hydration HTML show the section that actually matches the URL/title,
+// instead of always showing the homepage section underneath a different title.
+function activateDataPage(html, dataPage) {
+  if (dataPage === 'start') return html;
+  html = html.replace('<main data-page="start" class="active">', '<main data-page="start" class="">');
+  html = html.replace(`<main data-page="${dataPage}" class="`, `<main data-page="${dataPage}" class="active `);
+  return html;
+}
+
 async function renderSPA(context, pathname, meta) {
   const pageUrl = `https://elpriser.org${pathname}`;
   const indexUrl = new URL('/', context.request.url);
   const res = await context.env.ASSETS.fetch(indexUrl);
   let html = await res.text();
+  html = activateDataPage(html, dataPageForHash(meta.hash));
   html = html.replace(
     /<title>[^<]*<\/title>/,
     `<title>${meta.title}</title>`

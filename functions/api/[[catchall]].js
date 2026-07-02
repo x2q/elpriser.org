@@ -335,7 +335,7 @@ async function loadData(area, mode, gln) {
   const needsEn    = !['spot_ex', 'spot_inkl'].includes(mode);
   const needsTarif = mode.startsWith('net_') && gln;
   const [priceData, enCharges, tariffRecords] = await Promise.all([
-    cached(`prices-${area}-${fmtUTC(s)}-${fmtUTC(e)}`, 5 * 60_000,
+    edgeCached(`prices-${area}-${fmtUTC(s)}-${fmtUTC(e)}`, 300,
       () => fetchSpotPrices(area, fmtUTC(s), fmtUTC(e))),
     needsEn
       ? cached('encharges', 60 * 60_000, fetchEnCharges)
@@ -528,6 +528,10 @@ export async function onRequest(context) {
     const title = 'elpriser.org API — Gratis JSON API for danske elpriser';
     const desc  = 'Gratis public JSON API for danske elpriser (DK1 og DK2). Aktuel pris, 24h timepriser, 7-dages prognose, Tibber-kompatibel tariff. CORS-fri, ingen nøgle, OpenAPI 3.1 spec.';
     const url   = 'https://elpriser.org/api';
+    // Server-side equivalent of the client router's classList.add('active') —
+    // otherwise the crawlable HTML shows the homepage section under an "API" title.
+    html = html.replace('<main data-page="start" class="active">', '<main data-page="start" class="">');
+    html = html.replace('<main data-page="api" class="', '<main data-page="api" class="active ');
     html = html.replace(/<title>[^<]*<\/title>/,                         `<title>${title}</title>`);
     html = html.replace(/<meta name="description" content="[^"]*">/,    `<meta name="description" content="${desc}">`);
     html = html.replace(/<link rel="canonical" href="[^"]*">/,          `<link rel="canonical" href="${url}">`);
@@ -961,15 +965,40 @@ async function edgeCached(key, ttlSec, build) {
     await cache.delete(cacheKey);
   }
 
+  // `/v2-backup/` holds the last successfully-fetched value for this key,
+  // kept for 7 days regardless of `ttlSec` — a stale-if-error fallback so a
+  // transient EDS outage degrades to slightly-old data instead of a 500.
+  // Never used for a *valid* empty result (e.g. tomorrow's prices not yet
+  // published) — only when upstream actually throws, so we don't paper over
+  // "not published yet" with the wrong day's numbers.
+  const backupKey = new Request(`https://cache.local/v2-backup/${encodeURIComponent(key)}`);
+
   // 3. Upstream
-  const data = await build();
+  let data;
+  try {
+    data = await build();
+  } catch (err) {
+    const stale = await cache.match(backupKey);
+    if (stale) {
+      const v = await stale.json();
+      _cache.set(key, { ts: now, v });
+      return v;
+    }
+    throw err;
+  }
   // Only cache real data. A transient empty is returned to this caller but
   // never stored, so the very next request retries upstream.
   if (isCacheable(data)) {
     _cache.set(key, { ts: Date.now(), v: data });
-    await cache.put(cacheKey, new Response(JSON.stringify(data), {
-      headers: { 'Cache-Control': `public, max-age=${ttlSec}` },
-    }));
+    const body = JSON.stringify(data);
+    await Promise.all([
+      cache.put(cacheKey, new Response(body, {
+        headers: { 'Cache-Control': `public, max-age=${ttlSec}` },
+      })),
+      cache.put(backupKey, new Response(body, {
+        headers: { 'Cache-Control': 'public, max-age=604800' },
+      })),
+    ]);
   }
   return data;
 }
