@@ -41,7 +41,7 @@ const SEO_PAGES = {
   },
   '/prognose': {
     title: 'Elprisprognose — Forventede elpriser næste 7 dage',
-    description: 'Se forventede elpriser for DK1 og DK2 de næste 7 dage. Prognose baseret på historiske prismønstre og vindprognoser fra Energi Data Service.',
+    description: 'Se forventede elpriser for DK1 og DK2 de næste 7 dage. Prognose baseret på historiske prismønstre fra Energi Data Service.',
     hash: '#prognose',
   },
   '/blog/forsta-din-elpris': {
@@ -152,7 +152,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Elpriser DK2 Øst](https://elpriser.org/dk2): Time-for-time spotpriser for Østdanmark (Sjælland, Lolland-Falster, Bornholm).
 - Per-netselskab priser: \`/dk1/<slug>\` eller \`/dk2/<slug>\` viser dagens pris inkl. nettarif for det valgte netselskab (fx https://elpriser.org/dk1/n1, https://elpriser.org/dk2/radius).
 - [Nettariffer](https://elpriser.org/tariffer): Sammenligning af nettariffer for alle danske netselskaber.
-- [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser de næste 7 dage baseret på historik og vindprognoser.
+- [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser de næste 7 dage baseret på historiske prismønstre.
 - [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home.
 - [Om elpriser](https://elpriser.org/om-elpriser): Forklaring af priskomponenter, prisområder og datakilder.
 - [Forstå din elpris](https://elpriser.org/blog/forsta-din-elpris): Guide til hvad der bestemmer elprisen, spotpriser, tariffer, afgifter og sparetips.
