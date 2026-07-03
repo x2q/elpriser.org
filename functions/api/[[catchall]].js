@@ -908,6 +908,50 @@ async function edgeCached(key, ttlSec, build, env) {
   return data;
 }
 
+// The frontend's default price view requests a ROLLING window (today ± a few
+// days), so `raw-prices-${area}-${start}-${end}` shifts by one day, every
+// day — meaning edgeCached's per-exact-key KV backup is rarely warm on the
+// FIRST request of a new day, which is exactly when an upstream hiccup is
+// most costly (no prior success that day to fall back to). This second,
+// per-AREA rolling backup is keyed independently of the exact requested
+// range, so any request can fall back to whatever's been fetched recently
+// for that area, filtered to the range actually asked for.
+async function updateRollingPriceBackup(area, records, env) {
+  if (!env || !env.PRICE_CACHE || !records.length) return;
+  // Throttle KV writes to ~once per 5 min per area (in-memory gate) rather
+  // than once per request — KV write volume should stay low regardless of
+  // request rate, and the backup only needs to be "recent enough", not
+  // continuously up to the second.
+  const gateKey = `rolling-backup-gate-${area}`;
+  const now = Date.now();
+  const gate = _cache.get(gateKey);
+  if (gate && now - gate.ts < 5 * 60_000) return;
+  _cache.set(gateKey, { ts: now, v: true });
+
+  const key = `raw-prices-backup-${area}`;
+  try {
+    const existing = (await env.PRICE_CACHE.get(key, 'json')) || [];
+    const byTime = new Map(existing.map(r => [r.TimeUTC, r]));
+    for (const r of records) byTime.set(r.TimeUTC, r);
+    const cutoff = new Date(now - 45 * 86_400_000).toISOString();
+    const merged = Array.from(byTime.values()).filter(r => r.TimeUTC >= cutoff);
+    await env.PRICE_CACHE.put(key, JSON.stringify(merged), { expirationTtl: 60 * 86400 });
+  } catch (e) {
+    console.error('rolling price backup update failed', e);
+  }
+}
+
+async function fetchRollingPriceBackupFiltered(area, start, end, env) {
+  if (!env || !env.PRICE_CACHE) return [];
+  try {
+    const all = (await env.PRICE_CACHE.get(`raw-prices-backup-${area}`, 'json')) || [];
+    return all.filter(r => r.TimeUTC.slice(0, 10) >= start && r.TimeUTC.slice(0, 10) <= end);
+  } catch (e) {
+    console.error('rolling price backup read failed', e);
+    return [];
+  }
+}
+
 async function handleRawPrices(area, start, end, request, env) {
   if (!start || !end) return fail(400, 'start, end required (YYYY-MM-DD)');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end))
@@ -921,15 +965,28 @@ async function handleRawPrices(area, start, end, request, env) {
 
   // Edge/in-memory key uses a fixed bucket for the volatile slice so a fetch is
   // shared across users; the TTL above controls when we re-pull from upstream.
-  const records = await edgeCached(`raw-prices-${area}-${start}-${end}`, end < today ? 86400 : 300, async () => {
-    const f = encodeURIComponent(JSON.stringify({ PriceArea: area }));
-    const r = await fetch(
-      `https://api.energidataservice.dk/dataset/DayAheadPrices` +
-      `?start=${start}&end=${end}&filter=${f}&sort=TimeDK%20asc&limit=0`
-    );
-    const j = await r.json();
-    return j.records || [];
-  }, env);
+  let records;
+  try {
+    records = await edgeCached(`raw-prices-${area}-${start}-${end}`, end < today ? 86400 : 300, async () => {
+      const f = encodeURIComponent(JSON.stringify({ PriceArea: area }));
+      const r = await fetch(
+        `https://api.energidataservice.dk/dataset/DayAheadPrices` +
+        `?start=${start}&end=${end}&filter=${f}&sort=TimeDK%20asc&limit=0`
+      );
+      const j = await r.json();
+      return j.records || [];
+    }, env);
+  } catch (err) {
+    // edgeCached's own per-exact-key backup missed too -- expected on the
+    // first request of a new day, since this key shifts daily. Fall back to
+    // the per-area rolling backup instead.
+    console.error('handleRawPrices upstream failed, trying rolling backup', err);
+    records = await fetchRollingPriceBackupFiltered(area, start, end, env);
+    if (!records.length) throw err;
+  }
+
+  if (records.length) await updateRollingPriceBackup(area, records, env);
+
   // Never tell the browser to cache an empty result — force revalidation so a
   // transient empty self-heals on the next request instead of sticking around.
   return cachedJson({ records }, records.length ? ttlSec : 0, request);
