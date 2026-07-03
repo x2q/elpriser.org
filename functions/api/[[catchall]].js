@@ -560,7 +560,7 @@ export async function onRequest(context) {
   // ── /api/forecast ───────────────────────────────────────────────────────
   if (seg1 === 'forecast') {
     try {
-      return await handleForecast(area, mode, request);
+      return await handleForecast(area, mode, request, context.env);
     } catch (e) {
       console.error(e);
       return fail(500, String(e.message || e));
@@ -1067,7 +1067,32 @@ async function handleSupplierLookup(lat, lng, request) {
   return jsonResponse(result, { maxAge: 86400, request });
 }
 
-async function handleForecast(area, mode, request) {
+// Overlays a trained-model forecast (written by scripts/forecast_model/train_and_score.py
+// into KV daily) onto the seasonal-heuristic days from buildForecast(). Only replaces
+// 'forecast'-type days (the heuristic already handles 'actual' days by reading the
+// real published price) and only when the model's own value for that day isn't null —
+// so a partially-stale or partially-failed model run degrades to the heuristic
+// per-day rather than all-or-nothing.
+function applyModelForecast(days, modelOutput, mode, enCharges) {
+  if (!modelOutput || !Array.isArray(modelOutput.days)) return days;
+  const byDate = new Map(modelOutput.days.map(d => [d.date, d]));
+  return days.map(day => {
+    if (day.type !== 'forecast') return day;
+    const modelDay = byDate.get(day.date);
+    if (!modelDay || modelDay.type !== 'forecast') return day;
+    const prices = day.prices.map((p, h) => {
+      const mp = modelDay.prices[h];
+      if (!mp || mp.spot_dkk_mwh == null) return p;
+      const price = +cvtForecast(mp.spot_dkk_mwh, h, mode, enCharges).toFixed(4);
+      const min = mp.spot_min_dkk_mwh != null ? +cvtForecast(mp.spot_min_dkk_mwh, h, mode, enCharges).toFixed(4) : p.min;
+      const max = mp.spot_max_dkk_mwh != null ? +cvtForecast(mp.spot_max_dkk_mwh, h, mode, enCharges).toFixed(4) : p.max;
+      return { hour: h, price, min, max };
+    });
+    return { ...day, prices, source: 'model' };
+  });
+}
+
+async function handleForecast(area, mode, request, env) {
   const dkNow = danishNow();
   const start = new Date(dkNow.getTime() - 28 * 86_400_000);
   const end   = new Date(dkNow.getTime() + 2 * 86_400_000); // Include tomorrow
@@ -1078,7 +1103,21 @@ async function handleForecast(area, mode, request) {
     cached('encharges', 60 * 60_000, fetchEnCharges),
   ]);
 
-  const days = buildForecast(historicalPrices, mode, enCharges);
+  let days = buildForecast(historicalPrices, mode, enCharges);
+
+  // Trained-model overlay: best-effort, never blocks or fails the request.
+  // Accepts today's or yesterday's run (the daily cron may not have fired yet,
+  // or DK-local vs. UTC date bucketing may be off by one near midnight).
+  if (env && env.PRICE_CACHE) {
+    try {
+      const raw = await env.PRICE_CACHE.get(`forecast-model-${area}`, 'json');
+      if (raw && (raw.generated === fmtUTC(dkNow) || raw.generated === fmtUTC(new Date(dkNow.getTime() - 86_400_000)))) {
+        days = applyModelForecast(days, raw, mode, enCharges);
+      }
+    } catch (e) {
+      console.error('forecast-model KV read failed', e);
+    }
+  }
 
   // `generated` is bucketed to the date (not the millisecond) so the ETag is
   // stable within a caching window and conditional requests can 304.

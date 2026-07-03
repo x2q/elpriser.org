@@ -1,0 +1,23 @@
+name: Train and score price forecast model
+
+on:
+  schedule:
+    # 14:00 UTC daily — after the ~13:00 CET/CEST day-ahead price publication,
+    # so lag features and "today is actual" detection see fresh data.
+    - cron: '0 14 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  train-and-score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r scripts/forecast_model/requirements.txt
+      - run: python scripts/forecast_model/train_and_score.py
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_KV_NAMESPACE_ID: ${{ secrets.CLOUDFLARE_KV_NAMESPACE_ID }}
