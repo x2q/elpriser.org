@@ -328,7 +328,7 @@ function cached(key, ttlMs, fn) {
 
 // ── Shared data loader ────────────────────────────────────────────────────────
 
-async function loadData(area, mode, gln) {
+async function loadData(area, mode, gln, env) {
   const now = new Date();
   const s = new Date(now); s.setUTCDate(s.getUTCDate() - 1);
   const e = new Date(now); e.setUTCDate(e.getUTCDate() + 2);
@@ -336,7 +336,7 @@ async function loadData(area, mode, gln) {
   const needsTarif = mode.startsWith('net_') && gln;
   const [priceData, enCharges, tariffRecords] = await Promise.all([
     edgeCached(`prices-${area}-${fmtUTC(s)}-${fmtUTC(e)}`, 300,
-      () => fetchSpotPrices(area, fmtUTC(s), fmtUTC(e))),
+      () => fetchSpotPrices(area, fmtUTC(s), fmtUTC(e)), env),
     needsEn
       ? cached('encharges', 60 * 60_000, fetchEnCharges)
       : Promise.resolve({ sys: 0, trans: 0, afg: 0 }),
@@ -588,10 +588,10 @@ export async function onRequest(context) {
   // real body, and we tack on our own CORS + Cache-Control on the way out.
   if (seg1 === 'raw') {
     try {
-      if (seg2 === 'prices')    return await handleRawPrices(area, q.get('start'), q.get('end'), request);
-      if (seg2 === 'encharges') return await handleRawEnCharges(request);
-      if (seg2 === 'tariff')    return await handleRawTariff(q.get('gln'), request);
-      if (seg2 === 'tariffs')   return await handleRawTariffs(request);
+      if (seg2 === 'prices')    return await handleRawPrices(area, q.get('start'), q.get('end'), request, context.env);
+      if (seg2 === 'encharges') return await handleRawEnCharges(request, context.env);
+      if (seg2 === 'tariff')    return await handleRawTariff(q.get('gln'), request, context.env);
+      if (seg2 === 'tariffs')   return await handleRawTariffs(request, context.env);
       return fail(404, 'Unknown raw endpoint');
     } catch (e) {
       console.error(e);
@@ -600,7 +600,7 @@ export async function onRequest(context) {
   }
 
   try {
-    const { priceData, enCharges, tariffRecords } = await loadData(area, mode, gln);
+    const { priceData, enCharges, tariffRecords } = await loadData(area, mode, gln, context.env);
 
     const dkNow   = danishNow();
     const today   = fmtUTC(dkNow);
@@ -947,7 +947,7 @@ function isCacheable(d) {
   return d != null;
 }
 
-async function edgeCached(key, ttlSec, build) {
+async function edgeCached(key, ttlSec, build, env) {
   // 1. In-memory (peek directly — `cached()` would store the null sentinel)
   const now = Date.now(), mem = _cache.get(key);
   if (mem && now - mem.ts < ttlSec * 1000) return mem.v;
@@ -965,24 +965,24 @@ async function edgeCached(key, ttlSec, build) {
     await cache.delete(cacheKey);
   }
 
-  // `/v2-backup/` holds the last successfully-fetched value for this key,
-  // kept for 7 days regardless of `ttlSec` — a stale-if-error fallback so a
-  // transient EDS outage degrades to slightly-old data instead of a 500.
-  // Never used for a *valid* empty result (e.g. tomorrow's prices not yet
-  // published) — only when upstream actually throws, so we don't paper over
-  // "not published yet" with the wrong day's numbers.
-  const backupKey = new Request(`https://cache.local/v2-backup/${encodeURIComponent(key)}`);
+  // PRICE_CACHE (Workers KV) holds the last successfully-fetched value for
+  // this key, kept for 7 days regardless of `ttlSec` — a stale-if-error
+  // fallback so a transient EDS outage degrades to slightly-old data instead
+  // of a 500. Unlike the Cache API above (POP-local), KV is globally
+  // replicated, so this survives even a cold/never-hit colo. Never used for
+  // a *valid* empty result (e.g. tomorrow's prices not yet published) — only
+  // when upstream actually throws, so we don't paper over "not published
+  // yet" with the wrong day's numbers.
+  const kv = env && env.PRICE_CACHE;
 
   // 3. Upstream
   let data;
   try {
     data = await build();
   } catch (err) {
-    const stale = await cache.match(backupKey);
-    if (stale) {
-      const v = await stale.json();
-      _cache.set(key, { ts: now, v });
-      return v;
+    if (kv) {
+      const stale = await kv.get(key, 'json');
+      if (stale != null) { _cache.set(key, { ts: now, v: stale }); return stale; }
     }
     throw err;
   }
@@ -995,15 +995,13 @@ async function edgeCached(key, ttlSec, build) {
       cache.put(cacheKey, new Response(body, {
         headers: { 'Cache-Control': `public, max-age=${ttlSec}` },
       })),
-      cache.put(backupKey, new Response(body, {
-        headers: { 'Cache-Control': 'public, max-age=604800' },
-      })),
+      kv ? kv.put(key, body, { expirationTtl: 604800 }) : Promise.resolve(),
     ]);
   }
   return data;
 }
 
-async function handleRawPrices(area, start, end, request) {
+async function handleRawPrices(area, start, end, request, env) {
   if (!start || !end) return fail(400, 'start, end required (YYYY-MM-DD)');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end))
     return fail(400, 'start, end must be YYYY-MM-DD');
@@ -1024,13 +1022,13 @@ async function handleRawPrices(area, start, end, request) {
     );
     const j = await r.json();
     return j.records || [];
-  });
+  }, env);
   // Never tell the browser to cache an empty result — force revalidation so a
   // transient empty self-heals on the next request instead of sticking around.
   return cachedJson({ records }, records.length ? ttlSec : 0, request);
 }
 
-async function handleRawEnCharges(request) {
+async function handleRawEnCharges(request, env) {
   // Energinet system/transmission/electricity-tax charges. Change rarely.
   const records = await edgeCached('raw-encharges', 3600, async () => {
     const GLN = '5790000432752';
@@ -1044,7 +1042,7 @@ async function handleRawEnCharges(request) {
     );
     const j = await r.json();
     return j.records || [];
-  });
+  }, env);
   return cachedJson({ records }, records.length ? 3600 : 0, request);
 }
 
@@ -1052,7 +1050,7 @@ async function handleRawEnCharges(request) {
  * Single-net Nettarif C for the table view — needs only the user's chosen
  * net, not all 17. Returns ~1 KB instead of ~48 KB.
  */
-async function handleRawTariff(gln, request) {
+async function handleRawTariff(gln, request, env) {
   if (!gln || !/^\d{13}$/.test(gln)) return fail(400, 'gln required (13 digits)');
 
   const records = await edgeCached(`raw-tariff-${gln}`, 3600, async () => {
@@ -1076,7 +1074,7 @@ async function handleRawTariff(gln, request) {
       new Date(rec.ValidFrom) <= horizon &&
       (!rec.ValidTo || new Date(rec.ValidTo) > now)
     );
-  });
+  }, env);
   return cachedJson({ records }, records.length ? 3600 : 0, request);
 }
 
@@ -1084,7 +1082,7 @@ async function handleRawTariff(gln, request) {
  * All-nets Nettarif C — used ONLY by the Tariff comparison page. The table
  * view should call /api/raw/tariff?gln=… for a single net instead.
  */
-async function handleRawTariffs(request) {
+async function handleRawTariffs(request, env) {
   const records = await edgeCached('raw-tariffs', 3600, async () => {
     const f = encodeURIComponent(JSON.stringify({
       ChargeType: 'D03', Note: 'Nettarif C',
@@ -1103,7 +1101,7 @@ async function handleRawTariffs(request) {
       new Date(rec.ValidFrom) <= horizon &&
       (!rec.ValidTo || new Date(rec.ValidTo) > now)
     );
-  });
+  }, env);
   return cachedJson({ records }, records.length ? 3600 : 0, request);
 }
 
