@@ -854,6 +854,28 @@ function isCacheable(d) {
   return d != null;
 }
 
+// Writes to KV only if the key hasn't been written in the last `minIntervalMs`,
+// checked via KV's own stored metadata rather than in-memory state -- an
+// in-memory gate (a JS Map surviving across requests) only holds within a
+// single Worker isolate, and Cloudflare runs many ephemeral isolates across
+// the edge network, so it doesn't actually throttle anything globally: every
+// cold isolate starts with an empty gate and happily writes again. This is
+// what caused KV's daily PUT limit (1000/day free tier) to be exceeded --
+// reads are far more generous (100k/day free), so paying for one read to
+// decide whether a write is even needed is the fix.
+async function kvPutThrottled(kv, key, body, { minIntervalMs, expirationTtl }) {
+  try {
+    const { metadata } = await kv.getWithMetadata(key);
+    const now = Date.now();
+    if (metadata && metadata.writtenAt && now - metadata.writtenAt < minIntervalMs) return false;
+    await kv.put(key, body, { expirationTtl, metadata: { writtenAt: now } });
+    return true;
+  } catch (e) {
+    console.error('kvPutThrottled failed', e);
+    return false;
+  }
+}
+
 async function edgeCached(key, ttlSec, build, env) {
   // 1. In-memory (peek directly — `cached()` would store the null sentinel)
   const now = Date.now(), mem = _cache.get(key);
@@ -902,7 +924,12 @@ async function edgeCached(key, ttlSec, build, env) {
       cache.put(cacheKey, new Response(body, {
         headers: { 'Cache-Control': `public, max-age=${ttlSec}` },
       })),
-      kv ? kv.put(key, body, { expirationTtl: 604800 }) : Promise.resolve(),
+      // KV backup only needs to be "recent enough" for a stale-if-error
+      // fallback, not continuously fresh -- throttled to at most once per
+      // 10 min per key regardless of how many colos/isolates hit a Cache
+      // API miss in that window (see kvPutThrottled for why this can't be
+      // an in-memory gate).
+      kv ? kvPutThrottled(kv, key, body, { minIntervalMs: 10 * 60_000, expirationTtl: 604800 }) : Promise.resolve(),
     ]);
   }
   return data;
@@ -918,24 +945,24 @@ async function edgeCached(key, ttlSec, build, env) {
 // for that area, filtered to the range actually asked for.
 async function updateRollingPriceBackup(area, records, env) {
   if (!env || !env.PRICE_CACHE || !records.length) return;
-  // Throttle KV writes to ~once per 5 min per area (in-memory gate) rather
-  // than once per request — KV write volume should stay low regardless of
-  // request rate, and the backup only needs to be "recent enough", not
-  // continuously up to the second.
-  const gateKey = `rolling-backup-gate-${area}`;
-  const now = Date.now();
-  const gate = _cache.get(gateKey);
-  if (gate && now - gate.ts < 5 * 60_000) return;
-  _cache.set(gateKey, { ts: now, v: true });
-
   const key = `raw-prices-backup-${area}`;
+  const now = Date.now();
   try {
-    const existing = (await env.PRICE_CACHE.get(key, 'json')) || [];
+    // Throttle check (KV-metadata-based, not in-memory -- see kvPutThrottled)
+    // before doing the more expensive get+merge+put, since most calls will
+    // be within the throttle window and can bail after one cheap read.
+    const { value: existingRaw, metadata } = await env.PRICE_CACHE.getWithMetadata(key);
+    if (metadata && metadata.writtenAt && now - metadata.writtenAt < 20 * 60_000) return;
+
+    const existing = existingRaw ? JSON.parse(existingRaw) : [];
     const byTime = new Map(existing.map(r => [r.TimeUTC, r]));
     for (const r of records) byTime.set(r.TimeUTC, r);
     const cutoff = new Date(now - 45 * 86_400_000).toISOString();
     const merged = Array.from(byTime.values()).filter(r => r.TimeUTC >= cutoff);
-    await env.PRICE_CACHE.put(key, JSON.stringify(merged), { expirationTtl: 60 * 86400 });
+    await env.PRICE_CACHE.put(key, JSON.stringify(merged), {
+      expirationTtl: 60 * 86400,
+      metadata: { writtenAt: now },
+    });
   } catch (e) {
     console.error('rolling price backup update failed', e);
   }
@@ -965,6 +992,12 @@ async function handleRawPrices(area, start, end, request, env) {
 
   // Edge/in-memory key uses a fixed bucket for the volatile slice so a fetch is
   // shared across users; the TTL above controls when we re-pull from upstream.
+  // Note: `env` is deliberately NOT passed to edgeCached here -- its per-
+  // exact-key KV backup would rarely help anyway (this key shifts by a day,
+  // every day) and would just be a second KV write on top of the per-area
+  // rolling backup below, which already covers this case better. Cache API
+  // (POP-local, no KV involved) is still used via the in-memory/Cache API
+  // layers inside edgeCached.
   let records;
   try {
     records = await edgeCached(`raw-prices-${area}-${start}-${end}`, end < today ? 86400 : 300, async () => {
@@ -975,11 +1008,8 @@ async function handleRawPrices(area, start, end, request, env) {
       );
       const j = await r.json();
       return j.records || [];
-    }, env);
+    });
   } catch (err) {
-    // edgeCached's own per-exact-key backup missed too -- expected on the
-    // first request of a new day, since this key shifts daily. Fall back to
-    // the per-area rolling backup instead.
     console.error('handleRawPrices upstream failed, trying rolling backup', err);
     records = await fetchRollingPriceBackupFiltered(area, start, end, env);
     if (!records.length) throw err;
