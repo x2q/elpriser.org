@@ -409,36 +409,50 @@ def main():
     features = BASE_FEATURES + (["est_production_de"] if have_de_feature else [])
     print(f"Active features: {features}")
 
+    failed_areas = []
     for area in AREAS:
-        print(f"=== {area} ===")
-        lat, lon = COORDS[area]
+        try:
+            print(f"=== {area} ===")
+            lat, lon = COORDS[area]
 
-        print("Fetching EDS day-ahead prices...")
-        prices = fetch_day_ahead_prices(area, lookback_start, fetch_end)
-        print(f"  {len(prices)} days")
+            print("Fetching EDS day-ahead prices...")
+            prices = fetch_day_ahead_prices(area, lookback_start, fetch_end)
+            print(f"  {len(prices)} days")
 
-        print("Fetching EDS actual production...")
-        production = fetch_production(area, lookback_start, fetch_end)
+            print("Fetching EDS actual production...")
+            production = fetch_production(area, lookback_start, fetch_end)
 
-        print("Fitting weather -> production estimator + scoring next 7 days' weather...")
-        est_production_by_key = compute_estimated_production(lat, lon, production, lookback_start, today)
+            print("Fitting weather -> production estimator + scoring next 7 days' weather...")
+            est_production_by_key = compute_estimated_production(lat, lon, production, lookback_start, today)
 
-        print("Building training frame + training quantile models...")
-        train_df = build_training_frame(prices, est_production_by_key, est_production_de_by_key)
-        models = train_quantile_models(train_df, features)
+            print("Building training frame + training quantile models...")
+            train_df = build_training_frame(prices, est_production_by_key, est_production_de_by_key)
+            models = train_quantile_models(train_df, features)
 
-        print("Scoring next 7 days...")
-        days = score_future_days(prices, models, features, est_production_by_key, est_production_de_by_key, today)
+            print("Scoring next 7 days...")
+            days = score_future_days(prices, models, features, est_production_by_key, est_production_de_by_key, today)
 
-        print("Updating live-monitoring log...")
-        log = update_monitoring_log(area, days, today)
-        if log:
-            recent_mae = sum(e["mae_dkk_mwh"] for e in log) / len(log)
-            print(f"  monitoring log: {len(log)} entries, avg MAE {recent_mae:.2f} DKK/MWh")
+            print("Updating live-monitoring log...")
+            log = update_monitoring_log(area, days, today)
+            if log:
+                recent_mae = sum(e["mae_dkk_mwh"] for e in log) / len(log)
+                print(f"  monitoring log: {len(log)} entries, avg MAE {recent_mae:.2f} DKK/MWh")
 
-        output = {"area": area, "generated": today.isoformat(), "generatedAt": datetime.now(timezone.utc).isoformat(), "days": days}
-        kv_put(f"forecast-model-{area}", output, expiration_ttl=7 * 86400)
-        print(f"  wrote forecast-model-{area} to KV")
+            output = {"area": area, "generated": today.isoformat(), "generatedAt": datetime.now(timezone.utc).isoformat(), "days": days}
+            kv_put(f"forecast-model-{area}", output, expiration_ttl=7 * 86400)
+            print(f"  wrote forecast-model-{area} to KV")
+        except Exception as e:
+            # A transient upstream hiccup (EDS/Open-Meteo/ENTSO-E) for one area
+            # shouldn't stop the other area from training and writing its own
+            # fresh forecast -- the Worker already falls back to yesterday's
+            # KV entry (or the seasonal heuristic) if this area's write is
+            # skipped, so a partial run degrades gracefully instead of the
+            # whole job failing with nothing updated at all.
+            print(f"  {area} failed, skipping: {e}")
+            failed_areas.append(area)
+
+    if failed_areas:
+        raise SystemExit(f"Failed areas: {failed_areas} (other areas still wrote successfully if listed above)")
 
 
 if __name__ == "__main__":
