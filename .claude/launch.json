@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "elpriser",
+      "runtimeExecutable": "/opt/homebrew/bin/node",
+      "runtimeArgs": ["server.js"],
+      "port": 8080,
+      "autoPort": true
+    },
+    {
+      "name": "elpriser-pages",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["wrangler", "pages", "dev", ".", "--port", "8788"],
+      "port": 8788,
+      "autoPort": true
+    }
+  ]
+}

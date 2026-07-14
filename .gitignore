@@ -5,3 +5,7 @@ node_modules/
 .DS_Store
 .env.deploy
 data-backup/
+
+# Xcode
+xcuserdata/
+*.xcuserstate
