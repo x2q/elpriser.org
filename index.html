@@ -319,6 +319,16 @@
       "author":    { "@type": "Organization", "name": "elpriser.org" },
       "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
       "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/biler-ladere-v2h-v2g" }
+    },
+    {
+      "@type": "Article",
+      "headline": "Elafgift 2028: Sådan stiger den igen når den lave sats udløber",
+      "description": "Elafgiften er sænket til 0,8 øre/kWh i 2026-2027, men stiger igen fra 2028. Se de nye satser, hvorfor regeringen endnu ikke har forlænget den lave afgift, og hvad det betyder for din elregning og dine solceller.",
+      "url": "https://elpriser.org/blog/elafgift-2028",
+      "inLanguage": "da",
+      "author":    { "@type": "Organization", "name": "elpriser.org" },
+      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/elafgift-2028" }
     }
   ]
 }
@@ -1511,6 +1521,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
       <div class="flex flex-wrap gap-2">
         <a href="/blog/shelly-elpris-automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Shelly og elpriser →</a>
         <a href="/blog/home-assistant-elpriser" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Home Assistant guide →</a>
+        <a href="/blog/elafgift-2028" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Elafgift 2028 →</a>
       </div>
     </div>
   </article>
@@ -2049,15 +2060,102 @@ entities:
   </article>
 </main>
 
+<!-- ═══════ BLOG: Elafgift 2028 ═══════ -->
+<main data-page="blog-elafgift-2028" class="max-w-2xl mx-auto px-4 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Elafgift 2028: Sådan stiger den igen når den lave sats udløber</h1>
+    </div>
+    <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
+      <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+  <article class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+    <p class="text-base text-gray-700 dark:text-gray-300">Elafgiften er lige nu sænket til et absolut minimum — men det er midlertidigt. Regeringen har bekræftet, at afgiften stiger igen, når den nuværende ordning udløber ved udgangen af 2027, og der er endnu ingen politisk aftale om at forlænge den lave sats. Her får du satserne, tidslinjen og hvad det betyder for din elregning og dine solceller.</p>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hvor meget stiger elafgiften i 2028?</h2>
+      <p>I 2026 og 2027 er den almindelige elafgift sat ned til EU's minimumssats på <strong class="text-gray-800 dark:text-gray-200">0,8 øre/kWh</strong> (ekskl. moms) — ned fra omkring 72,7 øre/kWh i 2026-prisniveau. Sænkelsen udløber ved udgangen af 2027, og lovteksten fastlægger allerede nu, hvad der sker bagefter:</p>
+      <div class="mt-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+        <div class="px-4 py-3 flex justify-between items-center gap-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">2026-2027</p>
+          <p class="text-xs text-right">0,8 øre/kWh — EU's minimumssats</p>
+        </div>
+        <div class="px-4 py-3 flex justify-between items-center gap-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">2028-2029</p>
+          <p class="text-xs text-right">60,9 øre/kWh (2015-prisniveau)</p>
+        </div>
+        <div class="px-4 py-3 flex justify-between items-center gap-3">
+          <p class="font-bold text-gray-800 dark:text-gray-200">Fra 2030</p>
+          <p class="text-xs text-right">59,9 øre/kWh (2015-prisniveau)</p>
+        </div>
+      </div>
+      <p class="mt-2">Satserne fra 2028 er angivet i 2015-prisniveau og pristalsreguleres hvert år, så den faktiske sats i kroner og øre i 2028 bliver højere end 60,9 øre — men afgiften ryger under alle omstændigheder fra 0,8 øre op til et niveau, der ligner tiden før 2026-nedsættelsen. Kilde: lovudkastet til ændring af elafgiftsloven, behandlet i Folketingets Skatteudvalg (SAU, Alm.del, bilag 320, samling 2024-25).</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Bliver den lave afgift forlænget?</h2>
+      <p>Ikke ifølge regeringen selv — i hvert fald ikke endnu. I juni 2026 bekræftede erhvervsminister Martin Lidegaard (R) over for Børsen, at elafgiften stiger igen, når den to-årige sænkning udløber, og at der ikke er planer om at gøre den permanent:</p>
+      <p class="mt-2 pl-3 border-l-2 border-gray-300 dark:border-gray-700 italic">"Det har vi ikke, fordi vi har prioriteret selskabsskattelettelserne og andre rammevilkår først," siger Lidegaard til avisen.</p>
+      <p class="mt-2">Det nye regeringsgrundlag nævner ifølge artiklen intet om at fastholde en lav elafgift efter 2028. Udenrigsminister Lars Løkke Rasmussen (M) har peget på, at spørgsmålet hænger sammen med andre ubesluttede emner som bilafgifter og elektrificering af Danmark: "Vi har ikke lagt os fast på noget. Men det er klart, at inden vi rammer det tidspunkt, hvor den fulde elafgift kommer igen, bliver man nødt til at tage stilling til det." Begge ministre siger, at de gerne vil finde penge til en permanent lavere afgift — men lige nu prioriterer regeringen i stedet en lavere fødevaremoms.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hvad betyder det for din elregning?</h2>
+      <p>Sænkelsen til 0,8 øre/kWh i 2026-2027 er aftalt med syv milliarder kroner i finansloven for 2026 og sparer en typisk familie (to voksne, to børn, hus) omkring <strong class="text-gray-800 dark:text-gray-200">3.600-4.000 kr om året</strong> sammenlignet med den fulde afgift. Vender afgiften tilbage til et niveau omkring 60-70 øre/kWh fra 2028, forsvinder størstedelen af den besparelse igen — for et forbrug på 4.000 kWh/år svarer det til, at elafgiften alene lægger 2.400-2.800 kr/år oveni regningen, mod under 40 kr/år i 2026-2027.</p>
+      <p class="mt-2">Elafgiften er kun én af flere poster i den <a href="/blog/forsta-din-elpris" class="text-brand-500 underline">samlede elpris</a> — spotpris, nettarif, systemtarif og transmissionstarif kommer oveni, før der lægges 25% moms på det hele. Du kan følge den fulde pris inkl. alle afgifter time for time på <a href="/dk1" class="text-brand-500 underline">DK1</a> og <a href="/dk2" class="text-brand-500 underline">DK2</a>.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Solceller: er det stadig værd i 2026-2027?</h2>
+      <p>Den lave elafgift gør umiddelbart egenproduktion mindre værd i 2026-2027, fordi den afgift, du ellers ville have sparet ved at bruge din egen solstrøm frem for at købe fra nettet, midlertidigt er næsten væk. Men det ændrer ikke ved, at et solcelleanlæg er en langsigtet investering, der typisk producerer strøm i 20-30 år — og værdien af hver kWh egenproduceret strøm stiger igen, så snart elafgiften vender tilbage efter 2027.</p>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li>Vurdér anlægget over hele dets levetid, ikke ud fra afgiftsniveauet i 2026-2027 alene.</li>
+        <li>Kombinér med batteri og/eller varmepumpe for at maksimere egetforbrug — det giver mest værdi både nu og efter 2028.</li>
+        <li>Boliger med elbil eller varmepumpe får typisk mest ud af egenproduceret strøm, fordi forbruget er højere og mere fleksibelt.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hvad kan du gøre nu?</h2>
+      <ol class="space-y-2 ml-4 list-decimal">
+        <li><strong class="text-gray-800 dark:text-gray-200">Udnyt vinduet 2026-2027</strong> — er du alligevel i markedet for en elbil, varmepumpe eller andet elforbrug, er det billigere at bruge strøm i disse to år, end det bliver fra 2028.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Planlæg store elkøb og -installationer</strong> ud fra hele levetiden, ikke kun den midlertidigt lave afgift.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Følg <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a></strong> for at se, hvordan spotpriser og priskomponenter udvikler sig hen mod 2028.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Hold øje med lovgivningen</strong> — beslutningen om, hvad der sker efter 2029/2030, er ifølge ministrene selv endnu ikke truffet.</li>
+      </ol>
+    </section>
+
+    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+      <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">Kilder:</p>
+      <ul class="text-xs space-y-1 ml-4 list-disc">
+        <li><a href="https://www.ft.dk/samling/20241/almdel/SAU/bilag/320/3063354/index.htm" target="_blank" rel="noopener" class="text-brand-500 underline">Folketinget, Skatteudvalget: Lovudkast om nedsættelse af elafgiften 2026-2027 (SAU, Alm.del, bilag 320)</a></li>
+        <li><a href="https://ekstrabladet.dk/penge/lidegaard-bekraefter-elafgifterne-kommer-til-at-stige-igen/11201178" target="_blank" rel="noopener" class="text-brand-500 underline">Ekstra Bladet: "Lidegaard bekræfter: Elafgifterne kommer til at stige igen"</a></li>
+        <li><a href="https://bodil.energy/blog/elafgift-2028-solceller" target="_blank" rel="noopener" class="text-brand-500 underline">Bodil Energy: Elafgift 2028 og solceller</a></li>
+      </ul>
+    </div>
+
+    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+      <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Læs også:</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="/blog/forsta-din-elpris" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Forstå din elpris →</a>
+        <a href="/tariffer" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Nettariffer →</a>
+        <a href="/prognose" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Elprisprognose →</a>
+      </div>
+    </div>
+  </article>
+</main>
+
 <footer class="mt-10 py-6 border-t border-gray-200 dark:border-gray-800">
   <div class="max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-600">
     <nav class="mb-3" aria-label="Sider">
       <a href="/dk1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK1</a> · <a href="/dk2" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK2</a> · <a href="/tariffer" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Nettariffer</a> · <a href="/prognose" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elprisprognose</a> · <a href="/automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Automation</a> · <a href="/api" class="hover:text-gray-600 dark:hover:text-gray-400 underline">API</a> · <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser</a>
     </nav>
     <nav class="mb-3" aria-label="Guides">
-      <a href="/blog/forsta-din-elpris" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Forstå din elpris</a> · <a href="/blog/shelly-elpris-automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Shelly automation</a> · <a href="/blog/home-assistant-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Home Assistant guide</a> · <a href="/blog/v2g-v2h-bidirektional-opladning" class="hover:text-gray-600 dark:hover:text-gray-400 underline">V2G &amp; V2H</a> · <a href="/blog/biler-ladere-v2h-v2g" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Biler &amp; ladere</a>
+      <a href="/blog/forsta-din-elpris" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Forstå din elpris</a> · <a href="/blog/shelly-elpris-automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Shelly automation</a> · <a href="/blog/home-assistant-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Home Assistant guide</a> · <a href="/blog/v2g-v2h-bidirektional-opladning" class="hover:text-gray-600 dark:hover:text-gray-400 underline">V2G &amp; V2H</a> · <a href="/blog/biler-ladere-v2h-v2g" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Biler &amp; ladere</a> · <a href="/blog/elafgift-2028" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elafgift 2028</a>
     </nav>
-    <p>&copy; Elpriser.org &mdash; Data fra <a href="https://www.energidataservice.dk" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Energi Data Service</a> (Energinet).</p>
+    <p>&copy; Elpriser.org &mdash; Data fra <a href="https://www.energidataservice.dk" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Energi Data Service</a> (Energinet). Åbne datasæt på <a href="https://huggingface.co/Elpriser" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Hugging Face</a>.</p>
   </div>
 </footer>
 
@@ -2158,6 +2256,7 @@ const PATH_ROUTES={
   '/blog/home-assistant-elpriser':'blog/home-assistant-elpriser',
   '/blog/v2g-v2h-bidirektional-opladning':'blog/v2g-v2h-bidirektional-opladning',
   '/blog/biler-ladere-v2h-v2g':'blog/biler-ladere-v2h-v2g',
+  '/blog/elafgift-2028':'blog/elafgift-2028',
 };
 function pathToHash(p){
   if(PATH_ROUTES[p])return PATH_ROUTES[p];
@@ -2183,6 +2282,7 @@ function route(){
   if(h==='blog/home-assistant-elpriser'){document.querySelector('[data-page="blog-home-assistant-elpriser"]').classList.add('active');document.title='Home Assistant & elpriser — Smart elforbrug i Danmark';pv('Blog: Home Assistant','/blog/home-assistant-elpriser');return;}
   if(h==='blog/v2g-v2h-bidirektional-opladning'){document.querySelector('[data-page="blog-v2g-v2h-bidirektional-opladning"]').classList.add('active');document.title='V2G, V2H & V2L — Bidirektional elbilopladning forklaret';pv('Blog: V2G & V2H','/blog/v2g-v2h-bidirektional-opladning');return;}
   if(h==='blog/biler-ladere-v2h-v2g'){document.querySelector('[data-page="blog-biler-ladere-v2h-v2g"]').classList.add('active');document.title='Elbiler og ladere med V2H/V2G — Liste 2026';pv('Blog: Biler & ladere V2H/V2G','/blog/biler-ladere-v2h-v2g');return;}
+  if(h==='blog/elafgift-2028'){document.querySelector('[data-page="blog-elafgift-2028"]').classList.add('active');document.title='Elafgift 2028 — Stiger elafgiften igen? Se satser og datoer';pv('Blog: Elafgift 2028','/blog/elafgift-2028');return;}
   if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elprisprognose — Forventede elpriser næste 7 dage';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){location.hash='';return;}
@@ -2628,22 +2728,26 @@ async function loadAutomationPage(){
   if(enCharges===null)await fetchEnCharges();
   updateAutoViz();
 }
-function updateAutoViz(){
+async function updateAutoViz(){
   const strategy=document.getElementById('autoStrategy')?.value||'cheapest_n';
   const param=+(document.getElementById('autoParam')?.value||6);
   const param2=+(document.getElementById('autoParam2')?.value||2);
   const mode=document.getElementById('autoMode')?.value||'inkl_alt';
   // Ensure the net dropdown is populated (runs once per mode toggle)
   if(mode.startsWith('net_') && !document.getElementById('autoNet').options.length)populateAutoNet();
+  // Use autoMode for price calculations in the visualization
+  const autoMode=document.getElementById('autoMode')?.value||'inkl_alt';
+  const autoGln=(autoMode.startsWith('net_')&&document.getElementById('autoNet')?.value)||null;
+  // getTariff() silently returns an all-zero tariff for an unloaded GLN, which
+  // understates net_ prices instead of erroring -- must load before computing,
+  // not just rely on the price-table view having already warmed the cache.
+  if(autoGln)await loadNetTariff(autoGln);
   const dates=Object.keys(priceData).sort().slice(-7);
   document.getElementById('autoLoading').style.display='none';
   document.getElementById('autoTableWrapper').style.display='block';
   const dk=isDark(),today=fmt(new Date());
   const thSub=dk?'text-gray-500':'text-gray-400',thDay=dk?'text-gray-300':'text-gray-700',thToday=dk?'text-brand-400':'text-brand-600';
   const daySchedules={};
-  // Use autoMode for price calculations in the visualization
-  const autoMode=document.getElementById('autoMode')?.value||'inkl_alt';
-  const autoGln=(autoMode.startsWith('net_')&&document.getElementById('autoNet')?.value)||null;
   // Save real S state, temporarily override for cvt
   const _mode=S.mode,_gln=S.gln;
   S.mode=autoMode;S.gln=autoGln;

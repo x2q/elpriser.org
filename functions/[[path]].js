@@ -69,6 +69,11 @@ const SEO_PAGES = {
     description: 'Opdateret liste over elbiler og bidirektionale ladere der understøtter V2L, V2H og V2G. Inkluderer Hyundai Ioniq 5, Kia EV9, Nissan Leaf, Wallbox Quasar 2, Sigenergy og flere.',
     hash: '#blog/biler-ladere-v2h-v2g',
   },
+  '/blog/elafgift-2028': {
+    title: 'Elafgift 2028 — Stiger elafgiften igen? Se satser og datoer',
+    description: 'Elafgiften er sænket til 0,8 øre/kWh i 2026-2027, men stiger igen fra 2028. Se de nye satser, hvorfor regeringen endnu ikke har forlænget den lave afgift, og hvad det betyder for din elregning og dine solceller.',
+    hash: '#blog/elafgift-2028',
+  },
 };
 
 // Mirrors NETS in index.html. Used to (a) mint per-net clean URLs
@@ -117,7 +122,7 @@ for (const area of ['DK1', 'DK2']) {
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser',
   '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
-  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g',
+  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028',
   ...NET_URLS,
 ];
 
@@ -160,6 +165,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Home Assistant guide](https://elpriser.org/blog/home-assistant-elpriser): Komplet opsætning af Home Assistant med elpriser, sensorer og automations.
 - [V2G & V2H](https://elpriser.org/blog/v2g-v2h-bidirektional-opladning): Forklaring af bidirektional elbilopladning (V2G/V2H/V2L) og hvordan det udnytter spotpriser.
 - [Biler & ladere med V2H/V2G](https://elpriser.org/blog/biler-ladere-v2h-v2g): Opdateret liste over elbiler og bidirektionale ladere der understøtter V2H/V2G i Danmark.
+- [Elafgift 2028](https://elpriser.org/blog/elafgift-2028): Elafgiften er sænket til 0,8 øre/kWh i 2026-2027 men stiger igen fra 2028 — satser, tidslinje og betydning for din elregning og dine solceller.
 
 ## Live data API (for AI assistants and agents)
 
@@ -521,6 +527,7 @@ const HASH_TO_DATA_PAGE = {
   'blog/home-assistant-elpriser': 'blog-home-assistant-elpriser',
   'blog/v2g-v2h-bidirektional-opladning': 'blog-v2g-v2h-bidirektional-opladning',
   'blog/biler-ladere-v2h-v2g': 'blog-biler-ladere-v2h-v2g',
+  'blog/elafgift-2028': 'blog-elafgift-2028',
 };
 
 function dataPageForHash(hash) {
