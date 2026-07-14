@@ -166,6 +166,26 @@ def backup_eds():
         time.sleep(5)
 
 
+def backup_eds_tariffs():
+    """DatahubPricelist -- the master price-component list covering
+    nettariffer (every net company's grid tariff), Energinet's own
+    system/transmission tariffs, elafgift (electricity tax), and subscription
+    fees. Not area-scoped (GLN_Number identifies the charge owner, not a
+    DK1/DK2 split) and no date filter needed -- limit=0 returns full history
+    (~360 MB JSON) in one request."""
+    print("=== EDS DatahubPricelist (nettariffer/afgifter) ===")
+    print("Fetching full DatahubPricelist (all net companies + Energinet)...")
+    try:
+        j = fetch_json("https://api.energidataservice.dk/dataset/DatahubPricelist?limit=0", timeout=300)
+        df = pd.DataFrame(j.get("records", []))
+        if len(df):
+            save(df, "eds_datahubpricelist")
+        else:
+            print("  no records found")
+    except Exception as e:
+        print(f"  failed: {e}")
+
+
 # ─── JAO ──────────────────────────────────────────────────────────────────
 
 def fetch_jao_day(d):
@@ -433,6 +453,8 @@ if __name__ == "__main__":
     which = sys.argv[1] if len(sys.argv) > 1 else "all"
     if which in ("all", "eds"):
         backup_eds()
+    if which == "eds-tariffs":  # not part of "all" -- explicit opt-in, big one-off fetch
+        backup_eds_tariffs()
     if which in ("all", "jao"):
         backup_jao()
     if which in ("all", "entsoe", "entsoe-zones"):
