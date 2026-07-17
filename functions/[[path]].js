@@ -70,7 +70,7 @@ const SEO_PAGES = {
     hash: '#blog/biler-ladere-v2h-v2g',
   },
   '/blog/elafgift-2028': {
-    title: 'Elafgift 2028 — Stiger elafgiften igen? Se satser og datoer',
+    title: 'Elafgift 2028: Sådan stiger elafgiften igen',
     description: 'Elafgiften er sænket til 0,8 øre/kWh i 2026-2027, men stiger igen fra 2028. Se de nye satser, hvorfor regeringen endnu ikke har forlænget den lave afgift, og hvad det betyder for din elregning og dine solceller.',
     hash: '#blog/elafgift-2028',
   },
