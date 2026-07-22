@@ -463,6 +463,14 @@ const OPENAPI_SPEC = {
         responses: { '200': { description: 'Records array.' } },
       },
     },
+    '/api/raw/co2': {
+      get: {
+        operationId: 'getRawCo2',
+        summary: 'CO₂ emission per kWh (g/kWh), hourly, today + ~1 day ahead (Energinet CO2EmisProg)',
+        parameters: [AREA_PARAM],
+        responses: { '200': { description: '{area, unit, records: [{date, hour, co2}]}' } },
+      },
+    },
     '/api/raw/tariff': {
       get: {
         operationId: 'getRawNetTariff',
@@ -592,6 +600,7 @@ export async function onRequest(context) {
       if (seg2 === 'encharges') return await handleRawEnCharges(request, context.env);
       if (seg2 === 'tariff')    return await handleRawTariff(q.get('gln'), request, context.env);
       if (seg2 === 'tariffs')   return await handleRawTariffs(request, context.env);
+      if (seg2 === 'co2')       return await handleRawCo2(area, request, context.env);
       return fail(404, 'Unknown raw endpoint');
     } catch (e) {
       console.error(e);
@@ -1020,6 +1029,39 @@ async function handleRawPrices(area, start, end, request, env) {
   // Never tell the browser to cache an empty result — force revalidation so a
   // transient empty self-heals on the next request instead of sticking around.
   return cachedJson({ records }, records.length ? ttlSec : 0, request);
+}
+
+/**
+ * CO₂-udledning pr. kWh (g/kWh) — Energinet's CO2EmisProg (prognosis, covers
+ * today and ~1 day ahead in 5-min resolution). Averaged to hourly server-side
+ * so the payload is 24-48 rows instead of ~576.
+ */
+async function handleRawCo2(area, request, env) {
+  const records = await edgeCached(`raw-co2-${area}`, 900, async () => {
+    const dkNow = danishNow();
+    const start = fmtUTC(dkNow);
+    const end = fmtUTC(new Date(dkNow.getTime() + 2 * 86_400_000));
+    const f = encodeURIComponent(JSON.stringify({ PriceArea: area }));
+    const r = await fetch(
+      `https://api.energidataservice.dk/dataset/CO2EmisProg` +
+      `?start=${start}&end=${end}&filter=${f}&limit=0&columns=Minutes5DK,CO2Emission`
+    );
+    const j = await r.json();
+    // Average the 5-min values per Danish date+hour
+    const sums = {};
+    for (const rec of (j.records || [])) {
+      const key = rec.Minutes5DK.slice(0, 13); // "YYYY-MM-DDTHH"
+      (sums[key] ??= { s: 0, n: 0 });
+      sums[key].s += rec.CO2Emission;
+      sums[key].n++;
+    }
+    return Object.keys(sums).sort().map(k => ({
+      date: k.slice(0, 10),
+      hour: +k.slice(11, 13),
+      co2: Math.round(sums[k].s / sums[k].n),
+    }));
+  }, env);
+  return cachedJson({ area, unit: 'g/kWh', records }, records.length ? 900 : 0, request);
 }
 
 async function handleRawEnCharges(request, env) {

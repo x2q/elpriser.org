@@ -563,6 +563,60 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .zone-stack{display:flex;flex-direction:column;align-items:center;gap:.625rem;padding:.25rem 0 .5rem}
   .net-list{display:flex;flex-direction:column;gap:.125rem;padding:.5rem 0}
 
+  /* ═══ Answer-first hero (start page) ═══ */
+  .answer-hero{display:grid;grid-template-columns:340px 1fr;gap:1.75rem;align-items:stretch;max-width:66rem;margin:0 auto;padding:2rem 1rem 0}
+  @media (max-width:820px){.answer-hero{grid-template-columns:1fr;padding-top:1.25rem}}
+  .answer-eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#5c6675;margin:0}
+  .dark .answer-eyebrow{color:#8a95a8}
+  .answer-price{font-size:5.5rem;font-weight:250;letter-spacing:-.04em;line-height:1.02;margin:.25rem 0 0;font-variant-numeric:tabular-nums;color:#0e1421}
+  .dark .answer-price{color:#e8edf5}
+  .answer-unit{font-size:.9rem;font-weight:500;color:#5c6675;margin-top:.15rem}
+  .dark .answer-unit{color:#8a95a8}
+  .answer-pills{display:flex;gap:.5rem;margin-top:.9rem;flex-wrap:wrap}
+  .apill{width:max-content;padding:.32rem .85rem;border-radius:9999px;font-size:.82rem;font-weight:600}
+  .apill.billig{background:rgba(52,199,89,.14);color:#1e9e4a}
+  .apill.normal{background:rgba(255,159,10,.14);color:#b46a00}
+  .apill.dyr{background:rgba(255,59,48,.12);color:#d02b22}
+  .apill.co2{background:rgba(14,152,136,.12);color:#0e9888}
+  .dark .apill.billig{color:#4cd964}.dark .apill.normal{color:#ffb340}.dark .apill.dyr{color:#ff6b61}.dark .apill.co2{color:#2fd4bf}
+  .answer-context{margin-top:.65rem;font-size:.85rem;color:#5c6675;line-height:1.5;max-width:34ch}
+  .dark .answer-context{color:#8a95a8}
+  .answer-advice{margin-top:1.1rem;background:linear-gradient(135deg,#1b57f5,#1a3f9e);color:#fff;border-radius:1rem;padding:.85rem 1rem;font-size:.85rem;line-height:1.5;font-weight:500;max-width:22rem}
+  .answer-advice b{font-weight:700}
+  .answer-toggle{display:inline-flex;background:#fff;border:1px solid #e2e7f0;border-radius:9999px;padding:3px;font-size:.78rem;font-weight:600;margin-top:1.1rem;width:max-content}
+  .dark .answer-toggle{background:#131b29;border-color:#223046}
+  .answer-toggle button{padding:.3rem .9rem;border-radius:9999px;color:#5c6675;border:none;background:none;cursor:pointer;font:inherit}
+  .dark .answer-toggle button{color:#8a95a8}
+  .answer-toggle button.on{background:#1b57f5;color:#fff}
+  .chartcard{background:#fff;border-radius:1.25rem;box-shadow:0 1px 2px rgba(14,20,33,.05),0 8px 24px rgba(14,20,33,.05);padding:1.1rem 1.2rem .9rem;display:flex;flex-direction:column}
+  .dark .chartcard{background:#131b29;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .chartcard .chd{display:flex;justify-content:space-between;align-items:baseline;font-size:.7rem;font-weight:600;color:#5c6675;text-transform:uppercase;letter-spacing:.06em;padding:0 .25rem .45rem}
+  .dark .chartcard .chd{color:#8a95a8}
+  .chartcard .chd.co2{color:#0e9888;padding-top:.7rem}
+  .dark .chartcard .chd.co2{color:#2fd4bf}
+  .chartcard svg{width:100%;color:#0e1421}
+  .dark .chartcard svg{color:#e8edf5}
+  .minirow{display:flex;gap:.7rem;margin-top:.8rem;flex-wrap:wrap}
+  .mini{flex:1;min-width:7rem;border:1px solid #e2e7f0;border-radius:.9rem;padding:.6rem .85rem}
+  .dark .mini{border-color:#223046}
+  .mini .k{font-size:.62rem;font-weight:600;color:#5c6675;text-transform:uppercase;letter-spacing:.05em}
+  .dark .mini .k{color:#8a95a8}
+  .mini .v{font-size:1.3rem;font-weight:700;font-variant-numeric:tabular-nums;margin-top:1px}
+  .mini .s{font-size:.72rem;color:#5c6675}
+  .dark .mini .s{color:#8a95a8}
+  .mini.best .v{color:#1e9e4a}.mini.worst .v{color:#d02b22}.mini.green .v{color:#0e9888}
+  .dark .mini.best .v{color:#4cd964}.dark .mini.worst .v{color:#ff6b61}.dark .mini.green .v{color:#2fd4bf}
+  .mini.tmr .v{font-size:.85rem;font-weight:600;color:#5c6675;margin-top:.35rem}
+  /* SSR strip + GPS restyled for light hero */
+  .answer-ssr .ssr-live-price{margin-top:1.25rem;background:rgba(27,87,245,.06);border-color:rgba(27,87,245,.15);color:#3d495c}
+  .answer-ssr .ssr-live-price strong{color:#0e1421}
+  .answer-ssr .ssr-live-unit{color:#8a95a8}
+  .dark .answer-ssr .ssr-live-price{background:rgba(58,118,255,.1);border-color:rgba(58,118,255,.22);color:#aab6c8}
+  .dark .answer-ssr .ssr-live-price strong{color:#e8edf5}
+  .gps-light{display:inline-flex;align-items:center;gap:.7rem;border-radius:9999px;font-size:.85rem;font-weight:600;padding:.8rem 1.5rem;background:rgba(27,87,245,.08);border:1px solid rgba(27,87,245,.18);color:#1b57f5;cursor:pointer;transition:background .15s ease}
+  .gps-light:hover{background:rgba(27,87,245,.14)}
+  .dark .gps-light{background:rgba(58,118,255,.12);border-color:rgba(58,118,255,.25);color:#6d9aff}
+
   /* ═══ Light syntax highlighting (YAML / JS / URL) ═══ */
   .hl-attr{color:#0969da}     /* YAML keys, URL query params — blue */
   .hl-str{color:#0a7a48}      /* string literals — green */
@@ -584,32 +638,47 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
 <!-- ═══════ START PAGE ═══════ -->
 <main data-page="start" class="active">
-  <div class="hero">
-    <div class="hero-orb hero-orb-1"></div>
-    <div class="hero-orb hero-orb-2"></div>
-    <div class="max-w-4xl mx-auto text-center relative">
-      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium text-white/90 mb-5" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
-        <span style="width:.375rem;height:.375rem;border-radius:9999px;background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.9);animation:pulse 2s ease-in-out infinite"></span>
-        Live data fra Energi Data Service
+  <!-- Answer-first hero: the current price IS the headline, like a weather
+       app's temperature. Curve replaces the price table; the advice card
+       turns pris+CO₂ data into one actionable sentence. -->
+  <div class="answer-hero">
+    <div>
+      <h1 class="answer-eyebrow">Elpriser i dag — <span id="heroLoc">Vestdanmark · DK1</span> · lige nu</h1>
+      <div class="answer-price" id="heroPrice">—</div>
+      <div class="answer-unit">kr/kWh inkl. tarif, afgift og moms</div>
+      <div class="answer-pills" id="heroPills"></div>
+      <div class="answer-context" id="heroContext">Tjek aktuel elpris lige nu — spotpriser time for time for DK1 (Vestdanmark) og DK2 (Østdanmark), inkl. nettariffer, elafgift og moms. Opdateret fra Energi Data Service.</div>
+      <div class="answer-advice" id="heroAdvice" style="display:none"></div>
+      <div class="answer-toggle" role="tablist" aria-label="Prisområde">
+        <button id="heroBtnDK1" class="on" onclick="setHeroArea('DK1')">DK1 Vest</button>
+        <button id="heroBtnDK2" onclick="setHeroArea('DK2')">DK2 Øst</button>
       </div>
-      <div class="flex items-center justify-center gap-3 mb-4">
-        <span class="text-4xl sm:text-5xl">⚡</span>
-        <h1 class="text-4xl sm:text-5xl font-black text-white">Elpriser i dag</h1>
+      <div class="answer-ssr">
+        <!-- Server-rendered live price snapshot (homepage only). Replaced by
+             functions/[[path]].js so Google and LLM crawlers see the actual
+             numbers in the first HTML response. -->
+        <!--SSR_LIVE_PRICE-->
       </div>
-      <p class="hero-sub text-sm sm:text-base max-w-xl mx-auto">
-        Tjek aktuel elpris lige nu — spotpriser time for time for DK1 (Vestdanmark) og DK2 (Østdanmark). Den reelle pris på el du betaler per kWh, inkl. netselskab-tariffer, elafgift og moms &mdash; opdateret dagligt fra Energi Data Service.
-      </p>
-      <!-- Server-rendered live price snapshot (homepage only). Replaced by
-           functions/[[path]].js with a small frosted pill showing the
-           current DK1/DK2 spot + total prices, so Google and LLM crawlers
-           see the actual numbers in the first HTML response. -->
-      <!--SSR_LIVE_PRICE-->
-      <!-- GPS detect — single button -->
-      <button id="gpsBtn" onclick="detectLocation()" class="gps-bar mt-10 inline-flex items-center gap-3 rounded-full text-sm font-medium text-white" style="padding:1rem 2rem">
-        <svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span id="gpsText">Find dit netselskab automatisk</span>
-      </button>
     </div>
+    <div class="chartcard">
+      <div class="chd"><span>I dag, time for time</span><span>DKK/kWh</span></div>
+      <svg id="heroCurve" viewBox="0 0 720 200" preserveAspectRatio="none" style="min-height:170px"></svg>
+      <div class="chd co2"><span>CO₂-udledning</span><span>g/kWh</span></div>
+      <svg id="heroCo2" viewBox="0 0 720 48" preserveAspectRatio="none" style="height:48px"></svg>
+      <div class="minirow">
+        <div class="mini best"><div class="k">Billigst</div><div class="v" id="heroBestV">—</div><div class="s" id="heroBestS"></div></div>
+        <div class="mini worst"><div class="k">Dyrest</div><div class="v" id="heroWorstV">—</div><div class="s" id="heroWorstS"></div></div>
+        <div class="mini green"><div class="k">Grønnest</div><div class="v" id="heroGreenV">—</div><div class="s" id="heroGreenS"></div></div>
+        <div class="mini tmr"><div class="k">I morgen</div><div class="v" id="heroTmrV">Priser klar ca. kl. 13</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-8">
+    <button id="gpsBtn" onclick="detectLocation()" class="gps-light">
+      <svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span id="gpsText">Find dit netselskab automatisk</span>
+    </button>
   </div>
 
   <div class="max-w-4xl mx-auto px-4 py-12">
@@ -2299,8 +2368,123 @@ function route(){
 }
 window.addEventListener('hashchange',route);
 
+// ═══ START HERO (answer-first) ═══
+let heroArea='DK1';
+function setHeroArea(a){
+  heroArea=a;
+  document.getElementById('heroBtnDK1').classList.toggle('on',a==='DK1');
+  document.getElementById('heroBtnDK2').classList.toggle('on',a==='DK2');
+  document.getElementById('heroLoc').textContent=a==='DK1'?'Vestdanmark · DK1':'Østdanmark · DK2';
+  loadStartHero();
+}
+async function loadStartHero(){
+  const area=heroArea;
+  try{
+    const [pj,cj]=await Promise.all([
+      dedupedFetch(`/api/prices?area=${area}&mode=inkl_alt`),
+      dedupedFetch(`/api/raw/co2?area=${area}`).catch(()=>null),
+    ]);
+    if(heroArea!==area)return; // stale response after toggle
+    const prices=pj.prices.map(p=>p.price);
+    const nowH=pj.current_hour??new Date().getHours();
+    const today=pj.date;
+    const co2=Array(24).fill(null);
+    if(cj)for(const r of cj.records)if(r.date===today&&r.hour<24)co2[r.hour]=r.co2;
+    renderHero(prices,co2,nowH);
+  }catch(e){console.error('hero load failed',e);}
+}
+function renderHero(prices,co2,nowH){
+  const valid=prices.map((p,h)=>({p,h})).filter(x=>x.p!=null);
+  if(!valid.length)return;
+  const fmt2=v=>v.toFixed(2).replace('.',',');
+  const nowP=prices[nowH];
+  document.getElementById('heroPrice').textContent=nowP!=null?fmt2(nowP):'—';
+  // Pills: price percentile + CO₂
+  const cheaper=valid.filter(x=>x.p<nowP).length, pct=Math.round(cheaper/valid.length*100);
+  const cls=pct<=33?'billig':pct<=66?'normal':'dyr';
+  const lbl=pct<=33?'Billig lige nu':pct<=66?'Middel lige nu':'Dyr lige nu';
+  const co2Valid=co2.map((v,h)=>({v,h})).filter(x=>x.v!=null);
+  const nowC=co2[nowH];
+  let pills=`<span class="apill ${cls}">${lbl}</span>`;
+  if(nowC!=null){
+    const cMin=Math.min(...co2Valid.map(x=>x.v));
+    pills+=`<span class="apill co2">${nowC===cMin?'Grønnest i dag · ':''}${nowC} g CO₂/kWh</span>`;
+  }
+  document.getElementById('heroPills').innerHTML=pills;
+  // Best / worst / greenest windows
+  const best=valid.reduce((a,x)=>x.p<a.p?x:a), worst=valid.reduce((a,x)=>x.p>a.p?x:a);
+  document.getElementById('heroBestV').textContent=fmt2(best.p);
+  document.getElementById('heroBestS').textContent=`kl. ${String(best.h).padStart(2,'0')}–${String((best.h+1)%24).padStart(2,'0')}`;
+  document.getElementById('heroWorstV').textContent=fmt2(worst.p);
+  document.getElementById('heroWorstS').textContent=`kl. ${String(worst.h).padStart(2,'0')}–${String((worst.h+1)%24).padStart(2,'0')}`;
+  if(co2Valid.length){
+    const g=co2Valid.reduce((a,x)=>x.v<a.v?x:a);
+    document.getElementById('heroGreenV').textContent=g.v+' g';
+    document.getElementById('heroGreenS').textContent=`kl. ${String(g.h).padStart(2,'0')}${g.h===nowH?' · nu':''}`;
+  }
+  // Context line
+  document.getElementById('heroContext').textContent=
+    `Billigere end ${100-pct} % af dagens timer`+(nowC!=null&&co2Valid.length&&nowC===Math.min(...co2Valid.map(x=>x.v))?' — og dagens laveste CO₂-udledning netop nu.':'.');
+  // Advice engine — only say what the data actually supports
+  const later=valid.filter(x=>x.h>nowH);
+  const adviceEl=document.getElementById('heroAdvice');
+  let advice='';
+  if(later.length&&nowP!=null){
+    const lBest=later.reduce((a,x)=>x.p<a.p?x:a), lWorst=later.reduce((a,x)=>x.p>a.p?x:a);
+    const saveWait=Math.round((1-lBest.p/nowP)*100);
+    const savePeak=Math.round((1-nowP/lWorst.p)*100);
+    const co2AtBest=co2[lBest.h], co2AtPeak=co2[lWorst.h];
+    if(saveWait>=25){
+      advice=`Vent til kl. ${String(lBest.h).padStart(2,'0')} — så betaler du <b>${saveWait} % mindre</b>`;
+      if(nowC!=null&&co2AtBest!=null&&co2AtBest<=nowC*0.9)advice+=` og udleder <b>${Math.round((1-co2AtBest/nowC)*100)} % mindre CO₂</b>`;
+      else if(nowC!=null&&co2AtBest!=null&&co2AtBest>nowC*1.2)advice+=`. Grønnest er strømmen dog nu (${nowC} g CO₂)`;
+      advice+='.';
+    }else if(savePeak>=40){
+      advice=`Kør strømtunge apparater nu i stedet for kl. ${String(lWorst.h).padStart(2,'0')} — betal <b>${savePeak} % mindre</b>`;
+      if(nowC!=null&&co2AtPeak!=null&&nowC<=co2AtPeak*0.9)advice+=` og udled <b>${Math.round((1-nowC/co2AtPeak)*100)} % mindre CO₂</b>`;
+      advice+='.';
+    }
+  }
+  adviceEl.innerHTML=advice;
+  adviceEl.style.display=advice?'':'none';
+  // Curve
+  const W=720,H=200,PT=16,PB=24;
+  const pMax=Math.max(...valid.map(x=>x.p)),pMin=Math.min(...valid.map(x=>x.p));
+  const X=i=>i/23*W, Y=p=>PT+(1-(p-pMin)/(pMax-pMin||1))*(H-PT-PB);
+  const pts=valid.map(x=>`${X(x.h)},${Y(x.p)}`).join(' ');
+  const stops=valid.map(x=>{const t=(x.p-pMin)/(pMax-pMin||1);
+    const c=t<.25?'#34c759':t<.5?'#a8d84a':t<.75?'#ffcc00':t<.9?'#ff9500':'#ff3b30';
+    return `<stop offset="${(x.h/23*100).toFixed(1)}%" stop-color="${c}"/>`}).join('');
+  document.getElementById('heroCurve').innerHTML=`
+    <defs><linearGradient id="hpg" x1="0" y1="0" x2="1" y2="0">${stops}</linearGradient>
+    <linearGradient id="hfade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5b8bff" stop-opacity=".25"/><stop offset="100%" stop-color="#5b8bff" stop-opacity="0"/>
+    </linearGradient></defs>
+    <polygon points="${X(valid[0].h)},${H-PB+16} ${pts} ${X(valid[valid.length-1].h)},${H-PB+16}" fill="url(#hfade)"/>
+    <polyline points="${pts}" fill="none" stroke="url(#hpg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${nowP!=null?`<line x1="${X(nowH)}" y1="${PT-6}" x2="${X(nowH)}" y2="${H-PB+10}" stroke="currentColor" stroke-opacity=".18" stroke-dasharray="3 4"/>
+    <circle cx="${X(nowH)}" cy="${Y(nowP)}" r="6" fill="#1b57f5" stroke="#fff" stroke-width="2.5"/>`:''}
+    ${[0,6,12,18,23].map(h=>`<text x="${X(h)}" y="${H-5}" font-size="10.5" fill="currentColor" fill-opacity=".45" text-anchor="${h===0?'start':h===23?'end':'middle'}" font-family="system-ui">${String(h).padStart(2,'0')}</text>`).join('')}`;
+  // CO₂ strip
+  const co2El=document.getElementById('heroCo2');
+  if(co2Valid.length){
+    const cH=48,cPT=5,cPB=3,cMax=Math.max(...co2Valid.map(x=>x.v));
+    const cY=v=>cPT+(1-v/(cMax||1))*(cH-cPT-cPB);
+    const cpts=co2Valid.map(x=>`${X(x.h)},${cY(x.v)}`).join(' ');
+    co2El.innerHTML=`
+      <defs><linearGradient id="hcf" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0e9888" stop-opacity=".3"/><stop offset="100%" stop-color="#0e9888" stop-opacity=".02"/>
+      </linearGradient></defs>
+      <polygon points="${X(co2Valid[0].h)},${cH} ${cpts} ${X(co2Valid[co2Valid.length-1].h)},${cH}" fill="url(#hcf)"/>
+      <polyline points="${cpts}" fill="none" stroke="#0e9888" stroke-width="2" stroke-linejoin="round"/>
+      ${nowC!=null?`<circle cx="${X(nowH)}" cy="${cY(nowC)}" r="4" fill="#0e9888" stroke="#fff" stroke-width="2"/>`:''}`;
+    co2El.style.display='';co2El.previousElementSibling.style.display='';
+  }else{co2El.style.display='none';co2El.previousElementSibling.style.display='none';}
+}
+
 // ═══ BUILD START ═══
 function buildStart(){
+  loadStartHero();
   ['DK1','DK2'].forEach(area=>{
     document.getElementById(area.toLowerCase()+'-zone').innerHTML=ZONE_BTNS.map(b=>
       `<a href="#${area}/${b.mode}" class="zone-btn ${b.cls}">${b.label}</a>`

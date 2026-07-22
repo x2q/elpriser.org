@@ -189,6 +189,7 @@ native tools for current price, cheapest hours and the 7-day forecast.
 - \`GET /api/shelly/tariff?area=DK1&mode=inkl_alt\` — Tibber-compatible 24h JSON
 - \`GET /api/raw/prices?area=DK1&start=YYYY-MM-DD&end=YYYY-MM-DD\` — Raw DayAheadPrices records
 - \`GET /api/raw/tariff?gln=5790000704842\` — Single net company's Nettarif C (24 values)
+- \`GET /api/raw/co2?area=DK1\` — CO₂-udledning pr. kWh (g/kWh), time for time, i dag + ca. 1 døgn frem
 - \`GET /api/supplierlookup?lat=…&lng=…\` — Reverse-geocode an address to a netselskab
 
 ### Example: /api/now?area=DK1&mode=inkl_alt
