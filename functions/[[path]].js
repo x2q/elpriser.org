@@ -479,7 +479,9 @@ async function renderHomepage(context) {
   // hit re-runs the render + the live-price subrequests. The Cache API holds it
   // for s-maxage (5 min) — fine since the SSR'd price is a "lige nu" snapshot.
   const cache = caches.default;
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v1');
+  // Bump the version segment when index.html's homepage markup changes, so a
+  // deploy isn't masked by a previous render cached at the same key.
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v2');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
