@@ -140,43 +140,50 @@ struct AutomationView: View {
 private struct ScheduleGrid: View {
     let days: [ScheduleDay]
 
+    @State private var selectedDate: String?
+
+    private var selectedDay: ScheduleDay? {
+        days.first { $0.date == selectedDate } ?? days.first { $0.isToday } ?? days.first
+    }
+
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyVStack(spacing: 1) {
-                // Header
-                HStack(spacing: 1) {
-                    Text("")
-                        .frame(width: 30)
-                    ForEach(days) { day in
-                        VStack(spacing: 1) {
-                            Text("\(day.dayNumber)")
-                                .font(.caption2.weight(.medium))
-                            Text(day.weekday.prefix(2))
-                                .font(.system(size: 8))
+        VStack(spacing: 8) {
+            DayStrip(
+                days: days,
+                selectedID: $selectedDate,
+                label: { String($0.weekday.prefix(2)) },
+                number: { "\($0.dayNumber)" },
+                isHighlighted: { $0.isToday }
+            )
+
+            if let day = selectedDay {
+                VStack(spacing: 2) {
+                    ForEach(0..<24, id: \.self) { hour in
+                        let isOn = hour < day.schedule.count && day.schedule[hour].on
+                        HStack {
+                            Text(String(format: "%02d:00", hour))
+                                .font(.system(.caption, design: .monospaced))
                                 .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(isOn ? "T\u{00E6}ndt" : "Slukket")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(isOn ? .green : Color(.systemGray))
                         }
-                        .frame(width: 28)
-                    }
-                }
-
-                // Rows
-                ForEach(0..<24, id: \.self) { hour in
-                    HStack(spacing: 1) {
-                        Text(String(format: "%02d", hour))
-                            .font(.system(.caption2, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 30)
-
-                        ForEach(days) { day in
-                            let isOn = hour < day.schedule.count && day.schedule[hour].on
-                            Rectangle()
-                                .fill(isOn ? Color.green.opacity(0.6) : Color(.systemGray5))
-                                .frame(width: 28, height: 14)
-                                .clipShape(RoundedRectangle(cornerRadius: 2))
-                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(isOn ? Color.green.opacity(0.12) : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
                     }
                 }
             }
+        }
+        .onAppear { syncSelection() }
+        .onChange(of: days.map(\.date)) { _, _ in syncSelection() }
+    }
+
+    private func syncSelection() {
+        if selectedDate == nil || !days.contains(where: { $0.date == selectedDate }) {
+            selectedDate = days.first(where: { $0.isToday })?.date ?? days.first?.date
         }
     }
 }

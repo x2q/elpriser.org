@@ -16,6 +16,10 @@ struct ForecastDay: Identifiable, Codable {
     var shortWeekdayLabel: String {
         date.asDate?.shortWeekday ?? ""
     }
+
+    var dayNumber: Int {
+        date.asDate?.dayOfMonth ?? 0
+    }
 }
 
 struct ForecastPrice: Codable {

@@ -21,9 +21,9 @@
 		A10012000000000000000012 /* AutomationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20012000000000000000012 /* AutomationViewModel.swift */; };
 		A10013000000000000000013 /* Color+Price.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20013000000000000000013 /* Color+Price.swift */; };
 		A10014000000000000000014 /* Date+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20014000000000000000014 /* Date+Helpers.swift */; };
-		A10015000000000000000015 /* PriceCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20015000000000000000015 /* PriceCell.swift */; };
 		A10016000000000000000016 /* PriceTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20016000000000000000016 /* PriceTable.swift */; };
 		A10031000000000000000031 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20031000000000000000031 /* EmptyStateView.swift */; };
+		A10032000000000000000032 /* DayStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20032000000000000000032 /* DayStrip.swift */; };
 		A10019000000000000000019 /* PricesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20019000000000000000019 /* PricesView.swift */; };
 		A10020000000000000000020 /* PriceDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20020000000000000000020 /* PriceDetailSheet.swift */; };
 		A10021000000000000000021 /* ForecastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20021000000000000000021 /* ForecastView.swift */; };
@@ -51,9 +51,9 @@
 		A20012000000000000000012 /* AutomationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationViewModel.swift; sourceTree = "<group>"; };
 		A20013000000000000000013 /* Color+Price.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Price.swift"; sourceTree = "<group>"; };
 		A20014000000000000000014 /* Date+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Helpers.swift"; sourceTree = "<group>"; };
-		A20015000000000000000015 /* PriceCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceCell.swift; sourceTree = "<group>"; };
 		A20016000000000000000016 /* PriceTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceTable.swift; sourceTree = "<group>"; };
 		A20031000000000000000031 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		A20032000000000000000032 /* DayStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayStrip.swift; sourceTree = "<group>"; };
 		A20019000000000000000019 /* PricesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PricesView.swift; sourceTree = "<group>"; };
 		A20020000000000000000020 /* PriceDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceDetailSheet.swift; sourceTree = "<group>"; };
 		A20021000000000000000021 /* ForecastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForecastView.swift; sourceTree = "<group>"; };
@@ -149,9 +149,9 @@
 		A40007000000000000000007 /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				A20015000000000000000015 /* PriceCell.swift */,
 				A20016000000000000000016 /* PriceTable.swift */,
 				A20031000000000000000031 /* EmptyStateView.swift */,
+				A20032000000000000000032 /* DayStrip.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -270,9 +270,9 @@
 				A10012000000000000000012 /* AutomationViewModel.swift in Sources */,
 				A10013000000000000000013 /* Color+Price.swift in Sources */,
 				A10014000000000000000014 /* Date+Helpers.swift in Sources */,
-				A10015000000000000000015 /* PriceCell.swift in Sources */,
 				A10016000000000000000016 /* PriceTable.swift in Sources */,
 				A10031000000000000000031 /* EmptyStateView.swift in Sources */,
+				A10032000000000000000032 /* DayStrip.swift in Sources */,
 				A10019000000000000000019 /* PricesView.swift in Sources */,
 				A10020000000000000000020 /* PriceDetailSheet.swift in Sources */,
 				A10021000000000000000021 /* ForecastView.swift in Sources */,

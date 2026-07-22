@@ -75,66 +75,68 @@ private struct ForecastTable: View {
     let days: [ForecastDay]
     let priceRange: (min: Double, max: Double)
 
+    @State private var selectedDate: String?
+
+    private var selectedDay: ForecastDay? {
+        days.first { $0.date == selectedDate } ?? days.first { $0.isActual } ?? days.first
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            DayStrip(
+                days: days,
+                selectedID: $selectedDate,
+                label: { String($0.shortWeekdayLabel.prefix(3)) },
+                number: { "\($0.dayNumber)" },
+                isHighlighted: { $0.isActual }
+            )
+
+            if let day = selectedDay {
+                Text(day.isActual ? "Faktiske priser" : "Prognose baseret p\u{00E5} historiske prism\u{00F8}nstre")
+                    .font(.caption)
+                    .foregroundStyle(day.isActual ? Color.brandAccent : .secondary)
+                    .padding(.bottom, 4)
+
+                List {
+                    ForEach(0..<24, id: \.self) { hour in
+                        if hour < day.prices.count, let price = day.prices[hour].price {
+                            ForecastHourRow(hour: hour, price: price, priceRange: priceRange)
+                                .listRowInsets(EdgeInsets())
+                                .listRowSeparator(.hidden)
+                        }
+                    }
+                }
+                .listStyle(.plain)
+            }
+        }
+        .onAppear { syncSelection() }
+        .onChange(of: days.map(\.date)) { _, _ in syncSelection() }
+    }
+
+    private func syncSelection() {
+        if selectedDate == nil || !days.contains(where: { $0.date == selectedDate }) {
+            selectedDate = days.first(where: { $0.isActual })?.date ?? days.first?.date
+        }
+    }
+}
+
+private struct ForecastHourRow: View {
+    let hour: Int
+    let price: Double
+    let priceRange: (min: Double, max: Double)
+
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyVStack(spacing: 0) {
-                // Header
-                HStack(spacing: 2) {
-                    Text("Time")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 36, alignment: .trailing)
-
-                    ForEach(days) { day in
-                        VStack(spacing: 1) {
-                            Text(day.shortWeekdayLabel.prefix(3))
-                                .font(.caption)
-                                .fontWeight(.medium)
-                            Text(day.isActual ? "Faktisk" : "Prognose")
-                                .font(.system(size: 8))
-                                .foregroundStyle(day.isActual ? Color.brandAccent : .secondary)
-                        }
-                        .frame(minWidth: 44)
-                    }
-                }
-                .padding(.bottom, 4)
-
-                Divider()
-
-                ForEach(0..<24, id: \.self) { hour in
-                    HStack(spacing: 2) {
-                        Text(String(format: "%02d", hour))
-                            .font(.system(.caption2, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 36, alignment: .trailing)
-
-                        ForEach(days) { day in
-                            if hour < day.prices.count, let price = day.prices[hour].price {
-                                let isDark = colorScheme == .dark
-                                let bg = Color.forPrice(price, min: priceRange.min, max: priceRange.max, isDark: isDark)
-                                let formatted = String(format: "%.2f", price).replacingOccurrences(of: ".", with: ",")
-
-                                Text(formatted)
-                                    .font(.system(.caption2, design: .monospaced))
-                                    .frame(minWidth: 44)
-                                    .padding(.vertical, 3)
-                                    .background(bg)
-                                    .foregroundStyle(isDark ? .white.opacity(0.85) : .black)
-                                    .clipShape(RoundedRectangle(cornerRadius: 3))
-                            } else {
-                                Rectangle()
-                                    .fill(Color(.systemGray5))
-                                    .frame(minWidth: 44, minHeight: 22)
-                                    .clipShape(RoundedRectangle(cornerRadius: 3))
-                            }
-                        }
-                    }
-                    .padding(.vertical, 0.5)
-                }
-            }
-            .padding(.horizontal, 4)
+        HStack {
+            Text(String(format: "%02d:00\u{2013}%02d:00", hour, (hour + 1) % 24))
+                .font(.subheadline)
+            Spacer()
+            Text(String(format: "%.2f", price).replacingOccurrences(of: ".", with: ","))
+                .font(.system(.subheadline, design: .monospaced))
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Color.forPrice(price, min: priceRange.min, max: priceRange.max, isDark: colorScheme == .dark))
     }
 }
