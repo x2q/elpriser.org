@@ -99,9 +99,9 @@ struct ShellyTariffView: View {
                     if isLoading {
                         HStack { Spacer(); ProgressView(); Spacer() }
                             .padding(.vertical, 16)
-                    } else if let data = tariffData {
-                        ShellyPriceList(entries: data.viewer.home.currentSubscription.priceInfo.today, label: "I dag")
-                        if let tomorrow = data.viewer.home.currentSubscription.priceInfo.tomorrow, !tomorrow.isEmpty {
+                    } else if let home = tariffData?.data.viewer.homes.first {
+                        ShellyPriceList(entries: home.currentSubscription.priceInfo.today, label: "I dag")
+                        if let tomorrow = home.currentSubscription.priceInfo.tomorrow, !tomorrow.isEmpty {
                             ShellyPriceList(entries: tomorrow, label: "I morgen")
                         }
                     }

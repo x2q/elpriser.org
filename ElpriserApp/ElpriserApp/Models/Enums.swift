@@ -48,6 +48,19 @@ enum PriceMode: String, CaseIterable, Identifiable, Codable {
         default: return false
         }
     }
+
+    /// Compact label for constrained spaces like the nav bar — drops the
+    /// parenthetical explanation `displayName` carries for menu rows.
+    var shortDisplayName: String {
+        switch self {
+        case .spotEx: return "Elspot ex moms"
+        case .spotInkl: return "Elspot inkl moms"
+        case .inklAlt: return "Inkl alt"
+        case .inklAltMinus: return "Inkl alt minus afgift"
+        case .netInklAlt: return "Netselskab inkl alt"
+        case .netInklTarif: return "Netselskab inkl tarif"
+        }
+    }
 }
 
 enum Strategy: String, CaseIterable, Identifiable, Codable {

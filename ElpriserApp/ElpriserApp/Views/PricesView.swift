@@ -7,8 +7,51 @@ struct PricesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Selector bar
-            HStack(spacing: 8) {
+            // Content
+            if vm.isLoading {
+                Spacer()
+                ProgressView("Henter priser...")
+                    .font(.subheadline)
+                Spacer()
+            } else if let error = vm.error {
+                ErrorStateView(message: error, retry: loadData)
+            } else {
+                PriceTable(
+                    days: vm.days,
+                    priceRange: vm.priceRange,
+                    currentHour: Date().hour,
+                    onCellTap: { date, hour, price in
+                        selectedDetail = PriceDetail(date: date, hour: hour, price: price)
+                    }
+                )
+                .padding(.top, 4)
+
+                // Week navigation
+                HStack {
+                    Button { vm.changeWeek(-1); loadData() } label: {
+                        Image(systemName: "chevron.left")
+                    }
+
+                    Spacer()
+
+                    Text(vm.weekLabel)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Button { vm.changeWeek(1); loadData() } label: {
+                        Image(systemName: "chevron.right")
+                    }
+                    .disabled(!vm.canGoForward)
+                }
+                .padding(.horizontal, 40)
+                .padding(.vertical, 12)
+            }
+        }
+        .background(Color(.systemGroupedBackground))
+        .toolbar {
+            ToolbarItem(placement: .principal) {
                 Menu {
                     Section("Priszone") {
                         ForEach(Area.allCases) { a in
@@ -42,86 +85,14 @@ struct PricesView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Text(selectorLabel)
-                            .font(.subheadline.weight(.medium))
-                            .lineLimit(1)
-                        Image(systemName: "chevron.down")
-                            .font(.caption2)
+                            .font(.headline)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption2.weight(.bold))
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(color: .black.opacity(0.05), radius: 2)
+                    .foregroundStyle(.primary)
                 }
-                .foregroundStyle(.primary)
-
-                Spacer()
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-
-            // Content
-            if vm.isLoading {
-                Spacer()
-                ProgressView("Henter priser...")
-                    .font(.subheadline)
-                Spacer()
-            } else if let error = vm.error {
-                Spacer()
-                VStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.largeTitle)
-                        .foregroundStyle(.red)
-                    Text(error)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Button("Prøv igen") { loadData() }
-                        .buttonStyle(.bordered)
-                }
-                Spacer()
-            } else {
-                PriceTable(
-                    days: vm.days,
-                    priceRange: vm.priceRange,
-                    currentHour: Date().hour,
-                    onCellTap: { date, hour, price in
-                        selectedDetail = PriceDetail(date: date, hour: hour, price: price)
-                    }
-                )
-                .padding(.top, 4)
-
-                // Week navigation
-                HStack(spacing: 12) {
-                    Button {
-                        vm.changeWeek(-1)
-                        loadData()
-                    } label: {
-                        Text("\u{2190} Forrige")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-
-                    Text(vm.weekLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 90)
-
-                    Button {
-                        vm.changeWeek(1)
-                        loadData()
-                    } label: {
-                        Text("N\u{00E6}ste \u{2192}")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(!vm.canGoForward)
-                }
-                .padding(.vertical, 12)
             }
         }
-        .background(Color(.systemGroupedBackground))
         .sheet(item: $selectedDetail) { detail in
             PriceDetailSheet(detail: detail, mode: settings.mode)
                 .presentationDetents([.height(280)])
@@ -133,7 +104,7 @@ struct PricesView: View {
     }
 
     private var selectorLabel: String {
-        var label = "\(settings.area.shortName) \(settings.mode.displayName)"
+        var label = "\(settings.area.shortName) \(settings.mode.shortDisplayName)"
         if settings.mode.requiresNetwork, let net = settings.selectedNetwork {
             label = "\(settings.area.shortName) \(net.name)"
         }

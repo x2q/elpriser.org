@@ -10,7 +10,6 @@ struct ElpriserApp: App {
             TabView(selection: $selectedTab) {
                 NavigationStack {
                     PricesView(settings: settings)
-                        .navigationTitle("Elpriser")
                         .navigationBarTitleDisplayMode(.inline)
                 }
                 .tag(0)
@@ -20,7 +19,6 @@ struct ElpriserApp: App {
 
                 NavigationStack {
                     ForecastView(settings: settings)
-                        .navigationTitle("Prognose")
                         .navigationBarTitleDisplayMode(.inline)
                 }
                 .tag(1)

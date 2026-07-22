@@ -7,22 +7,22 @@ struct PriceDetailSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Header
-                VStack(spacing: 4) {
-                    Text("\(detail.date) kl. \(String(format: "%02d", detail.hour)):00-\(String(format: "%02d", (detail.hour + 1) % 24)):00")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            List {
+                Section {
+                    VStack(spacing: 4) {
+                        Text("\(detail.date) kl. \(String(format: "%02d", detail.hour)):00\u{2013}\(String(format: "%02d", (detail.hour + 1) % 24)):00")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
 
-                    Text(formatPrice(detail.price) + " DKK/kWh")
-                        .font(.title2.bold())
+                        Text(formatPrice(detail.price) + " DKK/kWh")
+                            .font(.title.bold())
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .listRowBackground(Color.clear)
                 }
-                .padding()
 
-                Divider()
-
-                // Breakdown
-                VStack(spacing: 0) {
+                Section("Prisopbygning") {
                     if mode != .spotEx {
                         breakdownRow("Spotpris", value: "Variabel")
                         if mode != .spotInkl {
@@ -40,9 +40,6 @@ struct PriceDetailSheet: View {
                         breakdownRow("Spotpris (ex moms)", value: formatPrice(detail.price))
                     }
                 }
-                .padding()
-
-                Spacer()
             }
             .navigationTitle("Prisdetaljer")
             .navigationBarTitleDisplayMode(.inline)
@@ -60,14 +57,12 @@ struct PriceDetailSheet: View {
     private func breakdownRow(_ label: String, value: String) -> some View {
         HStack {
             Text(label)
-                .font(.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
                 .monospacedDigit()
         }
-        .padding(.vertical, 6)
     }
 
     private func formatPrice(_ p: Double) -> String {

@@ -8,64 +8,57 @@ struct ForecastView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Elprisprognose")
-                        .font(.headline)
-                    Text("Forventede elpriser de n\u{00E6}ste 7 dage")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-
-            // Pickers
-            HStack(spacing: 8) {
-                Picker("Zone", selection: $fcArea) {
-                    ForEach(Area.allCases) { a in
-                        Text(a.displayName).tag(a)
-                    }
-                }
-                .pickerStyle(.menu)
-
-                Picker("Mode", selection: $fcMode) {
-                    Text("Elspot inkl moms").tag(PriceMode.spotInkl)
-                    Text("Inkl alt").tag(PriceMode.inklAlt)
-                    Text("Inkl alt minus afgift").tag(PriceMode.inklAltMinus)
-                }
-                .pickerStyle(.menu)
-
-                Spacer()
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
-
-            // Content
             if vm.isLoading {
                 Spacer()
                 ProgressView("Henter prognose...")
                 Spacer()
             } else if let error = vm.error {
-                Spacer()
-                VStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.largeTitle)
-                        .foregroundStyle(.red)
-                    Text(error)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Button("Pr\u{00F8}v igen") { loadData() }
-                        .buttonStyle(.bordered)
-                }
-                Spacer()
+                ErrorStateView(message: error, retry: loadData)
             } else {
+                Text("Forventede elpriser de n\u{00E6}ste 7 dage")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 12)
+                    .padding(.bottom, 4)
+
                 ForecastTable(days: vm.days, priceRange: vm.priceRange)
             }
         }
         .background(Color(.systemGroupedBackground))
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Menu {
+                    Section("Priszone") {
+                        ForEach(Area.allCases) { a in
+                            Button {
+                                fcArea = a
+                            } label: {
+                                Label(a.displayName, systemImage: fcArea == a ? "checkmark" : "")
+                            }
+                        }
+                    }
+                    Section("Pristype") {
+                        Button { fcMode = .spotInkl } label: {
+                            Label("Elspot inkl moms", systemImage: fcMode == .spotInkl ? "checkmark" : "")
+                        }
+                        Button { fcMode = .inklAlt } label: {
+                            Label("Inkl alt", systemImage: fcMode == .inklAlt ? "checkmark" : "")
+                        }
+                        Button { fcMode = .inklAltMinus } label: {
+                            Label("Inkl alt minus afgift", systemImage: fcMode == .inklAltMinus ? "checkmark" : "")
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("\(fcArea.shortName) \(fcMode.shortDisplayName)")
+                            .font(.headline)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption2.weight(.bold))
+                    }
+                    .foregroundStyle(.primary)
+                }
+            }
+        }
         .onAppear { loadData() }
         .onChange(of: fcArea) { _, _ in loadData() }
         .onChange(of: fcMode) { _, _ in loadData() }
@@ -96,7 +89,7 @@ private struct ForecastTable: View {
 
                     ForEach(days) { day in
                         VStack(spacing: 1) {
-                            Text(day.weekday.prefix(3))
+                            Text(day.shortWeekdayLabel.prefix(3))
                                 .font(.caption)
                                 .fontWeight(.medium)
                             Text(day.isActual ? "Faktisk" : "Prognose")

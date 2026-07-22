@@ -4,114 +4,94 @@ struct TariffView: View {
     @State private var tariffs: [TariffEntry] = []
     @State private var enCharges: EnCharges?
     @State private var isLoading = true
+    @State private var error: String?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Header
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Tariffer (Nettarif C)")
-                        .font(.headline)
-                    Text("Aktuelle tariffer (DKK/kWh ex moms)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal)
-
-                if isLoading {
-                    HStack {
-                        Spacer()
-                        ProgressView("Henter tariffer...")
-                        Spacer()
-                    }
-                    .padding(.top, 40)
-                } else {
-                    // Tariff table
-                    VStack(spacing: 0) {
-                        // Header row
+        Group {
+            if isLoading {
+                ProgressView("Henter tariffer...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let error {
+                ErrorStateView(message: error, retry: loadTariffs)
+            } else {
+                List {
+                    Section {
                         HStack {
                             Text("Netselskab")
-                                .font(.caption.weight(.semibold))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            Text("Lav\n00-06")
-                                .font(.caption2)
-                                .multilineTextAlignment(.center)
-                                .frame(width: 60)
-                            Text("Mellem\n06-17")
-                                .font(.caption2)
-                                .multilineTextAlignment(.center)
-                                .frame(width: 60)
-                            Text("Spids\n17-21")
-                                .font(.caption2)
-                                .multilineTextAlignment(.center)
-                                .frame(width: 60)
+                            Spacer()
+                            Text("Lav").frame(width: 56, alignment: .trailing)
+                            Text("Mellem").frame(width: 56, alignment: .trailing)
+                            Text("Spids").frame(width: 56, alignment: .trailing)
                         }
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
-                        .background(Color(.systemGray6))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
 
-                        // DK1 section
-                        SectionHeader(title: "DK1 Vest")
-                        ForEach(tariffEntries(for: .dk1), id: \.gln) { entry in
+                    Section("DK1 Vest") {
+                        ForEach(tariffs.filter { entry in NetworkOperators.dk1.contains { $0.gln == entry.gln } }, id: \.gln) { entry in
                             TariffRow(entry: entry)
-                        }
-
-                        // DK2 section
-                        SectionHeader(title: "DK2 Øst")
-                        ForEach(tariffEntries(for: .dk2), id: \.gln) { entry in
-                            TariffRow(entry: entry)
-                        }
-
-                        // Energinet charges
-                        if let en = enCharges {
-                            Divider().padding(.vertical, 4)
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Energinet (f\u{00E6}lles for alle)")
-                                    .font(.subheadline.weight(.semibold))
-                                ChargeRow(label: "Systemtarif", value: en.sys)
-                                ChargeRow(label: "Transmissions nettarif", value: en.trans)
-                                ChargeRow(label: "Elafgift", value: en.afg)
-                            }
-                            .padding(.horizontal)
-                            .padding(.vertical, 8)
                         }
                     }
-                    .background(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal)
+
+                    Section("DK2 \u{00D8}st") {
+                        ForEach(tariffs.filter { entry in NetworkOperators.dk2.contains { $0.gln == entry.gln } }, id: \.gln) { entry in
+                            TariffRow(entry: entry)
+                        }
+                    }
+
+                    if let en = enCharges {
+                        Section {
+                            ChargeRow(label: "Systemtarif", value: en.sys)
+                            ChargeRow(label: "Transmissions nettarif", value: en.trans)
+                            ChargeRow(label: "Elafgift", value: en.afg)
+                        } header: {
+                            Text("Energinet (f\u{00E6}lles for alle)")
+                        } footer: {
+                            Text("Nettarif C, DKK/kWh ekskl. moms. Lav = 00-06, Mellem = 06-17, Spids = 17-21.")
+                        }
+                    }
                 }
             }
-            .padding(.vertical)
         }
-        .background(Color(.systemGroupedBackground))
         .onAppear { loadTariffs() }
     }
 
-    private func tariffEntries(for area: Area) -> [TariffEntry] {
-        let nets = NetworkOperators.forArea(area)
-        return nets.map { net in
-            // Use placeholder values — would need API call for real tariffs
-            TariffEntry(name: net.name, gln: net.gln, low: 0.1013, mid: 0.2211, peak: 0.5896)
-        }
-    }
-
     private func loadTariffs() {
-        // Set default Energinet charges
-        enCharges = EnCharges(sys: 0.072, trans: 0.043, afg: 0.008)
-        isLoading = false
-    }
-}
+        isLoading = true
+        error = nil
+        Task {
+            do {
+                async let tariffsResp = ElpriserAPI.shared.fetchAllTariffs()
+                async let chargesResp = ElpriserAPI.shared.fetchEnCharges()
+                let (t, c) = try await (tariffsResp, chargesResp)
 
-private struct SectionHeader: View {
-    let title: String
+                let today = Date().dateString
+                var entries: [TariffEntry] = []
+                for net in NetworkOperators.dk1 + NetworkOperators.dk2 {
+                    guard let record = t.records
+                        .filter({ $0.glnNumber == net.gln && $0.resolutionDuration == "PT1H" })
+                        .filter({ $0.validFrom.prefix(10) <= today && ($0.validTo.map { $0.prefix(10) > today } ?? true) })
+                        .first
+                    else { continue }
 
-    var body: some View {
-        Text(title)
-            .font(.caption.weight(.bold))
-            .foregroundStyle(Color.brand)
-            .padding(.horizontal)
-            .padding(.top, 12)
-            .padding(.bottom, 4)
+                    let low = Array(record.hourly[0..<6]).reduce(0, +) / 6
+                    let mid = Array(record.hourly[6..<17]).reduce(0, +) / 11
+                    let peak = Array(record.hourly[17..<21]).reduce(0, +) / 4
+                    entries.append(TariffEntry(name: net.name, gln: net.gln, low: low, mid: mid, peak: peak))
+                }
+
+                await MainActor.run {
+                    self.tariffs = entries
+                    self.enCharges = c.resolved()
+                    self.isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.error = error.localizedDescription
+                    self.isLoading = false
+                }
+            }
+        }
     }
 }
 
@@ -121,20 +101,12 @@ private struct TariffRow: View {
     var body: some View {
         HStack {
             Text(entry.name)
-                .font(.subheadline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text(formatTariff(entry.low))
-                .font(.system(.caption, design: .monospaced))
-                .frame(width: 60)
-            Text(formatTariff(entry.mid))
-                .font(.system(.caption, design: .monospaced))
-                .frame(width: 60)
-            Text(formatTariff(entry.peak))
-                .font(.system(.caption, design: .monospaced))
-                .frame(width: 60)
+            Spacer()
+            Text(formatTariff(entry.low)).frame(width: 56, alignment: .trailing)
+            Text(formatTariff(entry.mid)).frame(width: 56, alignment: .trailing)
+            Text(formatTariff(entry.peak)).frame(width: 56, alignment: .trailing)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 6)
+        .font(.system(.subheadline, design: .monospaced))
     }
 
     private func formatTariff(_ v: Double) -> String {
@@ -149,11 +121,10 @@ private struct ChargeRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
             Spacer()
             Text("\(String(format: "%.4f", value).replacingOccurrences(of: ".", with: ",")) DKK/kWh")
-                .font(.system(.caption, design: .monospaced))
+                .font(.system(.subheadline, design: .monospaced))
+                .foregroundStyle(.secondary)
         }
     }
 }
