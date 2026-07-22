@@ -1,39 +1,35 @@
 import SwiftUI
 
-/// A fixed-width row of day chips that always fits the screen — used
-/// instead of a horizontally-scrolling multi-day grid, so picking a day
-/// never requires sideways scrolling. Pair with a full-width vertical list
-/// of that day's 24 hours below it.
-struct DayStrip<Day: Identifiable>: View {
-    let days: [Day]
-    @Binding var selectedID: Day.ID?
-    let label: (Day) -> String
-    let number: (Day) -> String
-    let isHighlighted: (Day) -> Bool
+/// 24 thin cells showing a day's on/off schedule as one full-width band —
+/// the device card's "døgnrytme" visual. Never needs sideways scrolling.
+struct HourBand: View {
+    let onHours: Set<Int>
+    let currentHour: Int?
 
     var body: some View {
-        HStack(spacing: 4) {
-            ForEach(days) { day in
-                let isSelected = selectedID == day.id
-                Button {
-                    selectedID = day.id
-                } label: {
-                    VStack(spacing: 2) {
-                        Text(label(day))
-                            .font(.system(size: 9))
-                        Text(number(day))
-                            .font(.caption.weight(isSelected ? .bold : .medium))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
-                    .foregroundStyle(isSelected ? .white : (isHighlighted(day) ? Color.brand : .primary))
-                    .background(isSelected ? Color.brand : Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+        VStack(spacing: 3) {
+            HStack(spacing: 2) {
+                ForEach(0..<24, id: \.self) { h in
+                    RoundedRectangle(cornerRadius: 2.5)
+                        .fill(onHours.contains(h) ? Color.brand : Color(.systemGray5))
+                        .frame(height: 22)
+                        .overlay {
+                            if h == currentHour {
+                                RoundedRectangle(cornerRadius: 2.5)
+                                    .strokeBorder(Color.primary, lineWidth: 1.5)
+                            }
+                        }
                 }
-                .buttonStyle(.plain)
             }
+            HStack {
+                Text("00")
+                Spacer(); Text("06")
+                Spacer(); Text("12")
+                Spacer(); Text("18")
+                Spacer(); Text("24")
+            }
+            .font(.system(size: 8.5, design: .monospaced))
+            .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
     }
 }

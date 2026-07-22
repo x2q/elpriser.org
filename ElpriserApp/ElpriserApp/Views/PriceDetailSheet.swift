@@ -1,5 +1,12 @@
 import SwiftUI
 
+struct PriceDetail: Identifiable {
+    let id = UUID()
+    let date: String
+    let hour: Int
+    let price: Double
+}
+
 struct PriceDetailSheet: View {
     let detail: PriceDetail
     let mode: PriceMode

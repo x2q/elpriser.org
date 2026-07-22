@@ -1,25 +1,56 @@
 import SwiftUI
 
+/// Automation — device-first: the configured device is a card with its own
+/// daily rhythm (24h on/off band), state, and savings. Configuration lives
+/// below as ordinary settings instead of dominating the screen.
 struct AutomationView: View {
     @State private var vm = AutomationViewModel()
     @State private var showExport = false
 
+    private var today: ScheduleDay? { vm.scheduleDays.first }
+    private var currentHour: Int { Calendar.current.component(.hour, from: Date()) }
+
+    private var onHoursToday: Set<Int> {
+        Set(today?.schedule.filter(\.on).map(\.hour) ?? [])
+    }
+    private var isOnNow: Bool { onHoursToday.contains(currentHour) }
+    private var nextOnHour: Int? {
+        onHoursToday.filter { $0 > currentHour }.min()
+    }
+    /// Today's saving: average price of on-hours vs. average of all hours.
+    private var savingsTodayPct: Int? {
+        guard let day = today else { return nil }
+        let all = day.schedule.compactMap(\.price)
+        let on = day.schedule.filter(\.on).compactMap(\.price)
+        guard !all.isEmpty, !on.isEmpty else { return nil }
+        let avgAll = all.reduce(0, +) / Double(all.count)
+        let avgOn = on.reduce(0, +) / Double(on.count)
+        guard avgAll > 0 else { return nil }
+        return Int((1 - avgOn / avgAll) * 100)
+    }
+
     var body: some View {
         Form {
-            Section("Indstillinger") {
+            Section {
+                deviceCard
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+
+            Section {
                 Picker("Priszone", selection: $vm.area) {
                     ForEach(Area.allCases) { a in Text(a.displayName).tag(a) }
                 }
                 .pickerStyle(.segmented)
 
-                Picker("Pristype", selection: $vm.mode) {
-                    ForEach(PriceMode.allCases) { m in Text(m.displayName).tag(m) }
-                }
-
                 Picker("Enhed", selection: $vm.device) {
                     ForEach(DeviceType.allCases) { d in Text(d.displayName).tag(d) }
                 }
                 .onChange(of: vm.device) { _, _ in vm.onDeviceChange() }
+
+                Picker("Pristype", selection: $vm.mode) {
+                    ForEach(PriceMode.allCases) { m in Text(m.displayName).tag(m) }
+                }
 
                 if vm.mode.requiresNetwork {
                     Picker("Netselskab", selection: $vm.networkGLN) {
@@ -29,9 +60,7 @@ struct AutomationView: View {
                         }
                     }
                 }
-            }
 
-            Section {
                 Picker("Strategi", selection: $vm.strategy) {
                     ForEach(Strategy.allCases) { s in Text(s.displayName).tag(s) }
                 }
@@ -47,42 +76,10 @@ struct AutomationView: View {
                         }
                     }
                 }
+            } header: {
+                Text("Indstillinger")
             } footer: {
                 Text(vm.strategy.helpText)
-            }
-
-            Section {
-                HStack(spacing: 12) {
-                    Label("T\u{00E6}ndt", systemImage: "circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                    Label("Slukket", systemImage: "circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(Color(.systemGray4))
-                    Spacer()
-                }
-
-                if vm.isLoading {
-                    HStack {
-                        Spacer()
-                        ProgressView("Henter data...")
-                        Spacer()
-                    }
-                    .padding(.vertical, 12)
-                } else if let error = vm.error {
-                    ErrorStateView(message: error, retry: loadSchedule)
-                } else if !vm.scheduleDays.isEmpty {
-                    ScheduleGrid(days: vm.scheduleDays)
-                        .padding(.vertical, 4)
-                }
-
-                if let savings = vm.savingsEstimate {
-                    Text(savings)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                Text("Ugentlig visualisering")
             }
 
             Section {
@@ -99,17 +96,10 @@ struct AutomationView: View {
                     }
                     .buttonStyle(.borderless)
                 }
-                .contextMenu {
-                    Button {
-                        UIPasteboard.general.string = vm.apiURL
-                    } label: {
-                        Label("Kopi\u{00E9}r", systemImage: "doc.on.doc")
-                    }
-                }
             } header: {
                 Text("API-adresse")
             } footer: {
-                Text("Returnerer: {\"on\": true/false, \"price\": 1.23, \"hour\": 14}")
+                Text("Returnerer: {\"on\": true/false, \"price\": 1.23, \"hour\": 14} — brug den direkte i Shelly-scripts eller Home Assistant.")
             }
 
             Section {
@@ -128,62 +118,93 @@ struct AutomationView: View {
         .onChange(of: vm.mode) { _, _ in loadSchedule() }
         .onChange(of: vm.strategy) { _, _ in loadSchedule() }
         .onChange(of: vm.param) { _, _ in loadSchedule() }
+        .onChange(of: vm.networkGLN) { _, _ in loadSchedule() }
+    }
+
+    // MARK: - Device card
+
+    private var deviceCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: deviceIcon)
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(Color.brand)
+                    .frame(width: 38, height: 38)
+                    .background(Color.brand.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(vm.device.displayName)
+                        .font(.system(size: 16, weight: .bold))
+                    Text(strategySubtitle)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(isOnNow ? "Tændt" : "Slukket")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(isOnNow ? Color(red: 0.12, green: 0.62, blue: 0.29) : .secondary)
+            }
+
+            if vm.isLoading {
+                HStack { Spacer(); ProgressView(); Spacer() }
+                    .padding(.vertical, 8)
+            } else if let error = vm.error {
+                ErrorStateView(message: error, retry: loadSchedule)
+            } else if today != nil {
+                HourBand(onHours: onHoursToday, currentHour: currentHour)
+                footerLine
+            }
+        }
+        .padding(14)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var footerLine: some View {
+        HStack(spacing: 4) {
+            if isOnNow {
+                Text("Kører nu")
+                    .fontWeight(.semibold)
+            } else if let next = nextOnHour {
+                Text("Tænder ")
+                + Text("kl. \(String(format: "%02d", next))").bold()
+            } else {
+                Text("Færdig for i dag")
+            }
+            if let s = savingsTodayPct, s > 0 {
+                Text("· sparer ")
+                + Text("≈ \(s) %").bold()
+                + Text(" i dag")
+            }
+            Spacer()
+        }
+        .font(.system(size: 12.5))
+        .foregroundStyle(.secondary)
+    }
+
+    private var strategySubtitle: String {
+        if vm.strategy.requiresParam {
+            return vm.strategy.displayName
+                .replacingOccurrences(of: "N timer", with: "\(vm.param) timer")
+                .replacingOccurrences(of: "X%", with: "\(vm.param)%")
+        }
+        return vm.strategy.displayName
+    }
+
+    private var deviceIcon: String {
+        switch vm.device {
+        case .heatPump: return "fan"
+        case .electricCar: return "car"
+        case .dishwasher: return "dishwasher"
+        case .washingMachine: return "washer"
+        case .dehumidifier: return "humidity"
+        case .waterHeater: return "drop"
+        }
     }
 
     private func loadSchedule() {
         Task { await vm.load() }
-    }
-}
-
-// MARK: - Schedule Grid
-
-private struct ScheduleGrid: View {
-    let days: [ScheduleDay]
-
-    @State private var selectedDate: String?
-
-    private var selectedDay: ScheduleDay? {
-        days.first { $0.date == selectedDate } ?? days.first { $0.isToday } ?? days.first
-    }
-
-    var body: some View {
-        VStack(spacing: 8) {
-            DayStrip(
-                days: days,
-                selectedID: $selectedDate,
-                label: { String($0.weekday.prefix(2)) },
-                number: { "\($0.dayNumber)" },
-                isHighlighted: { $0.isToday }
-            )
-
-            if let day = selectedDay {
-                VStack(spacing: 2) {
-                    ForEach(0..<24, id: \.self) { hour in
-                        let isOn = hour < day.schedule.count && day.schedule[hour].on
-                        HStack {
-                            Text(String(format: "%02d:00", hour))
-                                .font(.system(.caption, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text(isOn ? "T\u{00E6}ndt" : "Slukket")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(isOn ? .green : Color(.systemGray))
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(isOn ? Color.green.opacity(0.12) : Color.clear)
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
-                    }
-                }
-            }
-        }
-        .onAppear { syncSelection() }
-        .onChange(of: days.map(\.date)) { _, _ in syncSelection() }
-    }
-
-    private func syncSelection() {
-        if selectedDate == nil || !days.contains(where: { $0.date == selectedDate }) {
-            selectedDate = days.first(where: { $0.isToday })?.date ?? days.first?.date
-        }
     }
 }

@@ -45,6 +45,12 @@ actor ElpriserAPI {
         return try await get("/now", params: params)
     }
 
+    // MARK: - CO₂
+
+    func fetchCo2(area: Area) async throws -> Co2Response {
+        try await get("/raw/co2", params: ["area": area.rawValue])
+    }
+
     // MARK: - Tariffs (all net companies) + Energinet charges
 
     func fetchAllTariffs() async throws -> TariffRawResponse {

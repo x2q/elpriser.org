@@ -20,6 +20,10 @@ struct ForecastDay: Identifiable, Codable {
     var dayNumber: Int {
         date.asDate?.dayOfMonth ?? 0
     }
+
+    var isToday: Bool {
+        date == Date().dateString
+    }
 }
 
 struct ForecastPrice: Codable {

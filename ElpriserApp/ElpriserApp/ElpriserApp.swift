@@ -14,7 +14,7 @@ struct ElpriserApp: App {
                 }
                 .tag(0)
                 .tabItem {
-                    Label("Priser", systemImage: "bolt.fill")
+                    Label("Nu", systemImage: "bolt.fill")
                 }
 
                 NavigationStack {

@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// Prognose — Weather-app style: one row per day with its min price, a
+/// range bar on a shared scale, and its max price. The whole week reads
+/// at a glance; no grid, no sideways scrolling.
 struct ForecastView: View {
     @Bindable var settings: SettingsViewModel
     @State private var vm = ForecastViewModel()
@@ -7,24 +10,24 @@ struct ForecastView: View {
     @State private var fcMode: PriceMode = .inklAlt
 
     var body: some View {
-        VStack(spacing: 0) {
+        Group {
             if vm.isLoading {
-                Spacer()
                 ProgressView("Henter prognose...")
-                Spacer()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = vm.error {
                 ErrorStateView(message: error, retry: loadData)
             } else {
-                Text("Forventede elpriser de n\u{00E6}ste 7 dage")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 12)
-                    .padding(.bottom, 4)
-
-                ForecastTable(days: vm.days, priceRange: vm.priceRange)
+                List {
+                    Section {
+                        ForEach(vm.days) { day in
+                            ForecastRangeRow(day: day, range: vm.priceRange, isCheapest: cheapestDayDate == day.date)
+                        }
+                    } footer: {
+                        Text("Bjælken viser døgnets spænd fra billigste til dyreste time på fælles skala. \u{201C}Børspris\u{201D} er faktiske priser fra Nord Pool; \u{201C}prognose\u{201D} er modelberegnet ud fra historiske prismønstre.")
+                    }
+                }
             }
         }
-        .background(Color(.systemGroupedBackground))
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Menu {
@@ -64,79 +67,88 @@ struct ForecastView: View {
         .onChange(of: fcMode) { _, _ in loadData() }
     }
 
+    /// Date of the forecast day with the lowest daily max — "ugens billigste".
+    private var cheapestDayDate: String? {
+        vm.days
+            .compactMap { d -> (String, Double)? in
+                let ps = d.prices.compactMap(\.price)
+                return ps.isEmpty ? nil : (d.date, ps.max()!)
+            }
+            .min { $0.1 < $1.1 }?.0
+    }
+
     private func loadData() {
-        Task {
-            await vm.load(area: fcArea, mode: fcMode)
-        }
+        Task { await vm.load(area: fcArea, mode: fcMode) }
     }
 }
 
-private struct ForecastTable: View {
-    let days: [ForecastDay]
-    let priceRange: (min: Double, max: Double)
+private struct ForecastRangeRow: View {
+    let day: ForecastDay
+    let range: (min: Double, max: Double)
+    let isCheapest: Bool
 
-    @State private var selectedDate: String?
+    private var lo: Double? { day.prices.compactMap(\.price).min() }
+    private var hi: Double? { day.prices.compactMap(\.price).max() }
 
-    private var selectedDay: ForecastDay? {
-        days.first { $0.date == selectedDate } ?? days.first { $0.isActual } ?? days.first
+    private func fmt(_ v: Double) -> String {
+        String(format: "%.2f", v).replacingOccurrences(of: ".", with: ",")
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            DayStrip(
-                days: days,
-                selectedID: $selectedDate,
-                label: { String($0.shortWeekdayLabel.prefix(3)) },
-                number: { "\($0.dayNumber)" },
-                isHighlighted: { $0.isActual }
-            )
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(day.isToday ? "I dag" : day.shortWeekdayLabel.capitalized)
+                    .font(.subheadline.weight(.semibold))
+                Text(day.isActual ? "Børspris" : "Prognose")
+                    .font(.system(size: 9.5, weight: .medium))
+                    .foregroundStyle(day.isActual ? Color.brand : .secondary)
+            }
+            .frame(width: 68, alignment: .leading)
 
-            if let day = selectedDay {
-                Text(day.isActual ? "Faktiske priser" : "Prognose baseret p\u{00E5} historiske prism\u{00F8}nstre")
-                    .font(.caption)
-                    .foregroundStyle(day.isActual ? Color.brandAccent : .secondary)
-                    .padding(.bottom, 4)
+            if let lo, let hi {
+                Text(fmt(lo))
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 38, alignment: .trailing)
 
-                List {
-                    ForEach(0..<24, id: \.self) { hour in
-                        if hour < day.prices.count, let price = day.prices[hour].price {
-                            ForecastHourRow(hour: hour, price: price, priceRange: priceRange)
-                                .listRowInsets(EdgeInsets())
-                                .listRowSeparator(.hidden)
-                        }
+                GeometryReader { geo in
+                    let span = max(range.max - range.min, 0.01)
+                    let x0 = (lo - range.min) / span * geo.size.width
+                    let x1 = (hi - range.min) / span * geo.size.width
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color(.systemGray5))
+                            .frame(height: 5)
+                        Capsule()
+                            .fill(LinearGradient(
+                                colors: [Color(red: 0.20, green: 0.78, blue: 0.35),
+                                         Color(red: 1.00, green: 0.80, blue: 0.00),
+                                         Color(red: 1.00, green: 0.58, blue: 0.00)],
+                                startPoint: .leading, endPoint: .trailing))
+                            .frame(width: max(x1 - x0, 5), height: 5)
+                            .offset(x: x0)
                     }
+                    .frame(maxHeight: .infinity)
                 }
-                .listStyle(.plain)
+                .frame(height: 20)
+
+                Text(fmt(hi))
+                    .font(.system(.caption, design: .monospaced).weight(.semibold))
+                    .frame(width: 38, alignment: .trailing)
+            } else {
+                Spacer()
+                Text("—").foregroundStyle(.secondary)
+            }
+
+            if isCheapest {
+                Text("BILLIGST")
+                    .font(.system(size: 8.5, weight: .bold))
+                    .foregroundStyle(Color(red: 0.12, green: 0.62, blue: 0.29))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(Color.green.opacity(0.14), in: RoundedRectangle(cornerRadius: 6))
             }
         }
-        .onAppear { syncSelection() }
-        .onChange(of: days.map(\.date)) { _, _ in syncSelection() }
-    }
-
-    private func syncSelection() {
-        if selectedDate == nil || !days.contains(where: { $0.date == selectedDate }) {
-            selectedDate = days.first(where: { $0.isActual })?.date ?? days.first?.date
-        }
-    }
-}
-
-private struct ForecastHourRow: View {
-    let hour: Int
-    let price: Double
-    let priceRange: (min: Double, max: Double)
-
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        HStack {
-            Text(String(format: "%02d:00\u{2013}%02d:00", hour, (hour + 1) % 24))
-                .font(.subheadline)
-            Spacer()
-            Text(String(format: "%.2f", price).replacingOccurrences(of: ".", with: ","))
-                .font(.system(.subheadline, design: .monospaced))
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(Color.forPrice(price, min: priceRange.min, max: priceRange.max, isDark: colorScheme == .dark))
+        .padding(.vertical, 2)
     }
 }

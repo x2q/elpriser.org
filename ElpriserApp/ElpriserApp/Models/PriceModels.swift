@@ -48,6 +48,19 @@ struct PriceDay: Identifiable {
     }
 }
 
+// CO₂ emission per kWh — /api/raw/co2 (Energinet CO2EmisProg, hourly averages)
+struct Co2Record: Codable {
+    let date: String
+    let hour: Int
+    let co2: Int // g/kWh
+}
+
+struct Co2Response: Codable {
+    let area: String
+    let unit: String
+    let records: [Co2Record]
+}
+
 // Raw record from Energi Data Service (proxied through elpriser.org/api/raw/prices)
 struct EnergyRecord: Codable {
     let TimeDK: String
