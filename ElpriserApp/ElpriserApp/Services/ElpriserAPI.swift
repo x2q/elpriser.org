@@ -56,19 +56,11 @@ actor ElpriserAPI {
     // MARK: - Energi Data Service (direct)
 
     func fetchEnergyPrices(area: Area, start: String, end: String) async throws -> EnergyDataResponse {
-        let filter = "{\"PriceArea\":\"\(area.rawValue)\"}"
-        let params = [
-            "start": start,
-            "end": end,
-            "filter": filter,
-            "sort": "TimeDK asc",
-            "limit": "0"
-        ]
-        var components = URLComponents(string: "https://api.energidataservice.dk/dataset/DayAheadPrices")!
-        components.queryItems = params.map { URLQueryItem(name: $0.key, value: $0.value) }
-        guard let url = components.url else { throw APIError.invalidURL }
-        let (data, _) = try await session.data(from: url)
-        return try JSONDecoder().decode(EnergyDataResponse.self, from: data)
+        // Proxied through our own backend (not EDS directly) so this app tracks
+        // the same schema/caching/backup guarantees as the web client, instead
+        // of duplicating and re-breaking EDS's raw field names independently.
+        let params = ["area": area.rawValue, "start": start, "end": end]
+        return try await get("/raw/prices", params: params)
     }
 
     // MARK: - Private

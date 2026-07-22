@@ -4,7 +4,7 @@ extension Color {
     // Brand colors matching elpriser.org
     static let brand = Color(red: 0x1B/255, green: 0x57/255, blue: 0xF5/255)
     static let brandDark = Color(red: 0x19/255, green: 0x33/255, blue: 0x8F/255)
-    static let accent = Color(red: 0x10/255, green: 0xB9/255, blue: 0x81/255)
+    static let brandAccent = Color(red: 0x10/255, green: 0xB9/255, blue: 0x81/255)
 
     // Multi-stop gradient matching the web app's STOPS array
     // Position → [r, g, b]

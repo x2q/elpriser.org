@@ -48,11 +48,11 @@ struct PriceDay: Identifiable {
     }
 }
 
-// Raw record from Energi Data Service
+// Raw record from Energi Data Service (proxied through elpriser.org/api/raw/prices)
 struct EnergyRecord: Codable {
-    let HourDK: String
-    let SpotPriceDKK: Double?
-    let SpotPriceEUR: Double?
+    let TimeDK: String
+    let DayAheadPriceDKK: Double?
+    let DayAheadPriceEUR: Double?
     let PriceArea: String?
 }
 

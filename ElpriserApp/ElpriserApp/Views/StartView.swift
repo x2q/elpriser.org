@@ -130,7 +130,7 @@ private struct GPSBar: View {
                 .font(.caption.bold())
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color.accent)
+                .background(Color.brandAccent)
                 .foregroundStyle(.white)
                 .clipShape(Capsule())
             }
@@ -191,7 +191,7 @@ private struct ZoneButtonStyle: ButtonStyle {
             .padding(.vertical, 8)
             .background(
                 isPrimary ? AnyShapeStyle(Color.brand) :
-                isAccent ? AnyShapeStyle(Color.accent) :
+                isAccent ? AnyShapeStyle(Color.brandAccent) :
                 AnyShapeStyle(Color(.systemGray5))
             )
             .foregroundStyle(isPrimary || isAccent ? .white : .primary)
@@ -240,7 +240,7 @@ private struct DenmarkMap: View {
             }
             VStack {
                 Circle()
-                    .fill(Color.accent.opacity(0.3))
+                    .fill(Color.brandAccent.opacity(0.3))
                     .frame(width: 40, height: 50)
                     .overlay(Text("DK2").font(.caption.bold()).foregroundStyle(.white))
             }

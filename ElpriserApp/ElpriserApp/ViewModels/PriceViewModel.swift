@@ -70,7 +70,7 @@ class PriceViewModel {
         df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
 
         for rec in records {
-            let timeParts = rec.HourDK.prefix(19)
+            let timeParts = rec.TimeDK.prefix(19)
             if let date = df.date(from: String(timeParts)) {
                 let dateDf = DateFormatter()
                 dateDf.dateFormat = "yyyy-MM-dd"
@@ -80,7 +80,10 @@ class PriceViewModel {
                 if byDate[dateStr] == nil {
                     byDate[dateStr] = Array(repeating: nil, count: 24)
                 }
-                if let spot = rec.SpotPriceDKK {
+                // DayAheadPrices is quarter-hourly; this keeps only the last
+                // quarter seen per hour rather than averaging all 4, which is
+                // an approximation but fine for the visual weekly table.
+                if let spot = rec.DayAheadPriceDKK {
                     let converted = convertPrice(spotDKKMWh: spot, hour: hour, mode: mode)
                     byDate[dateStr]?[hour] = converted
                 }

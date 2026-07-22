@@ -101,7 +101,7 @@ private struct ForecastTable: View {
                                 .fontWeight(.medium)
                             Text(day.isActual ? "Faktisk" : "Prognose")
                                 .font(.system(size: 8))
-                                .foregroundStyle(day.isActual ? Color.accent : .secondary)
+                                .foregroundStyle(day.isActual ? Color.brandAccent : .secondary)
                         }
                         .frame(minWidth: 44)
                     }
