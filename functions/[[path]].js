@@ -447,6 +447,10 @@ function buildLivePriceMarkup(dk1, dk2) {
     <span class="ssr-live-unit">kr/kWh</span>
   </div>`;
 
+  // Prose version of the same snapshot for the Reader-summary <article> —
+  // what Safari Reader (and crawlers) see as the page's article text.
+  const summary = `Lige nu kl. ${hh}:00 koster strøm ${fmt(dk1.spot)} kr/kWh i ren spotpris i DK1 (Vestdanmark) og ${fmt(dk2.spot)} kr/kWh i DK2 (Østdanmark). Den samlede elpris inkl. nettarif, systemtarif, transmissionstarif, elafgift og moms er ${fmt(dk1.total)} kr/kWh i DK1 og ${fmt(dk2.total)} kr/kWh i DK2.`;
+
   const iso = new Date().toISOString();
   const priceLd = (name, price) => ({
     "@type": "PriceSpecification",
@@ -470,7 +474,7 @@ ${JSON.stringify({
     ],
   }, null, 2)}
 </script>`;
-  return { strip, jsonLd };
+  return { strip, jsonLd, summary };
 }
 
 async function renderHomepage(context) {
@@ -481,7 +485,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v4');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v5');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -493,9 +497,10 @@ async function renderHomepage(context) {
   ]);
   let html = await resHtml.text();
   if (dk1 && dk2) {
-    const { strip, jsonLd } = buildLivePriceMarkup(dk1, dk2);
+    const { strip, jsonLd, summary } = buildLivePriceMarkup(dk1, dk2);
     html = html.replace('<!--SSR_LIVE_PRICE-->', strip);
     html = html.replace('<!--SSR_LIVE_PRICE_JSONLD-->', jsonLd);
+    html = html.replace('<!--SSR_READER_SUMMARY-->', summary);
   }
   const res = new Response(html, {
     headers: {

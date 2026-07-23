@@ -717,6 +717,20 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <div>Elpriser — også kaldet energipriser eller strømpriser — skifter time for time og fastsættes dagen i forvejen. Her på elpriser.org finder du el priser i dag og kan se, hvad strøm koster lige nu: den aktuelle elpris time for time, både den rå spotpris og den samlede pris på el pr. kWh inkl. nettariffer, elafgift og moms. Vælg dit netselskab ovenfor for en præcis pris for din adresse, eller tjek <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> for de kommende 7 dage.</div>
     </section>
 
+    <!-- Reader-summary article. Deliberately the ONE <article> with real <p>
+         tags on the front page: Safari Reader picks it as "the article", so
+         auto-Reader users get the essentials (live prices, billigst/dyrest/
+         grønnest, dagens råd) instead of losing the hero. The live paragraph
+         is SSR-injected for crawlers/Reader-at-load; JS refreshes and extends
+         it after hydration. Doubles as SEO prose with real numbers. -->
+    <article class="mt-10 max-w-2xl mx-auto px-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-3">Dagens overblik</h2>
+      <p id="readerLive"><!--SSR_READER_SUMMARY--></p>
+      <p id="readerDay" class="mt-3"></p>
+      <p class="mt-3">Den samlede elpris pr. kWh består af spotprisen fra elbørsen Nord Pool plus nettarif til dit lokale netselskab, systemtarif og transmissionstarif til Energinet, elafgift og 25 % moms. Vælg dit netselskab ovenfor for at se den præcise pris for din adresse time for time.</p>
+      <p class="mt-3">CO₂-tallene viser Energinets prognose for udledningen pr. kWh, time for time. De billigste timer er ikke altid de grønneste — midt på dagen kan lav pris falde sammen med høj import, så tjek begge kurver, hvis du vil bruge strømmen, når den både er billig og grøn. Se også <a href="/prognose" class="text-brand-500 underline">elprisprognosen for de næste 7 dage</a> eller <a href="/automation" class="text-brand-500 underline">automatisér dit forbrug</a> efter de billigste timer.</p>
+    </article>
+
     <!-- FAQ — static crawlable content for SEO -->
     <section class="mt-10 max-w-2xl mx-auto">
       <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Ofte stillede spørgsmål om elpriser og spotpriser</h2>
@@ -2466,7 +2480,7 @@ function renderHero(prices,co2,nowH){
     if(saveWait>=25){
       advice=`Vent til kl. ${String(lBest.h).padStart(2,'0')} — så betaler du <b>${saveWait} % mindre</b>`;
       if(nowC!=null&&co2AtBest!=null&&co2AtBest<=nowC*0.9)advice+=` og udleder <b>${Math.round((1-co2AtBest/nowC)*100)} % mindre CO₂</b>`;
-      else if(nowC!=null&&co2AtBest!=null&&co2AtBest>nowC*1.2)advice+=`. Grønnest er strømmen dog nu (${nowC} g CO₂)`;
+      else if(nowC!=null&&co2AtBest!=null&&co2AtBest>nowC*1.2)advice+=`. Strømmen er dog grønnere nu (${nowC} g CO₂) end til den tid (${co2AtBest} g)`;
       advice+='.';
     }else if(savePeak>=40){
       advice=`Kør strømtunge apparater nu i stedet for kl. ${String(lWorst.h).padStart(2,'0')} — betal <b>${savePeak} % mindre</b>`;
@@ -2476,6 +2490,19 @@ function renderHero(prices,co2,nowH){
   }
   adviceEl.innerHTML=advice;
   adviceEl.style.display=advice?'':'none';
+  // Keep the Reader-summary article in sync with the selected area, so Safari
+  // Reader shows current essentials rather than a stale snapshot.
+  const rd=document.getElementById('readerDay');
+  if(rd){
+    const areaName=heroArea==='DK1'?'DK1 (Vestdanmark)':'DK2 (Østdanmark)';
+    let txt=`I dag i ${areaName} er strømmen billigst kl. ${String(best.h).padStart(2,'0')}–${String((best.h+1)%24).padStart(2,'0')} (${fmt2(best.p)} kr/kWh) og dyrest kl. ${String(worst.h).padStart(2,'0')}–${String((worst.h+1)%24).padStart(2,'0')} (${fmt2(worst.p)} kr/kWh).`;
+    if(co2Valid.length){
+      const g=co2Valid.reduce((a,x)=>x.v<a.v?x:a);
+      txt+=` Grønnest er strømmen kl. ${String(g.h).padStart(2,'0')} med ${g.v} g CO₂ pr. kWh.`;
+    }
+    if(advice)txt+=' '+advice.replace(/<[^>]+>/g,'');
+    rd.textContent=txt;
+  }
   // Curve
   const W=720,H=200,PT=16,PB=24;
   const pMax=Math.max(...valid.map(x=>x.p)),pMin=Math.min(...valid.map(x=>x.p));

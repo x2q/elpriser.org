@@ -65,7 +65,7 @@ class PriceViewModel {
                 if Double(cAtBest) <= Double(c) * 0.9 {
                     s += " og udleder \(Int((1 - Double(cAtBest) / Double(c)) * 100)) % mindre CO₂"
                 } else if Double(cAtBest) > Double(c) * 1.2 {
-                    s += ". Grønnest er strømmen dog nu (\(c) g CO₂)"
+                    s += ". Strømmen er dog grønnere nu (\(c) g CO₂) end til den tid (\(cAtBest) g)"
                 }
             }
             return s + "."
