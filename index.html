@@ -619,6 +619,18 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .gps-light:hover{background:rgba(27,87,245,.14)}
   .dark .gps-light{background:rgba(58,118,255,.12);border-color:rgba(58,118,255,.25);color:#6d9aff}
 
+  /* ═══ Shared subpage design — same language as the answer-first hero ═══ */
+  .page-eyebrow{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#5c6675}
+  .dark .page-eyebrow{color:#8a95a8}
+  .page-title{font-size:1.55rem;font-weight:800;letter-spacing:-.02em;color:#0e1421;line-height:1.15;margin-top:.15rem}
+  .dark .page-title{color:#e8edf5}
+  .subcard{background:#fff;border-radius:1.25rem;box-shadow:0 1px 2px rgba(14,20,33,.05),0 8px 24px rgba(14,20,33,.05);padding:1.1rem 1.2rem}
+  .dark .subcard{background:#131b29;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .chd2{display:flex;justify-content:space-between;align-items:baseline;font-size:.7rem;font-weight:600;color:#5c6675;text-transform:uppercase;letter-spacing:.06em;padding:0 .25rem .6rem}
+  .dark .chd2{color:#8a95a8}
+  .answer-price-sm{font-size:3.4rem;font-weight:250;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums;color:#0e1421}
+  .dark .answer-price-sm{color:#e8edf5}
+
   /* ═══ Light syntax highlighting (YAML / JS / URL) ═══ */
   .hl-attr{color:#0969da}     /* YAML keys, URL query params — blue */
   .hl-str{color:#0a7a48}      /* string literals — green */
@@ -946,19 +958,29 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       </a>
     </nav>
   </div>
-  <div id="tableView">
-    <div class="text-center py-12 text-gray-400 dark:text-gray-500" id="loadingIndicator">
-      <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>
-      Henter priser&hellip;
-    </div>
-    <div class="overflow-x-auto -mx-2 sm:mx-0" id="tableWrapper" style="display:none">
-      <table class="mx-auto text-xs sm:text-sm tabular" id="priceTable"></table>
-    </div>
+  <!-- Answer block — the current price IS the headline, same as the front page -->
+  <div id="pricesAnswer" class="text-center mt-4 mb-5" style="display:none">
+    <div class="page-eyebrow" id="pricesAnswerLoc"></div>
+    <div class="answer-price-sm" id="pricesAnswerPrice">—</div>
+    <div class="answer-unit" id="pricesAnswerUnit">kr/kWh</div>
+    <div class="answer-pills" id="pricesAnswerPills" style="justify-content:center"></div>
   </div>
-  <div class="flex items-center justify-center gap-2 mt-4">
-    <button onclick="changeWeek(-1)" class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs">← Forrige</button>
-    <span id="weekLabel" class="text-xs text-gray-500 dark:text-gray-400 w-24 text-center">Denne uge</span>
-    <button id="nextWeekBtn" onclick="changeWeek(1)" disabled class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs disabled:opacity-30 disabled:cursor-not-allowed">Næste →</button>
+  <div class="subcard mt-2">
+    <div class="chd2"><span>Time for time, seneste uge</span><span>DKK/kWh</span></div>
+    <div id="tableView">
+      <div class="text-center py-12 text-gray-400 dark:text-gray-500" id="loadingIndicator">
+        <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>
+        Henter priser&hellip;
+      </div>
+      <div class="overflow-x-auto -mx-2 sm:mx-0" id="tableWrapper" style="display:none">
+        <table class="mx-auto text-xs sm:text-sm tabular" id="priceTable"></table>
+      </div>
+    </div>
+    <div class="flex items-center justify-center gap-2 mt-4">
+      <button onclick="changeWeek(-1)" class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs">← Forrige</button>
+      <span id="weekLabel" class="text-xs text-gray-500 dark:text-gray-400 w-24 text-center">Denne uge</span>
+      <button id="nextWeekBtn" onclick="changeWeek(1)" disabled class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs disabled:opacity-30 disabled:cursor-not-allowed">Næste →</button>
+    </div>
   </div>
   <p class="text-center text-xs text-gray-400 dark:text-gray-600 mt-6">Tip: Bogmærk denne side</p>
 </main>
@@ -967,8 +989,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 <main style="display:none" data-page="tariffer" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-4">
     <div>
-      <h2 class="text-lg font-bold text-gray-900 dark:text-white">Tariffer (Nettarif C)</h2>
-      <p class="text-xs text-gray-500">Aktuelle tariffer (DKK/kWh ex moms)</p>
+      <div class="page-eyebrow">Aktuelle tariffer (DKK/kWh ex moms)</div>
+      <h2 class="page-title">Tariffer (Nettarif C)</h2>
     </div>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -977,11 +999,14 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   <!-- Static crawlable intro — nettarif prose for SEO ("nettariffer", "nettarif el", "nettarif c") -->
   <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-6">Nettarif C er den del af din elpris, du betaler til dit lokale netselskab for transport af strøm gennem elnettet — den er forskellig fra spotprisen, som er ens for alle i samme prisområde. De fleste netselskaber opererer med tre satser i løbet af døgnet: <strong>lavlast</strong> (typisk nat), <strong>højlast</strong> (dag/aften) og <strong>spidslast</strong> (kl. 17-20 i vinterhalvåret), hvor spidslasten kan være op til 4-5 gange dyrere end lavlasten. Tarifferne godkendes af Forsyningstilsynet og justeres typisk 1. januar og 1. april hvert år, så de aktuelle satser nedenfor er altid opdaterede — uanset om du søger efter dette års eller sidste års nettarif.</p>
 
-  <div class="text-center py-10 text-gray-400 dark:text-gray-500" id="tariffLoading">
-    <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>
-    Henter tariffer&hellip;
+  <div class="subcard">
+    <div class="chd2"><span>Nettarif C · alle netselskaber</span><span>DKK/kWh ex moms</span></div>
+    <div class="text-center py-10 text-gray-400 dark:text-gray-500" id="tariffLoading">
+      <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>
+      Henter tariffer&hellip;
+    </div>
+    <div class="overflow-x-auto"><table class="w-full text-sm tabular" id="tariffTable" style="display:none"></table></div>
   </div>
-  <div class="overflow-x-auto"><table class="w-full text-sm tabular" id="tariffTable" style="display:none"></table></div>
 
   <!-- Static crawlable explainer — covers "vores elnet tariffer", "nettarif el", "elpris inkl afgift" -->
   <section class="mt-10 space-y-5 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -1000,15 +1025,15 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 <main style="display:none" data-page="automation" class="max-w-3xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-4">
     <div>
-      <h2 class="text-lg font-bold text-gray-900 dark:text-white">Automation</h2>
-      <p class="text-xs text-gray-500 dark:text-gray-400">Styr dit elforbrug efter spotpriserne og samlede elpriser</p>
+      <div class="page-eyebrow">Styr dit elforbrug efter spotpriserne og samlede elpriser</div>
+      <h2 class="page-title">Automation</h2>
     </div>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     </a>
   </div>
   <!-- Strategy config — all fields auto-update on change -->
-  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
+  <div class="subcard mb-4">
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
       <div>
         <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Priszone</label>
@@ -1080,7 +1105,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <p id="autoStrategyHelp" class="text-xs text-gray-400 dark:text-gray-500 mt-2"></p>
   </div>
   <!-- Weekly visualization -->
-  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
+  <div class="subcard mb-4">
     <div class="flex items-center justify-between mb-3">
       <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm">Ugentlig visualisering</h3>
       <div class="flex gap-3 text-xs text-gray-500 dark:text-gray-400">
@@ -1095,7 +1120,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <p id="autoSavings" class="text-xs text-center mt-3 text-gray-500 dark:text-gray-400"></p>
   </div>
   <!-- API URL -->
-  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
+  <div class="subcard mb-4">
     <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-2">API-adresse</h3>
     <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Brug denne URL direkte i Shelly-scripts eller Home Assistant REST-sensorer.</p>
     <div class="relative">
@@ -1109,7 +1134,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <pre id="testApiResult" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 mt-2 text-gray-700 dark:text-gray-300 font-mono" style="display:none"></pre>
   </div>
   <!-- Export -->
-  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
+  <div class="subcard mb-4">
     <div class="flex gap-2 mb-4">
       <button onclick="switchExport('ha')" id="exportBtnHA" class="tab-btn active">Home Assistant</button>
       <button onclick="switchExport('shelly')" id="exportBtnShelly" class="tab-btn">Shelly</button>
@@ -1138,8 +1163,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 <main style="display:none" data-page="shelly-tariff" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-4">
     <div>
-      <h2 class="text-lg font-bold text-gray-900 dark:text-white">Shelly Live Tariff</h2>
-      <p class="text-xs text-gray-500 dark:text-gray-400">Vis aktuelle elpriser direkte på din Shelly</p>
+      <div class="page-eyebrow">Vis aktuelle elpriser direkte på din Shelly</div>
+      <h2 class="page-title">Shelly Live Tariff</h2>
     </div>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1152,7 +1177,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
 
   <!-- Step 1: priszone -->
-  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
+  <div class="subcard mb-4">
     <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-1">Trin 1 — Aktiver Live Tariff i Shelly-appen</h3>
     <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Find og kopiér din personlige API-adresse.</p>
     <ol class="space-y-3">
@@ -1176,7 +1201,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
 
   <!-- Step 2: URL input + script -->
-  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
+  <div class="subcard mb-4">
     <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-1">Trin 2 — Lav scriptet</h3>
     <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Vælg dit prisområde og indsæt din Shelly API URL — scriptet opdateres automatisk.</p>
     <div class="grid sm:grid-cols-2 gap-3 mb-4">
@@ -1196,7 +1221,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
 
   <!-- Step 3: install -->
-  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
+  <div class="subcard mb-4">
     <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-1">Trin 3 — Installér scriptet</h3>
     <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Scriptet kører på selve Shelly-enheden og opdaterer prisen automatisk hver time.</p>
     <ol class="space-y-3">
@@ -1220,7 +1245,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
 
   <!-- Live preview -->
-  <div class="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
+  <div class="subcard">
     <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-3">Prisoversigt — i dag og i morgen</h3>
     <div id="shellyTariffLoading" class="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">
       <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>Henter data...
@@ -1272,8 +1297,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 <main style="display:none" data-page="prognose" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
   <div class="flex items-center justify-between mb-3">
     <div>
-      <h2 class="text-lg font-bold text-gray-900 dark:text-white">Elprisprognose</h2>
-      <p class="text-xs text-gray-500 dark:text-gray-400">Forventede elpriser de næste 7 dage</p>
+      <div class="page-eyebrow">Forventede elpriser de næste 7 dage</div>
+      <h2 class="page-title">Elprisprognose</h2>
     </div>
     <div class="flex items-center gap-1">
       <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
@@ -1298,10 +1323,13 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded border-2 border-dashed border-gray-400"></span> Prognose</span>
   </div>
   <!-- Table -->
-  <div id="fcLoading" class="text-center py-12 text-gray-400 dark:text-gray-500">
-    <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>Beregner prognose&hellip;
+  <div class="subcard">
+    <div class="chd2"><span>Næste 7 døgn, time for time</span><span>DKK/kWh</span></div>
+    <div id="fcLoading" class="text-center py-12 text-gray-400 dark:text-gray-500">
+      <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>Beregner prognose&hellip;
+    </div>
+    <div id="fcTableWrapper" class="overflow-x-auto -mx-2 sm:mx-0" style="display:none"></div>
   </div>
-  <div id="fcTableWrapper" class="overflow-x-auto -mx-2 sm:mx-0" style="display:none"></div>
   <!-- Info -->
   <div class="mt-4 text-xs text-gray-400 dark:text-gray-600 space-y-1">
     <p>Prognosen er baseret på gennemsnitspriser for samme ugedag og time fra de sidste 4 uger. Faktiske priser kan afvige.</p>
@@ -1313,8 +1341,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 <main style="display:none" data-page="api" class="max-w-3xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
-      <h2 class="text-lg font-bold text-gray-900 dark:text-white">elpriser.org API</h2>
-      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Gratis JSON API for danske elpriser — ingen nøgle, fuld CORS, OpenAPI 3.1</p>
+      <div class="page-eyebrow">Gratis JSON API — ingen nøgle, fuld CORS, OpenAPI 3.1</div>
+      <h2 class="page-title">elpriser.org API</h2>
     </div>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1439,7 +1467,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 <!-- ═══════ ABOUT PAGE ═══════ -->
 <main style="display:none" data-page="om-elpriser" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
-    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Om elpriser i Danmark</h2>
+    <div><div class="page-eyebrow">Baggrund</div><h2 class="page-title">Om elpriser i Danmark</h2></div>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     </a>
@@ -1499,8 +1527,8 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 <main style="display:none" data-page="blog-forsta-din-elpris" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
-      <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Forstå din elpris: Hvad bestemmer elprisen i Danmark?</h1>
+      <div class="page-eyebrow">Guide</div>
+      <h1 class="page-title" style="font-size:1.35rem">Forstå din elpris: Hvad bestemmer elprisen i Danmark?</h1>
     </div>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1616,8 +1644,8 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 <main style="display:none" data-page="blog-shelly-elpris-automation" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
-      <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Shelly og elpriser: Automatisk tænd og sluk efter spotprisen</h1>
+      <div class="page-eyebrow">Guide</div>
+      <h1 class="page-title" style="font-size:1.35rem">Shelly og elpriser: Automatisk tænd og sluk efter spotprisen</h1>
     </div>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1724,8 +1752,8 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 <main style="display:none" data-page="blog-home-assistant-elpriser" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
-      <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Home Assistant og elpriser: Komplet guide til smart elforbrug</h1>
+      <div class="page-eyebrow">Guide</div>
+      <h1 class="page-title" style="font-size:1.35rem">Home Assistant og elpriser: Komplet guide til smart elforbrug</h1>
     </div>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1904,8 +1932,8 @@ entities:
 <main style="display:none" data-page="blog-v2g-v2h-bidirektional-opladning" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
-      <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">V2G, V2H og V2L: Bidirektional elbilopladning forklaret</h1>
+      <div class="page-eyebrow">Guide</div>
+      <h1 class="page-title" style="font-size:1.35rem">V2G, V2H og V2L: Bidirektional elbilopladning forklaret</h1>
     </div>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1992,8 +2020,8 @@ entities:
 <main style="display:none" data-page="blog-biler-ladere-v2h-v2g" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
-      <p class="text-xs text-brand-500 font-medium mb-1">Liste · 2026</p>
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Elbiler og ladere med V2H/V2G — Komplet liste 2026</h1>
+      <div class="page-eyebrow">Liste · 2026</div>
+      <h1 class="page-title" style="font-size:1.35rem">Elbiler og ladere med V2H/V2G — Komplet liste 2026</h1>
     </div>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -2149,8 +2177,8 @@ entities:
 <main style="display:none" data-page="blog-elafgift-2028" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
-      <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Elafgift 2028: Sådan stiger elafgiften igen</h1>
+      <div class="page-eyebrow">Guide</div>
+      <h1 class="page-title" style="font-size:1.35rem">Elafgift 2028: Sådan stiger elafgiften igen</h1>
     </div>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -2814,6 +2842,41 @@ function renderTable(){
     h+='</tr>';
   }
   tbl.innerHTML=h;document.getElementById('loadingIndicator').style.display='none';document.getElementById('tableWrapper').style.display='block';
+  updatePricesAnswer();
+}
+
+// Answer block above the table — same hierarchy as the front page hero:
+// current price for the selected area/net/mode, verdict + CO₂ pills.
+async function updatePricesAnswer(){
+  const box=document.getElementById('pricesAnswer');
+  if(!box)return;
+  const today=fmt(new Date());
+  if(S.weekOffset!==0||!priceData[today]){box.style.display='none';return;}
+  const nowH=new Date().getHours();
+  const todays=Array.from({length:24},(_,h)=>{const raw=priceData[today]?.[h];return raw===undefined?null:cvt(raw,h,today);});
+  const nowP=todays[nowH];
+  if(nowP==null){box.style.display='none';return;}
+  const valid=todays.filter(p=>p!=null);
+  const fmt2=v=>v.toFixed(2).replace('.',',');
+  const al=S.area==='DK1'?'Vestdanmark · DK1':'Østdanmark · DK2';
+  document.getElementById('pricesAnswerLoc').textContent=`${al}${S.netName?' · '+S.netName:''} · lige nu`;
+  document.getElementById('pricesAnswerPrice').textContent=fmt2(nowP);
+  const unitMap={spot_ex:'kr/kWh spot ekskl. moms',spot_inkl:'kr/kWh spot inkl. moms',inkl_alt:'kr/kWh inkl. tarif, afgift og moms',inkl_alt_minus:'kr/kWh inkl. tarif og moms (uden elafgift)',net_inkl_alt:'kr/kWh inkl. nettarif, afgift og moms',net_inkl_tarif:'kr/kWh inkl. nettarif og moms'};
+  document.getElementById('pricesAnswerUnit').textContent=unitMap[S.mode]||'kr/kWh';
+  const cheaper=valid.filter(p=>p<nowP).length,pct=Math.round(cheaper/valid.length*100);
+  const cls=pct<=33?'billig':pct<=66?'normal':'dyr';
+  const lbl=pct<=33?'Billig lige nu':pct<=66?'Middel lige nu':'Dyr lige nu';
+  let pills=`<span class="apill ${cls}">${lbl}</span>`;
+  box.style.display='';
+  document.getElementById('pricesAnswerPills').innerHTML=pills;
+  try{
+    const cj=await dedupedFetch(`/api/raw/co2?area=${S.area}`);
+    const rec=cj.records.find(r=>r.date===today&&r.hour===nowH);
+    if(rec&&S.weekOffset===0){
+      pills+=`<span class="apill co2">${rec.co2} g CO₂/kWh</span>`;
+      document.getElementById('pricesAnswerPills').innerHTML=pills;
+    }
+  }catch(_){/* CO₂ pill is optional */}
 }
 
 
