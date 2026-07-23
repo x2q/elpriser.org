@@ -914,7 +914,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 </main>
 
 <!-- ═══════ PRICE PAGE ═══════ -->
-<main data-page="prices" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
+<main style="display:none" data-page="prices" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
   <div class="flex items-center justify-center gap-2 mb-3">
     <!-- Combined area/net/mode selector -->
     <select id="priceSelector" onchange="onPriceSelectorChange()"
@@ -950,7 +950,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 </main>
 
 <!-- ═══════ TARIFF PAGE ═══════ -->
-<main data-page="tariffer" class="max-w-2xl mx-auto px-4 py-6">
+<main style="display:none" data-page="tariffer" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-4">
     <div>
       <h2 class="text-lg font-bold text-gray-900 dark:text-white">Tariffer (Nettarif C)</h2>
@@ -983,7 +983,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 </main>
 
 <!-- ═══════ AUTOMATION PAGE ═══════ -->
-<main data-page="automation" class="max-w-3xl mx-auto px-4 py-6">
+<main style="display:none" data-page="automation" class="max-w-3xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-4">
     <div>
       <h2 class="text-lg font-bold text-gray-900 dark:text-white">Automation</h2>
@@ -1121,7 +1121,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 </main>
 
 <!-- ═══════ SHELLY LIVE TARIFF PAGE ═══════ -->
-<main data-page="shelly-tariff" class="max-w-2xl mx-auto px-4 py-6">
+<main style="display:none" data-page="shelly-tariff" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-4">
     <div>
       <h2 class="text-lg font-bold text-gray-900 dark:text-white">Shelly Live Tariff</h2>
@@ -1255,7 +1255,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 </dialog>
 
 <!-- ═══════ FORECAST PAGE ═══════ -->
-<main data-page="prognose" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
+<main style="display:none" data-page="prognose" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
   <div class="flex items-center justify-between mb-3">
     <div>
       <h2 class="text-lg font-bold text-gray-900 dark:text-white">Elprisprognose</h2>
@@ -1296,7 +1296,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 </main>
 
 <!-- ═══════ API DOCS PAGE ═══════ -->
-<main data-page="api" class="max-w-3xl mx-auto px-4 py-6">
+<main style="display:none" data-page="api" class="max-w-3xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
       <h2 class="text-lg font-bold text-gray-900 dark:text-white">elpriser.org API</h2>
@@ -1423,7 +1423,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 </main>
 
 <!-- ═══════ ABOUT PAGE ═══════ -->
-<main data-page="om-elpriser" class="max-w-2xl mx-auto px-4 py-6">
+<main style="display:none" data-page="om-elpriser" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <h2 class="text-lg font-bold text-gray-900 dark:text-white">Om elpriser i Danmark</h2>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
@@ -1482,7 +1482,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 </main>
 
 <!-- ═══════ BLOG: Forstå din elpris ═══════ -->
-<main data-page="blog-forsta-din-elpris" class="max-w-2xl mx-auto px-4 py-6">
+<main style="display:none" data-page="blog-forsta-din-elpris" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
       <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
@@ -1599,7 +1599,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 </main>
 
 <!-- ═══════ BLOG: Shelly automation ═══════ -->
-<main data-page="blog-shelly-elpris-automation" class="max-w-2xl mx-auto px-4 py-6">
+<main style="display:none" data-page="blog-shelly-elpris-automation" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
       <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
@@ -1707,7 +1707,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 </main>
 
 <!-- ═══════ BLOG: Home Assistant ═══════ -->
-<main data-page="blog-home-assistant-elpriser" class="max-w-2xl mx-auto px-4 py-6">
+<main style="display:none" data-page="blog-home-assistant-elpriser" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
       <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
@@ -1887,7 +1887,7 @@ entities:
 </main>
 
 <!-- ═══════ BLOG: V2G/V2H/V2L explainer ═══════ -->
-<main data-page="blog-v2g-v2h-bidirektional-opladning" class="max-w-2xl mx-auto px-4 py-6">
+<main style="display:none" data-page="blog-v2g-v2h-bidirektional-opladning" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
       <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
@@ -1975,7 +1975,7 @@ entities:
 </main>
 
 <!-- ═══════ BLOG: V2H/V2G cars & chargers list ═══════ -->
-<main data-page="blog-biler-ladere-v2h-v2g" class="max-w-2xl mx-auto px-4 py-6">
+<main style="display:none" data-page="blog-biler-ladere-v2h-v2g" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
       <p class="text-xs text-brand-500 font-medium mb-1">Liste · 2026</p>
@@ -2132,7 +2132,7 @@ entities:
 </main>
 
 <!-- ═══════ BLOG: Elafgift 2028 ═══════ -->
-<main data-page="blog-elafgift-2028" class="max-w-2xl mx-auto px-4 py-6">
+<main style="display:none" data-page="blog-elafgift-2028" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
       <p class="text-xs text-brand-500 font-medium mb-1">Guide</p>
@@ -2337,7 +2337,12 @@ function pathToHash(p){
 function route(){
   let h=decodeURIComponent(location.hash.slice(1));
   if(!h)h=pathToHash(location.pathname);
-  document.querySelectorAll('[data-page]').forEach(p=>p.classList.remove('active'));
+  // Inline display:none (not just the .active class) keeps the hidden pages'
+  // text out of Safari Reader's article detection, which only sees inline
+  // styles. The microtask clears it on whichever page the branch below
+  // activates — route() is synchronous, so this runs right after it.
+  document.querySelectorAll('[data-page]').forEach(p=>{p.classList.remove('active');p.style.display='none';});
+  queueMicrotask(()=>{const a=document.querySelector('[data-page].active');if(a)a.style.display='';});
   // Helper: send page_view with clean path for GA4
   const pv=(title,path)=>gtag('event','page_view',{page_title:title,page_location:location.origin+(path||location.pathname)});
   if(!h){

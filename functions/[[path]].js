@@ -481,7 +481,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v3');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v4');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -545,8 +545,11 @@ function dataPageForHash(hash) {
 // instead of always showing the homepage section underneath a different title.
 function activateDataPage(html, dataPage) {
   if (dataPage === 'start') return html;
-  html = html.replace('<main data-page="start" class="active">', '<main data-page="start" class="">');
-  html = html.replace(`<main data-page="${dataPage}" class="`, `<main data-page="${dataPage}" class="active `);
+  // Non-start mains carry an inline display:none (keeps hidden pages' text out
+  // of Safari Reader's article detection) — swap it over to the start main and
+  // strip it from the page being activated.
+  html = html.replace('<main data-page="start" class="active">', '<main style="display:none" data-page="start" class="">');
+  html = html.replace(`<main style="display:none" data-page="${dataPage}" class="`, `<main data-page="${dataPage}" class="active `);
   return html;
 }
 
