@@ -575,6 +575,23 @@ export async function onRequest(context) {
     }
   }
 
+  // ── /api/geo ────────────────────────────────────────────────────────────
+  // Approximate visitor position from Cloudflare's IP geolocation
+  // (request.cf) — city-level accuracy, used as fallback when the browser's
+  // own geolocation fails or times out (e.g. desktop machines with location
+  // services off). Per-user data: never cached.
+  if (seg1 === 'geo') {
+    const cf = request.cf || {};
+    return new Response(JSON.stringify({
+      lat: cf.latitude != null ? parseFloat(cf.latitude) : null,
+      lng: cf.longitude != null ? parseFloat(cf.longitude) : null,
+      city: cf.city || null,
+      country: cf.country || null,
+    }), {
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS },
+    });
+  }
+
   // ── /api/supplierlookup ─────────────────────────────────────────────────
   // Reverse-geocodes (lat,lng) → DK address → net company. Proxied through
   // here because the upstream GreenPowerDenmark API has no CORS headers.

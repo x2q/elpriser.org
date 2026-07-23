@@ -2288,6 +2288,7 @@ async function detectLocation(){
   svg.style.animation='spin .7s linear infinite';
   text.textContent='Finder din position...';
   btn.disabled=true; btn.classList.add('opacity-50');
+  let lat,lng,approx=false;
   try{
     // Use watchPosition (not getCurrentPosition) to survive transient
     // kCLErrorLocationUnknown failures from macOS CoreLocation: it streams
@@ -2295,14 +2296,37 @@ async function detectLocation(){
     const pos=await new Promise((ok,no)=>{
       let id,timer;
       const done=fn=>v=>{navigator.geolocation.clearWatch(id);clearTimeout(timer);fn(v);};
-      timer=setTimeout(done(no),15000,{code:3,message:'Timeout'});
+      timer=setTimeout(done(no),8000,{code:3,message:'Timeout'});
       id=navigator.geolocation.watchPosition(
         done(ok),
         e=>{if(e.code===1)done(no)(e);}, // fail fast only on PERMISSION_DENIED
-        {timeout:15000,maximumAge:60000}
+        {timeout:8000,maximumAge:60000}
       );
     });
-    const{latitude:lat,longitude:lng}=pos.coords;
+    ({latitude:lat,longitude:lng}=pos.coords);
+  }catch(err){
+    // Browser geolocation failed (timed out, denied, or unavailable — common
+    // on desktops with location services off). Fall back to Cloudflare's
+    // IP-based position: city-level accuracy, which is enough to determine
+    // the netselskab in most of the country.
+    try{
+      text.textContent='Bruger omtrentlig position...';
+      const g=await(await fetch('/api/geo')).json();
+      // Accept anything in/near Denmark's bounding box rather than requiring
+      // country==='DK' — IP geolocation often lands Danish users in Lund/
+      // Flensburg/Hamburg due to ISP peering across the borders.
+      if(g.lat!=null&&g.lng!=null&&g.lat>54.3&&g.lat<58.2&&g.lng>7.3&&g.lng<15.7){lat=g.lat;lng=g.lng;approx=true;}
+    }catch(_){/* fall through to error below */}
+    if(lat==null){
+      svg.style.animation='';
+      gtag('event','gps_detect_error',{reason:err.code===1?'denied':err.code===2?'unavailable':err.message});
+      text.textContent=err.code===1?'Lokation nægtet — vælg netselskab nedenfor':'Kunne ikke finde din position — vælg netselskab nedenfor';
+      btn.disabled=false; btn.classList.remove('opacity-50');
+      return;
+    }
+    gtag('event','gps_detect_fallback_ipgeo');
+  }
+  try{
     text.textContent='Finder netselskab...';
     // Server-side proxy: DAWA reverse → address normalisation → GPD lookup.
     // Single round-trip; avoids GPD's missing CORS headers.
@@ -2310,8 +2334,8 @@ async function detectLocation(){
     const m=net.name?matchNet(net.name):null;
     svg.style.animation='';
     if(m){
-      text.textContent=`${m.net.name} (${m.area}) — navigerer...`;
-      gtag('event','gps_detect_success',{net:m.net.name,area:m.area});
+      text.textContent=`${m.net.name} (${m.area})${approx?' · omtrentlig':''} — navigerer...`;
+      gtag('event','gps_detect_success',{net:m.net.name,area:m.area,approx});
       // Auto-navigate directly to the detected netselskab page
       location.hash=`${m.area}/net_inkl_alt/${m.net.slug}`;
     }else{
@@ -2321,8 +2345,8 @@ async function detectLocation(){
     }
   }catch(err){
     svg.style.animation='';
-    gtag('event','gps_detect_error',{reason:err.code===1?'denied':err.code===2?'unavailable':err.message});
-    text.textContent=err.code===1?'Lokation nægtet':err.code===2?'Position ikke tilgængelig':'Fejl: '+(err.message||'Ukendt');
+    gtag('event','gps_detect_error',{reason:'lookup: '+(err.message||'ukendt')});
+    text.textContent='Kunne ikke slå netselskab op — vælg det nedenfor';
   }
   btn.disabled=false; btn.classList.remove('opacity-50');
 }
