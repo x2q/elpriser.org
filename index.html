@@ -20,12 +20,13 @@
 <meta property="og:url" content="https://elpriser.org/">
 <meta property="og:locale" content="da_DK">
 <meta property="og:site_name" content="elpriser.org">
-<meta property="og:image" content="https://elpriser.org/og-image">
+<meta property="og:image" content="https://elpriser.org/og-image.png">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://elpriser.org/og-image">
+<meta name="twitter:image" content="https://elpriser.org/og-image.png">
 <meta name="twitter:title" content="Elpriser i dag — Aktuel spotpris lige nu (DK1 og DK2)">
 <meta name="twitter:description" content="Aktuelle elpriser og spotpriser lige nu — time for time for DK1 og DK2 inkl. tariffer og moms.">
 <!-- Structured Data -->
@@ -275,6 +276,8 @@
       "headline": "Forstå din elpris: Hvad bestemmer elprisen i Danmark?",
       "description": "Komplet guide til elpriser i Danmark: spotpris, nettarif, elafgift, DK1 vs DK2, hvornår strømmen er billigst, negative elpriser og sådan sparer du penge.",
       "url": "https://elpriser.org/blog/forsta-din-elpris",
+      "datePublished": "2026-04-17",
+      "dateModified": "2026-07-24",
       "inLanguage": "da",
       "author":    { "@type": "Organization", "name": "elpriser.org" },
       "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
@@ -285,6 +288,8 @@
       "headline": "Shelly og elpriser: Automatisk tænd og sluk efter spotprisen",
       "description": "Styr Shelly Plus, Pro og Plug efter elprisen med gratis API. Script- og tidsbaseret automation af elbil, varmepumpe og vandvarmer efter billig strøm.",
       "url": "https://elpriser.org/blog/shelly-elpris-automation",
+      "datePublished": "2026-04-17",
+      "dateModified": "2026-07-24",
       "inLanguage": "da",
       "author":    { "@type": "Organization", "name": "elpriser.org" },
       "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
@@ -295,6 +300,8 @@
       "headline": "Home Assistant og elpriser: Komplet guide til smart elforbrug",
       "description": "Opsæt Home Assistant med danske elpriser: REST-sensorer, schedule-automations og dashboards — spar automatisk penge på strøm efter de billigste timer.",
       "url": "https://elpriser.org/blog/home-assistant-elpriser",
+      "datePublished": "2026-04-17",
+      "dateModified": "2026-07-24",
       "inLanguage": "da",
       "author":    { "@type": "Organization", "name": "elpriser.org" },
       "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
@@ -305,6 +312,8 @@
       "headline": "V2G, V2H og V2L: Bidirektional elbilopladning forklaret",
       "description": "Forstå Vehicle-to-Grid (V2G), Vehicle-to-Home (V2H) og Vehicle-to-Load (V2L). Sådan kan din elbil sælge strøm til nettet eller forsyne dit hus, og hvordan det fungerer med spotpriser i Danmark.",
       "url": "https://elpriser.org/blog/v2g-v2h-bidirektional-opladning",
+      "datePublished": "2026-05-15",
+      "dateModified": "2026-07-24",
       "inLanguage": "da",
       "author":    { "@type": "Organization", "name": "elpriser.org" },
       "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
@@ -315,6 +324,8 @@
       "headline": "Elbiler og ladere med V2H/V2G — Komplet liste 2026",
       "description": "Opdateret liste over elbiler og bidirektionale ladere der understøtter V2L, V2H og V2G. Inkluderer Hyundai Ioniq 5, Kia EV9, Nissan Leaf, Wallbox Quasar 2, Sigenergy og flere.",
       "url": "https://elpriser.org/blog/biler-ladere-v2h-v2g",
+      "datePublished": "2026-05-15",
+      "dateModified": "2026-07-24",
       "inLanguage": "da",
       "author":    { "@type": "Organization", "name": "elpriser.org" },
       "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
@@ -325,6 +336,8 @@
       "headline": "Elafgift 2028: Sådan stiger elafgiften igen",
       "description": "Elafgiften er sænket til 0,8 øre/kWh i 2026-2027, men stiger igen fra 2028. Se de nye satser, hvorfor regeringen endnu ikke har forlænget den lave afgift, og hvad det betyder for din elregning og dine solceller.",
       "url": "https://elpriser.org/blog/elafgift-2028",
+      "datePublished": "2026-07-14",
+      "dateModified": "2026-07-24",
       "inLanguage": "da",
       "author":    { "@type": "Organization", "name": "elpriser.org" },
       "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
@@ -958,6 +971,9 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       </a>
     </nav>
   </div>
+  <!-- SSR: unique per-URL intro (H1 + live-price sentence + net coverage +
+       tariff rates + PriceSpecification JSON-LD), injected by functions/[[path]].js -->
+  <!--SSR_PRICES_INTRO-->
   <!-- Answer block — the current price IS the headline, same as the front page -->
   <div id="pricesAnswer" class="text-center mt-4 mb-5" style="display:none">
     <div class="page-eyebrow" id="pricesAnswerLoc"></div>
@@ -998,6 +1014,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
   <!-- Static crawlable intro — nettarif prose for SEO ("nettariffer", "nettarif el", "nettarif c") -->
   <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-6">Nettarif C er den del af din elpris, du betaler til dit lokale netselskab for transport af strøm gennem elnettet — den er forskellig fra spotprisen, som er ens for alle i samme prisområde. De fleste netselskaber opererer med tre satser i løbet af døgnet: <strong>lavlast</strong> (typisk nat), <strong>højlast</strong> (dag/aften) og <strong>spidslast</strong> (kl. 17-20 i vinterhalvåret), hvor spidslasten kan være op til 4-5 gange dyrere end lavlasten. Tarifferne godkendes af Forsyningstilsynet og justeres typisk 1. januar og 1. april hvert år, så de aktuelle satser nedenfor er altid opdaterede — uanset om du søger efter dette års eller sidste års nettarif.</p>
+  <!-- SSR: dated cheapest/most-expensive peak-tariff answer sentence -->
+  <!--SSR_TARIFF_FACTS-->
 
   <div class="subcard">
     <div class="chd2"><span>Nettarif C · alle netselskaber</span><span>DKK/kWh ex moms</span></div>
@@ -1019,6 +1037,36 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <p>Nettariffen er kun én del af den elpris, du reelt betaler. Læg spotpris, nettarif, systemtarif, transmissionstarif og elafgift sammen, og gang med moms (25%), så får du den samlede pris pr. kWh inkl. afgift. Vil du se den fulde beregning for dit netselskab time for time, kan du vælge "Netselskab inkl alt" på <a href="/dk1" class="text-brand-500 underline">DK1 Vest</a>- eller <a href="/dk2" class="text-brand-500 underline">DK2 Øst</a>-siden.</p>
     </div>
   </section>
+
+  <!-- FAQ — visible + FAQPage schema, route-specific (lives inside this section) -->
+  <section class="mt-10">
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Ofte stillede spørgsmål om nettariffer</h2>
+    <div class="space-y-3 text-sm">
+      <details class="group faq">
+        <summary class="px-5 py-3 font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">Hvad er Nettarif C?<svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="px-5 pb-4 text-gray-600 dark:text-gray-400 leading-relaxed">Nettarif C er den takst, private husstande og mindre virksomheder på lavspændingsnettet betaler til deres lokale netselskab for transport af strøm. De fleste selskaber har tre satser i døgnet: lavlast (nat), højlast (dag) og spidslast (kl. 17-21), hvor spidslasten kan være 4-5 gange dyrere end lavlasten.</div>
+      </details>
+      <details class="group faq">
+        <summary class="px-5 py-3 font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">Kan jeg selv vælge netselskab?<svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="px-5 pb-4 text-gray-600 dark:text-gray-400 leading-relaxed">Nej — dit netselskab afgøres af din adresse, fordi selskabet ejer ledningsnettet i dit område. Du kan frit vælge elleverandør (dem du køber strømmen af), men nettariffen følger altid adressen.</div>
+      </details>
+      <details class="group faq">
+        <summary class="px-5 py-3 font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">Hvornår ændrer nettarifferne sig?<svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="px-5 pb-4 text-gray-600 dark:text-gray-400 leading-relaxed">Netselskaberne justerer typisk tarifferne 1. januar og 1. april, efter godkendelse hos Forsyningstilsynet. Tabellen ovenfor henter altid de aktuelt gældende satser direkte fra Energi Data Service.</div>
+      </details>
+    </div>
+  </section>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type":"Question","name":"Hvad er Nettarif C?","acceptedAnswer":{"@type":"Answer","text":"Nettarif C er den takst, private husstande og mindre virksomheder på lavspændingsnettet betaler til deres lokale netselskab for transport af strøm. De fleste selskaber har tre satser i døgnet: lavlast (nat), højlast (dag) og spidslast (kl. 17-21), hvor spidslasten kan være 4-5 gange dyrere end lavlasten."}},
+      {"@type":"Question","name":"Kan jeg selv vælge netselskab?","acceptedAnswer":{"@type":"Answer","text":"Nej — dit netselskab afgøres af din adresse, fordi selskabet ejer ledningsnettet i dit område. Du kan frit vælge elleverandør, men nettariffen følger altid adressen."}},
+      {"@type":"Question","name":"Hvornår ændrer nettarifferne sig?","acceptedAnswer":{"@type":"Answer","text":"Netselskaberne justerer typisk tarifferne 1. januar og 1. april, efter godkendelse hos Forsyningstilsynet. elpriser.org henter altid de aktuelt gældende satser direkte fra Energi Data Service."}}
+    ]
+  }
+  </script>
 </main>
 
 <!-- ═══════ AUTOMATION PAGE ═══════ -->
@@ -1335,6 +1383,36 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <p>Prognosen er baseret på gennemsnitspriser for samme ugedag og time fra de sidste 4 uger. Faktiske priser kan afvige.</p>
     <p>Se også <a href="https://elforbrug.nu/elpriser-og-elprisprognose-for-de-kommende-dage/" target="_blank" rel="noopener" class="text-brand-500 underline">elforbrug.nu's elprisprognose</a> for en alternativ prognose.</p>
   </div>
+
+  <!-- FAQ — visible + FAQPage schema, route-specific (lives inside this section) -->
+  <section class="mt-10">
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Ofte stillede spørgsmål om elprisprognosen</h2>
+    <div class="space-y-3 text-sm">
+      <details class="group faq">
+        <summary class="px-5 py-3 font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">Hvornår kommer morgendagens elpriser?<svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="px-5 pb-4 text-gray-600 dark:text-gray-400 leading-relaxed">Morgendagens spotpriser fastsættes i day-ahead-auktionen på elbørsen Nord Pool og offentliggøres dagligt omkring kl. 13. Indtil da viser prognosen de forventede priser — og skifter automatisk til de faktiske børspriser, så snart de findes.</div>
+      </details>
+      <details class="group faq">
+        <summary class="px-5 py-3 font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">Hvor præcis er elprisprognosen?<svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="px-5 pb-4 text-gray-600 dark:text-gray-400 leading-relaxed">Prognosen kombinerer historiske prismønstre (samme ugedag og time) med en maskinlæringsmodel, der bruger vejr- og produktionsdata. Den rammer typisk niveauet og døgnrytmen godt, men enkelttimer kan afvige — særligt ved omslag i vinden. Brug den til at planlægge, ikke som garanti.</div>
+      </details>
+      <details class="group faq">
+        <summary class="px-5 py-3 font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">Hvorfor svinger elprisen så meget fra dag til dag?<svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="px-5 pb-4 text-gray-600 dark:text-gray-400 leading-relaxed">Danmarks elpris er stærkt vejrafhængig: meget vind og sol presser prisen ned — nogle gange under nul — mens vindstille, koldt vejr og høj efterspørgsel trækker den op. Udlandsforbindelsernes kapacitet og priserne i vores nabolande spiller også ind.</div>
+      </details>
+    </div>
+  </section>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type":"Question","name":"Hvornår kommer morgendagens elpriser?","acceptedAnswer":{"@type":"Answer","text":"Morgendagens spotpriser fastsættes i day-ahead-auktionen på elbørsen Nord Pool og offentliggøres dagligt omkring kl. 13. Indtil da viser elpriser.org en prognose, som automatisk skifter til de faktiske børspriser, så snart de findes."}},
+      {"@type":"Question","name":"Hvor præcis er elprisprognosen?","acceptedAnswer":{"@type":"Answer","text":"Prognosen kombinerer historiske prismønstre med en maskinlæringsmodel baseret på vejr- og produktionsdata. Den rammer typisk niveauet og døgnrytmen godt, men enkelttimer kan afvige — særligt ved omslag i vinden."}},
+      {"@type":"Question","name":"Hvorfor svinger elprisen så meget fra dag til dag?","acceptedAnswer":{"@type":"Answer","text":"Danmarks elpris er stærkt vejrafhængig: meget vind og sol presser prisen ned, mens vindstille, koldt vejr og høj efterspørgsel trækker den op. Udlandsforbindelsernes kapacitet og nabolandenes priser spiller også ind."}}
+    ]
+  }
+  </script>
 </main>
 
 <!-- ═══════ API DOCS PAGE ═══════ -->
@@ -2400,9 +2478,34 @@ function pathToHash(p){
   const m=p.match(/^\/(dk[12])\/([a-z0-9-]+)$/);
   return m?m[1].toUpperCase()+'/net_inkl_alt/'+m[2]:'';
 }
+// The server strips every <main> except the URL's own section, so each page
+// only carries its own content. Cross-section navigation therefore needs a
+// full page load — this maps a hash route to its clean path.
+function hashToPath(h){
+  if(!h)return '/';
+  if(/^DK[12]\//.test(h)){
+    const area=h.slice(0,3).toLowerCase();
+    const m=h.match(/^DK[12]\/net_[a-z_]+\/([a-z0-9-]+)/);
+    return m?`/${area}/${m[1]}`:`/${area}`;
+  }
+  return '/'+h; // tariffer, automation, api, prognose, om-elpriser, shelly-tariff, blog/…
+}
+function dataPageFor(h){
+  if(!h)return 'start';
+  if(/^DK[12]\//.test(h))return 'prices';
+  return h.replace(/\//g,'-'); // blog/x -> blog-x; others map 1:1
+}
 function route(){
   let h=decodeURIComponent(location.hash.slice(1));
   if(!h)h=pathToHash(location.pathname);
+  // Section not in this page's HTML (server-stripped) → full navigation to
+  // the section's own URL, carrying the hash so in-page state survives.
+  const dp=dataPageFor(h);
+  if(!document.querySelector(`[data-page="${dp}"]`)){
+    const target=hashToPath(h)+(h?'#'+h:'');
+    if(location.pathname+location.hash!==target)location.href=target;
+    return;
+  }
   // Inline display:none (not just the .active class) keeps the hidden pages'
   // text out of Safari Reader's article detection, which only sees inline
   // styles. The microtask clears it on whichever page the branch below
@@ -2451,6 +2554,7 @@ function setHeroArea(a){
   loadStartHero();
 }
 async function loadStartHero(){
+  if(!document.getElementById('heroPrice'))return; // section stripped on subpages
   const area=heroArea;
   try{
     const [pj,cj,fj]=await Promise.all([
@@ -2592,6 +2696,7 @@ function renderHero(prices,co2,nowH){
 
 // ═══ BUILD START ═══
 function buildStart(){
+  if(!document.getElementById('dk1-zone'))return; // section stripped on subpages
   loadStartHero();
   ['DK1','DK2'].forEach(area=>{
     document.getElementById(area.toLowerCase()+'-zone').innerHTML=ZONE_BTNS.map(b=>

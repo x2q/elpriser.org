@@ -25,8 +25,8 @@ const SEO_PAGES = {
     hash: '#DK2/spot_inkl',
   },
   '/tariffer': {
-    title: 'Nettariffer i Danmark — Sammenlign alle netselskaber',
-    description: 'Sammenlign nettariffer (Nettarif C) for alle danske netselskaber — lav-, mellem- og spidstariffer for N1, Radius, Trefor, Cerius, RAH, Konstant m.fl.',
+    title: 'Nettariffer 2026: Sammenlign 14 netselskaber — op til 25 øre/kWh forskel',
+    description: 'Se aktuelle nettariffer (Nettarif C) for alle 14 danske netselskaber — lav-, høj- og spidslast for N1, Radius, Trefor, Cerius, RAH, Konstant m.fl. Forskellen kan koste dig flere hundrede kroner om året.',
     hash: '#tariffer',
   },
   '/automation': {
@@ -43,6 +43,16 @@ const SEO_PAGES = {
     title: 'Elprisprognose — Forventede elpriser næste 7 dage',
     description: 'Se forventede elpriser for DK1 og DK2 de næste 7 dage. Prognose baseret på historiske prismønstre fra Energi Data Service.',
     hash: '#prognose',
+  },
+  '/api': {
+    title: 'elpriser.org API — Gratis JSON API for danske elpriser',
+    description: 'Gratis JSON API for danske elpriser: aktuel pris, time-for-time-priser, 7-dages prognose, CO₂-udledning, nettariffer og Tibber-kompatibel Shelly-tarif. Ingen nøgle, fuld CORS, OpenAPI 3.1.',
+    hash: '#api',
+  },
+  '/shelly-tariff': {
+    title: 'Shelly Live Tariff — Tibber-kompatibel elpris-JSON',
+    description: 'Vis aktuelle danske elpriser direkte på din Shelly med Live Tariff: Tibber-kompatibel JSON fra elpriser.org, opdateret time for time inkl. nettarif, elafgift og moms.',
+    hash: '#shelly-tariff',
   },
   '/blog/forsta-din-elpris': {
     title: 'Forstå din elpris — Guide til spotpris og tariffer',
@@ -81,22 +91,22 @@ const SEO_PAGES = {
 // URLs in the sitemap so Google/Bing find them. Keep in sync with index.html.
 const NETS = {
   DK1: [
-    { name: 'N1',          slug: 'n1'           },
-    { name: 'Trefor',      slug: 'trefor'       },
-    { name: 'Konstant',    slug: 'konstant'     },
-    { name: 'Vores Elnet', slug: 'vores-elnet'  },
-    { name: 'RAH Net',     slug: 'rah-net'      },
-    { name: 'Elværk',      slug: 'elvaerk'      },
-    { name: 'Nord Energi', slug: 'nord-energi'  },
-    { name: 'NOE Net',     slug: 'noe-net'      },
-    { name: 'Elnet Midt',  slug: 'elnet-midt'   },
-    { name: 'Flow Elnet',  slug: 'flow-elnet'   },
-    { name: 'LNet',        slug: 'lnet'         },
+    { name: 'N1',          slug: 'n1',          gln: '5790001089030' },
+    { name: 'Trefor',      slug: 'trefor',      gln: '5790000392261' },
+    { name: 'Konstant',    slug: 'konstant',    gln: '5790000704842' },
+    { name: 'Vores Elnet', slug: 'vores-elnet', gln: '5790000610976' },
+    { name: 'RAH Net',     slug: 'rah-net',     gln: '5790000681327' },
+    { name: 'Elværk',      slug: 'elvaerk',     gln: '5790000681358' },
+    { name: 'Nord Energi', slug: 'nord-energi', gln: '5790000610877' },
+    { name: 'NOE Net',     slug: 'noe-net',     gln: '5790000395620' },
+    { name: 'Elnet Midt',  slug: 'elnet-midt',  gln: '5790001100520' },
+    { name: 'Flow Elnet',  slug: 'flow-elnet',  gln: '5790000392551' },
+    { name: 'LNet',        slug: 'lnet',        gln: '5790001090111' },
   ],
   DK2: [
-    { name: 'Cerius',      slug: 'cerius'       },
-    { name: 'Trefor Øst',  slug: 'trefor-ost'   },
-    { name: 'Radius',      slug: 'radius'       },
+    { name: 'Cerius',      slug: 'cerius',      gln: '5790000705184' },
+    { name: 'Trefor Øst',  slug: 'trefor-ost',  gln: '5790000706686' },
+    { name: 'Radius',      slug: 'radius',      gln: '5790000705689' },
   ],
 };
 const AREA_LABEL = { DK1: 'DK1 Vest', DK2: 'DK2 Øst' };
@@ -120,11 +130,28 @@ for (const area of ['DK1', 'DK2']) {
 }
 
 const SITEMAP_URLS = [
-  '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser',
+  '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff',
   '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
   '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028',
   ...NET_URLS,
 ];
+
+// Real lastmod dates for content pages (from git history / last substantive
+// edit). Price-bearing pages legitimately change daily and use today's date.
+// Update these when a page's content actually changes — an always-today
+// lastmod for everything teaches Google to ignore the field.
+const CONTENT_LASTMOD = {
+  '/automation': '2026-07-24',
+  '/api': '2026-07-24',
+  '/om-elpriser': '2026-07-24',
+  '/shelly-tariff': '2026-07-24',
+  '/blog/forsta-din-elpris': '2026-07-24',
+  '/blog/shelly-elpris-automation': '2026-07-24',
+  '/blog/home-assistant-elpriser': '2026-07-24',
+  '/blog/v2g-v2h-bidirektional-opladning': '2026-07-24',
+  '/blog/biler-ladere-v2h-v2g': '2026-07-24',
+  '/blog/elafgift-2028': '2026-07-24',
+};
 
 function buildSitemap() {
   const today = new Date().toISOString().split('T')[0];
@@ -135,12 +162,15 @@ function buildSitemap() {
   };
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${SITEMAP_URLS.map(p => `  <url>
+${SITEMAP_URLS.map(p => {
+    const isDaily = !CONTENT_LASTMOD[p];
+    return `  <url>
     <loc>https://elpriser.org${p}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
+    <lastmod>${CONTENT_LASTMOD[p] || today}</lastmod>
+    <changefreq>${isDaily ? 'daily' : 'monthly'}</changefreq>
     <priority>${priorityFor(p)}</priority>
-  </url>`).join('\n')}
+  </url>`;
+  }).join('\n')}
 </urlset>`;
 }
 
@@ -323,6 +353,85 @@ GET https://elpriser.org/api/schedule?area=DK1&hours=4
 \`\`\`
 GET https://elpriser.org/api/shelly/tariff?area=DK1
 \`\`\`
+
+## Ofte stillede spørgsmål (fuld tekst)
+
+**Hvad er elprisen i dag?**
+Elprisen i Danmark skifter time for time og fastsættes dagen i forvejen på den nordiske elbørs Nord Pool. Prisen kaldes spotprisen og offentliggøres dagligt omkring kl. 13 for det kommende døgn. Her på elpriser.org kan du se den aktuelle elpris live for både DK1 (Vestdanmark) og DK2 (Østdanmark), opdateret med data fra Energi Data Service.
+
+**Hvad koster strøm lige nu?**
+Hvad strøm koster lige nu afhænger af spotprisen på Nord Pool samt dit netselskabs nettarif, elafgift og moms — tilsammen den reelle pris pr. kWh. El priser og strømpriser dækker reelt det samme: prisen på elektricitet, opdateret time for time. Se de aktuelle el priser for i dag på [DK1 Vest](https://elpriser.org/dk1) eller [DK2 Øst](https://elpriser.org/dk2), eller vælg dit netselskab for at se præcis, hvad strøm koster hos dig lige nu.
+
+**Er energipriser det samme som elpriser?**
+"Energipriser" bruges ofte i daglig tale om elpriser — altså prisen på strøm (el) per kWh. Strengt taget dækker energipriser bredt over al energi (el, gas og fjernvarme), men når folk søger på energipriser mener de typisk den aktuelle elpris. På elpriser.org viser vi netop elpriser/strømpriser time for time for hele Danmark, inkl. nettariffer, elafgift og moms — så du kan se hvad strøm reelt koster lige nu.
+
+**Hvad er forskellen på DK1 og DK2?**
+Danmark er delt i to prisområder: DK1 dækker Vestdanmark (Jylland og Fyn) og DK2 dækker Østdanmark (Sjælland, Lolland-Falster og Bornholm). Priserne kan variere mellem de to områder, da de har forskellige forbindelser til nabolande og forskellige produktionsforhold med vindmøller og solceller.
+
+**Hvornår er strømmen billigst?**
+Strømmen er typisk billigst om natten mellem kl. 00 og 06, og dyrest i spidstimerne kl. 17-21 hvor mange husholdninger bruger mest energi. Men den faktiske pris afhænger af vejr, vind og forbrug, så det kan variere fra dag til dag. Med elpriser.org kan du se præcis hvilke timer der er billigst i dag og planlægge dit forbrug — f.eks. opladning af elbil, varmepumpe eller vaskemaskine.
+
+**Hvad indgår i den samlede elpris?**
+Den samlede elpris består af flere dele: spotprisen (den rene markedspris fra Nord Pool), nettariffer (betaling til dit lokale netselskab for transport af strøm), systemtarif og transmissionstarif (til Energinet for det overordnede elnet), elafgift (statslig afgift) og moms (25%). På elpriser.org kan du se prisen med alle dele inkluderet, så du kender den reelle pris du betaler per kWh.
+
+**Hvad er den aktuelle spotpris på el lige nu?**
+Spotprisen på el opdateres time for time og varierer mellem DK1 (Vest) og DK2 (Øst). Prisen offentliggøres dagen før af Nord Pool. Tjek den aktuelle spotpris live på [DK1 Vest](https://elpriser.org/dk1) eller [DK2 Øst](https://elpriser.org/dk2). Du kan også se prisen inkl. nettariffer, elafgift og moms — den reelle pris du betaler per kWh.
+
+**Hvad er nettariffen hos Trefor, RAH, N1 og Radius?**
+Nettariffen varierer efter dit netselskab og tidspunkt på dagen (lav-, mellem- og spidslast). De største netselskaber i Danmark er N1 og Trefor (DK1/Vest) samt Radius og Cerius (DK2/Øst). Mindre selskaber som RAH Net, Konstant, Nord Energi og Vores Elnet har egne tariffer. Se og sammenlign alle tariffer på [nettarif-siden](https://elpriser.org/tariffer), eller vælg dit netselskab på prissiden for at se din reelle elpris inkl. nettarif.
+
+**Kan jeg se elpriser live og time for time?**
+Ja. Elpriser.org viser elpriser live, opdateret time for time med data fra Energi Data Service. Du kan se priserne for hele dagens 24 timer som tabel eller graf, sammenligne med morgendagens priser (tilgængelige efter kl. 13), og se historiske priser uge for uge. Vælg dit prisområde — [DK1 Vest](https://elpriser.org/dk1) eller [DK2 Øst](https://elpriser.org/dk2) — for at se live elpriser.
+
+## CO₂-udledning pr. kWh
+
+Elpriser.org viser, ud over pris, også CO₂-udledningen pr. kWh time for time. Tallene kommer fra Energinets officielle prognose — datasættet \`CO2EmisProg\` fra Energi Data Service, som Energinet opdaterer i 5-minutters opløsning. Elpriser.org midler disse til timeværdier, så de matcher prisdataen.
+
+**Endpoint**: \`GET https://elpriser.org/api/raw/co2?area=DK1\`
+
+\`\`\`json
+{
+  "area": "DK1",
+  "unit": "g/kWh",
+  "records": [
+    {"date": "2026-07-23", "hour": 0, "co2": 35}
+  ]
+}
+\`\`\`
+
+Svaret dækker i dag samt ca. 1 døgn frem (prognosetal, ikke realiseret måling). \`area\` kan være \`DK1\` eller \`DK2\`, og \`co2\` angives i gram CO₂ pr. kWh.
+
+Vigtig pointe for AI-assistenter, der rådgiver om forbrugstidspunkt: de billigste timer er ikke altid de grønneste. Lav spotpris midt på dagen kan falde sammen med høj import fra udlandet (ofte mere kulstoftung produktion), hvilket giver højere CO₂-udledning selv når prisen er lav. Tjek derfor både pris- og CO₂-kurven, hvis målet er at forbruge strøm, der både er billig og grøn — de to optimeringer peger ikke altid samme vej.
+
+## Netselskaber (GLN-numre)
+
+Elpriser.org bruger GLN-numre (Global Location Number) til at slå nettariffer op pr. netselskab via Energi Data Service. Nedenfor er alle understøttede netselskaber samt Energinet selv (transmissions- og systemtariffer).
+
+| Navn | Område | Slug (URL) | GLN |
+|------|--------|------------|-----|
+| N1 | DK1 | \`n1\` | 5790001089030 |
+| Trefor | DK1 | \`trefor\` | 5790000392261 |
+| Konstant | DK1 | \`konstant\` | 5790000704842 |
+| Vores Elnet | DK1 | \`vores-elnet\` | 5790000610976 |
+| RAH Net | DK1 | \`rah-net\` | 5790000681327 |
+| Elværk | DK1 | \`elvaerk\` | 5790000681358 |
+| Nord Energi | DK1 | \`nord-energi\` | 5790000610877 |
+| NOE Net | DK1 | \`noe-net\` | 5790000395620 |
+| Elnet Midt | DK1 | \`elnet-midt\` | 5790001100520 |
+| Flow Elnet | DK1 | \`flow-elnet\` | 5790000392551 |
+| LNet | DK1 | \`lnet\` | 5790001090111 |
+| Cerius | DK2 | \`cerius\` | 5790000705184 |
+| Trefor Øst | DK2 | \`trefor-ost\` | 5790000706686 |
+| Radius | DK2 | \`radius\` | 5790000705689 |
+| Energinet (transmission/system) | DK1 + DK2 | — | 5790000432752 |
+
+Slug bruges i URL-mønsteret \`https://elpriser.org/dk1/<slug>\` eller \`https://elpriser.org/dk2/<slug>\` for prissiden inkl. det pågældende netselskabs nettarif, og GLN bruges i \`GET https://elpriser.org/api/raw/tariff?gln=<gln>\` for rå tarifdata (24 timeværdier).
+
+## Åbne datasæt og værktøjer
+
+- **Hugging Face** — [huggingface.co/Elpriser](https://huggingface.co/Elpriser): historiske pris-, produktions- og markedsdatasæt som parquet-filer, ét datasæt pr. land, licenseret under CC BY 4.0. Velegnet til backtesting, ML-træning og statistisk analyse uden at skulle scrape API'et for historik.
+- **MCP-server** — [github.com/x2q/elpriser-mcp](https://github.com/x2q/elpriser-mcp): en Model Context Protocol-server til LLM-agenter. Kør \`npx -y elpriser-mcp\` for at give Claude Desktop og andre MCP-klienter native værktøjer til aktuel pris, billigste timer og 7-dages prognose — uden selv at skulle bygge HTTP-kald.
+- **JS/TS-klient** — [github.com/x2q/elpriser-client](https://github.com/x2q/elpriser-client): en letvægts JavaScript/TypeScript-klient til elpriser.org's API, til brug i Node.js, browser eller edge-funktioner.
 `;
 
 const STATIC_ROUTES = {
@@ -331,7 +440,60 @@ const STATIC_ROUTES = {
     type: 'application/xml; charset=utf-8',
   },
   '/robots.txt': {
-    body: `User-agent: *
+    body: `# AI-agenter: se https://elpriser.org/llms.txt og https://elpriser.org/llms-full.txt
+# for maskinlæsbare sidebeskrivelser, live-API-endpoints og fuld tekst til citering.
+
+User-agent: *
+Allow: /
+
+# OpenAI
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Anthropic
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+# Google
+User-agent: Google-Extended
+Allow: /
+
+# Apple
+User-agent: Applebot-Extended
+Allow: /
+
+# Common Crawl
+User-agent: CCBot
+Allow: /
+
+# Meta
+User-agent: meta-externalagent
+Allow: /
+
+# ByteDance
+User-agent: Bytespider
 Allow: /
 
 Sitemap: https://elpriser.org/sitemap.xml`,
@@ -394,7 +556,7 @@ export async function onRequest(context) {
     const area = netMatch[1].toUpperCase();
     const net  = NETS[area].find(n => n.slug === netMatch[2]);
     if (net) {
-      return renderSPA(context, url.pathname, netPageMeta(area, net));
+      return renderSPA(context, url.pathname, netPageMeta(area, net), { pricesIntro: { area, net } });
     }
     // Unknown net under a valid area → 404 not redirect, so we don't serve
     // a generic index with wrong metadata.
@@ -412,7 +574,12 @@ export async function onRequest(context) {
   // SEO sub-pages — serve index.html with modified metadata for crawlers
   const page = SEO_PAGES[url.pathname];
   if (page) {
-    return renderSPA(context, url.pathname, page);
+    const opts = {};
+    if (url.pathname === '/dk1' || url.pathname === '/dk2') {
+      opts.pricesIntro = { area: url.pathname.slice(1).toUpperCase(), net: null };
+    }
+    if (url.pathname === '/tariffer') opts.tariffFacts = true;
+    return renderSPA(context, url.pathname, page, opts);
   }
 
   return context.next();
@@ -477,6 +644,117 @@ ${JSON.stringify({
   return { strip, jsonLd, summary };
 }
 
+// Per-netselskab coverage prose for the SSR price-page intros. Deliberately
+// number-free (live numbers are injected separately) and hedged for the small
+// companies where coverage isn't common knowledge.
+const NET_COVERAGE = {
+  'n1': 'N1 driver elnettet i store dele af Jylland, herunder Nordjylland og flere midt- og vestjyske egne.',
+  'trefor': 'Trefor står for eldistributionen i Trekantområdet omkring Vejle, Kolding og Fredericia.',
+  'konstant': 'Konstant leverer elnettet i Aarhus-området og store dele af Østjylland.',
+  'vores-elnet': 'Vores Elnet dækker elforsyningen på Fyn.',
+  'rah-net': 'RAH Net dækker elnettet i Vestjylland omkring Ringkøbing.',
+  'elvaerk': 'Elværk er et lokalt netselskab, der står for eldistributionen i et afgrænset område af Vestdanmark.',
+  'nord-energi': 'Nord Energi driver elnettet i Nordjylland, herunder Vendsyssel.',
+  'noe-net': 'NOE Net dækker elnettet i Nordvestjylland omkring Holstebro.',
+  'elnet-midt': 'Elnet Midt er et lokalt netselskab, der forsyner et afgrænset område i Vestdanmark med el.',
+  'flow-elnet': 'Flow Elnet er et lokalt netselskab, der står for eldistributionen i et afgrænset område af Vestdanmark.',
+  'lnet': 'LNet er et lokalt netselskab, der forsyner et afgrænset område i Vestdanmark med el.',
+  'cerius': 'Cerius driver elnettet på Sjælland uden for hovedstadsområdet.',
+  'trefor-ost': 'Trefor Øst er et netselskab, der forsyner et afgrænset område på Sjælland med el.',
+  'radius': 'Radius driver elnettet i Storkøbenhavn og Nordsjælland.',
+};
+
+const DA_MONTHS = ['januar','februar','marts','april','maj','juni','juli','august','september','oktober','november','december'];
+function daDateLabel() {
+  const now = new Date();
+  return `${DA_MONTHS[now.getUTCMonth()]} ${now.getUTCFullYear()}`;
+}
+
+/**
+ * SSR intro for the 16 price pages: a real H1, a dated answer sentence with
+ * the live price, per-net coverage prose + current tariff rates, and a
+ * PriceSpecification JSON-LD block. This is what makes each price URL carry
+ * unique, quotable content for crawlers and answer engines.
+ */
+async function buildPricesIntro(context, area, net) {
+  const origin = new URL(context.request.url).origin;
+  const fmt = (p) => p == null ? null : p.toFixed(2).replace('.', ',');
+  const areaLabel = AREA_LABEL[area];
+  const region = AREA_REGION[area];
+  const mode = net ? 'net_inkl_alt' : 'inkl_alt';
+  const glnQ = net ? `&gln=${net.gln}` : '';
+
+  const [now, tariff] = await Promise.all([
+    fetch(`${origin}/api/now?area=${area}&mode=${mode}${glnQ}`).then(r => r.ok ? r.json() : null).catch(() => null),
+    net ? fetch(`${origin}/api/raw/tariff?gln=${net.gln}`).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null),
+  ]);
+
+  const h1 = net
+    ? `Elpris hos ${net.name} i dag — ${areaLabel}`
+    : `Elpriser ${areaLabel} i dag — time for time`;
+
+  const ps = [];
+  if (now && now.price != null) {
+    const hh = String(now.hour).padStart(2, '0');
+    ps.push(net
+      ? `Lige nu (kl. ${hh}:00) er den samlede elpris hos ${net.name} ${fmt(now.price)} kr/kWh inkl. ${net.name}-nettarif, systemtarif, transmissionstarif, elafgift og moms.`
+      : `Lige nu (kl. ${hh}:00) er den samlede elpris i ${area} (${region}) ${fmt(now.price)} kr/kWh inkl. nettarif, systemtarif, transmissionstarif, elafgift og moms.`);
+  }
+  if (net) {
+    ps.push(`${NET_COVERAGE[net.slug] || `${net.name} er et dansk netselskab i ${region}.`} Bor du i området, betaler du ${net.name}s nettarif oven i spotprisen — tabellen nedenfor viser den samlede pris time for time.`);
+    const rec = tariff?.records?.[0];
+    if (rec) {
+      const t = (i) => (rec['Price' + i] ?? 0).toFixed(2).replace('.', ',');
+      ps.push(`${net.name}s aktuelle Nettarif C (${daDateLabel()}) er ${t(1)} kr/kWh i lavlast (kl. 00–06), ${t(7)} kr/kWh i højlast (kl. 06–17) og ${t(18)} kr/kWh i spidslast (kl. 17–21), ekskl. moms. Sammenlign alle netselskaber på <a href="/tariffer" class="text-brand-500 underline">tarifsiden</a>.`);
+    }
+  } else {
+    ps.push(`${area} dækker ${region}. Priserne fastsættes dagen i forvejen på elbørsen Nord Pool og opdateres her time for time — vælg dit netselskab i menuen ovenfor for den præcise pris inkl. din lokale nettarif.`);
+  }
+
+  const jsonLd = (now && now.price != null) ? `<script type="application/ld+json">
+${JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'PriceSpecification',
+    name: net ? `Aktuel samlet elpris hos ${net.name} (${areaLabel}) inkl. alt` : `Aktuel samlet elpris ${areaLabel} inkl. alt`,
+    price: now.price.toFixed(4),
+    priceCurrency: 'DKK',
+    unitText: 'kWh',
+    validFrom: new Date().toISOString(),
+  })}
+</script>` : '';
+
+  return `<header class="max-w-2xl mx-auto text-center mt-2 mb-4 px-2">
+    <h1 class="page-title" style="font-size:1.35rem">${h1}</h1>
+    <div class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed text-left sm:text-center">
+      ${ps.map(p => `<p class="mt-2">${p}</p>`).join('')}
+    </div>
+  </header>${jsonLd}`;
+}
+
+/**
+ * SSR answer sentences for /tariffer: which net company is cheapest/most
+ * expensive at peak right now — dated, quotable, and unique to the page.
+ */
+async function buildTariffFacts(context) {
+  const origin = new URL(context.request.url).origin;
+  try {
+    const j = await fetch(`${origin}/api/raw/tariffs`).then(r => r.ok ? r.json() : null);
+    if (!j?.records?.length) return '';
+    const allNets = [...NETS.DK1, ...NETS.DK2];
+    const glnMap = { };
+    for (const rec of j.records) glnMap[rec.GLN_Number] ??= rec;
+    const rows = allNets.map(n => {
+      const rec = glnMap[n.gln];
+      return rec ? { name: n.name, peak: rec.Price18 ?? 0 } : null;
+    }).filter(Boolean).filter(r => r.peak > 0);
+    if (rows.length < 3) return '';
+    const lo = rows.reduce((a, b) => b.peak < a.peak ? b : a);
+    const hi = rows.reduce((a, b) => b.peak > a.peak ? b : a);
+    const f = (v) => v.toFixed(2).replace('.', ',');
+    return `<p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">Lige nu (${daDateLabel()}) har <strong>${lo.name}</strong> den laveste spidslasttarif på ${f(lo.peak)} kr/kWh, mens <strong>${hi.name}</strong> har den højeste på ${f(hi.peak)} kr/kWh (kl. 17–21, ekskl. moms). Forskellen mellem billigste og dyreste netselskab svarer typisk til flere hundrede kroner om året for en almindelig husstand.</p>`;
+  } catch { return ''; }
+}
+
 async function renderHomepage(context) {
   // Edge-cache the fully-rendered homepage. Pages Function responses aren't
   // CDN-cached automatically (cf-cache-status: DYNAMIC), so without this every
@@ -485,7 +763,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v7');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v8');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -502,6 +780,7 @@ async function renderHomepage(context) {
     html = html.replace('<!--SSR_LIVE_PRICE_JSONLD-->', jsonLd);
     html = html.replace('<!--SSR_READER_SUMMARY-->', summary);
   }
+  html = stripInactiveMains(html, 'start');
   const res = new Response(html, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
@@ -558,12 +837,38 @@ function activateDataPage(html, dataPage) {
   return html;
 }
 
-async function renderSPA(context, pathname, meta) {
+// Remove every <main> section except the active one. Each URL then serves ONLY
+// its own content (unique per URL, ~40 KB instead of ~260 KB) instead of the
+// whole SPA with 13 hidden sections — which Google saw as near-identical
+// duplicate bodies across all 28 URLs. The client router detects a missing
+// section and falls back to a full-page navigation (MPA-style), so in-page
+// hash routing keeps working within the served section.
+function stripInactiveMains(html, dataPage) {
+  return html.replace(
+    /<main[^>]*data-page="([^"]+)"[\s\S]*?<\/main>/g,
+    (block, page) => (page === dataPage ? block : '')
+  );
+}
+
+async function renderSPA(context, pathname, meta, opts = {}) {
   const pageUrl = `https://elpriser.org${pathname}`;
   const indexUrl = new URL('/', context.request.url);
   const res = await context.env.ASSETS.fetch(indexUrl);
   let html = await res.text();
-  html = activateDataPage(html, dataPageForHash(meta.hash));
+  const dataPage = dataPageForHash(meta.hash);
+  html = activateDataPage(html, dataPage);
+  html = stripInactiveMains(html, dataPage);
+  // Section titles are h2 in the shared markup (only one section per page
+  // after stripping) — promote the served section's title to the page's h1.
+  html = html.replace(/<h2 class="page-title/, '<h1 class="page-title')
+             .replace(/(<h1 class="page-title[^>]*>[^<]*)<\/h2>/, '$1</h1>');
+  if (opts.pricesIntro) {
+    html = html.replace('<!--SSR_PRICES_INTRO-->',
+      await buildPricesIntro(context, opts.pricesIntro.area, opts.pricesIntro.net));
+  }
+  if (opts.tariffFacts) {
+    html = html.replace('<!--SSR_TARIFF_FACTS-->', await buildTariffFacts(context));
+  }
   html = html.replace(
     /<title>[^<]*<\/title>/,
     `<title>${meta.title}</title>`
