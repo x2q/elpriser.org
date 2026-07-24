@@ -601,20 +601,11 @@ async function fetchAreaSnapshot(context, area) {
   };
 }
 
-/** Build the visible live-price strip + the price JSON-LD block. */
+/** Build the live-price JSON-LD block + Reader-summary prose. */
 function buildLivePriceMarkup(dk1, dk2) {
   const hh = String(dk1.hour).padStart(2, '0');
   const fmt = (p) => p == null ? '—' : p.toFixed(2).replace('.', ',');
-  const strip = `<div class="ssr-live-price">
-    <span class="ssr-live-pulse" aria-hidden="true"></span>
-    <span>Lige nu kl. ${hh}:00:</span>
-    <span><strong>DK1</strong> ${fmt(dk1.spot)} spot · ${fmt(dk1.total)} inkl. alt</span>
-    <span aria-hidden="true">·</span>
-    <span><strong>DK2</strong> ${fmt(dk2.spot)} spot · ${fmt(dk2.total)} inkl. alt</span>
-    <span class="ssr-live-unit">kr/kWh</span>
-  </div>`;
-
-  // Prose version of the same snapshot for the Reader-summary <article> —
+  // Prose version of the live snapshot for the Reader-summary <article> —
   // what Safari Reader (and crawlers) see as the page's article text.
   const summary = `Lige nu kl. ${hh}:00 koster strøm ${fmt(dk1.spot)} kr/kWh i ren spotpris i DK1 (Vestdanmark) og ${fmt(dk2.spot)} kr/kWh i DK2 (Østdanmark). Den samlede elpris inkl. nettarif, systemtarif, transmissionstarif, elafgift og moms er ${fmt(dk1.total)} kr/kWh i DK1 og ${fmt(dk2.total)} kr/kWh i DK2.`;
 
@@ -641,7 +632,7 @@ ${JSON.stringify({
     ],
   }, null, 2)}
 </script>`;
-  return { strip, jsonLd, summary };
+  return { jsonLd, summary };
 }
 
 // Per-netselskab coverage prose for the SSR price-page intros. Deliberately
@@ -763,7 +754,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v10');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v11');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -775,8 +766,7 @@ async function renderHomepage(context) {
   ]);
   let html = await resHtml.text();
   if (dk1 && dk2) {
-    const { strip, jsonLd, summary } = buildLivePriceMarkup(dk1, dk2);
-    html = html.replace('<!--SSR_LIVE_PRICE-->', strip);
+    const { jsonLd, summary } = buildLivePriceMarkup(dk1, dk2);
     html = html.replace('<!--SSR_LIVE_PRICE_JSONLD-->', jsonLd);
     html = html.replace('<!--SSR_READER_SUMMARY-->', summary);
   }

@@ -463,16 +463,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
   .hero h1{letter-spacing:-0.035em;text-shadow:0 2px 30px rgba(0,0,0,.18)}
   .hero-sub{color:rgba(236,244,255,.82);letter-spacing:-0.005em}
-  /* Server-rendered live-price pill (homepage only). Matches the GPS button's
-     frosted-glass treatment so it reads as a coherent hero element. */
-  .ssr-live-price{display:inline-flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:.5rem;
     margin-top:1.5rem;padding:.55rem 1.15rem;
     font-size:.8125rem;color:rgba(255,255,255,.92);letter-spacing:-0.005em;
     background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:9999px;
     backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-  .ssr-live-price strong{color:#fff;font-weight:600}
-  .ssr-live-unit{color:rgba(255,255,255,.55);font-size:.7rem;margin-left:.25rem}
-  .ssr-live-pulse{width:.45rem;height:.45rem;border-radius:9999px;background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.9);
     animation:pulse 2s ease-in-out infinite;display:inline-block;align-self:center}
   .gps-bar{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 8px 28px -12px rgba(0,0,0,.35);cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease;letter-spacing:-0.005em}
   button.gps-bar:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.32);transform:translateY(-1px);box-shadow:0 12px 32px -10px rgba(0,0,0,.45)}
@@ -622,12 +616,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .mini.tmr .v{font-size:.85rem;font-weight:600;color:#5c6675;margin-top:.35rem}
   .mini.tmr.has-range .v{font-size:1.3rem;font-weight:700;color:#0e1421;margin-top:1px}
   .dark .mini.tmr.has-range .v{color:#e8edf5}
-  /* SSR strip + GPS restyled for light hero */
-  .answer-ssr .ssr-live-price{margin-top:1.25rem;background:rgba(27,87,245,.06);border-color:rgba(27,87,245,.15);color:#3d495c}
-  .answer-ssr .ssr-live-price strong{color:#0e1421}
-  .answer-ssr .ssr-live-unit{color:#8a95a8}
-  .dark .answer-ssr .ssr-live-price{background:rgba(58,118,255,.1);border-color:rgba(58,118,255,.22);color:#aab6c8}
-  .dark .answer-ssr .ssr-live-price strong{color:#e8edf5}
+  /* GPS restyled for light hero */
   .gps-light{display:inline-flex;align-items:center;gap:.7rem;border-radius:9999px;font-size:.85rem;font-weight:600;padding:.8rem 1.5rem;background:rgba(27,87,245,.08);border:1px solid rgba(27,87,245,.18);color:#1b57f5;cursor:pointer;transition:background .15s ease}
   .gps-light:hover{background:rgba(27,87,245,.14)}
   .dark .gps-light{background:rgba(58,118,255,.12);border-color:rgba(58,118,255,.25);color:#6d9aff}
@@ -679,12 +668,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <div class="answer-toggle" role="tablist" aria-label="Prisområde">
         <button id="heroBtnDK1" class="on" onclick="setHeroArea('DK1')">DK1 Vest</button>
         <button id="heroBtnDK2" onclick="setHeroArea('DK2')">DK2 Øst</button>
-      </div>
-      <div class="answer-ssr">
-        <!-- Server-rendered live price snapshot (homepage only). Replaced by
-             functions/[[path]].js so Google and LLM crawlers see the actual
-             numbers in the first HTML response. -->
-        <!--SSR_LIVE_PRICE-->
       </div>
     </div>
     <div class="chartcard">
