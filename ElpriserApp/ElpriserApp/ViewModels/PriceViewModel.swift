@@ -25,11 +25,20 @@ class PriceViewModel {
         co2.enumerated().compactMap { h, v in v.map { (h, $0) } }
     }
 
-    /// Fraction of today's hours that are more expensive than now (0-100).
-    var cheaperThanPct: Int? {
+    /// Human-readable rank of the current hour among today's prices —
+    /// concrete hours instead of an abstract percentile ("Dagens billigste
+    /// time", "Blandt dagens 3 billigste timer", "Billigere end 15 af
+    /// dagens 24 timer", or the same for the expensive end).
+    var rankLabel: String? {
         guard let now = currentPrice, !validPrices.isEmpty else { return nil }
         let cheaper = validPrices.filter { $0.p < now }.count
-        return 100 - Int(Double(cheaper) / Double(validPrices.count) * 100)
+        let total = validPrices.count
+        let dyrere = total - cheaper - 1
+        if cheaper == 0 { return "Dagens billigste time" }
+        if cheaper <= 3 { return "Blandt dagens \(cheaper + 1) billigste timer" }
+        if dyrere == 0 { return "Dagens dyreste time" }
+        if dyrere <= 3 { return "Blandt dagens \(dyrere + 1) dyreste timer" }
+        return "Billigere end \(dyrere) af dagens \(total) timer"
     }
 
     var verdict: Verdict? {

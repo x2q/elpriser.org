@@ -70,8 +70,8 @@ struct PricesView: View {
             }
             .padding(.top, 8)
 
-            if let pct = vm.cheaperThanPct {
-                Text("Billigere end \(pct) % af dagens timer\(vm.isGreenestNow ? " · dagens laveste CO₂" : "")")
+            if let rank = vm.rankLabel {
+                Text("\(rank)\(vm.isGreenestNow ? " · dagens laveste CO₂" : "")")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .padding(.top, 5)

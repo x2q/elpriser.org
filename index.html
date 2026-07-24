@@ -2621,9 +2621,18 @@ function renderHero(prices,co2,nowH){
     document.getElementById('heroGreenV').textContent=g.v+' g';
     document.getElementById('heroGreenS').textContent=`kl. ${String(g.h).padStart(2,'0')}${g.h===nowH?' · nu':''}`;
   }
-  // Context line
+  // Context line — concrete hours instead of an abstract percentile:
+  // "Dagens billigste time" / "Blandt dagens 3 billigste timer" /
+  // "Billigere end 15 af dagens 24 timer" / same for the expensive end.
+  const total=valid.length,dyrere=total-cheaper-1;
+  let rankTxt;
+  if(cheaper===0)rankTxt='Dagens billigste time';
+  else if(cheaper<=3)rankTxt=`Blandt dagens ${cheaper+1} billigste timer`;
+  else if(dyrere===0)rankTxt='Dagens dyreste time';
+  else if(dyrere<=3)rankTxt=`Blandt dagens ${dyrere+1} dyreste timer`;
+  else rankTxt=`Billigere end ${dyrere} af dagens ${total} timer`;
   document.getElementById('heroContext').textContent=
-    `Billigere end ${100-pct} % af dagens timer`+(nowC!=null&&co2Valid.length&&nowC===Math.min(...co2Valid.map(x=>x.v))?' — og dagens laveste CO₂-udledning netop nu.':'.');
+    rankTxt+(nowC!=null&&co2Valid.length&&nowC===Math.min(...co2Valid.map(x=>x.v))?' — og dagens laveste CO₂-udledning netop nu.':'.');
   // Advice engine — only say what the data actually supports
   const later=valid.filter(x=>x.h>nowH);
   const adviceEl=document.getElementById('heroAdvice');
