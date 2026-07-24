@@ -621,6 +621,50 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .gps-light:hover{background:rgba(27,87,245,.14)}
   .dark .gps-light{background:rgba(58,118,255,.12);border-color:rgba(58,118,255,.25);color:#6d9aff}
 
+  /* ═══ Top nav — sticky, blurred, burger on mobile ═══ */
+  .site-nav{position:sticky;top:0;z-index:50;background:rgba(249,250,251,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid #e2e7f0}
+  .dark .site-nav{background:rgba(13,18,33,.85);border-bottom-color:#242e44}
+  .site-nav-inner{max-width:66rem;margin:0 auto;display:flex;align-items:center;gap:1.5rem;padding:.7rem 1rem}
+  .site-logo{font-size:1.05rem;font-weight:800;letter-spacing:-.02em;color:#0e1421;display:flex;align-items:center;gap:.3rem;flex-shrink:0}
+  .dark .site-logo{color:#e8edf5}
+  .site-logo .bolt{color:#1b57f5}
+  .dark .site-logo .bolt{color:#59a0ff}
+  .site-links{display:flex;align-items:center;gap:1.2rem;font-size:.85rem;font-weight:500;color:#5c6675;margin-left:auto}
+  .dark .site-links{color:#8a95a8}
+  .site-links>a{padding:.25rem 0;border-bottom:2px solid transparent}
+  .site-links>a:hover{color:#0e1421}
+  .dark .site-links>a:hover{color:#e8edf5}
+  .site-links>a.on{color:#1b57f5;border-bottom-color:#1b57f5;font-weight:600}
+  .dark .site-links>a.on{color:#59a0ff;border-bottom-color:#59a0ff}
+  .site-guides{position:relative}
+  .site-guides>button{font:inherit;font-weight:500;color:inherit;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:.25rem;padding:.25rem 0}
+  .site-guides>button:hover{color:#0e1421}
+  .dark .site-guides>button:hover{color:#e8edf5}
+  .site-guides>button.on{color:#1b57f5;font-weight:600}
+  .site-guides-menu{position:absolute;right:0;top:calc(100% + .5rem);min-width:15rem;background:#fff;border:1px solid #e2e7f0;border-radius:.9rem;box-shadow:0 8px 24px rgba(14,20,33,.12);padding:.4rem;display:flex;flex-direction:column}
+  .site-guides-menu[hidden]{display:none}
+  .dark .site-guides-menu{background:#161d30;border-color:#242e44;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+  .site-guides-menu a{padding:.5rem .7rem;border-radius:.5rem;font-size:.85rem;color:#3d495c}
+  .dark .site-guides-menu a{color:#c2cce0}
+  .site-guides-menu a:hover{background:rgba(27,87,245,.07);color:#1b57f5}
+  .dark .site-guides-menu a:hover{background:rgba(89,160,255,.1);color:#59a0ff}
+  .site-burger{display:none;margin-left:auto;background:none;border:none;cursor:pointer;padding:.35rem;color:#3d495c;border-radius:.5rem}
+  .site-burger:hover{background:rgba(27,87,245,.07)}
+  .dark .site-burger{color:#c2cce0}
+  .site-mobile{display:none;border-top:1px solid #e2e7f0;padding:.5rem .8rem .9rem;flex-direction:column}
+  .dark .site-mobile{border-top-color:#242e44}
+  .site-mobile.open{display:flex}
+  .site-mobile a{padding:.6rem .5rem;border-radius:.5rem;font-size:.95rem;font-weight:500;color:#3d495c}
+  .dark .site-mobile a{color:#c2cce0}
+  .site-mobile a:hover{background:rgba(27,87,245,.07)}
+  .site-mobile a.on{color:#1b57f5;font-weight:600}
+  .dark .site-mobile a.on{color:#59a0ff}
+  .site-mobile .grp{margin-top:.5rem;padding:.55rem .5rem .15rem;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8a95a8}
+  @media (max-width:820px){
+    .site-links{display:none}
+    .site-burger{display:block}
+  }
+
   /* ═══ Shared subpage design — same language as the answer-first hero ═══ */
   .page-eyebrow{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#5c6675}
   .dark .page-eyebrow{color:#8a95a8}
@@ -651,6 +695,55 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 </style>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-950 dark:text-gray-100 min-h-screen font-sans transition-colors">
+
+<!-- ═══════ TOP NAV — lives outside the <main> sections so the SSR
+     stripping keeps it on every page. Burger menu below 820px. ═══════ -->
+<header class="site-nav">
+  <div class="site-nav-inner">
+    <a href="/" class="site-logo" aria-label="elpriser.org forside"><span class="bolt">⚡</span>elpriser</a>
+    <nav class="site-links" aria-label="Hovedmenu">
+      <a href="/dk1" data-nav="dk1">DK1 Vest</a>
+      <a href="/dk2" data-nav="dk2">DK2 Øst</a>
+      <a href="/prognose" data-nav="prognose">Prognose</a>
+      <a href="/tariffer" data-nav="tariffer">Tariffer</a>
+      <a href="/automation" data-nav="automation">Automation</a>
+      <a href="/api" data-nav="api">API</a>
+      <div class="site-guides">
+        <button type="button" id="guidesBtn" aria-haspopup="true" aria-expanded="false" onclick="toggleGuides(event)">Guides
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="site-guides-menu" id="guidesMenu" hidden>
+          <a href="/blog/forsta-din-elpris">Forstå din elpris</a>
+          <a href="/blog/elafgift-2028">Elafgift 2028</a>
+          <a href="/blog/home-assistant-elpriser">Home Assistant</a>
+          <a href="/blog/shelly-elpris-automation">Shelly automation</a>
+          <a href="/blog/v2g-v2h-bidirektional-opladning">V2G &amp; V2H</a>
+          <a href="/blog/biler-ladere-v2h-v2g">Biler &amp; ladere</a>
+          <a href="/om-elpriser">Om elpriser</a>
+        </div>
+      </div>
+    </nav>
+    <button type="button" class="site-burger" id="burgerBtn" aria-label="Åbn menu" aria-expanded="false" onclick="toggleBurger()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path id="burgerIcon" d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+  <div class="site-mobile" id="mobileMenu">
+    <a href="/dk1" data-nav="dk1">DK1 Vest</a>
+    <a href="/dk2" data-nav="dk2">DK2 Øst</a>
+    <a href="/prognose" data-nav="prognose">Prognose</a>
+    <a href="/tariffer" data-nav="tariffer">Tariffer</a>
+    <a href="/automation" data-nav="automation">Automation</a>
+    <a href="/api" data-nav="api">API</a>
+    <div class="grp">Guides</div>
+    <a href="/blog/forsta-din-elpris">Forstå din elpris</a>
+    <a href="/blog/elafgift-2028">Elafgift 2028</a>
+    <a href="/blog/home-assistant-elpriser">Home Assistant</a>
+    <a href="/blog/shelly-elpris-automation">Shelly automation</a>
+    <a href="/blog/v2g-v2h-bidirektional-opladning">V2G &amp; V2H</a>
+    <a href="/blog/biler-ladere-v2h-v2g">Biler &amp; ladere</a>
+    <a href="/om-elpriser">Om elpriser</a>
+  </div>
+</header>
 
 <!-- ═══════ START PAGE ═══════ -->
 <main data-page="start" class="active">
@@ -2441,6 +2534,41 @@ async function detectLocation(){
 }
 function matchNet(n){const l=n.toLowerCase();for(const a of['DK1','DK2'])for(const net of NETS[a])for(const m of net.match)if(l.includes(m.toLowerCase()))return{area:a,net};return null;}
 
+// ═══ TOP NAV ═══
+function toggleBurger(){
+  const m=document.getElementById('mobileMenu'),b=document.getElementById('burgerBtn');
+  const open=!m.classList.contains('open');
+  m.classList.toggle('open',open);
+  b.setAttribute('aria-expanded',open);
+  document.getElementById('burgerIcon').setAttribute('d',open?'M6 6l12 12M18 6L6 18':'M4 7h16M4 12h16M4 17h16');
+  if(open)track('burger_open');
+}
+function toggleGuides(e){
+  e.stopPropagation();
+  const m=document.getElementById('guidesMenu'),b=document.getElementById('guidesBtn');
+  const open=m.hidden;
+  m.hidden=!open;
+  b.setAttribute('aria-expanded',open);
+}
+// Close menus on outside click / after navigating via a menu link
+document.addEventListener('click',e=>{
+  const gm=document.getElementById('guidesMenu');
+  if(gm&&!gm.hidden&&!e.target.closest('.site-guides')){gm.hidden=true;document.getElementById('guidesBtn')?.setAttribute('aria-expanded','false');}
+  if(e.target.closest('#mobileMenu a, #guidesMenu a')){
+    document.getElementById('mobileMenu')?.classList.remove('open');
+    if(gm)gm.hidden=true;
+  }
+},{passive:true});
+// Highlight the current page in the nav (desktop links + mobile list + Guides)
+function updateNavActive(){
+  const dp=document.querySelector('[data-page].active')?.getAttribute('data-page')||'start';
+  const key=dp==='prices'?(S.area==='DK2'?'dk2':'dk1'):dp;
+  document.querySelectorAll('.site-links a[data-nav], .site-mobile a[data-nav]').forEach(a=>
+    a.classList.toggle('on',a.dataset.nav===key));
+  const isGuide=dp.startsWith('blog-')||dp==='om-elpriser';
+  document.getElementById('guidesBtn')?.classList.toggle('on',isGuide);
+}
+
 // ═══ ADFÆRDSTRACKING (GA4) ═══
 // Central helper: every custom event carries the active SPA section, so
 // behavior can be segmented per page even within a single page_view.
@@ -2463,7 +2591,8 @@ function initBehaviorTracking(){
       track('outbound_click',{link_url:href,link_domain:domain,link_text:(a.textContent||'').trim().slice(0,60)});
       return;
     }
-    const ctx=a.classList.contains('nav-pill')?'nav_pill'
+    const ctx=a.closest('.site-nav')?'top_nav'
+      :a.classList.contains('nav-pill')?'nav_pill'
       :a.classList.contains('net-chip')?'net_chip'
       :a.classList.contains('zone-btn')?'zone_button'
       :a.closest('footer')?'footer'
@@ -2547,7 +2676,7 @@ function route(){
   // styles. The microtask clears it on whichever page the branch below
   // activates — route() is synchronous, so this runs right after it.
   document.querySelectorAll('[data-page]').forEach(p=>{p.classList.remove('active');p.style.display='none';});
-  queueMicrotask(()=>{const a=document.querySelector('[data-page].active');if(a)a.style.display='';});
+  queueMicrotask(()=>{const a=document.querySelector('[data-page].active');if(a)a.style.display='';updateNavActive();});
   // Helper: send page_view with clean path for GA4
   const pv=(title,path)=>gtag('event','page_view',{page_title:title,page_location:location.origin+(path||location.pathname)});
   if(!h){
