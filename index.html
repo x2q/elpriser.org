@@ -2441,6 +2441,58 @@ async function detectLocation(){
 }
 function matchNet(n){const l=n.toLowerCase();for(const a of['DK1','DK2'])for(const net of NETS[a])for(const m of net.match)if(l.includes(m.toLowerCase()))return{area:a,net};return null;}
 
+// ═══ ADFÆRDSTRACKING (GA4) ═══
+// Central helper: every custom event carries the active SPA section, so
+// behavior can be segmented per page even within a single page_view.
+function track(name,params){try{gtag('event',name,{page:document.querySelector('[data-page].active')?.getAttribute('data-page')||'start',...params});}catch(_){/* analytics must never break the app */}}
+
+function initBehaviorTracking(){
+  // User properties: theme + preferred area follow the user across sessions
+  try{
+    gtag('set','user_properties',{color_scheme:isDark()?'dark':'light',preferred_area:heroArea||S.area||'DK1'});
+  }catch(_){}
+
+  // Click delegation: outbound links vs. internal navigation, classified by
+  // the component the user clicked (nav pill, net chip, zone button, footer…)
+  document.addEventListener('click',e=>{
+    const a=e.target.closest('a[href]');
+    if(!a)return;
+    const href=a.getAttribute('href')||'';
+    if(/^https?:\/\//.test(href)&&!href.includes('elpriser.org')){
+      let domain='';try{domain=new URL(href).hostname;}catch(_){}
+      track('outbound_click',{link_url:href,link_domain:domain,link_text:(a.textContent||'').trim().slice(0,60)});
+      return;
+    }
+    const ctx=a.classList.contains('nav-pill')?'nav_pill'
+      :a.classList.contains('net-chip')?'net_chip'
+      :a.classList.contains('zone-btn')?'zone_button'
+      :a.closest('footer')?'footer'
+      :a.closest('.answer-advice')?'advice_card'
+      :null;
+    if(ctx)track('nav_click',{link_url:href,link_text:(a.textContent||'').trim().slice(0,40),component:ctx});
+  },{passive:true});
+
+  // FAQ engagement — which questions do people actually open?
+  document.addEventListener('toggle',e=>{
+    const d=e.target;
+    if(d.matches?.('details.faq')&&d.open){
+      const q=d.querySelector('summary')?.textContent.trim().slice(0,80)||'';
+      track('faq_open',{question:q});
+    }
+  },true); // toggle doesn't bubble — capture it
+
+  // Scroll depth per SPA page (25/50/75/90), reset on route change
+  let seen=new Set();
+  window._resetScrollDepth=()=>{seen=new Set();};
+  addEventListener('scroll',()=>{
+    const h=document.documentElement;
+    const max=h.scrollHeight-innerHeight;
+    if(max<200)return;
+    const pct=Math.round(scrollY/max*100);
+    for(const t of[25,50,75,90])if(pct>=t&&!seen.has(t)){seen.add(t);track('scroll_depth',{percent:t});}
+  },{passive:true});
+}
+
 // ═══ ROUTER ═══
 // Clean-URL → hash equivalents. Crawlable URLs (/dk1, /blog/…) load without a
 // hash; we derive the SPA route from the pathname instead of doing a redirect
@@ -2489,6 +2541,7 @@ function route(){
     if(location.pathname+location.hash!==target)location.href=target;
     return;
   }
+  window._resetScrollDepth?.();
   // Inline display:none (not just the .active class) keeps the hidden pages'
   // text out of Safari Reader's article detection, which only sees inline
   // styles. The microtask clears it on whichever page the branch below
@@ -2534,6 +2587,8 @@ function setHeroArea(a){
   document.getElementById('heroBtnDK1').classList.toggle('on',a==='DK1');
   document.getElementById('heroBtnDK2').classList.toggle('on',a==='DK2');
   document.getElementById('heroLoc').textContent=a==='DK1'?'Vestdanmark · DK1':'Østdanmark · DK2';
+  track('hero_area_change',{area:a});
+  try{gtag('set','user_properties',{preferred_area:a});}catch(_){}
   loadStartHero();
 }
 async function loadStartHero(){
@@ -2619,12 +2674,13 @@ function renderHero(prices,co2,nowH){
   // Advice engine — only say what the data actually supports
   const later=valid.filter(x=>x.h>nowH);
   const adviceEl=document.getElementById('heroAdvice');
-  let advice='';
+  let advice='',adviceType='none';
   if(later.length&&nowP!=null){
     const lBest=later.reduce((a,x)=>x.p<a.p?x:a), lWorst=later.reduce((a,x)=>x.p>a.p?x:a);
     const saveWait=Math.round((1-lBest.p/nowP)*100);
     const savePeak=Math.round((1-nowP/lWorst.p)*100);
     const co2AtBest=co2[lBest.h], co2AtPeak=co2[lWorst.h];
+    if(saveWait>=25)adviceType='wait';else if(savePeak>=40)adviceType='use_now';
     if(saveWait>=25){
       advice=`Vent til kl. ${String(lBest.h).padStart(2,'0')} — så betaler du <b>${saveWait} % mindre</b>`;
       if(nowC!=null&&co2AtBest!=null&&co2AtBest<=nowC*0.9)advice+=` og udleder <b>${Math.round((1-co2AtBest/nowC)*100)} % mindre CO₂</b>`;
@@ -2638,6 +2694,12 @@ function renderHero(prices,co2,nowH){
   }
   adviceEl.innerHTML=advice;
   adviceEl.style.display=advice?'':'none';
+  // One impression per area+hour: which verdict/advice did visitors see?
+  const impKey=`${heroArea}|${nowH}`;
+  if(window._heroImpKey!==impKey){
+    window._heroImpKey=impKey;
+    track('hero_impression',{area:heroArea,verdict:cls,price:+nowP.toFixed(4),co2:nowC??undefined,advice_type:adviceType});
+  }
   // Keep the Reader-summary article in sync with the selected area, so Safari
   // Reader shows current essentials rather than a stale snapshot.
   const rd=document.getElementById('readerDay');
@@ -2966,6 +3028,12 @@ async function updatePricesAnswer(){
   let pills=`<span class="apill ${cls}">${lbl}</span>`;
   box.style.display='';
   document.getElementById('pricesAnswerPills').innerHTML=pills;
+  // One impression per selection+hour: verdict seen on the price pages
+  const ansKey=`${S.area}|${S.mode}|${S.gln||''}|${nowH}`;
+  if(window._ansImpKey!==ansKey){
+    window._ansImpKey=ansKey;
+    track('price_answer_impression',{area:S.area,mode:S.mode,net:S.netName||undefined,verdict:cls,price:+nowP.toFixed(4)});
+  }
   try{
     const cj=await dedupedFetch(`/api/raw/co2?area=${S.area}`);
     const rec=cj.records.find(r=>r.date===today&&r.hour===nowH);
@@ -3451,6 +3519,9 @@ async function loadForecastPage(){
   const loadId=++_fcLoadId;
   const area=document.getElementById('fcArea')?.value||S.area||'DK1';
   const mode=document.getElementById('fcMode')?.value||'inkl_alt';
+  const fcKey=`${area}|${mode}`;
+  if(window._fcCfgKey&&window._fcCfgKey!==fcKey)track('forecast_config_change',{area,mode});
+  window._fcCfgKey=fcKey;
   document.getElementById('fcLoading').style.display='';
   document.getElementById('fcTableWrapper').style.display='none';
   try{
@@ -3715,7 +3786,7 @@ async function renderShellyTariffTable(){
 }
 
 // ═══ INIT ═══
-buildStart();buildPriceSelector();route();
+buildStart();buildPriceSelector();initBehaviorTracking();route();
 </script>
 </body>
 </html>
