@@ -1068,6 +1068,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         <table class="mx-auto text-xs sm:text-sm tabular" id="priceTable"></table>
       </div>
     </div>
+    <p id="fcTableNote" class="text-center text-xs mt-2" style="color:#0e9888;display:none">Kolonnen "i morgen" er en prognose — de faktiske priser offentliggøres ca. kl. 13.</p>
     <div class="flex items-center justify-center gap-2 mt-4">
       <button onclick="changeWeek(-1)" class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs">← Forrige</button>
       <span id="weekLabel" class="text-xs text-gray-500 dark:text-gray-400 w-24 text-center">Denne uge</span>
@@ -2458,7 +2459,7 @@ const ZONE_BTNS=[
 const isDark=()=>document.documentElement.classList.contains('dark');
 
 let S={area:'DK1',mode:'spot_inkl',gln:null,netName:'',view:'table',_loadId:0,weekOffset:0};
-let priceData={},tariffCache={},allTariffsLoaded=false,enCharges=null;
+let priceData={},tariffCache={},allTariffsLoaded=false,enCharges=null,fcTomorrow=null;
 
 
 // ═══ GPS — auto-navigate on detection ═══
@@ -3089,6 +3090,26 @@ async function loadPriceData(loadId){
     if(loadId!==S._loadId)return;
     priceData=processRecords(j.records||[]);
     if(!Object.keys(priceData).length)throw new Error('no parseable records');
+    // Tomorrow's column: actual børspriser once published (~13:00, already in
+    // priceData via the +2d fetch window) — otherwise the ML forecast, fetched
+    // as raw spot so cvt() can apply the exact same tariff/afgift pipeline as
+    // the rest of the table (works for net_ modes too).
+    fcTomorrow=null;
+    if(S.weekOffset===0){
+      const tmr=new Date();tmr.setDate(tmr.getDate()+1);const tmrStr=fmt(tmr);
+      if(!priceData[tmrStr]){
+        try{
+          const fj=await dedupedFetch(`/api/forecast?area=${S.area}&mode=spot_ex`);
+          const day=fj?.days?.find(x=>x.date===tmrStr);
+          if(day){
+            const hours={};let n=0;
+            day.prices.forEach(p=>{if(p.price!=null){hours[p.hour]=p.price*1000;n++;}});
+            if(n)fcTomorrow={date:tmrStr,hours};
+          }
+        }catch(_){/* prognosekolonnen er valgfri */}
+        if(loadId!==S._loadId)return;
+      }
+    }
     renderTable();
   }catch(err){
     console.error('Price load failed',err);
@@ -3097,13 +3118,16 @@ async function loadPriceData(loadId){
 }
 
 function renderTable(){
-  const dates=Object.keys(priceData).sort().slice(-8);
+  // Forecast column only while tomorrow's actual prices are still unpublished
+  const showFc=S.weekOffset===0&&fcTomorrow&&!priceData[fcTomorrow.date];
+  const dates=Object.keys(priceData).sort().slice(showFc?-7:-8);
   if(!dates.length){document.getElementById('loadingIndicator').textContent='Ingen data';return;}
   const today=fmt(new Date()),tbl=document.getElementById('priceTable');
   const dk=isDark();
-  // Compute dynamic color range from all visible prices
+  // Compute dynamic color range from all visible prices (incl. forecast)
   const allPrices=[];
   dates.forEach(d=>{for(let hr=0;hr<24;hr++){const raw=priceData[d]?.[hr];if(raw!==undefined)allPrices.push(cvt(raw,hr,d));}});
+  if(showFc)for(let hr=0;hr<24;hr++){const raw=fcTomorrow.hours[hr];if(raw!=null)allPrices.push(cvt(raw,hr,fcTomorrow.date));}
   setColorRange(allPrices);
   // Adaptive text classes
   const thSub=dk?'text-gray-500':'text-gray-400';
@@ -3114,11 +3138,13 @@ function renderTable(){
 
   let h='';
   const fd=new Date(dates[0]);
-  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal"></th><th colspan="${dates.length}" class="text-xs ${thSub} font-normal">${MON_FULL[fd.getMonth()]} ${fd.getFullYear()}</th></tr>`;
+  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal"></th><th colspan="${dates.length+(showFc?1:0)}" class="text-xs ${thSub} font-normal">${MON_FULL[fd.getMonth()]} ${fd.getFullYear()}</th></tr>`;
   h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Dag</th>`;
   dates.forEach(d=>{const dt=new Date(d);h+=`<th class="px-0.5 sm:px-1.5 ${thDay}">${dt.getDate()}</th>`;});
+  if(showFc)h+=`<th class="px-0.5 sm:px-1.5 ${thDay}">${new Date(fcTomorrow.date).getDate()}</th>`;
   h+=`</tr><tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Time</th>`;
   dates.forEach(d=>{const dt=new Date(d);const l=(S.weekOffset===0&&d===today)?'I dag':DAY[dt.getDay()];const isToday=S.weekOffset===0&&d===today;h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${isToday?thDay:thSub}">${l}</th>`;});
+  if(showFc)h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal" style="color:#0e9888">i morgen<br><span style="font-size:.6rem;font-weight:600;letter-spacing:.04em">PROGNOSE</span></th>`;
   h+='</tr>';
   const curHour=new Date().getHours();
   const isMobile=window.innerWidth<640;
@@ -3127,9 +3153,11 @@ function renderTable(){
     const isNow=S.weekOffset===0&&hr===curHour;
     h+=`<tr><td class="pr-1 sm:pr-3 text-right text-xs ${tdHour} py-0.5">${lb}</td>`;
     dates.forEach(d=>{const raw=priceData[d]?.[hr];if(raw!==undefined){const p=cvt(raw,hr,d),b2=bg(p),f2=fg(p),v=p.toFixed(2).replace('.',',');const isCurCell=isNow&&S.weekOffset===0&&d===today;h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center cursor-pointer hover:ring-2 hover:ring-inset hover:ring-white/60 active:opacity-80 transition-opacity${isCurCell?' ring-2 ring-inset ring-gray-800/40 dark:ring-white/50':''}" style="background:${b2};color:${f2}" data-d="${d}" data-hr="${hr}" onclick="showPriceDetail(this)">${v}</td>`;}else h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;});
+    if(showFc){const raw=fcTomorrow.hours[hr];if(raw!=null){const p=cvt(raw,hr,fcTomorrow.date),b2=bg(p),f2=fg(p);h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center" style="background:${b2};color:${f2};opacity:.72" title="Prognose — faktiske priser kommer ca. kl. 13">${p.toFixed(2).replace('.',',')}</td>`;}else h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;}
     h+='</tr>';
   }
   tbl.innerHTML=h;document.getElementById('loadingIndicator').style.display='none';document.getElementById('tableWrapper').style.display='block';
+  const note=document.getElementById('fcTableNote');if(note)note.style.display=showFc?'':'none';
   updatePricesAnswer();
 }
 
