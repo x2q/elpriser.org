@@ -429,11 +429,11 @@ const OPENAPI_SPEC = {
     '/api/forecast': {
       get: {
         operationId: 'getForecast',
-        summary: '7-day electricity price forecast',
-        description: 'Combines actual day-ahead prices for today/tomorrow with a weather-corrected forecast for days 3-7 using EDS production forecasts + Open-Meteo wind/solar.',
+        summary: '10-day electricity price forecast + long-term outlook',
+        description: 'Actual day-ahead prices for today/tomorrow plus an ML forecast (LightGBM quantile model trained on lead-correct weather forecasts, price lags and DK+DE weather) for days 2-9, with calibrated min/max bands. The optional longterm object adds a daily outlook for days 10-45 and a monthly outlook 2-7 months out.',
         parameters: [AREA_PARAM, MODE_PARAM],
         responses: { '200': {
-          description: '7 days × 24 hours of forecasted prices.',
+          description: '10 days × 24 hours of forecasted prices, plus optional longterm.daily (day 10-45) and longterm.monthly (month 2-7).',
           content: { 'application/json': { example: { area: 'DK1', mode: 'inkl_alt', generated: '2026-05-15T13:00:00Z', days: [{ date: '2026-05-15', type: 'actual', weekday: 5, prices: [{ hour: 0, price: 0.84 }] }] } } }
         } },
       },
@@ -787,9 +787,10 @@ function buildForecast(historicalPrices, mode, enCharges) {
     }
   }
 
-  // Build 7-day output
+  // Build 10-day output (v2 model covers T+9; heuristic fills whatever the
+  // model doesn't overlay, so extending this is harmless for v1-only reads)
   const days = [];
-  for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+  for (let dayOffset = 0; dayOffset < 10; dayOffset++) {
     const d = fmtUTC(new Date(dkNow.getTime() + dayOffset * 86_400_000));
     const isActual = (dayOffset === 0 && hasToday) || (dayOffset === 1 && hasTomorrow);
 
@@ -1252,16 +1253,42 @@ async function handleForecast(area, mode, request, env) {
   let days = buildForecast(historicalPrices, mode, enCharges);
 
   // Trained-model overlay: best-effort, never blocks or fails the request.
+  // Prefers v2 (Spark-trained: lead-correct weather, hybrid shape, calibrated
+  // bands) over v1 (GitHub Actions), falling through to the heuristic days —
+  // so a dead Spark degrades to v1, and a dead v1 degrades to the heuristic.
   // Accepts today's or yesterday's run (the daily cron may not have fired yet,
   // or DK-local vs. UTC date bucketing may be off by one near midnight).
+  let longterm = null;
   if (env && env.PRICE_CACHE) {
     try {
-      const raw = await env.PRICE_CACHE.get(`forecast-model-${area}`, 'json');
-      if (raw && (raw.generated === fmtUTC(dkNow) || raw.generated === fmtUTC(new Date(dkNow.getTime() - 86_400_000)))) {
-        days = applyModelForecast(days, raw, mode, enCharges);
+      const isFresh = r => r && (r.generated === fmtUTC(dkNow) || r.generated === fmtUTC(new Date(dkNow.getTime() - 86_400_000)));
+      const v2 = await env.PRICE_CACHE.get(`forecast-v2-${area}`, 'json');
+      if (isFresh(v2)) {
+        days = applyModelForecast(days, v2, mode, enCharges);
+      } else {
+        const v1 = await env.PRICE_CACHE.get(`forecast-model-${area}`, 'json');
+        if (isFresh(v1)) days = applyModelForecast(days, v1, mode, enCharges);
+      }
+      // Long-term outlook (day 10-45 daily + month 2-7 monthly, spot DKK/MWh
+      // with calibrated P10-P90 bands). Converted to the request's mode using
+      // the day-average charge (charges vary by hour; a daily mean can't be
+      // hour-exact, so we apply the mean conversion across all 24 hours).
+      const lt = await env.PRICE_CACHE.get(`forecast-longterm-${area}`, 'json');
+      if (lt && Array.isArray(lt.daily)) {
+        const cvtMean = v => {
+          if (v == null) return null;
+          let s = 0;
+          for (let h = 0; h < 24; h++) s += cvtForecast(v, h, mode, enCharges);
+          return +(s / 24).toFixed(4);
+        };
+        longterm = {
+          generated: lt.generated,
+          daily: lt.daily.map(d => ({ date: d.date, price: cvtMean(d.p50), min: cvtMean(d.p10), max: cvtMean(d.p90) })),
+          monthly: (lt.monthly || []).map(d => ({ month: d.month, price: cvtMean(d.p50), min: cvtMean(d.p10), max: cvtMean(d.p90) })),
+        };
       }
     } catch (e) {
-      console.error('forecast-model KV read failed', e);
+      console.error('forecast KV read failed', e);
     }
   }
 
@@ -1272,5 +1299,6 @@ async function handleForecast(area, mode, request, env) {
     mode,
     generated: fmtUTC(dkNow),
     days,
+    ...(longterm ? { longterm } : {}),
   }, { maxAge: 1800, request });
 }
