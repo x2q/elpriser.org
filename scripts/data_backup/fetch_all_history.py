@@ -186,6 +186,66 @@ def backup_eds_tariffs():
         print(f"  failed: {e}")
 
 
+def backup_eds_co2():
+    """CO2-udledning pr. kWh (g/kWh) for DK1/DK2. CO2Emis er realiserede
+    5-minutters-tal; vi midler til timer, så filen matcher prisdataenes
+    opløsning og bliver ~12x mindre."""
+    print("=== EDS CO2Emis (udledning pr. kWh) ===")
+    for area in ["DK1", "DK2"]:
+        print(f"Fetching CO2Emis {area}...")
+        try:
+            df = fetch_eds_with_retry("CO2Emis", area, "2015-01-01",
+                                      (TODAY + timedelta(days=1)).isoformat())
+            if df is None or not len(df):
+                print("  no data"); continue
+            df["hour"] = pd.to_datetime(df["Minutes5DK"]).dt.floor("h")
+            h = (df.groupby("hour", as_index=False)["CO2Emission"].mean()
+                   .rename(columns={"hour": "TimeDK", "CO2Emission": "CO2Emission_g_per_kWh"}))
+            h["PriceArea"] = area
+            save(h, f"eds_co2emis_{area.lower()}")
+        except Exception as e:
+            print(f"  failed: {e}")
+        time.sleep(5)
+
+
+def backup_eds_consumption_profile():
+    """Timeforbrug pr. brancheklasse (ConsumptionDK3619IndustryHour).
+    Kategorien 'PR' (Privat) er husholdningernes forbrugsprofil, som bruges
+    til at vægte profilpriser og til at analysere, om forbruget flyttes
+    efter prisen. Ikke opdelt på prisområde -- tallene er landsdækkende."""
+    print("=== EDS ConsumptionDK3619IndustryHour (privat forbrugsprofil) ===")
+    f = urllib.parse.quote(json.dumps({"DK36Code": "PR"}))
+    frames = []
+    # Ét år ad gangen: EDS' rate limit tæller requests, og et helt kald over
+    # alle år timer ud.
+    for year in range(2021, TODAY.year + 1):
+        start = f"{year}-01-01"
+        end = f"{year+1}-01-01" if year < TODAY.year else (TODAY + timedelta(days=1)).isoformat()
+        print(f"Fetching {year}...")
+        for attempt in range(6):
+            try:
+                url = (f"https://api.energidataservice.dk/dataset/ConsumptionDK3619IndustryHour"
+                       f"?start={start}&end={end}&filter={f}&limit=0"
+                       f"&columns=TimeDK,Consumption_MWh")
+                j = fetch_json(url, timeout=300)
+                recs = j.get("records", [])
+                print(f"  {len(recs)} timer")
+                if recs:
+                    frames.append(pd.DataFrame(recs))
+                break
+            except Exception as e:
+                if "429" in str(e) and attempt < 5:
+                    w = 30 * (attempt + 1)
+                    print(f"    rate limited, waiting {w}s...")
+                    time.sleep(w)
+                else:
+                    print(f"  failed: {e}"); break
+        time.sleep(10)
+    if frames:
+        df = pd.concat(frames).drop_duplicates("TimeDK").sort_values("TimeDK")
+        save(df, "eds_consumption_profile_private")
+
+
 # ─── JAO ──────────────────────────────────────────────────────────────────
 
 def fetch_jao_day(d):
@@ -453,6 +513,10 @@ if __name__ == "__main__":
     which = sys.argv[1] if len(sys.argv) > 1 else "all"
     if which in ("all", "eds"):
         backup_eds()
+    if which == "eds-co2":
+        backup_eds_co2()
+    if which == "eds-consumption":
+        backup_eds_consumption_profile()
     if which == "eds-tariffs":  # not part of "all" -- explicit opt-in, big one-off fetch
         backup_eds_tariffs()
     if which in ("all", "jao"):
