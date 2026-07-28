@@ -89,6 +89,20 @@ class PriceViewModel {
         return nil
     }
 
+    /// Seasonal tip: solar has moved the cheap window from night to midday,
+    /// but EVs and heat pumps typically run on fixed night timers. Only shown
+    /// on days where today's own numbers actually back it up.
+    var timerTip: String? {
+        let night = validPrices.filter { $0.h < 6 }
+        let midday = validPrices.filter { $0.h >= 10 && $0.h <= 16 }
+        guard night.count >= 4, midday.count >= 4 else { return nil }
+        let nightAvg = night.map(\.p).reduce(0, +) / Double(night.count)
+        let midAvg = midday.map(\.p).reduce(0, +) / Double(midday.count)
+        guard nightAvg > 0, midAvg < nightAvg * 0.85 else { return nil }
+        let pct = Int((1 - midAvg / nightAvg) * 100)
+        return "Lader du elbil eller varmepumpe om natten? I dag er strømmen \(pct) % billigere kl. 10–16 end kl. 00–06."
+    }
+
     func load(area: Area, mode: PriceMode, gln: String?) async {
         isLoading = prices.isEmpty
         error = nil

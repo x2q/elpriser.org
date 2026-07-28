@@ -23,6 +23,9 @@ struct PricesView: View {
                         if let advice = vm.advice {
                             adviceCard(advice)
                         }
+                        if let tip = vm.timerTip {
+                            timerTipCard(tip)
+                        }
                     }
                     .padding(.bottom, 24)
                 }
@@ -155,6 +158,23 @@ struct PricesView: View {
                 in: RoundedRectangle(cornerRadius: 16))
             .padding(.horizontal, 16)
             .padding(.top, 12)
+    }
+
+    private func timerTipCard(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "clock.badge.exclamationmark")
+                .font(.system(size: 13))
+            Text(text)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .font(.system(size: 12))
+        .foregroundStyle(Color.co2)
+        .padding(11)
+        .background(Color.co2.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.co2.opacity(0.2)))
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
     }
 
     // MARK: - Toolbar selector (unchanged pattern)

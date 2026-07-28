@@ -79,6 +79,11 @@ const SEO_PAGES = {
     description: 'Opdateret liste over elbiler og bidirektionale ladere der understøtter V2L, V2H og V2G. Inkluderer Hyundai Ioniq 5, Kia EV9, Nissan Leaf, Wallbox Quasar 2, Sigenergy og flere.',
     hash: '#blog/biler-ladere-v2h-v2g',
   },
+  '/blog/hvornaar-er-stroemmen-billigst': {
+    title: 'Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret',
+    description: 'Nattestrøm er ikke længere billigst: i 2026 ligger døgnets billigste time midt på dagen på 68 % af dagene mod 23 % om natten. Analyse af 48.594 timers forbrugs- og prisdata — og hvad det betyder for din elbil og varmepumpe.',
+    hash: '#blog/hvornaar-er-stroemmen-billigst',
+  },
   '/blog/elafgift-2028': {
     title: 'Elafgift 2028: Sådan stiger elafgiften igen',
     description: 'Elafgiften er sænket til 0,8 øre/kWh i 2026-2027, men stiger igen fra 2028. Se de nye satser, hvorfor regeringen endnu ikke har forlænget den lave afgift, og hvad det betyder for din elregning og dine solceller.',
@@ -132,7 +137,7 @@ for (const area of ['DK1', 'DK2']) {
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff',
   '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
-  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028',
+  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028', '/blog/hvornaar-er-stroemmen-billigst',
   ...NET_URLS,
 ];
 
@@ -151,6 +156,7 @@ const CONTENT_LASTMOD = {
   '/blog/v2g-v2h-bidirektional-opladning': '2026-07-24',
   '/blog/biler-ladere-v2h-v2g': '2026-07-24',
   '/blog/elafgift-2028': '2026-07-24',
+  '/blog/hvornaar-er-stroemmen-billigst': '2026-07-28',
 };
 
 function buildSitemap() {
@@ -195,6 +201,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Home Assistant guide](https://elpriser.org/blog/home-assistant-elpriser): Komplet opsætning af Home Assistant med elpriser, sensorer og automations.
 - [V2G & V2H](https://elpriser.org/blog/v2g-v2h-bidirektional-opladning): Forklaring af bidirektional elbilopladning (V2G/V2H/V2L) og hvordan det udnytter spotpriser.
 - [Biler & ladere med V2H/V2G](https://elpriser.org/blog/biler-ladere-v2h-v2g): Opdateret liste over elbiler og bidirektionale ladere der understøtter V2H/V2G i Danmark.
+- [Hvornår er strømmen billigst](https://elpriser.org/blog/hvornaar-er-stroemmen-billigst): Analyse af 48.594 timers data — døgnets billigste time ligger nu midt på dagen på 68 % af dagene mod 23 % om natten; danske husholdninger flytter forbrug efter et forældet natte-mønster.
 - [Elafgift 2028](https://elpriser.org/blog/elafgift-2028): Elafgiften er sænket til 0,8 øre/kWh i 2026-2027 men stiger igen fra 2028 — satser, tidslinje og betydning for din elregning og dine solceller.
 
 ## Live data API (for AI assistants and agents)
@@ -754,7 +761,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v14');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v15');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -805,6 +812,7 @@ const HASH_TO_DATA_PAGE = {
   'blog/v2g-v2h-bidirektional-opladning': 'blog-v2g-v2h-bidirektional-opladning',
   'blog/biler-ladere-v2h-v2g': 'blog-biler-ladere-v2h-v2g',
   'blog/elafgift-2028': 'blog-elafgift-2028',
+  'blog/hvornaar-er-stroemmen-billigst': 'blog-hvornaar-er-stroemmen-billigst',
 };
 
 function dataPageForHash(hash) {

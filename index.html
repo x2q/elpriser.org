@@ -342,6 +342,18 @@
       "author":    { "@type": "Organization", "name": "elpriser.org" },
       "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
       "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/elafgift-2028" }
+    },
+    {
+      "@type": "Article",
+      "headline": "Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret",
+      "description": "Nattestrøm er ikke længere billigst: i 2026 ligger døgnets billigste time midt på dagen på 68 % af dagene. Analyse af 48.594 timers forbrugs- og prisdata fra Energinet.",
+      "url": "https://elpriser.org/blog/hvornaar-er-stroemmen-billigst",
+      "inLanguage": "da",
+      "datePublished": "2026-07-28",
+      "dateModified": "2026-07-28",
+      "author":    { "@type": "Organization", "name": "elpriser.org" },
+      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/hvornaar-er-stroemmen-billigst" }
     }
   ]
 }
@@ -590,6 +602,13 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .dark .answer-context{color:#8a95a8}
   .answer-advice{margin-top:1.1rem;background:linear-gradient(135deg,#1b57f5,#1a3f9e);color:#fff;border-radius:1rem;padding:.85rem 1rem;font-size:.85rem;line-height:1.5;font-weight:500;max-width:22rem}
   .answer-advice b{font-weight:700}
+  /* Sæson-tip: de billige timer er vandret fra nat til middag, men mange
+     enheder kører stadig på faste natte-timere. Vises kun de dage hvor
+     middagen faktisk er markant billigere end natten. */
+  .answer-tip{margin-top:.6rem;max-width:22rem;background:rgba(14,152,136,.08);border:1px solid rgba(14,152,136,.2);border-radius:.85rem;padding:.6rem .8rem;font-size:.78rem;line-height:1.45;color:#0b6f64}
+  .answer-tip b{font-weight:700}
+  .answer-tip a{text-decoration:underline}
+  .dark .answer-tip{background:rgba(47,212,191,.1);border-color:rgba(47,212,191,.24);color:#7fe3d6}
   .answer-toggle{display:inline-flex;background:#fff;border:1px solid #e2e7f0;border-radius:9999px;padding:3px;font-size:.78rem;font-weight:600;margin-top:1.1rem;width:max-content}
   .dark .answer-toggle{background:#131b29;border-color:#223046}
   .answer-toggle button{padding:.3rem .9rem;border-radius:9999px;color:#5c6675;border:none;background:none;cursor:pointer;font:inherit}
@@ -714,6 +733,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         </button>
         <div class="site-guides-menu" id="guidesMenu" hidden>
           <a href="/blog/forsta-din-elpris">Forstå din elpris</a>
+          <a href="/blog/hvornaar-er-stroemmen-billigst">Hvornår er strømmen billigst?</a>
           <a href="/blog/elafgift-2028">Elafgift 2028</a>
           <a href="/blog/home-assistant-elpriser">Home Assistant</a>
           <a href="/blog/shelly-elpris-automation">Shelly automation</a>
@@ -736,6 +756,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <a href="/api" data-nav="api">API</a>
     <div class="grp">Guides</div>
     <a href="/blog/forsta-din-elpris">Forstå din elpris</a>
+    <a href="/blog/hvornaar-er-stroemmen-billigst">Hvornår er strømmen billigst?</a>
     <a href="/blog/elafgift-2028">Elafgift 2028</a>
     <a href="/blog/home-assistant-elpriser">Home Assistant</a>
     <a href="/blog/shelly-elpris-automation">Shelly automation</a>
@@ -758,6 +779,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <div class="answer-pills" id="heroPills"></div>
       <div class="answer-context" id="heroContext">Tjek aktuel elpris lige nu — spotpriser time for time for DK1 (Vestdanmark) og DK2 (Østdanmark), inkl. nettariffer, elafgift og moms. Opdateret fra Energi Data Service.</div>
       <div class="answer-advice" id="heroAdvice" style="display:none"></div>
+      <div class="answer-tip" id="heroTimerTip" style="display:none"></div>
       <div class="answer-toggle" role="tablist" aria-label="Prisområde">
         <button id="heroBtnDK1" class="on" onclick="setHeroArea('DK1')">DK1 Vest</button>
         <button id="heroBtnDK2" onclick="setHeroArea('DK2')">DK2 Øst</button>
@@ -2415,13 +2437,122 @@ entities:
   </article>
 </main>
 
+<!-- ═══════ BLOG: Hvornår er strømmen billigst ═══════ -->
+<main style="display:none" data-page="blog-hvornaar-er-stroemmen-billigst" class="max-w-2xl mx-auto px-4 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <div class="page-eyebrow">Analyse · juli 2026</div>
+      <h1 class="page-title" style="font-size:1.35rem">Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret</h1>
+    </div>
+    <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
+      <svg width="20" height="20" class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+  <article class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+    <p class="text-base text-gray-700 dark:text-gray-300">"Lad elbilen om natten, så er strømmen billig." Det råd var rigtigt for få år siden. I dag er det forkert to ud af tre dage — og danske husholdninger har automatiseret sig ind i et mønster, der er ved at være forældet. Vi har regnet på 48.594 timers forbrugs- og prisdata fra Energinet for at finde ud af, hvornår strømmen faktisk er billigst nu.</p>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Det billige vindue er flyttet fra nat til middag</h2>
+      <p>Solceller har vendt døgnrytmen på hovedet. Midt på dagen presser solproduktionen prisen ned — nogle gange under nul — mens natten ikke længere har den store fordel, den havde, da vindmøller og kraftværker var alene om at levere.</p>
+      <p class="mt-2">Ser man på, <em>hvor på døgnet den billigste time ligger</em>, er udviklingen entydig:</p>
+      <div class="mt-3 subcard">
+        <div class="chd2"><span>Hvor ligger døgnets billigste time?</span><span>% af årets døgn</span></div>
+        <table class="w-full text-sm tabular">
+          <thead><tr class="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
+            <th class="text-left py-1.5 font-semibold">År</th>
+            <th class="text-right py-1.5 font-semibold">Nat (00–06)</th>
+            <th class="text-right py-1.5 font-semibold">Middag (10–16)</th>
+          </tr></thead>
+          <tbody>
+            <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5">2018</td><td class="text-right">78 %</td><td class="text-right">6 %</td></tr>
+            <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5">2021</td><td class="text-right">55 %</td><td class="text-right">28 %</td></tr>
+            <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5">2023</td><td class="text-right">37 %</td><td class="text-right">47 %</td></tr>
+            <tr><td class="py-1.5 font-semibold text-gray-800 dark:text-gray-200">2026</td><td class="text-right font-semibold text-gray-800 dark:text-gray-200">23 %</td><td class="text-right font-semibold" style="color:#0e9888">68 %</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-3">Samtidig er det blevet meget mere værd at ramme rigtigt: forskellen mellem døgnets dyreste og billigste time er femdoblet, fra typisk 23 øre/kWh i 2018 til 116 øre/kWh i 2026.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Danskerne <em>har</em> flyttet forbruget — bare til det forkerte tidspunkt</h2>
+      <p>Husholdningernes døgnprofil har ændret sig markant siden 2021. Aftenspidsen kl. 17–19 er faldet mærkbart, og natteforbruget er steget kraftigt — den klassiske signatur af elbiler og varmepumper på natte-timere:</p>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li>Forbruget kl. 18 er faldet fra indeks <strong class="text-gray-800 dark:text-gray-200">1,53 til 1,27</strong> (1,00 = døgnets gennemsnitstime)</li>
+        <li>Forbruget kl. 01 er steget fra <strong class="text-gray-800 dark:text-gray-200">0,70 til 1,06</strong> — en stigning på 51 %</li>
+      </ul>
+      <p class="mt-3">Det har givet gevinst. I 2021 betalte en gennemsnitlig husholdning <strong class="text-gray-800 dark:text-gray-200">4,8 % mere</strong> end en husstand med helt fladt forbrug — cirka 157 kr. om året ved 4.000 kWh. I 2026 er den merpris nul.</p>
+      <p class="mt-2">Men da vi delte døgnene op efter, <em>hvor</em> de billige timer lå den pågældende dag, blev billedet et andet:</p>
+      <div class="mt-3 subcard">
+        <div class="chd2"><span>Andel af døgnforbrug i de 6 billigste timer</span><span>neutral = 25 %</span></div>
+        <table class="w-full text-sm tabular">
+          <thead><tr class="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
+            <th class="text-left py-1.5 font-semibold">Type døgn</th>
+            <th class="text-right py-1.5 font-semibold">2021</th>
+            <th class="text-right py-1.5 font-semibold">2026</th>
+            <th class="text-right py-1.5 font-semibold">Ændring</th>
+          </tr></thead>
+          <tbody>
+            <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5">Natten er billigst</td><td class="text-right">17,9 %</td><td class="text-right">25,3 %</td><td class="text-right font-semibold" style="color:#1e9e4a">+7,4</td></tr>
+            <tr><td class="py-1.5">Middagen er billigst</td><td class="text-right">25,3 %</td><td class="text-right">26,1 %</td><td class="text-right font-semibold" style="color:#b46a00">+0,8</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-3">Hele forbedringen ligger på de døgn, hvor natten tilfældigvis er billigst. På de døgn hvor middagen er billigst — altså <strong class="text-gray-800 dark:text-gray-200">to ud af tre dage i 2026</strong> — har husholdningerne stort set ikke rykket sig på fem år. Automatikken kører efter uret, ikke efter prisen.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Der <em>er</em> ægte prisrespons — den er bare lille</h2>
+      <p>Vi testede også, om husholdningerne reagerer kraftigere, når der er mere at hente. Det gør de: på døgn med stort prisspænd flytter de 1,2–2,4 procentpoint mere af forbruget til de billige timer end på døgn med lille spænd. Effekten opstår først i 2022 — energikrisens år — og har holdt sig siden.</p>
+      <p class="mt-2">Men den effekt er lille sammenlignet med det strukturelle skift fra aften til nat. Med andre ord: en del af flytningen sker bevidst efter prisen, men langt det meste er timere, der blev sat én gang efter en tommelfingerregel.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hvad du selv kan gøre</h2>
+      <ol class="space-y-2 ml-4 list-decimal">
+        <li><strong class="text-gray-800 dark:text-gray-200">Tjek hvad din elbil og varmepumpe er sat til.</strong> Står de på fast natteopladning, rammer de i dag de billige timer på under en fjerdedel af årets dage. Flyt dem til de faktisk billigste timer — se dem for i dag på <a href="/dk1" class="text-brand-500 underline">DK1</a> eller <a href="/dk2" class="text-brand-500 underline">DK2</a>.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Lad om dagen, hvis bilen holder hjemme.</strong> Hjemmearbejde, weekend eller ferie: middagstimerne er nu billigst på 68 % af dagene, og på solrige dage er forskellen stor.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Automatisér efter prisen i stedet for efter klokken.</strong> Med et gratis API kan Home Assistant, Shelly eller en anden styring vælge de billigste timer dag for dag — se <a href="/automation" class="text-brand-500 underline">automation-guiden</a>.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Husk at billig ikke altid er grøn.</strong> De billigste timer har ikke altid den laveste CO₂-udledning. Begge dele vises time for time på forsiden.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Om analysen</h2>
+      <p>Beregnet på 48.594 timers data fra 1. januar 2021 til 19. juli 2026: husholdningernes timeforbrug (datasættet <span class="font-mono text-xs">ConsumptionDK3619IndustryHour</span>, kategori "Privat") sammenholdt med spotpriser for DK1 og DK2, alle inkl. moms. Alle forbrugstal er opgjort som andel af døgnets samlede forbrug, så vækst, vejr og sæson ikke påvirker sammenligningen.</p>
+      <p class="mt-2">Tre forbehold: Solceller sænker det <em>målte</em> nettoforbrug midt på dagen — altså netop i de billige timer — så den reelle adfærdsændring er formentlig en anelse stærkere end målt. Prisen er delvist bestemt <em>af</em> forbruget, hvilket forklarer en del af sammenhængen mellem fladere forbrug og fladere priser. Og 2026 dækker kun januar til juli.</p>
+      <p class="mt-2">Data er hentet fra <a href="https://www.energidataservice.dk" target="_blank" rel="noopener" class="text-brand-500 underline">Energi Data Service</a> (Energinet). Historiske datasæt er frit tilgængelige på <a href="https://huggingface.co/Elpriser" target="_blank" rel="noopener" class="text-brand-500 underline">Hugging Face</a> under CC BY 4.0.</p>
+    </section>
+
+    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+      <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Læs også:</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="/blog/forsta-din-elpris" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Forstå din elpris →</a>
+        <a href="/automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Automation →</a>
+        <a href="/blog/elafgift-2028" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Elafgift 2028 →</a>
+      </div>
+    </div>
+  </article>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type":"Question","name":"Hvornår er strømmen billigst på døgnet?","acceptedAnswer":{"@type":"Answer","text":"I 2026 ligger døgnets billigste time midt på dagen (kl. 10-16) på 68 % af dagene, mens natten (kl. 00-06) kun er billigst på 23 % af dagene. Det er en markant ændring fra 2018, hvor natten var billigst på 78 % af dagene. Solcellernes middagsproduktion har vendt døgnrytmen om."}},
+      {"@type":"Question","name":"Skal jeg lade elbilen om natten eller om dagen?","acceptedAnswer":{"@type":"Answer","text":"Hvis bilen holder hjemme i dagtimerne, er midt på dagen typisk billigst — det gælder to ud af tre dage i 2026. En fast natteopladning rammer de billigste timer på under en fjerdedel af årets dage. Det bedste er at styre opladningen efter dagens faktiske priser frem for efter et fast klokkeslæt."}},
+      {"@type":"Question","name":"Hvor meget kan man spare ved at flytte forbruget?","acceptedAnswer":{"@type":"Answer","text":"Forskellen mellem døgnets dyreste og billigste time er femdoblet fra typisk 23 øre/kWh i 2018 til 116 øre/kWh i 2026. En gennemsnitlig dansk husholdning betalte i 2021 4,8 % mere end en husstand med helt fladt forbrug, svarende til cirka 157 kr. om året ved 4.000 kWh. I 2026 er den merpris nul."}}
+    ]
+  }
+  </script>
+</main>
+
 <footer class="mt-10 py-6 border-t border-gray-200 dark:border-gray-800">
   <div class="max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-600">
     <nav class="mb-3" aria-label="Sider">
       <a href="/dk1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK1</a> · <a href="/dk2" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK2</a> · <a href="/tariffer" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Nettariffer</a> · <a href="/prognose" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elprisprognose</a> · <a href="/automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Automation</a> · <a href="/api" class="hover:text-gray-600 dark:hover:text-gray-400 underline">API</a> · <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser</a>
     </nav>
     <nav class="mb-3" aria-label="Guides">
-      <a href="/blog/forsta-din-elpris" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Forstå din elpris</a> · <a href="/blog/shelly-elpris-automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Shelly automation</a> · <a href="/blog/home-assistant-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Home Assistant guide</a> · <a href="/blog/v2g-v2h-bidirektional-opladning" class="hover:text-gray-600 dark:hover:text-gray-400 underline">V2G &amp; V2H</a> · <a href="/blog/biler-ladere-v2h-v2g" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Biler &amp; ladere</a> · <a href="/blog/elafgift-2028" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elafgift 2028</a>
+      <a href="/blog/forsta-din-elpris" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Forstå din elpris</a> · <a href="/blog/shelly-elpris-automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Shelly automation</a> · <a href="/blog/home-assistant-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Home Assistant guide</a> · <a href="/blog/v2g-v2h-bidirektional-opladning" class="hover:text-gray-600 dark:hover:text-gray-400 underline">V2G &amp; V2H</a> · <a href="/blog/biler-ladere-v2h-v2g" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Biler &amp; ladere</a> · <a href="/blog/hvornaar-er-stroemmen-billigst" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Hvornår er strømmen billigst?</a> · <a href="/blog/elafgift-2028" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elafgift 2028</a>
     </nav>
     <p>&copy; Elpriser.org &mdash; Data fra <a href="https://www.energidataservice.dk" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Energi Data Service</a> (Energinet). Åbne datasæt på <a href="https://huggingface.co/Elpriser" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Hugging Face</a>.</p>
   </div>
@@ -2637,6 +2768,7 @@ const PATH_ROUTES={
   '/blog/v2g-v2h-bidirektional-opladning':'blog/v2g-v2h-bidirektional-opladning',
   '/blog/biler-ladere-v2h-v2g':'blog/biler-ladere-v2h-v2g',
   '/blog/elafgift-2028':'blog/elafgift-2028',
+  '/blog/hvornaar-er-stroemmen-billigst':'blog/hvornaar-er-stroemmen-billigst',
 };
 function pathToHash(p){
   if(PATH_ROUTES[p])return PATH_ROUTES[p];
@@ -2693,6 +2825,7 @@ function route(){
   if(h==='blog/home-assistant-elpriser'){document.querySelector('[data-page="blog-home-assistant-elpriser"]').classList.add('active');document.title='Home Assistant & elpriser — Smart elforbrug i Danmark';pv('Blog: Home Assistant','/blog/home-assistant-elpriser');return;}
   if(h==='blog/v2g-v2h-bidirektional-opladning'){document.querySelector('[data-page="blog-v2g-v2h-bidirektional-opladning"]').classList.add('active');document.title='V2G, V2H & V2L — Bidirektional elbilopladning forklaret';pv('Blog: V2G & V2H','/blog/v2g-v2h-bidirektional-opladning');return;}
   if(h==='blog/biler-ladere-v2h-v2g'){document.querySelector('[data-page="blog-biler-ladere-v2h-v2g"]').classList.add('active');document.title='Elbiler og ladere med V2H/V2G — Liste 2026';pv('Blog: Biler & ladere V2H/V2G','/blog/biler-ladere-v2h-v2g');return;}
+  if(h==='blog/hvornaar-er-stroemmen-billigst'){document.querySelector('[data-page="blog-hvornaar-er-stroemmen-billigst"]').classList.add('active');document.title='Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret';pv('Blog: Hvornår billigst','/blog/hvornaar-er-stroemmen-billigst');return;}
   if(h==='blog/elafgift-2028'){document.querySelector('[data-page="blog-elafgift-2028"]').classList.add('active');document.title='Elafgift 2028: Sådan stiger elafgiften igen';pv('Blog: Elafgift 2028','/blog/elafgift-2028');return;}
   if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elprisprognose — Forventede elpriser næste 7 dage';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
@@ -2824,6 +2957,24 @@ function renderHero(prices,co2,nowH){
   }
   adviceEl.innerHTML=advice;
   adviceEl.style.display=advice?'':'none';
+  // Sæson-tip: solcellerne har flyttet det billige vindue fra nat til middag,
+  // men elbiler og varmepumper kører typisk på faste natte-timere. Vises kun
+  // når dagens tal faktisk bakker det op.
+  const tipEl=document.getElementById('heroTimerTip');
+  if(tipEl){
+    const avg=a=>a.reduce((s,x)=>s+x.p,0)/a.length;
+    const nat=valid.filter(x=>x.h<6), mid=valid.filter(x=>x.h>=10&&x.h<=16);
+    let tip='';
+    if(nat.length>=4&&mid.length>=4){
+      const nP=avg(nat), mP=avg(mid);
+      if(mP<nP*0.85&&nP>0){
+        tip=`Lader du elbil eller varmepumpe om natten? I dag er strømmen <b>${Math.round((1-mP/nP)*100)} % billigere kl. 10–16</b> end kl. 00–06. `
+          +`<a href="/blog/hvornaar-er-stroemmen-billigst">Læs hvorfor →</a>`;
+      }
+    }
+    tipEl.innerHTML=tip;
+    tipEl.style.display=tip?'':'none';
+  }
   // One impression per area+hour: which verdict/advice did visitors see?
   const impKey=`${heroArea}|${nowH}`;
   if(window._heroImpKey!==impKey){
