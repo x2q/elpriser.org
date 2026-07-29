@@ -8,18 +8,13 @@ Fire horisonter, tre modeller, én kørsel:
     døgnniveau + 50/50 formblanding med sæsonprofilen (backtest: vinder på
     både MAE og min-time-hitrate) + konformal kvantil-udvidelse
     (calibration_hourly.json — LGBM-kvantiler var ~2x for smalle).
-  - Dag 10-45 (måned): (0.7·lvl30+0.3·lvl90)·dæmpet sæsonform. Klimatologi
-    alene TABER til aktuelt niveau i backtest — solceller og kriseår har
-    destabiliseret sæsonmønstret, så formvægten er kun 0.5.
-  - Måned 2-7 (sæson): 3-md-niveau med formvægt aftagende i horisonten
-    (0.25→0). Bånd fra empiriske backtest-residualer i begge tilfælde.
 
 Backtest-facit (rullende origin 2025-04→2026-07, se memory):
   time-MAE 27-33 % (heuristik: 35-36 %), min-time-hitrate 70/69 %
   (heuristik 67/68 %), båndene rammer 80 % dækning efter kalibrering.
 
 KV-nøgler: forecast-v2-{area} (samme days-skema som v1 → worker-overlay
-genbruges), forecast-longterm-{area}, forecast-v2-monitoring-{area}.
+genbruges) og forecast-v2-monitoring-{area}.
 Fallback-kæden i workeren er uændret: v2 → v1 (GitHub Actions) → heuristik,
 så en død Spark degraderer stille og roligt.
 
@@ -52,7 +47,6 @@ FEATS = ["h", "hour", "weekday", "month", "is_weekend", "doy_sin", "doy_cos",
          "est_prod", "est_prod_de", "wind", "rad", "wind_de", "rad_de", "temp"]
 
 CAL_H = json.load(open(f"{V2DIR}/calibration_hourly.json"))
-CAL_MS = json.load(open(f"{V2DIR}/calibration_month_season.json"))
 
 
 def env_creds():
@@ -274,55 +268,6 @@ def score_area(area, models, prices, est, est_de, live_w, live_w_de, today):
     return days_out
 
 
-def longterm(area, prices, today):
-    """Dag 10-45 (døgnmiddel) + måned 2-7 (månedsmiddel), med kalibrerede bånd."""
-    d = prices.resample("D").mean().dropna()
-    lvl30, lvl90 = d[-30:].mean(), d[-90:].mean()
-    cal_m = CAL_MS[area.lower()]["month"]
-
-    daily = []
-    for h in range(10, 46):
-        target = pd.Timestamp(today) + pd.Timedelta(days=h)
-        vals, base = [], []
-        for k in (1, 2, 3):
-            y = target.year - k
-            try:
-                t0 = target.replace(year=y)
-            except ValueError:
-                continue
-            win = d[(d.index >= t0 - pd.Timedelta(days=7)) & (d.index <= t0 + pd.Timedelta(days=7))]
-            yr = d[(d.index >= pd.Timestamp(y, 1, 1)) & (d.index <= pd.Timestamp(y, 12, 31))]
-            if len(win) > 5 and len(yr) > 300:
-                vals.append(win.mean()); base.append(yr.mean())
-        shape = np.mean([v / b for v, b in zip(vals, base) if b > 0]) if vals else 1.0
-        pred = (0.7 * lvl30 + 0.3 * lvl90) * (1 + 0.5 * (shape - 1))
-        bucket = "d10_17" if h <= 17 else ("d18_31" if h <= 31 else "d32_45")
-        c = cal_m[bucket]
-        daily.append({"date": target.date().isoformat(),
-                      "p50": round(pred + c["q50"] * lvl30, 1),
-                      "p10": round(pred + c["q10"] * lvl30, 1),
-                      "p90": round(pred + c["q90"] * lvl30, 1)})
-
-    m = d.resample("MS").mean()
-    lvl3 = m[-3:].mean()
-    cal_s = CAL_MS[area.lower()]["season"]
-    monthly = []
-    for h in range(2, 8):
-        target = (pd.Timestamp(today).replace(day=1) + pd.offsets.MonthBegin(h))
-        same = [m.get(target - pd.offsets.MonthBegin(12 * k), np.nan) for k in (1, 2, 3)]
-        yrm = [m[(m.index >= pd.Timestamp(target.year - k, 1, 1)) &
-                 (m.index < pd.Timestamp(target.year - k + 1, 1, 1))].mean() for k in (1, 2, 3)]
-        shapes = [s / y for s, y in zip(same, yrm) if y and not np.isnan(s) and y > 0]
-        shape = np.nanmean(shapes) if shapes else 1.0
-        c = cal_s[str(h)]
-        pred = lvl3 * (1 + c["shape_w"] * (shape - 1))
-        monthly.append({"month": target.strftime("%Y-%m"),
-                        "p50": round(pred, 1),
-                        "p10": round(pred + c["q10"] * lvl3, 1),
-                        "p90": round(pred + c["q90"] * lvl3, 1)})
-    return {"daily": daily, "monthly": monthly}
-
-
 def update_monitoring(area, days, today, account, token):
     log_key = f"forecast-v2-monitoring-{area}"
     log = kv_get(log_key, account, token) or []
@@ -385,10 +330,7 @@ def main():
                     "generatedAt": datetime.now(timezone.utc).isoformat(),
                     "model": "v2-hybrid", "days": days},
                    3 * 86400, account, token)
-            kv_put(f"forecast-longterm-{area}",
-                   {"area": area, "generated": today.isoformat(), **longterm(area, prices, today)},
-                   21 * 86400, account, token)
-            print(f"  KV skrevet: forecast-v2-{area} + forecast-longterm-{area}", flush=True)
+            print(f"  KV skrevet: forecast-v2-{area}", flush=True)
         except Exception as e:
             import traceback
             traceback.print_exc()

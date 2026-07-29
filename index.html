@@ -1444,7 +1444,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 <main style="display:none" data-page="prognose" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
   <div class="flex items-center justify-between mb-3">
     <div>
-      <div class="page-eyebrow">Forventede elpriser — 10 døgn, måned og sæson</div>
+      <div class="page-eyebrow">Forventede elpriser de næste 10 døgn</div>
       <h2 class="page-title">Elprisprognose</h2>
     </div>
     <div class="flex items-center gap-1">
@@ -1477,22 +1477,9 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     </div>
     <div id="fcTableWrapper" class="overflow-x-auto -mx-2 sm:mx-0" style="display:none"></div>
   </div>
-  <!-- Langtidsudsigt (dag 10-45 + måned 2-7) — vises kun når API'et leverer longterm -->
-  <div id="fcLongterm" style="display:none">
-    <div class="subcard mt-4">
-      <div class="chd2"><span>Månedsudsigt — dag 10&ndash;45, døgnmiddel</span><span>DKK/kWh</span></div>
-      <div id="fcLtDaily" class="px-1 py-2"></div>
-      <p class="text-xs text-gray-400 dark:text-gray-500 px-1 pb-1">Linjen er medianprognosen; det skraverede bånd dækker 80&nbsp;% af de sandsynlige udfald (P10&ndash;P90). Så langt frem har vejrudsigter ingen værdi — udsigten bygger på aktuelt prisniveau og sæsonmønster, og usikkerheden er reel.</p>
-    </div>
-    <div class="subcard mt-4">
-      <div class="chd2"><span>Sæsonudsigt — kommende måneder</span><span>DKK/kWh, månedsmiddel</span></div>
-      <div id="fcLtMonthly" class="grid grid-cols-2 sm:grid-cols-3 gap-2 px-1 py-2"></div>
-      <p class="text-xs text-gray-400 dark:text-gray-500 px-1 pb-1">Intervallet er P10&ndash;P90. Kvartalsprognoser for el er grundlæggende usikre — brug midten som pejling og intervallet som ærlighed.</p>
-    </div>
-  </div>
   <!-- Info -->
   <div class="mt-4 text-xs text-gray-400 dark:text-gray-600 space-y-1">
-    <p>Dag 1&ndash;9 beregnes af en maskinlæringsmodel (LightGBM-kvantiler) trænet på to års timepriser og vejrprognoser, som de så ud på udgivelsestidspunktet — vind og sol i Danmark og Nordtyskland samt temperatur. I backtest rammer modellen 27&ndash;33&nbsp;% MAE mod 35&ndash;36&nbsp;% for en ren sæsonprofil, og døgnets billigste time ligger i prognosens top-3 i ca. 70&nbsp;% af døgnene. Dag 10+ bygger på aktuelt prisniveau og sæsonmønster. Faktiske priser kan afvige — især ved udfald på udlandsforbindelser.</p>
+    <p>Dag 1&ndash;9 beregnes af en maskinlæringsmodel (LightGBM-kvantiler) trænet på to års timepriser og vejrprognoser, som de så ud på udgivelsestidspunktet — vind og sol i Danmark og Nordtyskland samt temperatur. I backtest rammer modellen 27&ndash;33&nbsp;% MAE mod 35&ndash;36&nbsp;% for en ren sæsonprofil, og døgnets billigste time ligger i prognosens top-3 i ca. 70&nbsp;% af døgnene.Faktiske priser kan afvige — især ved udfald på udlandsforbindelser.</p>
     <p>Se også <a href="https://elforbrug.nu/elpriser-og-elprisprognose-for-de-kommende-dage/" target="_blank" rel="noopener" class="text-brand-500 underline">elforbrug.nu's elprisprognose</a> for en alternativ prognose.</p>
   </div>
 
@@ -3925,47 +3912,7 @@ function renderForecastTable(data){
   document.getElementById('fcTableWrapper').innerHTML='<table class="mx-auto text-xs sm:text-sm tabular" id="fcTable">'+h+'</table>';
   document.getElementById('fcLoading').style.display='none';
   document.getElementById('fcTableWrapper').style.display='block';
-  renderLongterm(data.longterm);
 }
-function renderLongterm(lt){
-  const wrap=document.getElementById('fcLongterm');
-  if(!wrap)return;
-  if(!lt||!Array.isArray(lt.daily)||!lt.daily.length){wrap.style.display='none';return;}
-  const dk=isDark();
-  // ── dag 10-45: SVG-båndgraf ──
-  const D=lt.daily,W=640,H=180,PL=34,PR=8,PT=10,PB=22;
-  const lo=Math.min(...D.map(d=>d.min)),hi=Math.max(...D.map(d=>d.max));
-  const x=i=>PL+(W-PL-PR)*i/(D.length-1);
-  const y=v=>PT+(H-PT-PB)*(1-(v-lo)/(hi-lo||1));
-  const path=k=>D.map((d,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(d[k]).toFixed(1)}`).join('');
-  const band=path('max')+D.slice().reverse().map((d,j)=>`L${x(D.length-1-j).toFixed(1)},${y(d.min).toFixed(1)}`).join('')+'Z';
-  const grid=dk?'#374151':'#e5e7eb',txt=dk?'#9ca3af':'#6b7280';
-  let ticks='';
-  for(const f of [0,.25,.5,.75,1]){
-    const v=lo+(hi-lo)*f;
-    ticks+=`<line x1="${PL}" y1="${y(v)}" x2="${W-PR}" y2="${y(v)}" stroke="${grid}" stroke-width="0.5"/><text x="${PL-4}" y="${y(v)+3}" text-anchor="end" font-size="9" fill="${txt}">${v.toFixed(2).replace('.',',')}</text>`;
-  }
-  let xt='';
-  for(let i=0;i<D.length;i+=7){
-    const dt=new Date(D[i].date);
-    xt+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle" font-size="9" fill="${txt}">${dt.getDate()}/${dt.getMonth()+1}</text>`;
-  }
-  document.getElementById('fcLtDaily').innerHTML=
-    `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="Prisudsigt dag 10-45 med usikkerhedsbånd">${ticks}${xt}`+
-    `<path d="${band}" fill="#1b57f5" opacity="0.13"/>`+
-    `<path d="${path('price')}" fill="none" stroke="#1b57f5" stroke-width="2"/></svg>`;
-  // ── måned 2-7: kort ──
-  const MN=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
-  document.getElementById('fcLtMonthly').innerHTML=(lt.monthly||[]).map(m=>{
-    const [yy,mm]=m.month.split('-');
-    return `<div class="rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 text-center">`+
-      `<div class="text-xs text-gray-500 dark:text-gray-400">${MN[+mm-1]} ${yy}</div>`+
-      `<div class="text-lg font-bold text-gray-800 dark:text-gray-100 tabular">${m.price.toFixed(2).replace('.',',')}</div>`+
-      `<div class="text-xs text-gray-400 dark:text-gray-500 tabular">${m.min.toFixed(2).replace('.',',')} &ndash; ${m.max.toFixed(2).replace('.',',')}</div></div>`;
-  }).join('');
-  wrap.style.display='';
-}
-
 // ═══ PRICE DETAIL POPUP ═══
 function showPriceDetail(cell){
   const d=cell.dataset.d,hr=+cell.dataset.hr;
