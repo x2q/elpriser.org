@@ -18,7 +18,13 @@ genbruges) og forecast-v2-monitoring-{area}.
 Fallback-kæden i workeren er uændret: v2 → v1 (GitHub Actions) → heuristik,
 så en død Spark degraderer stille og roligt.
 
-Kræver: ~/.config/elpriser.env med CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN.
+Efter en vellykket kørsel publiceres de friske boostere til
+huggingface.co/Elpriser/denmark-price-forecast (se publish_hf.py) — best
+effort, en HF-fejl stopper aldrig KV-skrivningen eller giver ikke-nul
+exit-kode.
+
+Kræver: ~/.config/elpriser.env med CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN
+(+ valgfri HF_TOKEN for at aktivere HF-publicering).
 """
 import json
 import os
@@ -34,6 +40,7 @@ import lightgbm as lgb
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dataset as ds  # genbruger builder + estimatorer, samme kode som backtesten
+import publish_hf
 
 V2DIR = os.path.dirname(os.path.abspath(__file__))
 BACKUP = os.path.expanduser("~/elpriser-data-backup")
@@ -57,7 +64,7 @@ def env_creds():
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
                 os.environ.setdefault(k.strip(), v.strip().strip('"'))
-    return os.environ["CLOUDFLARE_ACCOUNT_ID"], os.environ["CLOUDFLARE_API_TOKEN"]
+    return os.environ["CLOUDFLARE_ACCOUNT_ID"], os.environ["CLOUDFLARE_API_TOKEN"], os.environ.get("HF_TOKEN")
 
 
 def fetch_json(url, tries=5, timeout=120):
@@ -287,7 +294,7 @@ def update_monitoring(area, days, today, account, token):
 
 
 def main():
-    account, token = env_creds()
+    account, token, hf_token = env_creds()
     today = datetime.now(timezone.utc).date()
     print(f"=== v2 daglig kørsel {today} ===", flush=True)
 
@@ -303,6 +310,7 @@ def main():
     live = {n: fetch_live_forecast(n) for n in COORDS}
 
     failed = []
+    models_all, estimators_all = {}, {}
     for area in AREAS:
         try:
             print(f"=== {area} ===", flush=True)
@@ -331,10 +339,25 @@ def main():
                     "model": "v2-hybrid", "days": days},
                    3 * 86400, account, token)
             print(f"  KV skrevet: forecast-v2-{area}", flush=True)
+            models_all[area] = models
+            estimators_all[area] = {"dk": est, "de": est_de}
         except Exception as e:
             import traceback
             traceback.print_exc()
             failed.append(area)
+
+    # HF-publicering er best-effort og site-uafhængig: en fejl her må aldrig
+    # give en ikke-nul exit-kode, for den ville stoppe cron fra at prøve igen
+    # i morgen selvom KV (det site-kritiske) allerede er skrevet korrekt ovenfor.
+    if not failed and hf_token:
+        try:
+            publish_hf.publish(models_all, estimators_all, CAL_H, FEATS, today, hf_token)
+        except Exception:
+            import traceback
+            print("  HF-publicering fejlede (ikke-fatalt):", flush=True)
+            traceback.print_exc()
+    elif not hf_token:
+        print("  HF_TOKEN ikke sat — springer HF-publicering over", flush=True)
 
     if failed:
         raise SystemExit(f"fejlede: {failed}")
