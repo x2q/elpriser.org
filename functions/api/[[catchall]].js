@@ -1261,12 +1261,12 @@ async function handleForecast(area, mode, request, env) {
   if (env && env.PRICE_CACHE) {
     try {
       const isFresh = r => r && (r.generated === fmtUTC(dkNow) || r.generated === fmtUTC(new Date(dkNow.getTime() - 86_400_000)));
-      const v2 = await env.PRICE_CACHE.get(`forecast-v2-${area}`, 'json');
-      if (isFresh(v2)) {
-        days = applyModelForecast(days, v2, mode, enCharges);
-      } else {
-        const v1 = await env.PRICE_CACHE.get(`forecast-model-${area}`, 'json');
-        if (isFresh(v1)) days = applyModelForecast(days, v1, mode, enCharges);
+      // v3 -> v2 -> v1 -> heuristic. Each generation writes its own KV key with
+      // a short TTL, so a stopped trainer expires out of the chain on its own
+      // and deleting a key is an instant rollback to the generation below.
+      for (const key of [`forecast-v3-${area}`, `forecast-v2-${area}`, `forecast-model-${area}`]) {
+        const m = await env.PRICE_CACHE.get(key, 'json');
+        if (isFresh(m)) { days = applyModelForecast(days, m, mode, enCharges); break; }
       }
     } catch (e) {
       console.error('forecast KV read failed', e);

@@ -1,0 +1,6 @@
+lightgbm
+pandas
+numpy
+pyarrow
+scikit-learn
+huggingface_hub

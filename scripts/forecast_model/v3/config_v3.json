@@ -1,0 +1,8 @@
+{
+ "variant_by_area": {
+  "DK1": "D_congest",
+  "DK2": "C_neighbour"
+ },
+ "guard_trigger": 1.15,
+ "guard_slope": 2.0
+}
