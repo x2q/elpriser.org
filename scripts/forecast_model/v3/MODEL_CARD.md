@@ -176,6 +176,33 @@ persistence ~41-46%.
 These figures are a **floor**: the backtest deliberately uses a weather-forecast
 lead at least as old as the operational run would see.
 
+## Why this exact configuration (Pareto analysis)
+
+MAE and min-hour hit-rate are genuinely competing objectives here: leaning on
+the model's own intraday shape sharpens the price level, leaning on the
+seasonal profile ranks the cheap hours better. `pareto.py` sweeps the whole
+achievable set — 4 feature variants × 21 blend weights per area — and
+`pareto_plot.py` plots it.
+
+Two results worth stating:
+
+- **The shipped configuration sits on the Pareto frontier in both areas.**
+  Nothing available is better on one objective without being worse on the
+  other, so there is no free improvement left in this design space.
+- **v2 is dominated.** In DK1 a v3 config reaches ~4.6% lower MAE at the same
+  hit-rate; in DK2 v3 is better on *both* objectives at once. The v3 changes
+  moved the frontier outward rather than just sliding along it.
+
+Moving *along* the frontier was tested and deliberately not done. Raising the
+guard's base weight looks tempting (DK1 hit-rate 69.0% → 69.7%), but a paired
+bootstrap over 486 days puts the MAE cost firmly outside zero (+1.06 to +1.63
+DKK/MWh, 95% CI) while the hit-rate gain barely clears it (+0.05 to +1.49).
+That is paying something certain for something that may not be there — and
+picking the best-looking point from the same backtest the numbers are reported
+from would be selection on the test set. Anyone wanting a different balance
+should treat it as a product decision and re-validate on fresh data, not tune
+against this backtest.
+
 ## Limitations
 
 - **Unplanned outages are still invisible.** v3 models *scheduled* capacity
