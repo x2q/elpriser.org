@@ -761,7 +761,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v19');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v20');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
