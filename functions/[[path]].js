@@ -39,10 +39,71 @@ const SEO_PAGES = {
     description: 'Forstå din elpris: spotpris, nettarif, systemtarif, elafgift og moms. Sådan fungerer prisområderne DK1 og DK2, og sådan finder du dit netselskab.',
     hash: '#om-elpriser',
   },
-  '/norden': {
-    title: 'Elpriser i Norden — prognose for 13 prisområder',
-    description: 'Elprisprognose 10 døgn frem for alle prisområder i Danmark, Norge, Sverige, Finland og Holland: DK1, DK2, NO1-NO5, SE1-SE4, FI og NL. Åben maskinlæringsmodel trænet på vejrprognoser, magasinfyldning og ENTSO-E-priser.',
-    hash: '#norden',
+  '/no1': {
+    title: 'Strømpriser NO1 Oslo — prognose 10 døgn frem',
+    description: 'Strømpriser og prognose for prisområde NO1 (Oslo), time for time 10 døgn frem. Åpen maskinlæringsmodell trent på værvarsler, magasinfylling og ENTSO-E-priser.',
+    hash: '#no1',
+    lang: 'no',
+  },
+  '/no2': {
+    title: 'Strømpriser NO2 Kristiansand — prognose 10 døgn frem',
+    description: 'Strømpriser og prognose for prisområde NO2 (Kristiansand), time for time 10 døgn frem. Åpen maskinlæringsmodell trent på værvarsler, magasinfylling og ENTSO-E-priser.',
+    hash: '#no2',
+    lang: 'no',
+  },
+  '/no3': {
+    title: 'Strømpriser NO3 Trondheim — prognose 10 døgn frem',
+    description: 'Strømpriser og prognose for prisområde NO3 (Trondheim), time for time 10 døgn frem. Åpen maskinlæringsmodell trent på værvarsler, magasinfylling og ENTSO-E-priser.',
+    hash: '#no3',
+    lang: 'no',
+  },
+  '/no4': {
+    title: 'Strømpriser NO4 Tromsø — prognose 10 døgn frem',
+    description: 'Strømpriser og prognose for prisområde NO4 (Tromsø), time for time 10 døgn frem. Åpen maskinlæringsmodell trent på værvarsler, magasinfylling og ENTSO-E-priser.',
+    hash: '#no4',
+    lang: 'no',
+  },
+  '/no5': {
+    title: 'Strømpriser NO5 Bergen — prognose 10 døgn frem',
+    description: 'Strømpriser og prognose for prisområde NO5 (Bergen), time for time 10 døgn frem. Åpen maskinlæringsmodell trent på værvarsler, magasinfylling og ENTSO-E-priser.',
+    hash: '#no5',
+    lang: 'no',
+  },
+  '/se1': {
+    title: 'Elpriser SE1 Luleå — prognos 10 dygn framåt',
+    description: 'Elpriser och prognos för elområde SE1 (Luleå), timme för timme 10 dygn framåt. Öppen maskininlärningsmodell tränad på väderprognoser, magasinfyllnad och ENTSO-E-priser.',
+    hash: '#se1',
+    lang: 'sv',
+  },
+  '/se2': {
+    title: 'Elpriser SE2 Sundsvall — prognos 10 dygn framåt',
+    description: 'Elpriser och prognos för elområde SE2 (Sundsvall), timme för timme 10 dygn framåt. Öppen maskininlärningsmodell tränad på väderprognoser, magasinfyllnad och ENTSO-E-priser.',
+    hash: '#se2',
+    lang: 'sv',
+  },
+  '/se3': {
+    title: 'Elpriser SE3 Stockholm — prognos 10 dygn framåt',
+    description: 'Elpriser och prognos för elområde SE3 (Stockholm), timme för timme 10 dygn framåt. Öppen maskininlärningsmodell tränad på väderprognoser, magasinfyllnad och ENTSO-E-priser.',
+    hash: '#se3',
+    lang: 'sv',
+  },
+  '/se4': {
+    title: 'Elpriser SE4 Malmö — prognos 10 dygn framåt',
+    description: 'Elpriser och prognos för elområde SE4 (Malmö), timme för timme 10 dygn framåt. Öppen maskininlärningsmodell tränad på väderprognoser, magasinfyllnad och ENTSO-E-priser.',
+    hash: '#se4',
+    lang: 'sv',
+  },
+  '/fi': {
+    title: 'Sähkön hinta FI Suomi — ennuste 10 vuorokautta',
+    description: 'Sähkön hinta ja ennuste hinta-alueelle FI (Suomi), tunneittain 10 vuorokautta eteenpäin. Avoin koneoppimismalli, joka on koulutettu sääennusteilla, varastotäytöillä ja ENTSO-E:n hinnoilla.',
+    hash: '#fi',
+    lang: 'fi',
+  },
+  '/nl': {
+    title: 'Stroomprijzen NL Nederland — verwachting 10 dagen',
+    description: 'Stroomprijzen en verwachting voor prijsgebied NL (Nederland), per uur tot 10 dagen vooruit. Open machine-learningmodel getraind op weersverwachtingen, stuwmeerstanden en ENTSO-E-prijzen.',
+    hash: '#nl',
+    lang: 'nl',
   },
   '/prognose': {
     title: 'Elprisprognose — Forventede elpriser næste 7 dage',
@@ -142,7 +203,7 @@ for (const area of ['DK1', 'DK2']) {
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff',
   '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
-  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028', '/norden', '/blog/hvornaar-er-stroemmen-billigst',
+  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028', '/no1', '/no2', '/no3', '/no4', '/no5', '/se1', '/se2', '/se3', '/se4', '/fi', '/nl', '/blog/hvornaar-er-stroemmen-billigst',
   ...NET_URLS,
 ];
 
@@ -161,7 +222,17 @@ const CONTENT_LASTMOD = {
   '/blog/v2g-v2h-bidirektional-opladning': '2026-07-24',
   '/blog/biler-ladere-v2h-v2g': '2026-07-24',
   '/blog/elafgift-2028': '2026-07-24',
-  '/norden': '2026-08-01',
+  '/no1': '2026-08-01',
+  '/no2': '2026-08-01',
+  '/no3': '2026-08-01',
+  '/no4': '2026-08-01',
+  '/no5': '2026-08-01',
+  '/se1': '2026-08-01',
+  '/se2': '2026-08-01',
+  '/se3': '2026-08-01',
+  '/se4': '2026-08-01',
+  '/fi': '2026-08-01',
+  '/nl': '2026-08-01',
   '/blog/hvornaar-er-stroemmen-billigst': '2026-07-28',
 };
 
@@ -767,7 +838,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v22');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v24');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -818,7 +889,17 @@ const HASH_TO_DATA_PAGE = {
   'blog/v2g-v2h-bidirektional-opladning': 'blog-v2g-v2h-bidirektional-opladning',
   'blog/biler-ladere-v2h-v2g': 'blog-biler-ladere-v2h-v2g',
   'blog/elafgift-2028': 'blog-elafgift-2028',
-  'norden': 'norden',
+  'no1': 'zone',
+  'no2': 'zone',
+  'no3': 'zone',
+  'no4': 'zone',
+  'no5': 'zone',
+  'se1': 'zone',
+  'se2': 'zone',
+  'se3': 'zone',
+  'se4': 'zone',
+  'fi': 'zone',
+  'nl': 'zone',
   'blog/hvornaar-er-stroemmen-billigst': 'blog-hvornaar-er-stroemmen-billigst',
 };
 
@@ -874,6 +955,21 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   if (opts.tariffFacts) {
     html = html.replace('<!--SSR_TARIFF_FACTS-->', await buildTariffFacts(context));
   }
+  // Zone pages are served in the local language of that bidding zone, so the
+  // document has to say so — a Norwegian page still labelled lang="da" gets
+  // read (and indexed, and spoken by screen readers) as Danish.
+  if (meta.lang) {
+    html = html.replace(/<html lang="[^"]*"/, `<html lang="${meta.lang}"`);
+    // hreflang across the sibling zone pages: same content, different market
+    // and language, which is exactly what these annotations are for.
+    const alts = Object.entries(SEO_PAGES)
+      .filter(([, m]) => m.lang)
+      .map(([p, m]) => `<link rel="alternate" hreflang="${m.lang}" href="https://elpriser.org${p}">`)
+      .join('\n  ');
+    html = html.replace('</head>',
+      `  ${alts}\n  <link rel="alternate" hreflang="x-default" href="https://elpriser.org/">\n</head>`);
+  }
+
   html = html.replace(
     /<title>[^<]*<\/title>/,
     `<title>${meta.title}</title>`

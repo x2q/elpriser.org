@@ -605,6 +605,35 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   /* Sæson-tip: de billige timer er vandret fra nat til middag, men mange
      enheder kører stadig på faste natte-timere. Vises kun de dage hvor
      middagen faktisk er markant billigere end natten. */
+  /* ── Globus: lokationsvælger ─────────────────────────────────────────── */
+  .globe-btn{display:inline-flex;align-items:center;justify-content:center;padding:.35rem;border-radius:.5rem;
+    color:#6b7280;background:none;border:none;cursor:pointer;transition:color .15s,background .15s}
+  .globe-btn:hover{color:#111827;background:#f3f4f6}
+  .dark .globe-btn{color:#9ca3af}
+  .dark .globe-btn:hover{color:#fff;background:#1f2937}
+  .globe-overlay{position:fixed;inset:0;z-index:60;background:rgba(17,24,39,.45);
+    backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto}
+  .globe-overlay[hidden]{display:none}
+  .globe-panel{background:#fff;border-radius:1.1rem;max-width:52rem;width:100%;margin-top:3rem;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);padding:1.25rem 1.5rem 1.75rem}
+  .dark .globe-panel{background:#111827;color:#e5e7eb}
+  .globe-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+  .globe-head h2{font-size:1.05rem;font-weight:700;color:#111827}
+  .dark .globe-head h2{color:#fff}
+  .globe-x{padding:.35rem;border-radius:.5rem;color:#9ca3af;background:none;border:none;cursor:pointer}
+  .globe-x:hover{color:#111827;background:#f3f4f6}
+  .dark .globe-x:hover{color:#fff;background:#1f2937}
+  .globe-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1.5rem 1.75rem}
+  .globe-col h3{font-size:.95rem;font-weight:700;color:#111827;margin-bottom:.55rem}
+  .dark .globe-col h3{color:#fff}
+  .globe-col a{display:flex;flex-direction:column;padding:.4rem .55rem;margin:0 -.55rem;border-radius:.5rem;
+    text-decoration:none;transition:background .12s}
+  .globe-col a:hover{background:#f3f4f6}
+  .dark .globe-col a:hover{background:#1f2937}
+  .globe-col .gz{font-size:.85rem;font-weight:600;color:#1b57f5}
+  .dark .globe-col .gz{color:#7ba4ff}
+  .globe-col .gc{font-size:.75rem;color:#6b7280}
+  .dark .globe-col .gc{color:#9ca3af}
   .answer-tip{margin-top:.6rem;max-width:22rem;background:rgba(14,152,136,.08);border:1px solid rgba(14,152,136,.2);border-radius:.85rem;padding:.6rem .8rem;font-size:.78rem;line-height:1.45;color:#0b6f64}
   .answer-tip b{font-weight:700}
   .answer-tip a{text-decoration:underline}
@@ -724,7 +753,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <a href="/dk1" data-nav="dk1">DK1 Vest</a>
       <a href="/dk2" data-nav="dk2">DK2 Øst</a>
       <a href="/prognose" data-nav="prognose">Prognose</a>
-      <a href="/norden" data-nav="norden">Norden</a>
+      <button onclick="openGlobe()" data-nav="zone" class="globe-btn" aria-label="Choose price area"><svg width="17" height="17" class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></button>
       <a href="/tariffer" data-nav="tariffer">Tariffer</a>
       <a href="/automation" data-nav="automation">Automation</a>
       <a href="/api" data-nav="api">API</a>
@@ -752,7 +781,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <a href="/dk1" data-nav="dk1">DK1 Vest</a>
     <a href="/dk2" data-nav="dk2">DK2 Øst</a>
     <a href="/prognose" data-nav="prognose">Prognose</a>
-    <a href="/norden" data-nav="norden">Norden</a>
+    <a href="#" onclick="event.preventDefault();toggleBurger();openGlobe()" data-nav="zone">🌐 Prisområder</a>
     <a href="/tariffer" data-nav="tariffer">Tariffer</a>
     <a href="/automation" data-nav="automation">Automation</a>
     <a href="/api" data-nav="api">API</a>
@@ -831,7 +860,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <a href="/dk1" class="nav-pill">DK1 Vest</a>
       <a href="/dk2" class="nav-pill">DK2 Øst</a>
       <a href="/prognose" class="nav-pill">Prognose</a>
-      <a href="/norden" class="nav-pill">Norden</a>
+
       <a href="/tariffer" class="nav-pill">Tariffer</a>
       <a href="/automation" class="nav-pill">Automation</a>
       <a href="#shelly-tariff" class="nav-pill">Shelly Live Tariff</a>
@@ -2358,40 +2387,37 @@ entities:
 </main>
 
 
-<!-- ═══════ NORDEN: prognose for 13 prisområder ═══════ -->
-<main style="display:none" data-page="norden" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
+<!-- ═══════ PRISZONE: én side pr. budområde, oversat UI ═══════ -->
+<main style="display:none" data-page="zone" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
   <div class="flex items-center justify-between mb-3">
     <div>
-      <div class="page-eyebrow">Prognose for Norden og Holland</div>
-      <h2 class="page-title">Elpriser i 13 prisområder</h2>
+      <div class="page-eyebrow" id="zEyebrow">&nbsp;</div>
+      <h2 class="page-title" id="zTitle">&nbsp;</h2>
     </div>
-    <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
+    <a href="/" title="Home" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
       <svg width="20" height="20" class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     </a>
   </div>
   <div class="flex flex-wrap gap-2 mb-4">
-    <select id="ndZone" onchange="loadNordic()" class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-      <optgroup label="Danmark"><option value="dk1">DK1 Vestdanmark</option><option value="dk2">DK2 Østdanmark</option></optgroup>
-      <optgroup label="Norge"><option value="no1">NO1 Oslo</option><option value="no2">NO2 Kristiansand</option><option value="no3">NO3 Trondheim</option><option value="no4">NO4 Tromsø</option><option value="no5">NO5 Bergen</option></optgroup>
-      <optgroup label="Sverige"><option value="se1">SE1 Luleå</option><option value="se2">SE2 Sundsvall</option><option value="se3">SE3 Stockholm</option><option value="se4">SE4 Malmö</option></optgroup>
-      <optgroup label="Finland"><option value="fi">FI Finland</option></optgroup>
-      <optgroup label="Holland"><option value="nl">NL Nederland</option></optgroup>
-    </select>
-    <select id="ndCur" onchange="renderNordic()" class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-      <option value="local">Lokal valuta pr. kWh</option>
-      <option value="eur">EUR/MWh (rå)</option>
+    <button onclick="openGlobe()" class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex items-center gap-2 hover:border-gray-400 dark:hover:border-gray-500 transition">
+      <svg width="15" height="15" class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <span id="zZoneLabel">—</span>
+    </button>
+    <select id="zCur" onchange="renderZone()" class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+      <option value="local" id="zCurLocal">Local</option>
+      <option value="eur" id="zCurEur">EUR/MWh</option>
     </select>
   </div>
   <div class="subcard">
-    <div class="chd2"><span id="ndTitle">Næste 10 døgn, time for time</span><span id="ndUnit">&nbsp;</span></div>
-    <div id="ndLoading" class="text-center py-12 text-gray-400 dark:text-gray-500">
-      <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>Henter prognose&hellip;
+    <div class="chd2"><span id="zTableTitle">&nbsp;</span><span id="zUnit">&nbsp;</span></div>
+    <div id="zLoading" class="text-center py-12 text-gray-400 dark:text-gray-500">
+      <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div><span id="zLoadingText">Loading…</span>
     </div>
-    <div id="ndWrap" class="overflow-x-auto -mx-2 sm:mx-0" style="display:none"></div>
+    <div id="zWrap" class="overflow-x-auto -mx-2 sm:mx-0" style="display:none"></div>
   </div>
   <div class="mt-4 text-xs text-gray-400 dark:text-gray-600 space-y-1">
-    <p>Prognosen laves af én samlet maskinlæringsmodel for alle 13 prisområder, trænet på 2,1 mio. timeobservationer med vejrprognoser som de så ud på udgivelsestidspunktet, magasinfyldning i vandkraftzonerne og priser fra ENTSO-E. Modellen er åben: <a href="https://huggingface.co/Elpriser/nordic-price-forecast" target="_blank" rel="noopener" class="text-brand-500 underline">se den på Hugging Face</a>.</p>
-    <p>Priserne er rå spotpriser uden afgifter, tariffer og moms &mdash; de varierer efter land og netselskab. Omregning til lokal valuta bruger en fast kurs og er vejledende.</p>
+    <p id="zNoteModel">&nbsp;</p>
+    <p id="zNoteRaw">&nbsp;</p>
   </div>
 </main>
 
@@ -2594,7 +2620,7 @@ entities:
 <footer class="mt-10 py-6 border-t border-gray-200 dark:border-gray-800">
   <div class="max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-600">
     <nav class="mb-3" aria-label="Sider">
-      <a href="/dk1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK1</a> · <a href="/dk2" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK2</a> · <a href="/tariffer" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Nettariffer</a> · <a href="/prognose" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elprisprognose</a> · <a href="/norden" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Norden</a> · <a href="/automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Automation</a> · <a href="/api" class="hover:text-gray-600 dark:hover:text-gray-400 underline">API</a> · <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser</a>
+      <a href="/dk1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK1</a> · <a href="/dk2" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK2</a> · <a href="/tariffer" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Nettariffer</a> · <a href="/prognose" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elprisprognose</a> · <a href="/se3" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Sverige</a> · <a href="/no1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Norge</a> · <a href="/automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Automation</a> · <a href="/api" class="hover:text-gray-600 dark:hover:text-gray-400 underline">API</a> · <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser</a>
     </nav>
     <nav class="mb-3" aria-label="Guides">
       <a href="/blog/forsta-din-elpris" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Forstå din elpris</a> · <a href="/blog/shelly-elpris-automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Shelly automation</a> · <a href="/blog/home-assistant-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Home Assistant guide</a> · <a href="/blog/v2g-v2h-bidirektional-opladning" class="hover:text-gray-600 dark:hover:text-gray-400 underline">V2G &amp; V2H</a> · <a href="/blog/biler-ladere-v2h-v2g" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Biler &amp; ladere</a> · <a href="/blog/hvornaar-er-stroemmen-billigst" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Hvornår er strømmen billigst?</a> · <a href="/blog/elafgift-2028" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elafgift 2028</a>
@@ -2806,7 +2832,8 @@ function initBehaviorTracking(){
 const PATH_ROUTES={
   '/dk1':'DK1/spot_inkl','/dk2':'DK2/spot_inkl',
   '/tariffer':'tariffer','/automation':'automation','/api':'api','/shelly-tariff':'shelly-tariff',
-  '/om-elpriser':'om-elpriser','/prognose':'prognose','/norden':'norden',
+  '/om-elpriser':'om-elpriser','/prognose':'prognose',
+  '/no1':'no1','/no2':'no2','/no3':'no3','/no4':'no4','/no5':'no5','/se1':'se1','/se2':'se2','/se3':'se3','/se4':'se4','/fi':'fi','/nl':'nl',
   '/blog/forsta-din-elpris':'blog/forsta-din-elpris',
   '/blog/shelly-elpris-automation':'blog/shelly-elpris-automation',
   '/blog/home-assistant-elpriser':'blog/home-assistant-elpriser',
@@ -2835,6 +2862,9 @@ function hashToPath(h){
 function dataPageFor(h){
   if(!h)return 'start';
   if(/^DK[12]\//.test(h))return 'prices';
+  // The 11 non-Danish bidding zones all share one generic section; DK1/DK2
+  // keep their own richer pages with tariffs and net companies.
+  if(ZONES[h]&&h!=='dk1'&&h!=='dk2')return 'zone';
   return h.replace(/\//g,'-'); // blog/x -> blog-x; others map 1:1
 }
 function route(){
@@ -2872,7 +2902,7 @@ function route(){
   if(h==='blog/biler-ladere-v2h-v2g'){document.querySelector('[data-page="blog-biler-ladere-v2h-v2g"]').classList.add('active');document.title='Elbiler og ladere med V2H/V2G — Liste 2026';pv('Blog: Biler & ladere V2H/V2G','/blog/biler-ladere-v2h-v2g');return;}
   if(h==='blog/hvornaar-er-stroemmen-billigst'){document.querySelector('[data-page="blog-hvornaar-er-stroemmen-billigst"]').classList.add('active');document.title='Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret';pv('Blog: Hvornår billigst','/blog/hvornaar-er-stroemmen-billigst');return;}
   if(h==='blog/elafgift-2028'){document.querySelector('[data-page="blog-elafgift-2028"]').classList.add('active');document.title='Elafgift 2028: Sådan stiger elafgiften igen';pv('Blog: Elafgift 2028','/blog/elafgift-2028');return;}
-  if(h==='norden'){document.querySelector('[data-page="norden"]').classList.add('active');document.title='Elpriser i Norden — prognose for 13 prisområder';pv('Norden','/norden');loadNordic();return;}
+  if(ZONES[h]&&h!=='dk1'&&h!=='dk2'){document.querySelector('[data-page="zone"]').classList.add('active');const z=ZONES[h];document.title=I18N[z.lang].title(z)+' — elpriser.org';pv('Zone '+z.name,'/'+h);loadZone(h);return;}
   if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elprisprognose — Forventede elpriser næste 7 dage';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){location.hash='';return;}
@@ -3959,72 +3989,178 @@ function renderForecastTable(data){
   document.getElementById('fcLoading').style.display='none';
   document.getElementById('fcTableWrapper').style.display='block';
 }
-// ═══ NORDEN: 13 prisområder ═══
-let _ndData=null,_ndLoad=0;
-async function loadNordic(){
-  const id=++_ndLoad;
-  const z=document.getElementById('ndZone')?.value||'dk1';
-  document.getElementById('ndLoading').style.display='';
-  document.getElementById('ndWrap').style.display='none';
+// ═══ PRISZONER: 13 budområder, oversat UI ═══
+// One page per bidding zone (/no1, /se3, /fi …). Each zone carries its own
+// language, currency and conversion rate; the UI language follows the zone
+// rather than the browser, so a shared link always reads the same for everyone.
+const ZONES={
+  dk1:{name:'DK1',city:'Vestdanmark',country:'Danmark',cc:'DK',lang:'da',cur:'DKK',rate:7.46},
+  dk2:{name:'DK2',city:'Østdanmark',country:'Danmark',cc:'DK',lang:'da',cur:'DKK',rate:7.46},
+  no1:{name:'NO1',city:'Oslo',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7},
+  no2:{name:'NO2',city:'Kristiansand',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7},
+  no3:{name:'NO3',city:'Trondheim',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7},
+  no4:{name:'NO4',city:'Tromsø',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7},
+  no5:{name:'NO5',city:'Bergen',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7},
+  se1:{name:'SE1',city:'Luleå',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3},
+  se2:{name:'SE2',city:'Sundsvall',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3},
+  se3:{name:'SE3',city:'Stockholm',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3},
+  se4:{name:'SE4',city:'Malmö',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3},
+  fi:{name:'FI',city:'Suomi',country:'Suomi',cc:'FI',lang:'fi',cur:'EUR',rate:1},
+  nl:{name:'NL',city:'Nederland',country:'Nederland',cc:'NL',lang:'nl',cur:'EUR',rate:1},
+};
+const LOCALE={da:'da-DK',no:'nb-NO',sv:'sv-SE',fi:'fi-FI',nl:'nl-NL',en:'en-GB'};
+const I18N={
+  da:{eyebrow:'Elprisprognose',title:z=>`Elpriser ${z.name} ${z.city}`,
+      table:n=>`Næste ${n} døgn, time for time`,loading:'Henter prognose…',
+      err:'Kunne ikke hente prognosen',day:'Dag',hour:'Time',today:'I dag',avg:'Gns.',
+      fc:'prognose',act:'faktisk',local:c=>`${c} pr. kWh`,
+      noteModel:'Prognosen laves af én samlet maskinlæringsmodel for alle 13 prisområder, trænet på 2,1 mio. timeobservationer med vejrprognoser som de så ud ved udgivelsen, magasinfyldning i vandkraftzonerne og priser fra ENTSO-E.',
+      noteRaw:'Priserne er rå spotpriser uden afgifter, tariffer og moms. Omregning til lokal valuta bruger en fast kurs og er vejledende.',
+      pick:'Vælg dit prisområde',model:'Se modellen på Hugging Face'},
+  no:{eyebrow:'Strømprisprognose',title:z=>`Strømpriser ${z.name} ${z.city}`,
+      table:n=>`Neste ${n} døgn, time for time`,loading:'Henter prognose…',
+      err:'Kunne ikke hente prognosen',day:'Dag',hour:'Time',today:'I dag',avg:'Snitt',
+      fc:'prognose',act:'faktisk',local:c=>`${c} per kWh`,
+      noteModel:'Prognosen lages av én felles maskinlæringsmodell for alle 13 prisområder, trent på 2,1 mill. timeobservasjoner med værvarsler slik de var da de ble utgitt, magasinfylling i vannkraftsonene og priser fra ENTSO-E.',
+      noteRaw:'Prisene er rene spotpriser uten avgifter, nettleie og moms. Omregning til lokal valuta bruker fast kurs og er veiledende.',
+      pick:'Velg prisområdet ditt',model:'Se modellen på Hugging Face'},
+  sv:{eyebrow:'Elprisprognos',title:z=>`Elpriser ${z.name} ${z.city}`,
+      table:n=>`Kommande ${n} dygn, timme för timme`,loading:'Hämtar prognos…',
+      err:'Kunde inte hämta prognosen',day:'Dag',hour:'Timme',today:'I dag',avg:'Snitt',
+      fc:'prognos',act:'faktisk',local:c=>`${c} per kWh`,
+      noteModel:'Prognosen görs av en gemensam maskininlärningsmodell för alla 13 elområden, tränad på 2,1 milj. timobservationer med väderprognoser som de såg ut vid publiceringen, magasinfyllnad i vattenkraftområdena och priser från ENTSO-E.',
+      noteRaw:'Priserna är rena spotpriser utan skatter, nätavgifter och moms. Omräkning till lokal valuta använder fast kurs och är vägledande.',
+      pick:'Välj ditt elområde',model:'Se modellen på Hugging Face'},
+  fi:{eyebrow:'Sähkön hintaennuste',title:z=>`Sähkön hinta ${z.name} ${z.city}`,
+      table:n=>`Seuraavat ${n} vuorokautta, tunneittain`,loading:'Haetaan ennustetta…',
+      err:'Ennusteen haku epäonnistui',day:'Päivä',hour:'Tunti',today:'Tänään',avg:'Ka.',
+      fc:'ennuste',act:'toteutunut',local:c=>`${c}/kWh`,
+      noteModel:'Ennusteen tekee yksi yhteinen koneoppimismalli kaikille 13 hinta-alueelle. Se on koulutettu 2,1 miljoonalla tuntihavainnolla käyttäen sääennusteita sellaisina kuin ne julkaisuhetkellä olivat, vesivoima-alueiden varastotäyttöä ja ENTSO-E:n hintoja.',
+      noteRaw:'Hinnat ovat pörssihintoja ilman veroja, siirtomaksuja ja arvonlisäveroa. Valuuttamuunnos käyttää kiinteää kurssia ja on suuntaa antava.',
+      pick:'Valitse hinta-alueesi',model:'Katso malli Hugging Facessa'},
+  nl:{eyebrow:'Stroomprijsverwachting',title:z=>`Stroomprijzen ${z.name} ${z.city}`,
+      table:n=>`Komende ${n} dagen, per uur`,loading:'Verwachting laden…',
+      err:'Kon de verwachting niet laden',day:'Dag',hour:'Uur',today:'Vandaag',avg:'Gem.',
+      fc:'verwachting',act:'werkelijk',local:c=>`${c} per kWh`,
+      noteModel:'De verwachting komt van één gezamenlijk machine-learningmodel voor alle 13 prijsgebieden, getraind op 2,1 mln. uurwaarnemingen met weersverwachtingen zoals ze bij publicatie luidden, stuwmeerstanden in de waterkrachtgebieden en prijzen van ENTSO-E.',
+      noteRaw:'Dit zijn kale spotprijzen zonder belastingen, nettarieven en btw. Omrekening naar lokale valuta gebruikt een vaste koers en is indicatief.',
+      pick:'Kies je prijsgebied',model:'Bekijk het model op Hugging Face'},
+  en:{eyebrow:'Electricity price forecast',title:z=>`Electricity prices ${z.name} ${z.city}`,
+      table:n=>`Next ${n} days, hour by hour`,loading:'Loading forecast…',
+      err:'Could not load the forecast',day:'Day',hour:'Hour',today:'Today',avg:'Avg.',
+      fc:'forecast',act:'actual',local:c=>`${c} per kWh`,
+      noteModel:'The forecast comes from a single machine-learning model covering all 13 bidding zones, trained on 2.1M hourly observations using weather forecasts as they stood when issued, hydro reservoir levels and ENTSO-E prices.',
+      noteRaw:'These are raw spot prices before taxes, grid tariffs and VAT. Currency conversion uses a fixed rate and is indicative only.',
+      pick:'Choose your price area',model:'See the model on Hugging Face'},
+};
+let _zData=null,_zLoad=0,_zZone='dk1';
+
+function zoneLang(z){return (ZONES[z]||ZONES.dk1).lang;}
+function T(z){return I18N[zoneLang(z)]||I18N.en;}
+
+async function loadZone(zone){
+  _zZone=zone; const id=++_zLoad, z=ZONES[zone], t=T(zone);
+  document.documentElement.lang=z.lang;
+  document.getElementById('zEyebrow').textContent=t.eyebrow;
+  document.getElementById('zTitle').textContent=t.title(z);
+  document.getElementById('zZoneLabel').textContent=`${z.name} · ${z.country}`;
+  document.getElementById('zLoadingText').textContent=t.loading;
+  document.getElementById('zCurLocal').textContent=t.local(z.cur);
+  document.getElementById('zNoteModel').innerHTML=t.noteModel+
+    ` <a href="https://huggingface.co/Elpriser/nordic-price-forecast" target="_blank" rel="noopener" class="text-brand-500 underline">${t.model}</a>.`;
+  document.getElementById('zNoteRaw').textContent=t.noteRaw;
+  document.getElementById('zLoading').style.display='';
+  document.getElementById('zWrap').style.display='none';
   try{
-    const r=await fetch(`/api/nordic?zone=${z}`);
-    if(id!==_ndLoad)return;
+    const r=await fetch(`/api/nordic?zone=${zone}`);
+    if(id!==_zLoad)return;
     const j=await r.json();
-    if(j.error){document.getElementById('ndLoading').innerHTML='<span class="text-red-500">'+j.error+'</span>';return;}
-    _ndData=j; renderNordic();
-    track('nordic_zone_view',{zone:z});
+    if(j.error){document.getElementById('zLoading').innerHTML=`<span class="text-red-500">${t.err}</span>`;return;}
+    _zData=j; renderZone(); track('zone_view',{zone});
   }catch(e){
-    if(id===_ndLoad)document.getElementById('ndLoading').innerHTML='<span class="text-red-500">Kunne ikke hente prognosen</span>';
+    if(id===_zLoad)document.getElementById('zLoading').innerHTML=`<span class="text-red-500">${t.err}</span>`;
   }
 }
-function renderNordic(){
-  const j=_ndData; if(!j)return;
-  const info=j.zoneInfo||{currency:'EUR',rate:1,name:j.zone};
-  const local=document.getElementById('ndCur').value==='local';
-  // EUR/MWh -> lokal valuta pr. kWh: /1000 for kWh, x kurs for valuta
-  const cvt=v=>v==null?null:(local? v/1000*info.rate : v);
+
+function renderZone(){
+  const j=_zData; if(!j)return;
+  const z=ZONES[_zZone], t=T(_zZone), loc=LOCALE[z.lang]||'en-GB';
+  const local=document.getElementById('zCur').value==='local';
+  // EUR/MWh -> local currency per kWh: /1000 for kWh, x rate for currency
+  const cvt=v=>v==null?null:(local? v/1000*z.rate : v);
   const dec=local?2:0;
-  document.getElementById('ndUnit').textContent=local?`${info.currency}/kWh`:'EUR/MWh';
-  document.getElementById('ndTitle').textContent=`${info.name} — næste ${j.days.length} døgn`;
+  document.getElementById('zUnit').textContent=local?`${z.cur}/kWh`:'EUR/MWh';
+  document.getElementById('zTableTitle').textContent=t.table(j.days.length);
   const all=[];j.days.forEach(d=>d.prices.forEach(p=>{const v=cvt(p.eur_mwh);if(v!=null)all.push(v);}));
   setColorRange(all);
   const dk=isDark(),today=fmt(new Date());
-  const thSub=dk?'text-gray-500':'text-gray-400', thDay=dk?'text-gray-300':'text-gray-700';
-  const thToday=dk?'text-brand-400':'text-brand-600', tdHour=dk?'text-gray-500':'text-gray-500';
+  const thSub=dk?'text-gray-500':'text-gray-400',thDay=dk?'text-gray-300':'text-gray-700';
+  const thT=dk?'text-brand-400':'text-brand-600',tdH=dk?'text-gray-500':'text-gray-500';
   const emptyBg=dk?'bg-gray-800':'bg-gray-100';
-  const days=j.days;
-  let h=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal"></th><th colspan="${days.length}" class="text-xs ${thSub} font-normal">${MON_FULL[new Date(days[0].date).getMonth()]} ${new Date(days[0].date).getFullYear()}</th></tr>`;
-  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Dag</th>`;
-  days.forEach(d=>{const dt=new Date(d.date);h+=`<th class="px-0.5 sm:px-1.5 ${d.date===today?thToday:thDay}">${dt.getDate()}</th>`;});
-  h+='</tr><tr><th class="pr-1 sm:pr-3 text-right text-xs '+thSub+' font-normal">Time</th>';
-  days.forEach(d=>{const dt=new Date(d.date);const isT=d.date===today;h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${isT?thToday:thSub}">${isT?'I dag':DAY[dt.getDay()]}</th>`;});
+  // Dates render through Intl, so weekday and month names follow the zone's
+  // language automatically instead of needing a table per locale.
+  const wdF=new Intl.DateTimeFormat(loc,{weekday:'short'});
+  const moF=new Intl.DateTimeFormat(loc,{month:'long',year:'numeric'});
+  const days=j.days, d0=new Date(days[0].date);
+  let h=`<tr><th class="pr-1 sm:pr-3"></th><th colspan="${days.length}" class="text-xs ${thSub} font-normal">${moF.format(d0)}</th></tr>`;
+  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">${t.day}</th>`;
+  days.forEach(d=>{h+=`<th class="px-0.5 sm:px-1.5 ${d.date===today?thT:thDay}">${new Date(d.date).getDate()}</th>`;});
+  h+=`</tr><tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">${t.hour}</th>`;
+  days.forEach(d=>{const isT=d.date===today;
+    h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${isT?thT:thSub}">${isT?t.today:wdF.format(new Date(d.date))}</th>`;});
   h+='</tr><tr><th class="pr-1 sm:pr-3"></th>';
-  days.forEach(d=>{const fc=d.type==='forecast';h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${fc?thSub:(dk?'text-emerald-400':'text-emerald-600')}" style="font-size:0.6rem">${fc?'prognose':'faktisk'}</th>`;});
+  days.forEach(d=>{const f=d.type==='forecast';
+    h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${f?thSub:(dk?'text-emerald-400':'text-emerald-600')}" style="font-size:0.6rem">${f?t.fc:t.act}</th>`;});
   h+='</tr>';
   const isMobile=window.innerWidth<640;
   for(let hr=0;hr<24;hr++){
     const lb=isMobile?String(hr):String(hr).padStart(2,'0')+'-'+String(hr+1===24?0:hr+1).padStart(2,'0');
-    h+=`<tr><td class="pr-1 sm:pr-3 text-right text-xs ${tdHour} py-0.5">${lb}</td>`;
+    h+=`<tr><td class="pr-1 sm:pr-3 text-right text-xs ${tdH} py-0.5">${lb}</td>`;
     days.forEach(d=>{
       const p=d.prices.find(x=>x.hour===hr),v=p?cvt(p.eur_mwh):null;
       if(v==null){h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;return;}
-      const txt=v.toFixed(dec).replace('.',',');
-      h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center${d.type==='forecast'?' opacity-80':''}" style="background:${bg(v)};color:${fg(v)}">${txt}</td>`;
+      h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center${d.type==='forecast'?' opacity-80':''}" style="background:${bg(v)};color:${fg(v)}">${v.toFixed(dec).replace('.',',')}</td>`;
     });
     h+='</tr>';
   }
-  h+='<tr class="border-t border-gray-300 dark:border-gray-600"><td class="pr-1 sm:pr-3 text-right text-xs font-bold pt-1 '+thSub+'">Gns.</td>';
+  h+=`<tr class="border-t border-gray-300 dark:border-gray-600"><td class="pr-1 sm:pr-3 text-right text-xs font-bold pt-1 ${thSub}">${t.avg}</td>`;
   days.forEach(d=>{
     const vals=d.prices.map(p=>cvt(p.eur_mwh)).filter(v=>v!=null);
     if(!vals.length){h+='<td></td>';return;}
-    const avg=(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(dec).replace('.',',');
-    h+=`<td class="px-0.5 sm:px-1.5 pt-1 text-center text-xs font-bold ${d.date===today?thToday:thDay}">${avg}</td>`;
+    h+=`<td class="px-0.5 sm:px-1.5 pt-1 text-center text-xs font-bold ${d.date===today?thT:thDay}">${(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(dec).replace('.',',')}</td>`;
   });
   h+='</tr>';
-  document.getElementById('ndWrap').innerHTML='<table class="mx-auto text-xs sm:text-sm tabular">'+h+'</table>';
-  document.getElementById('ndLoading').style.display='none';
-  document.getElementById('ndWrap').style.display='block';
+  document.getElementById('zWrap').innerHTML='<table class="mx-auto text-xs sm:text-sm tabular">'+h+'</table>';
+  document.getElementById('zLoading').style.display='none';
+  document.getElementById('zWrap').style.display='block';
 }
+
+// ═══ GLOBUS: lokationsvælger ═══
+function buildGlobe(){
+  const grid=document.getElementById('globeGrid'); if(grid.dataset.built)return;
+  const byCountry={};
+  Object.entries(ZONES).forEach(([k,z])=>{(byCountry[z.country]=byCountry[z.country]||[]).push([k,z]);});
+  grid.innerHTML=Object.entries(byCountry).map(([c,list])=>
+    `<div class="globe-col"><h3>${c}</h3>`+
+    list.map(([k,z])=>`<a href="/${k}" onclick="closeGlobe()"><span class="gz">${z.name}</span><span class="gc">${z.city}</span></a>`).join('')+
+    '</div>').join('');
+  grid.dataset.built='1';
+}
+function openGlobe(){
+  buildGlobe();
+  const t=T(_zZone);
+  document.getElementById('globeHeading').textContent=t.pick;
+  const o=document.getElementById('globeOverlay');
+  o.hidden=false; document.body.style.overflow='hidden';
+  track('globe_open',{from:_zZone});
+}
+function closeGlobe(){
+  document.getElementById('globeOverlay').hidden=true;
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&!document.getElementById('globeOverlay')?.hidden)closeGlobe();
+});
 
 // ═══ PRICE DETAIL POPUP ═══
 function showPriceDetail(cell){
@@ -4208,5 +4344,17 @@ async function renderShellyTariffTable(){
 // ═══ INIT ═══
 buildStart();buildPriceSelector();initBehaviorTracking();route();
 </script>
+<!-- ═══════ GLOBUS: lokations-/sprogvælger (Tesla-stil) ═══════ -->
+<div id="globeOverlay" class="globe-overlay" hidden onclick="if(event.target===this)closeGlobe()">
+  <div class="globe-panel" role="dialog" aria-modal="true" aria-labelledby="globeHeading">
+    <div class="globe-head">
+      <h2 id="globeHeading">Choose your price area</h2>
+      <button onclick="closeGlobe()" aria-label="Close" class="globe-x">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="globe-grid" id="globeGrid"></div>
+  </div>
+</div>
 </body>
 </html>
