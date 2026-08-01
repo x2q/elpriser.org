@@ -161,10 +161,16 @@ def score(models, prices, live, reservoirs, nordic_res, today):
             # No published prices for this day yet — forecast it rather than
             # emitting nulls. Between midnight and the ~13:00 CET day-ahead
             # auction, tomorrow is genuinely unknown, and a forecast is exactly
-            # what a visitor wants there. The model is trained on h >= 2, so
-            # shorter horizons borrow the h=2 model; that is conservative
-            # (it assumes less recent information than is actually available)
-            # but far better than a blank column.
+            # what a visitor wants there.
+            #
+            # h = max(offset, 2) is not a fallback, it is the correct horizon.
+            # The training convention is "the last known price day is
+            # target - (h-1)". Tomorrow, before its auction publishes, has
+            # today as its last known day — i.e. target - 1 — which is exactly
+            # the h=2 information state. So the h=2 model is being asked the
+            # question it was trained on. (A separate h=1 model would describe
+            # the state where the target day's own prices are already known,
+            # in which case no forecast is needed at all.)
             h = max(offset, 2)
             idx = pd.date_range(pd.Timestamp(d), periods=24, freq="h")
             row = pd.DataFrame({"h": h, "hour": range(24)})
