@@ -605,6 +605,11 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   /* Sæson-tip: de billige timer er vandret fra nat til middag, men mange
      enheder kører stadig på faste natte-timere. Vises kun de dage hvor
      middagen faktisk er markant billigere end natten. */
+  /* Zone-tabellen har 10 kolonner og skal kunne rummes i max-w-3xl uden at
+     den sidste bliver klippet. Reglen står her frem for som Tailwind-klasse,
+     fordi det purgede build kun kender klasser der findes ved build-tid. */
+  #zWrap table td,#zWrap table th{padding-left:.15rem;padding-right:.15rem}
+  #zWrap table td:first-child,#zWrap table th:first-child{padding-right:.5rem}
   /* ── Globus: lokationsvælger ─────────────────────────────────────────── */
   .globe-btn{display:inline-flex;align-items:center;justify-content:center;padding:.35rem;border-radius:.5rem;
     color:#6b7280;background:none;border:none;cursor:pointer;transition:color .15s,background .15s}
@@ -3994,40 +3999,40 @@ function renderForecastTable(data){
 // language, currency and conversion rate; the UI language follows the zone
 // rather than the browser, so a shared link always reads the same for everyone.
 const ZONES={
-  dk1:{name:'DK1',city:'Vestdanmark',country:'Danmark',cc:'DK',lang:'da',cur:'DKK',rate:7.46},
-  dk2:{name:'DK2',city:'Østdanmark',country:'Danmark',cc:'DK',lang:'da',cur:'DKK',rate:7.46},
-  no1:{name:'NO1',city:'Oslo',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7},
-  no2:{name:'NO2',city:'Kristiansand',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7},
-  no3:{name:'NO3',city:'Trondheim',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7},
-  no4:{name:'NO4',city:'Tromsø',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7},
-  no5:{name:'NO5',city:'Bergen',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7},
-  se1:{name:'SE1',city:'Luleå',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3},
-  se2:{name:'SE2',city:'Sundsvall',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3},
-  se3:{name:'SE3',city:'Stockholm',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3},
-  se4:{name:'SE4',city:'Malmö',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3},
-  fi:{name:'FI',city:'Suomi',country:'Suomi',cc:'FI',lang:'fi',cur:'EUR',rate:1},
-  nl:{name:'NL',city:'Nederland',country:'Nederland',cc:'NL',lang:'nl',cur:'EUR',rate:1},
+  dk1:{name:'DK1',city:'Vestdanmark',country:'Danmark',cc:'DK',lang:'da',cur:'DKK',rate:7.46,sub:'øre'},
+  dk2:{name:'DK2',city:'Østdanmark',country:'Danmark',cc:'DK',lang:'da',cur:'DKK',rate:7.46,sub:'øre'},
+  no1:{name:'NO1',city:'Oslo',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7,sub:'øre'},
+  no2:{name:'NO2',city:'Kristiansand',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7,sub:'øre'},
+  no3:{name:'NO3',city:'Trondheim',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7,sub:'øre'},
+  no4:{name:'NO4',city:'Tromsø',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7,sub:'øre'},
+  no5:{name:'NO5',city:'Bergen',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7,sub:'øre'},
+  se1:{name:'SE1',city:'Luleå',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3,sub:'öre'},
+  se2:{name:'SE2',city:'Sundsvall',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3,sub:'öre'},
+  se3:{name:'SE3',city:'Stockholm',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3,sub:'öre'},
+  se4:{name:'SE4',city:'Malmö',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3,sub:'öre'},
+  fi:{name:'FI',city:'Suomi',country:'Suomi',cc:'FI',lang:'fi',cur:'EUR',rate:1,sub:'snt'},
+  nl:{name:'NL',city:'Nederland',country:'Nederland',cc:'NL',lang:'nl',cur:'EUR',rate:1,sub:'cent'},
 };
 const LOCALE={da:'da-DK',no:'nb-NO',sv:'sv-SE',fi:'fi-FI',nl:'nl-NL',en:'en-GB'};
 const I18N={
   da:{eyebrow:'Elprisprognose',title:z=>`Elpriser ${z.name} ${z.city}`,
       table:n=>`Næste ${n} døgn, time for time`,loading:'Henter prognose…',
       err:'Kunne ikke hente prognosen',day:'Dag',hour:'Time',today:'I dag',avg:'Gns.',
-      fc:'prognose',act:'faktisk',local:c=>`${c} pr. kWh`,
+      fc:'prognose',act:'faktisk',local:c=>`${c}/kWh`,
       noteModel:'Prognosen laves af én samlet maskinlæringsmodel for alle 13 prisområder, trænet på 2,1 mio. timeobservationer med vejrprognoser som de så ud ved udgivelsen, magasinfyldning i vandkraftzonerne og priser fra ENTSO-E.',
       noteRaw:'Priserne er rå spotpriser uden afgifter, tariffer og moms. Omregning til lokal valuta bruger en fast kurs og er vejledende.',
       pick:'Vælg dit prisområde',model:'Se modellen på Hugging Face'},
   no:{eyebrow:'Strømprisprognose',title:z=>`Strømpriser ${z.name} ${z.city}`,
       table:n=>`Neste ${n} døgn, time for time`,loading:'Henter prognose…',
       err:'Kunne ikke hente prognosen',day:'Dag',hour:'Time',today:'I dag',avg:'Snitt',
-      fc:'prognose',act:'faktisk',local:c=>`${c} per kWh`,
+      fc:'prognose',act:'faktisk',local:c=>`${c}/kWh`,
       noteModel:'Prognosen lages av én felles maskinlæringsmodell for alle 13 prisområder, trent på 2,1 mill. timeobservasjoner med værvarsler slik de var da de ble utgitt, magasinfylling i vannkraftsonene og priser fra ENTSO-E.',
       noteRaw:'Prisene er rene spotpriser uten avgifter, nettleie og moms. Omregning til lokal valuta bruker fast kurs og er veiledende.',
       pick:'Velg prisområdet ditt',model:'Se modellen på Hugging Face'},
   sv:{eyebrow:'Elprisprognos',title:z=>`Elpriser ${z.name} ${z.city}`,
       table:n=>`Kommande ${n} dygn, timme för timme`,loading:'Hämtar prognos…',
       err:'Kunde inte hämta prognosen',day:'Dag',hour:'Timme',today:'I dag',avg:'Snitt',
-      fc:'prognos',act:'faktisk',local:c=>`${c} per kWh`,
+      fc:'prognos',act:'faktisk',local:c=>`${c}/kWh`,
       noteModel:'Prognosen görs av en gemensam maskininlärningsmodell för alla 13 elområden, tränad på 2,1 milj. timobservationer med väderprognoser som de såg ut vid publiceringen, magasinfyllnad i vattenkraftområdena och priser från ENTSO-E.',
       noteRaw:'Priserna är rena spotpriser utan skatter, nätavgifter och moms. Omräkning till lokal valuta använder fast kurs och är vägledande.',
       pick:'Välj ditt elområde',model:'Se modellen på Hugging Face'},
@@ -4041,14 +4046,14 @@ const I18N={
   nl:{eyebrow:'Stroomprijsverwachting',title:z=>`Stroomprijzen ${z.name} ${z.city}`,
       table:n=>`Komende ${n} dagen, per uur`,loading:'Verwachting laden…',
       err:'Kon de verwachting niet laden',day:'Dag',hour:'Uur',today:'Vandaag',avg:'Gem.',
-      fc:'verwachting',act:'werkelijk',local:c=>`${c} per kWh`,
+      fc:'verwachting',act:'werkelijk',local:c=>`${c}/kWh`,
       noteModel:'De verwachting komt van één gezamenlijk machine-learningmodel voor alle 13 prijsgebieden, getraind op 2,1 mln. uurwaarnemingen met weersverwachtingen zoals ze bij publicatie luidden, stuwmeerstanden in de waterkrachtgebieden en prijzen van ENTSO-E.',
       noteRaw:'Dit zijn kale spotprijzen zonder belastingen, nettarieven en btw. Omrekening naar lokale valuta gebruikt een vaste koers en is indicatief.',
       pick:'Kies je prijsgebied',model:'Bekijk het model op Hugging Face'},
   en:{eyebrow:'Electricity price forecast',title:z=>`Electricity prices ${z.name} ${z.city}`,
       table:n=>`Next ${n} days, hour by hour`,loading:'Loading forecast…',
       err:'Could not load the forecast',day:'Day',hour:'Hour',today:'Today',avg:'Avg.',
-      fc:'forecast',act:'actual',local:c=>`${c} per kWh`,
+      fc:'forecast',act:'actual',local:c=>`${c}/kWh`,
       noteModel:'The forecast comes from a single machine-learning model covering all 13 bidding zones, trained on 2.1M hourly observations using weather forecasts as they stood when issued, hydro reservoir levels and ENTSO-E prices.',
       noteRaw:'These are raw spot prices before taxes, grid tariffs and VAT. Currency conversion uses a fixed rate and is indicative only.',
       pick:'Choose your price area',model:'See the model on Hugging Face'},
@@ -4065,7 +4070,7 @@ async function loadZone(zone){
   document.getElementById('zTitle').textContent=t.title(z);
   document.getElementById('zZoneLabel').textContent=`${z.name} · ${z.country}`;
   document.getElementById('zLoadingText').textContent=t.loading;
-  document.getElementById('zCurLocal').textContent=t.local(z.cur);
+  document.getElementById('zCurLocal').textContent=t.local(z.sub);
   document.getElementById('zNoteModel').innerHTML=t.noteModel+
     ` <a href="https://huggingface.co/Elpriser/nordic-price-forecast" target="_blank" rel="noopener" class="text-brand-500 underline">${t.model}</a>.`;
   document.getElementById('zNoteRaw').textContent=t.noteRaw;
@@ -4086,10 +4091,15 @@ function renderZone(){
   const j=_zData; if(!j)return;
   const z=ZONES[_zZone], t=T(_zZone), loc=LOCALE[z.lang]||'en-GB';
   const local=document.getElementById('zCur').value==='local';
-  // EUR/MWh -> local currency per kWh: /1000 for kWh, x rate for currency
-  const cvt=v=>v==null?null:(local? v/1000*z.rate : v);
-  const dec=local?2:0;
-  document.getElementById('zUnit').textContent=local?`${z.cur}/kWh`:'EUR/MWh';
+  // EUR/MWh -> the zone's sub-unit per kWh (øre/öre/snt/cent): /1000 for kWh,
+  // x rate for currency, x100 for the sub-unit. Sub-units matter here: NL
+  // prices in EUR/kWh span only 0.00-0.17, so two decimals collapse genuinely
+  // different hours onto the same "0,00".
+  const cvt=v=>v==null?null:(local? v/1000*z.rate*100 : v);
+  const mx=Math.max(...j.days.flatMap(d=>d.prices.map(p=>Math.abs(cvt(p.eur_mwh)??0))));
+  // Aim for ~3 significant figures whatever the zone's price level.
+  const dec=!local?0:(mx>=100?0:mx>=10?1:2);
+  document.getElementById('zUnit').textContent=local?`${z.sub}/kWh`:'EUR/MWh';
   document.getElementById('zTableTitle').textContent=t.table(j.days.length);
   const all=[];j.days.forEach(d=>d.prices.forEach(p=>{const v=cvt(p.eur_mwh);if(v!=null)all.push(v);}));
   setColorRange(all);
@@ -4115,7 +4125,7 @@ function renderZone(){
   const isMobile=window.innerWidth<640;
   for(let hr=0;hr<24;hr++){
     const lb=isMobile?String(hr):String(hr).padStart(2,'0')+'-'+String(hr+1===24?0:hr+1).padStart(2,'0');
-    h+=`<tr><td class="pr-1 sm:pr-3 text-right text-xs ${tdH} py-0.5">${lb}</td>`;
+    h+=`<tr><td class="pr-1 sm:pr-3 text-right text-xs ${tdH} py-0.5" style="white-space:nowrap">${lb}</td>`;
     days.forEach(d=>{
       const p=d.prices.find(x=>x.hour===hr),v=p?cvt(p.eur_mwh):null;
       if(v==null){h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;return;}

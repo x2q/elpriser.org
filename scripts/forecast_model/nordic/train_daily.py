@@ -151,15 +151,21 @@ def score(models, prices, live, reservoirs, nordic_res, today):
         for offset in range(10):
             d = today + timedelta(days=offset)
             dayp = p[p.index.normalize() == pd.Timestamp(d)]
-            if len(dayp) > 12 or offset < 2:
-                days.append({"date": d.isoformat(),
-                             "type": "actual" if len(dayp) > 12 else "forecast",
+            if len(dayp) > 12:
+                days.append({"date": d.isoformat(), "type": "actual",
                              "prices": [{"hour": h,
                                          "eur_mwh": (round(float(dayp[dayp.index.hour == h].mean()), 2)
                                                      if len(dayp[dayp.index.hour == h]) else None)}
                                         for h in range(24)]})
                 continue
-            h = offset
+            # No published prices for this day yet — forecast it rather than
+            # emitting nulls. Between midnight and the ~13:00 CET day-ahead
+            # auction, tomorrow is genuinely unknown, and a forecast is exactly
+            # what a visitor wants there. The model is trained on h >= 2, so
+            # shorter horizons borrow the h=2 model; that is conservative
+            # (it assumes less recent information than is actually available)
+            # but far better than a blank column.
+            h = max(offset, 2)
             idx = pd.date_range(pd.Timestamp(d), periods=24, freq="h")
             row = pd.DataFrame({"h": h, "hour": range(24)})
             row["zone"] = pd.Categorical([z] * 24, categories=ZONES)
