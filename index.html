@@ -354,6 +354,18 @@
       "author":    { "@type": "Organization", "name": "elpriser.org" },
       "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
       "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/hvornaar-er-stroemmen-billigst" }
+    },
+    {
+      "@type": "Article",
+      "headline": "Hvorfor er strømmen grønnest netop i den dyreste time?",
+      "description": "Den dyreste time på døgnet er ofte også den grønneste. Analyse af 22.504 timers data: pris sættes marginalt på et europæisk marked, mens CO₂ er et gennemsnit der afhænger af, hvilke naboer Danmark handler med.",
+      "url": "https://elpriser.org/blog/groennest-og-dyrest",
+      "inLanguage": "da",
+      "datePublished": "2026-08-01",
+      "dateModified": "2026-08-01",
+      "author":    { "@type": "Organization", "name": "elpriser.org" },
+      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/groennest-og-dyrest" }
     }
   ]
 }
@@ -769,6 +781,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         <div class="site-guides-menu" id="guidesMenu" hidden>
           <a href="/blog/forsta-din-elpris">Forstå din elpris</a>
           <a href="/blog/hvornaar-er-stroemmen-billigst">Hvornår er strømmen billigst?</a>
+    <a href="/blog/groennest-og-dyrest">Grønnest og dyrest</a>
+          <a href="/blog/groennest-og-dyrest">Grønnest og dyrest på samme tid</a>
           <a href="/blog/elafgift-2028">Elafgift 2028</a>
           <a href="/blog/home-assistant-elpriser">Home Assistant</a>
           <a href="/blog/shelly-elpris-automation">Shelly automation</a>
@@ -2513,6 +2527,125 @@ entities:
   </article>
 </main>
 
+<!-- ═══════ BLOG: Grønnest og dyrest på samme tid ═══════ -->
+<main style="display:none" data-page="blog-groennest-og-dyrest" class="max-w-2xl mx-auto px-4 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <div class="page-eyebrow">Analyse · august 2026</div>
+      <h1 class="page-title" style="font-size:1.35rem">Hvorfor er strømmen grønnest netop i den dyreste time?</h1>
+    </div>
+    <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
+      <svg width="20" height="20" class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+  <article class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+    <p class="text-base text-gray-700 dark:text-gray-300">Den 1. august 2026 kostede strømmen i Vestdanmark <strong class="text-gray-800 dark:text-gray-200">0,19 kr/kWh kl. 14</strong> og <strong class="text-gray-800 dark:text-gray-200">1,84 kr/kWh kl. 20</strong> — næsten ti gange så meget. Men CO₂-udledningen gik den modsatte vej: 105 g/kWh i den billige time, 54 g i den dyre. Den billigste time på døgnet var altså næsten dobbelt så beskidt som den dyreste.</p>
+    <p class="mt-2">Det virker bagvendt. Vi har regnet på 22.504 timers data for at finde ud af hvorfor — og svaret viste sig at være et andet, end vi først troede.</p>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Først: den oplagte forklaring er forkert</h2>
+      <p>Den nærliggende tanke er, at høj pris betyder grøn strøm — at vi ligefrem betaler ekstra for det rene. Det holder ikke. Deler man alle timer op efter prisniveau, går udledningen <em>op</em> med prisen:</p>
+      <div class="mt-3 subcard">
+        <div class="chd2"><span>Alle timer sorteret efter pris</span><span>DK1, 2024&ndash;2026</span></div>
+        <table class="w-full text-sm tabular">
+          <thead><tr class="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
+            <th class="text-left py-1.5 font-semibold">Prisniveau</th>
+            <th class="text-right py-1.5 font-semibold">Spotpris</th>
+            <th class="text-right py-1.5 font-semibold">CO₂</th>
+          </tr></thead>
+          <tbody>
+            <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5">De 10 % billigste timer</td><td class="text-right">−0,5 øre</td><td class="text-right">121 g</td></tr>
+            <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5">2. decil</td><td class="text-right">17,8 øre</td><td class="text-right" style="color:#1e9e4a"><strong>70 g</strong></td></tr>
+            <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5">Midt i feltet</td><td class="text-right">65,6 øre</td><td class="text-right">95 g</td></tr>
+            <tr><td class="py-1.5 font-semibold text-gray-800 dark:text-gray-200">De 10 % dyreste timer</td><td class="text-right font-semibold text-gray-800 dark:text-gray-200">130,4 øre</td><td class="text-right font-semibold" style="color:#d02b22">131 g</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-3">Som hovedregel er dyr strøm altså <em>beskidt</em> strøm. Årsagen er enkel: når vinden svigter, stiger prisen, og gas- og kulværker fylder hullet. Begge dele følges ad.</p>
+      <p class="mt-2">Så aftentimen er ikke et eksempel på reglen. Den er en undtagelse — og undtagelsen har en helt anden årsag.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">De to tal svarer på hver sit spørgsmål</h2>
+      <p>Prisen og CO₂-tallet måler ikke det samme, og det er hele nøglen.</p>
+      <p class="mt-2"><strong class="text-gray-800 dark:text-gray-200">Prisen sættes af den sidste, dyreste kilowatt-time</strong>, der skal til for at dække forbruget — og den fastsættes på et europæisk marked, ikke et dansk. Time for time følger den danske pris den tyske med en korrelation på <strong class="text-gray-800 dark:text-gray-200">+0,92</strong>. Og over døgnet følger prisen den termiske produktions andel med <strong class="text-gray-800 dark:text-gray-200">+0,95</strong>. Når solen er væk over hele Europa og aftenforbruget topper, er det et gaskraftværk, der sætter prisen — også for os.</p>
+      <p class="mt-2"><strong class="text-gray-800 dark:text-gray-200">CO₂-tallet er derimod et gennemsnit</strong> af alt det, danskerne faktisk forbruger — inklusive importeret strøm, der tæller med afsenderlandets udledning. Det er et helt andet regnestykke, og intet forhindrer de to i at pege hver sin vej.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Danmark handler med vidt forskellige lande over døgnet</h2>
+      <p>Da vi delte udvekslingen op på nabolande, faldt forklaringen på plads. Danmark handler nemlig ikke med de samme naboer hele døgnet:</p>
+      <div class="mt-3 subcard">
+        <div class="chd2"><span>DK1's udveksling, gennemsnit pr. time</span><span>positiv = import</span></div>
+        <table class="w-full text-sm tabular">
+          <thead><tr class="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
+            <th class="text-left py-1.5 font-semibold">Time</th>
+            <th class="text-right py-1.5 font-semibold">Norge</th>
+            <th class="text-right py-1.5 font-semibold">Tyskland</th>
+            <th class="text-right py-1.5 font-semibold">CO₂</th>
+          </tr></thead>
+          <tbody>
+            <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-1.5">kl. 13 (billigst)</td><td class="text-right">+15 MWh</td><td class="text-right" style="color:#8a6d3b">+587 MWh</td><td class="text-right" style="color:#d02b22"><strong>114 g</strong></td></tr>
+            <tr><td class="py-1.5">kl. 20 (dyrest)</td><td class="text-right" style="color:#1e9e4a"><strong>+1.027 MWh</strong></td><td class="text-right">−942 MWh</td><td class="text-right" style="color:#1e9e4a"><strong>94 g</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-3">Midt på dagen <strong class="text-gray-800 dark:text-gray-200">importerer Danmark tysk strøm</strong>, og Norge sender næsten intet. Om aftenen vender det helt om: Norge sender over en gigawatt vandkraft ind i Danmark, mens vi eksporterer til Tyskland.</p>
+      <p class="mt-2">Og norsk vandkraft er stort set CO₂-fri. Sammenhængen på tværs af døgnet er slående: udledningen følger importen fra Tyskland, Holland og England med <strong class="text-gray-800 dark:text-gray-200">+0,92</strong>, og importen fra Norge og Sverige med <strong class="text-gray-800 dark:text-gray-200">−0,89</strong>. Til sammenligning følger den den samlede danske andel af vind og sol med <strong>+0,69</strong> — altså den forkerte vej. Hvem vi handler med, betyder mere for CO₂-tallet end vores egen produktion.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Den høje pris henter faktisk den grønne strøm ind</h2>
+      <p>Hvorfor sender Norge så meget netop om aftenen? Fordi vandkraft styres efter <em>vandværdi</em>. Vand i et magasin kan bruges nu eller gemmes til senere, og en norsk producent slipper det, når prisen gør det værd at bruge frem for at gemme.</p>
+      <p class="mt-2">Det kan efterprøves. Sammenligner man samme time på dyre og billige døgn, sender Norge omkring <strong class="text-gray-800 dark:text-gray-200">1.000 MWh mere pr. time</strong> på de dyre døgn — og det gælder hele døgnet rundt, ikke kun om aftenen:</p>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li>kl. 02: +1.048 MWh på dyre døgn</li>
+        <li>kl. 13: +1.132 MWh</li>
+        <li>kl. 20: +812 MWh</li>
+      </ul>
+      <p class="mt-3">Den høje aftenpris er altså ikke bare tilfældigvis sammenfaldende med ren strøm. Prisen er en del af det, der <em>kalder</em> den rene strøm ind over grænsen. Markedet virker efter hensigten — det er bare ikke synligt fra en enkelt prisetiket.</p>
+      <p class="mt-2">Oveni kommer en enklere effekt: aftenforbruget er lavere end middagsforbruget (2.750 MW mod 3.422 MW), mens vinden blæser videre. Vindens <em>andel</em> af forbruget stiger derfor fra 46 % midt på dagen til 63 % kl. 20, selvom der ikke produceres mere vindstrøm.</p>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Hvad du kan bruge det til</h2>
+      <ol class="space-y-2 ml-4 list-decimal">
+        <li><strong class="text-gray-800 dark:text-gray-200">Antag ikke, at billig strøm er grøn strøm.</strong> Det er den ofte, men ikke altid — og de billigste timer på døgnet er faktisk blandt de mest CO₂-tunge. Vi viser begge kurver på forsiden, netop fordi de ikke altid følges ad.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Vil du spare penge, så kør midt på dagen.</strong> Det er stadig det rigtige råd for pengepungen — og på 89 % af døgnene er middagen billigere end aftenen.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Vil du minimere CO₂, så kig på CO₂-kurven.</strong> Aftenen er grønnere end middagen på 58 % af døgnene, men det svinger. Nogle dage er middagen både billigst og grønnest.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Kan du ikke vælge?</strong> Timerne omkring midnat er et godt kompromis: næstlaveste udledning på døgnet og en pris under gennemsnittet.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Om analysen og dens forbehold</h2>
+      <p>Beregnet på 22.504 timer for DK1 fra januar 2024 til august 2026: spotpriser og produktions-/udvekslingsdata fra Energi Data Service, tyske priser fra ENTSO-E, og Energinets CO₂-tal for forbrugt strøm.</p>
+      <p class="mt-2">Tre ting bør siges tydeligt. <strong class="text-gray-800 dark:text-gray-200">Mønstret er en tendens, ikke en lov</strong> — den grønneste og den dyreste time falder kun sammen på 1,7 % af døgnene, og ligger inden for to timer af hinanden på 12 %. <strong class="text-gray-800 dark:text-gray-200">Gennemsnitligt er kl. 23 døgnets grønneste time</strong> (86 g), ikke kl. 20 (94 g); den 1. august var et særligt tydeligt eksempel. Og <strong class="text-gray-800 dark:text-gray-200">korrelation er ikke bevis</strong> — vandværdi-mekanismen er veldokumenteret i nordisk elmarkedsteori, og tallene her stemmer med den, men de beviser den ikke alene.</p>
+      <p class="mt-2">Data er frit tilgængelige på <a href="https://huggingface.co/datasets/Elpriser/denmark-power-market" target="_blank" rel="noopener" class="text-brand-500 underline">Hugging Face</a> under CC BY 4.0, hvis du vil regne efter.</p>
+    </section>
+
+    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+      <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Læs også:</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="/blog/hvornaar-er-stroemmen-billigst" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Hvornår er strømmen billigst? →</a>
+        <a href="/no1" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Priser i Norge →</a>
+        <a href="/blog/forsta-din-elpris" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Forstå din elpris →</a>
+      </div>
+    </div>
+  </article>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type":"Question","name":"Hvorfor er strømmen grønnest i den dyreste time?","acceptedAnswer":{"@type":"Answer","text":"Fordi pris og CO₂ måler to forskellige ting. Prisen sættes af den sidste og dyreste kilowatt-time på et europæisk marked — typisk et gasværk, når solen er væk om aftenen. CO₂-tallet er et gennemsnit af al forbrugt strøm inklusive import. Om aftenen importerer Danmark over 1.000 MWh/time norsk vandkraft, som er næsten CO₂-fri, mens vi midt på dagen importerer tysk strøm med højere udledning."}},
+      {"@type":"Question","name":"Er dyr strøm altid grøn strøm?","acceptedAnswer":{"@type":"Answer","text":"Nej, som hovedregel er det omvendt. Deler man alle timer op efter pris, stiger CO₂-udledningen med prisen: de 10 % dyreste timer har 131 g/kWh mod 70 g i andet decil. Når vinden svigter, stiger både prisen og udledningen. Aftentimen er en undtagelse med sin egen forklaring."}},
+      {"@type":"Question","name":"Hvornår på døgnet er strømmen mest CO₂-venlig i Danmark?","acceptedAnswer":{"@type":"Answer","text":"I gennemsnit er kl. 23 døgnets grønneste time med 86 g CO₂/kWh for DK1, tæt fulgt af de øvrige aften- og nattetimer. Den mest CO₂-tunge time er kl. 13-14 med 114 g, hvilket samtidig er den billigste tid på døgnet. Aftenen er grønnere end middagen på 58 % af døgnene."}}
+    ]
+  }
+  </script>
+</main>
+
 <!-- ═══════ BLOG: Hvornår er strømmen billigst ═══════ -->
 <main style="display:none" data-page="blog-hvornaar-er-stroemmen-billigst" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
@@ -2628,7 +2761,7 @@ entities:
       <a href="/dk1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK1</a> · <a href="/dk2" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK2</a> · <a href="/tariffer" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Nettariffer</a> · <a href="/prognose" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elprisprognose</a> · <a href="/se3" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Sverige</a> · <a href="/no1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Norge</a> · <a href="/automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Automation</a> · <a href="/api" class="hover:text-gray-600 dark:hover:text-gray-400 underline">API</a> · <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser</a>
     </nav>
     <nav class="mb-3" aria-label="Guides">
-      <a href="/blog/forsta-din-elpris" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Forstå din elpris</a> · <a href="/blog/shelly-elpris-automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Shelly automation</a> · <a href="/blog/home-assistant-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Home Assistant guide</a> · <a href="/blog/v2g-v2h-bidirektional-opladning" class="hover:text-gray-600 dark:hover:text-gray-400 underline">V2G &amp; V2H</a> · <a href="/blog/biler-ladere-v2h-v2g" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Biler &amp; ladere</a> · <a href="/blog/hvornaar-er-stroemmen-billigst" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Hvornår er strømmen billigst?</a> · <a href="/blog/elafgift-2028" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elafgift 2028</a>
+      <a href="/blog/forsta-din-elpris" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Forstå din elpris</a> · <a href="/blog/shelly-elpris-automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Shelly automation</a> · <a href="/blog/home-assistant-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Home Assistant guide</a> · <a href="/blog/v2g-v2h-bidirektional-opladning" class="hover:text-gray-600 dark:hover:text-gray-400 underline">V2G &amp; V2H</a> · <a href="/blog/biler-ladere-v2h-v2g" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Biler &amp; ladere</a> · <a href="/blog/hvornaar-er-stroemmen-billigst" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Hvornår er strømmen billigst?</a> · <a href="/blog/groennest-og-dyrest" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Grønnest og dyrest</a> · <a href="/blog/elafgift-2028" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elafgift 2028</a>
     </nav>
     <p>&copy; Elpriser.org &mdash; Data fra <a href="https://www.energidataservice.dk" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Energi Data Service</a> (Energinet). Åbne datasæt på <a href="https://huggingface.co/Elpriser" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Hugging Face</a>.</p>
   </div>
@@ -2845,6 +2978,7 @@ const PATH_ROUTES={
   '/blog/v2g-v2h-bidirektional-opladning':'blog/v2g-v2h-bidirektional-opladning',
   '/blog/biler-ladere-v2h-v2g':'blog/biler-ladere-v2h-v2g',
   '/blog/elafgift-2028':'blog/elafgift-2028',
+  '/blog/groennest-og-dyrest':'blog/groennest-og-dyrest',
   '/blog/hvornaar-er-stroemmen-billigst':'blog/hvornaar-er-stroemmen-billigst',
 };
 function pathToHash(p){
@@ -2906,6 +3040,7 @@ function route(){
   if(h==='blog/v2g-v2h-bidirektional-opladning'){document.querySelector('[data-page="blog-v2g-v2h-bidirektional-opladning"]').classList.add('active');document.title='V2G, V2H & V2L — Bidirektional elbilopladning forklaret';pv('Blog: V2G & V2H','/blog/v2g-v2h-bidirektional-opladning');return;}
   if(h==='blog/biler-ladere-v2h-v2g'){document.querySelector('[data-page="blog-biler-ladere-v2h-v2g"]').classList.add('active');document.title='Elbiler og ladere med V2H/V2G — Liste 2026';pv('Blog: Biler & ladere V2H/V2G','/blog/biler-ladere-v2h-v2g');return;}
   if(h==='blog/hvornaar-er-stroemmen-billigst'){document.querySelector('[data-page="blog-hvornaar-er-stroemmen-billigst"]').classList.add('active');document.title='Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret';pv('Blog: Hvornår billigst','/blog/hvornaar-er-stroemmen-billigst');return;}
+  if(h==='blog/groennest-og-dyrest'){document.querySelector('[data-page="blog-groennest-og-dyrest"]').classList.add('active');document.title='Hvorfor er strømmen grønnest netop i den dyreste time?';pv('Blog: Grønnest og dyrest','/blog/groennest-og-dyrest');return;}
   if(h==='blog/elafgift-2028'){document.querySelector('[data-page="blog-elafgift-2028"]').classList.add('active');document.title='Elafgift 2028: Sådan stiger elafgiften igen';pv('Blog: Elafgift 2028','/blog/elafgift-2028');return;}
   if(ZONES[h]&&h!=='dk1'&&h!=='dk2'){document.querySelector('[data-page="zone"]').classList.add('active');const z=ZONES[h];document.title=I18N[z.lang].title(z)+' — elpriser.org';pv('Zone '+z.name,'/'+h);loadZone(h);return;}
   if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elprisprognose — Forventede elpriser næste 7 dage';pv('Prognose','/prognose');loadForecastPage();return;}

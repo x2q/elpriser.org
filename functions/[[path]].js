@@ -150,6 +150,11 @@ const SEO_PAGES = {
     description: 'Nattestrøm er ikke længere billigst: i 2026 ligger døgnets billigste time midt på dagen på 68 % af dagene mod 23 % om natten. Analyse af 48.594 timers forbrugs- og prisdata — og hvad det betyder for din elbil og varmepumpe.',
     hash: '#blog/hvornaar-er-stroemmen-billigst',
   },
+  '/blog/groennest-og-dyrest': {
+    title: 'Hvorfor er strømmen grønnest netop i den dyreste time?',
+    description: 'Den dyreste time på døgnet er ofte også den grønneste — mens den billigste er blandt de mest CO₂-tunge. Analyse af 22.504 timers data: prisen sættes marginalt på et europæisk marked, mens CO₂ er et gennemsnit, der afhænger af hvilke naboer Danmark handler med.',
+    hash: '#blog/groennest-og-dyrest',
+  },
   '/blog/elafgift-2028': {
     title: 'Elafgift 2028: Sådan stiger elafgiften igen',
     description: 'Elafgiften er sænket til 0,8 øre/kWh i 2026-2027, men stiger igen fra 2028. Se de nye satser, hvorfor regeringen endnu ikke har forlænget den lave afgift, og hvad det betyder for din elregning og dine solceller.',
@@ -203,7 +208,7 @@ for (const area of ['DK1', 'DK2']) {
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff',
   '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
-  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028', '/no1', '/no2', '/no3', '/no4', '/no5', '/se1', '/se2', '/se3', '/se4', '/fi', '/nl', '/blog/hvornaar-er-stroemmen-billigst',
+  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028', '/no1', '/no2', '/no3', '/no4', '/no5', '/se1', '/se2', '/se3', '/se4', '/fi', '/nl', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
   ...NET_URLS,
 ];
 
@@ -234,6 +239,7 @@ const CONTENT_LASTMOD = {
   '/fi': '2026-08-01',
   '/nl': '2026-08-01',
   '/blog/hvornaar-er-stroemmen-billigst': '2026-07-28',
+  '/blog/groennest-og-dyrest': '2026-08-01',
 };
 
 function buildSitemap() {
@@ -279,6 +285,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [V2G & V2H](https://elpriser.org/blog/v2g-v2h-bidirektional-opladning): Forklaring af bidirektional elbilopladning (V2G/V2H/V2L) og hvordan det udnytter spotpriser.
 - [Biler & ladere med V2H/V2G](https://elpriser.org/blog/biler-ladere-v2h-v2g): Opdateret liste over elbiler og bidirektionale ladere der understøtter V2H/V2G i Danmark.
 - [Hvornår er strømmen billigst](https://elpriser.org/blog/hvornaar-er-stroemmen-billigst): Analyse af 48.594 timers data — døgnets billigste time ligger nu midt på dagen på 68 % af dagene mod 23 % om natten; danske husholdninger flytter forbrug efter et forældet natte-mønster.
+- [Grønnest og dyrest på samme tid](https://elpriser.org/blog/groennest-og-dyrest): Hvorfor døgnets dyreste time ofte er den grønneste — pris sættes marginalt på et europæisk marked, CO₂ er et gennemsnit der følger hvem Danmark importerer fra (norsk vandkraft om aftenen, tysk strøm midt på dagen).
 - [Elafgift 2028](https://elpriser.org/blog/elafgift-2028): Elafgiften er sænket til 0,8 øre/kWh i 2026-2027 men stiger igen fra 2028 — satser, tidslinje og betydning for din elregning og dine solceller.
 
 ## Live data API (for AI assistants and agents)
@@ -838,7 +845,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v26');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v27');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -901,6 +908,7 @@ const HASH_TO_DATA_PAGE = {
   'fi': 'zone',
   'nl': 'zone',
   'blog/hvornaar-er-stroemmen-billigst': 'blog-hvornaar-er-stroemmen-billigst',
+  'blog/groennest-og-dyrest': 'blog-groennest-og-dyrest',
 };
 
 function dataPageForHash(hash) {
