@@ -365,6 +365,26 @@ const PCT_PARAM      = { name: 'pct',      in: 'query', schema: { type: 'integer
 const DATE_PARAM     = { name: 'date',     in: 'query', schema: { type: 'string', format: 'date' }, description: 'YYYY-MM-DD. Defaults to today (DK local).' };
 const MAXOFF_PARAM   = { name: 'max_off',  in: 'query', schema: { type: 'integer', minimum: 1, maximum: 12 }, description: 'For `strategy=smart`: max consecutive OFF hours.' };
 
+// The 13 Nordic + NL bidding zones served by /api/nordic. Kept here rather
+// than derived, so an unknown zone is rejected with a useful message instead
+// of turning into a KV miss.
+const NORDIC_ZONES = ['dk1','dk2','no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl'];
+const NORDIC_ZONE_INFO = {
+  dk1: { name: 'DK1 Vestdanmark',  country: 'DK', currency: 'DKK', rate: 7.46 },
+  dk2: { name: 'DK2 Østdanmark',   country: 'DK', currency: 'DKK', rate: 7.46 },
+  no1: { name: 'NO1 Oslo',         country: 'NO', currency: 'NOK', rate: 11.7 },
+  no2: { name: 'NO2 Kristiansand', country: 'NO', currency: 'NOK', rate: 11.7 },
+  no3: { name: 'NO3 Trondheim',    country: 'NO', currency: 'NOK', rate: 11.7 },
+  no4: { name: 'NO4 Tromsø',       country: 'NO', currency: 'NOK', rate: 11.7 },
+  no5: { name: 'NO5 Bergen',       country: 'NO', currency: 'NOK', rate: 11.7 },
+  se1: { name: 'SE1 Luleå',        country: 'SE', currency: 'SEK', rate: 11.3 },
+  se2: { name: 'SE2 Sundsvall',    country: 'SE', currency: 'SEK', rate: 11.3 },
+  se3: { name: 'SE3 Stockholm',    country: 'SE', currency: 'SEK', rate: 11.3 },
+  se4: { name: 'SE4 Malmö',        country: 'SE', currency: 'SEK', rate: 11.3 },
+  fi:  { name: 'FI Finland',       country: 'FI', currency: 'EUR', rate: 1 },
+  nl:  { name: 'NL Nederland',     country: 'NL', currency: 'EUR', rate: 1 },
+};
+
 const OPENAPI_SPEC = {
   openapi: '3.1.0',
   info: {
@@ -557,6 +577,25 @@ export async function onRequest(context) {
   if (seg1 === 'openapi.json') {
     // Spec rarely changes — cache hard at the edge; ETag enables cheap 304s.
     return jsonResponse(OPENAPI_SPEC, { maxAge: 3600, sMaxAge: 86400, request });
+  }
+
+  // ── /api/nordic — 13-zone forecast (served before the DK1/DK2 area check,
+  //    since its zones are Nordic bidding zones, not Danish price areas) ───
+  if (seg1 === 'nordic') {
+    const zone = (q.get('zone') || 'dk1').toLowerCase();
+    if (!NORDIC_ZONES.includes(zone)) {
+      return fail(400, `zone must be one of: ${NORDIC_ZONES.join(', ')}`);
+    }
+    if (!context.env || !context.env.PRICE_CACHE) return fail(503, 'forecast store unavailable');
+    try {
+      const raw = await context.env.PRICE_CACHE.get(`nordic-forecast-${zone}`, 'json');
+      if (!raw) return fail(404, `no forecast available for ${zone}`);
+      return jsonResponse({ ...raw, zoneInfo: NORDIC_ZONE_INFO[zone] },
+                          { maxAge: 1800, request });
+    } catch (e) {
+      console.error(e);
+      return fail(500, String(e.message || e));
+    }
   }
 
   const area = (q.get('area') || 'DK1').toUpperCase();

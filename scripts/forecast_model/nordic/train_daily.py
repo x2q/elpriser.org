@@ -41,6 +41,9 @@ import sys
 import time
 from datetime import date, datetime, timedelta, timezone
 
+import urllib.parse
+import urllib.request
+
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
@@ -62,6 +65,22 @@ FEATS = ["zone", "h", "hour", "weekday", "month", "is_weekend", "doy_sin", "doy_
 NULLABLE = {"reservoir_pct", "reservoir_anom"}
 BLEND = 0.5
 CAL = json.load(open(f"{DIR}/calibration_nordic.json"))
+
+
+KV_NAMESPACE = "126700e66e8d4a19b289b0e8afdaff69"
+
+
+def kv_put(key, value, ttl, account, token):
+    url = (f"https://api.cloudflare.com/client/v4/accounts/{account}"
+           f"/storage/kv/namespaces/{KV_NAMESPACE}/values/{urllib.parse.quote(key)}"
+           f"?expiration_ttl={ttl}")
+    req = urllib.request.Request(url, data=json.dumps(value).encode(), method="PUT",
+                                 headers={"Authorization": f"Bearer {token}",
+                                          "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        resp = json.loads(r.read())
+    if not resp.get("success"):
+        raise RuntimeError(f"KV put failed for {key}: {resp}")
 
 
 def env():
@@ -224,6 +243,25 @@ def main():
     with open(f"{DIR}/forecast_latest.json", "w") as f:
         json.dump(payload, f)
     print(f"  wrote forecast_latest.json ({len(out)} zones)", flush=True)
+
+    # One KV key per zone rather than one big blob: the site only ever renders
+    # one zone at a time, and a per-zone key keeps each read small.
+    acct = os.environ.get("CLOUDFLARE_ACCOUNT_ID")
+    tok = os.environ.get("CLOUDFLARE_API_TOKEN")
+    if acct and tok:
+        written = 0
+        for z, days in out.items():
+            try:
+                kv_put(f"nordic-forecast-{z}",
+                       {"zone": z, "generated": today.isoformat(),
+                        "unit": "EUR/MWh", "days": days},
+                       3 * 86400, acct, tok)
+                written += 1
+            except Exception as e:
+                print(f"  KV write failed for {z}: {e}", flush=True)
+        print(f"  KV: wrote {written}/{len(out)} zones", flush=True)
+    else:
+        print("  Cloudflare creds not set - skipping KV", flush=True)
 
     hf = os.environ.get("HF_TOKEN")
     if hf:

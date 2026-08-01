@@ -39,6 +39,11 @@ const SEO_PAGES = {
     description: 'Forstå din elpris: spotpris, nettarif, systemtarif, elafgift og moms. Sådan fungerer prisområderne DK1 og DK2, og sådan finder du dit netselskab.',
     hash: '#om-elpriser',
   },
+  '/norden': {
+    title: 'Elpriser i Norden — prognose for 13 prisområder',
+    description: 'Elprisprognose 10 døgn frem for alle prisområder i Danmark, Norge, Sverige, Finland og Holland: DK1, DK2, NO1-NO5, SE1-SE4, FI og NL. Åben maskinlæringsmodel trænet på vejrprognoser, magasinfyldning og ENTSO-E-priser.',
+    hash: '#norden',
+  },
   '/prognose': {
     title: 'Elprisprognose — Forventede elpriser næste 7 dage',
     description: 'Se forventede elpriser for DK1 og DK2 de næste 7 dage. Prognose baseret på historiske prismønstre fra Energi Data Service.',
@@ -137,7 +142,7 @@ for (const area of ['DK1', 'DK2']) {
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff',
   '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
-  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028', '/blog/hvornaar-er-stroemmen-billigst',
+  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028', '/norden', '/blog/hvornaar-er-stroemmen-billigst',
   ...NET_URLS,
 ];
 
@@ -156,6 +161,7 @@ const CONTENT_LASTMOD = {
   '/blog/v2g-v2h-bidirektional-opladning': '2026-07-24',
   '/blog/biler-ladere-v2h-v2g': '2026-07-24',
   '/blog/elafgift-2028': '2026-07-24',
+  '/norden': '2026-08-01',
   '/blog/hvornaar-er-stroemmen-billigst': '2026-07-28',
 };
 
@@ -761,7 +767,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v20');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v22');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -812,6 +818,7 @@ const HASH_TO_DATA_PAGE = {
   'blog/v2g-v2h-bidirektional-opladning': 'blog-v2g-v2h-bidirektional-opladning',
   'blog/biler-ladere-v2h-v2g': 'blog-biler-ladere-v2h-v2g',
   'blog/elafgift-2028': 'blog-elafgift-2028',
+  'norden': 'norden',
   'blog/hvornaar-er-stroemmen-billigst': 'blog-hvornaar-er-stroemmen-billigst',
 };
 
