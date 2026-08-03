@@ -579,6 +579,25 @@ export async function onRequest(context) {
     return jsonResponse(OPENAPI_SPEC, { maxAge: 3600, sMaxAge: 86400, request });
   }
 
+  // ── /api/tariffs — grid tariffs for NO and SE (before the DK area check,
+  //    since these are not Danish price areas) ────────────────────────────
+  if (seg1 === 'tariffs') {
+    const country = (q.get('country') || '').toLowerCase();
+    if (!['no', 'se'].includes(country)) {
+      return fail(400, 'country must be no or se (Denmark uses /api/tariffs via the DataHub pricelist)');
+    }
+    if (!context.env || !context.env.PRICE_CACHE) return fail(503, 'tariff store unavailable');
+    try {
+      const raw = await context.env.PRICE_CACHE.get(`tariffs-${country}`, 'json');
+      if (!raw) return fail(404, `no tariff data for ${country}`);
+      // Tariffs move at most monthly (NO) or yearly (SE) — cache hard.
+      return jsonResponse(raw, { maxAge: 6 * 3600, sMaxAge: 86400, request });
+    } catch (e) {
+      console.error(e);
+      return fail(500, String(e.message || e));
+    }
+  }
+
   // ── /api/nordic — 13-zone forecast (served before the DK1/DK2 area check,
   //    since its zones are Nordic bidding zones, not Danish price areas) ───
   if (seg1 === 'nordic') {

@@ -2425,7 +2425,10 @@ entities:
     <select id="zCur" onchange="renderZone()" class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
       <option value="local" id="zCurLocal">Local</option>
       <option value="eur" id="zCurEur">EUR/MWh</option>
+      <option value="total" id="zCurTotal">Incl. grid + tax</option>
     </select>
+    <select id="zNet" onchange="pickNet()" style="display:none"
+            class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 max-w-[15rem]"></select>
   </div>
   <div class="subcard">
     <div class="chd2"><span id="zTableTitle">&nbsp;</span><span id="zUnit">&nbsp;</span></div>
@@ -4156,42 +4159,42 @@ const I18N={
       fc:'prognose',act:'faktisk',local:c=>`${c}/kWh`,
       noteModel:'Prognosen laves af én samlet maskinlæringsmodel for alle 13 prisområder, trænet på 2,1 mio. timeobservationer med vejrprognoser som de så ud ved udgivelsen, magasinfyldning i vandkraftzonerne og priser fra ENTSO-E.',
       noteRaw:'Priserne er rå spotpriser uden afgifter, tariffer og moms. Omregning til lokal valuta bruger en fast kurs og er vejledende.',
-      pick:'Vælg dit prisområde',model:'Se modellen på Hugging Face'},
+      pick:'Vælg dit prisområde',model:'Se modellen på Hugging Face',total:'Inkl. nettarif og afgifter',net:'Netselskab',netNote:t=>`Nettarif, afgifter og moms er lagt til: ${t} øre/kWh. Kilde: ${'NVE'}.`},
   no:{eyebrow:'Strømprisprognose',title:z=>`Strømpriser ${z.name} ${z.city}`,
       table:n=>`Neste ${n} døgn, time for time`,loading:'Henter prognose…',
       err:'Kunne ikke hente prognosen',day:'Dag',hour:'Time',today:'I dag',avg:'Snitt',
       fc:'prognose',act:'faktisk',local:c=>`${c}/kWh`,
       noteModel:'Prognosen lages av én felles maskinlæringsmodell for alle 13 prisområder, trent på 2,1 mill. timeobservasjoner med værvarsler slik de var da de ble utgitt, magasinfylling i vannkraftsonene og priser fra ENTSO-E.',
       noteRaw:'Prisene er rene spotpriser uten avgifter, nettleie og moms. Omregning til lokal valuta bruker fast kurs og er veiledende.',
-      pick:'Velg prisområdet ditt',model:'Se modellen på Hugging Face'},
+      pick:'Velg prisområdet ditt',model:'Se modellen på Hugging Face',total:'Inkl. nettleie og avgifter',net:'Nettselskap',netNote:t=>`Nettleie, forbruksavgift og mva er lagt til: ${t} øre/kWh. Kilde: NVE (NLOD).`},
   sv:{eyebrow:'Elprisprognos',title:z=>`Elpriser ${z.name} ${z.city}`,
       table:n=>`Kommande ${n} dygn, timme för timme`,loading:'Hämtar prognos…',
       err:'Kunde inte hämta prognosen',day:'Dag',hour:'Timme',today:'I dag',avg:'Snitt',
       fc:'prognos',act:'faktisk',local:c=>`${c}/kWh`,
       noteModel:'Prognosen görs av en gemensam maskininlärningsmodell för alla 13 elområden, tränad på 2,1 milj. timobservationer med väderprognoser som de såg ut vid publiceringen, magasinfyllnad i vattenkraftområdena och priser från ENTSO-E.',
       noteRaw:'Priserna är rena spotpriser utan skatter, nätavgifter och moms. Omräkning till lokal valuta använder fast kurs och är vägledande.',
-      pick:'Välj ditt elområde',model:'Se modellen på Hugging Face'},
+      pick:'Välj ditt elområde',model:'Se modellen på Hugging Face',total:'Inkl. elnätsavgift och skatt',net:'Elnätsföretag',netNote:t=>`Elnätsavgift, energiskatt och moms är tillagt: ${t} öre/kWh. Källa: Energimarknadsinspektionen.`},
   fi:{eyebrow:'Sähkön hintaennuste',title:z=>`Sähkön hinta ${z.name} ${z.city}`,
       table:n=>`Seuraavat ${n} vuorokautta, tunneittain`,loading:'Haetaan ennustetta…',
       err:'Ennusteen haku epäonnistui',day:'Päivä',hour:'Tunti',today:'Tänään',avg:'Ka.',
       fc:'ennuste',act:'toteutunut',local:c=>`${c}/kWh`,
       noteModel:'Ennusteen tekee yksi yhteinen koneoppimismalli kaikille 13 hinta-alueelle. Se on koulutettu 2,1 miljoonalla tuntihavainnolla käyttäen sääennusteita sellaisina kuin ne julkaisuhetkellä olivat, vesivoima-alueiden varastotäyttöä ja ENTSO-E:n hintoja.',
       noteRaw:'Hinnat ovat pörssihintoja ilman veroja, siirtomaksuja ja arvonlisäveroa. Valuuttamuunnos käyttää kiinteää kurssia ja on suuntaa antava.',
-      pick:'Valitse hinta-alueesi',model:'Katso malli Hugging Facessa'},
+      pick:'Valitse hinta-alueesi',model:'Katso malli Hugging Facessa',total:'Sis. siirto ja verot',net:'Verkkoyhtiö',netNote:t=>`+${t}`},
   nl:{eyebrow:'Stroomprijsverwachting',title:z=>`Stroomprijzen ${z.name} ${z.city}`,
       table:n=>`Komende ${n} dagen, per uur`,loading:'Verwachting laden…',
       err:'Kon de verwachting niet laden',day:'Dag',hour:'Uur',today:'Vandaag',avg:'Gem.',
       fc:'verwachting',act:'werkelijk',local:c=>`${c}/kWh`,
       noteModel:'De verwachting komt van één gezamenlijk machine-learningmodel voor alle 13 prijsgebieden, getraind op 2,1 mln. uurwaarnemingen met weersverwachtingen zoals ze bij publicatie luidden, stuwmeerstanden in de waterkrachtgebieden en prijzen van ENTSO-E.',
       noteRaw:'Dit zijn kale spotprijzen zonder belastingen, nettarieven en btw. Omrekening naar lokale valuta gebruikt een vaste koers en is indicatief.',
-      pick:'Kies je prijsgebied',model:'Bekijk het model op Hugging Face'},
+      pick:'Kies je prijsgebied',model:'Bekijk het model op Hugging Face',total:'Incl. netkosten en belasting',net:'Netbeheerder',netNote:t=>`+${t}`},
   en:{eyebrow:'Electricity price forecast',title:z=>`Electricity prices ${z.name} ${z.city}`,
       table:n=>`Next ${n} days, hour by hour`,loading:'Loading forecast…',
       err:'Could not load the forecast',day:'Day',hour:'Hour',today:'Today',avg:'Avg.',
       fc:'forecast',act:'actual',local:c=>`${c}/kWh`,
       noteModel:'The forecast comes from a single machine-learning model covering all 13 bidding zones, trained on 2.1M hourly observations using weather forecasts as they stood when issued, hydro reservoir levels and ENTSO-E prices.',
       noteRaw:'These are raw spot prices before taxes, grid tariffs and VAT. Currency conversion uses a fixed rate and is indicative only.',
-      pick:'Choose your price area',model:'See the model on Hugging Face'},
+      pick:'Choose your price area',model:'See the model on Hugging Face',total:'Incl. grid tariff and tax',net:'Grid company',netNote:t=>`Grid tariff, tax and VAT added: ${t} per kWh.`},
 };
 let _zData=null,_zLoad=0,_zZone='dk1';
 
@@ -4211,6 +4214,7 @@ async function loadZone(zone){
   document.getElementById('zNoteRaw').textContent=t.noteRaw;
   document.getElementById('zLoading').style.display='';
   document.getElementById('zWrap').style.display='none';
+  loadTariffs(zone);
   try{
     const r=await fetch(`/api/nordic?zone=${zone}`);
     if(id!==_zLoad)return;
@@ -4225,16 +4229,34 @@ async function loadZone(zone){
 function renderZone(){
   const j=_zData; if(!j)return;
   const z=ZONES[_zZone], t=T(_zZone), loc=LOCALE[z.lang]||'en-GB';
-  const local=document.getElementById('zCur').value==='local';
+  const mode=document.getElementById('zCur').value;
+  const local=mode!=='eur';
+  const tar=mode==='total'?currentTariff():null;
+  document.getElementById('zNet').style.display=mode==='total'&&_tariffs?'':'none';
   // EUR/MWh -> the zone's sub-unit per kWh (øre/öre/snt/cent): /1000 for kWh,
   // x rate for currency, x100 for the sub-unit. Sub-units matter here: NL
   // prices in EUR/kWh span only 0.00-0.17, so two decimals collapse genuinely
   // different hours onto the same "0,00".
-  const cvt=v=>v==null?null:(local? v/1000*z.rate*100 : v);
+  //
+  // In "total" mode the grid tariff is added on top. The spot price gets VAT
+  // first where it applies — northern Norway is VAT-exempt on electricity, and
+  // the tariff data carries that per company rather than per bidding zone,
+  // because the exemption boundary does not follow the zone boundary.
+  const vat=tar?(tar.has_vat===false?1:1+(_tariffs.vat_pct||0)/100):1;
+  const cvt=v=>{
+    if(v==null)return null;
+    if(!local)return v;
+    const base=v/1000*z.rate*100;
+    return tar? base*vat + tar.total_ore_kwh : base;
+  };
   const mx=Math.max(...j.days.flatMap(d=>d.prices.map(p=>Math.abs(cvt(p.eur_mwh)??0))));
   // Aim for ~3 significant figures whatever the zone's price level.
   const dec=!local?0:(mx>=100?0:mx>=10?1:2);
   document.getElementById('zUnit').textContent=local?`${z.sub}/kWh`:'EUR/MWh';
+  const noteEl=document.getElementById('zNoteRaw');
+  if(tar&&t.netNote){noteEl.textContent=t.netNote(tar.total_ore_kwh.toFixed(1));}
+  else if(mode==='total'&&_tariffs){noteEl.textContent=t.net+'…';}
+  else{noteEl.textContent=t.noteRaw;}
   document.getElementById('zTableTitle').textContent=t.table(j.days.length);
   const all=[];j.days.forEach(d=>d.prices.forEach(p=>{const v=cvt(p.eur_mwh);if(v!=null)all.push(v);}));
   setColorRange(all);
@@ -4278,6 +4300,44 @@ function renderZone(){
   document.getElementById('zWrap').innerHTML='<table class="mx-auto text-xs sm:text-sm tabular">'+h+'</table>';
   document.getElementById('zLoading').style.display='none';
   document.getElementById('zWrap').style.display='block';
+}
+
+// ─── Nettarif: NO og SE har brugbare registre; DK har sine egne sider,
+//     FI og NL mangler kilder der kan bære en pris pr. kWh (se blogindlæg).
+let _tariffs=null,_netPick=null;
+function tariffCountry(zone){const c=(ZONES[zone]||{}).cc;return c==='NO'?'no':c==='SE'?'se':null;}
+async function loadTariffs(zone){
+  const c=tariffCountry(zone);
+  const sel=document.getElementById('zNet'), opt=document.getElementById('zCurTotal');
+  if(!c){ _tariffs=null; sel.style.display='none'; opt.style.display='none'; return; }
+  opt.style.display=''; opt.textContent=T(zone).total;
+  try{
+    const r=await fetch(`/api/tariffs?country=${c}`);
+    const j=await r.json();
+    if(j.error){_tariffs=null;opt.style.display='none';return;}
+    _tariffs=j;
+    // Norway ships a region per company, Sweden does not — so Norwegian
+    // companies are grouped by county and Swedish ones listed flat.
+    const byR={};
+    j.companies.forEach(co=>{(byR[co.region||'']=byR[co.region||'']||[]).push(co);});
+    const saved=localStorage.getItem('net_'+c);
+    sel.innerHTML=`<option value="">${T(zone).net}…</option>`+
+      Object.entries(byR).map(([r,list])=>{
+        const opts=list.map(co=>`<option value="${co.id}">${co.name} — ${co.total_ore_kwh.toFixed(0)}</option>`).join('');
+        return r?`<optgroup label="${r}">${opts}</optgroup>`:opts;
+      }).join('');
+    if(saved&&j.companies.some(co=>co.id===saved)){sel.value=saved;_netPick=saved;}
+  }catch(e){_tariffs=null;opt.style.display='none';}
+}
+function pickNet(){
+  const c=tariffCountry(_zZone); _netPick=document.getElementById('zNet').value;
+  if(c&&_netPick)localStorage.setItem('net_'+c,_netPick);
+  track('tariff_pick',{zone:_zZone,net:_netPick});
+  renderZone();
+}
+function currentTariff(){
+  if(!_tariffs||!_netPick)return null;
+  return _tariffs.companies.find(co=>co.id===_netPick)||null;
 }
 
 // ═══ GLOBUS: lokationsvælger ═══
