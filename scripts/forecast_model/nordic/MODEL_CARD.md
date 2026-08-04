@@ -159,8 +159,38 @@ horizon gives correct coverage by construction.
   includes month-ahead transfer capacity; this one does not.
 - **Reservoir data is weekly and lagged.** Deliberately shifted 14 days to
   stay clear of publication timing, so fast hydrological swings arrive late.
+- **The autumn fall-back hour is averaged away.** Prices are keyed on a naive
+  local timestamp, which cannot hold the two 02:00s of the autumn clock change,
+  so those days carry 24 hours instead of 25. Two hours per zone per year.
+  Removing it means re-keying the pipeline on UTC.
 - **Not financial or trading advice.** These are wholesale day-ahead prices,
   not retail bills, which add grid tariffs, taxes and VAT.
+
+## Data correction, August 2026
+
+Every price series was refetched after a parser bug was found. ENTSO-E
+publishes day-ahead prices as curveType A03 — variable-sized blocks, where a
+point holds until the next published position — and the parser read only the
+explicit positions. Each hour whose price repeated the hour before it was
+therefore dropped: 2,569 hours, and not at random, because the loss scaled
+with how flat a zone is (2.8% of NO4 against 0.34% of DK1). Expanding the
+blocks also corrected the hourly mean under the 15-minute market design
+introduced in October 2025, where the old code weighted each published block
+equally regardless of its length; that moved 4,656 further hours by 0.27
+EUR/MWh on average.
+
+The correction was verified against a source outside this code path: Denmark's
+correlation with Energinet's independent EDS feed rose from 0.99999 to
+1.00000, so the restored hours match an external record rather than being
+interpolated.
+
+**It did not make the model more accurate.** Retrained and backtested on the
+corrected data, MAE rose 1.6% while regret — the cost of following the
+forecast's three cheapest hours — improved from 5.28 to 5.26 EUR/MWh and the
+hit-rate fell from 51.7% to 51.3%. The training is deterministic, so these are
+real differences rather than run-to-run noise; they are simply small. The
+value of the fix is that the data and the published prices are correct, not
+that the forecast improved.
 
 ## Intended use
 
