@@ -2440,6 +2440,7 @@ entities:
   <div class="mt-4 text-xs text-gray-400 dark:text-gray-600 space-y-1">
     <p id="zNoteModel">&nbsp;</p>
     <p id="zNoteRaw">&nbsp;</p>
+    <p id="zNoTariff" style="display:none"></p>
   </div>
 </main>
 
@@ -4159,42 +4160,42 @@ const I18N={
       fc:'prognose',act:'faktisk',local:c=>`${c}/kWh`,
       noteModel:'Prognosen laves af én samlet maskinlæringsmodel for alle 13 prisområder, trænet på 2,1 mio. timeobservationer med vejrprognoser som de så ud ved udgivelsen, magasinfyldning i vandkraftzonerne og priser fra ENTSO-E.',
       noteRaw:'Priserne er rå spotpriser uden afgifter, tariffer og moms. Omregning til lokal valuta bruger en fast kurs og er vejledende.',
-      pick:'Vælg dit prisområde',model:'Se modellen på Hugging Face',total:'Inkl. nettarif og afgifter',net:'Netselskab',netNote:t=>`Nettarif, afgifter og moms er lagt til: ${t} øre/kWh. Kilde: ${'NVE'}.`},
+      pick:'Vælg dit prisområde',model:'Se modellen på Hugging Face',noTariff:cc=>cc==='FI'?'Finske nettariffer vises ikke: Energiavirastos register har ikke været opdateret siden juli 2024.':'Hollandske netomkostninger er et fast årligt gebyr efter tilslutningens størrelse, ikke pr. kWh — en kWh-pris ville være misvisende.',total:'Inkl. nettarif og afgifter',net:'Netselskab',netNote:t=>`Nettarif, afgifter og moms er lagt til: ${t} øre/kWh. Kilde: ${'NVE'}.`},
   no:{eyebrow:'Strømprisprognose',title:z=>`Strømpriser ${z.name} ${z.city}`,
       table:n=>`Neste ${n} døgn, time for time`,loading:'Henter prognose…',
       err:'Kunne ikke hente prognosen',day:'Dag',hour:'Time',today:'I dag',avg:'Snitt',
       fc:'prognose',act:'faktisk',local:c=>`${c}/kWh`,
       noteModel:'Prognosen lages av én felles maskinlæringsmodell for alle 13 prisområder, trent på 2,1 mill. timeobservasjoner med værvarsler slik de var da de ble utgitt, magasinfylling i vannkraftsonene og priser fra ENTSO-E.',
       noteRaw:'Prisene er rene spotpriser uten avgifter, nettleie og moms. Omregning til lokal valuta bruker fast kurs og er veiledende.',
-      pick:'Velg prisområdet ditt',model:'Se modellen på Hugging Face',total:'Inkl. nettleie og avgifter',net:'Nettselskap',netNote:t=>`Nettleie, forbruksavgift og mva er lagt til: ${t} øre/kWh. Kilde: NVE (NLOD).`},
+      pick:'Velg prisområdet ditt',model:'Se modellen på Hugging Face',noTariff:cc=>cc==='FI'?'Finsk nettleie vises ikke: registeret er ikke oppdatert siden juli 2024.':'Nederlandske nettkostnader er et fast årsgebyr etter tilknytningens størrelse, ikke per kWh.',total:'Inkl. nettleie og avgifter',net:'Nettselskap',netNote:t=>`Nettleie, forbruksavgift og mva er lagt til: ${t} øre/kWh. Kilde: NVE (NLOD).`},
   sv:{eyebrow:'Elprisprognos',title:z=>`Elpriser ${z.name} ${z.city}`,
       table:n=>`Kommande ${n} dygn, timme för timme`,loading:'Hämtar prognos…',
       err:'Kunde inte hämta prognosen',day:'Dag',hour:'Timme',today:'I dag',avg:'Snitt',
       fc:'prognos',act:'faktisk',local:c=>`${c}/kWh`,
       noteModel:'Prognosen görs av en gemensam maskininlärningsmodell för alla 13 elområden, tränad på 2,1 milj. timobservationer med väderprognoser som de såg ut vid publiceringen, magasinfyllnad i vattenkraftområdena och priser från ENTSO-E.',
       noteRaw:'Priserna är rena spotpriser utan skatter, nätavgifter och moms. Omräkning till lokal valuta använder fast kurs och är vägledande.',
-      pick:'Välj ditt elområde',model:'Se modellen på Hugging Face',total:'Inkl. elnätsavgift och skatt',net:'Elnätsföretag',netNote:t=>`Elnätsavgift, energiskatt och moms är tillagt: ${t} öre/kWh. Källa: Energimarknadsinspektionen.`},
+      pick:'Välj ditt elområde',model:'Se modellen på Hugging Face',noTariff:cc=>cc==='FI'?'Finsk elnätsavgift visas inte: registret har inte uppdaterats sedan juli 2024.':'Nederländska nätkostnader är en fast årsavgift efter anslutningens storlek, inte per kWh.',total:'Inkl. elnätsavgift och skatt',net:'Elnätsföretag',netNote:t=>`Elnätsavgift, energiskatt och moms är tillagt: ${t} öre/kWh. Källa: Energimarknadsinspektionen.`},
   fi:{eyebrow:'Sähkön hintaennuste',title:z=>`Sähkön hinta ${z.name} ${z.city}`,
       table:n=>`Seuraavat ${n} vuorokautta, tunneittain`,loading:'Haetaan ennustetta…',
       err:'Ennusteen haku epäonnistui',day:'Päivä',hour:'Tunti',today:'Tänään',avg:'Ka.',
       fc:'ennuste',act:'toteutunut',local:c=>`${c}/kWh`,
       noteModel:'Ennusteen tekee yksi yhteinen koneoppimismalli kaikille 13 hinta-alueelle. Se on koulutettu 2,1 miljoonalla tuntihavainnolla käyttäen sääennusteita sellaisina kuin ne julkaisuhetkellä olivat, vesivoima-alueiden varastotäyttöä ja ENTSO-E:n hintoja.',
       noteRaw:'Hinnat ovat pörssihintoja ilman veroja, siirtomaksuja ja arvonlisäveroa. Valuuttamuunnos käyttää kiinteää kurssia ja on suuntaa antava.',
-      pick:'Valitse hinta-alueesi',model:'Katso malli Hugging Facessa',total:'Sis. siirto ja verot',net:'Verkkoyhtiö',netNote:t=>`+${t}`},
+      pick:'Valitse hinta-alueesi',model:'Katso malli Hugging Facessa',noTariff:cc=>'Siirtomaksuja ei näytetä: Energiaviraston rekisteriä ei ole päivitetty heinäkuun 2024 jälkeen.',total:'Sis. siirto ja verot',net:'Verkkoyhtiö',netNote:t=>`+${t}`},
   nl:{eyebrow:'Stroomprijsverwachting',title:z=>`Stroomprijzen ${z.name} ${z.city}`,
       table:n=>`Komende ${n} dagen, per uur`,loading:'Verwachting laden…',
       err:'Kon de verwachting niet laden',day:'Dag',hour:'Uur',today:'Vandaag',avg:'Gem.',
       fc:'verwachting',act:'werkelijk',local:c=>`${c}/kWh`,
       noteModel:'De verwachting komt van één gezamenlijk machine-learningmodel voor alle 13 prijsgebieden, getraind op 2,1 mln. uurwaarnemingen met weersverwachtingen zoals ze bij publicatie luidden, stuwmeerstanden in de waterkrachtgebieden en prijzen van ENTSO-E.',
       noteRaw:'Dit zijn kale spotprijzen zonder belastingen, nettarieven en btw. Omrekening naar lokale valuta gebruikt een vaste koers en is indicatief.',
-      pick:'Kies je prijsgebied',model:'Bekijk het model op Hugging Face',total:'Incl. netkosten en belasting',net:'Netbeheerder',netNote:t=>`+${t}`},
+      pick:'Kies je prijsgebied',model:'Bekijk het model op Hugging Face',noTariff:cc=>'Netkosten zijn een vast jaartarief op basis van uw aansluitcapaciteit, niet per kWh — een prijs per kWh zou misleidend zijn.',total:'Incl. netkosten en belasting',net:'Netbeheerder',netNote:t=>`+${t}`},
   en:{eyebrow:'Electricity price forecast',title:z=>`Electricity prices ${z.name} ${z.city}`,
       table:n=>`Next ${n} days, hour by hour`,loading:'Loading forecast…',
       err:'Could not load the forecast',day:'Day',hour:'Hour',today:'Today',avg:'Avg.',
       fc:'forecast',act:'actual',local:c=>`${c}/kWh`,
       noteModel:'The forecast comes from a single machine-learning model covering all 13 bidding zones, trained on 2.1M hourly observations using weather forecasts as they stood when issued, hydro reservoir levels and ENTSO-E prices.',
       noteRaw:'These are raw spot prices before taxes, grid tariffs and VAT. Currency conversion uses a fixed rate and is indicative only.',
-      pick:'Choose your price area',model:'See the model on Hugging Face',total:'Incl. grid tariff and tax',net:'Grid company',netNote:t=>`Grid tariff, tax and VAT added: ${t} per kWh.`},
+      pick:'Choose your price area',model:'See the model on Hugging Face',noTariff:cc=>cc==='FI'?'Finnish grid tariffs are not shown: the national register has not been updated since July 2024.':'Dutch grid cost is a fixed annual charge based on connection size, not per kWh — a per-kWh figure would mislead.',total:'Incl. grid tariff and tax',net:'Grid company',netNote:t=>`Grid tariff, tax and VAT added: ${t} per kWh.`},
 };
 let _zData=null,_zLoad=0,_zZone='dk1';
 
@@ -4309,7 +4310,16 @@ function tariffCountry(zone){const c=(ZONES[zone]||{}).cc;return c==='NO'?'no':c
 async function loadTariffs(zone){
   const c=tariffCountry(zone);
   const sel=document.getElementById('zNet'), opt=document.getElementById('zCurTotal');
-  if(!c){ _tariffs=null; sel.style.display='none'; opt.style.display='none'; return; }
+  if(!c){
+    // Finland's central register stalled after July 2024; Dutch grid cost is a
+    // fixed capacity charge by connection size, so a per-kWh figure would
+    // mislead rather than inform. Say so instead of silently offering less.
+    _tariffs=null; sel.style.display='none'; opt.style.display='none';
+    const n=document.getElementById('zNoTariff'), f=T(zone).noTariff;
+    if(n&&f){n.textContent=f((ZONES[zone]||{}).cc);n.style.display='';}
+    return;
+  }
+  const n0=document.getElementById('zNoTariff'); if(n0)n0.style.display='none';
   opt.style.display=''; opt.textContent=T(zone).total;
   try{
     const r=await fetch(`/api/tariffs?country=${c}`);
