@@ -340,12 +340,67 @@ def check_coherence():
             report("OK", f"{a}-{b}", f"korrelation {c:.2f}")
 
 
+# ─── 8. Grid tariffs ────────────────────────────────────────────────────────
+
+def check_tariffs():
+    """The zone pages add a grid tariff to the spot price, so a wrong tariff is
+    a wrong consumer price. Ranges alone would not catch much; the real test is
+    the arithmetic identity, which validates the per-company exemption flags
+    and the hard-coded tax rates at the same time."""
+    print("\n8. NETTARIFFER — sammensætning af forbrugerprisen for NO og SE")
+    for cc, lo, hi, min_n in (("no", 25, 130, 60), ("se", 50, 220, 80)):
+        req = urllib.request.Request(
+            f"https://elpriser.org/api/tariffs?country={cc}",
+            headers={"User-Agent": "elpriser-qa/1.0 (+https://elpriser.org)"})
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                d = json.load(r)
+        except Exception as e:
+            report("FAIL", cc, f"tarif-API-fejl: {str(e)[:60]}")
+            continue
+
+        comps = d.get("companies", [])
+        if len(comps) < min_n:
+            report("FAIL", cc, f"kun {len(comps)} selskaber, forventet mindst {min_n}")
+        vals = [c["total_ore_kwh"] for c in comps if c.get("total_ore_kwh")]
+        if not vals:
+            report("FAIL", cc, "ingen totalpriser")
+            continue
+        if min(vals) < lo or max(vals) > hi:
+            report("FAIL", cc, f"totaler {min(vals):.1f}–{max(vals):.1f} uden for [{lo},{hi}]")
+        else:
+            report("OK", cc, f"{len(comps)} selskaber, {min(vals):.1f}–{max(vals):.1f} {d['unit']}")
+
+        # Norway publishes the components, so the total can be re-derived:
+        # (grid + consumption tax where it applies) x VAT where it applies.
+        # Agreement proves the exemption flags and the tax rate together.
+        if cc == "no":
+            tax = d.get("consumption_tax_ore_kwh", 0)
+            vat = 1 + d.get("vat_pct", 0) / 100
+            bad = sum(1 for c in comps if c.get("grid_ore_kwh") is not None
+                      and abs((c["grid_ore_kwh"] + (tax if c["has_consumption_tax"] else 0))
+                              * (vat if c["has_vat"] else 1) - c["total_ore_kwh"]) > 0.6)
+            if bad:
+                report("FAIL", cc, f"{bad} selskaber hvor total != (net + afgift) x moms")
+            else:
+                report("OK", cc, f"prissammensætning stemmer for alle {len(comps)} selskaber")
+            # Northern Norway has two different exemptions covering different
+            # areas, so a county holding only one value is a red flag.
+            if len({c["has_vat"] for c in comps}) < 2:
+                report("WARN", cc, "ingen momsfritagne selskaber — nordnorge mangler?")
+
+        stale = (date.today() - date.fromisoformat(d["valid_from"])).days
+        limit = 70 if cc == "no" else 460      # monthly vs annual publication
+        if stale > limit:
+            report("WARN", cc, f"tariffer gyldige fra {d['valid_from']} — {stale} dage gamle")
+
+
 def main():
     print("═" * 70)
     print("KVALITETSSIKRING — 13 prisområder")
     print("═" * 70)
     for fn in (check_cross_source, check_prices, check_dst, check_weather,
-               check_reservoir, check_live, check_coherence):
+               check_reservoir, check_live, check_coherence, check_tariffs):
         try:
             fn()
         except Exception as e:
