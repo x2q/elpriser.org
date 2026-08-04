@@ -59,16 +59,25 @@ def fetch(eic, s, e):
 
 
 def parse(xml):
+    """A72 is published as curveType A03 like the price documents, so a point
+    holds until the next published position. Reservoir levels move slowly and
+    repeat often, which makes the block expansion matter here too: without it
+    a run of unchanged weeks disappears instead of being carried forward."""
     rows = []
     for per in re.finditer(r"<Period>(.*?)</Period>", xml, re.S):
         body = per.group(1)
-        ti = re.search(r"<start>([^<]+)</start>", body)
+        ti = re.search(r"<start>([^<]+)</start>\s*<end>([^<]+)</end>", body)
         if not ti:
             continue
         t0 = pd.Timestamp(ti.group(1)).tz_convert("UTC")
-        for pos, qty in re.findall(
-                r"<position>(\d+)</position>\s*<quantity>([\d.]+)</quantity>", body):
-            rows.append((t0 + pd.Timedelta(weeks=int(pos) - 1), float(qty)))
+        t1 = pd.Timestamp(ti.group(2)).tz_convert("UTC")
+        last = int((t1 - t0) / pd.Timedelta(weeks=1)) + 1
+        pts = sorted((int(p), float(q)) for p, q in re.findall(
+            r"<position>(\d+)</position>\s*<quantity>([\d.]+)</quantity>", body))
+        for i, (pos, qty) in enumerate(pts):
+            end = pts[i + 1][0] if i + 1 < len(pts) else last
+            for slot in range(pos, end):
+                rows.append((t0 + pd.Timedelta(weeks=slot - 1), qty))
     return rows
 
 

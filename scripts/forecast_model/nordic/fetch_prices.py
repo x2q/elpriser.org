@@ -49,11 +49,19 @@ def fetch(eic, s, e):
 
 
 def parse(xml):
-    """A44 periods carry PT60M or PT15M points; everything is averaged to hours."""
+    """A44 periods carry PT60M or PT15M points; everything is averaged to hours.
+
+    ENTSO-E sends these as curveType A03, variable-sized blocks: a point holds
+    until the next published position, so a run of identical prices arrives as
+    a SINGLE point. Expanding the blocks is not optional. Reading only the
+    explicit positions silently deleted every hour whose price repeated the one
+    before it — 2,506 hours across the 13 zones, and biased, because the loss
+    scales with how flat a zone is: 2.8 % of NO4 against 0.34 % of DK1.
+    """
     rows = []
     for per in re.finditer(r"<Period>(.*?)</Period>", xml, re.S):
         body = per.group(1)
-        ti = re.search(r"<start>([^<]+)</start>", body)
+        ti = re.search(r"<start>([^<]+)</start>\s*<end>([^<]+)</end>", body)
         rs = re.search(r"<resolution>([^<]+)</resolution>", body)
         if not ti or not rs:
             continue
@@ -61,9 +69,15 @@ def parse(xml):
         if not step:
             continue
         t0 = pd.Timestamp(ti.group(1)).tz_convert("UTC")
-        for pos, qty in re.findall(
-                r"<position>(\d+)</position>\s*<price\.amount>(-?[\d.]+)</price\.amount>", body):
-            rows.append((t0 + pd.Timedelta(minutes=step * (int(pos) - 1)), float(qty)))
+        t1 = pd.Timestamp(ti.group(2)).tz_convert("UTC")
+        # Positions are 1-based, so the slot after the last one is n_slots + 1.
+        last = int((t1 - t0) / pd.Timedelta(minutes=step)) + 1
+        pts = sorted((int(p), float(q)) for p, q in re.findall(
+            r"<position>(\d+)</position>\s*<price\.amount>(-?[\d.]+)</price\.amount>", body))
+        for i, (pos, price) in enumerate(pts):
+            end = pts[i + 1][0] if i + 1 < len(pts) else last
+            for slot in range(pos, end):
+                rows.append((t0 + pd.Timedelta(minutes=step * (slot - 1)), price))
     return rows
 
 

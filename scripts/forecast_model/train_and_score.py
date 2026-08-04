@@ -113,22 +113,33 @@ def _parse_entsoe_generation_xml(xml_text):
         psr = re.search(r"<psrType>(\w+)</psrType>", series)
         if not psr or psr.group(1) not in ("B16", "B18", "B19"):
             continue
-        period = re.search(r"<start>([^<]+)</start>.*?<resolution>([^<]+)</resolution>", series, re.S)
+        period = re.search(
+            r"<start>([^<]+)</start>\s*<end>([^<]+)</end>.*?<resolution>([^<]+)</resolution>",
+            series, re.S)
         if not period:
             continue
-        start_str, resolution = period.group(1), period.group(2)
+        start_str, end_str, resolution = period.group(1), period.group(2), period.group(3)
         start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end_str.replace("Z", "+00:00"))
         if resolution == "PT15M":
             step_minutes = 15
         elif resolution == "PT60M" or resolution == "PT1H":
             step_minutes = 60
         else:
             continue
-        for m in re.finditer(r"<Point>\s*<position>(\d+)</position>\s*<quantity>([\d.]+)</quantity>", series):
-            pos, qty = int(m.group(1)), float(m.group(2))
-            ts = start_dt + timedelta(minutes=step_minutes * (pos - 1))
-            key = f"{ts.date().isoformat()}:{ts.hour}"
-            out[key] = out.get(key, 0.0) + qty / (60 / step_minutes)  # average across sub-hourly points
+        # curveType A03 publishes one point per *block* of unchanged values, so
+        # the missing positions have to be filled before averaging. Skipping
+        # them does not merely lose a slot: the hourly mean below divides by a
+        # fixed 60/step, so an unfilled quarter silently under-reports the hour.
+        last = int((end_dt - start_dt).total_seconds() / 60 / step_minutes) + 1
+        pts = sorted((int(m.group(1)), float(m.group(2))) for m in re.finditer(
+            r"<Point>\s*<position>(\d+)</position>\s*<quantity>([\d.]+)</quantity>", series))
+        for i, (pos, qty) in enumerate(pts):
+            stop = pts[i + 1][0] if i + 1 < len(pts) else last
+            for slot in range(pos, stop):
+                ts = start_dt + timedelta(minutes=step_minutes * (slot - 1))
+                key = f"{ts.date().isoformat()}:{ts.hour}"
+                out[key] = out.get(key, 0.0) + qty / (60 / step_minutes)  # average across sub-hourly points
     return out
 
 

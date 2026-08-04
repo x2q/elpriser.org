@@ -305,26 +305,46 @@ def curl_get(url, timeout=90):
 
 def _parse_points(xml_text, series_regex, value_tag, extra_field=None, extra_regex=None):
     """Shared point-extraction for any ENTSO-E GL_MarketDocument-style response:
-    splits into <TimeSeries> blocks, reads each block's start+resolution, then
-    walks its <Point> entries pulling out `value_tag` (price.amount / quantity)."""
+    splits into <TimeSeries> blocks, walks each <Period> in the block, and
+    pulls out `value_tag` (price.amount / quantity) per point.
+
+    ENTSO-E uses curveType A03 — variable-sized blocks — where a point holds
+    until the next published position, so a run of unchanged values arrives as
+    a single point. Every slot up to the next position has to be filled in, or
+    exactly the flat stretches go missing. For a curve that really does publish
+    every position the loop below is a no-op.
+    """
     rows = []
     for series in re.split(r"<TimeSeries>", xml_text)[1:]:
         extra_val = None
         if extra_regex:
             m = re.search(extra_regex, series)
             extra_val = m.group(1) if m else None
-        period = re.search(r"<start>([^<]+)</start>.*?<resolution>([^<]+)</resolution>", series, re.S)
-        if not period:
-            continue
-        start_dt = datetime.fromisoformat(period.group(1).replace("Z", "+00:00"))
-        step_minutes = 15 if period.group(2) == "PT15M" else 60
-        for m in re.finditer(rf"<Point>\s*<position>(\d+)</position>\s*<{value_tag}>([\-\d.]+)</{value_tag}>", series):
-            pos, val = int(m.group(1)), float(m.group(2))
-            ts = start_dt + timedelta(minutes=step_minutes * (pos - 1))
-            row = {"datetime_utc": ts.isoformat(), "value": val}
-            if extra_field:
-                row[extra_field] = extra_val
-            rows.append(row)
+        # A TimeSeries can carry several Periods; handle each on its own terms.
+        for per in re.finditer(r"<Period>(.*?)</Period>", series, re.S):
+            body = per.group(1)
+            period = re.search(
+                r"<start>([^<]+)</start>\s*<end>([^<]+)</end>.*?<resolution>([^<]+)</resolution>",
+                body, re.S)
+            if not period:
+                continue
+            start_dt = datetime.fromisoformat(period.group(1).replace("Z", "+00:00"))
+            end_dt = datetime.fromisoformat(period.group(2).replace("Z", "+00:00"))
+            step_minutes = 15 if period.group(3) == "PT15M" else 60
+            last = int((end_dt - start_dt).total_seconds() / 60 / step_minutes) + 1
+            pts = sorted(
+                (int(m.group(1)), float(m.group(2)))
+                for m in re.finditer(
+                    rf"<Point>\s*<position>(\d+)</position>\s*"
+                    rf"<{value_tag}>([\-\d.]+)</{value_tag}>", body))
+            for i, (pos, val) in enumerate(pts):
+                stop = pts[i + 1][0] if i + 1 < len(pts) else last
+                for slot in range(pos, stop):
+                    ts = start_dt + timedelta(minutes=step_minutes * (slot - 1))
+                    row = {"datetime_utc": ts.isoformat(), "value": val}
+                    if extra_field:
+                        row[extra_field] = extra_val
+                    rows.append(row)
     return rows
 
 
