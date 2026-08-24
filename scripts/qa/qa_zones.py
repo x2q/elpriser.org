@@ -20,6 +20,7 @@ deploy. WARN-level findings are reported but do not fail.
 import json
 import os
 import sys
+import urllib.error
 import urllib.request
 from datetime import date, timedelta
 
@@ -446,13 +447,111 @@ def check_history_api():
         report("OK", "interval", f"3 år i ét kald: {got} døgn, alle med data")
 
 
+def api_prices(area, day, mode, gln=None, charges=None):
+    u = (f"https://elpriser.org/api/prices?area={area}&start={day}&end={day}&mode={mode}"
+         + (f"&gln={gln}" if gln else "") + (f"&charges={charges}" if charges else ""))
+    req = urllib.request.Request(u, headers={"User-Agent": "elpriser-qa/1.0 (+https://elpriser.org)"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        j = json.load(r)
+    d = j["days"][0]
+    return [p["price"] for p in d["prices"]] if d["prices"] else None
+
+
+# ─── 10. Historical tariffs and taxes ───────────────────────────────────────
+
+def check_history_pricing():
+    """A historical consumer price has to be built from the tariff and the
+    taxes in force on that date. Both used to be taken from whatever was valid
+    today, which produced numbers that looked entirely reasonable — the grid
+    tariff simply vanished and the duty was off by a factor of ninety. Nothing
+    here checks a magic constant; each check asserts a relationship that must
+    hold whatever the rates happen to be."""
+    print("\n10. HISTORISK PRISDANNELSE — tarif og afgift pr. dato")
+    day = "2025-01-15"                       # inside a tax year that is not the current one
+    gln = "5790001089030"                    # N1 area 131, publishes hourly bands
+    # Fetched one at a time, and named, so a failure says which call broke.
+    # The first version wrapped all four in one try and reported only the
+    # exception, which said nothing about where to look.
+    wanted = {
+        "spot_inkl": ("spot_inkl", None),
+        "net": ("net_inkl_alt", gln),
+        "plain": ("inkl_alt", None),
+        "elvarme": ("net_inkl_alt_elvarme", gln),
+    }
+    got = {}
+    for name, (mode, g) in wanted.items():
+        for attempt in range(3):
+            try:
+                got[name] = api_prices("DK1", day, mode, g)
+                break
+            except Exception as e:
+                if attempt == 2:
+                    report("FAIL", "historik", f"{mode} fejlede: {type(e).__name__} {str(e)[:40]}")
+    if len(got) < len(wanted):
+        return
+    spot, net, plain, elvarme = got["spot_inkl"], got["net"], got["plain"], got["elvarme"]
+
+    # The grid tariff is time-of-day differentiated, so the gap between a
+    # tariffed and an untariffed price cannot be the same in all 24 hours.
+    diff = [round(n - s, 3) for n, s in zip(net, spot)]
+    bands = len(set(diff))
+    if bands < 2:
+        report("FAIL", "historik", f"nettariffen har ingen tidsbånd på {day} "
+                                   f"— differencen er {diff[0]} i alle 24 timer")
+    else:
+        report("OK", "historik", f"nettarif med {bands} tidsbånd på {day}")
+
+    # net_inkl_alt must exceed inkl_alt by exactly the grid tariff. Equal means
+    # the tariff was dropped, which is the failure this section exists for.
+    if max(abs(n - p) for n, p in zip(net, plain)) < 1e-6:
+        report("FAIL", "historik", "net_inkl_alt er identisk med inkl_alt — nettarif ignoreret")
+    else:
+        report("OK", "historik", "net_inkl_alt og inkl_alt adskiller sig")
+
+    # The reduced duty is flat across the day, so substituting it must shift
+    # every hour by the same amount — and by more than a trivial rounding.
+    shifts = [n - e for n, e in zip(net, elvarme)]
+    # Tolerance, not equality: each price is rounded to four decimals before
+    # the subtraction, so two hours differing by 0.0001 is the rounding, not a
+    # tariff that moved.
+    spread = max(shifts) - min(shifts)
+    if spread > 0.001:
+        report("FAIL", "historik", f"elvarmeafgift forskyder timerne uens, spredning {spread:.4f}")
+    elif abs(shifts[0]) < 0.01:
+        report("WARN", "historik", f"elvarme og normal afgift er næsten ens ({shifts[0]:.4f})")
+    else:
+        report("OK", "historik", f"elvarmeafgift sparer {shifts[0]:.4f} kr/kWh på {day}")
+
+    # Historical rates must not equal today's rates for a year whose duty
+    # differed — if they do, the date is being priced under the wrong regime.
+    try:
+        cur = api_prices("DK1", day, "inkl_alt", charges="current")
+        if max(abs(a - b) for a, b in zip(plain, cur)) < 1e-6:
+            report("FAIL", "historik", "charges=historical og current giver samme pris "
+                                       f"— {day} prissættes med nutidens afgifter")
+        else:
+            report("OK", "historik", "historiske og nutidige afgifter giver forskellige priser")
+    except Exception as e:
+        report("FAIL", "historik", f"charges-parameter fejlede: {str(e)[:50]}")
+
+    # An unknown mode must be refused, not silently answered with another one.
+    try:
+        api_prices("DK1", day, "der-findes-ikke")
+        report("FAIL", "historik", "ukendt mode blev accepteret")
+    except urllib.error.HTTPError as e:
+        report("OK" if e.code == 400 else "FAIL", "historik",
+               f"ukendt mode giver HTTP {e.code}" + ("" if e.code == 400 else " — forventet 400"))
+    except Exception as e:
+        report("FAIL", "historik", f"ukendt mode: uventet fejl {str(e)[:40]}")
+
+
 def main():
     print("═" * 70)
     print("KVALITETSSIKRING — 13 prisområder")
     print("═" * 70)
     for fn in (check_cross_source, check_prices, check_dst, check_weather,
                check_reservoir, check_live, check_coherence, check_tariffs,
-               check_history_api):
+               check_history_api, check_history_pricing):
         try:
             fn()
         except Exception as e:

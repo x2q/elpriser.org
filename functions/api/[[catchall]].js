@@ -78,6 +78,14 @@ function fail(status, msg) {
  * cached as though the market had no prices that day.
  */
 function upstreamFail(e) {
+  // AbortSignal.timeout raises TimeoutError; a dropped connection raises
+  // AbortError. Both mean upstream was too slow, which is a 503 the caller can
+  // retry — not a 500 implying their request was malformed.
+  if (e && (e.name === 'TimeoutError' || e.name === 'AbortError')) {
+    const res = fail(503, 'Upstream (Energi Data Service) timed out — retry shortly');
+    res.headers.set('Retry-After', '5');
+    return res;
+  }
   if (e && e.upstreamStatus === 429) {
     const res = fail(503, `Upstream rate limit (Energi Data Service). ${e.message}`);
     if (e.retryAfter) res.headers.set('Retry-After', String(e.retryAfter));
@@ -269,6 +277,12 @@ async function fetchSpotPrices(area, start, end) {
 // above 4,000 kWh/year in homes with electric heating. They diverge enormously
 // — 72.0 vs 0.8 øre/kWh in 2025 — so which one applies is not a rounding
 // detail for a heat-pump customer, it is most of the bill.
+// A Worker subrequest has no wall-clock deadline of its own, so a slow
+// upstream becomes a hung response: the caller waits until *their* timeout,
+// with nothing to show for it. Failing fast lets the route answer 503, which
+// a client can retry, instead of leaving them to guess.
+const PRICELIST_TIMEOUT_MS = 8000;
+
 const CHARGE_CODES = { '41000': 'sys', '40000': 'trans', 'EA-001': 'afg', 'EA-002': 'afgReduced' };
 
 // Used only when DatahubPricelist cannot be reached. These are the rates in
@@ -294,7 +308,8 @@ async function fetchChargeHistory() {
   const out = { sys: [], trans: [], afg: [], afgReduced: [] };
   const res = await fetch(
     `https://api.energidataservice.dk/dataset/DatahubPricelist` +
-    `?filter=${f}&sort=ValidFrom%20asc&limit=0&columns=ChargeTypeCode,ValidFrom,ValidTo,Price1`
+    `?filter=${f}&sort=ValidFrom%20asc&limit=0&columns=ChargeTypeCode,ValidFrom,ValidTo,Price1`,
+    { signal: AbortSignal.timeout(PRICELIST_TIMEOUT_MS) }
   );
   const j = await res.json();
   if (j.statusCode && j.statusCode >= 400) {
@@ -375,7 +390,8 @@ async function fetchTariffRecords(gln, to) {
     const res = await fetch(
       `https://api.energidataservice.dk/dataset/DatahubPricelist` +
       `?end=${ahead}&filter=${f}` +
-      `&sort=ValidFrom%20desc&limit=0&columns=${cols}`
+      `&sort=ValidFrom%20desc&limit=0&columns=${cols}`,
+      { signal: AbortSignal.timeout(PRICELIST_TIMEOUT_MS) }
     );
     const j = await res.json();
     if (j.statusCode && j.statusCode >= 400) {
@@ -551,6 +567,33 @@ function cached(key, ttlMs, fn) {
   return fn().then(v => { _cache.set(key, { ts: now, v }); return v; });
 }
 
+/**
+ * A company's tariff periods, from our own archive in Workers KV.
+ *
+ * Built by scripts/data_backup/build_tariff_archive.py, for the same reason
+ * the price archive exists: from some Cloudflare locations the upstream
+ * DatahubPricelist query hangs for over eight seconds every single time, while
+ * answering in 0.1 s from others. A request should not depend on which
+ * location served it. Live fetching remains as the fallback for a company the
+ * archive has not seen yet.
+ */
+async function loadTariffRecords(gln, to, env) {
+  if (env && env.PRICE_CACHE) {
+    const a = await env.PRICE_CACHE.get(`dk-nettarif-${gln}`, 'json').catch(() => null);
+    if (a && Array.isArray(a.periods) && a.periods.length) {
+      return a.periods.map(p => ({
+        fromStr: p.from,
+        toStr: p.to,
+        hourly: p.hourly,
+        rank: p.kind === 'hourly' ? 0 : 1,
+        code: '',
+      }));
+    }
+  }
+  return edgeCached(`tariff-${gln}-${to}`, 6 * 3600,
+                    () => fetchTariffRecords(gln, to), env);
+}
+
 // ── Shared data loader ────────────────────────────────────────────────────────
 
 /**
@@ -638,15 +681,15 @@ async function loadData(area, mode, gln, env, range = null) {
     // The whole rate history is 49 records, so there is nothing to gain by
     // fetching a window of it — and caching it whole means a range spanning
     // several tax years costs one lookup, not one per year.
+    //
+    // Cached through edgeCached rather than the in-memory map: that one is per
+    // isolate, so a burst of requests across cold isolates each went upstream
+    // and some timed out into a 500. These rates change a handful of times a
+    // year, so a POP-shared cache with a KV backup is the right shape.
     needsEn
-      ? cached('charge-history', 6 * 60 * 60_000, fetchChargeHistory)
+      ? edgeCached('charge-history-v1', 6 * 3600, fetchChargeHistory, env)
       : Promise.resolve(null),
-    // Keyed by the window as well as the company: a cache holding only the
-    // current tariff must not answer a query about 2024.
-    needsTarif
-      ? cached(`tariff-${gln}-${to}`, 6 * 60 * 60_000,
-               () => fetchTariffRecords(gln, to))
-      : Promise.resolve([]),
+    needsTarif ? loadTariffRecords(gln, to, env) : Promise.resolve([]),
   ]);
   return { priceData, chargeHistory, tariffRecords };
 }
@@ -1749,7 +1792,7 @@ async function handleForecast(area, mode, request, env) {
   const [historicalPrices, chargeHistory] = await Promise.all([
     cached(`forecast-prices-${area}-${fmtUTC(start)}-${fmtUTC(end)}`, 30 * 60_000,
       () => fetchHistoricalPrices(area, fmtUTC(start), fmtUTC(end))),
-    cached('charge-history', 6 * 60 * 60_000, fetchChargeHistory),
+    edgeCached('charge-history-v1', 6 * 3600, fetchChargeHistory, env),
   ]);
   // A forecast is about days that have not happened, so the rates in force
   // today are the right ones — but the reduced duty still has to follow the
