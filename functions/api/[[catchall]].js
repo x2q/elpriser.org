@@ -5,6 +5,7 @@
  *   /api/now?area=DK1&mode=inkl_alt&strategy=cheapest_n&hours=6[&gln=...]
  *   /api/now?area=DK1&strategy=smart&hours=4&max_off=2[&gln=...]
  *   /api/prices?area=DK1&mode=inkl_alt[&gln=...][&date=YYYY-MM-DD]
+ *   /api/prices?area=DK1&start=YYYY-MM-DD&end=YYYY-MM-DD   (range, max 1150 days)
  *   /api/schedule?area=DK1&mode=inkl_alt&strategy=cheapest_n&hours=6[&gln=...][&date=YYYY-MM-DD]
  *   /api/shelly/tariff?area=DK1&mode=inkl_alt[&gln=...]   → Tibber-compatible JSON
  */
@@ -70,6 +71,21 @@ function fail(status, msg) {
   });
 }
 
+/**
+ * Turn an upstream failure into an honest status. Energinet answers a rate
+ * limit with HTTP 200 and a statusCode in the body, so without this the caller
+ * would see either a 500 (their request was fine) or, worse, an empty result
+ * cached as though the market had no prices that day.
+ */
+function upstreamFail(e) {
+  if (e && e.upstreamStatus === 429) {
+    const res = fail(503, `Upstream rate limit (Energi Data Service). ${e.message}`);
+    if (e.retryAfter) res.headers.set('Retry-After', String(e.retryAfter));
+    return res;
+  }
+  return fail(500, String((e && e.message) || e));
+}
+
 // ── Danish timezone helpers ───────────────────────────────────────────────────
 // Workers run in UTC. Denmark uses CET (UTC+1) in winter, CEST (UTC+2) in summer.
 // Transition: last Sunday in March 02:00 CET → 03:00 CEST (01:00 UTC)
@@ -120,6 +136,16 @@ function secondsUntilNextPublish() {
   return Math.max(300, Math.min(delta, 6 * 3600));
 }
 
+/**
+ * Cache lifetime for a price range ending at `end` (exclusive, YYYY-MM-DD).
+ * A range that ends at or before today is settled history — those prices were
+ * fixed at auction years ago and will never change, so it can be held for a
+ * day. Anything reaching into tomorrow is waiting on the next publication.
+ */
+function priceTtl(end) {
+  return end <= fmtUTC(new Date()) ? 86400 : secondsUntilNextPublish();
+}
+
 /** Seconds until the top of the next hour (clamped 30 s … 1 h). Used where the
  *  response depends on the current hour (e.g. /api/now's current price). */
 function secondsUntilNextHour() {
@@ -145,13 +171,78 @@ function isoWithOffset(dateStr, localHour) {
 
 // ── Energi Data Service fetchers ──────────────────────────────────────────────
 
-async function fetchSpotPrices(area, start, end) {
+// Energinet split the day-ahead price into two datasets when the market moved
+// to 15-minute resolution. Neither one covers the whole history:
+//
+//   Elspotprices    2000-01-01 .. 2025-09-30   hourly
+//   DayAheadPrices  2025-10-01 .. tomorrow     15-minute
+//
+// Asking DayAheadPrices for 2024 does not fail — it returns an empty record
+// list — so a range that crosses the boundary silently loses everything before
+// it. Any range query has to be split and both halves fetched.
+const PRICE_DATASET_SWITCH = '2025-10-01';
+
+// Elspotprices starts at 2000-01-01. Requests before that are a caller
+// mistake, not an empty market, and are worth saying so explicitly.
+const EARLIEST_PRICE_DATE = '2000-01-01';
+// Three years plus a leap day of headroom — enough for the longest range the
+// site itself offers, while keeping a single response bounded.
+const MAX_RANGE_DAYS = 1150;
+
+/** Normalise an Elspotprices row to the DayAheadPrices field names, so callers
+ *  see one schema regardless of which side of the boundary a row came from. */
+function normaliseElspot(r) {
+  return {
+    TimeUTC: r.HourUTC,
+    TimeDK: r.HourDK,
+    PriceArea: r.PriceArea,
+    DayAheadPriceEUR: r.SpotPriceEUR,
+    DayAheadPriceDKK: r.SpotPriceDKK,
+  };
+}
+
+async function fetchEdsDataset(dataset, area, start, end) {
   const f = encodeURIComponent(JSON.stringify({ PriceArea: area }));
+  const sortCol = dataset === 'Elspotprices' ? 'HourDK' : 'TimeDK';
   const res = await fetch(
-    `https://api.energidataservice.dk/dataset/DayAheadPrices` +
-    `?start=${start}&end=${end}&filter=${f}&sort=TimeDK%20asc&limit=0`
+    `https://api.energidataservice.dk/dataset/${dataset}` +
+    `?start=${start}&end=${end}&filter=${f}&sort=${sortCol}%20asc&limit=0`
   );
   const j = await res.json();
+  // EDS answers rate limits with a 200 and a statusCode body, not an HTTP
+  // error — treat that as a failure so the caller's backup path can run
+  // instead of caching an empty range as though it were genuinely empty.
+  if (j.statusCode && j.statusCode >= 400) {
+    const err = new Error(`EDS ${dataset} ${j.statusCode}: ${j.message || 'error'}`);
+    // Carried so the route can answer 503 + Retry-After instead of a flat 500:
+    // upstream throttling is temporary and the caller should be told to wait,
+    // not told their request was wrong.
+    err.upstreamStatus = j.statusCode;
+    const wait = /in (\d+) seconds/.exec(j.message || '');
+    if (wait) err.retryAfter = +wait[1];
+    throw err;
+  }
+  const rows = j.records || [];
+  return dataset === 'Elspotprices' ? rows.map(normaliseElspot) : rows;
+}
+
+/** Day-ahead price records for [start, end), spanning both datasets. */
+async function fetchPriceRecords(area, start, end) {
+  const parts = [];
+  if (start < PRICE_DATASET_SWITCH) {
+    parts.push(fetchEdsDataset('Elspotprices', area, start,
+                               end < PRICE_DATASET_SWITCH ? end : PRICE_DATASET_SWITCH));
+  }
+  if (end > PRICE_DATASET_SWITCH) {
+    parts.push(fetchEdsDataset('DayAheadPrices', area,
+                               start > PRICE_DATASET_SWITCH ? start : PRICE_DATASET_SWITCH, end));
+  }
+  const chunks = await Promise.all(parts);
+  return chunks.flat();
+}
+
+async function fetchSpotPrices(area, start, end) {
+  const j = { records: await fetchPriceRecords(area, start, end) };
   // TimeDK is Danish local time. In Workers (UTC), parsing it without 'Z' treats it
   // as UTC — but the date and hour NUMBERS extracted are still the correct Danish values.
   const g = {};
@@ -328,15 +419,88 @@ function cached(key, ttlMs, fn) {
 
 // ── Shared data loader ────────────────────────────────────────────────────────
 
-async function loadData(area, mode, gln, env) {
+/**
+ * Settled Danish prices, read from our own archive in Workers KV rather than
+ * from Energi Data Service.
+ *
+ * One key per area per year, built by scripts/data_backup/build_price_archive.py
+ * with the value already in the shape used here: date → 24 hourly DKK/MWh.
+ * Reading years rather than days keeps a three-year pull at a handful of KV
+ * reads instead of a thousand upstream requests.
+ */
+async function loadPriceArchive(area, from, to, env) {
+  if (!env || !env.PRICE_CACHE) return {};
+  const y0 = +from.slice(0, 4), y1 = +to.slice(0, 4);
+  const years = [];
+  for (let y = y0; y <= y1; y++) years.push(y);
+  const parts = await Promise.all(years.map(y =>
+    env.PRICE_CACHE.get(`prices-archive-${area}-${y}`, 'json').catch(() => null)));
+  const out = {};
+  for (const part of parts) {
+    if (!part) continue;
+    for (const d in part) {
+      if (d < from || d >= to) continue;
+      const hours = part[d];
+      const row = {};
+      for (let h = 0; h < 24; h++) if (hours[h] !== null && hours[h] !== undefined) row[h] = hours[h];
+      if (Object.keys(row).length) out[d] = row;
+    }
+  }
+  return out;
+}
+
+/**
+ * Prices for [from, to), preferring the archive and asking upstream only for
+ * the days it does not hold — in practice the last day or two plus tomorrow.
+ *
+ * If upstream then fails, whatever the archive returned is still served. A
+ * partial history beats a 500 for a caller who asked for three years and
+ * needed 1,093 of those days to be exactly the settled numbers they already are.
+ */
+async function loadPrices(area, from, to, env) {
+  const archive = await loadPriceArchive(area, from, to, env);
+
+  const missing = [];
+  for (let t = Date.parse(from); t < Date.parse(to); t += 86_400_000) {
+    const d = fmtUTC(new Date(t));
+    if (!archive[d]) missing.push(d);
+  }
+  if (!missing.length) return archive;
+
+  // Fetch one contiguous span covering the gaps rather than one call per day.
+  const liveFrom = missing[0];
+  const liveTo   = fmtUTC(new Date(Date.parse(missing[missing.length - 1]) + 86_400_000));
+  try {
+    const live = await edgeCached(`prices-${area}-${liveFrom}-${liveTo}`, priceTtl(liveTo),
+      () => fetchSpotPrices(area, liveFrom, liveTo), env);
+    return { ...archive, ...live };
+  } catch (err) {
+    if (Object.keys(archive).length) {
+      console.error('upstream failed, serving archive only', err);
+      return archive;
+    }
+    throw err;
+  }
+}
+
+/**
+ * Load prices plus the charges needed to convert them.
+ *
+ * `range` overrides the default yesterday..+2 window. It has to exist: `date`
+ * used to be applied only as a lookup into that fixed window, so any date
+ * outside it came back as 24 nulls with a 200 — indistinguishable from a day
+ * the market genuinely never priced.
+ */
+async function loadData(area, mode, gln, env, range = null) {
   const now = new Date();
   const s = new Date(now); s.setUTCDate(s.getUTCDate() - 1);
   const e = new Date(now); e.setUTCDate(e.getUTCDate() + 2);
+  const from = range ? range.start : fmtUTC(s);
+  const to   = range ? range.end   : fmtUTC(e);
   const needsEn    = !['spot_ex', 'spot_inkl'].includes(mode);
   const needsTarif = mode.startsWith('net_') && gln;
   const [priceData, enCharges, tariffRecords] = await Promise.all([
-    edgeCached(`prices-${area}-${fmtUTC(s)}-${fmtUTC(e)}`, 300,
-      () => fetchSpotPrices(area, fmtUTC(s), fmtUTC(e)), env),
+    loadPrices(area, from, to, env),
     needsEn
       ? cached('encharges', 60 * 60_000, fetchEnCharges)
       : Promise.resolve({ sys: 0, trans: 0, afg: 0 }),
@@ -362,7 +526,9 @@ const GLN_PARAM      = { name: 'gln',      in: 'query', schema: { type: 'string'
 const STRATEGY_PARAM = { name: 'strategy', in: 'query', schema: { type: 'string', enum: STRATEGIES, default: 'cheapest_n' }, description: 'Schedule strategy. See /automation for descriptions.' };
 const HOURS_PARAM    = { name: 'hours',    in: 'query', schema: { type: 'integer', minimum: 1, maximum: 23, default: 6 }, description: 'For strategies that take an hour count.' };
 const PCT_PARAM      = { name: 'pct',      in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 }, description: 'For percentage-based strategies.' };
-const DATE_PARAM     = { name: 'date',     in: 'query', schema: { type: 'string', format: 'date' }, description: 'YYYY-MM-DD. Defaults to today (DK local).' };
+const DATE_PARAM     = { name: 'date',     in: 'query', schema: { type: 'string', format: 'date' }, description: 'YYYY-MM-DD. Defaults to today (DK local). Any date from 2000-01-01 onwards.' };
+const START_PARAM    = { name: 'start',    in: 'query', schema: { type: 'string', format: 'date' }, description: 'YYYY-MM-DD. With `end`, returns every day in the range instead of one. Max 1150 days.' };
+const END_PARAM      = { name: 'end',      in: 'query', schema: { type: 'string', format: 'date' }, description: 'YYYY-MM-DD, inclusive. Must be given together with `start`.' };
 const MAXOFF_PARAM   = { name: 'max_off',  in: 'query', schema: { type: 'integer', minimum: 1, maximum: 12 }, description: 'For `strategy=smart`: max consecutive OFF hours.' };
 
 // The 13 Nordic + NL bidding zones served by /api/nordic. Kept here rather
@@ -427,12 +593,20 @@ const OPENAPI_SPEC = {
     '/api/prices': {
       get: {
         operationId: 'getDailyPrices',
-        summary: '24 hourly prices for one date',
-        parameters: [AREA_PARAM, MODE_PARAM, GLN_PARAM, DATE_PARAM],
-        responses: { '200': {
-          description: '24 hourly prices.',
-          content: { 'application/json': { example: { area: 'DK1', mode: 'inkl_alt', date: '2026-05-15', unit: 'DKK/kWh', prices: [{ hour: 0, price: 0.84 }, { hour: 1, price: 0.79 }], current_hour: 14, current_price: 1.23 } } }
-        } },
+        summary: 'Hourly prices for one date, or for a date range',
+        description: 'Historical prices back to 2000-01-01. Pass `date` for a single day, '
+          + 'or `start` and `end` together for a range — up to 1150 days in one response, '
+          + 'so three years costs one request rather than a thousand. '
+          + 'On a range, `days[].prices` is null for a day the market never priced.',
+        parameters: [AREA_PARAM, MODE_PARAM, GLN_PARAM, DATE_PARAM, START_PARAM, END_PARAM],
+        responses: {
+          '200': {
+            description: '24 hourly prices for the date, or a day-by-day list for a range.',
+            content: { 'application/json': { example: { area: 'DK1', mode: 'inkl_alt', date: '2026-05-15', unit: 'DKK/kWh', prices: [{ hour: 0, price: 0.84 }, { hour: 1, price: 0.79 }], current_hour: 14, current_price: 1.23 } } }
+          },
+          '400': { description: 'Malformed date, `start` without `end`, range over 1150 days, or a date before 2000-01-01.' },
+          '503': { description: 'Upstream (Energi Data Service) rate-limited or unavailable for days not yet in the archive. Carries Retry-After.' },
+        },
       },
     },
     '/api/schedule': {
@@ -683,12 +857,48 @@ export async function onRequest(context) {
     }
   }
 
-  try {
-    const { priceData, enCharges, tariffRecords } = await loadData(area, mode, gln, context.env);
+  // Work out which days the caller actually wants before loading anything, so
+  // a historical date pulls its own range rather than being looked up in a
+  // window that only ever held yesterday..+2.
+  const dkNow   = danishNow();
+  const today   = fmtUTC(dkNow);
+  const curHour = dkNow.getUTCHours(); // Danish local hour
 
-    const dkNow   = danishNow();
-    const today   = fmtUTC(dkNow);
-    const curHour = dkNow.getUTCHours(); // Danish local hour
+  const qDate  = q.get('date');
+  const qStart = q.get('start');
+  const qEnd   = q.get('end');
+  // Shape alone is not enough: 2024-13-01 matches the pattern, then fails the
+  // start<=end comparison and gets reported as an ordering problem rather than
+  // as the invalid date it is. Round-trip it so only real calendar dates pass.
+  const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v) &&
+    !Number.isNaN(Date.parse(v + 'T00:00:00Z')) &&
+    new Date(v + 'T00:00:00Z').toISOString().slice(0, 10) === v;
+
+  let range = null, wantDays = null;
+  if (seg1 === 'prices' && (qStart || qEnd)) {
+    if (!qStart || !qEnd) return fail(400, 'start and end must be given together (YYYY-MM-DD)');
+    if (!isDate(qStart) || !isDate(qEnd)) return fail(400, 'start and end must be a valid YYYY-MM-DD date');
+    if (qEnd < qStart) return fail(400, 'end must not be before start');
+    if (qStart < EARLIEST_PRICE_DATE) return fail(400, `no prices before ${EARLIEST_PRICE_DATE}`);
+    const span = (Date.parse(qEnd) - Date.parse(qStart)) / 86_400_000 + 1;
+    if (span > MAX_RANGE_DAYS) return fail(400, `range too long: ${span} days, max ${MAX_RANGE_DAYS}`);
+    wantDays = span;
+    // `end` is inclusive for callers but exclusive upstream.
+    range = { start: qStart, end: fmtUTC(new Date(Date.parse(qEnd) + 86_400_000)) };
+  } else if (qDate) {
+    if (!isDate(qDate)) return fail(400, 'date must be a valid YYYY-MM-DD date');
+    if (qDate < EARLIEST_PRICE_DATE) return fail(400, `no prices before ${EARLIEST_PRICE_DATE}`);
+    // Only leave the default window when the date sits outside it — staying on
+    // the shared key keeps today's requests hitting one warm cache entry.
+    const defStart = fmtUTC(new Date(Date.now() - 86_400_000));
+    const defEnd   = fmtUTC(new Date(Date.now() + 2 * 86_400_000));
+    if (qDate < defStart || qDate >= defEnd) {
+      range = { start: qDate, end: fmtUTC(new Date(Date.parse(qDate) + 86_400_000)) };
+    }
+  }
+
+  try {
+    const { priceData, enCharges, tariffRecords } = await loadData(area, mode, gln, context.env, range);
 
     // ── /api/shelly/tariff ──────────────────────────────────────────────────
     if (seg1 === 'shelly' && seg2 === 'tariff') {
@@ -739,15 +949,46 @@ export async function onRequest(context) {
       return raw === undefined ? null : +cvt(raw, h, mode, enCharges, tariffH).toFixed(4);
     });
 
+    if (seg1 === 'prices' && range && wantDays) {
+      // Multi-day pull. One request per day would be 1,095 round trips for
+      // three years, so the range is fetched upstream in one go and returned
+      // day by day. Days the market never priced are included with a null
+      // array rather than dropped, so a gap is visible instead of implied.
+      const days = [];
+      for (let i = 0; i < wantDays; i++) {
+        const d = fmtUTC(new Date(Date.parse(qStart) + i * 86_400_000));
+        const tH = (mode.startsWith('net_') && gln) ? getTariffHourly(tariffRecords, d) : null;
+        const row = priceData[d];
+        days.push({
+          date: d,
+          prices: row
+            ? Array.from({ length: 24 }, (_, h) => ({
+                hour: h,
+                price: row[h] === undefined ? null : +cvt(row[h], h, mode, enCharges, tH).toFixed(4),
+              }))
+            : null,
+        });
+      }
+      return jsonResponse({
+        area, mode, start: qStart, end: qEnd, unit: 'DKK/kWh',
+        days_returned: days.length,
+        days_with_data: days.filter(d => d.prices).length,
+        days,
+      }, { maxAge: priceTtl(range.end), request });
+    }
+
     if (seg1 === 'prices') {
       // The 24 hourly prices are stable for the day; current_hour/current_price
       // change hourly → cap freshness at the next hour boundary.
       return jsonResponse({
         area, mode, date: dateStr, unit: 'DKK/kWh',
         prices: hourlyPrices.map((price, hour) => ({ hour, price })),
-        current_hour:  curHour,
-        current_price: hourlyPrices[curHour],
-      }, { maxAge: secondsUntilNextHour(), request });
+        // Only meaningful for today — on a historical date there is no
+        // "current" hour, and reporting one invites it to be read as a price
+        // for now rather than for that date.
+        current_hour:  dateStr === today ? curHour : null,
+        current_price: dateStr === today ? hourlyPrices[curHour] : null,
+      }, { maxAge: dateStr < today ? 86400 : secondsUntilNextHour(), request });
     }
 
     const strategy = q.get('strategy') || 'cheapest_n';
@@ -778,7 +1019,7 @@ export async function onRequest(context) {
     return fail(404, 'Unknown endpoint. Try /api/now  /api/prices  /api/schedule  /api/forecast  /api/shelly/tariff');
   } catch (e) {
     console.error(e);
-    return fail(500, String(e.message || e));
+    return upstreamFail(e);
   }
 }
 
@@ -1085,15 +1326,10 @@ async function handleRawPrices(area, start, end, request, env) {
   // layers inside edgeCached.
   let records;
   try {
-    records = await edgeCached(`raw-prices-${area}-${start}-${end}`, end < today ? 86400 : 300, async () => {
-      const f = encodeURIComponent(JSON.stringify({ PriceArea: area }));
-      const r = await fetch(
-        `https://api.energidataservice.dk/dataset/DayAheadPrices` +
-        `?start=${start}&end=${end}&filter=${f}&sort=TimeDK%20asc&limit=0`
-      );
-      const j = await r.json();
-      return j.records || [];
-    });
+    records = await edgeCached(`raw-prices-${area}-${start}-${end}`, end < today ? 86400 : 300,
+      // Spans both price datasets — before this, any range ending before
+      // 2025-10-01 came back as an empty list rather than as history.
+      () => fetchPriceRecords(area, start, end));
   } catch (err) {
     console.error('handleRawPrices upstream failed, trying rolling backup', err);
     records = await fetchRollingPriceBackupFiltered(area, start, end, env);

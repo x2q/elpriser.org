@@ -395,12 +395,64 @@ def check_tariffs():
             report("WARN", cc, f"tariffer gyldige fra {d['valid_from']} — {stale} dage gamle")
 
 
+# ─── 9. Historical price API ────────────────────────────────────────────────
+
+def check_history_api():
+    """The public API must serve the years it claims, not just today. It used
+    to answer any date outside yesterday..+2 with 24 nulls and a 200 — a shape
+    indistinguishable from a day the market never priced."""
+    print("\n9. HISTORIK-API — priser tilbage i tiden for DK1 og DK2")
+    today = date.today()
+    probes = [today - timedelta(days=n) for n in (2, 30, 200, 400, 800, 1090)]
+    for area in ("DK1", "DK2"):
+        bad = []
+        for d in probes:
+            req = urllib.request.Request(
+                f"https://elpriser.org/api/prices?area={area}&date={d}",
+                headers={"User-Agent": "elpriser-qa/1.0 (+https://elpriser.org)"})
+            try:
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    j = json.load(r)
+            except Exception as e:
+                bad.append(f"{d}: {str(e)[:40]}")
+                continue
+            n = sum(1 for p in j.get("prices", []) if p.get("price") is not None)
+            # 23 is correct on the spring-forward day, where 02:00 does not exist.
+            if n not in (23, 24):
+                bad.append(f"{d}: {n}/24 timer")
+        if bad:
+            report("FAIL", area, f"historik mangler — {'; '.join(bad[:4])}")
+        else:
+            report("OK", area, f"{len(probes)} stikprøver tilbage til {probes[-1]}")
+
+    # A range must return every day it was asked for, in one response.
+    start = today - timedelta(days=1095)
+    req = urllib.request.Request(
+        f"https://elpriser.org/api/prices?area=DK1&start={start}&end={today}",
+        headers={"User-Agent": "elpriser-qa/1.0 (+https://elpriser.org)"})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            j = json.load(r)
+    except Exception as e:
+        report("FAIL", "interval", f"3-års-udtræk fejlede: {str(e)[:60]}")
+        return
+    want = 1096
+    got, filled = j.get("days_returned", 0), j.get("days_with_data", 0)
+    if got != want:
+        report("FAIL", "interval", f"{got} døgn returneret, forventet {want}")
+    elif filled < want:
+        report("FAIL", "interval", f"{want - filled} døgn uden data i 3-års-udtrækket")
+    else:
+        report("OK", "interval", f"3 år i ét kald: {got} døgn, alle med data")
+
+
 def main():
     print("═" * 70)
     print("KVALITETSSIKRING — 13 prisområder")
     print("═" * 70)
     for fn in (check_cross_source, check_prices, check_dst, check_weather,
-               check_reservoir, check_live, check_coherence, check_tariffs):
+               check_reservoir, check_live, check_coherence, check_tariffs,
+               check_history_api):
         try:
             fn()
         except Exception as e:
