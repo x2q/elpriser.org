@@ -1600,7 +1600,11 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         </div>
         <div class="px-4 py-3">
           <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/prices?area=DK1&amp;mode=inkl_alt[&amp;date=YYYY-MM-DD]</p>
-          <p class="text-xs mt-1">24 timepriser for én dato (default i dag, dansk lokaltid).</p>
+          <p class="text-xs mt-1">24 timepriser for én dato (default i dag, dansk lokaltid). Historik tilbage til 2000.</p>
+        </div>
+        <div class="px-4 py-3">
+          <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/prices?area=DK1&amp;start=YYYY-MM-DD&amp;end=YYYY-MM-DD</p>
+          <p class="text-xs mt-1">Hele perioden i ét svar, op til 1150 døgn — tre år koster ét kald i stedet for tusind.</p>
         </div>
         <div class="px-4 py-3">
           <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/schedule?area=DK1&amp;strategy=cheapest_n&amp;hours=6</p>
@@ -1630,6 +1634,18 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     </section>
 
     <section>
+      <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Priser, afgifter og tariffer</h3>
+      <p class="text-xs mb-2"><code>mode</code> bestemmer, hvad der er lagt oven i spotprisen. Et ukendt <code>mode</code> afvises med 400 — det bliver ikke tavst til spot inkl. moms.</p>
+      <ul class="text-xs space-y-1 mb-3 list-disc pl-5">
+        <li><code>spot_ex</code> / <code>spot_inkl</code> — ren spotpris, uden og med moms.</li>
+        <li><code>inkl_alt</code> — spot + systemtarif + transmissionstarif + elafgift, inkl. moms.</li>
+        <li><code>inkl_alt_minus</code> — som ovenfor, men uden elafgift.</li>
+        <li><code>net_inkl_tarif</code> / <code>net_inkl_alt</code> — med nettarif; <code>net_inkl_alt</code> er den fulde forbrugerpris. Kræver <code>gln</code>.</li>
+        <li><code>inkl_alt_elvarme</code> / <code>net_inkl_alt_elvarme</code> — bruger den <strong>reducerede elafgift</strong> for forbrug over 4.000 kWh/år i elopvarmede boliger. Forskellen er stor: 0,8 mod 72,0 øre/kWh i 2025.</li>
+      </ul>
+      <p class="text-xs mb-2">Nettariffen hentes for den dato, der spørges om — med tidsbånd og sommer-/vinterforskel. Netselskabet vælges med <code>gln</code>; bemærk at fx N1 optræder som tre selvstændige netområder med hver sin GLN og hver sine satser. Svaret oplyser <code>grid_tariff</code>: <code>hourly</code>, <code>flat</code> for selskaber der kun udgiver én døgnsats, eller <code>null</code> hvis selskabet ikke har udgivet nogen — og så er dagens priser <code>null</code> frem for at mangle tariffen i tavshed.</p>
+      <p class="text-xs mb-4"><code>charges</code> afgør, hvilke satser en historisk dato prissættes med. <code>historical</code> (default) bruger de satser, der faktisk gjaldt på datoen. <code>current</code> omregner samme prisforløb til nutidens satser — nyttigt til at sammenligne år, men det er ikke, hvad timen kostede.</p>
+
       <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Eksempel — <code>curl</code></h3>
       <pre class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 whitespace-pre-wrap">curl -sS "https://elpriser.org/api/now?area=DK1&amp;mode=inkl_alt"</pre>
       <p class="text-xs mt-2">Returnerer:</p>

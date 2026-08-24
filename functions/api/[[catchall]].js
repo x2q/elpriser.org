@@ -264,81 +264,215 @@ async function fetchSpotPrices(area, start, end) {
   return out;
 }
 
-async function fetchEnCharges() {
+// Charge-type codes in Energinet's DatahubPricelist. EA-001 is the ordinary
+// electricity duty; EA-002 is the reduced rate that applies to consumption
+// above 4,000 kWh/year in homes with electric heating. They diverge enormously
+// — 72.0 vs 0.8 øre/kWh in 2025 — so which one applies is not a rounding
+// detail for a heat-pump customer, it is most of the bill.
+const CHARGE_CODES = { '41000': 'sys', '40000': 'trans', 'EA-001': 'afg', 'EA-002': 'afgReduced' };
+
+// Used only when DatahubPricelist cannot be reached. These are the rates in
+// force at the time of writing, so they are right for today and wrong for any
+// historical date — which is why a lookup failure must not silently pass for
+// history. See chargesOn().
+const CHARGE_FALLBACK = { sys: 0.072, trans: 0.043, afg: 0.008, afgReduced: 0.008 };
+
+/**
+ * Every system tariff, transmission tariff and electricity duty rate, with the
+ * period each was in force.
+ *
+ * The previous version asked only for what was valid *now* and returned a
+ * single set of numbers. That silently priced January 2025 at 2026's duty of
+ * 0.8 øre/kWh instead of the 72 øre actually levied — understating the cost of
+ * every historical hour by about 0.9 kr/kWh including VAT.
+ */
+async function fetchChargeHistory() {
   const GLN = '5790000432752';
   const f = encodeURIComponent(JSON.stringify({
-    GLN_Number: GLN, ChargeType: 'D03', ResolutionDuration: 'P1D',
+    GLN_Number: GLN, ChargeTypeCode: Object.keys(CHARGE_CODES),
   }));
-  const defaults = { sys: 0.072, trans: 0.043, afg: 0.008 };
-  try {
-    const res = await fetch(
-      `https://api.energidataservice.dk/dataset/DatahubPricelist` +
-      `?filter=${f}&sort=ValidFrom%20desc&limit=20&columns=ChargeTypeCode,ValidFrom,ValidTo,Price1`
-    );
-    const j = await res.json();
-    const now = new Date(), c = { ...defaults };
-    for (const r of (j.records || [])) {
-      if (new Date(r.ValidFrom) > now) continue;
-      if (r.ValidTo && new Date(r.ValidTo) < now) continue;
-      if      (r.ChargeTypeCode === '41000')  c.sys   = r.Price1 || 0;
-      else if (r.ChargeTypeCode === '40000')  c.trans = r.Price1 || 0;
-      else if (r.ChargeTypeCode === 'EA-001') c.afg   = r.Price1 || 0;
-    }
-    return c;
-  } catch { return defaults; }
+  const out = { sys: [], trans: [], afg: [], afgReduced: [] };
+  const res = await fetch(
+    `https://api.energidataservice.dk/dataset/DatahubPricelist` +
+    `?filter=${f}&sort=ValidFrom%20asc&limit=0&columns=ChargeTypeCode,ValidFrom,ValidTo,Price1`
+  );
+  const j = await res.json();
+  if (j.statusCode && j.statusCode >= 400) {
+    throw new Error(`EDS DatahubPricelist ${j.statusCode}: ${j.message || 'error'}`);
+  }
+  for (const r of (j.records || [])) {
+    const key = CHARGE_CODES[r.ChargeTypeCode];
+    if (!key) continue;
+    out[key].push({
+      from: r.ValidFrom.slice(0, 10),
+      to: r.ValidTo ? r.ValidTo.slice(0, 10) : null,
+      price: r.Price1 || 0,
+    });
+  }
+  // Newest first, so the first match in chargesOn() is the most specific one.
+  for (const k in out) out[k].sort((a, b) => (a.from < b.from ? 1 : -1));
+  return out;
 }
 
-async function fetchTariffRecords(gln) {
+function pickRate(list, dateStr, fallback) {
+  for (const r of list) {
+    if (r.from > dateStr) continue;
+    if (r.to && r.to <= dateStr) continue;
+    return r.price;
+  }
+  return fallback;
+}
+
+/**
+ * The charges that applied on `dateStr`.
+ *
+ * `useToday` answers "what would this price curve cost under today's taxes",
+ * which is a legitimate question when comparing years, but it is not what the
+ * hour actually cost. Historical rates are the default for that reason.
+ */
+function chargesOn(history, dateStr, { reduced = false, useToday = false } = {}) {
+  if (!history) return { sys: CHARGE_FALLBACK.sys, trans: CHARGE_FALLBACK.trans, afg: CHARGE_FALLBACK.afg };
+  const on = useToday ? fmtUTC(new Date()) : dateStr;
+  return {
+    sys: pickRate(history.sys, on, CHARGE_FALLBACK.sys),
+    trans: pickRate(history.trans, on, CHARGE_FALLBACK.trans),
+    afg: reduced
+      ? pickRate(history.afgReduced, on, CHARGE_FALLBACK.afgReduced)
+      : pickRate(history.afg, on, CHARGE_FALLBACK.afg),
+  };
+}
+
+/**
+ * A grid company's household tariff (Nettarif C) with its full hourly profile,
+ * for every period overlapping [from, to].
+ *
+ * Two things the previous version got wrong, both of which erased history:
+ *
+ *   1. It dropped any record whose ValidTo had passed, so for a past date
+ *      there was nothing left to match and the tariff silently became zero.
+ *      A zero tariff is not visibly wrong — it just makes net_inkl_alt equal
+ *      inkl_alt, which is how this went unnoticed.
+ *   2. It took the 10 most recent records regardless of the dates asked for.
+ *
+ * There is deliberately no lower date bound. DatahubPricelist filters on
+ * ValidFrom, so any window cuts off the record that was already in force when
+ * the window opens. A generous lookback is not enough either: N1's area 016
+ * has published the same flat tariff since 2023-02-01, so a query about 2025
+ * needs to reach back two years to find it, and a company that never changes
+ * its tariff would need an unbounded one. The full history for a single
+ * company is at most a few hundred records — 222 KB for the largest — and it
+ * is cached, so fetching all of it is cheaper than being subtly wrong.
+ */
+async function fetchTariffRecords(gln, to) {
   const f = encodeURIComponent(JSON.stringify({
     GLN_Number: gln, ChargeType: 'D03', Note: 'Nettarif C',
   }));
-  const cols = 'ValidFrom,ValidTo,ResolutionDuration,' +
+  const cols = 'ValidFrom,ValidTo,ChargeTypeCode,ResolutionDuration,' +
     Array.from({ length: 24 }, (_, i) => 'Price' + (i + 1)).join(',');
+  // Three days past the end so a tariff published for tomorrow is available.
+  const ahead = fmtUTC(new Date(Date.parse(to) + 3 * 86_400_000));
   try {
     const res = await fetch(
       `https://api.energidataservice.dk/dataset/DatahubPricelist` +
-      `?filter=${f}&sort=ValidFrom%20desc&limit=10&columns=${cols}`
+      `?end=${ahead}&filter=${f}` +
+      `&sort=ValidFrom%20desc&limit=0&columns=${cols}`
     );
     const j = await res.json();
-    const now = new Date(), horizon = new Date(now);
-    horizon.setUTCDate(horizon.getUTCDate() + 3);
+    if (j.statusCode && j.statusCode >= 400) {
+      const err = new Error(`EDS DatahubPricelist ${j.statusCode}: ${j.message || 'error'}`);
+      err.upstreamStatus = j.statusCode;
+      const wait = /in (\d+) seconds/.exec(j.message || '');
+      if (wait) err.retryAfter = +wait[1];
+      throw err;
+    }
     const records = [];
     for (const r of (j.records || [])) {
-      if (r.ResolutionDuration !== 'PT1H') continue;
-      if (new Date(r.ValidFrom) > horizon) continue;
-      if (r.ValidTo && new Date(r.ValidTo) <= now) continue;
+      // Not every company publishes an hourly profile. Before time-of-use
+      // tariffs became the norm — and still today for some areas — the tariff
+      // is a single flat rate at P1D resolution, carried in Price1 alone.
+      // Rejecting those left the company with no tariff at all rather than a
+      // flat one: N1's area 016 gets its first hourly tariff on 2026-07-01,
+      // so every earlier date silently priced at zero grid tariff.
+      const hourly = r.ResolutionDuration === 'PT1H'
+        ? Array.from({ length: 24 }, (_, i) => r['Price' + (i + 1)] || 0)
+        : r.ResolutionDuration === 'P1D'
+          ? Array(24).fill(r.Price1 || 0)
+          : null;
+      if (!hourly) continue;
       records.push({
         fromStr: r.ValidFrom.slice(0, 10),
         toStr:   r.ValidTo ? r.ValidTo.slice(0, 10) : null,
-        hourly:  Array.from({ length: 24 }, (_, i) => r['Price' + (i + 1)] || 0),
+        code:    r.ChargeTypeCode,
+        hourly,
+        // Prefer an hourly profile when both resolutions cover the same date.
+        rank:    r.ResolutionDuration === 'PT1H' ? 0 : 1,
       });
     }
+    // Newest first, then by code, so a date covered by more than one charge
+    // type resolves the same way every time. N1's area 344 publishes the same
+    // tariff under two codes (flex- and template-settled) with identical
+    // prices; picking arbitrarily would still be a latent inconsistency.
+    records.sort((x, y) => (x.fromStr !== y.fromStr
+      ? (x.fromStr < y.fromStr ? 1 : -1)
+      : x.rank !== y.rank ? x.rank - y.rank
+      : (x.code < y.code ? -1 : 1)));
     return records;
-  } catch { return []; }
+  } catch (e) {
+    // Rethrown rather than swallowed into an empty list. An empty list now
+    // means "this company published no tariff", which the response reports as
+    // a null price — a claim we must not make because a request timed out.
+    throw e;
+  }
 }
 
-/** Timezone-safe tariff lookup using YYYY-MM-DD string comparison. */
+/**
+ * The tariff in force on `dateStr`, or null if the company published none.
+ *
+ * Null rather than 24 zeros. A zero tariff is not distinguishable from a real
+ * one in the output, so the old fallback turned "we have no data for this
+ * company on this date" into "this company charged nothing" — which is how
+ * net_inkl_alt came to equal inkl_alt for every historical date without
+ * anything appearing to be wrong.
+ */
 function getTariffHourly(records, dateStr) {
   for (const r of records) {
     if (r.fromStr > dateStr) continue;
     if (r.toStr && r.toStr <= dateStr) continue;
-    return r.hourly;
+    return { hourly: r.hourly, kind: r.rank === 0 ? 'hourly' : 'flat' };
   }
-  return Array(24).fill(0);
+  return null;
 }
 
 // ── Price conversion ──────────────────────────────────────────────────────────
+
+// The `_elvarme` variants are not separate formulas — they are the same sum
+// with the reduced electricity duty substituted, which is resolved upstream in
+// chargesOn(). Keeping that decision out of here means there is one place that
+// knows which duty applies, rather than two that can disagree.
+const PRICE_MODE_SET = new Set([
+  'spot_ex', 'spot_inkl', 'inkl_alt', 'inkl_alt_elvarme', 'inkl_alt_minus',
+  'net_inkl_alt', 'net_inkl_alt_elvarme', 'net_inkl_tarif',
+]);
+
+const usesReducedTax = mode => mode.endsWith('_elvarme');
 
 function cvt(dkkMwh, h, mode, en, tariff) {
   const spot = dkkMwh / 1000;
   switch (mode) {
     case 'spot_ex':        return spot;
     case 'spot_inkl':      return spot * 1.25;
-    case 'inkl_alt':       return (spot + en.sys + en.trans + en.afg) * 1.25;
+    case 'inkl_alt':
+    case 'inkl_alt_elvarme':
+      return (spot + en.sys + en.trans + en.afg) * 1.25;
     case 'inkl_alt_minus': return (spot + en.sys + en.trans) * 1.25;
-    case 'net_inkl_alt':   return (spot + (tariff?.[h] ?? 0) + en.sys + en.trans + en.afg) * 1.25;
+    case 'net_inkl_alt':
+    case 'net_inkl_alt_elvarme':
+      return (spot + (tariff?.[h] ?? 0) + en.sys + en.trans + en.afg) * 1.25;
     case 'net_inkl_tarif': return (spot + (tariff?.[h] ?? 0) + en.sys + en.trans) * 1.25;
-    default:               return spot * 1.25;
+    // Unreachable: the route rejects unknown modes. The old default returned
+    // spot incl. VAT for anything it did not recognise, so a typo produced a
+    // plausible number for a different quantity than the caller asked for.
+    default:               throw new Error(`unknown mode ${mode}`);
   }
 }
 
@@ -499,16 +633,22 @@ async function loadData(area, mode, gln, env, range = null) {
   const to   = range ? range.end   : fmtUTC(e);
   const needsEn    = !['spot_ex', 'spot_inkl'].includes(mode);
   const needsTarif = mode.startsWith('net_') && gln;
-  const [priceData, enCharges, tariffRecords] = await Promise.all([
+  const [priceData, chargeHistory, tariffRecords] = await Promise.all([
     loadPrices(area, from, to, env),
+    // The whole rate history is 49 records, so there is nothing to gain by
+    // fetching a window of it — and caching it whole means a range spanning
+    // several tax years costs one lookup, not one per year.
     needsEn
-      ? cached('encharges', 60 * 60_000, fetchEnCharges)
-      : Promise.resolve({ sys: 0, trans: 0, afg: 0 }),
+      ? cached('charge-history', 6 * 60 * 60_000, fetchChargeHistory)
+      : Promise.resolve(null),
+    // Keyed by the window as well as the company: a cache holding only the
+    // current tariff must not answer a query about 2024.
     needsTarif
-      ? cached(`tariff-${gln}`, 60 * 60_000, () => fetchTariffRecords(gln))
+      ? cached(`tariff-${gln}-${to}`, 6 * 60 * 60_000,
+               () => fetchTariffRecords(gln, to))
       : Promise.resolve([]),
   ]);
-  return { priceData, enCharges, tariffRecords };
+  return { priceData, chargeHistory, tariffRecords };
 }
 
 // ── OpenAPI 3.1 spec (served at /api/openapi.json) ───────────────────────────
@@ -517,11 +657,26 @@ async function loadData(area, mode, gln, env, range = null) {
 // clients, Postman, Bruno, openapi-generator, and now LLMs that crawl us
 // looking for tool descriptions. Keep in sync when adding/changing endpoints.
 
-const PRICE_MODES = ['spot_ex', 'spot_inkl', 'inkl_alt', 'inkl_alt_minus', 'net_inkl_alt', 'net_inkl_tarif'];
+// Derived from the set the route validates against, so the spec cannot drift
+// from what is actually accepted.
+const PRICE_MODES = [...PRICE_MODE_SET];
 const STRATEGIES  = ['cheapest_n', 'cheapest_pct', 'avoid_expensive_n', 'avoid_expensive_pct', 'avoid_peak', 'night_cheap', 'smart'];
 
 const AREA_PARAM     = { name: 'area',     in: 'query', schema: { type: 'string', enum: ['DK1','DK2'], default: 'DK1' }, description: 'Danish price zone — DK1 (Vestdanmark) or DK2 (Østdanmark).' };
-const MODE_PARAM     = { name: 'mode',     in: 'query', schema: { type: 'string', enum: PRICE_MODES, default: 'inkl_alt' }, description: 'Price view: raw spot, spot incl. moms, or total incl. all tariffs.' };
+const MODE_PARAM     = { name: 'mode',     in: 'query', schema: { type: 'string', enum: PRICE_MODES, default: 'inkl_alt' }, description:
+  'Which price to return. `spot_ex` raw spot; `spot_inkl` spot incl. VAT; '
+  + '`inkl_alt` spot + system + transmission + electricity duty, incl. VAT; '
+  + '`inkl_alt_minus` the same without the duty; `net_inkl_tarif` adds the grid '
+  + 'tariff but no duty; `net_inkl_alt` is the full consumer price. The two '
+  + '`_elvarme` variants substitute the reduced duty that applies above '
+  + '4,000 kWh/year in electrically heated homes — 0.8 vs 72.0 øre/kWh in 2025. '
+  + 'The `net_` modes require `gln`. An unknown mode is rejected rather than '
+  + 'silently treated as spot incl. VAT.' };
+const CHARGES_PARAM  = { name: 'charges',  in: 'query', schema: { type: 'string', enum: ['historical', 'current'], default: 'historical' }, description:
+  'Which tax and tariff rates to apply to a historical date. `historical` (default) '
+  + 'uses the rates actually in force on that date. `current` reprices the same '
+  + 'spot curve under today\'s rates, answering "what would this cost now" — '
+  + 'useful for comparing years, but not what the hour cost.' };
 const GLN_PARAM      = { name: 'gln',      in: 'query', schema: { type: 'string' }, description: 'Net company GLN (13 digits). Required when mode is `net_inkl_alt` or `net_inkl_tarif`.' };
 const STRATEGY_PARAM = { name: 'strategy', in: 'query', schema: { type: 'string', enum: STRATEGIES, default: 'cheapest_n' }, description: 'Schedule strategy. See /automation for descriptions.' };
 const HOURS_PARAM    = { name: 'hours',    in: 'query', schema: { type: 'integer', minimum: 1, maximum: 23, default: 6 }, description: 'For strategies that take an hour count.' };
@@ -597,8 +752,14 @@ const OPENAPI_SPEC = {
         description: 'Historical prices back to 2000-01-01. Pass `date` for a single day, '
           + 'or `start` and `end` together for a range — up to 1150 days in one response, '
           + 'so three years costs one request rather than a thousand. '
-          + 'On a range, `days[].prices` is null for a day the market never priced.',
-        parameters: [AREA_PARAM, MODE_PARAM, GLN_PARAM, DATE_PARAM, START_PARAM, END_PARAM],
+          + 'On a range, `days[].prices` is null for a day the market never priced. '
+          + 'Historical dates are priced with the taxes and grid tariffs that were in '
+          + 'force on the date, including the tariff\'s time-of-day bands and its '
+          + 'summer/winter split — see `charges` to reprice under today\'s rates instead. '
+          + 'For `net_` modes each day carries `grid_tariff`: "hourly", "flat" for a '
+          + 'company publishing a single daily rate, or null if it published none, in '
+          + 'which case that day\'s prices are null rather than silently missing the tariff.',
+        parameters: [AREA_PARAM, MODE_PARAM, GLN_PARAM, DATE_PARAM, START_PARAM, END_PARAM, CHARGES_PARAM],
         responses: {
           '200': {
             description: '24 hourly prices for the date, or a day-by-day list for a range.',
@@ -795,9 +956,23 @@ export async function onRequest(context) {
   if (!['DK1', 'DK2'].includes(area)) return fail(400, 'area must be DK1 or DK2');
 
   const mode = q.get('mode') || 'inkl_alt';
+  if (!PRICE_MODE_SET.has(mode)) {
+    return fail(400, `unknown mode "${mode}". Valid: ${[...PRICE_MODE_SET].join(', ')}`);
+  }
   const gln  = q.get('gln')  || null;
 
+  // Historical dates are priced with the taxes that were actually levied then.
+  // `charges=current` reprices them under today's rates instead, which answers
+  // "what would this curve cost now" — a different and also useful question,
+  // but not what the hour cost.
+  const chargeBasis = q.get('charges') || 'historical';
+  if (!['historical', 'current'].includes(chargeBasis)) {
+    return fail(400, 'charges must be historical or current');
+  }
+
   // ── /api/forecast ───────────────────────────────────────────────────────
+  // Checked before the gln requirement below: a forecast covers days that have
+  // not happened, so it never applies a grid tariff and has no use for a GLN.
   if (seg1 === 'forecast') {
     try {
       return await handleForecast(area, mode, request, context.env);
@@ -805,6 +980,14 @@ export async function onRequest(context) {
       console.error(e);
       return fail(500, String(e.message || e));
     }
+  }
+
+  // Everything past this point does apply the tariff. A net_ mode without a
+  // GLN would quietly drop it and return a number that looks like a full
+  // consumer price but is not one — which is precisely the failure that made
+  // net_inkl_alt and inkl_alt identical for historical dates.
+  if (mode.startsWith('net_') && !gln) {
+    return fail(400, `mode "${mode}" needs gln — the grid tariff depends on the network company`);
   }
 
   // ── /api/geo ────────────────────────────────────────────────────────────
@@ -898,7 +1081,11 @@ export async function onRequest(context) {
   }
 
   try {
-    const { priceData, enCharges, tariffRecords } = await loadData(area, mode, gln, context.env, range);
+    const { priceData, chargeHistory, tariffRecords } = await loadData(area, mode, gln, context.env, range);
+    // Resolved per date, not once per request: a range can span several tax
+    // years, and the duty changed by a factor of 90 between 2025 and 2026.
+    const chargeOpts = { reduced: usesReducedTax(mode), useToday: chargeBasis === 'current' };
+    const chargesFor = d => chargesOn(chargeHistory, d, chargeOpts);
 
     // ── /api/shelly/tariff ──────────────────────────────────────────────────
     if (seg1 === 'shelly' && seg2 === 'tariff') {
@@ -907,9 +1094,12 @@ export async function onRequest(context) {
       function makeEntries(dateStr) {
         const tariffH = (mode.startsWith('net_') && gln)
           ? getTariffHourly(tariffRecords, dateStr) : null;
+        const needTariff = mode.startsWith('net_') && !tariffH;
+        const en = chargesFor(dateStr);
         const prices = Array.from({ length: 24 }, (_, h) => {
           const raw = (priceData[dateStr] || {})[h];
-          return raw === undefined ? null : +cvt(raw, h, mode, enCharges, tariffH).toFixed(4);
+          if (raw === undefined || needTariff) return null;
+          return +cvt(raw, h, mode, en, tariffH && tariffH.hourly).toFixed(4);
         });
         const levels = priceLevels(prices);
         return prices
@@ -944,9 +1134,14 @@ export async function onRequest(context) {
     const tariffH  = (mode.startsWith('net_') && gln)
       ? getTariffHourly(tariffRecords, dateStr) : null;
 
+    const enDay = chargesFor(dateStr);
+    // Without a tariff a net_ price cannot be produced. Null, not a number
+    // that omits the grid tariff while claiming to include it.
+    const dayNeedsTariff = mode.startsWith('net_') && !tariffH;
     const hourlyPrices = Array.from({ length: 24 }, (_, h) => {
       const raw = (priceData[dateStr] || {})[h];
-      return raw === undefined ? null : +cvt(raw, h, mode, enCharges, tariffH).toFixed(4);
+      if (raw === undefined || dayNeedsTariff) return null;
+      return +cvt(raw, h, mode, enDay, tariffH && tariffH.hourly).toFixed(4);
     });
 
     if (seg1 === 'prices' && range && wantDays) {
@@ -955,24 +1150,33 @@ export async function onRequest(context) {
       // day by day. Days the market never priced are included with a null
       // array rather than dropped, so a gap is visible instead of implied.
       const days = [];
+      let noTariff = 0;
       for (let i = 0; i < wantDays; i++) {
         const d = fmtUTC(new Date(Date.parse(qStart) + i * 86_400_000));
         const tH = (mode.startsWith('net_') && gln) ? getTariffHourly(tariffRecords, d) : null;
+        const enD = chargesFor(d);
         const row = priceData[d];
+        // A day the company published no tariff for cannot yield a net_ price.
+        // Reported as null and counted, so it cannot be averaged in by mistake.
+        const gap = mode.startsWith('net_') && !tH;
+        if (gap) noTariff++;
         days.push({
           date: d,
-          prices: row
+          grid_tariff: mode.startsWith('net_') ? (tH ? tH.kind : null) : undefined,
+          prices: (row && !gap)
             ? Array.from({ length: 24 }, (_, h) => ({
                 hour: h,
-                price: row[h] === undefined ? null : +cvt(row[h], h, mode, enCharges, tH).toFixed(4),
+                price: row[h] === undefined ? null : +cvt(row[h], h, mode, enD, tH && tH.hourly).toFixed(4),
               }))
             : null,
         });
       }
       return jsonResponse({
         area, mode, start: qStart, end: qEnd, unit: 'DKK/kWh',
+        charges: chargeBasis,
         days_returned: days.length,
         days_with_data: days.filter(d => d.prices).length,
+        ...(noTariff ? { days_without_grid_tariff: noTariff } : {}),
         days,
       }, { maxAge: priceTtl(range.end), request });
     }
@@ -982,6 +1186,8 @@ export async function onRequest(context) {
       // change hourly → cap freshness at the next hour boundary.
       return jsonResponse({
         area, mode, date: dateStr, unit: 'DKK/kWh',
+        charges: chargeBasis,
+        ...(mode.startsWith('net_') ? { grid_tariff: tariffH ? tariffH.kind : null } : {}),
         prices: hourlyPrices.map((price, hour) => ({ hour, price })),
         // Only meaningful for today — on a historical date there is no
         // "current" hour, and reporting one invites it to be read as a price
@@ -1138,9 +1344,11 @@ function cvtForecast(dkkMwh, h, mode, en) {
   switch (mode) {
     case 'spot_ex':        return spot;
     case 'spot_inkl':      return spot * 1.25;
-    case 'inkl_alt':       return (spot + en.sys + en.trans + en.afg) * 1.25;
+    // The net_ modes fall through to the untariffed sum on purpose: a grid
+    // tariff for a day that has not happened would have to be guessed, and
+    // this endpoint says so rather than inventing one.
     case 'inkl_alt_minus': return (spot + en.sys + en.trans) * 1.25;
-    default:               return spot * 1.25;
+    default:               return (spot + en.sys + en.trans + en.afg) * 1.25;
   }
 }
 
@@ -1538,11 +1746,16 @@ async function handleForecast(area, mode, request, env) {
   const start = new Date(dkNow.getTime() - 28 * 86_400_000);
   const end   = new Date(dkNow.getTime() + 2 * 86_400_000); // Include tomorrow
 
-  const [historicalPrices, enCharges] = await Promise.all([
+  const [historicalPrices, chargeHistory] = await Promise.all([
     cached(`forecast-prices-${area}-${fmtUTC(start)}-${fmtUTC(end)}`, 30 * 60_000,
       () => fetchHistoricalPrices(area, fmtUTC(start), fmtUTC(end))),
-    cached('encharges', 60 * 60_000, fetchEnCharges),
+    cached('charge-history', 6 * 60 * 60_000, fetchChargeHistory),
   ]);
+  // A forecast is about days that have not happened, so the rates in force
+  // today are the right ones — but the reduced duty still has to follow the
+  // mode, or an elvarme forecast would be priced at the ordinary duty.
+  const enCharges = chargesOn(chargeHistory, fmtUTC(new Date()),
+                              { reduced: usesReducedTax(mode) });
 
   let days = buildForecast(historicalPrices, mode, enCharges);
 
