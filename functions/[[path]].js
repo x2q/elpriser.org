@@ -626,6 +626,36 @@ export async function onRequest(context) {
     });
   }
 
+  // ── URL normalisation ───────────────────────────────────────────────────
+  // Every page had a silent twin. `_routes.json` only listed the canonical
+  // spellings, so anything else — a trailing slash, the wrong case, a path
+  // that no longer exists — fell through to Pages' SPA fallback and was served
+  // index.html with HTTP 200 and the *homepage's* canonical tag. Google reports
+  // exactly that as "Alternate page with proper canonical tag": a page it
+  // fetched successfully, then dropped because the page told it to look
+  // elsewhere. The canonical tag was doing its job; the URL should never have
+  // answered 200 in the first place.
+
+  // Trailing slash: /dk1/ and /dk1 are the same page, so say so with a 301
+  // rather than serving both and letting a link tag arbitrate.
+  if (url.pathname.length > 1 && url.pathname.endsWith('/')) {
+    const to = new URL(url);
+    to.pathname = url.pathname.replace(/\/+$/, '') || '/';
+    return new Response(null, { status: 301, headers: { 'Location': to.toString() } });
+  }
+
+  // Case: paths are lowercase by construction, so /DK1 is a typo for a real
+  // page rather than a page of its own. Only redirect when the lowercase form
+  // actually exists — otherwise it falls through to the 404 below.
+  if (/[A-Z]/.test(url.pathname)) {
+    const lower = url.pathname.toLowerCase();
+    if (isKnownPath(lower)) {
+      const to = new URL(url);
+      to.pathname = lower;
+      return new Response(null, { status: 301, headers: { 'Location': to.toString() } });
+    }
+  }
+
   // Static routes (sitemap, robots, og-image)
   const staticRoute = STATIC_ROUTES[url.pathname];
   if (staticRoute) {
@@ -651,7 +681,7 @@ export async function onRequest(context) {
     }
     // Unknown net under a valid area → 404 not redirect, so we don't serve
     // a generic index with wrong metadata.
-    return new Response('Not found', { status: 404 });
+    return notFound();
   }
 
   // Homepage — server-render the live price snapshot into the HTML.
@@ -673,7 +703,60 @@ export async function onRequest(context) {
     return renderSPA(context, url.pathname, page, opts);
   }
 
-  return context.next();
+  // A real file still passes through. Anything else is not a page here, and
+  // must say so: serving the SPA shell with a 200 is what put these URLs in
+  // front of Google to begin with.
+  if (/\.[a-z0-9]{2,5}$/i.test(url.pathname)) return context.next();
+  return notFound();
+}
+
+/** Paths that resolve to a page, for the case-normalising redirect. */
+function isKnownPath(path) {
+  if (path === '/' || SEO_PAGES[path] || STATIC_ROUTES[path]) return true;
+  const m = path.match(/^\/(dk[12])\/([a-z0-9-]+)$/);
+  return !!(m && NETS[m[1].toUpperCase()].some(n => n.slug === m[2]));
+}
+
+function notFound() {
+  // Inline styles, not Tailwind classes. This markup is generated in the
+  // Function, so Tailwind never scans it and the purged stylesheet does not
+  // contain the utilities it would need — max-w-lg, py-20 and text-5xl are all
+  // absent from style.css today.
+  const body = `<!doctype html><html lang="da"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Siden findes ikke — elpriser.org</title>
+<style>
+  :root { color-scheme: light dark; --bg:#f9fafb; --fg:#111827; --muted:#6b7280; --dim:#d1d5db; --link:#0ea5e9; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0b1220; --fg:#f3f4f6; --muted:#9ca3af; --dim:#374151; }
+  }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:32rem; margin:0 auto; padding:5rem 1rem; text-align:center; }
+  .code { font-size:3rem; font-weight:700; color:var(--dim); margin:0; }
+  h1 { font-size:1.25rem; margin:1rem 0 .5rem; }
+  p.lead { color:var(--muted); font-size:.875rem; margin:0; }
+  nav { margin-top:1.5rem; font-size:.875rem; }
+  a { color:var(--link); }
+</style>
+</head><body>
+<main>
+  <p class="code">404</p>
+  <h1>Siden findes ikke</h1>
+  <p class="lead">Adressen fører ikke til en side her. Prøv en af disse:</p>
+  <nav>
+    <a href="/">Forsiden</a> ·
+    <a href="/dk1">DK1</a> ·
+    <a href="/dk2">DK2</a> ·
+    <a href="/tariffer">Nettariffer</a> ·
+    <a href="/api">API</a>
+  </nav>
+</main></body></html>`;
+  return new Response(body, {
+    status: 404,
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+  });
 }
 
 // ─── Homepage SSR with live-price injection ────────────────────────────────

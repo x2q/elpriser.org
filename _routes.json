@@ -1,35 +1,17 @@
 {
   "version": 1,
   "include": [
-    "/",
-    "/api",
-    "/api/*",
-    "/sitemap.xml",
-    "/robots.txt",
-    "/llms.txt",
-    "/llms-full.txt",
-    "/og-image",
-    "/dk1",
-    "/dk2",
-    "/dk1/*",
-    "/dk2/*",
-    "/tariffer",
-    "/automation",
-    "/prognose",
-    "/om-elpriser",
-    "/shelly-tariff",
-    "/blog/*",
-    "/no1",
-    "/no2",
-    "/no3",
-    "/no4",
-    "/no5",
-    "/se1",
-    "/se2",
-    "/se3",
-    "/se4",
-    "/fi",
-    "/nl"
+    "/*"
   ],
-  "exclude": []
+  "exclude": [
+    "/style.css",
+    "/favicon.ico",
+    "/favicon.svg",
+    "/favicon-32.png",
+    "/favicon-192.png",
+    "/favicon-512.png",
+    "/apple-touch-icon.png",
+    "/og-image.png",
+    "/ElpriserApp/*"
+  ]
 }

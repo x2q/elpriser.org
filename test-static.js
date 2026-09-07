@@ -149,14 +149,51 @@ test('crawlable: sitemap includes per-net URLs with reduced priority', () => {
   assert.ok(indexNets.DK1.length > 0 && indexNets.DK2.length > 0);
 });
 
-test('crawlable: _routes.json includes /dk1/* and /dk2/* (not just /dk1, /dk2)', () => {
-  // Cloudflare Pages only runs the function for paths listed here.
-  // /dk1/n1 needs /dk1/* — an exact match on /dk1 doesn't cover sub-paths.
+// Cloudflare Pages only runs the function for paths matched by _routes.json.
+// A path that misses it is served straight from static assets, which for this
+// project means index.html with HTTP 200 and the homepage's canonical tag —
+// the function never gets to redirect it, 404 it, or give it its own metadata.
+// Assert coverage of the paths that matter rather than the literal patterns,
+// so this keeps holding whether the include list is enumerated or a catch-all.
+function routeMatches(pattern, p) {
+  return pattern.endsWith('/*')
+    ? p === pattern.slice(0, -2) || p.startsWith(pattern.slice(0, -1))
+    : pattern === p;
+}
+
+function routedByFunction(routes, p) {
+  if ((routes.exclude || []).some(x => routeMatches(x, p))) return false;
+  return routes.include.some(x => routeMatches(x, p));
+}
+
+test('crawlable: _routes.json routes every page through the function', () => {
   const routes = JSON.parse(fs.readFileSync(path.join(ROOT, '_routes.json'), 'utf8'));
-  assert.ok(routes.include.includes('/dk1/*'),
-    '_routes.json must include "/dk1/*" — per-net URLs will not be rendered by the function');
-  assert.ok(routes.include.includes('/dk2/*'),
-    '_routes.json must include "/dk2/*" — per-net URLs will not be rendered by the function');
+  const indexNets = getNetsFromIndex();
+  const paths = [
+    '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose',
+    '/om-elpriser', '/shelly-tariff', '/sitemap.xml', '/robots.txt',
+    '/no1', '/se1', '/fi', '/nl',
+    ...indexNets.DK1.map(s => `/dk1/${s}`),
+    ...indexNets.DK2.map(s => `/dk2/${s}`),
+    // Variants that must reach the function so it can normalise them; served
+    // statically they answer 200 and point their canonical at the homepage,
+    // which is what Search Console reports as "Alternate page with proper
+    // canonical tag".
+    '/dk1/', '/se1/', '/tariffer/', '/dk1/n1/', '/DK1', '/findes-ikke',
+  ];
+  paths.forEach(p => {
+    assert.ok(routedByFunction(routes, p),
+      `_routes.json does not route "${p}" through the function`);
+  });
+});
+
+test('crawlable: _routes.json keeps static assets off the function', () => {
+  const routes = JSON.parse(fs.readFileSync(path.join(ROOT, '_routes.json'), 'utf8'));
+  ['/style.css', '/favicon.ico', '/favicon.svg', '/og-image.png',
+   '/apple-touch-icon.png'].forEach(p => {
+    assert.ok(!routedByFunction(routes, p),
+      `_routes.json sends "${p}" through the function — it should be served directly`);
+  });
 });
 
 test('crawlable: net-URL pattern in functions matches /dk[12]/slug', () => {
