@@ -9,3 +9,4 @@ data-backup/
 # Xcode
 xcuserdata/
 *.xcuserstate
+dist/

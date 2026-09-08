@@ -781,13 +781,13 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         <div class="site-guides-menu" id="guidesMenu" hidden>
           <a href="/blog/forsta-din-elpris">Forstå din elpris</a>
           <a href="/blog/hvornaar-er-stroemmen-billigst">Hvornår er strømmen billigst?</a>
-    <a href="/blog/groennest-og-dyrest">Grønnest og dyrest</a>
           <a href="/blog/groennest-og-dyrest">Grønnest og dyrest på samme tid</a>
           <a href="/blog/elafgift-2028">Elafgift 2028</a>
           <a href="/blog/home-assistant-elpriser">Home Assistant</a>
           <a href="/blog/shelly-elpris-automation">Shelly automation</a>
           <a href="/blog/v2g-v2h-bidirektional-opladning">V2G &amp; V2H</a>
           <a href="/blog/biler-ladere-v2h-v2g">Biler &amp; ladere</a>
+          <a href="/blog">Alle guides</a>
           <a href="/om-elpriser">Om elpriser</a>
         </div>
       </div>
@@ -812,6 +812,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <a href="/blog/shelly-elpris-automation">Shelly automation</a>
     <a href="/blog/v2g-v2h-bidirektional-opladning">V2G &amp; V2H</a>
     <a href="/blog/biler-ladere-v2h-v2g">Biler &amp; ladere</a>
+    <a href="/blog">Alle guides</a>
     <a href="/om-elpriser">Om elpriser</a>
   </div>
 </header>
@@ -1772,6 +1773,61 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 </main>
 
 <!-- ═══════ BLOG: Forstå din elpris ═══════ -->
+<main style="display:none" data-page="blog" class="max-w-2xl mx-auto px-4 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <div class="page-eyebrow">Guides og analyser</div>
+      <h1 class="page-title">Blog</h1>
+    </div>
+    <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
+      <svg width="20" height="20" class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+  <p class="text-sm text-gray-600 dark:text-gray-400 mb-5">Baggrund og analyser om danske elpriser — hvordan prisen bliver til, hvornår den er lav, og hvordan du automatiserer forbruget efter den.</p>
+  <div class="space-y-3">
+    <a href="/blog/groennest-og-dyrest" class="card block p-4">
+      <div class="page-eyebrow">1. august 2026</div>
+      <h2 class="text-base font-bold text-gray-900 dark:text-white mt-1 leading-snug">Hvorfor er strømmen grønnest netop i den dyreste time?</h2>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">Døgnets dyreste time er ofte også den grønneste, mens den billigste er blandt de mest CO₂-tunge. 22.504 timers data forklarer hvorfor.</p>
+    </a>
+    <a href="/blog/hvornaar-er-stroemmen-billigst" class="card block p-4">
+      <div class="page-eyebrow">28. juli 2026</div>
+      <h2 class="text-base font-bold text-gray-900 dark:text-white mt-1 leading-snug">Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret</h2>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">Døgnets billigste time ligger nu midt på dagen på 68 % af dagene mod 23 % om natten. Hvad det betyder for elbil og varmepumpe.</p>
+    </a>
+    <a href="/blog/elafgift-2028" class="card block p-4">
+      <div class="page-eyebrow">24. juli 2026</div>
+      <h2 class="text-base font-bold text-gray-900 dark:text-white mt-1 leading-snug">Elafgift 2028: Sådan stiger elafgiften igen</h2>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">Afgiften er sænket til 0,8 øre/kWh i 2026-2027, men stiger igen fra 2028. Satserne, og hvad de gør ved din elregning.</p>
+    </a>
+    <a href="/blog/forsta-din-elpris" class="card block p-4">
+      <div class="page-eyebrow">24. juli 2026</div>
+      <h2 class="text-base font-bold text-gray-900 dark:text-white mt-1 leading-snug">Forstå din elpris</h2>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">Spotpris, nettarif, elafgift og moms — hvad de enkelte led er, hvorfor DK1 og DK2 er forskellige, og hvor du kan flytte forbrug.</p>
+    </a>
+    <a href="/blog/home-assistant-elpriser" class="card block p-4">
+      <div class="page-eyebrow">24. juli 2026</div>
+      <h2 class="text-base font-bold text-gray-900 dark:text-white mt-1 leading-snug">Home Assistant &amp; elpriser</h2>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">REST-sensorer, automations og dashboards med danske elpriser, så forbruget selv flytter sig til de billige timer.</p>
+    </a>
+    <a href="/blog/shelly-elpris-automation" class="card block p-4">
+      <div class="page-eyebrow">24. juli 2026</div>
+      <h2 class="text-base font-bold text-gray-900 dark:text-white mt-1 leading-snug">Shelly &amp; elpriser</h2>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">Styr Shelly Plus, Pro og Plug efter spotprisen med det gratis API — script- og tidsbaseret automation.</p>
+    </a>
+    <a href="/blog/v2g-v2h-bidirektional-opladning" class="card block p-4">
+      <div class="page-eyebrow">24. juli 2026</div>
+      <h2 class="text-base font-bold text-gray-900 dark:text-white mt-1 leading-snug">V2G, V2H og V2L forklaret</h2>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">Hvordan bidirektional opladning virker, og hvad elbilen kan levere tilbage til hus og net.</p>
+    </a>
+    <a href="/blog/biler-ladere-v2h-v2g" class="card block p-4">
+      <div class="page-eyebrow">24. juli 2026</div>
+      <h2 class="text-base font-bold text-gray-900 dark:text-white mt-1 leading-snug">Elbiler og ladere med V2H/V2G</h2>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">Opdateret liste over biler og bidirektionale ladere der understøtter V2L, V2H og V2G.</p>
+    </a>
+  </div>
+</main>
+
 <main style="display:none" data-page="blog-forsta-din-elpris" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <div>
@@ -2992,6 +3048,7 @@ const PATH_ROUTES={
   '/tariffer':'tariffer','/automation':'automation','/api':'api','/shelly-tariff':'shelly-tariff',
   '/om-elpriser':'om-elpriser','/prognose':'prognose',
   '/no1':'no1','/no2':'no2','/no3':'no3','/no4':'no4','/no5':'no5','/se1':'se1','/se2':'se2','/se3':'se3','/se4':'se4','/fi':'fi','/nl':'nl',
+  '/blog':'blog',
   '/blog/forsta-din-elpris':'blog/forsta-din-elpris',
   '/blog/shelly-elpris-automation':'blog/shelly-elpris-automation',
   '/blog/home-assistant-elpriser':'blog/home-assistant-elpriser',
@@ -3054,6 +3111,7 @@ function route(){
   if(h==='api'){document.querySelector('[data-page="api"]').classList.add('active');document.title='elpriser.org API — Gratis JSON API for danske elpriser';pv('API','/api');return;}
   if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — Tibber-kompatibel elpris-JSON';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}
   if(h==='om-elpriser'){document.querySelector('[data-page="om-elpriser"]').classList.add('active');document.title='Om elpriser i Danmark — Spotpris, tariffer og afgifter';pv('Om elpriser','/om-elpriser');return;}
+  if(h==='blog'){document.querySelector('[data-page="blog"]').classList.add('active');document.title='Blog — Guides og analyser om elpriser';pv('Blog','/blog');return;}
   if(h==='blog/forsta-din-elpris'){document.querySelector('[data-page="blog-forsta-din-elpris"]').classList.add('active');document.title='Forstå din elpris — Guide til spotpris og tariffer';pv('Blog: Forstå din elpris','/blog/forsta-din-elpris');return;}
   if(h==='blog/shelly-elpris-automation'){document.querySelector('[data-page="blog-shelly-elpris-automation"]').classList.add('active');document.title='Shelly & elpriser — Automatisér forbrug efter spotpris';pv('Blog: Shelly automation','/blog/shelly-elpris-automation');return;}
   if(h==='blog/home-assistant-elpriser'){document.querySelector('[data-page="blog-home-assistant-elpriser"]').classList.add('active');document.title='Home Assistant & elpriser — Smart elforbrug i Danmark';pv('Blog: Home Assistant','/blog/home-assistant-elpriser');return;}

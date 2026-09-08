@@ -166,6 +166,22 @@ function routedByFunction(routes, p) {
   return routes.include.some(x => routeMatches(x, p));
 }
 
+test('crawlable: every SEO_PAGES hash maps to a data-page section', () => {
+  // A page whose hash is missing from HASH_TO_DATA_PAGE silently renders the
+  // homepage section under its own title — the URL is right, the canonical is
+  // right, and the body is the wrong page. /blog shipped that way for one
+  // deploy, so assert the mapping rather than trusting it.
+  const hashes = [...ROUTES.matchAll(/hash:\s*'#([^']+)'/g)].map(m => m[1]);
+  const mapBlock = ROUTES.match(/const HASH_TO_DATA_PAGE = \{([\s\S]*?)\n\};/);
+  assert.ok(mapBlock, 'HASH_TO_DATA_PAGE not found in functions/[[path]].js');
+  hashes.forEach(h => {
+    // DK1/DK2 price hashes are resolved by pattern, not by the map.
+    if (/^DK[12]\//.test(h)) return;
+    assert.ok(mapBlock[1].includes(`'${h}':`),
+      `HASH_TO_DATA_PAGE missing "${h}" — that page will serve the start section`);
+  });
+});
+
 test('crawlable: _routes.json routes every page through the function', () => {
   const routes = JSON.parse(fs.readFileSync(path.join(ROOT, '_routes.json'), 'utf8'));
   const indexNets = getNetsFromIndex();

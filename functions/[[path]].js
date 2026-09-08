@@ -120,6 +120,11 @@ const SEO_PAGES = {
     description: 'Vis aktuelle danske elpriser direkte på din Shelly med Live Tariff: Tibber-kompatibel JSON fra elpriser.org, opdateret time for time inkl. nettarif, elafgift og moms.',
     hash: '#shelly-tariff',
   },
+  '/blog': {
+    title: 'Blog — Guides og analyser om elpriser',
+    description: 'Baggrund og analyser om danske elpriser: hvordan prisen bliver til, hvornår strømmen er billigst og grønnest, elafgiften frem mod 2028, og hvordan du automatiserer forbruget med Home Assistant, Shelly og V2G.',
+    hash: '#blog',
+  },
   '/blog/forsta-din-elpris': {
     title: 'Forstå din elpris — Guide til spotpris og tariffer',
     description: 'Komplet guide til elpriser i Danmark: spotpris, nettarif, elafgift, DK1 vs DK2, hvornår strømmen er billigst, negative elpriser og sådan sparer du penge.',
@@ -207,6 +212,7 @@ for (const area of ['DK1', 'DK2']) {
 
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff',
+  '/blog',
   '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
   '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028', '/no1', '/no2', '/no3', '/no4', '/no5', '/se1', '/se2', '/se3', '/se4', '/fi', '/nl', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
   ...NET_URLS,
@@ -240,6 +246,7 @@ const CONTENT_LASTMOD = {
   '/nl': '2026-08-01',
   '/blog/hvornaar-er-stroemmen-billigst': '2026-07-28',
   '/blog/groennest-og-dyrest': '2026-08-01',
+  '/blog': '2026-08-01',   // the newest post it lists
 };
 
 function buildSitemap() {
@@ -703,12 +710,22 @@ export async function onRequest(context) {
     return renderSPA(context, url.pathname, page, opts);
   }
 
-  // A real file still passes through. Anything else is not a page here, and
-  // must say so: serving the SPA shell with a 200 is what put these URLs in
-  // front of Google to begin with.
-  if (/\.[a-z0-9]{2,5}$/i.test(url.pathname)) return context.next();
+  // Static assets pass through by name, not by "looks like a filename".
+  // Matching any extension meant every path with a dot in it was handed to the
+  // asset server — which, while the whole repository was being deployed, served
+  // the Python scripts, the test files and wrangler.toml over HTTPS. The build
+  // no longer ships those, and this makes a stray file unreachable rather than
+  // merely unlinked. Keep in step with the exclude list in _routes.json.
+  if (STATIC_ASSETS.has(url.pathname)) return context.next();
   return notFound();
 }
+
+// The complete set of files served as-is. Anything not listed 404s.
+const STATIC_ASSETS = new Set([
+  '/style.css', '/favicon.ico', '/favicon.svg', '/favicon-32.png',
+  '/favicon-192.png', '/favicon-512.png', '/apple-touch-icon.png',
+  '/og-image.png',
+]);
 
 /** Paths that resolve to a page, for the case-normalising redirect. */
 function isKnownPath(path) {
@@ -928,7 +945,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v30');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v31');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -967,6 +984,7 @@ async function renderHomepage(context) {
 // <title> for e.g. "Tariffer" wrapped around the *homepage's* visible content,
 // which is a plausible cause of it collapsing these URLs onto one canonical.
 const HASH_TO_DATA_PAGE = {
+  'blog': 'blog',
   'tariffer': 'tariffer',
   'automation': 'automation',
   'api': 'api',
