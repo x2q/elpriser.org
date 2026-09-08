@@ -11,7 +11,8 @@
     "test:regressions": "node test-regressions.js",
     "test:pre-commit": "node test-static.js && node test-e2e.js && node test-regressions.js",
     "deploy": "bash scripts/build-dist.sh && npx wrangler pages deploy dist --project-name=elpriser-org",
-    "build": "bash scripts/build-dist.sh"
+    "build": "bash scripts/build-dist.sh",
+    "test:urls": "node test-urls.js"
   },
   "devDependencies": {
     "playwright": "^1.59.1"

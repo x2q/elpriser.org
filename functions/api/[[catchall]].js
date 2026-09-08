@@ -10,6 +10,8 @@
  *   /api/shelly/tariff?area=DK1&mode=inkl_alt[&gln=...]   → Tibber-compatible JSON
  */
 
+import { activateDataPage, stripInactiveMains, promoteSectionTitle } from '../_spa.js';
+
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -936,8 +938,15 @@ export async function onRequest(context) {
     const url   = 'https://elpriser.org/api';
     // Server-side equivalent of the client router's classList.add('active') —
     // otherwise the crawlable HTML shows the homepage section under an "API" title.
-    html = html.replace('<main data-page="start" class="active">', '<main data-page="start" class="">');
-    html = html.replace('<main data-page="api" class="', '<main data-page="api" class="active ');
+    // Activate the API section and drop the other 17. Without the strip this
+    // page shipped every section of the site — 18 <main> elements and 10 <h1>
+    // elements under the API title — which is both the duplicate-body problem
+    // stripInactiveMains exists to prevent and, at ~350 KB, six times the page
+    // it should be. The old replace also never matched: the markup carries an
+    // inline display:none before the data-page attribute.
+    html = activateDataPage(html, 'api');
+    html = stripInactiveMains(html, 'api');
+    html = promoteSectionTitle(html);
     html = html.replace(/<title>[^<]*<\/title>/,                         `<title>${title}</title>`);
     html = html.replace(/<meta name="description" content="[^"]*">/,    `<meta name="description" content="${desc}">`);
     html = html.replace(/<link rel="canonical" href="[^"]*">/,          `<link rel="canonical" href="${url}">`);
@@ -1274,32 +1283,6 @@ export async function onRequest(context) {
 
 // ── Forecast endpoint ────────────────────────────────────────────────────────
 
-async function fetchHistoricalPrices(area, startDate, endDate) {
-  const f = encodeURIComponent(JSON.stringify({ PriceArea: area }));
-  const res = await fetch(
-    `https://api.energidataservice.dk/dataset/DayAheadPrices` +
-    `?start=${startDate}&end=${endDate}&filter=${f}&sort=TimeDK%20asc&limit=0`
-  );
-  const j = await res.json();
-  // Group by date → hour → average price (DKK/MWh)
-  const g = {};
-  for (const r of (j.records || [])) {
-    const dt = new Date(r.TimeDK);
-    const dk = fmtUTC(dt);
-    const h  = dt.getUTCHours();
-    (g[dk] ??= {})[h] ??= [];
-    g[dk][h].push(r.DayAheadPriceDKK);
-  }
-  const out = {};
-  for (const dk in g) {
-    out[dk] = {};
-    for (const h in g[dk]) {
-      const v = g[dk][h];
-      out[dk][h] = v.reduce((a, b) => a + b, 0) / v.length;
-    }
-  }
-  return out;
-}
 
 function buildForecast(historicalPrices, mode, enCharges) {
   const dkNow = danishNow();
@@ -1789,9 +1772,16 @@ async function handleForecast(area, mode, request, env) {
   const start = new Date(dkNow.getTime() - 28 * 86_400_000);
   const end   = new Date(dkNow.getTime() + 2 * 86_400_000); // Include tomorrow
 
+  // Prices come from the same archive-first loader as every other endpoint.
+  // This was the last place still fetching Energi Data Service live, and on
+  // 2026-08-26 they rotated their certificate and began serving the leaf
+  // without its intermediate. curl fetches the missing intermediate over AIA
+  // and does not notice; Cloudflare does not, and answered every forecast
+  // request with 526 — which arrived here as a JSON parse error and left the
+  // endpoint returning 500 for days. Reading the archive removes the
+  // dependency rather than working around their chain.
   const [historicalPrices, chargeHistory] = await Promise.all([
-    cached(`forecast-prices-${area}-${fmtUTC(start)}-${fmtUTC(end)}`, 30 * 60_000,
-      () => fetchHistoricalPrices(area, fmtUTC(start), fmtUTC(end))),
+    loadPrices(area, fmtUTC(start), fmtUTC(end), env),
     edgeCached('charge-history-v1', 6 * 3600, fetchChargeHistory, env),
   ]);
   // A forecast is about days that have not happened, so the rates in force

@@ -1,3 +1,5 @@
+import { activateDataPage, stripInactiveMains, promoteSectionTitle } from './_spa.js';
+
 const OG_IMAGE = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1019,32 +1021,6 @@ function dataPageForHash(hash) {
   return 'start';
 }
 
-// Server-side equivalent of route()'s `classList.add('active')` — makes the
-// pre-hydration HTML show the section that actually matches the URL/title,
-// instead of always showing the homepage section underneath a different title.
-function activateDataPage(html, dataPage) {
-  if (dataPage === 'start') return html;
-  // Non-start mains carry an inline display:none (keeps hidden pages' text out
-  // of Safari Reader's article detection) — swap it over to the start main and
-  // strip it from the page being activated.
-  html = html.replace('<main data-page="start" class="active">', '<main style="display:none" data-page="start" class="">');
-  html = html.replace(`<main style="display:none" data-page="${dataPage}" class="`, `<main data-page="${dataPage}" class="active `);
-  return html;
-}
-
-// Remove every <main> section except the active one. Each URL then serves ONLY
-// its own content (unique per URL, ~40 KB instead of ~260 KB) instead of the
-// whole SPA with 13 hidden sections — which Google saw as near-identical
-// duplicate bodies across all 28 URLs. The client router detects a missing
-// section and falls back to a full-page navigation (MPA-style), so in-page
-// hash routing keeps working within the served section.
-function stripInactiveMains(html, dataPage) {
-  return html.replace(
-    /<main[^>]*data-page="([^"]+)"[\s\S]*?<\/main>/g,
-    (block, page) => (page === dataPage ? block : '')
-  );
-}
-
 async function renderSPA(context, pathname, meta, opts = {}) {
   const pageUrl = `https://elpriser.org${pathname}`;
   const indexUrl = new URL('/', context.request.url);
@@ -1055,8 +1031,7 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   html = stripInactiveMains(html, dataPage);
   // Section titles are h2 in the shared markup (only one section per page
   // after stripping) — promote the served section's title to the page's h1.
-  html = html.replace(/<h2 class="page-title/, '<h1 class="page-title')
-             .replace(/(<h1 class="page-title[^>]*>[^<]*)<\/h2>/, '$1</h1>');
+  html = promoteSectionTitle(html);
   if (opts.pricesIntro) {
     html = html.replace('<!--SSR_PRICES_INTRO-->',
       await buildPricesIntro(context, opts.pricesIntro.area, opts.pricesIntro.net));
