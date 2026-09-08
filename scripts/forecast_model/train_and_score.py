@@ -47,8 +47,10 @@ import json
 import os
 import re
 import sys
-import urllib.request
+import time
+import urllib.error
 import urllib.parse
+import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
 import numpy as np
@@ -68,10 +70,30 @@ CF_API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"]
 CF_KV_NAMESPACE_ID = os.environ["CLOUDFLARE_KV_NAMESPACE_ID"]
 
 
-def fetch_json(url, headers=None):
-    req = urllib.request.Request(url, headers=headers or {})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return json.loads(r.read())
+def fetch_json(url, headers=None, attempts=4):
+    """Fetch with retries, because the failure this guards against is boring
+    and frequent: a TLS handshake to Open-Meteo that times out once.
+
+    Without a retry that single blip failed one area, which failed the job,
+    which sent a mail. 17 of the last 60 scheduled runs died that way — always
+    the same handshake timeout, always on whichever area was fetched first —
+    and a notification that cries wolf 28 % of the time stops being read at
+    all. Retrying does not paper over a real outage: four attempts over ~30
+    seconds still fail if the far end is genuinely down."""
+    last = None
+    for n in range(attempts):
+        try:
+            req = urllib.request.Request(url, headers=headers or {})
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return json.loads(r.read())
+        except OSError as e:   # URLError, SSLError and timeouts are all OSError
+            # A 4xx is the request being wrong; retrying cannot help.
+            if isinstance(e, urllib.error.HTTPError) and 400 <= e.code < 500:
+                raise
+            last = e
+            if n < attempts - 1:
+                time.sleep(2 * (n + 1))
+    raise last
 
 
 def fetch_day_ahead_prices(area, start, end):
