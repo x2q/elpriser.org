@@ -23,7 +23,7 @@ from datetime import date, timedelta
 import pandas as pd
 
 OUT = os.path.dirname(os.path.abspath(__file__))
-TOKEN = os.environ.get("ENTSOE_TOKEN", "a3f638e6-3312-4ebb-96c3-2b588516e41e")
+TOKEN = os.environ["ENTSOE_TOKEN"]
 
 HYDRO = {
     "no1": "10YNO-1--------2", "no2": "10YNO-2--------T", "no3": "10YNO-3--------J",

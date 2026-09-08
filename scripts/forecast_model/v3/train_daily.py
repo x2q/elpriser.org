@@ -50,8 +50,10 @@ Needs ~/.config/elpriser.env with CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN
 """
 import json
 import os
+import ssl
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
@@ -103,11 +105,50 @@ def env_creds():
             os.environ.get("HF_TOKEN"))
 
 
+# Energi Data Service periodically serves its leaf certificate without the
+# intermediate, and Python cannot fetch a missing intermediate the way browsers
+# and curl do over AIA. On 2026-09-08 that took out this job for a full day —
+# every retry failed identically, because the fault was upstream and constant
+# for hours. Energinet fixed it the same day, which is the point: it is their
+# transient misconfiguration, and it should not stop a price forecast.
+#
+# The fallback is deliberately narrow rather than a blanket unverified context:
+# it applies only to this host, and only after a verified attempt has failed
+# with this exact error. Normal operation stays fully verified, and any other
+# TLS failure is still an error. These are public wholesale prices that are
+# cross-checked against ENTSO-E elsewhere in the pipeline, so an unverified
+# read of them on the rare day Energinet breaks their chain is a smaller cost
+# than a day with no forecast.
+TLS_FALLBACK_HOSTS = ("api.energidataservice.dk",)
+
+
+def _unverified_ctx():
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+
 def fetch_json(url, tries=5, timeout=180):
+    ctx = None
     for i in range(tries):
         try:
-            with urllib.request.urlopen(url, timeout=timeout) as r:
+            with urllib.request.urlopen(url, timeout=timeout, context=ctx) as r:
                 return json.loads(r.read())
+        except urllib.error.URLError as e:
+            reason = getattr(e, "reason", e)
+            if (isinstance(reason, ssl.SSLCertVerificationError)
+                    and ctx is None
+                    and any(h in url for h in TLS_FALLBACK_HOSTS)):
+                print(f"    {urllib.parse.urlsplit(url).hostname} has a broken "
+                      f"certificate chain — retrying without verification", flush=True)
+                ctx = _unverified_ctx()
+                continue          # immediate retry, this is not a timing problem
+            if i == tries - 1:
+                raise
+            wait = 30 * (i + 1) if "429" in str(e) else 15
+            print(f"    retry in {wait}s: {e}", flush=True)
+            time.sleep(wait)
         except Exception as e:
             if i == tries - 1:
                 raise

@@ -12,7 +12,7 @@ from datetime import date, timedelta
 import pandas as pd
 
 OUT = os.path.dirname(os.path.abspath(__file__))
-TOKEN = os.environ.get("ENTSOE_TOKEN", "a3f638e6-3312-4ebb-96c3-2b588516e41e")
+TOKEN = os.environ["ENTSOE_TOKEN"]
 
 ZONES = {
     "dk1": "10YDK-1--------W", "dk2": "10YDK-2--------M",

@@ -1801,10 +1801,16 @@ async function handleForecast(area, mode, request, env) {
   if (env && env.PRICE_CACHE) {
     try {
       const isFresh = r => r && (r.generated === fmtUTC(dkNow) || r.generated === fmtUTC(new Date(dkNow.getTime() - 86_400_000)));
-      // v3 -> v2 -> v1 -> heuristic. Each generation writes its own KV key with
-      // a short TTL, so a stopped trainer expires out of the chain on its own
-      // and deleting a key is an instant rollback to the generation below.
-      for (const key of [`forecast-v3-${area}`, `forecast-v2-${area}`, `forecast-model-${area}`]) {
+      // v3, then the seasonal heuristic already in `days`.
+      //
+      // v2 and v1 used to sit between them. v2's key stopped being written some
+      // time ago and reads 404; v1 was trained by a GitHub Action that has been
+      // retired, so its key expires on its own. Listing keys nothing writes is
+      // not a safety net — it reads as one while doing nothing, which is worse
+      // than no net at all. v3 is trained daily on its own host and its key has
+      // a short TTL, so if it stops the chain falls through to the heuristic
+      // rather than serving a stale forecast.
+      for (const key of [`forecast-v3-${area}`]) {
         const m = await env.PRICE_CACHE.get(key, 'json');
         if (isFresh(m)) { days = applyModelForecast(days, m, mode, enCharges); break; }
       }

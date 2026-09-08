@@ -28,6 +28,8 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+
+import eds_tls
 from collections import defaultdict
 
 KV_NAMESPACE = "126700e66e8d4a19b289b0e8afdaff69"
@@ -40,7 +42,7 @@ def fetch(params, attempts=5):
     url = EDS + "?" + urllib.parse.urlencode(params)
     for n in range(attempts):
         try:
-            with urllib.request.urlopen(url, timeout=300) as r:
+            with eds_tls.urlopen(url, timeout=300) as r:
                 j = json.loads(r.read())
         except Exception as e:
             if n == attempts - 1:

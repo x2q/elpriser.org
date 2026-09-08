@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""
+"""RETIRED 2026-09-08. Kept for reference; nothing runs it.
+
+This trained the v1 model from a daily GitHub Action, writing forecast-model-*
+to KV as the last tier of the Worker's fallback chain. v3 (scripts/forecast_model/v3/)
+supersedes it and trains daily on its own host with a far richer feature set.
+
+The Action was retired because it had become a source of false alarms rather
+than a safety net: it emailed on failure, and 17 of its last 60 runs failed on
+transient network faults in a fallback nobody was reading.
+
 Trains a fresh LightGBM quantile price model each run (no model persistence
 needed — training takes seconds) and writes a 7-day forecast per area to
 Cloudflare KV, which functions/api/[[catchall]].js reads with a fallback to

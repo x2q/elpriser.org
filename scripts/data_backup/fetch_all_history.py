@@ -33,7 +33,7 @@ import pandas as pd
 # has anything in it over Pages' 25MiB per-file limit (learned the hard way).
 OUT_DIR = os.environ.get("BACKUP_OUT_DIR", os.path.expanduser("~/elpriser-data-backup"))
 JAO_TOKEN = os.environ.get("JAO_TOKEN", "66d45fc6-a2ce-499b-9d81-b92de7c8bb97")
-ENTSOE_TOKEN = os.environ.get("ENTSOE_TOKEN", "a3f638e6-3312-4ebb-96c3-2b588516e41e")
+ENTSOE_TOKEN = os.environ["ENTSOE_TOKEN"]
 DE_LU_EIC = "10Y1001A1001A82H"
 DK_EIC = {"DK1": "10YDK-1--------W", "DK2": "10YDK-2--------M"}
 

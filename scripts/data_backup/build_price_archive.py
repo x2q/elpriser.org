@@ -22,6 +22,8 @@ import sys
 import urllib.parse
 import urllib.request
 
+import eds_tls
+
 import pandas as pd
 
 KV_NAMESPACE = "126700e66e8d4a19b289b0e8afdaff69"
@@ -52,7 +54,7 @@ def fetch_recent(area, start):
            f"&filter=%7B%22PriceArea%22%3A%22{area.upper()}%22%7D"
            "&sort=TimeDK%20asc&limit=0")
     try:
-        with urllib.request.urlopen(url, timeout=180) as r:
+        with eds_tls.urlopen(url, timeout=180) as r:
             j = json.loads(r.read())
     except Exception as e:
         print(f"  {area}: EDS top-up failed ({e}) — archive ends at {start}", flush=True)
