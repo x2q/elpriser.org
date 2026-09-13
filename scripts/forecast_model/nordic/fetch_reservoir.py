@@ -23,7 +23,20 @@ from datetime import date, timedelta
 import pandas as pd
 
 OUT = os.path.dirname(os.path.abspath(__file__))
-TOKEN = os.environ["ENTSOE_TOKEN"]
+
+
+def _token():
+    """The ENTSO-E token, read when a request is made rather than at import.
+
+    Reading it at import crashed the Nordic cron job for five days: train_daily
+    imports this module before it loads ~/.config/elpriser.env, and cron does
+    not supply the variable either, so every run died on a KeyError before
+    fetching anything — silently, until the forecasts expired off the site."""
+    t = os.environ.get("ENTSOE_TOKEN")
+    if not t:
+        raise RuntimeError("ENTSOE_TOKEN is not set — source ~/.config/elpriser.env")
+    return t
+
 
 HYDRO = {
     "no1": "10YNO-1--------2", "no2": "10YNO-2--------T", "no3": "10YNO-3--------J",
@@ -37,7 +50,7 @@ START, END = date(2022, 1, 1), date.today() + timedelta(days=1)
 
 def fetch(eic, s, e):
     url = "https://web-api.tp.entsoe.eu/api?" + urllib.parse.urlencode({
-        "securityToken": TOKEN, "documentType": "A72", "processType": "A16",
+        "securityToken": _token(), "documentType": "A72", "processType": "A16",
         "in_Domain": eic,
         "periodStart": s.strftime("%Y%m%d0000"), "periodEnd": e.strftime("%Y%m%d0000"),
     })

@@ -12,7 +12,20 @@ from datetime import date, timedelta
 import pandas as pd
 
 OUT = os.path.dirname(os.path.abspath(__file__))
-TOKEN = os.environ["ENTSOE_TOKEN"]
+
+
+def _token():
+    """The ENTSO-E token, read when a request is made rather than at import.
+
+    Reading it at import crashed the Nordic cron job for five days: train_daily
+    imports this module before it loads ~/.config/elpriser.env, and cron does
+    not supply the variable either, so every run died on a KeyError before
+    fetching anything — silently, until the forecasts expired off the site."""
+    t = os.environ.get("ENTSOE_TOKEN")
+    if not t:
+        raise RuntimeError("ENTSOE_TOKEN is not set — source ~/.config/elpriser.env")
+    return t
+
 
 ZONES = {
     "dk1": "10YDK-1--------W", "dk2": "10YDK-2--------M",
@@ -27,7 +40,7 @@ START, END = date(2024, 1, 1), date.today() + timedelta(days=2)
 
 def fetch(eic, s, e):
     url = "https://web-api.tp.entsoe.eu/api?" + urllib.parse.urlencode({
-        "securityToken": TOKEN, "documentType": "A44",
+        "securityToken": _token(), "documentType": "A44",
         "in_Domain": eic, "out_Domain": eic,
         "periodStart": s.strftime("%Y%m%d0000"), "periodEnd": e.strftime("%Y%m%d0000"),
     })
