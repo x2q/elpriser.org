@@ -1251,6 +1251,43 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         </select>
       </div>
     </div>
+    <div class="mb-3">
+      <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1" for="autoDevice">Apparat</label>
+      <select id="autoDevice" oninput="onAutoDeviceChange()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+        <optgroup label="Kan styres efter pris">
+          <option value="ev_charger">Elbillader</option>
+          <option value="water_heater">Elvandvarmer</option>
+          <option value="heat_pump">Varmepumpe</option>
+          <option value="battery">Hjemmebatteri</option>
+          <option value="pool_pump">Pool- eller spapumpe</option>
+          <option value="water_pump">Vandpumpe (vanding eller tank)</option>
+        </optgroup>
+        <optgroup label="Kun kortvarigt">
+          <option value="fridge">Køleskab</option>
+          <option value="freezer">Fryser</option>
+        </optgroup>
+        <optgroup label="Bør ikke styres efter pris">
+          <option value="drain_pump">Dræn- eller pumpebrønd</option>
+          <option value="medical">Medicinsk udstyr</option>
+          <option value="cycle_appliance">Vaskemaskine, opvasker eller tørretumbler</option>
+          <option value="it_equipment">Computer, server eller netværk</option>
+        </optgroup>
+        <option value="other" selected>Andet / ved ikke</option>
+      </select>
+      <p id="autoDeviceAdvice" class="text-xs mt-2"></p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3" id="autoDevicePower">
+      <div>
+        <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1" for="autoRatedW">Effekt (W)</label>
+        <input type="number" id="autoRatedW" value="0" min="0" max="100000" step="10" oninput="updateAutoViz()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+      </div>
+      <div>
+        <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1" for="autoPhases">Faser</label>
+        <select id="autoPhases" oninput="updateAutoViz()" class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+          <option value="1">1-faset</option><option value="3">3-faset</option>
+        </select>
+      </div>
+    </div>
     <!-- Netselskab row — only shown for net_ modes. Shows every net across DK1+DK2;
          picking a net auto-switches the priszone to match. -->
     <div id="autoNetRow" class="mb-3" style="display:none">
@@ -1351,6 +1388,15 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       </div>
       <div class="relative"><pre id="exportShellyCode" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"></pre><button onclick="copyExport('shelly')" class="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition">Kopiér kode</button></div>
     </div>
+    <details class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+      <summary class="cursor-pointer font-semibold text-gray-700 dark:text-gray-300">Del regulerbar kapacitet (valgfrit)</summary>
+      <div class="mt-2">
+        <p>Begge eksporter indeholder en blok, der kan indsende, hvor mange watt elpriser.org styrer på din enhed. Den er <strong>slået fra</strong> i Shelly-scriptet (<code>SHARE_FLEX = false</code>) og er en separat blok i Home Assistant, som du selv skal tilføje.</p>
+        <p class="mt-2"><strong>Hvad der sendes:</strong> enhedens kategori (fx fryser, pumpe), prisområde (DK1/DK2), om den er tændt, hvad elpriser.org bad den om, målt effekt i watt og en tilfældig id dannet på enheden. <strong>Hvad der ikke sendes:</strong> navn, adresse, e-mail, MAC-adresse, serienummer eller IP-adresse — IP-adressen gemmes ikke.</p>
+        <p class="mt-2"><strong>Hvorfor:</strong> for at opgøre den samlede fleksible effekt, som elpriser.org-brugere tilsammen kan flytte, og på sigt at tilbyde den samlet til elhandlere og netselskaber. Kun summer på tværs af mange enheder deles — aldrig data om den enkelte enhed.</p>
+        <p class="mt-2"><strong>Opbevaring:</strong> målinger slettes efter 90 dage; derefter findes kun timesummer uden enheds-id. <strong>Stop og slet:</strong> sæt <code>SHARE_FLEX = false</code> eller fjern blokken. Alt om en enhed slettes med et POST til <code>https://elpriser.org/api/flex/forget</code> med <code>{"id": "…"}</code> — id'et findes i Shelly under <em>KVS → elpriser_flex_id</em>.</p>
+      </div>
+    </details>
   </div>
   <!-- Cross-links -->
   <div class="text-center text-xs text-gray-400 dark:text-gray-500">
@@ -3905,9 +3951,56 @@ function buildApiUrl(mode,area,strategy,param,param2,gln){
   const g=gln?`&gln=${gln}`:'';
   return base+p+g;
 }
+// Which appliances can and should be switched by price. `flex`:
+//   can      shift freely — storage or deadline-driven load
+//   short    only briefly; the script's safety limit turns it back on
+//   unknown  we cannot judge; the user decides
+//   no       must not be switched by price; no switching script is generated
+// Keys with flex other than 'no' must equal FLEX_CATEGORIES, and the 'no' keys
+// FLEX_UNSUITABLE, in functions/api/[[catchall]].js — test-static.js checks it.
+const FLEX_DEVICE_TYPES={
+  ev_charger:{label:'Elbillader',flex:'can',rated:11000,phases:3,maxOff:0,advice:'Velegnet. Vælg en strategi med mindst så mange timer, som bilen skal lade.'},
+  water_heater:{label:'Elvandvarmer',flex:'can',rated:3000,phases:1,maxOff:0,advice:'Særdeles velegnet. Tanken holder på varmen, så opvarmningen kan flyttes flere timer.'},
+  heat_pump:{label:'Varmepumpe',flex:'short',rated:2000,phases:1,maxOff:120,advice:'Velegnet i kortere perioder, fordi huset holder på varmen. Styr helst via SG Ready-indgangen eller varmepumpens egen app frem for at afbryde strømmen — mange kompressorer tåler ikke at blive slukket brat.'},
+  battery:{label:'Hjemmebatteri',flex:'can',rated:5000,phases:3,maxOff:0,advice:'Velegnet. Styr via inverterens API frem for et relæ.'},
+  pool_pump:{label:'Pool- eller spapumpe',flex:'can',rated:1100,phases:1,maxOff:0,advice:'Velegnet. Filtreringen skal blot nå sit antal timer i døgnet.'},
+  water_pump:{label:'Vandpumpe (vanding eller tank)',flex:'can',rated:1500,phases:3,maxOff:0,advice:'Velegnet, hvis der er en tank, eller vandingen kan vente. Leverer pumpen drikkevand uden tank, så vælg en kort strategi. Styres en 3-faset pumpe via kontaktor, måler relæet ikke selv — angiv effekten ovenfor.'},
+  fridge:{label:'Køleskab',flex:'short',rated:100,phases:1,maxOff:30,advice:'Kun kortvarigt. Scriptet tænder igen efter 30 minutter uanset pris, så maden holdes kold.'},
+  freezer:{label:'Fryser',flex:'short',rated:120,phases:1,maxOff:45,advice:'Kun kortvarigt. Scriptet tænder igen efter 45 minutter uanset pris.'},
+  other:{label:'Andet',flex:'unknown',rated:0,phases:1,maxOff:0,advice:'Vælg apparatet ovenfor for at få de rigtige indstillinger. Styr det kun, hvis det tåler at være slukket i flere timer.'},
+  drain_pump:{label:'Dræn- eller pumpebrønd',flex:'no',advice:'Bør ikke styres efter pris. En drænpumpe, der holdes slukket, kan give vand i kælderen. Der genereres ikke noget script.'},
+  medical:{label:'Medicinsk udstyr',flex:'no',advice:'Må aldrig styres efter pris. Der genereres ikke noget script.'},
+  cycle_appliance:{label:'Vaskemaskine, opvasker eller tørretumbler',flex:'no',advice:'Bør ikke styres med et relæ — afbrydes strømmen midt i et program, ødelægges det. Brug maskinens egen startforsinkelse til de billige timer i stedet.'},
+  it_equipment:{label:'Computer, server eller netværk',flex:'no',advice:'Bør ikke styres efter pris — det giver udfald og kan koste data. Der genereres ikke noget script.'},
+};
+function onAutoDeviceChange(){
+  const d=FLEX_DEVICE_TYPES[document.getElementById('autoDevice')?.value]||FLEX_DEVICE_TYPES.other;
+  if(d.flex!=='no'){
+    document.getElementById('autoRatedW').value=d.rated;
+    document.getElementById('autoPhases').value=String(d.phases);
+  }
+  updateAutoViz();
+}
 function generateExports(strategy,param,param2,daySchedules,dates,mode,gln){
   const area=document.getElementById('autoArea')?.value||'DK1';
   const entityId='elpris';
+  const flexKey=document.getElementById('autoDevice')?.value||'other';
+  const dev=FLEX_DEVICE_TYPES[flexKey]||FLEX_DEVICE_TYPES.other;
+  const flexCat=FLEX_DEVICE_TYPES[flexKey]?flexKey:'other';
+  const flexLabel=dev.label;
+  const flexRated=Math.max(0,Math.round(+(document.getElementById('autoRatedW')?.value||0)));
+  const flexPhases=document.getElementById('autoPhases')?.value==='3'?3:1;
+  const flexMaxOff=dev.maxOff||0;
+  const adv=document.getElementById('autoDeviceAdvice');
+  if(adv){
+    adv.textContent=dev.advice;
+    // Inline colours: this text is set from JS, so Tailwind never sees it and
+    // colour utilities would be purged from the stylesheet.
+    adv.style.color=dev.flex==='no'?'#dc2626':dev.flex==='can'?'#16a34a':'#d97706';
+    adv.style.fontWeight=dev.flex==='no'?'600':'';
+  }
+  const pw=document.getElementById('autoDevicePower');
+  if(pw)pw.style.display=dev.flex==='no'?'none':'';
   const labels={cheapest_n:`Billigste ${param} timer/dag`,cheapest_pct:`Billigste ${param}% af timer`,avoid_expensive_n:`Undgå dyreste ${param} timer/dag`,avoid_expensive_pct:`Undgå dyreste ${param}% af timer`,avoid_peak:'Undgå spidstimer (17-21)',night_cheap:'Kun nattetimer (23-06)',smart:`Undgå dyreste ${param} timer, men maks ${param2} i træk`};
   const stratLabel=labels[strategy]||strategy;
   const apiUrl=buildApiUrl(mode,area,strategy,param,param2,gln);
@@ -3966,7 +4059,42 @@ automation:
           {% else %}switch.turn_off{% endif %}
         target:
           entity_id: switch.${entityId}`;
-  setHighlighted(document.getElementById('exportHACode'),haCode,'yaml');
+  // A fresh random id per export, so two devices set up from this page are
+  // not merged into one. Nothing identifying goes into it.
+  const flexHaId=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now()).replace(/-/g,'');
+  const haFlex=`
+
+# ── Valgfrit: del regulerbar kapacitet med elpriser.org ─────────────────
+# Indsender kategori, prisområde, om kontakten er tændt, og effekt fra en
+# effektsensor, hvis du har en. Ingen navne, adresser eller IP-adresser.
+# Tilføj kun, hvis du vil dele. Slet blokken for at stoppe.
+# Brug én id pr. enhed — generér en ny ved at genindlæse siden.
+
+rest_command:
+  elpriser_flex_${entityId}:
+    url: "https://elpriser.org/api/flex/report"
+    method: POST
+    content_type: "application/json"
+    payload: >-
+      {"v":1,"id":"${flexHaId}","platform":"homeassistant",
+       "category":"${flexCat}","area":"${area}","phases":${flexPhases},
+       "rated_w":${flexRated},"max_off_min":${flexMaxOff},
+       "on":{{ is_state('switch.${entityId}','on') | lower }},
+       "commanded_on":{{ is_state('sensor.${entityId}_on','true') | lower }},
+       "power_w":{{ states('sensor.${entityId}_power') | float(none) | tojson }},
+       "measured":{{ (states('sensor.${entityId}_power') | float(none)) is not none | lower }}}
+
+automation:
+  - alias: "Del regulerbar kapacitet — ${entityId}"
+    trigger:
+      - platform: time_pattern
+        minutes: "/15"
+      - platform: state
+        entity_id: switch.${entityId}
+    action:
+      - service: rest_command.elpriser_flex_${entityId}`;
+  const noScript=c=>`${c} Intet script for ${dev.label.toLowerCase()}.\n${c} ${dev.advice}`;
+  setHighlighted(document.getElementById('exportHACode'),dev.flex==='no'?noScript('#'):haCode+haFlex,'yaml');
   // ── Shelly export (Script, not Schedule — dynamic per API) ─────────────────
   // Suggested name follows the same shape as the HA alias: "Elpris {area} — {strategy}".
   // Users likely have multiple Shelly scripts (one per device), so the
@@ -3982,6 +4110,63 @@ var API = "${apiUrl}";
 var OUTPUT_ID = 0;  // Shelly output nummer (0 = første relæ)
 var CHECK_INTERVAL_MS = 60000;  // Tjek hvert minut
 
+// ── Del regulerbar kapacitet (valgfrit, slået FRA som standard) ──────────
+// Sæt SHARE_FLEX = true for at indsende, hvor mange watt elpriser.org
+// styrer på dette output. Der sendes: kategori, prisområde, relæets tilstand,
+// målt effekt og en tilfældig enheds-id dannet her på enheden. Der sendes
+// IKKE navn, adresse, MAC, serienummer eller IP. Se elpriser.org/automation.
+var SHARE_FLEX = false;
+var CATEGORY = "${flexCat}";   // ${flexLabel} — valgt på elpriser.org/automation
+var RATED_W = ${flexRated};    // effekt i W. Bruges når relæet ikke selv måler
+                               // (fx en 3-faset pumpe styret via kontaktor)
+var PHASES = ${flexPhases};    // 1 eller 3
+var MAX_OFF_MIN = ${flexMaxOff};  // længste tid enheden må holdes slukket, i minutter.
+                               // 0 = ingen grænse. For køl og frys tænder scriptet
+                               // igen efter grænsen uanset pris, i mindst 15 min.
+var MIN_ON_MIN = 15;
+
+var REPORT_URL = "https://elpriser.org/api/flex/report";
+var REPORT_EVERY_MS = 15 * 60 * 1000;
+var flexId = null;
+var lastCommanded = null;
+var offSince = null;
+var forcedUntil = 0;
+
+function newId() {
+  var h = "0123456789abcdef", out = "";
+  for (var i = 0; i < 32; i++) out += h.charAt(Math.floor(Math.random() * 16));
+  return out;
+}
+
+function withFlexId(cb) {
+  if (flexId) return cb(flexId);
+  Shelly.call("KVS.Get", { key: "elpriser_flex_id" }, function (res) {
+    if (res && res.value) { flexId = res.value; return cb(flexId); }
+    flexId = newId();
+    Shelly.call("KVS.Set", { key: "elpriser_flex_id", value: flexId });
+    cb(flexId);
+  });
+}
+
+function report(area, commandedOn) {
+  if (!SHARE_FLEX) return;
+  var st = Shelly.getComponentStatus("switch", OUTPUT_ID);
+  var metered = st && typeof st.apower === "number";
+  withFlexId(function (id) {
+    Shelly.call("HTTP.POST", {
+      url: REPORT_URL, timeout: 10, content_type: "application/json",
+      body: JSON.stringify({
+        v: 1, id: id, platform: "shelly", category: CATEGORY, area: area,
+        phases: PHASES, rated_w: RATED_W, max_off_min: MAX_OFF_MIN,
+        on: !!(st && st.output), commanded_on: commandedOn,
+        power_w: metered ? st.apower : null, measured: metered
+      })
+    });
+  });
+}
+
+var lastArea = null;
+
 function check() {
   Shelly.call("HTTP.GET", { url: API, timeout: 10 }, function(res, err) {
     if (err || !res || res.code !== 200) {
@@ -3990,14 +4175,36 @@ function check() {
     }
     var data = JSON.parse(res.body);
     var on = data.on === true;
+    var now = Date.now();
+
+    // Sikkerhedsgrænse for køl/frys: ingen pris er billig nok til at lade
+    // maden tø. Efter MAX_OFF_MIN slukket tændes den i mindst MIN_ON_MIN.
+    if (MAX_OFF_MIN > 0) {
+      if (now < forcedUntil) on = true;
+      else if (!on) {
+        if (offSince === null) offSince = now;
+        if (now - offSince >= MAX_OFF_MIN * 60000) {
+          forcedUntil = now + MIN_ON_MIN * 60000;
+          offSince = null;
+          on = true;
+        }
+      } else offSince = null;
+    }
+
     print("Elpris: " + data.price + " kr/kWh — output " + (on ? "ON" : "OFF"));
     Shelly.call("Switch.Set", { id: OUTPUT_ID, on: on });
+    lastArea = data.area;
+    // Report on every change, so the capacity picture follows the switching.
+    if (on !== lastCommanded) { lastCommanded = on; report(data.area, on); }
   });
 }
 
 check();
-Timer.set(CHECK_INTERVAL_MS, true, check);`;
-  setHighlighted(document.getElementById('exportShellyCode'),shellyCode,'js');
+Timer.set(CHECK_INTERVAL_MS, true, check);
+Timer.set(REPORT_EVERY_MS, true, function () {
+  if (lastArea) report(lastArea, lastCommanded);
+});`;
+  setHighlighted(document.getElementById('exportShellyCode'),dev.flex==='no'?noScript('//'):shellyCode,'js');
 }
 function switchExport(tab){
   gtag('event','switch_export_tab',{tab:tab});

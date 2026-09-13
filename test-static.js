@@ -166,6 +166,35 @@ function routedByFunction(routes, p) {
   return routes.include.some(x => routeMatches(x, p));
 }
 
+test('flex: appliance types in the UI match what the API accepts and refuses', () => {
+  // The UI decides which appliances get a switching script; the API decides
+  // which count as flexible capacity. If the two lists drift, the page can
+  // hand out a script whose reports the API rejects — or the API can start
+  // counting an appliance the page warns must never be switched.
+  const API = fs.readFileSync(path.join(ROOT, 'functions/api/[[catchall]].js'), 'utf8');
+  const reg = INDEX.match(/const FLEX_DEVICE_TYPES=\{([\s\S]*?)\n\};/);
+  assert.ok(reg, 'FLEX_DEVICE_TYPES not found in index.html');
+  const types = [...reg[1].matchAll(/^\s*(\w+):\{label:'[^']*',flex:'(\w+)'/gm)].map(m => [m[1], m[2]]);
+  assert.ok(types.length >= 10, `expected at least 10 appliance types, found ${types.length}`);
+  const uiAccepted = types.filter(([, f]) => f !== 'no').map(([k]) => k).sort();
+  const uiRefused = types.filter(([, f]) => f === 'no').map(([k]) => k).sort();
+
+  const acc = API.match(/const FLEX_CATEGORIES = new Set\(\[([\s\S]*?)\]\)/);
+  assert.ok(acc, 'FLEX_CATEGORIES not found in the API');
+  const apiAccepted = [...acc[1].matchAll(/'(\w+)'/g)].map(m => m[1]).sort();
+  const ref = API.match(/const FLEX_UNSUITABLE = \{([\s\S]*?)\};/);
+  assert.ok(ref, 'FLEX_UNSUITABLE not found in the API');
+  const apiRefused = [...ref[1].matchAll(/^\s*(\w+):\s+'/gm)].map(m => m[1]).sort();
+
+  assert.deepEqual(apiAccepted, uiAccepted, 'API FLEX_CATEGORIES differs from the UI types that get a script');
+  assert.deepEqual(apiRefused, uiRefused, 'API FLEX_UNSUITABLE differs from the UI types marked flex:no');
+
+  // Every option in the <select> must be a known type, and vice versa.
+  const opts = [...INDEX.matchAll(/<select id="autoDevice"[\s\S]*?<\/select>/g)][0][0];
+  const optKeys = [...opts.matchAll(/value="(\w+)"/g)].map(m => m[1]).sort();
+  assert.deepEqual(optKeys, types.map(([k]) => k).sort(), 'appliance <select> options differ from FLEX_DEVICE_TYPES');
+});
+
 test('crawlable: every SEO_PAGES hash maps to a data-page section', () => {
   // A page whose hash is missing from HASH_TO_DATA_PAGE silently renders the
   // homepage section under its own title — the URL is right, the canonical is

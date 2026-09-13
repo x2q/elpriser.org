@@ -200,6 +200,23 @@ async function main() {
     check(r.status === 404, `ikke publiceret ${p}`, `status ${r.status}`);
   });
 
+  console.log('\n8. REGULERBAR KAPACITET — endpoints lever og afviser forkert input');
+  // Only payloads that are refused before anything is stored, so a scheduled
+  // run against production never writes a row.
+  const flexPost = body => fetch(BASE + '/api/flex/report', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'User-Agent': UA },
+    body: JSON.stringify(body),
+  });
+  const fakeId = 'f'.repeat(32);
+  let fr = await flexPost({ v: 1, id: fakeId, platform: 'shelly', category: 'jacuzzi', area: 'DK1', on: true });
+  check(fr.status === 400, 'flex: ukendt kategori afvises', `status ${fr.status}`);
+  fr = await flexPost({ v: 1, id: fakeId, platform: 'shelly', category: 'drain_pump', area: 'DK1', on: true });
+  check(fr.status === 422, 'flex: drænpumpe afvises som uegnet', `status ${fr.status}`);
+  fr = await flexPost({ v: 1, id: 'AA:BB:CC', platform: 'shelly', category: 'freezer', area: 'DK1', on: true });
+  check(fr.status === 400, 'flex: id der ligner en MAC-adresse afvises', `status ${fr.status}`);
+  fr = await fetch(BASE + '/api/flex/summary', { headers: { 'User-Agent': UA } });
+  check(fr.status === 401, 'flex: summary kræver token', `status ${fr.status}`);
+
   console.log('\n' + '─'.repeat(60));
   console.log(`${passed} beståede, ${failures.length} fejl`);
   if (failures.length) {

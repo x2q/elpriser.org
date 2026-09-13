@@ -696,6 +696,192 @@ async function loadData(area, mode, gln, env, range = null) {
   return { priceData, chargeHistory, tariffRecords };
 }
 
+
+// ── Regulerbar kapacitet ─────────────────────────────────────────────────────
+//
+// What a buyer of flexibility needs is not a rated wattage but two numbers
+// that change through the day:
+//   down_w  load that could be switched off right now — devices that are on,
+//           at their measured draw (a fridge's compressor is not always running)
+//   up_w    load that could be switched on right now — devices that
+//           elpriser.org is holding off, at their rated draw
+// Devices report their relay state, what they were told, and measured power;
+// both numbers are derived here.
+//
+// Limits worth stating plainly: reports are self-declared and unauthenticated.
+// That is enough to size the opportunity and build the product, but not to
+// settle against — any market that pays for flexibility will require metered
+// verification against a baseline, not a device's word.
+
+const FLEX_PLATFORMS  = new Set(['shelly', 'homeassistant', 'other']);
+// Appliances that can be regulated by price. Must match the "can" and "short"
+// entries of FLEX_DEVICE_TYPES in index.html — test-static.js checks that.
+const FLEX_CATEGORIES = new Set(['ev_charger', 'water_heater', 'heat_pump',
+  'battery', 'pool_pump', 'water_pump', 'fridge', 'freezer', 'other']);
+
+// Appliances that must not be switched by price, and why. Refused outright so
+// they can never be counted as flexible capacity: a number offered to a grid
+// operator has to be load that can actually be moved without harm.
+const FLEX_UNSUITABLE = {
+  drain_pump:      'a drain or sump pump held off can flood a basement',
+  medical:         'medical equipment must never be switched by price',
+  cycle_appliance: 'cutting power mid-cycle ruins the programme; shift the start time instead',
+  it_equipment:    'switching IT equipment off causes outages and data loss',
+};
+const FLEX_RETENTION_DAYS = 90;
+const FLEX_SLOT_MIN = 15;
+
+function flexSlot(d = new Date()) {
+  const t = new Date(d);
+  t.setUTCSeconds(0, 0);
+  t.setUTCMinutes(Math.floor(t.getUTCMinutes() / FLEX_SLOT_MIN) * FLEX_SLOT_MIN);
+  return t.toISOString().slice(0, 19) + 'Z';
+}
+
+async function flexBody(request) {
+  const len = +(request.headers.get('content-length') || 0);
+  if (len > 2048) throw Object.assign(new Error('body too large'), { status: 413 });
+  const text = await request.text();
+  if (text.length > 2048) throw Object.assign(new Error('body too large'), { status: 413 });
+  try { return JSON.parse(text); }
+  catch { throw Object.assign(new Error('body must be JSON'), { status: 400 }); }
+}
+
+const num = (v, lo, hi) => (typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi);
+
+async function flexReport(request, context) {
+  let b;
+  try { b = await flexBody(request); } catch (e) { return fail(e.status || 400, e.message); }
+
+  // Strict, because anything accepted here ends up in a number offered to a
+  // third party. Reject rather than coerce.
+  const bad = [];
+  if (typeof b.id !== 'string' || !/^[a-f0-9]{16,64}$/.test(b.id)) bad.push('id');
+  if (!FLEX_PLATFORMS.has(b.platform)) bad.push('platform');
+  if (FLEX_UNSUITABLE[b.category]) {
+    return fail(422, `category ${b.category} is not regulable: ${FLEX_UNSUITABLE[b.category]}`);
+  }
+  if (!FLEX_CATEGORIES.has(b.category)) bad.push('category');
+  if (b.area !== 'DK1' && b.area !== 'DK2') bad.push('area');
+  if (typeof b.on !== 'boolean') bad.push('on');
+  if (b.commanded_on != null && typeof b.commanded_on !== 'boolean') bad.push('commanded_on');
+  if (b.power_w != null && !num(b.power_w, 0, 100000)) bad.push('power_w');
+  if (b.rated_w != null && !num(b.rated_w, 0, 100000)) bad.push('rated_w');
+  if (b.max_off_min != null && !num(b.max_off_min, 0, 1440)) bad.push('max_off_min');
+  if (b.phases != null && b.phases !== 1 && b.phases !== 3) bad.push('phases');
+  if (bad.length) return fail(400, `invalid fields: ${bad.join(', ')}`);
+
+  const db = context.env.FLEX_DB;
+  const now = new Date().toISOString();
+  const measured = b.measured === true && b.power_w != null;
+  // One row per device per 15-minute slot, replaced on repeat. That caps what
+  // any single id can write however often it calls.
+  await db.batch([
+    db.prepare(`INSERT INTO devices (id, platform, category, area, phases, rated_w, max_off_min, first_seen, last_seen, reports)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8, 1)
+                ON CONFLICT(id) DO UPDATE SET
+                  platform = ?2, category = ?3, area = ?4, phases = ?5, rated_w = ?6,
+                  max_off_min = ?7, last_seen = ?8, reports = reports + 1`)
+      .bind(b.id, b.platform, b.category, b.area, b.phases ?? null,
+            b.rated_w ? Math.round(b.rated_w) : null,
+            b.max_off_min ? Math.round(b.max_off_min) : null, now),
+    db.prepare(`INSERT OR REPLACE INTO readings (device_id, ts, on_state, commanded_on, power_w, measured)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6)`)
+      .bind(b.id, flexSlot(), b.on ? 1 : 0,
+            b.commanded_on == null ? null : (b.commanded_on ? 1 : 0),
+            measured ? b.power_w : null, measured ? 1 : 0),
+  ]);
+
+  // Housekeeping off the request path, on a small share of reports: there is
+  // no cron in Pages Functions, and doing it every time would multiply writes.
+  if (Math.random() < 0.02 && context.waitUntil) context.waitUntil(flexRollup(db));
+
+  return new Response(null, { status: 204, headers: CORS });
+}
+
+async function flexForget(request, env) {
+  let b;
+  try { b = await flexBody(request); } catch (e) { return fail(e.status || 400, e.message); }
+  if (typeof b.id !== 'string' || !/^[a-f0-9]{16,64}$/.test(b.id)) return fail(400, 'invalid id');
+  // Holding the id is the proof of ownership — it exists only on the device.
+  await env.FLEX_DB.batch([
+    env.FLEX_DB.prepare('DELETE FROM readings WHERE device_id = ?1').bind(b.id),
+    env.FLEX_DB.prepare('DELETE FROM devices WHERE id = ?1').bind(b.id),
+  ]);
+  return new Response(null, { status: 204, headers: CORS });
+}
+
+// Per-slot capacity: down_w from devices that are on (measured draw, else the
+// declared rating); up_w from devices held off by elpriser.org (rating).
+const FLEX_CAPACITY_SQL = `
+  SUM(CASE WHEN r.on_state = 1 THEN COALESCE(r.power_w, d.rated_w, 0) ELSE 0 END) AS down_w,
+  SUM(CASE WHEN r.on_state = 0 AND r.commanded_on = 0 THEN COALESCE(d.rated_w, 0) ELSE 0 END) AS up_w,
+  SUM(CASE WHEN r.power_w IS NULL AND COALESCE(d.rated_w, 0) = 0 THEN 1 ELSE 0 END) AS unquantified`;
+
+async function flexRollup(db) {
+  const keepFrom = new Date(Date.now() - FLEX_RETENTION_DAYS * 86_400_000).toISOString();
+  const upTo = new Date(Date.now() - 2 * 3_600_000).toISOString().slice(0, 13) + ':00:00Z';
+  await db.batch([
+    // Hourly averages of the per-slot totals, for completed hours only.
+    db.prepare(`
+      INSERT OR REPLACE INTO hourly (hour, area, category, devices, down_w, up_w)
+      SELECT hour, area, category, MAX(devices), AVG(down_w), AVG(up_w) FROM (
+        SELECT substr(r.ts, 1, 13) || ':00:00Z' AS hour, d.area, d.category, r.ts,
+               COUNT(*) AS devices, ${FLEX_CAPACITY_SQL}
+        FROM readings r JOIN devices d ON d.id = r.device_id
+        WHERE r.ts < ?1
+        GROUP BY hour, d.area, d.category, r.ts
+      ) GROUP BY hour, area, category`).bind(upTo),
+    db.prepare('DELETE FROM readings WHERE ts < ?1').bind(keepFrom),
+  ]);
+}
+
+async function flexSummary(request, env) {
+  // Aggregates only, never a device row — but still business data, so it is
+  // behind a token rather than public.
+  const want = env.FLEX_ADMIN_TOKEN;
+  const got = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!want || got !== want) return fail(401, 'Authorization: Bearer <FLEX_ADMIN_TOKEN> required');
+
+  const db = env.FLEX_DB;
+  const since30m = new Date(Date.now() - 30 * 60_000).toISOString();
+  const since24h = new Date(Date.now() - 24 * 3_600_000).toISOString();
+
+  const [fleet, now, day] = await Promise.all([
+    db.prepare(`SELECT area, category, platform, COUNT(*) AS devices,
+                       SUM(CASE WHEN last_seen >= ?1 THEN 1 ELSE 0 END) AS active_24h,
+                       SUM(COALESCE(rated_w, 0)) AS rated_w
+                FROM devices GROUP BY area, category, platform
+                ORDER BY area, category`).bind(since24h).all(),
+    // Latest reading per device within the last half hour.
+    db.prepare(`SELECT d.area, d.category, COUNT(*) AS devices, ${FLEX_CAPACITY_SQL}
+                FROM readings r
+                JOIN devices d ON d.id = r.device_id
+                JOIN (SELECT device_id, MAX(ts) AS ts FROM readings WHERE ts >= ?1 GROUP BY device_id) l
+                  ON l.device_id = r.device_id AND l.ts = r.ts
+                GROUP BY d.area, d.category`).bind(since30m).all(),
+    db.prepare(`SELECT ts, d.area, COUNT(*) AS devices, ${FLEX_CAPACITY_SQL}
+                FROM readings r JOIN devices d ON d.id = r.device_id
+                WHERE r.ts >= ?1 GROUP BY ts, d.area ORDER BY ts`).bind(since24h).all(),
+  ]);
+
+  const sum = (rows, k) => rows.reduce((a, r) => a + (r[k] || 0), 0);
+  return jsonResponse({
+    generated: new Date().toISOString(),
+    note: 'Self-reported by opted-in devices. down_w = load that can be switched off now; '
+        + 'up_w = load held off that can be switched on now. Not metered verification.',
+    now: {
+      devices: sum(now.results, 'devices'),
+      down_kw: +(sum(now.results, 'down_w') / 1000).toFixed(2),
+      up_kw: +(sum(now.results, 'up_w') / 1000).toFixed(2),
+      unquantified_devices: sum(now.results, 'unquantified'),
+      by_area_category: now.results,
+    },
+    fleet: fleet.results,
+    last_24h: day.results,
+  }, { maxAge: 0, request });
+}
+
 // ── OpenAPI 3.1 spec (served at /api/openapi.json) ───────────────────────────
 //
 // One source of truth for every endpoint. Consumed by ChatGPT plugins, MCP
@@ -813,6 +999,54 @@ const OPENAPI_SPEC = {
           '400': { description: 'Malformed date, `start` without `end`, range over 1150 days, or a date before 2000-01-01.' },
           '503': { description: 'Upstream (Energi Data Service) rate-limited or unavailable for days not yet in the archive. Carries Retry-After.' },
         },
+      },
+    },
+    '/api/flex/report': {
+      post: {
+        operationId: 'reportFlex',
+        summary: 'Report controllable load from an opted-in device',
+        description: 'Called by the Shelly script and Home Assistant snippet on /automation when '
+          + 'sharing is switched on. Records relay state, what elpriser.org commanded, and measured '
+          + 'power, so the aggregate of load that can be switched off (down) or on (up) can be '
+          + 'derived. The id is random and generated on the device; no name, address, MAC, serial '
+          + 'or IP address is stored. One reading per device per 15-minute slot is kept, for 90 days.',
+        requestBody: { required: true, content: { 'application/json': { schema: {
+          type: 'object',
+          required: ['id', 'platform', 'category', 'area', 'on'],
+          properties: {
+            v: { type: 'integer', example: 1 },
+            id: { type: 'string', pattern: '^[a-f0-9]{16,64}$', description: 'Random, generated on the device.' },
+            platform: { type: 'string', enum: ['shelly', 'homeassistant', 'other'] },
+            category: { type: 'string', enum: ['ev_charger', 'water_heater', 'heat_pump', 'battery', 'pool_pump', 'water_pump', 'fridge', 'freezer', 'other'],
+                        description: 'Appliance type. drain_pump, medical, cycle_appliance and it_equipment are refused with 422: they must not be switched by price.' },
+            area: { type: 'string', enum: ['DK1', 'DK2'] },
+            on: { type: 'boolean', description: 'Relay actually on.' },
+            commanded_on: { type: ['boolean', 'null'], description: 'What elpriser.org told the device.' },
+            power_w: { type: ['number', 'null'], minimum: 0, maximum: 100000, description: 'Measured draw; null when not metered.' },
+            measured: { type: 'boolean' },
+            rated_w: { type: ['number', 'null'], minimum: 0, maximum: 100000, description: 'Declared rating, used when the relay does not meter (e.g. a contactor).' },
+            phases: { type: ['integer', 'null'], enum: [1, 3, null] },
+            max_off_min: { type: ['number', 'null'], minimum: 0, maximum: 1440, description: 'Longest the device may be held off.' },
+          },
+        } } } },
+        responses: {
+          '204': { description: 'Recorded.' },
+          '400': { description: 'A field is missing or out of range; the message names which.' },
+          '422': { description: 'The appliance type must not be regulated by price; the message says why.' },
+          '413': { description: 'Body over 2 KB.' },
+        },
+      },
+    },
+    '/api/flex/forget': {
+      post: {
+        operationId: 'forgetFlex',
+        summary: 'Delete everything stored about a device',
+        description: 'Removes the device and all its readings. The id is the proof of ownership; it exists only on the device (Shelly: KVS key elpriser_flex_id).',
+        requestBody: { required: true, content: { 'application/json': { schema: {
+          type: 'object', required: ['id'],
+          properties: { id: { type: 'string', pattern: '^[a-f0-9]{16,64}$' } },
+        } } } },
+        responses: { '204': { description: 'Deleted.' }, '400': { description: 'Invalid id.' } },
       },
     },
     '/api/schedule': {
@@ -964,6 +1198,20 @@ export async function onRequest(context) {
   if (seg1 === 'openapi.json') {
     // Spec rarely changes — cache hard at the edge; ETag enables cheap 304s.
     return jsonResponse(OPENAPI_SPEC, { maxAge: 3600, sMaxAge: 86400, request });
+  }
+
+  // ── /api/flex/* — regulerbar kapacitet from opted-in devices ────────────
+  if (seg1 === 'flex') {
+    if (!context.env || !context.env.FLEX_DB) return fail(503, 'flex store unavailable');
+    try {
+      if (seg2 === 'report' && request.method === 'POST') return await flexReport(request, context);
+      if (seg2 === 'forget' && request.method === 'POST') return await flexForget(request, context.env);
+      if (seg2 === 'summary' && request.method === 'GET') return await flexSummary(request, context.env);
+      return fail(404, 'Unknown flex endpoint. POST /api/flex/report, POST /api/flex/forget, GET /api/flex/summary');
+    } catch (e) {
+      console.error(e);
+      return fail(500, String(e.message || e));
+    }
   }
 
   // ── /api/tariffs — grid tariffs for NO and SE (before the DK area check,

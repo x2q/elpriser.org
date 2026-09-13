@@ -1,5 +1,5 @@
 name = "elpriser-org"
-pages_build_output_dir = "."
+pages_build_output_dir = "dist"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
@@ -9,3 +9,11 @@ compatibility_flags = ["nodejs_compat"]
 [[kv_namespaces]]
 binding = "PRICE_CACHE"
 id = "126700e66e8d4a19b289b0e8afdaff69"
+
+# Regulerbar kapacitet reported by opted-in Shelly and Home Assistant devices.
+# Schema in migrations/. Relational rather than KV because the whole point is
+# aggregation — kW available by area, category and hour — which KV cannot query.
+[[d1_databases]]
+binding = "FLEX_DB"
+database_name = "elpriser-flex"
+database_id = "5b77057e-5b1d-44f3-9502-811614fc9736"
