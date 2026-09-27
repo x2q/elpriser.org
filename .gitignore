@@ -10,3 +10,6 @@ data-backup/
 xcuserdata/
 *.xcuserstate
 dist/
+
+# IndexNow: when the sitemap was last submitted (scripts/indexnow.mjs)
+.indexnow-state.json

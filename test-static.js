@@ -514,6 +514,19 @@ test('structured data: each block is served only on the page it describes', () =
   assert.ok(/body: async context => LLMS_FULL_TXT \+ await llmsNowSection\(context\)/.test(SRV), 'llms-full.txt carries no dated figures');
 });
 
+test('indexnow: the served key and the submitting script agree', () => {
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const SCR = fs.readFileSync(path.join(ROOT, 'scripts/indexnow.mjs'), 'utf8');
+  const served = (SRV.match(/const INDEXNOW_KEY = '([0-9a-f]{32})'/) || [])[1];
+  const sent = (SCR.match(/const KEY = '([0-9a-f]{32})'/) || [])[1];
+  assert.ok(served && sent, 'IndexNow key missing');
+  assert.equal(served, sent, 'the key the site serves is not the key the script submits');
+  assert.ok(SRV.includes(`'/${served}.txt': {`), 'the key file route does not match the key');
+  const pj = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  assert.ok(/wrangler pages deploy[^&]*&& \(node scripts\/indexnow\.mjs \|\| true\)$/.test(pj.scripts.deploy),
+    'deploy does not submit to IndexNow, or lets an IndexNow failure fail the deploy');
+});
+
 test('homepage: the hero curve has a price scale that lines up', () => {
   // The scale sits in a gutter left of the curve. The CO2 strip below takes the
   // same gutter, or its hours stop lining up with the price curve's.

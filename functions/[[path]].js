@@ -582,6 +582,8 @@ Slug bruges i URL-mønsteret \`https://elpriser.org/dk1/<slug>\` eller \`https:/
 - **JS/TS-klient** — [github.com/x2q/elpriser-client](https://github.com/x2q/elpriser-client): en letvægts JavaScript/TypeScript-klient til elpriser.org's API, til brug i Node.js, browser eller edge-funktioner.
 `;
 
+const INDEXNOW_KEY = 'ede0d7c16ca973f60282b7079da12804';
+
 const STATIC_ROUTES = {
   '/sitemap.xml': {
     body: () => buildSitemap(),
@@ -657,6 +659,13 @@ Sitemap: https://elpriser.org/sitemap.xml`,
     body: async context => LLMS_FULL_TXT + await llmsNowSection(context),
     type: 'text/plain; charset=utf-8',
     maxAge: 900,
+  },
+  // IndexNow ownership proof: the key, served as plain text at /<key>.txt.
+  // Public by design — it only proves this host may submit its own URLs.
+  // scripts/indexnow.mjs carries the same key; test-static.js checks they match.
+  '/ede0d7c16ca973f60282b7079da12804.txt': {
+    body: INDEXNOW_KEY,
+    type: 'text/plain; charset=utf-8',
   },
   '/og-image': {
     body: OG_IMAGE,

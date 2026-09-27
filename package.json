@@ -2,7 +2,7 @@
   "name": "elpriser-org",
   "version": "1.0.0",
   "private": true,
-  "description": "Danish electricity price tracker \u2014 elpriser.org",
+  "description": "Danish electricity price tracker — elpriser.org",
   "scripts": {
     "start": "node server.js",
     "test": "node test.js",
@@ -10,13 +10,14 @@
     "test:e2e": "node test-e2e.js",
     "test:regressions": "node test-regressions.js",
     "test:pre-commit": "node test-static.js && node test-e2e.js && node test-regressions.js",
-    "deploy": "bash scripts/build-dist.sh && npx wrangler pages deploy dist --project-name=elpriser-org",
+    "deploy": "bash scripts/build-dist.sh && npx wrangler pages deploy dist --project-name=elpriser-org && (node scripts/indexnow.mjs || true)",
     "build": "bash scripts/build-dist.sh",
     "test:urls": "node test-urls.js",
     "test:shelly": "node test-shelly-script.mjs",
     "test:flex": "node test-flex-api.mjs",
     "test:forecast": "node test-forecast-chart.mjs",
-    "test:zone": "node test-zone-intro.mjs"
+    "test:zone": "node test-zone-intro.mjs",
+    "indexnow": "node scripts/indexnow.mjs"
   },
   "devDependencies": {
     "playwright": "^1.59.1"

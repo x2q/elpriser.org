@@ -248,6 +248,11 @@ async function main() {
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Copenhagen' }).format(new Date());
   check(full.body.includes(`## Elpriser lige nu (${today}`) && /DK1 \(Vestdanmark\), kl\. \d\d:00: spotpris -?\d+,\d\d kr\/kWh/.test(full.body), 'llms-full.txt: dagens tal med dato');
 
+  // IndexNow re-fetches this to validate submissions; if it breaks, every
+  // later submission is rejected with 403 and nothing says so on the site.
+  const inKey = await get('/ede0d7c16ca973f60282b7079da12804.txt');
+  check(inKey.status === 200 && inKey.body.trim() === 'ede0d7c16ca973f60282b7079da12804', 'IndexNow: nøglefilen serveres');
+
   console.log('\n8. REGULERBAR KAPACITET — endpoints lever og afviser forkert input');
   // Only payloads that are refused before anything is stored, so a scheduled
   // run against production never writes a row.
