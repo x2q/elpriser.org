@@ -1,9 +1,4 @@
-<tbody class="text-gray-600 dark:text-gray-400">
-          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Nettarif C</strong><div class="text-xs">Det lokale elnet frem til din måler</div></td><td class="py-2 pr-3">Dit netselskab</td><td class="py-2 text-right">Se tabellen ovenfor — varierer pr. selskab og time</td></tr>
-          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Transmissions&shy;nettarif</strong><div class="text-xs">Det overordnede net mellem landsdelene</div></td><td class="py-2 pr-3">Energinet</td><td class="py-2 text-right tabular" id="enTrans">4,3 øre</td></tr>
-          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Systemtarif</strong><div class="text-xs">Forsyningssikkerhed og balancering af nettet</div></td><td class="py-2 pr-3">Energinet</td><td class="py-2 text-right tabular" id="enSys">7,2 øre</td></tr>
-          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Elafgift</strong><div class="text-xs">Statens afgift på el</div></td><td class="py-2 pr-3">Staten, via Energinet</td><td class="py-2 text-right tabular" id="enAfg">0,8 øre</td></tr>
-        <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="da">
 <head>
 <meta charset="UTF-8">
@@ -1216,17 +1211,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <select id="priceSelector" onchange="onPriceSelectorChange()"
       class="flex-1 max-w-xs text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
     </select>
-    <nav class="flex items-center gap-1 shrink-0">
-      <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-        <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      </a>
-      <a href="#automation" title="Automation" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-        <svg class="ico" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4l3 3"/></svg>
-      </a>
-      <a href="/om-elpriser" title="Om elpriser" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-        <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-      </a>
-    </nav>
   </div>
   <!-- SSR: unique per-URL intro (H1 + live-price sentence + net coverage +
        tariff rates + PriceSpecification JSON-LD), injected by functions/[[path]].js -->
@@ -1310,10 +1294,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
           <th class="py-2 font-semibold text-right">Sats lige nu</th>
         </tr></thead>
         <tbody class="text-gray-600 dark:text-gray-400">
-          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Nettarif C</strong><div class="text-xs">Det lokale elnet frem til din måler</div></td><td class="py-2 pr-3">Dit netselskab</td><td class="py-2 pr-3 text-right" colspan="2">Se tabellen ovenfor — den varierer pr. selskab og time</td></tr>
-          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Transmissions&shy;nettarif</strong><div class="text-xs">Det overordnede net mellem landsdelene</div></td><td class="py-2 pr-3">Energinet</td><td class="py-2 pr-3 text-right tabular">4,3 øre</td><td class="py-2 text-right tabular">6,1 øre</td></tr>
-          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Systemtarif</strong><div class="text-xs">Forsyningssikkerhed og balancering af nettet</div></td><td class="py-2 pr-3">Energinet</td><td class="py-2 pr-3 text-right tabular">7,2 øre</td><td class="py-2 text-right tabular">7,4 øre</td></tr>
-          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Elafgift</strong><div class="text-xs">Statens afgift på el</div></td><td class="py-2 pr-3">Staten, via Energinet</td><td class="py-2 pr-3 text-right tabular">0,8 øre</td><td class="py-2 text-right tabular">72,0 øre</td></tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Nettarif C</strong><div class="text-xs">Det lokale elnet frem til din måler</div></td><td class="py-2 pr-3">Dit netselskab</td><td class="py-2 text-right">Se tabellen ovenfor — varierer pr. selskab og time</td></tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Transmissions&shy;nettarif</strong><div class="text-xs">Det overordnede net mellem landsdelene</div></td><td class="py-2 pr-3">Energinet</td><td class="py-2 text-right tabular" id="enTrans">4,3 øre</td></tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Systemtarif</strong><div class="text-xs">Forsyningssikkerhed og balancering af nettet</div></td><td class="py-2 pr-3">Energinet</td><td class="py-2 text-right tabular" id="enSys">7,2 øre</td></tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Elafgift</strong><div class="text-xs">Statens afgift på el</div></td><td class="py-2 pr-3">Staten, via Energinet</td><td class="py-2 text-right tabular" id="enAfg">0,8 øre</td></tr>
         </tbody>
       </table>
     </div>
