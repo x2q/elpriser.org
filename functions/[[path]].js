@@ -798,67 +798,128 @@ async function fetchAreaSnapshot(context, area) {
   };
 }
 
-/** Seven-day min/max rows for the homepage's "Næste 7 døgn".
+/** The homepage's price curve: today's settled hours and three days of forecast.
  *
  *  Rendered here rather than left to the client because the reason the section
  *  exists is search: the homepage was receiving "elpriser prognose" queries and
  *  ranking 18th on them with nothing on the page that answered them, while
- *  /prognose ranked 7th. Rows that only appear after JS runs would not fix that.
- *  The client replaces these with the same numbers once it loads. */
-const FC_WEEKDAYS = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
-const FC_MONTHS = ['jan.', 'feb.', 'mar.', 'apr.', 'maj', 'jun.', 'jul.', 'aug.', 'sep.', 'okt.', 'nov.', 'dec.'];
-
-function buildForecastRows(fc, todayStr) {
-  const days = (fc.days || []).slice(0, 7).map(d => {
-    const ps = (d.prices || []).map(p => p.price).filter(p => p != null);
-    if (!ps.length) return null;
-    return { date: d.date, type: d.type, lo: Math.min(...ps), hi: Math.max(...ps) };
-  }).filter(Boolean);
-  if (days.length < 2) return '';
-
-  const glo = Math.min(...days.map(d => d.lo));
-  const ghi = Math.max(...days.map(d => d.hi));
-  // A flat week would divide by zero and paint every bar full width.
-  const span = Math.max(ghi - glo, 0.01);
-  const cheapest = days.reduce((a, b) => (b.lo < a.lo ? b : a));
-  const f = v => v.toFixed(2).replace('.', ',');
-  const dayNo = str => Math.round(Date.parse(str + 'T12:00:00Z') / 86_400_000);
-  const today = dayNo(todayStr);
-
-  return days.map(d => {
-    const dt = new Date(d.date + 'T12:00:00Z');
-    const diff = dayNo(d.date) - today;
-    const name = diff === 0 ? 'I dag' : diff === 1 ? 'I morgen'
-      : FC_WEEKDAYS[dt.getUTCDay()].replace(/^./, c => c.toUpperCase());
-    const sub = `${dt.getUTCDate()}. ${FC_MONTHS[dt.getUTCMonth()]}`;
-    const l = ((d.lo - glo) / span * 100).toFixed(1);
-    const w = ((d.hi - d.lo) / span * 100).toFixed(1);
-    const real = d.type === 'actual';
-    return `<div class="fc-row">`
-      + `<div class="fc-day">${name}<small>${sub}</small></div>`
-      + `<div class="fc-tag${real ? ' real' : ''}">${real ? 'BØRSPRIS' : 'PROGNOSE'}</div>`
-      + `<div class="fc-min">${f(d.lo)}</div>`
-      + `<div class="fc-bar"><i style="left:${l}%;width:${w}%"></i></div>`
-      + `<div class="fc-max">${f(d.hi)}</div>`
-      + (d === cheapest ? `<span class="fc-badge"><span class="fc-b-long">UGENS BILLIGSTE</span><span class="fc-b-short">BILLIGST</span></span>`
-                        : `<span class="fc-spacer"></span>`)
-      + `</div>`;
+ *  /prognose ranked 7th. A chart that only appears after JS runs would not fix
+ *  that — which is also why the per-day figures below it stay as text. */
+// ═══ Forsidens kurve: nu og 2 døgn frem ═══
+// This function is CANONICAL and exists verbatim in two places: here and in
+// functions/[[path]].js. The server draws it so a crawler gets the numbers,
+// the client redraws it when the visitor switches DK1/DK2 — and neither
+// runtime can import from the other. test-forecast-chart.mjs runs both copies
+// over the same fixtures and fails on the first differing byte, so the
+// duplication cannot rot quietly.
+//
+// Everything here is deterministic on purpose: weekday and month names come
+// from the arrays below rather than toLocaleDateString, whose output depends
+// on the ICU build and would differ between Workers and a browser.
+function fcChartHTML(days, todayStr, nowHour){
+  var WD=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+  var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  var f2=function(v){return v.toFixed(2).replace('.',',');};
+  // The feed opens on yesterday, so the window is keyed off today's date, not
+  // off row 0. A day is only taken when it is exactly the next one expected:
+  // skipping a hole and carrying on would splice non-adjacent days into one
+  // continuous line, which reads as a price movement that never happened, and
+  // would slide "I morgen" onto the wrong date.
+  var dayNo=function(x){
+    return Math.round((Date.parse(x+'T12:00:00Z')-Date.parse(todayStr+'T12:00:00Z'))/86400000);};
+  var WINDOW=3;                  // i dag + 2 døgn frem
+  var sel=[];
+  for(var k=0;k<days.length&&sel.length<WINDOW;k++){
+    var d=days[k];
+    if(!d||!d.date||!d.prices)continue;
+    var n=dayNo(d.date);
+    if(n<0)continue;
+    if(n!==sel.length)break;
+    var ps=d.prices.map(function(p){return p&&p.price!=null?p.price:null;});
+    if(!ps.some(function(p){return p!=null;}))break;
+    sel.push({date:d.date,real:d.type==='actual',ps:ps});
+  }
+  if(sel.length<2)return '';
+  var N=sel.length*24, W=720, H=190, PT=14, PB=10;
+  var pts=[];
+  for(var di=0;di<sel.length;di++)for(var h=0;h<24;h++){
+    var p=sel[di].ps[h];
+    if(p!=null)pts.push({i:di*24+h,p:p,di:di,real:sel[di].real});
+  }
+  if(pts.length<24)return '';
+  var lo=Math.min.apply(null,pts.map(function(x){return x.p;}));
+  var hi=Math.max.apply(null,pts.map(function(x){return x.p;}));
+  var span=(hi-lo)||1;
+  var X=function(i){return +(i/(N-1)*W).toFixed(1);};
+  var Y=function(p){return +(PT+(1-(p-lo)/span)*(H-PT-PB)).toFixed(1);};
+  var xy=function(x){return X(x.i)+','+Y(x.p);};
+  // The colour language is the hero curve's, so the two charts read the same.
+  var col=function(p){var t=(p-lo)/span;
+    return t<.25?'#34c759':t<.5?'#a8d84a':t<.75?'#ffcc00':t<.9?'#ff9500':'#ff3b30';};
+  // One stop per hour would be 96 of them. Emitting only the ends of each
+  // colour run is a handful, and renders the same: the run's last stop is what
+  // stops the gradient bleeding across a band it should not.
+  var stops='', run=null;
+  var stop=function(i,c){return '<stop offset="'+(i/(N-1)*100).toFixed(1)+'%" stop-color="'+c+'"/>';};
+  for(var q=0;q<pts.length;q++){
+    var c=col(pts[q].p);
+    if(run===null){stops+=stop(pts[q].i,c);run={c:c,i:pts[q].i};continue;}
+    if(c!==run.c){stops+=stop(run.i,run.c)+stop(pts[q].i,c);}
+    run={c:c,i:pts[q].i};
+  }
+  stops+=stop(pts[pts.length-1].i,run.c);
+  // Split at the last settled hour. The two polylines share that point, so the
+  // solid and dashed halves meet with no gap.
+  var lastReal=-1;
+  for(var j=0;j<pts.length;j++)if(pts[j].real)lastReal=j;
+  var solid=lastReal>=0?pts.slice(0,lastReal+1):[];
+  var dashed=lastReal>=0?pts.slice(lastReal):pts;
+  var poly=function(a){return a.map(xy).join(' ');};
+  var svg='<defs><linearGradient id="fcg" x1="0" y1="0" x2="1" y2="0">'+stops+'</linearGradient>'
+    +'<linearGradient id="fcf" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="#5b8bff" stop-opacity=".22"/>'
+    +'<stop offset="100%" stop-color="#5b8bff" stop-opacity="0"/></linearGradient></defs>';
+  // A tinted band behind the forecast, so the distinction survives even when
+  // the dashes are too small to notice on a phone.
+  if(lastReal>=0&&lastReal<pts.length-1)
+    svg+='<rect x="'+X(pts[lastReal].i)+'" y="0" width="'+(W-X(pts[lastReal].i))+'" height="'+(H-PB+12)+'" fill="currentColor" fill-opacity=".035"/>';
+  svg+='<polygon points="'+X(pts[0].i)+','+(H-PB+12)+' '+poly(pts)+' '+X(pts[pts.length-1].i)+','+(H-PB+12)+'" fill="url(#fcf)"/>';
+  if(solid.length>1)
+    svg+='<polyline points="'+poly(solid)+'" fill="none" stroke="url(#fcg)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>';
+  if(dashed.length>1)
+    svg+='<polyline points="'+poly(dashed)+'" fill="none" stroke="url(#fcg)" stroke-width="2.6" stroke-dasharray="5 4" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>';
+  // Midnight separators and the day names between them.
+  for(var s=1;s<sel.length;s++)
+    svg+='<line x1="'+X(s*24)+'" y1="'+PT+'" x2="'+X(s*24)+'" y2="'+(H-PB+6)+'" stroke="currentColor" stroke-opacity=".12"/>';
+  var labels='';
+  for(var t=0;t<sel.length;t++){
+    var dt=new Date(sel[t].date+'T12:00:00Z');
+    var lab=t===0?'I dag':t===1?'I morgen':WD[dt.getUTCDay()];
+    labels+='<span>'+lab+'<small>'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+'</small></span>';
+  }
+  // "Nu" sits on today's curve, and only when today is settled.
+  if(nowHour!=null&&sel[0].real&&sel[0].ps[nowHour]!=null){
+    svg+='<line x1="'+X(nowHour)+'" y1="'+(PT-6)+'" x2="'+X(nowHour)+'" y2="'+(H-PB+6)+'" stroke="currentColor" stroke-opacity=".2" stroke-dasharray="3 4"/>'
+      +'<circle cx="'+X(nowHour)+'" cy="'+Y(sel[0].ps[nowHour])+'" r="5.5" fill="#1b57f5" stroke="#fff" stroke-width="2.5"/>';
+  }
+  // The per-day figures stay as text. They are what the front page answers
+  // "elpriser prognose" with, and an SVG path answers nothing.
+  var dayLo=sel.map(function(d){return Math.min.apply(null,d.ps.filter(function(p){return p!=null;}));});
+  var cheap=dayLo.indexOf(Math.min.apply(null,dayLo));
+  var cards=sel.map(function(d,n){
+    var v=d.ps.filter(function(p){return p!=null;});
+    var dt=new Date(d.date+'T12:00:00Z');
+    var lab=n===0?'I dag':n===1?'I morgen':WD[dt.getUTCDay()];
+    return '<div class="mini'+(n===cheap?' best':'')+'">'
+      +'<div class="k">'+lab+' · '+(d.real?'Børspris':'Prognose')+'</div>'
+      +'<div class="v">'+f2(Math.min.apply(null,v))+'–'+f2(Math.max.apply(null,v))+'</div>'
+      +'<div class="s">'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+' · kr/kWh</div></div>';
   }).join('');
+  return '<svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="Elpris time for time i dag og '+(sel.length-1)+' døgn frem">'+svg+'</svg>'
+    +'<div class="fc-days">'+labels+'</div>'
+    +'<div class="minirow">'+cards+'</div>';
 }
 
-/**
- * Server-rendered content for the eleven non-Danish bidding zones.
- *
- * These pages shipped an empty shell: an <h1> containing &nbsp;, the word
- * "Loading…", and 85 characters of text in total. They work for a visitor —
- * the table fills in client-side, correctly localised — but a crawler sees a
- * blank page, which is why five of them have never been indexed and the rest
- * rank between 20th and 52nd.
- *
- * Only labels that already exist as reviewed translations in index.html's
- * I18N table are used here. No prose is composed in languages nobody on this
- * side can check; everything else is dates and numbers.
- */
 const SSR_ZONES = {
   no1: { name: 'NO1', city: 'Oslo',         lang: 'no', rate: 11.7, sub: 'øre' },
   no2: { name: 'NO2', city: 'Kristiansand', lang: 'no', rate: 11.7, sub: 'øre' },
@@ -1103,7 +1164,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v35');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v37');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1128,7 +1189,9 @@ async function renderHomepage(context) {
     // threw a ReferenceError and took the whole homepage down with a 500.
     const todayDk = new Intl.DateTimeFormat('en-CA',
       { timeZone: 'Europe/Copenhagen' }).format(new Date());
-    html = html.replace('<!--SSR_FORECAST_ROWS-->', buildForecastRows(fc, todayDk));
+    const nowH = +new Intl.DateTimeFormat('en-GB',
+      { timeZone: 'Europe/Copenhagen', hour: '2-digit', hour12: false }).format(new Date());
+    html = html.replace('<!--SSR_FORECAST_CHART-->', fcChartHTML(fc.days || [], todayDk, nowH));
   }
   html = stripInactiveMains(html, 'start');
   const res = new Response(html, {

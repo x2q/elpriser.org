@@ -239,32 +239,67 @@ test('tariffer: the page answers the tariff searches it was ranking for', () => 
     'the per-company chips are no longer built from NETS');
 });
 
-test('homepage: the 7-day forecast section is server-rendered, not JS-only', () => {
-  // The section exists to answer "elpriser prognose" searches that land on the
-  // homepage. Rows that appear only after JS runs would not do that, so the
-  // placeholder and the code that fills it both have to be present.
-  assert.ok(INDEX.includes('<!--SSR_FORECAST_ROWS-->'),
-    'index.html lost the SSR_FORECAST_ROWS placeholder');
-  assert.ok(/<div class="fc" id="homeForecast">/.test(INDEX),
-    'the forecast container is missing from the homepage');
-  assert.ok(INDEX.includes('Næste 7 døgn'), 'the section heading is missing');
-  const ROUTES_SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
-  assert.ok(ROUTES_SRC.includes('function buildForecastRows('),
-    'functions/[[path]].js no longer builds the forecast rows');
-  assert.ok(ROUTES_SRC.includes("html.replace('<!--SSR_FORECAST_ROWS-->'"),
-    'the server never substitutes SSR_FORECAST_ROWS');
+test('server: every top-level piece the renderer calls still exists', () => {
+  // Editing this file by matching a start and an end anchor is how a whole
+  // unrelated block gets swallowed: an end anchor further down the file than
+  // you think takes everything in between with it. That deleted the zone SSR
+  // once and put /se3 and /no1 into a 500 in production. A missing definition
+  // is a ReferenceError at request time, which no other test here would catch,
+  // so the presence of each one is asserted directly.
+  const SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const required = [
+    'const SSR_ZONES', 'const ZONE_T', 'const ZONE_CUR_RE',
+    'function buildZoneCurrency(', 'function buildZoneIntro(',
+    'function fcChartHTML(', 'function buildSitemap(',
+    'const CONTENT_LASTMOD', 'const SITEMAP_URLS',
+  ];
+  const missing = required.filter(r => !SRC.includes(r));
+  assert.deepEqual(missing, [], `functions/[[path]].js is missing: ${missing.join(', ')}`);
+
+  // And nothing may be referenced that is no longer defined.
+  for (const name of ['buildZoneIntro', 'buildZoneCurrency', 'fcChartHTML']) {
+    const called = new RegExp(`[^a-zA-Z.]${name}\\s*\\(`).test(
+      SRC.slice(SRC.indexOf('async function renderHomepage')));
+    const defined = SRC.includes(`function ${name}(`);
+    assert.ok(!called || defined, `${name} is called but not defined`);
+  }
 });
 
-test('homepage: forecast-row styles are hand-written, not Tailwind utilities', () => {
-  // These classes only ever appear in JS-generated and server-generated markup,
-  // which Tailwind does not scan — utilities would be purged out of style.css
-  // and the section would render unstyled.
-  const style = INDEX.match(/<style>([\s\S]*?)<\/style>/);
-  assert.ok(style, 'no <style> block in index.html');
-  for (const cls of ['.fc-row', '.fc-day', '.fc-tag', '.fc-min', '.fc-max',
-                     '.fc-bar', '.fc-badge', '.fc-spacer', '.fc-wrap', '.fc-head']) {
-    assert.ok(style[1].includes(cls + '{') || style[1].includes(cls + ','),
-      `${cls} is not defined in the hand-written style block`);
+test('homepage: the forecast curve is server-rendered, not JS-only', () => {
+  // The section exists to answer "elpriser prognose" searches that land on the
+  // homepage. A chart that appears only after JS runs would not do that, so the
+  // placeholder and the code that fills it both have to be present.
+  assert.ok(INDEX.includes('<!--SSR_FORECAST_CHART-->'),
+    'index.html lost the SSR_FORECAST_CHART placeholder');
+  assert.ok(/<div id="homeForecast">/.test(INDEX),
+    'the forecast container is missing from the homepage');
+  assert.ok(INDEX.includes('Nu og 2 døgn frem'), 'the section heading is missing');
+  const ROUTES_SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  assert.ok(ROUTES_SRC.includes('function fcChartHTML('),
+    'functions/[[path]].js no longer builds the forecast chart');
+  assert.ok(ROUTES_SRC.includes("html.replace('<!--SSR_FORECAST_CHART-->'"),
+    'the server never substitutes SSR_FORECAST_CHART');
+});
+
+test('homepage: the forecast numbers stay as text, not just path data', () => {
+  // A polyline is unreadable to a crawler and to a screen reader. The whole
+  // point of server-rendering this section is the numbers, so the per-day
+  // figures have to leave the function as text.
+  const ROUTES_SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const fn = ROUTES_SRC.slice(ROUTES_SRC.indexOf('function fcChartHTML('),
+                              ROUTES_SRC.indexOf('/** Build the live-price JSON-LD block'));
+  assert.ok(/class="minirow"/.test(fn), 'the per-day figures are gone from the chart output');
+  assert.ok(/aria-label=/.test(fn), 'the svg has no accessible name');
+});
+
+test('homepage: the chart reuses the hero card styles, which are hand-written', () => {
+  // Tailwind does not scan JS- or server-generated markup, so a utility class
+  // used only there is purged out of style.css and silently does nothing.
+  // The chart deliberately reuses .chartcard/.minirow/.mini rather than
+  // inventing new classes, and those must stay in the hand-written block.
+  const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
+  for (const cls of ['.chartcard', '.minirow', '.mini{', '.mini .v', '.mini.best', '.fc-days']) {
+    assert.ok(style.includes(cls), `${cls} is not hand-written in the <style> block`);
   }
 });
 

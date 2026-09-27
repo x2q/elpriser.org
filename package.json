@@ -15,7 +15,7 @@
     "test:urls": "node test-urls.js",
     "test:shelly": "node test-shelly-script.mjs",
     "test:flex": "node test-flex-api.mjs",
-    "test:forecast": "node test-forecast-rows.mjs",
+    "test:forecast": "node test-forecast-chart.mjs",
     "test:zone": "node test-zone-intro.mjs"
   },
   "devDependencies": {

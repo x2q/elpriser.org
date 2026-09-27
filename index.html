@@ -689,30 +689,16 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .dark .fc-head h2{color:#e8edf5}
   .fc-head p{margin:.2rem 0 0;font-size:.82rem;color:#5c6675;line-height:1.45;max-width:52ch}
   .dark .fc-head p{color:#8a95a8}
+  /* The curve is stretched with preserveAspectRatio="none", which scales
+     glyphs non-uniformly — day names inside the svg came out visibly
+     narrowed on a phone. They live here instead, lined up with the
+     separators by giving each day an equal share of the width. */
+  .fc-days{display:flex;margin:.15rem .25rem 0}
+  .fc-days span{flex:1;text-align:center;font-size:.78rem;font-weight:600;color:#3d4756;line-height:1.25}
+  .dark .fc-days span{color:#c3ccdb}
+  .fc-days small{display:block;font-size:.66rem;font-weight:500;color:#8a95a8}
   .fc-head a{font-size:.8rem;font-weight:600;color:#1b57f5;white-space:nowrap;text-decoration:underline}
   .dark .fc-head a{color:#6d9aff}
-  .fc{background:#fff;border-radius:1.25rem;box-shadow:0 1px 2px rgba(14,20,33,.05),0 8px 24px rgba(14,20,33,.05);overflow:hidden}
-  .dark .fc{background:#131b29;box-shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25)}
-  .fc-row{display:flex;align-items:center;gap:.7rem;padding:.7rem 1.1rem;border-bottom:1px solid #e2e7f0;font-variant-numeric:tabular-nums}
-  .dark .fc-row{border-color:#223046}
-  .fc-row:last-child{border-bottom:none}
-  .fc-day{width:5.6rem;flex-shrink:0;font-size:.9rem;font-weight:600;color:#0e1421}
-  .dark .fc-day{color:#e8edf5}
-  .fc-day small{display:block;font-size:.66rem;font-weight:500;color:#5c6675}
-  .dark .fc-day small{color:#8a95a8}
-  .fc-tag{width:4.6rem;flex-shrink:0;font-size:.6rem;font-weight:700;letter-spacing:.04em;color:#5c6675}
-  .dark .fc-tag{color:#8a95a8}
-  .fc-tag.real{color:#1b57f5}
-  .dark .fc-tag.real{color:#6d9aff}
-  .fc-min,.fc-max{width:2.9rem;flex-shrink:0;font-size:.82rem;font-weight:500;color:#5c6675}
-  .dark .fc-min{color:#8a95a8}
-  .fc-max{text-align:right;font-weight:600;color:#0e1421}
-  .dark .fc-max{color:#e8edf5}
-  .fc-bar{flex:1;min-width:3rem;height:6px;border-radius:3px;background:#e2e7f0;position:relative}
-  .dark .fc-bar{background:#223046}
-  .fc-bar i{position:absolute;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#34c759,#ffcc00,#ff9500)}
-  .fc-badge{flex-shrink:0;font-size:.58rem;font-weight:700;color:#1e9e4a;background:rgba(52,199,89,.14);padding:3px 7px;border-radius:7px;white-space:nowrap}
-  .dark .fc-badge{color:#4cd964}
   .fc-b-short{display:none}
   /* Location/view selector — took the globe icon's place in the nav. */
   .nav-select{max-width:15rem;font-size:.8rem;font-weight:500;padding:.3rem 1.6rem .3rem .6rem;
@@ -756,18 +742,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .tabbar svg{width:1.3rem;height:1.3rem}
   .tabbar .on{color:#1b57f5}
   .dark .tabbar .on{color:#6d9aff}
-  .fc-spacer{width:5.9rem;flex-shrink:0}
-  @media (max-width:640px){
-    .fc-row{gap:.45rem;padding:.65rem .7rem}
-    .fc-day{width:4.4rem;font-size:.84rem}
-    .fc-tag,.fc-spacer{display:none}
-    .fc-min,.fc-max{width:2.6rem;font-size:.78rem}
-    .fc-bar{min-width:1.5rem}
-    /* The full label overflows a 375 px row, so the short one is shown there. */
-    .fc-badge{font-size:.55rem;padding:2px 5px}
-    .fc-b-long{display:none}
-    .fc-b-short{display:inline}
-  }
   /* GPS restyled for light hero */
   .gps-light{display:inline-flex;align-items:center;gap:.7rem;border-radius:9999px;font-size:.85rem;font-weight:600;padding:.8rem 1.5rem;background:rgba(27,87,245,.08);border:1px solid rgba(27,87,245,.18);color:#1b57f5;cursor:pointer;transition:background .15s ease}
   .gps-light:hover{background:rgba(27,87,245,.14)}
@@ -947,22 +921,27 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     </div>
   </div>
 
-  <!-- ═══ Næste 7 døgn ═══
+  <!-- ═══ Nu og 2 døgn frem ═══
        The forecast belongs on the front page, not only on /prognose: the
        homepage already received the "elpriser prognose" searches and ranked
        18th on them with nothing on the page to answer them. Server-rendered
-       into SSR_FORECAST_ROWS so a crawler sees the numbers, then replaced
+       into SSR_FORECAST_CHART so a crawler sees the numbers, then replaced
        client-side from the same /api/forecast response the hero already
-       fetches — the section costs no extra request. -->
+       fetches — the section costs no extra request.
+       The per-day figures under the curve are text, not path data, because a
+       polyline is what a reader can use and a crawler cannot. -->
   <div class="fc-wrap">
     <div class="fc-head">
       <div>
-        <h2>Næste 7 døgn</h2>
-        <p>Døgnets spænd fra billigste til dyreste time — faktiske børspriser i dag og i morgen, prognose derefter.</p>
+        <h2>Nu og 2 døgn frem</h2>
+        <p>Time for time: faktiske børspriser så langt de er afregnet, prognose resten af vejen.</p>
       </div>
       <a href="/prognose">Se hele prognosen</a>
     </div>
-    <div class="fc" id="homeForecast"><!--SSR_FORECAST_ROWS--></div>
+    <div class="chartcard">
+      <div class="chd"><span>Time for time</span><span>DKK/kWh</span></div>
+      <div id="homeForecast"><!--SSR_FORECAST_CHART--></div>
+    </div>
   </div>
 
   <div class="text-center mt-8">
@@ -3455,40 +3434,132 @@ function renderHeroTomorrow(fj,todayStr){
 // ═══ Næste 7 døgn (forside) ═══
 // Fed the same /api/forecast response the "I morgen"-mini uses, so adding the
 // section costs no extra request. Replaces the server-rendered rows in place.
+// ═══ Forsidens kurve: nu og 2 døgn frem ═══
+// This function is CANONICAL and exists verbatim in two places: here and in
+// functions/[[path]].js. The server draws it so a crawler gets the numbers,
+// the client redraws it when the visitor switches DK1/DK2 — and neither
+// runtime can import from the other. test-forecast-chart.mjs runs both copies
+// over the same fixtures and fails on the first differing byte, so the
+// duplication cannot rot quietly.
+//
+// Everything here is deterministic on purpose: weekday and month names come
+// from the arrays below rather than toLocaleDateString, whose output depends
+// on the ICU build and would differ between Workers and a browser.
+function fcChartHTML(days, todayStr, nowHour){
+  var WD=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+  var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  var f2=function(v){return v.toFixed(2).replace('.',',');};
+  // The feed opens on yesterday, so the window is keyed off today's date, not
+  // off row 0. A day is only taken when it is exactly the next one expected:
+  // skipping a hole and carrying on would splice non-adjacent days into one
+  // continuous line, which reads as a price movement that never happened, and
+  // would slide "I morgen" onto the wrong date.
+  var dayNo=function(x){
+    return Math.round((Date.parse(x+'T12:00:00Z')-Date.parse(todayStr+'T12:00:00Z'))/86400000);};
+  var WINDOW=3;                  // i dag + 2 døgn frem
+  var sel=[];
+  for(var k=0;k<days.length&&sel.length<WINDOW;k++){
+    var d=days[k];
+    if(!d||!d.date||!d.prices)continue;
+    var n=dayNo(d.date);
+    if(n<0)continue;
+    if(n!==sel.length)break;
+    var ps=d.prices.map(function(p){return p&&p.price!=null?p.price:null;});
+    if(!ps.some(function(p){return p!=null;}))break;
+    sel.push({date:d.date,real:d.type==='actual',ps:ps});
+  }
+  if(sel.length<2)return '';
+  var N=sel.length*24, W=720, H=190, PT=14, PB=10;
+  var pts=[];
+  for(var di=0;di<sel.length;di++)for(var h=0;h<24;h++){
+    var p=sel[di].ps[h];
+    if(p!=null)pts.push({i:di*24+h,p:p,di:di,real:sel[di].real});
+  }
+  if(pts.length<24)return '';
+  var lo=Math.min.apply(null,pts.map(function(x){return x.p;}));
+  var hi=Math.max.apply(null,pts.map(function(x){return x.p;}));
+  var span=(hi-lo)||1;
+  var X=function(i){return +(i/(N-1)*W).toFixed(1);};
+  var Y=function(p){return +(PT+(1-(p-lo)/span)*(H-PT-PB)).toFixed(1);};
+  var xy=function(x){return X(x.i)+','+Y(x.p);};
+  // The colour language is the hero curve's, so the two charts read the same.
+  var col=function(p){var t=(p-lo)/span;
+    return t<.25?'#34c759':t<.5?'#a8d84a':t<.75?'#ffcc00':t<.9?'#ff9500':'#ff3b30';};
+  // One stop per hour would be 96 of them. Emitting only the ends of each
+  // colour run is a handful, and renders the same: the run's last stop is what
+  // stops the gradient bleeding across a band it should not.
+  var stops='', run=null;
+  var stop=function(i,c){return '<stop offset="'+(i/(N-1)*100).toFixed(1)+'%" stop-color="'+c+'"/>';};
+  for(var q=0;q<pts.length;q++){
+    var c=col(pts[q].p);
+    if(run===null){stops+=stop(pts[q].i,c);run={c:c,i:pts[q].i};continue;}
+    if(c!==run.c){stops+=stop(run.i,run.c)+stop(pts[q].i,c);}
+    run={c:c,i:pts[q].i};
+  }
+  stops+=stop(pts[pts.length-1].i,run.c);
+  // Split at the last settled hour. The two polylines share that point, so the
+  // solid and dashed halves meet with no gap.
+  var lastReal=-1;
+  for(var j=0;j<pts.length;j++)if(pts[j].real)lastReal=j;
+  var solid=lastReal>=0?pts.slice(0,lastReal+1):[];
+  var dashed=lastReal>=0?pts.slice(lastReal):pts;
+  var poly=function(a){return a.map(xy).join(' ');};
+  var svg='<defs><linearGradient id="fcg" x1="0" y1="0" x2="1" y2="0">'+stops+'</linearGradient>'
+    +'<linearGradient id="fcf" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="#5b8bff" stop-opacity=".22"/>'
+    +'<stop offset="100%" stop-color="#5b8bff" stop-opacity="0"/></linearGradient></defs>';
+  // A tinted band behind the forecast, so the distinction survives even when
+  // the dashes are too small to notice on a phone.
+  if(lastReal>=0&&lastReal<pts.length-1)
+    svg+='<rect x="'+X(pts[lastReal].i)+'" y="0" width="'+(W-X(pts[lastReal].i))+'" height="'+(H-PB+12)+'" fill="currentColor" fill-opacity=".035"/>';
+  svg+='<polygon points="'+X(pts[0].i)+','+(H-PB+12)+' '+poly(pts)+' '+X(pts[pts.length-1].i)+','+(H-PB+12)+'" fill="url(#fcf)"/>';
+  if(solid.length>1)
+    svg+='<polyline points="'+poly(solid)+'" fill="none" stroke="url(#fcg)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>';
+  if(dashed.length>1)
+    svg+='<polyline points="'+poly(dashed)+'" fill="none" stroke="url(#fcg)" stroke-width="2.6" stroke-dasharray="5 4" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>';
+  // Midnight separators and the day names between them.
+  for(var s=1;s<sel.length;s++)
+    svg+='<line x1="'+X(s*24)+'" y1="'+PT+'" x2="'+X(s*24)+'" y2="'+(H-PB+6)+'" stroke="currentColor" stroke-opacity=".12"/>';
+  var labels='';
+  for(var t=0;t<sel.length;t++){
+    var dt=new Date(sel[t].date+'T12:00:00Z');
+    var lab=t===0?'I dag':t===1?'I morgen':WD[dt.getUTCDay()];
+    labels+='<span>'+lab+'<small>'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+'</small></span>';
+  }
+  // "Nu" sits on today's curve, and only when today is settled.
+  if(nowHour!=null&&sel[0].real&&sel[0].ps[nowHour]!=null){
+    svg+='<line x1="'+X(nowHour)+'" y1="'+(PT-6)+'" x2="'+X(nowHour)+'" y2="'+(H-PB+6)+'" stroke="currentColor" stroke-opacity=".2" stroke-dasharray="3 4"/>'
+      +'<circle cx="'+X(nowHour)+'" cy="'+Y(sel[0].ps[nowHour])+'" r="5.5" fill="#1b57f5" stroke="#fff" stroke-width="2.5"/>';
+  }
+  // The per-day figures stay as text. They are what the front page answers
+  // "elpriser prognose" with, and an SVG path answers nothing.
+  var dayLo=sel.map(function(d){return Math.min.apply(null,d.ps.filter(function(p){return p!=null;}));});
+  var cheap=dayLo.indexOf(Math.min.apply(null,dayLo));
+  var cards=sel.map(function(d,n){
+    var v=d.ps.filter(function(p){return p!=null;});
+    var dt=new Date(d.date+'T12:00:00Z');
+    var lab=n===0?'I dag':n===1?'I morgen':WD[dt.getUTCDay()];
+    return '<div class="mini'+(n===cheap?' best':'')+'">'
+      +'<div class="k">'+lab+' · '+(d.real?'Børspris':'Prognose')+'</div>'
+      +'<div class="v">'+f2(Math.min.apply(null,v))+'–'+f2(Math.max.apply(null,v))+'</div>'
+      +'<div class="s">'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+' · kr/kWh</div></div>';
+  }).join('');
+  return '<svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="Elpris time for time i dag og '+(sel.length-1)+' døgn frem">'+svg+'</svg>'
+    +'<div class="fc-days">'+labels+'</div>'
+    +'<div class="minirow">'+cards+'</div>';
+}
+
+
 function renderHomeForecast(fj){
   const el=document.getElementById('homeForecast');
-  if(!el||!fj||!fj.days||!fj.days.length)return;
-  const days=fj.days.slice(0,7).map(d=>{
-    const ps=d.prices.map(p=>p.price).filter(p=>p!=null);
-    return ps.length?{date:d.date,type:d.type,lo:Math.min(...ps),hi:Math.max(...ps)}:null;
-  }).filter(Boolean);
-  if(days.length<2)return;
-  const glo=Math.min(...days.map(d=>d.lo)),ghi=Math.max(...days.map(d=>d.hi));
-  // A flat week would divide by zero and paint every bar full width.
-  const span=Math.max(ghi-glo,.01);
-  const cheapest=days.reduce((a,b)=>b.lo<a.lo?b:a);
-  const f=v=>v.toFixed(2).replace('.',',');
-  const today=new Date();today.setHours(12,0,0,0);
-  const label=s=>{
-    const d=new Date(s+'T12:00:00');
-    const diff=Math.round((d-today)/86400000);
-    if(diff===0)return'I dag';
-    if(diff===1)return'I morgen';
-    return d.toLocaleDateString('da-DK',{weekday:'long'}).replace(/^./,c=>c.toUpperCase());
-  };
-  const sub=s=>new Date(s+'T12:00:00').toLocaleDateString('da-DK',{day:'numeric',month:'short'});
-  el.innerHTML=days.map(d=>{
-    const l=((d.lo-glo)/span*100).toFixed(1),w=((d.hi-d.lo)/span*100).toFixed(1);
-    const real=d.type==='actual';
-    return '<div class="fc-row">'
-      +'<div class="fc-day">'+label(d.date)+'<small>'+sub(d.date)+'</small></div>'
-      +'<div class="fc-tag'+(real?' real':'')+'">'+(real?'BØRSPRIS':'PROGNOSE')+'</div>'
-      +'<div class="fc-min">'+f(d.lo)+'</div>'
-      +'<div class="fc-bar"><i style="left:'+l+'%;width:'+w+'%"></i></div>'
-      +'<div class="fc-max">'+f(d.hi)+'</div>'
-      +(d===cheapest?'<span class="fc-badge"><span class="fc-b-long">UGENS BILLIGSTE</span><span class="fc-b-short">BILLIGST</span></span>':'<span class="fc-spacer"></span>')
-      +'</div>';
-  }).join('');
+  if(!el||!fj||!fj.days)return;
+  // Danish hour, so "nu" lands where the visitor's clock says it should
+  // regardless of the device's timezone.
+  const nowH=+new Intl.DateTimeFormat('en-GB',
+    {timeZone:'Europe/Copenhagen',hour:'2-digit',hour12:false}).format(new Date());
+  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Copenhagen'}).format(new Date());
+  const html=fcChartHTML(fj.days,today,nowH);
+  if(html)el.innerHTML=html;
 }
 function renderHero(prices,co2,nowH){
   const valid=prices.map((p,h)=>({p,h})).filter(x=>x.p!=null);

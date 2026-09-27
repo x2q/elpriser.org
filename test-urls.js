@@ -202,12 +202,17 @@ async function main() {
 
   console.log('\n9. FORSIDEN — prognosen skal stå i HTML\'en, ikke kun efter JS');
   const home = await get('/');
-  const rows = (home.body.match(/class="fc-row"/g) || []).length;
-  check(rows >= 5, 'forside: server-renderede prognoserækker', `fandt ${rows}, forventer mindst 5`);
-  check(home.body.includes('Næste 7 døgn'), 'forside: sektionsoverskrift');
+  const fcSection = home.body.slice(home.body.indexOf('id="homeForecast"'));
+  const days = (fcSection.match(/<div class="mini[ "]/g) || []).length;
+  check(days === 3, 'forside: server-renderede døgntal', `fandt ${days}, forventer 3`);
+  check(/<svg id="fcCurve"/.test(home.body), 'forside: kurven står i HTML\'en');
+  check(home.body.includes('Nu og 2 døgn frem'), 'forside: sektionsoverskrift');
   // The explanatory HTML comment names the placeholder too, so match the tag.
-  check(!home.body.includes('<!--SSR_FORECAST_ROWS-->'), 'forside: placeholder er erstattet');
-  check(/BØRSPRIS|PROGNOSE/.test(home.body), 'forside: rækkerne er mærket børspris eller prognose');
+  check(!home.body.includes('<!--SSR_FORECAST_CHART-->'), 'forside: placeholder er erstattet');
+  check(/Børspris|Prognose/.test(home.body), 'forside: døgnene er mærket børspris eller prognose');
+  // The numbers are the reason the section is server-rendered at all.
+  check(/<div class="v">\d,\d\d–\d,\d\d<\/div>/.test(home.body),
+        'forside: døgnenes spænd står som tekst');
   check(!home.body.includes('href="/${k}"'), 'forside: intet skabelon-link i HTML');
 
   console.log('\n8. REGULERBAR KAPACITET — endpoints lever og afviser forkert input');
