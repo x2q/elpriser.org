@@ -713,12 +713,18 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .fc-bar i{position:absolute;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#34c759,#ffcc00,#ff9500)}
   .fc-badge{flex-shrink:0;font-size:.58rem;font-weight:700;color:#1e9e4a;background:rgba(52,199,89,.14);padding:3px 7px;border-radius:7px;white-space:nowrap}
   .dark .fc-badge{color:#4cd964}
+  .fc-b-short{display:none}
   .fc-spacer{width:5.9rem;flex-shrink:0}
   @media (max-width:640px){
-    .fc-row{gap:.5rem;padding:.65rem .85rem}
-    .fc-day{width:4.6rem;font-size:.84rem}
+    .fc-row{gap:.45rem;padding:.65rem .7rem}
+    .fc-day{width:4.4rem;font-size:.84rem}
     .fc-tag,.fc-spacer{display:none}
+    .fc-min,.fc-max{width:2.6rem;font-size:.78rem}
+    .fc-bar{min-width:1.5rem}
+    /* The full label overflows a 375 px row, so the short one is shown there. */
     .fc-badge{font-size:.55rem;padding:2px 5px}
+    .fc-b-long{display:none}
+    .fc-b-short{display:inline}
   }
   /* GPS restyled for light hero */
   .gps-light{display:inline-flex;align-items:center;gap:.7rem;border-radius:9999px;font-size:.85rem;font-weight:600;padding:.8rem 1.5rem;background:rgba(27,87,245,.08);border:1px solid rgba(27,87,245,.18);color:#1b57f5;cursor:pointer;transition:background .15s ease}
@@ -3325,7 +3331,7 @@ function renderHomeForecast(fj){
       +'<div class="fc-min">'+f(d.lo)+'</div>'
       +'<div class="fc-bar"><i style="left:'+l+'%;width:'+w+'%"></i></div>'
       +'<div class="fc-max">'+f(d.hi)+'</div>'
-      +(d===cheapest?'<span class="fc-badge">UGENS BILLIGSTE</span>':'<span class="fc-spacer"></span>')
+      +(d===cheapest?'<span class="fc-badge"><span class="fc-b-long">UGENS BILLIGSTE</span><span class="fc-b-short">BILLIGST</span></span>':'<span class="fc-spacer"></span>')
       +'</div>';
   }).join('');
 }

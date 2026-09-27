@@ -836,7 +836,7 @@ function buildForecastRows(fc, todayStr) {
       + `<div class="fc-min">${f(d.lo)}</div>`
       + `<div class="fc-bar"><i style="left:${l}%;width:${w}%"></i></div>`
       + `<div class="fc-max">${f(d.hi)}</div>`
-      + (d === cheapest ? `<span class="fc-badge">UGENS BILLIGSTE</span>`
+      + (d === cheapest ? `<span class="fc-badge"><span class="fc-b-long">UGENS BILLIGSTE</span><span class="fc-b-short">BILLIGST</span></span>`
                         : `<span class="fc-spacer"></span>`)
       + `</div>`;
   }).join('');
