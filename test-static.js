@@ -352,6 +352,27 @@ test('price pages: dropdown, sentence and unit describe the same price in every 
     'the homepage summary still says the no-company total includes the nettarif');
 });
 
+test('price pages: the curve is drawn from the table\'s own data and conversion', () => {
+  // The chart sits between the big number and the table. If it fetched its own
+  // prices (say the front page's inkl_alt feed) it would disagree with both on
+  // /dk1/n1 or in "Inkl tarif". It must use priceData/fcDays through cvt().
+  const main = INDEX.slice(INDEX.indexOf('data-page="prices"'), INDEX.indexOf('<!-- ═══════ TARIFF PAGE'));
+  assert.ok(/id="pricesForecast"/.test(main), 'no chart container on the price pages');
+  assert.ok(main.indexOf('id="pricesAnswer"') < main.indexOf('id="pricesForecastWrap"') &&
+            main.indexOf('id="pricesForecastWrap"') < main.indexOf('id="priceTable"'),
+    'the chart is not between the big number and the table');
+  const fn = INDEX.slice(INDEX.indexOf('function pricesChartDays(){'), INDEX.indexOf('function renderPricesForecast(){'));
+  assert.ok(/priceData\[ds\]\|\|fcDays\[ds\]/.test(fn) && /cvt\(src\[h\],h,ds\)/.test(fn),
+    'pricesChartDays does not use the table\'s data through cvt()');
+  assert.ok(!/fetch\(/.test(fn), 'pricesChartDays fetches its own prices');
+  assert.ok(/if\(S\.weekOffset===0\)renderPricesForecast\(\);/.test(INDEX), 'the chart is not redrawn with the table');
+  // Spacing between the chart and the table must come from the hand-written
+  // block: a Tailwind class used nowhere else (mt-5 was) is purged and the
+  // cards end up touching.
+  const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
+  assert.ok(style.includes('.fc-prices+.fc-after{margin-top:'), 'no hand-written gap between the chart and the table');
+});
+
 test('homepage: the hero curve has a price scale that lines up', () => {
   // The scale sits in a gutter left of the curve. The CO2 strip below takes the
   // same gutter, or its hours stop lining up with the price curve's.

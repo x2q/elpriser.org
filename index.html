@@ -711,6 +711,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .yax{position:absolute;top:0;bottom:0;right:100%;width:2.2rem}
   .yax span{position:absolute;right:.4rem;transform:translateY(-50%);font-size:.6rem;color:#8a95a8;font-variant-numeric:tabular-nums;white-space:nowrap}
   .dark .yax span{color:#6b778a}
+  .fc-prices{padding:0;margin-top:.5rem}
+  .fc-prices+.fc-after{margin-top:1.25rem}
   .fc-head a{font-size:.8rem;font-weight:600;color:#1b57f5;white-space:nowrap;text-decoration:underline}
   .dark .fc-head a{color:#6d9aff}
   .fc-b-short{display:none}
@@ -1225,7 +1227,25 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <div class="answer-unit" id="pricesAnswerUnit">kr/kWh</div>
     <div class="answer-pills" id="pricesAnswerPills" style="justify-content:center"></div>
   </div>
-  <div class="subcard mt-2">
+  <!-- ═══ Nu og 2 døgn frem, for this page's own view ═══
+       Same curve as the front page, but drawn from the very data and cvt()
+       conversion the table below uses — on /dk1/n1 it includes N1's nettarif,
+       in "Inkl tarif" it drops elafgift — so the chart, the big number and the
+       table can never disagree. Hidden until it has data. -->
+  <div class="fc-wrap fc-prices" id="pricesForecastWrap" style="display:none">
+    <div class="fc-head">
+      <div>
+        <h2>Nu og 2 døgn frem</h2>
+        <p>Time for time: faktiske børspriser så langt de er afregnet, prognose resten af vejen.</p>
+      </div>
+      <a href="/prognose">Se hele prognosen</a>
+    </div>
+    <div class="chartcard">
+      <div class="chd"><span>Time for time</span><span>DKK/kWh</span></div>
+      <div id="pricesForecast"></div>
+    </div>
+  </div>
+  <div class="subcard mt-2 fc-after">
     <div class="chd2"><span id="tableTitle">Time for time · 4 dage tilbage, 3 døgn frem</span><span>DKK/kWh</span></div>
     <div id="tableView">
       <div class="text-center py-12 text-gray-400 dark:text-gray-500" id="loadingIndicator">
@@ -4012,6 +4032,27 @@ async function loadPriceData(loadId){
   }
 }
 
+/** Today and the next two days in fcChartHTML's input shape, converted with
+ *  cvt() exactly like the table: settled prices where they exist, otherwise
+ *  the forecast the table already fetched. */
+function pricesChartDays(){
+  const t=new Date();t.setHours(12,0,0,0);const out=[];
+  for(let i=0;i<3;i++){
+    const d=new Date(t);d.setDate(t.getDate()+i);const ds=fmt(d);
+    const src=priceData[ds]||fcDays[ds];
+    if(!src)break;
+    out.push({date:ds,type:priceData[ds]?'actual':'forecast',
+      prices:Array.from({length:24},(_,h)=>({hour:h,price:src[h]!=null?cvt(src[h],h,ds):null}))});
+  }
+  return out;
+}
+function renderPricesForecast(){
+  const el=document.getElementById('pricesForecast'),wrap=document.getElementById('pricesForecastWrap');
+  if(!el||!wrap)return;
+  const html=fcChartHTML(pricesChartDays(),fmt(new Date()),new Date().getHours());
+  if(!html)return;
+  el.innerHTML=html;wrap.style.display='';
+}
 /** The eight dates the table shows for the current S.weekOffset. */
 function tableWindow(){
   const s=new Date();s.setHours(12,0,0,0);s.setDate(s.getDate()-4+S.weekOffset*8);
@@ -4082,6 +4123,7 @@ function renderTable(){
   }
   tbl.innerHTML=h;document.getElementById('loadingIndicator').style.display='none';document.getElementById('tableWrapper').style.display='block';
   const note=document.getElementById('fcTableNote');if(note)note.style.display=anyFc?'':'none';
+  if(S.weekOffset===0)renderPricesForecast();
   const tt=document.getElementById('tableTitle');
   if(tt)tt.textContent=S.weekOffset===0?'Time for time · 4 dage tilbage, 3 døgn frem':'Time for time · tidligere priser';
   updatePricesAnswer();
