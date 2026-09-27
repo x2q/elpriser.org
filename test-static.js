@@ -298,7 +298,7 @@ test('homepage: the chart reuses the hero card styles, which are hand-written', 
   // The chart deliberately reuses .chartcard/.minirow/.mini rather than
   // inventing new classes, and those must stay in the hand-written block.
   const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
-  for (const cls of ['.chartcard', '.minirow', '.mini{', '.mini .v', '.mini.best', '.fc-days']) {
+  for (const cls of ['.chartcard', '.minirow', '.mini{', '.mini .v', '.mini.best', '.fc-days', '.fc-hours']) {
     assert.ok(style.includes(cls), `${cls} is not hand-written in the <style> block`);
   }
 });

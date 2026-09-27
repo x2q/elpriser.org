@@ -83,6 +83,19 @@ const span = (n, los, his, types = []) => ({
   ok(solid[1].split(' ').pop() === dash[1].split(' ')[0],
      'de to dele mødes i samme punkt');
   ok(!/<rect[^>]*fill-opacity/.test(h), 'der tegnes intet bånd bag prognosen');
+  // Six-hour marks: 00 06 12 18 for each of the three days.
+  const hrs = [...h.matchAll(/<span(?: class="first")? style="left:([\d.]+)%">(\d\d)<\/span>/g)];
+  ok(hrs.length === 12, 'tolv 6-timers etiketter på tre døgn', `${hrs.length}`);
+  ok(hrs.map(m => m[2]).join(' ') === '00 06 12 18 00 06 12 18 00 06 12 18',
+     'etiketterne går 00 06 12 18 hvert døgn', hrs.map(m => m[2]).join(' '));
+  const lefts = hrs.map(m => +m[1]);
+  ok(lefts[0] === 0 && lefts.every((x, i) => i === 0 || x > lefts[i - 1]) && lefts.at(-1) < 100,
+     'etiketterne står i stigende rækkefølge inden for grafen', lefts.join(','));
+  // Hour 6 of 72 sits at 6/71 of the width, exactly where the svg draws it.
+  ok(Math.abs(lefts[1] - 6 / 71 * 100) < 0.01, 'etiket 06 står ud for sin gitterlinje', `${lefts[1]}`);
+  ok((h.match(/stroke-opacity="\.06" stroke-dasharray="2 4"/g) || []).length === 9,
+     'ni svage 6-timers linjer (midnat har sin egen)');
+  ok(!/<text[^>]*>\d\d</.test(h), 'timetallene står ikke inde i den strakte svg');
   // The curve is two polylines sharing one gradient. Left to default to
   // objectBoundingBox, each stretches the whole window's ramp across its own
   // width and today gets painted in tomorrow's colours — cheap hours came out

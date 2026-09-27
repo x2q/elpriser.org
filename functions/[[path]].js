@@ -881,6 +881,15 @@ function fcChartHTML(days, todayStr, nowHour){
   // Midnight separators and the day names between them.
   for(var s=1;s<sel.length;s++)
     svg+='<line x1="'+X(s*24)+'" y1="'+PT+'" x2="'+X(s*24)+'" y2="'+(H-PB+6)+'" stroke="currentColor" stroke-opacity=".12"/>';
+  // Six-hour gridlines, fainter than midnight so the days still read as days.
+  // Their labels go in HTML like the day names, for the same reason: text
+  // inside this stretched svg is squashed on a phone.
+  var hours='';
+  for(var g=0;g<N;g+=6){
+    var hh=g%24;
+    if(hh)svg+='<line x1="'+X(g)+'" y1="'+PT+'" x2="'+X(g)+'" y2="'+(H-PB+6)+'" stroke="currentColor" stroke-opacity=".06" stroke-dasharray="2 4"/>';
+    hours+='<span'+(g===0?' class="first"':'')+' style="left:'+(g/(N-1)*100).toFixed(2)+'%">'+(hh<10?'0':'')+hh+'</span>';
+  }
   var labels='';
   for(var t=0;t<sel.length;t++){
     var dt=new Date(sel[t].date+'T12:00:00Z');
@@ -906,6 +915,7 @@ function fcChartHTML(days, todayStr, nowHour){
       +'<div class="s">'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+' · kr/kWh</div></div>';
   }).join('');
   return '<svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="Elpris time for time i dag og '+(sel.length-1)+' døgn frem">'+svg+'</svg>'
+    +'<div class="fc-hours">'+hours+'</div>'
     +'<div class="fc-days">'+labels+'</div>'
     +'<div class="minirow">'+cards+'</div>';
 }
@@ -1154,7 +1164,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v40');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v41');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
