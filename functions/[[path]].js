@@ -836,15 +836,30 @@ function fcTicks(lo, hi){
  *  be <text> inside it: the svg is stretched with preserveAspectRatio="none"
  *  and glyphs would be squashed on a phone. Each sits at the same fraction of
  *  the height the svg draws its gridline at. */
-function fcYaxis(ticks, Y, H){
+function fcYaxis(ticks, Y, H, dec){
+  var d=dec==null?2:dec;
   return ticks.map(function(v){
-    return '<span style="top:'+(Y(v)/H*100).toFixed(2)+'%">'+v.toFixed(2).replace('.',',')+'</span>';
+    var s=v.toFixed(d);if(/^-0\.?0*$/.test(s))s=s.slice(1);
+    return '<span style="top:'+(Y(v)/H*100).toFixed(2)+'%">'+s.replace('.',',')+'</span>';
   }).join('');
 }
-function fcChartHTML(days, todayStr, nowHour){
+// `o` is optional and only the zone pages pass it: their labels, date format,
+// unit and decimals come from the zone's own locale and currency. Without it
+// the output is the Danish chart, byte for byte as before.
+function fcChartHTML(days, todayStr, nowHour, o){
+  o=o||{};
   var WD=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
   var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
-  var f2=function(v){return v.toFixed(2).replace('.',',');};
+  var dec=o.dec==null?2:o.dec;
+  // A price that rounds to zero is printed without its minus: "-0" is not a
+  // price anyone should have to read. Real negative prices keep their sign.
+  var f2=function(v){var s=v.toFixed(dec);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',',');};
+  var dm=o.dm||function(dt){return dt.getUTCDate()+'. '+MON[dt.getUTCMonth()];};
+  var dayName=function(n,dt){
+    if(n===0)return o.today||'I dag';
+    if(n===1&&o.tomorrow!==null)return o.tomorrow||'I morgen';
+    return o.wd?o.wd(dt):WD[dt.getUTCDay()];
+  };
   // The feed opens on yesterday, so the window is keyed off today's date, not
   // off row 0. A day is only taken when it is exactly the next one expected:
   // skipping a hole and carrying on would splice non-adjacent days into one
@@ -921,8 +936,7 @@ function fcChartHTML(days, todayStr, nowHour){
   var labels='';
   for(var t=0;t<sel.length;t++){
     var dt=new Date(sel[t].date+'T12:00:00Z');
-    var lab=t===0?'I dag':t===1?'I morgen':WD[dt.getUTCDay()];
-    labels+='<span>'+lab+'<small>'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+'</small></span>';
+    labels+='<span>'+dayName(t,dt)+'<small>'+dm(dt)+'</small></span>';
   }
   // "Nu" sits on today's curve, and only when today is settled.
   if(nowHour!=null&&sel[0].real&&sel[0].ps[nowHour]!=null){
@@ -936,29 +950,28 @@ function fcChartHTML(days, todayStr, nowHour){
   var cards=sel.map(function(d,n){
     var v=d.ps.filter(function(p){return p!=null;});
     var dt=new Date(d.date+'T12:00:00Z');
-    var lab=n===0?'I dag':n===1?'I morgen':WD[dt.getUTCDay()];
     return '<div class="mini'+(n===cheap?' best':'')+'">'
-      +'<div class="k">'+lab+' · '+(d.real?'Børspris':'Prognose')+'</div>'
+      +'<div class="k">'+dayName(n,dt)+' · '+(d.real?(o.actual||'Børspris'):(o.forecast||'Prognose'))+'</div>'
       +'<div class="v">'+f2(Math.min.apply(null,v))+'–'+f2(Math.max.apply(null,v))+'</div>'
-      +'<div class="s">'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+' · kr/kWh</div></div>';
+      +'<div class="s">'+dm(dt)+' · '+(o.unit||'kr/kWh')+'</div></div>';
   }).join('');
-  return '<div class="yplot"><svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="Elpris time for time i dag og '+(sel.length-1)+' døgn frem">'+svg+'</svg>'
-    +'<div class="yax">'+fcYaxis(ticks,Y,H)+'</div></div>'
+  return '<div class="yplot"><svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="'+(o.aria||('Elpris time for time i dag og '+(sel.length-1)+' døgn frem'))+'">'+svg+'</svg>'
+    +'<div class="yax">'+fcYaxis(ticks,Y,H,dec)+'</div></div>'
     +'<div class="fc-hours ygut">'+hours+'</div>'
     +'<div class="fc-days ygut">'+labels+'</div>'
     +'<div class="minirow">'+cards+'</div>';
 }
 
 const SSR_ZONES = {
-  no1: { name: 'NO1', city: 'Oslo',         lang: 'no', rate: 11.7, sub: 'øre' },
-  no2: { name: 'NO2', city: 'Kristiansand', lang: 'no', rate: 11.7, sub: 'øre' },
-  no3: { name: 'NO3', city: 'Trondheim',    lang: 'no', rate: 11.7, sub: 'øre' },
-  no4: { name: 'NO4', city: 'Tromsø',       lang: 'no', rate: 11.7, sub: 'øre' },
-  no5: { name: 'NO5', city: 'Bergen',       lang: 'no', rate: 11.7, sub: 'øre' },
-  se1: { name: 'SE1', city: 'Luleå',        lang: 'sv', rate: 11.3, sub: 'öre' },
-  se2: { name: 'SE2', city: 'Sundsvall',    lang: 'sv', rate: 11.3, sub: 'öre' },
-  se3: { name: 'SE3', city: 'Stockholm',    lang: 'sv', rate: 11.3, sub: 'öre' },
-  se4: { name: 'SE4', city: 'Malmö',        lang: 'sv', rate: 11.3, sub: 'öre' },
+  no1: { name: 'NO1', city: 'Oslo',         lang: 'no', rate: 10.84, sub: 'øre' },
+  no2: { name: 'NO2', city: 'Kristiansand', lang: 'no', rate: 10.84, sub: 'øre' },
+  no3: { name: 'NO3', city: 'Trondheim',    lang: 'no', rate: 10.84, sub: 'øre' },
+  no4: { name: 'NO4', city: 'Tromsø',       lang: 'no', rate: 10.84, sub: 'øre' },
+  no5: { name: 'NO5', city: 'Bergen',       lang: 'no', rate: 10.84, sub: 'øre' },
+  se1: { name: 'SE1', city: 'Luleå',        lang: 'sv', rate: 11.29, sub: 'öre' },
+  se2: { name: 'SE2', city: 'Sundsvall',    lang: 'sv', rate: 11.29, sub: 'öre' },
+  se3: { name: 'SE3', city: 'Stockholm',    lang: 'sv', rate: 11.29, sub: 'öre' },
+  se4: { name: 'SE4', city: 'Malmö',        lang: 'sv', rate: 11.29, sub: 'öre' },
   fi:  { name: 'FI',  city: 'Suomi',        lang: 'fi', rate: 1,    sub: 'snt' },
   nl:  { name: 'NL',  city: 'Nederland',    lang: 'nl', rate: 1,    sub: 'cent' },
 };
@@ -1008,8 +1021,9 @@ function buildZoneIntro(key, data, todayStr) {
   const days = (data.days || []).filter(d => !todayStr || d.date >= todayStr).map(d => {
     const ps = (d.prices || []).map(p => p.eur_mwh).filter(v => v != null);
     if (!ps.length) return null;
-    // EUR/MWh to the zone's own sub-unit per kWh, as the client does.
-    const conv = v => v / 1000 * z.rate * 100;
+    // EUR/MWh to the zone's own sub-unit per kWh, as the client does, at the
+    // ECB rate /api/nordic returns; the constant is only its fallback.
+    const conv = v => v / 1000 * ((data.zoneInfo && data.zoneInfo.rate) || z.rate) * 100;
     return { date: d.date, actual: d.actual === true || d.type === 'actual',
              lo: conv(Math.min(...ps)), hi: conv(Math.max(...ps)) };
   }).filter(Boolean);
@@ -1113,7 +1127,7 @@ function daDateLabel() {
 // it.
 function priceNowText(mode, hh, price, area, net){
   var R={DK1:'Vestdanmark (Jylland og Fyn)',DK2:'Østdanmark (Sjælland, Lolland-Falster og Bornholm)'};
-  var p=price.toFixed(2).replace('.',',');
+  var p=price.toFixed(2);if(/^-0\.?0*$/.test(p))p=p.slice(1);p=p.replace('.',',');
   var at='Lige nu (kl. '+hh+':00) er ';
   var where='i '+area+', '+R[area]+', ';
   var local=' Nettariffen fra dit lokale netselskab kommer oveni — vælg netselskab i menuen ovenfor for den fulde pris.';
@@ -1221,7 +1235,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v44');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v46');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 

@@ -921,21 +921,49 @@ const MAXOFF_PARAM   = { name: 'max_off',  in: 'query', schema: { type: 'integer
 // than derived, so an unknown zone is rejected with a useful message instead
 // of turning into a KV miss.
 const NORDIC_ZONES = ['dk1','dk2','no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl'];
+// EUR→local conversion for the zone pages. These were fixed constants — NOK
+// sat at 11.7 while the ECB rate had fallen to 10.84, so every Norwegian price
+// in øre was ~8 % too high, grid-company totals included. The ECB's daily
+// reference rate is used now; these are only the fallback, set to the ECB
+// fixing of 2026-09-25, for when the ECB cannot be reached.
+const FX_FALLBACK = { EUR: 1, DKK: 7.4755, NOK: 10.84, SEK: 11.29, date: '2026-09-25' };
 const NORDIC_ZONE_INFO = {
-  dk1: { name: 'DK1 Vestdanmark',  country: 'DK', currency: 'DKK', rate: 7.46 },
-  dk2: { name: 'DK2 Østdanmark',   country: 'DK', currency: 'DKK', rate: 7.46 },
-  no1: { name: 'NO1 Oslo',         country: 'NO', currency: 'NOK', rate: 11.7 },
-  no2: { name: 'NO2 Kristiansand', country: 'NO', currency: 'NOK', rate: 11.7 },
-  no3: { name: 'NO3 Trondheim',    country: 'NO', currency: 'NOK', rate: 11.7 },
-  no4: { name: 'NO4 Tromsø',       country: 'NO', currency: 'NOK', rate: 11.7 },
-  no5: { name: 'NO5 Bergen',       country: 'NO', currency: 'NOK', rate: 11.7 },
-  se1: { name: 'SE1 Luleå',        country: 'SE', currency: 'SEK', rate: 11.3 },
-  se2: { name: 'SE2 Sundsvall',    country: 'SE', currency: 'SEK', rate: 11.3 },
-  se3: { name: 'SE3 Stockholm',    country: 'SE', currency: 'SEK', rate: 11.3 },
-  se4: { name: 'SE4 Malmö',        country: 'SE', currency: 'SEK', rate: 11.3 },
+  dk1: { name: 'DK1 Vestdanmark',  country: 'DK', currency: 'DKK', rate: FX_FALLBACK.DKK },
+  dk2: { name: 'DK2 Østdanmark',   country: 'DK', currency: 'DKK', rate: FX_FALLBACK.DKK },
+  no1: { name: 'NO1 Oslo',         country: 'NO', currency: 'NOK', rate: FX_FALLBACK.NOK },
+  no2: { name: 'NO2 Kristiansand', country: 'NO', currency: 'NOK', rate: FX_FALLBACK.NOK },
+  no3: { name: 'NO3 Trondheim',    country: 'NO', currency: 'NOK', rate: FX_FALLBACK.NOK },
+  no4: { name: 'NO4 Tromsø',       country: 'NO', currency: 'NOK', rate: FX_FALLBACK.NOK },
+  no5: { name: 'NO5 Bergen',       country: 'NO', currency: 'NOK', rate: FX_FALLBACK.NOK },
+  se1: { name: 'SE1 Luleå',        country: 'SE', currency: 'SEK', rate: FX_FALLBACK.SEK },
+  se2: { name: 'SE2 Sundsvall',    country: 'SE', currency: 'SEK', rate: FX_FALLBACK.SEK },
+  se3: { name: 'SE3 Stockholm',    country: 'SE', currency: 'SEK', rate: FX_FALLBACK.SEK },
+  se4: { name: 'SE4 Malmö',        country: 'SE', currency: 'SEK', rate: FX_FALLBACK.SEK },
   fi:  { name: 'FI Finland',       country: 'FI', currency: 'EUR', rate: 1 },
   nl:  { name: 'NL Nederland',     country: 'NL', currency: 'EUR', rate: 1 },
 };
+
+/** The ECB's daily euro reference rates, edge-cached for six hours (the ECB
+ *  publishes once a working day, ~16:00 CET). A rate outside a sane band is
+ *  treated as a parse failure, so a malformed file can never put a Norwegian
+ *  price out by a factor of ten. */
+async function ecbRates() {
+  try {
+    const r = await fetch('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml',
+                          { cf: { cacheTtl: 21600, cacheEverything: true } });
+    if (!r.ok) throw new Error(`ECB ${r.status}`);
+    const x = await r.text();
+    const date = (x.match(/time='(\d{4}-\d{2}-\d{2})'/) || [])[1];
+    const get = c => +((x.match(new RegExp(`currency='${c}' rate='([\\d.]+)'`)) || [])[1]);
+    const rates = { EUR: 1, DKK: get('DKK'), NOK: get('NOK'), SEK: get('SEK') };
+    const sane = rates.DKK > 7 && rates.DKK < 8 && rates.NOK > 7 && rates.NOK < 16 && rates.SEK > 7 && rates.SEK < 16;
+    if (!date || !sane) throw new Error('ECB file did not parse');
+    return { rates, date, source: 'ECB' };
+  } catch (e) {
+    console.error('ecbRates', e.message || e);
+    return { rates: FX_FALLBACK, date: FX_FALLBACK.date, source: 'fallback' };
+  }
+}
 
 const OPENAPI_SPEC = {
   openapi: '3.1.0',
@@ -1244,7 +1272,11 @@ export async function onRequest(context) {
     try {
       const raw = await context.env.PRICE_CACHE.get(`nordic-forecast-${zone}`, 'json');
       if (!raw) return fail(404, `no forecast available for ${zone}`);
-      return jsonResponse({ ...raw, zoneInfo: NORDIC_ZONE_INFO[zone] },
+      const fx = await ecbRates();
+      const info = NORDIC_ZONE_INFO[zone];
+      return jsonResponse({ ...raw, zoneInfo: { ...info,
+                            rate: fx.rates[info.currency] ?? info.rate,
+                            rateDate: fx.date, rateSource: fx.source } },
                           { maxAge: 1800, request });
     } catch (e) {
       console.error(e);

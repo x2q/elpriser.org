@@ -371,7 +371,7 @@ test('price pages: the curve is drawn from the table\'s own data and conversion'
   // Above the heading the box must be reserved before the data arrives, or
   // the h1 jumps down under the reader when it does.
   const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
-  assert.ok(/#pricesForecast\{min-height:\d+px\}/.test(style), 'no reserved height for the chart');
+  assert.ok(/#pricesForecast[^{]*\{min-height:\d+px\}/.test(style), 'no reserved height for the chart');
   assert.ok(!/id="pricesForecastWrap" style="display:none"/.test(INDEX), 'the chart box starts collapsed and will shift the page');
 });
 
@@ -382,6 +382,52 @@ test('seo: no heading tag written inside an HTML comment', () => {
   const bad = [...INDEX.matchAll(/<!--([\s\S]*?)-->/g)].filter(m => /<h[1-6]\b/i.test(m[1]))
     .map(m => m[1].trim().slice(0, 60));
   assert.deepEqual(bad, [], `heading tag inside a comment: ${bad.join(' | ')}`);
+});
+
+test('zone pages: curve above the heading, from the table\'s own conversion', () => {
+  const main = INDEX.slice(INDEX.indexOf('data-page="zone"'), INDEX.indexOf('<!-- ═══════ BLOG: Elafgift 2028'));
+  assert.ok(main.indexOf('id="zoneForecastWrap"') > 0 && main.indexOf('id="zoneForecastWrap"') < main.indexOf('id="zTitle"'),
+    'the zone chart is not above the zone heading');
+  const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
+  assert.ok(/#zoneForecast\{min-height:\d+px\}|,#zoneForecast\{min-height:\d+px\}/.test(style), 'no reserved height for the zone chart');
+  // Drawn with renderZone's own cvt, so it follows currency and grid company.
+  assert.ok(/renderZoneForecast\(j,z,t,loc,cvt,dec,local\);/.test(INDEX), 'renderZone does not hand its conversion to the chart');
+  const fn = INDEX.slice(INDEX.indexOf('function renderZoneForecast('), INDEX.indexOf('function renderZone(){'));
+  assert.ok(/price:cvt\(p\.eur_mwh\)/.test(fn) && !/fetch\(/.test(fn), 'the zone chart does not use the table\'s numbers');
+});
+
+test('zone pages: EUR is converted at the ECB rate, not a stale constant', () => {
+  // NOK sat at a fixed 11.7 while the ECB rate was 10.84: every Norwegian
+  // price in øre was ~8 % too high. The API now returns the ECB rate, and both
+  // the server page and the browser must use it rather than their constants.
+  const API = fs.readFileSync(path.join(ROOT, 'functions/api/[[catchall]].js'), 'utf8');
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  assert.ok(/eurofxref-daily\.xml/.test(API) && /rate: fx\.rates\[info\.currency\]/.test(API), '/api/nordic does not return the ECB rate');
+  assert.ok(/const rate=\(j\.zoneInfo&&j\.zoneInfo\.rate\)\|\|z\.rate;/.test(INDEX) && /base=v\/1000\*rate\*100/.test(INDEX),
+    'the browser converts with its constant instead of the API rate');
+  assert.ok(/data\.zoneInfo && data\.zoneInfo\.rate\) \|\| z\.rate/.test(SRV), 'the server page converts with its constant instead of the API rate');
+  // The fallbacks must agree across the three files, or a failed ECB fetch
+  // would show different numbers on the page and in its first paint.
+  const fb = API.match(/const FX_FALLBACK = \{ EUR: 1, DKK: ([\d.]+), NOK: ([\d.]+), SEK: ([\d.]+)/);
+  assert.ok(fb, 'FX_FALLBACK not found');
+  for (const [cur, v] of [['NOK', fb[2]], ['SEK', fb[3]]]) {
+    assert.ok(INDEX.includes(`cur:'${cur}',rate:${v},`), `index.html ZONES ${cur} fallback is not ${v}`);
+    assert.ok(new RegExp(`rate: ${v.replace('.', '\\.')}, sub:`).test(SRV), `SSR_ZONES ${cur} fallback is not ${v}`);
+  }
+  // And the pages must no longer say the rate is fixed.
+  assert.ok(!/fast kurs|fixed rate|kiinteää kurssia|vaste koers/.test(INDEX), 'a note still says the conversion uses a fixed rate');
+});
+
+test('prices: nothing prints a minus in front of a zero', () => {
+  // NO2 and NL each had an hour a fraction below zero, so the new curve read
+  // "-0–179" and the table "-0". Every price goes through num() or the same
+  // inline rule in the two shared functions; no raw toFixed().replace remains.
+  const raw = [...INDEX.matchAll(/\.toFixed\((?:2|dec|d)\)\.replace\('\.',','\)/g)].length;
+  assert.equal(raw, 0, `${raw} price(s) still formatted without the negative-zero rule`);
+  const vm = require('vm'); const ctx = {}; vm.createContext(ctx);
+  vm.runInContext(INDEX.match(/function num\(v,d\)\{[^\n]+/)[0] + '\nglobalThis.n=num;', ctx);
+  assert.equal(ctx.n(-0.004, 2), '0,00'); assert.equal(ctx.n(-0.3, 0), '0');
+  assert.equal(ctx.n(-0.6, 0), '-1'); assert.equal(ctx.n(-1.25, 2), '-1,25'); assert.equal(ctx.n(3.456, 1), '3,5');
 });
 
 test('homepage: the hero curve has a price scale that lines up', () => {

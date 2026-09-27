@@ -207,6 +207,31 @@ const span = (n, los, his, types = []) => ({
      'time- og dagrækken rykker ind sammen med kurven, så de stadig flugter');
 }
 
+// ── Zone options: labels, dates, unit and decimals from the zone's locale ──
+{
+  const f = span(3, [40, 60, 30], [120, 180, 90], ['actual', 'actual']);
+  const h = chart(f.days, TODAY, 11, {
+    today: 'I dag', tomorrow: null, wd: dt => ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'][dt.getUTCDay()].replace('Mandag', 'Mandag'),
+    dm: dt => `${dt.getUTCDate()}. sep.`, actual: 'Faktisk', forecast: 'Prognose', unit: 'øre/kWh', dec: 0, aria: 'Neste 3 døgn · øre/kWh' });
+  ok(/>40–120</.test(h) && />60–180</.test(h), 'øre vises uden decimaler', h.slice(-500));
+  ok(/· øre\/kWh</.test(h) && !/kr\/kWh/.test(h), 'enheden følger zonen');
+  ok(/>I dag · Faktisk</.test(h), 'zonens ord for afregnet pris bruges');
+  ok(/>Mandag · Faktisk</.test(h) && !/I morgen/.test(h), 'dagen efter i dag navngives med ugedag, ikke et nyt ord');
+  ok(/<small>28\. sep\.<\/small>/.test(h), 'datoformatet kommer fra zonen');
+  ok(/aria-label="Neste 3 døgn · øre\/kWh"/.test(h), 'beskrivelsen er på zonens sprog');
+  const labs = [...h.match(/<div class="yax">([\s\S]*?)<\/div>/)[1].matchAll(/>([^<]+)</g)].map(m => m[1]);
+  ok(labs.every(x => /^-?\d+$/.test(x)), 'skalaen følger zonens decimaler', labs.join(' '));
+}
+
+// ── A price a fraction below zero is not printed as "-0" ──────────────────
+{
+  const f = span(3, [-0.3, 60, 30], [179, 180, 90], ['actual', 'actual']);
+  const h = chart(f.days, TODAY, 11, { dec: 0, unit: 'øre/kWh', tomorrow: null });
+  ok(/>0–179</.test(h) && !/-0[–<]/.test(h), 'et beløb der runder til nul vises uden minus', h.slice(-600));
+  const g = span(3, [-2.4, 60, 30], [179, 180, 90], ['actual', 'actual']);
+  ok(/>-2–179</.test(chart(g.days, TODAY, 11, { dec: 0 })), 'rigtige negative priser beholder fortegnet');
+}
+
 console.log(`${pass} beståede, ${fails.length} fejl`);
 fails.forEach(f => console.log('  ✗ ' + f));
 process.exit(fails.length ? 1 : 0);

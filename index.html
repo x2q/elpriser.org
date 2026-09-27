@@ -716,8 +716,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .dark .fc-head .fc-title{color:#e8edf5}
   /* Measured rendered heights: the three day cards wrap to two rows below
      ~440 px. Reserved so the page's h1 does not jump when the data lands. */
-  #pricesForecast{min-height:322px}
+  #pricesForecast,#zoneForecast{min-height:322px}
   @media (max-width:440px){#pricesForecast{min-height:404px}}
+  /* Zone labels run longer ("Tänään · Toteutunut" wraps), measured 419 px. */
+  @media (max-width:440px){#zoneForecast{min-height:420px}}
   .fc-head a{font-size:.8rem;font-weight:600;color:#1b57f5;white-space:nowrap;text-decoration:underline}
   .dark .fc-head a{color:#6d9aff}
   .fc-b-short{display:none}
@@ -2704,6 +2706,17 @@ entities:
 
 <!-- ═══════ PRISZONE: én side pr. budområde, oversat UI ═══════ -->
 <main style="display:none" data-page="zone" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
+  <!-- The same curve as the Danish pages: today and two days ahead, in this
+       zone's language, currency and view. Drawn by renderZone from the very
+       numbers and conversion its table uses, so the two cannot disagree when
+       the currency or grid company changes. Reserved at full height so the
+       heading below does not jump when it lands. -->
+  <div class="fc-wrap fc-prices" id="zoneForecastWrap">
+    <div class="chartcard">
+      <div class="chd"><span id="zFcTitle">&nbsp;</span><span id="zFcUnit">&nbsp;</span></div>
+      <div id="zoneForecast"></div>
+    </div>
+  </div>
   <div class="flex items-center justify-between mb-3">
     <div>
       <div class="page-eyebrow" id="zEyebrow">&nbsp;</div>
@@ -3466,7 +3479,7 @@ function renderHeroTomorrow(fj,todayStr){
   const day=fj?.days?.find(x=>x.date===tmrStr);
   const ps=day?day.prices.map(p=>p.price).filter(p=>p!=null):[];
   if(ps.length){
-    const f=v=>v.toFixed(2).replace('.',',');
+    const f=v=>num(v,2);
     vEl.textContent=`${f(Math.min(...ps))}–${f(Math.max(...ps))}`;
     sEl.textContent=day.type==='actual'?'kr/kWh · børspris':'kr/kWh · prognose';
     card.classList.add('has-range');
@@ -3506,15 +3519,30 @@ function fcTicks(lo, hi){
  *  be <text> inside it: the svg is stretched with preserveAspectRatio="none"
  *  and glyphs would be squashed on a phone. Each sits at the same fraction of
  *  the height the svg draws its gridline at. */
-function fcYaxis(ticks, Y, H){
+function fcYaxis(ticks, Y, H, dec){
+  var d=dec==null?2:dec;
   return ticks.map(function(v){
-    return '<span style="top:'+(Y(v)/H*100).toFixed(2)+'%">'+v.toFixed(2).replace('.',',')+'</span>';
+    var s=v.toFixed(d);if(/^-0\.?0*$/.test(s))s=s.slice(1);
+    return '<span style="top:'+(Y(v)/H*100).toFixed(2)+'%">'+s.replace('.',',')+'</span>';
   }).join('');
 }
-function fcChartHTML(days, todayStr, nowHour){
+// `o` is optional and only the zone pages pass it: their labels, date format,
+// unit and decimals come from the zone's own locale and currency. Without it
+// the output is the Danish chart, byte for byte as before.
+function fcChartHTML(days, todayStr, nowHour, o){
+  o=o||{};
   var WD=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
   var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
-  var f2=function(v){return v.toFixed(2).replace('.',',');};
+  var dec=o.dec==null?2:o.dec;
+  // A price that rounds to zero is printed without its minus: "-0" is not a
+  // price anyone should have to read. Real negative prices keep their sign.
+  var f2=function(v){var s=v.toFixed(dec);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',',');};
+  var dm=o.dm||function(dt){return dt.getUTCDate()+'. '+MON[dt.getUTCMonth()];};
+  var dayName=function(n,dt){
+    if(n===0)return o.today||'I dag';
+    if(n===1&&o.tomorrow!==null)return o.tomorrow||'I morgen';
+    return o.wd?o.wd(dt):WD[dt.getUTCDay()];
+  };
   // The feed opens on yesterday, so the window is keyed off today's date, not
   // off row 0. A day is only taken when it is exactly the next one expected:
   // skipping a hole and carrying on would splice non-adjacent days into one
@@ -3591,8 +3619,7 @@ function fcChartHTML(days, todayStr, nowHour){
   var labels='';
   for(var t=0;t<sel.length;t++){
     var dt=new Date(sel[t].date+'T12:00:00Z');
-    var lab=t===0?'I dag':t===1?'I morgen':WD[dt.getUTCDay()];
-    labels+='<span>'+lab+'<small>'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+'</small></span>';
+    labels+='<span>'+dayName(t,dt)+'<small>'+dm(dt)+'</small></span>';
   }
   // "Nu" sits on today's curve, and only when today is settled.
   if(nowHour!=null&&sel[0].real&&sel[0].ps[nowHour]!=null){
@@ -3606,14 +3633,13 @@ function fcChartHTML(days, todayStr, nowHour){
   var cards=sel.map(function(d,n){
     var v=d.ps.filter(function(p){return p!=null;});
     var dt=new Date(d.date+'T12:00:00Z');
-    var lab=n===0?'I dag':n===1?'I morgen':WD[dt.getUTCDay()];
     return '<div class="mini'+(n===cheap?' best':'')+'">'
-      +'<div class="k">'+lab+' · '+(d.real?'Børspris':'Prognose')+'</div>'
+      +'<div class="k">'+dayName(n,dt)+' · '+(d.real?(o.actual||'Børspris'):(o.forecast||'Prognose'))+'</div>'
       +'<div class="v">'+f2(Math.min.apply(null,v))+'–'+f2(Math.max.apply(null,v))+'</div>'
-      +'<div class="s">'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+' · kr/kWh</div></div>';
+      +'<div class="s">'+dm(dt)+' · '+(o.unit||'kr/kWh')+'</div></div>';
   }).join('');
-  return '<div class="yplot"><svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="Elpris time for time i dag og '+(sel.length-1)+' døgn frem">'+svg+'</svg>'
-    +'<div class="yax">'+fcYaxis(ticks,Y,H)+'</div></div>'
+  return '<div class="yplot"><svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="'+(o.aria||('Elpris time for time i dag og '+(sel.length-1)+' døgn frem'))+'">'+svg+'</svg>'
+    +'<div class="yax">'+fcYaxis(ticks,Y,H,dec)+'</div></div>'
     +'<div class="fc-hours ygut">'+hours+'</div>'
     +'<div class="fc-days ygut">'+labels+'</div>'
     +'<div class="minirow">'+cards+'</div>';
@@ -3634,7 +3660,7 @@ function renderHomeForecast(fj){
 function renderHero(prices,co2,nowH){
   const valid=prices.map((p,h)=>({p,h})).filter(x=>x.p!=null);
   if(!valid.length)return;
-  const fmt2=v=>v.toFixed(2).replace('.',',');
+  const fmt2=v=>num(v,2);
   const nowP=prices[nowH];
   document.getElementById('heroPrice').textContent=nowP!=null?fmt2(nowP):'—';
   // Pills: price percentile + CO₂
@@ -3868,6 +3894,9 @@ function updateHeader(){
 }
 
 // ═══ DATA ═══
+// A price with d decimals, Danish comma, and no minus on a value that rounds
+// to zero ("-0,0" is not a price). Real negative prices keep their sign.
+function num(v,d){const s=v.toFixed(d);return(/^-0\.?0*$/.test(s)?s.slice(1):s).replace('.',',');}
 const fmt=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 function processRecords(recs){const g={};recs.forEach(r=>{const dt=new Date(r.TimeDK),dk=fmt(dt),h=dt.getHours();(g[dk]??={})[h]??=[];g[dk][h].push(r.DayAheadPriceDKK);});const o={};for(const d in g){o[d]={};for(const h in g[d]){const v=g[d][h];o[d][h]=v.reduce((a,b)=>a+b,0)/v.length;}}return o;}
 
@@ -4125,7 +4154,7 @@ function renderTable(){
     cols.forEach(c=>{
       const raw=src(c)?.[hr];
       if(raw==null){h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;return;}
-      const p=cvt(raw,hr,c.d),b2=bg(p),f2=fg(p),v=p.toFixed(2).replace('.',',');
+      const p=cvt(raw,hr,c.d),b2=bg(p),f2=fg(p),v=num(p,2);
       if(c.fc){h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center" style="background:${b2};color:${f2};opacity:.72" title="Prognose — ikke en faktisk børspris">${v}</td>`;return;}
       const isCurCell=hr===curHour&&c.d===today;
       h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center cursor-pointer hover:ring-2 hover:ring-inset hover:ring-white/60 active:opacity-80 transition-opacity${isCurCell?' ring-2 ring-inset ring-gray-800/40 dark:ring-white/50':''}" style="background:${b2};color:${f2}" data-d="${c.d}" data-hr="${hr}" onclick="showPriceDetail(this)">${v}</td>`;
@@ -4153,7 +4182,7 @@ function renderTable(){
 // it.
 function priceNowText(mode, hh, price, area, net){
   var R={DK1:'Vestdanmark (Jylland og Fyn)',DK2:'Østdanmark (Sjælland, Lolland-Falster og Bornholm)'};
-  var p=price.toFixed(2).replace('.',',');
+  var p=price.toFixed(2);if(/^-0\.?0*$/.test(p))p=p.slice(1);p=p.replace('.',',');
   var at='Lige nu (kl. '+hh+':00) er ';
   var where='i '+area+', '+R[area]+', ';
   var local=' Nettariffen fra dit lokale netselskab kommer oveni — vælg netselskab i menuen ovenfor for den fulde pris.';
@@ -4180,7 +4209,7 @@ async function updatePricesAnswer(){
   const nowP=todays[nowH];
   if(nowP==null){box.style.display='none';return;}
   const valid=todays.filter(p=>p!=null);
-  const fmt2=v=>v.toFixed(2).replace('.',',');
+  const fmt2=v=>num(v,2);
   const al=S.area==='DK1'?'Vestdanmark · DK1':'Østdanmark · DK2';
   document.getElementById('pricesAnswerLoc').textContent=`${al}${S.netName?' · '+S.netName:''} · lige nu`;
   document.getElementById('pricesAnswerPrice').textContent=fmt2(nowP);
@@ -4445,7 +4474,7 @@ async function updateAutoViz(){
     dates.forEach(d=>{
       const on=daySchedules[d][hr];
       const raw=priceData[d]?.[hr];
-      const pStr=raw!=null?cvt(raw,hr,d).toFixed(2).replace('.',','):'—';
+      const pStr=raw!=null?num(cvt(raw,hr,d),2):'—';
       h+=on?`<td class="px-1.5 py-px text-center ${dk?'bg-green-900/50 text-green-200':'bg-green-100 text-green-800'} rounded">${pStr}</td>`
            :`<td class="px-1.5 py-px text-center ${dk?'text-gray-600':'text-gray-400'}">${pStr}</td>`;
     });
@@ -4932,7 +4961,7 @@ function renderForecastTable(data){
     days.forEach(d=>{
       const p=d.prices.find(x=>x.hour===hr);
       if(!p||p.price==null){h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;return;}
-      const v=p.price.toFixed(2).replace('.',',');
+      const v=num(p.price,2);
       const b2=bg(p.price),f2=fg(p.price);
       const isCurCell=isNow&&d.date===today;
       const isFc=d.type==='forecast';
@@ -4945,7 +4974,7 @@ function renderForecastTable(data){
   days.forEach(d=>{
     const valid=d.prices.filter(p=>p.price!=null);
     if(!valid.length){h+='<td></td>';return;}
-    const avg=(valid.reduce((s,p)=>s+p.price,0)/valid.length).toFixed(2).replace('.',',');
+    const avg=num(valid.reduce((s,p)=>s+p.price,0)/valid.length,2);
     h+=`<td class="px-0.5 sm:px-1.5 pt-1 text-center text-xs font-bold ${d.date===today?thDayToday:thDay}">${avg}</td>`;
   });
   h+='</tr>';
@@ -4958,17 +4987,17 @@ function renderForecastTable(data){
 // language, currency and conversion rate; the UI language follows the zone
 // rather than the browser, so a shared link always reads the same for everyone.
 const ZONES={
-  dk1:{name:'DK1',city:'Vestdanmark',country:'Danmark',cc:'DK',lang:'da',cur:'DKK',rate:7.46,sub:'øre'},
-  dk2:{name:'DK2',city:'Østdanmark',country:'Danmark',cc:'DK',lang:'da',cur:'DKK',rate:7.46,sub:'øre'},
-  no1:{name:'NO1',city:'Oslo',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7,sub:'øre'},
-  no2:{name:'NO2',city:'Kristiansand',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7,sub:'øre'},
-  no3:{name:'NO3',city:'Trondheim',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7,sub:'øre'},
-  no4:{name:'NO4',city:'Tromsø',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7,sub:'øre'},
-  no5:{name:'NO5',city:'Bergen',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:11.7,sub:'øre'},
-  se1:{name:'SE1',city:'Luleå',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3,sub:'öre'},
-  se2:{name:'SE2',city:'Sundsvall',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3,sub:'öre'},
-  se3:{name:'SE3',city:'Stockholm',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3,sub:'öre'},
-  se4:{name:'SE4',city:'Malmö',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.3,sub:'öre'},
+  dk1:{name:'DK1',city:'Vestdanmark',country:'Danmark',cc:'DK',lang:'da',cur:'DKK',rate:7.4755,sub:'øre'},
+  dk2:{name:'DK2',city:'Østdanmark',country:'Danmark',cc:'DK',lang:'da',cur:'DKK',rate:7.4755,sub:'øre'},
+  no1:{name:'NO1',city:'Oslo',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:10.84,sub:'øre'},
+  no2:{name:'NO2',city:'Kristiansand',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:10.84,sub:'øre'},
+  no3:{name:'NO3',city:'Trondheim',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:10.84,sub:'øre'},
+  no4:{name:'NO4',city:'Tromsø',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:10.84,sub:'øre'},
+  no5:{name:'NO5',city:'Bergen',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:10.84,sub:'øre'},
+  se1:{name:'SE1',city:'Luleå',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
+  se2:{name:'SE2',city:'Sundsvall',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
+  se3:{name:'SE3',city:'Stockholm',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
+  se4:{name:'SE4',city:'Malmö',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
   fi:{name:'FI',city:'Suomi',country:'Suomi',cc:'FI',lang:'fi',cur:'EUR',rate:1,sub:'snt'},
   nl:{name:'NL',city:'Nederland',country:'Nederland',cc:'NL',lang:'nl',cur:'EUR',rate:1,sub:'cent'},
 };
@@ -4979,42 +5008,42 @@ const I18N={
       err:'Kunne ikke hente prognosen',day:'Dag',hour:'Time',today:'I dag',avg:'Gns.',
       fc:'prognose',act:'faktisk',local:c=>`${c}/kWh`,
       noteModel:'Prognosen laves af én samlet maskinlæringsmodel for alle 13 prisområder, trænet på 2,1 mio. timeobservationer med vejrprognoser som de så ud ved udgivelsen, magasinfyldning i vandkraftzonerne og priser fra ENTSO-E.',
-      noteRaw:'Priserne er rå spotpriser uden afgifter, tariffer og moms. Omregning til lokal valuta bruger en fast kurs og er vejledende.',
+      noteRaw:'Priserne er rå spotpriser uden afgifter, tariffer og moms. Omregning til lokal valuta bruger Den Europæiske Centralbanks daglige referencekurs.',
       pick:'Vælg dit prisområde',model:'Se modellen på Hugging Face',noTariff:cc=>cc==='FI'?'Finske nettariffer vises ikke: Energiavirastos register har ikke været opdateret siden juli 2024.':'Hollandske netomkostninger er et fast årligt gebyr efter tilslutningens størrelse, ikke pr. kWh — en kWh-pris ville være misvisende.',total:'Inkl. nettarif og afgifter',net:'Netselskab',netNote:t=>`Nettarif, afgifter og moms er lagt til: ${t} øre/kWh. Kilde: ${'NVE'}.`},
   no:{eyebrow:'Strømprisprognose',title:z=>`Strømpriser ${z.name} ${z.city}`,
       table:n=>`Neste ${n} døgn, time for time`,loading:'Henter prognose…',
       err:'Kunne ikke hente prognosen',day:'Dag',hour:'Time',today:'I dag',avg:'Snitt',
       fc:'prognose',act:'faktisk',local:c=>`${c}/kWh`,
       noteModel:'Prognosen lages av én felles maskinlæringsmodell for alle 13 prisområder, trent på 2,1 mill. timeobservasjoner med værvarsler slik de var da de ble utgitt, magasinfylling i vannkraftsonene og priser fra ENTSO-E.',
-      noteRaw:'Prisene er rene spotpriser uten avgifter, nettleie og moms. Omregning til lokal valuta bruker fast kurs og er veiledende.',
+      noteRaw:'Prisene er rene spotpriser uten avgifter, nettleie og moms. Omregning til lokal valuta bruker Den europeiske sentralbankens daglige referansekurs.',
       pick:'Velg prisområdet ditt',model:'Se modellen på Hugging Face',noTariff:cc=>cc==='FI'?'Finsk nettleie vises ikke: registeret er ikke oppdatert siden juli 2024.':'Nederlandske nettkostnader er et fast årsgebyr etter tilknytningens størrelse, ikke per kWh.',total:'Inkl. nettleie og avgifter',net:'Nettselskap',netNote:t=>`Nettleie, forbruksavgift og mva er lagt til: ${t} øre/kWh. Kilde: NVE (NLOD).`},
   sv:{eyebrow:'Elprisprognos',title:z=>`Elpriser ${z.name} ${z.city}`,
       table:n=>`Kommande ${n} dygn, timme för timme`,loading:'Hämtar prognos…',
       err:'Kunde inte hämta prognosen',day:'Dag',hour:'Timme',today:'I dag',avg:'Snitt',
       fc:'prognos',act:'faktisk',local:c=>`${c}/kWh`,
       noteModel:'Prognosen görs av en gemensam maskininlärningsmodell för alla 13 elområden, tränad på 2,1 milj. timobservationer med väderprognoser som de såg ut vid publiceringen, magasinfyllnad i vattenkraftområdena och priser från ENTSO-E.',
-      noteRaw:'Priserna är rena spotpriser utan skatter, nätavgifter och moms. Omräkning till lokal valuta använder fast kurs och är vägledande.',
+      noteRaw:'Priserna är rena spotpriser utan skatter, nätavgifter och moms. Omräkning till lokal valuta använder Europeiska centralbankens dagliga referenskurs.',
       pick:'Välj ditt elområde',model:'Se modellen på Hugging Face',noTariff:cc=>cc==='FI'?'Finsk elnätsavgift visas inte: registret har inte uppdaterats sedan juli 2024.':'Nederländska nätkostnader är en fast årsavgift efter anslutningens storlek, inte per kWh.',total:'Inkl. elnätsavgift och skatt',net:'Elnätsföretag',netNote:t=>`Elnätsavgift, energiskatt och moms är tillagt: ${t} öre/kWh. Källa: Energimarknadsinspektionen.`},
   fi:{eyebrow:'Sähkön hintaennuste',title:z=>`Sähkön hinta ${z.name} ${z.city}`,
       table:n=>`Seuraavat ${n} vuorokautta, tunneittain`,loading:'Haetaan ennustetta…',
       err:'Ennusteen haku epäonnistui',day:'Päivä',hour:'Tunti',today:'Tänään',avg:'Ka.',
       fc:'ennuste',act:'toteutunut',local:c=>`${c}/kWh`,
       noteModel:'Ennusteen tekee yksi yhteinen koneoppimismalli kaikille 13 hinta-alueelle. Se on koulutettu 2,1 miljoonalla tuntihavainnolla käyttäen sääennusteita sellaisina kuin ne julkaisuhetkellä olivat, vesivoima-alueiden varastotäyttöä ja ENTSO-E:n hintoja.',
-      noteRaw:'Hinnat ovat pörssihintoja ilman veroja, siirtomaksuja ja arvonlisäveroa. Valuuttamuunnos käyttää kiinteää kurssia ja on suuntaa antava.',
+      noteRaw:'Hinnat ovat pörssihintoja ilman veroja, siirtomaksuja ja arvonlisäveroa. Valuuttamuunnos käyttää Euroopan keskuspankin päivittäistä viitekurssia.',
       pick:'Valitse hinta-alueesi',model:'Katso malli Hugging Facessa',noTariff:cc=>'Siirtomaksuja ei näytetä: Energiaviraston rekisteriä ei ole päivitetty heinäkuun 2024 jälkeen.',total:'Sis. siirto ja verot',net:'Verkkoyhtiö',netNote:t=>`+${t}`},
   nl:{eyebrow:'Stroomprijsverwachting',title:z=>`Stroomprijzen ${z.name} ${z.city}`,
       table:n=>`Komende ${n} dagen, per uur`,loading:'Verwachting laden…',
       err:'Kon de verwachting niet laden',day:'Dag',hour:'Uur',today:'Vandaag',avg:'Gem.',
       fc:'verwachting',act:'werkelijk',local:c=>`${c}/kWh`,
       noteModel:'De verwachting komt van één gezamenlijk machine-learningmodel voor alle 13 prijsgebieden, getraind op 2,1 mln. uurwaarnemingen met weersverwachtingen zoals ze bij publicatie luidden, stuwmeerstanden in de waterkrachtgebieden en prijzen van ENTSO-E.',
-      noteRaw:'Dit zijn kale spotprijzen zonder belastingen, nettarieven en btw. Omrekening naar lokale valuta gebruikt een vaste koers en is indicatief.',
+      noteRaw:'Dit zijn kale spotprijzen zonder belastingen, nettarieven en btw. Omrekening naar lokale valuta gebruikt de dagelijkse referentiekoers van de Europese Centrale Bank.',
       pick:'Kies je prijsgebied',model:'Bekijk het model op Hugging Face',noTariff:cc=>'Netkosten zijn een vast jaartarief op basis van uw aansluitcapaciteit, niet per kWh — een prijs per kWh zou misleidend zijn.',total:'Incl. netkosten en belasting',net:'Netbeheerder',netNote:t=>`+${t}`},
   en:{eyebrow:'Electricity price forecast',title:z=>`Electricity prices ${z.name} ${z.city}`,
       table:n=>`Next ${n} days, hour by hour`,loading:'Loading forecast…',
       err:'Could not load the forecast',day:'Day',hour:'Hour',today:'Today',avg:'Avg.',
       fc:'forecast',act:'actual',local:c=>`${c}/kWh`,
       noteModel:'The forecast comes from a single machine-learning model covering all 13 bidding zones, trained on 2.1M hourly observations using weather forecasts as they stood when issued, hydro reservoir levels and ENTSO-E prices.',
-      noteRaw:'These are raw spot prices before taxes, grid tariffs and VAT. Currency conversion uses a fixed rate and is indicative only.',
+      noteRaw:'These are raw spot prices before taxes, grid tariffs and VAT. Currency conversion uses the European Central Bank\'s daily reference rate.',
       pick:'Choose your price area',model:'See the model on Hugging Face',noTariff:cc=>cc==='FI'?'Finnish grid tariffs are not shown: the national register has not been updated since July 2024.':'Dutch grid cost is a fixed annual charge based on connection size, not per kWh — a per-kWh figure would mislead.',total:'Incl. grid tariff and tax',net:'Grid company',netNote:t=>`Grid tariff, tax and VAT added: ${t} per kWh.`},
 };
 let _zData=null,_zLoad=0,_zZone='dk1';
@@ -5047,6 +5076,31 @@ async function loadZone(zone){
   }
 }
 
+/** The zone's curve: today and two days ahead through renderZone's own cvt(),
+ *  so it follows the currency dropdown and grid company exactly as the table
+ *  does. Labels come from the zone's locale — weekday and date via Intl, the
+ *  settled/forecast words from the reviewed I18N set — and the day after today
+ *  is named by weekday, as in the table, rather than by a new word for
+ *  "tomorrow" in five languages. */
+function renderZoneForecast(j,z,t,loc,cvt,dec,local){
+  const el=document.getElementById('zoneForecast'),wrap=document.getElementById('zoneForecastWrap');
+  if(!el||!wrap)return;
+  const tz={timeZone:'Europe/Copenhagen'};  // the feed's hours are Copenhagen hours
+  const today=new Intl.DateTimeFormat('en-CA',tz).format(new Date());
+  const nowH=+new Intl.DateTimeFormat('en-GB',{...tz,hour:'2-digit',hour12:false}).format(new Date());
+  const days=j.days.map(d=>({date:d.date,type:d.type,prices:d.prices.map(p=>({hour:p.hour,price:cvt(p.eur_mwh)}))}));
+  const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+  const wdF=new Intl.DateTimeFormat(loc,{weekday:'long',timeZone:'UTC'});
+  const dmF=new Intl.DateTimeFormat(loc,{day:'numeric',month:'short',timeZone:'UTC'});
+  const unit=local?`${z.sub}/kWh`:'EUR/MWh';
+  const html=fcChartHTML(days,today,nowH,{today:t.today,tomorrow:null,wd:dt=>cap(wdF.format(dt)),
+    dm:dt=>dmF.format(dt),actual:cap(t.act),forecast:cap(t.fc),unit,dec,aria:`${t.table(3)} · ${unit}`});
+  if(!html){wrap.style.display='none';return;}
+  const n=(html.match(/<div class="mini[ "]/g)||[]).length;
+  document.getElementById('zFcTitle').textContent=t.table(n);
+  document.getElementById('zFcUnit').textContent=unit;
+  el.innerHTML=html;wrap.style.display='';
+}
 function renderZone(){
   const j=_zData; if(!j)return;
   const z=ZONES[_zZone], t=T(_zZone), loc=LOCALE[z.lang]||'en-GB';
@@ -5063,11 +5117,13 @@ function renderZone(){
   // first where it applies — northern Norway is VAT-exempt on electricity, and
   // the tariff data carries that per company rather than per bidding zone,
   // because the exemption boundary does not follow the zone boundary.
+  // The ECB rate the API returns; the constant in ZONES is only its fallback.
+  const rate=(j.zoneInfo&&j.zoneInfo.rate)||z.rate;
   const vat=tar?(tar.has_vat===false?1:1+(_tariffs.vat_pct||0)/100):1;
   const cvt=v=>{
     if(v==null)return null;
     if(!local)return v;
-    const base=v/1000*z.rate*100;
+    const base=v/1000*rate*100;
     return tar? base*vat + tar.total_ore_kwh : base;
   };
   const mx=Math.max(...j.days.flatMap(d=>d.prices.map(p=>Math.abs(cvt(p.eur_mwh)??0))));
@@ -5107,7 +5163,7 @@ function renderZone(){
     days.forEach(d=>{
       const p=d.prices.find(x=>x.hour===hr),v=p?cvt(p.eur_mwh):null;
       if(v==null){h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;return;}
-      h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center${d.type==='forecast'?' opacity-80':''}" style="background:${bg(v)};color:${fg(v)}">${v.toFixed(dec).replace('.',',')}</td>`;
+      h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center${d.type==='forecast'?' opacity-80':''}" style="background:${bg(v)};color:${fg(v)}">${num(v,dec)}</td>`;
     });
     h+='</tr>';
   }
@@ -5115,10 +5171,11 @@ function renderZone(){
   days.forEach(d=>{
     const vals=d.prices.map(p=>cvt(p.eur_mwh)).filter(v=>v!=null);
     if(!vals.length){h+='<td></td>';return;}
-    h+=`<td class="px-0.5 sm:px-1.5 pt-1 text-center text-xs font-bold ${d.date===today?thT:thDay}">${(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(dec).replace('.',',')}</td>`;
+    h+=`<td class="px-0.5 sm:px-1.5 pt-1 text-center text-xs font-bold ${d.date===today?thT:thDay}">${num(vals.reduce((a,b)=>a+b,0)/vals.length,dec)}</td>`;
   });
   h+='</tr>';
   document.getElementById('zWrap').innerHTML='<table class="mx-auto text-xs sm:text-sm tabular">'+h+'</table>';
+  renderZoneForecast(j,z,t,loc,cvt,dec,local);
   document.getElementById('zLoading').style.display='none';
   document.getElementById('zWrap').style.display='block';
 }
@@ -5267,7 +5324,7 @@ function showPriceDetail(cell){
   </div>`;
 
   document.getElementById('pdLabel').textContent=dayLabel;
-  document.getElementById('pdTotal').textContent=total.toFixed(2).replace('.',',')+' kr/kWh';
+  document.getElementById('pdTotal').textContent=num(total,2)+' kr/kWh';
   document.getElementById('pdRows').innerHTML=html;
   document.getElementById('priceDetail').showModal();
 }
@@ -5372,7 +5429,7 @@ async function renderShellyTariffTable(){
       const col=LEVEL_COLOR[row.level]||'';
       h+=`<tr class="${bg}">
         <td class="px-3 py-1 text-xs text-gray-700 dark:text-gray-300">${day} ${String(hr).padStart(2,'0')}–${String((hr+1)%24).padStart(2,'0')}${isNow?' ←':''}</td>
-        <td class="px-3 py-1 text-xs text-right tabular text-gray-700 dark:text-gray-300">${row.total.toFixed(2).replace('.',',')} kr</td>
+        <td class="px-3 py-1 text-xs text-right tabular text-gray-700 dark:text-gray-300">${num(row.total,2)} kr</td>
         <td class="px-3 py-1 text-xs text-right font-medium ${col}">${LEVEL_DA[row.level]||row.level}</td>
       </tr>`;
     }
