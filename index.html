@@ -1,4 +1,9 @@
-<!DOCTYPE html>
+<tbody class="text-gray-600 dark:text-gray-400">
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Nettarif C</strong><div class="text-xs">Det lokale elnet frem til din måler</div></td><td class="py-2 pr-3">Dit netselskab</td><td class="py-2 text-right">Se tabellen ovenfor — varierer pr. selskab og time</td></tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Transmissions&shy;nettarif</strong><div class="text-xs">Det overordnede net mellem landsdelene</div></td><td class="py-2 pr-3">Energinet</td><td class="py-2 text-right tabular" id="enTrans">4,3 øre</td></tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Systemtarif</strong><div class="text-xs">Forsyningssikkerhed og balancering af nettet</div></td><td class="py-2 pr-3">Energinet</td><td class="py-2 text-right tabular" id="enSys">7,2 øre</td></tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Elafgift</strong><div class="text-xs">Statens afgift på el</div></td><td class="py-2 pr-3">Staten, via Energinet</td><td class="py-2 text-right tabular" id="enAfg">0,8 øre</td></tr>
+        <!DOCTYPE html>
 <html lang="da">
 <head>
 <meta charset="UTF-8">
@@ -1302,7 +1307,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <table class="w-full text-sm tabular">
         <thead><tr class="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-left">
           <th class="py-2 pr-3 font-semibold">Led</th><th class="py-2 pr-3 font-semibold">Hvem opkræver</th>
-          <th class="py-2 pr-3 font-semibold text-right">2026</th><th class="py-2 font-semibold text-right">2025</th>
+          <th class="py-2 font-semibold text-right">Sats lige nu</th>
         </tr></thead>
         <tbody class="text-gray-600 dark:text-gray-400">
           <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Nettarif C</strong><div class="text-xs">Det lokale elnet frem til din måler</div></td><td class="py-2 pr-3">Dit netselskab</td><td class="py-2 pr-3 text-right" colspan="2">Se tabellen ovenfor — den varierer pr. selskab og time</td></tr>
@@ -1312,7 +1317,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         </tbody>
       </table>
     </div>
-    <p class="text-xs text-gray-500 dark:text-gray-500 mt-3 leading-relaxed">Satser pr. kWh ekskl. moms, fra Energinets DataHub-prisliste. Oven i alle fire led lægges 25 % moms. Elafgiften faldt fra 72 til 0,8 øre pr. 1. januar 2026 — det er langt den største enkeltændring i en dansk elregning i mange år, og den er midlertidig: se <a href="/blog/elafgift-2028" class="text-brand-500 underline">elafgift 2028</a>.</p>
+    <p class="text-xs text-gray-500 dark:text-gray-500 mt-3 leading-relaxed">Satser pr. kWh ekskl. moms, hentet live fra Energinets DataHub-prisliste. Oven i alle fire led lægges 25 % moms. Elafgiften faldt fra 72 til 0,8 øre pr. 1. januar 2026 — det er langt den største enkeltændring i en dansk elregning i mange år, og den er midlertidig: se <a href="/blog/elafgift-2028" class="text-brand-500 underline">elafgift 2028</a>.</p>
   </section>
 
   <section class="mt-10">
@@ -3898,6 +3903,12 @@ async function updatePricesAnswer(){
 
 
 // ═══ TARIFF PAGE ═══
+function renderEnerginetRates(en){
+  if(!en)return;
+  const ore=v=>(v*100).toFixed(1).replace('.',',')+' øre';
+  const set=(id,v)=>{const el=document.getElementById(id); if(el)el.textContent=ore(v);};
+  set('enTrans',en.trans); set('enSys',en.sys); set('enAfg',en.afg);
+}
 function renderTariffNetLinks(){
   const el=document.getElementById('tariffNetLinks'); if(!el||el.dataset.built)return;
   el.innerHTML=['DK1','DK2'].flatMap(a=>NETS[a].map(n=>
@@ -3908,7 +3919,7 @@ function renderTariffNetLinks(){
 async function loadTariffPage(){
   renderTariffNetLinks();
   document.getElementById('tariffLoading').style.display='block';document.getElementById('tariffTable').style.display='none';
-  await loadAllNettarifC();const en=await fetchEnCharges();const all=[...NETS.DK1,...NETS.DK2];
+  await loadAllNettarifC();const en=await fetchEnCharges();renderEnerginetRates(en);const all=[...NETS.DK1,...NETS.DK2];
   const hd='text-gray-700 dark:text-gray-300',bd='text-gray-600 dark:text-gray-400',nm='text-gray-800 dark:text-gray-200';
   let h=`<thead><tr class="border-b border-gray-200 dark:border-gray-700"><th class="text-left py-2 pr-4 ${hd}">Netselskab</th><th class="px-3 py-2 ${hd}">Lav<br><span class="text-xs text-gray-400 dark:text-gray-500">(00-06)</span></th><th class="px-3 py-2 ${hd}">Mellem<br><span class="text-xs text-gray-400 dark:text-gray-500">(06-17)</span></th><th class="px-3 py-2 ${hd}">Spids<br><span class="text-xs text-gray-400 dark:text-gray-500">(17-21)</span></th></tr></thead><tbody>`;
   const todayStr=fmt(new Date());all.forEach(n=>{const t={hourly:getTariff(n.gln,todayStr)};h+=`<tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"><td class="py-1.5 pr-4 font-semibold ${nm}">${n.name}</td><td class="px-3 text-center ${bd}">${t.hourly[0].toFixed(4).replace('.',',')}</td><td class="px-3 text-center ${bd}">${t.hourly[6].toFixed(4).replace('.',',')}</td><td class="px-3 text-center ${bd}">${t.hourly[17].toFixed(4).replace('.',',')}</td></tr>`;});
