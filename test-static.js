@@ -358,19 +358,30 @@ test('price pages: the curve is drawn from the table\'s own data and conversion'
   // /dk1/n1 or in "Inkl tarif". It must use priceData/fcDays through cvt().
   const main = INDEX.slice(INDEX.indexOf('data-page="prices"'), INDEX.indexOf('<!-- ═══════ TARIFF PAGE'));
   assert.ok(/id="pricesForecast"/.test(main), 'no chart container on the price pages');
-  assert.ok(main.indexOf('id="pricesAnswer"') < main.indexOf('id="pricesForecastWrap"') &&
-            main.indexOf('id="pricesForecastWrap"') < main.indexOf('id="priceTable"'),
-    'the chart is not between the big number and the table');
+  assert.ok(main.indexOf('id="pricesForecastWrap"') < main.indexOf('<!--SSR_PRICES_INTRO-->'),
+    'the chart is not above the page heading');
+  // Above the h1, its title must not be a heading, or the outline starts at h2.
+  const wrapHtml = main.slice(main.indexOf('id="pricesForecastWrap"'), main.indexOf('<!--SSR_PRICES_INTRO-->'));
+  assert.ok(!/<h[1-6]/.test(wrapHtml), 'a heading element sits above the page h1');
   const fn = INDEX.slice(INDEX.indexOf('function pricesChartDays(){'), INDEX.indexOf('function renderPricesForecast(){'));
   assert.ok(/priceData\[ds\]\|\|fcDays\[ds\]/.test(fn) && /cvt\(src\[h\],h,ds\)/.test(fn),
     'pricesChartDays does not use the table\'s data through cvt()');
   assert.ok(!/fetch\(/.test(fn), 'pricesChartDays fetches its own prices');
   assert.ok(/if\(S\.weekOffset===0\)renderPricesForecast\(\);/.test(INDEX), 'the chart is not redrawn with the table');
-  // Spacing between the chart and the table must come from the hand-written
-  // block: a Tailwind class used nowhere else (mt-5 was) is purged and the
-  // cards end up touching.
+  // Above the heading the box must be reserved before the data arrives, or
+  // the h1 jumps down under the reader when it does.
   const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
-  assert.ok(style.includes('.fc-prices+.fc-after{margin-top:'), 'no hand-written gap between the chart and the table');
+  assert.ok(/#pricesForecast\{min-height:\d+px\}/.test(style), 'no reserved height for the chart');
+  assert.ok(!/id="pricesForecastWrap" style="display:none"/.test(INDEX), 'the chart box starts collapsed and will shift the page');
+});
+
+test('seo: no heading tag written inside an HTML comment', () => {
+  // Crawlers and the live h1 count read raw markup, comments included. A
+  // comment explaining heading order that spelled out the tags made every
+  // price page report two h1 elements.
+  const bad = [...INDEX.matchAll(/<!--([\s\S]*?)-->/g)].filter(m => /<h[1-6]\b/i.test(m[1]))
+    .map(m => m[1].trim().slice(0, 60));
+  assert.deepEqual(bad, [], `heading tag inside a comment: ${bad.join(' | ')}`);
 });
 
 test('homepage: the hero curve has a price scale that lines up', () => {

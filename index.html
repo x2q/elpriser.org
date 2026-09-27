@@ -711,8 +711,13 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .yax{position:absolute;top:0;bottom:0;right:100%;width:2.2rem}
   .yax span{position:absolute;right:.4rem;transform:translateY(-50%);font-size:.6rem;color:#8a95a8;font-variant-numeric:tabular-nums;white-space:nowrap}
   .dark .yax span{color:#6b778a}
-  .fc-prices{padding:0;margin-top:.5rem}
-  .fc-prices+.fc-after{margin-top:1.25rem}
+  .fc-prices{padding:0;margin:.25rem 0 1.5rem}
+  .fc-head .fc-title{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;margin:0;color:#0e1421}
+  .dark .fc-head .fc-title{color:#e8edf5}
+  /* Measured rendered heights: the three day cards wrap to two rows below
+     ~440 px. Reserved so the page's h1 does not jump when the data lands. */
+  #pricesForecast{min-height:322px}
+  @media (max-width:440px){#pricesForecast{min-height:404px}}
   .fc-head a{font-size:.8rem;font-weight:600;color:#1b57f5;white-space:nowrap;text-decoration:underline}
   .dark .fc-head a{color:#6d9aff}
   .fc-b-short{display:none}
@@ -1217,6 +1222,30 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
 <!-- ═══════ PRICE PAGE ═══════ -->
 <main style="display:none" data-page="prices" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
+  <!-- ═══ Nu og 2 døgn frem, for this page's own view ═══
+       Same curve as the front page, but drawn from the very data and cvt()
+       conversion the table below uses — on /dk1/n1 it includes N1's nettarif,
+       in "Inkl tarif" it drops elafgift — so the chart, the big number and the
+       table can never disagree.
+       It sits above the page's heading by request, so its title is not a
+       heading element (a level-2 heading ahead of the page's level-1 heading
+       would put the outline out of order), and its box is reserved at full
+       height before the data arrives, or the heading below would jump ~320 px
+       down under the reader. Written without literal tags: crawlers and the
+       live test read markup inside comments too. -->
+  <div class="fc-wrap fc-prices" id="pricesForecastWrap">
+    <div class="fc-head">
+      <div>
+        <p class="fc-title">Nu og 2 døgn frem</p>
+        <p>Time for time: faktiske børspriser så langt de er afregnet, prognose resten af vejen.</p>
+      </div>
+      <a href="/prognose">Se hele prognosen</a>
+    </div>
+    <div class="chartcard">
+      <div class="chd"><span>Time for time</span><span>DKK/kWh</span></div>
+      <div id="pricesForecast"></div>
+    </div>
+  </div>
   <!-- SSR: unique per-URL intro (H1 + live-price sentence + net coverage +
        tariff rates + PriceSpecification JSON-LD), injected by functions/[[path]].js -->
   <!--SSR_PRICES_INTRO-->
@@ -1227,25 +1256,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <div class="answer-unit" id="pricesAnswerUnit">kr/kWh</div>
     <div class="answer-pills" id="pricesAnswerPills" style="justify-content:center"></div>
   </div>
-  <!-- ═══ Nu og 2 døgn frem, for this page's own view ═══
-       Same curve as the front page, but drawn from the very data and cvt()
-       conversion the table below uses — on /dk1/n1 it includes N1's nettarif,
-       in "Inkl tarif" it drops elafgift — so the chart, the big number and the
-       table can never disagree. Hidden until it has data. -->
-  <div class="fc-wrap fc-prices" id="pricesForecastWrap" style="display:none">
-    <div class="fc-head">
-      <div>
-        <h2>Nu og 2 døgn frem</h2>
-        <p>Time for time: faktiske børspriser så langt de er afregnet, prognose resten af vejen.</p>
-      </div>
-      <a href="/prognose">Se hele prognosen</a>
-    </div>
-    <div class="chartcard">
-      <div class="chd"><span>Time for time</span><span>DKK/kWh</span></div>
-      <div id="pricesForecast"></div>
-    </div>
-  </div>
-  <div class="subcard mt-2 fc-after">
+  <div class="subcard mt-2">
     <div class="chd2"><span id="tableTitle">Time for time · 4 dage tilbage, 3 døgn frem</span><span>DKK/kWh</span></div>
     <div id="tableView">
       <div class="text-center py-12 text-gray-400 dark:text-gray-500" id="loadingIndicator">
@@ -4050,7 +4061,7 @@ function renderPricesForecast(){
   const el=document.getElementById('pricesForecast'),wrap=document.getElementById('pricesForecastWrap');
   if(!el||!wrap)return;
   const html=fcChartHTML(pricesChartDays(),fmt(new Date()),new Date().getHours());
-  if(!html)return;
+  if(!html){wrap.style.display='none';return;}
   el.innerHTML=html;wrap.style.display='';
 }
 /** The eight dates the table shows for the current S.weekOffset. */
