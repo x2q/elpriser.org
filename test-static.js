@@ -268,6 +268,28 @@ test('homepage: forecast-row styles are hand-written, not Tailwind utilities', (
   }
 });
 
+test('structure: index.html begins with the doctype', () => {
+  // A tbody once landed at byte 0 because a replacement searched for its
+  // closing tag from the start of the file. Every page then opened with a
+  // block of unstyled table text above <!DOCTYPE html>.
+  assert.ok(INDEX.startsWith('<!DOCTYPE html>'),
+    `index.html starts with ${JSON.stringify(INDEX.slice(0, 60))} — markup landed outside the document`);
+});
+
+test('sitemap: foreign-zone pages rank below the Danish ones in priority', () => {
+  // 21 of 43 URLs are discovered but not indexed. The eleven non-Danish zone
+  // pages are the least likely to earn it and must not outrank the per-net
+  // pages for crawl budget.
+  const ROUTES_SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const fn = ROUTES_SRC.match(/const priorityFor = p => \{([\s\S]*?)\n  \};/);
+  assert.ok(fn, 'priorityFor not found');
+  const zone = fn[1].match(/ZONE_ONLY\.test\(p\)\) return '([\d.]+)'/);
+  const net = fn[1].match(/dk\[12\].*?return '([\d.]+)'/);
+  assert.ok(zone && net, 'zone or per-net priority missing');
+  assert.ok(parseFloat(zone[1]) < parseFloat(net[1]),
+    `zone pages at ${zone[1]} are not below per-net pages at ${net[1]}`);
+});
+
 test('seo: no JS expression is written into an href', () => {
   // Google crawled and indexed /${k} — 55 impressions — because a template
   // literal sat inside an href in the served HTML. Concatenation does the same:

@@ -253,8 +253,16 @@ const CONTENT_LASTMOD = {
 
 function buildSitemap() {
   const today = new Date().toISOString().split('T')[0];
+  // Crawl budget follows priority, and 21 of the 43 URLs here have never been
+  // indexed — Google reports them as "discovered, currently not indexed". The
+  // eleven non-Danish bidding zones are the least likely of them to ever earn
+  // a place: Danish-language pages competing in Norwegian, Swedish, Finnish
+  // and Dutch results, ranking in the 20s to 50s with no clicks. They sat at
+  // 0.8, above the per-net pages that actually get searched for by name.
+  const ZONE_ONLY = /^\/(no[1-5]|se[1-4]|fi|nl)$/;
   const priorityFor = p => {
     if (p === '/') return '1.0';
+    if (ZONE_ONLY.test(p)) return '0.4';                    // foreign-market pages
     if (/^\/(dk[12])\/[a-z0-9-]+$/.test(p)) return '0.6'; // per-net long-tail pages
     return '0.8';
   };

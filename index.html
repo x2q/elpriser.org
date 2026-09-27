@@ -3289,7 +3289,12 @@ function route(){
   // the section's own URL, carrying the hash so in-page state survives.
   const dp=dataPageFor(h);
   if(!document.querySelector(`[data-page="${dp}"]`)){
-    const target=hashToPath(h)+(h?'#'+h:'');
+    // Only navigate to a path this site actually serves. An old or malformed
+    // hash used to be turned straight into a URL — that is where
+    // /net_inkl_alt/ came from, and Google crawled and indexed it.
+    const path=hashToPath(h);
+    const known=path==='/'||!!PATH_ROUTES[path]||/^\/(dk[12])\/[a-z0-9-]+$/.test(path);
+    const target=known?path+(h?'#'+h:''):'/';
     if(location.pathname+location.hash!==target)location.href=target;
     return;
   }
