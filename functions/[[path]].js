@@ -235,17 +235,11 @@ const CONTENT_LASTMOD = {
   '/blog/v2g-v2h-bidirektional-opladning': '2026-07-24',
   '/blog/biler-ladere-v2h-v2g': '2026-07-24',
   '/blog/elafgift-2028': '2026-07-24',
-  '/no1': '2026-08-01',
-  '/no2': '2026-08-01',
-  '/no3': '2026-08-01',
-  '/no4': '2026-08-01',
-  '/no5': '2026-08-01',
-  '/se1': '2026-08-01',
-  '/se2': '2026-08-01',
-  '/se3': '2026-08-01',
-  '/se4': '2026-08-01',
-  '/fi': '2026-08-01',
-  '/nl': '2026-08-01',
+  // The zone pages are deliberately NOT listed here: buildZoneIntro renders
+  // today's prices into the served HTML, so they change every day and fall
+  // through to lastmod=today / changefreq=daily like /dk1 and /dk2. They were
+  // pinned to a fixed August date back when a crawler got an empty shell, and
+  // claiming daily freshness for markup that never moved would have been a lie.
   '/blog/hvornaar-er-stroemmen-billigst': '2026-07-28',
   '/blog/groennest-og-dyrest': '2026-08-01',
   '/blog': '2026-08-01',   // the newest post it lists
@@ -255,14 +249,14 @@ function buildSitemap() {
   const today = new Date().toISOString().split('T')[0];
   // Crawl budget follows priority, and 21 of the 43 URLs here have never been
   // indexed — Google reports them as "discovered, currently not indexed". The
-  // eleven non-Danish bidding zones are the least likely of them to ever earn
-  // a place: Danish-language pages competing in Norwegian, Swedish, Finnish
-  // and Dutch results, ranking in the 20s to 50s with no clicks. They sat at
-  // 0.8, above the per-net pages that actually get searched for by name.
+  // eleven non-Danish bidding zones were all of them, because they served an
+  // empty shell to crawlers; buildZoneIntro fixes that, and they are no longer
+  // at the bottom at 0.4. They stay below the per-net pages all the same: this
+  // is a Danish site, and those are the pages searched for by name.
   const ZONE_ONLY = /^\/(no[1-5]|se[1-4]|fi|nl)$/;
   const priorityFor = p => {
     if (p === '/') return '1.0';
-    if (ZONE_ONLY.test(p)) return '0.4';                    // foreign-market pages
+    if (ZONE_ONLY.test(p)) return '0.5';                    // foreign-market pages
     if (/^\/(dk[12])\/[a-z0-9-]+$/.test(p)) return '0.6'; // per-net long-tail pages
     return '0.8';
   };
