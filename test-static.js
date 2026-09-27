@@ -300,6 +300,39 @@ test('price table: 4 days back, today, 3 ahead — and paging neither skips nor 
   assert.ok(/colspan="\$\{j-i\}"[^>]*>PROGNOSE</.test(render), 'PROGNOSE does not span the forecast columns');
 });
 
+test('price pages: dropdown, sentence and unit describe the same price in every view', () => {
+  const vm = require('vm');
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const MARK = '// ═══ Pris lige nu, i ord ═══';
+  const lift = src => { const a = src.indexOf(MARK), b = src.indexOf('\n}', src.indexOf('function priceNowText(', a)); return a < 0 || b < 0 ? '' : src.slice(a, b + 2); };
+  const cli = lift(INDEX), srv = lift(SRV);
+  assert.ok(cli.length > 500, 'priceNowText not found in index.html');
+  assert.equal(cli, srv, 'the server and browser copies of priceNowText differ');
+  const ctx = {}; vm.createContext(ctx);
+  vm.runInContext(cli + '\nglobalThis.t = priceNowText;', ctx);
+  const modes = ['spot_ex', 'spot_inkl', 'inkl_alt', 'inkl_alt_minus', 'net_inkl_alt', 'net_inkl_tarif'];
+  for (const m of modes) {
+    const txt = ctx.t(m, '15', 0.3149, 'DK1', 'N1');
+    assert.ok(txt.includes('0,31 kr/kWh'), `${m}: the sentence does not carry the price`);
+    // A view without a grid company must never claim to include the nettarif.
+    if (!m.startsWith('net_')) assert.ok(!/0,31 kr\/kWh inkl\.[^.]*nettarif/.test(txt), `${m} claims the local nettarif: ${txt}`);
+    if (m.endsWith('_minus') || m === 'net_inkl_tarif') assert.ok(/uden elafgift/.test(txt), `${m} does not say it excludes elafgift`);
+    // Every view has its own option, or the dropdown goes blank on it.
+    if (!m.startsWith('net_')) assert.ok(INDEX.includes('value="${area}/' + m + '"'), `no dropdown option for ${m}`);
+  }
+  // The server writes the sentence for the view the URL opens in, which is
+  // what pathToHash sends /dk1 and /dk2 to.
+  assert.ok(/const mode = net \? 'net_inkl_alt' : 'spot_inkl';/.test(SRV), 'server sentence is not for the URL\'s own view');
+  assert.ok(INDEX.includes("'/dk1':'DK1/spot_inkl','/dk2':'DK2/spot_inkl'") &&
+            INDEX.includes("m[1].toUpperCase()+'/net_inkl_alt/'"),
+    'pathToHash no longer opens /dk1 in spot inkl. moms and net pages in inkl alt — update the server sentence to match');
+  assert.ok(/id="priceNowText"/.test(SRV) && /getElementById\('priceNowText'\)/.test(INDEX), 'the sentence is not rewritten when the view changes');
+  // Another area or grid company is another page; only views of the same URL stay in-page.
+  assert.ok(/hashToPath\(val\)!==location\.pathname/.test(INDEX), 'the dropdown can switch company without reloading the page');
+  assert.ok(!/inkl\. nettarif, systemtarif, transmissionstarif, elafgift og moms er \$\{fmt\(dk1\.total\)\}/.test(SRV),
+    'the homepage summary still says the no-company total includes the nettarif');
+});
+
 test('homepage: the hero curve has a price scale that lines up', () => {
   // The scale sits in a gutter left of the curve. The CO2 strip below takes the
   // same gutter, or its hours stop lining up with the price curve's.

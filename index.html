@@ -911,7 +911,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <div class="answer-col">
       <h1 class="answer-eyebrow">Elpriser i dag — <span id="heroLoc">Vestdanmark · DK1</span> · lige nu</h1>
       <div class="answer-price" id="heroPrice">—</div>
-      <div class="answer-unit">kr/kWh inkl. tarif, afgift og moms</div>
+      <div class="answer-unit">kr/kWh inkl. Energinets tariffer, elafgift og moms</div>
       <div class="answer-pills" id="heroPills"></div>
       <div class="answer-context" id="heroContext">Tjek aktuel elpris lige nu — spotpriser time for time for DK1 (Vestdanmark) og DK2 (Østdanmark), inkl. nettariffer, elafgift og moms. Opdateret fra Energi Data Service.</div>
       <div class="answer-advice" id="heroAdvice" style="display:none"></div>
@@ -3769,8 +3769,13 @@ function buildPriceSelector(){
     const aLabel=area==='DK1'?'DK1 Vest':'DK2 Øst';
     const grpLabel=area==='DK1'?'── DK1 Vest ──':'── DK2 Øst ──';
     opts.push(`<optgroup label="${grpLabel}">`);
+    // One option per view the site can show. Elspot ex moms and inkl alt minus
+    // afgift are linked from the front page, and without an option of their own
+    // the dropdown went blank on them.
     opts.push(`<option value="${area}/spot_inkl">Elspot inkl moms</option>`);
+    opts.push(`<option value="${area}/spot_ex">Elspot ex moms</option>`);
     opts.push(`<option value="${area}/inkl_alt">Inkl alt (uden netselskab)</option>`);
+    opts.push(`<option value="${area}/inkl_alt_minus">Inkl alt minus afgift (uden netselskab)</option>`);
     NETS[area].forEach(n=>{
       opts.push(`<option value="${area}/net_inkl_alt/${n.slug}">${n.name} — Inkl alt</option>`);
       opts.push(`<option value="${area}/net_inkl_tarif/${n.slug}">${n.name} — Inkl tarif</option>`);
@@ -3806,7 +3811,11 @@ function onPriceSelectorChange(){
   gtag('event','select_price_view',{value:val});
   // A zone is its own page; a DK view is a hash on the price page.
   if(val.startsWith('zone:')){location.href='/'+val.slice(5);return;}
-  if(dataPageFor(val)&&!document.querySelector('[data-page="prices"]')){
+  // Another area or grid company is another page, with its own heading and
+  // prose — switching it by hash alone left N1's prices under "Elpriser DK1
+  // Vest" and DK1's text. Only a change of view within the same URL (spot,
+  // inkl alt, inkl tarif …) stays in-page, where the sentence is rewritten.
+  if(dataPageFor(val)&&(!document.querySelector('[data-page="prices"]')||hashToPath(val)!==location.pathname)){
     location.href=hashToPath(val)+'#'+val;return;
   }
   location.hash=val;
@@ -4077,6 +4086,34 @@ function renderTable(){
   updatePricesAnswer();
 }
 
+// ═══ Pris lige nu, i ord ═══
+// CANONICAL, like fcChartHTML: verbatim in index.html and functions/[[path]].js.
+// The server writes this sentence for the URL's own view so a crawler reads
+// it; the browser rewrites it whenever the view changes, so the sentence, the
+// dropdown, the big number and the table always describe the same price.
+// test-static.js diffs the two copies.
+//
+// Each sentence names exactly what the figure includes. "Inkl alt" without a
+// grid company is spot + Energinet's tariffs + elafgift + moms — NOT the local
+// nettarif, which is per company — and it used to be described as including
+// it.
+function priceNowText(mode, hh, price, area, net){
+  var R={DK1:'Vestdanmark (Jylland og Fyn)',DK2:'Østdanmark (Sjælland, Lolland-Falster og Bornholm)'};
+  var p=price.toFixed(2).replace('.',',');
+  var at='Lige nu (kl. '+hh+':00) er ';
+  var where='i '+area+', '+R[area]+', ';
+  var local=' Nettariffen fra dit lokale netselskab kommer oveni — vælg netselskab i menuen ovenfor for den fulde pris.';
+  switch(mode){
+    case 'spot_ex': return at+'spotprisen '+where+p+' kr/kWh ekskl. moms. Moms, nettarif, systemtarif, transmissionstarif og elafgift kommer oveni.';
+    case 'spot_inkl': return at+'spotprisen '+where+p+' kr/kWh inkl. moms. Nettarif, systemtarif, transmissionstarif og elafgift kommer oveni.';
+    case 'inkl_alt': return at+'elprisen '+where+p+' kr/kWh inkl. systemtarif, transmissionstarif, elafgift og moms.'+local;
+    case 'inkl_alt_minus': return at+'elprisen '+where+p+' kr/kWh inkl. systemtarif, transmissionstarif og moms, men uden elafgift.'+local;
+    case 'net_inkl_alt': return at+'den samlede elpris hos '+net+' '+p+' kr/kWh inkl. '+net+'-nettarif, systemtarif, transmissionstarif, elafgift og moms.';
+    case 'net_inkl_tarif': return at+'elprisen hos '+net+' '+p+' kr/kWh inkl. '+net+'-nettarif, systemtarif, transmissionstarif og moms, men uden elafgift.';
+  }
+  return '';
+}
+
 // Answer block above the table — same hierarchy as the front page hero:
 // current price for the selected area/net/mode, verdict + CO₂ pills.
 async function updatePricesAnswer(){
@@ -4093,7 +4130,12 @@ async function updatePricesAnswer(){
   const al=S.area==='DK1'?'Vestdanmark · DK1':'Østdanmark · DK2';
   document.getElementById('pricesAnswerLoc').textContent=`${al}${S.netName?' · '+S.netName:''} · lige nu`;
   document.getElementById('pricesAnswerPrice').textContent=fmt2(nowP);
-  const unitMap={spot_ex:'kr/kWh spot ekskl. moms',spot_inkl:'kr/kWh spot inkl. moms',inkl_alt:'kr/kWh inkl. tarif, afgift og moms',inkl_alt_minus:'kr/kWh inkl. tarif og moms (uden elafgift)',net_inkl_alt:'kr/kWh inkl. nettarif, afgift og moms',net_inkl_tarif:'kr/kWh inkl. nettarif og moms'};
+  // The intro sentence is server-written for the URL's own view; rewrite it for
+  // whatever view is showing now, so it never contradicts the number below it.
+  const pnt=document.getElementById('priceNowText');
+  if(pnt)pnt.textContent=priceNowText(S.mode,String(nowH).padStart(2,'0'),nowP,S.area,S.netName);
+  // "tarif" alone read as the local nettarif, which the no-company views do not include.
+  const unitMap={spot_ex:'kr/kWh spot ekskl. moms',spot_inkl:'kr/kWh spot inkl. moms',inkl_alt:'kr/kWh inkl. Energinets tariffer, elafgift og moms',inkl_alt_minus:'kr/kWh inkl. Energinets tariffer og moms (uden elafgift)',net_inkl_alt:'kr/kWh inkl. nettarif, afgift og moms',net_inkl_tarif:'kr/kWh inkl. nettarif og moms (uden elafgift)'};
   document.getElementById('pricesAnswerUnit').textContent=unitMap[S.mode]||'kr/kWh';
   const cheaper=valid.filter(p=>p<nowP).length,pct=Math.round(cheaper/valid.length*100);
   const cls=pct<=33?'billig':pct<=66?'normal':'dyr';

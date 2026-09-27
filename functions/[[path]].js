@@ -1042,7 +1042,7 @@ function buildLivePriceMarkup(dk1, dk2) {
   const fmt = (p) => p == null ? '—' : p.toFixed(2).replace('.', ',');
   // Prose version of the live snapshot for the Reader-summary <article> —
   // what Safari Reader (and crawlers) see as the page's article text.
-  const summary = `Lige nu kl. ${hh}:00 koster strøm ${fmt(dk1.spot)} kr/kWh i ren spotpris i DK1 (Vestdanmark) og ${fmt(dk2.spot)} kr/kWh i DK2 (Østdanmark). Den samlede elpris inkl. nettarif, systemtarif, transmissionstarif, elafgift og moms er ${fmt(dk1.total)} kr/kWh i DK1 og ${fmt(dk2.total)} kr/kWh i DK2.`;
+  const summary = `Lige nu kl. ${hh}:00 koster strøm ${fmt(dk1.spot)} kr/kWh i ren spotpris i DK1 (Vestdanmark) og ${fmt(dk2.spot)} kr/kWh i DK2 (Østdanmark). Med systemtarif, transmissionstarif, elafgift og moms er prisen ${fmt(dk1.total)} kr/kWh i DK1 og ${fmt(dk2.total)} kr/kWh i DK2 — før nettariffen fra dit lokale netselskab.`;
 
   const iso = new Date().toISOString();
   const priceLd = (name, price) => ({
@@ -1096,6 +1096,34 @@ function daDateLabel() {
   return `${DA_MONTHS[now.getUTCMonth()]} ${now.getUTCFullYear()}`;
 }
 
+// ═══ Pris lige nu, i ord ═══
+// CANONICAL, like fcChartHTML: verbatim in index.html and functions/[[path]].js.
+// The server writes this sentence for the URL's own view so a crawler reads
+// it; the browser rewrites it whenever the view changes, so the sentence, the
+// dropdown, the big number and the table always describe the same price.
+// test-static.js diffs the two copies.
+//
+// Each sentence names exactly what the figure includes. "Inkl alt" without a
+// grid company is spot + Energinet's tariffs + elafgift + moms — NOT the local
+// nettarif, which is per company — and it used to be described as including
+// it.
+function priceNowText(mode, hh, price, area, net){
+  var R={DK1:'Vestdanmark (Jylland og Fyn)',DK2:'Østdanmark (Sjælland, Lolland-Falster og Bornholm)'};
+  var p=price.toFixed(2).replace('.',',');
+  var at='Lige nu (kl. '+hh+':00) er ';
+  var where='i '+area+', '+R[area]+', ';
+  var local=' Nettariffen fra dit lokale netselskab kommer oveni — vælg netselskab i menuen ovenfor for den fulde pris.';
+  switch(mode){
+    case 'spot_ex': return at+'spotprisen '+where+p+' kr/kWh ekskl. moms. Moms, nettarif, systemtarif, transmissionstarif og elafgift kommer oveni.';
+    case 'spot_inkl': return at+'spotprisen '+where+p+' kr/kWh inkl. moms. Nettarif, systemtarif, transmissionstarif og elafgift kommer oveni.';
+    case 'inkl_alt': return at+'elprisen '+where+p+' kr/kWh inkl. systemtarif, transmissionstarif, elafgift og moms.'+local;
+    case 'inkl_alt_minus': return at+'elprisen '+where+p+' kr/kWh inkl. systemtarif, transmissionstarif og moms, men uden elafgift.'+local;
+    case 'net_inkl_alt': return at+'den samlede elpris hos '+net+' '+p+' kr/kWh inkl. '+net+'-nettarif, systemtarif, transmissionstarif, elafgift og moms.';
+    case 'net_inkl_tarif': return at+'elprisen hos '+net+' '+p+' kr/kWh inkl. '+net+'-nettarif, systemtarif, transmissionstarif og moms, men uden elafgift.';
+  }
+  return '';
+}
+
 /**
  * SSR intro for the 16 price pages: a real H1, a dated answer sentence with
  * the live price, per-net coverage prose + current tariff rates, and a
@@ -1107,7 +1135,10 @@ async function buildPricesIntro(context, area, net) {
   const fmt = (p) => p == null ? null : p.toFixed(2).replace('.', ',');
   const areaLabel = AREA_LABEL[area];
   const region = AREA_REGION[area];
-  const mode = net ? 'net_inkl_alt' : 'inkl_alt';
+  // The view each URL opens in: pathToHash in index.html sends /dk1 and /dk2 to
+  // spot inkl. moms and a grid-company page to its all-in price. The sentence
+  // must describe that same figure, or it contradicts the number under it.
+  const mode = net ? 'net_inkl_alt' : 'spot_inkl';
   const glnQ = net ? `&gln=${net.gln}` : '';
 
   const [now, tariff] = await Promise.all([
@@ -1119,13 +1150,10 @@ async function buildPricesIntro(context, area, net) {
     ? `Elpris hos ${net.name} i dag — ${areaLabel}`
     : `Elpriser ${areaLabel} i dag — time for time`;
 
-  const ps = [];
-  if (now && now.price != null) {
-    const hh = String(now.hour).padStart(2, '0');
-    ps.push(net
-      ? `Lige nu (kl. ${hh}:00) er den samlede elpris hos ${net.name} ${fmt(now.price)} kr/kWh inkl. ${net.name}-nettarif, systemtarif, transmissionstarif, elafgift og moms.`
-      : `Lige nu (kl. ${hh}:00) er den samlede elpris i ${area} (${region}) ${fmt(now.price)} kr/kWh inkl. nettarif, systemtarif, transmissionstarif, elafgift og moms.`);
-  }
+  // Always present, even empty: the browser rewrites it when the view changes.
+  const ps = [(now && now.price != null)
+    ? priceNowText(mode, String(now.hour).padStart(2, '0'), now.price, area, net && net.name)
+    : ''];
   if (net) {
     ps.push(`${NET_COVERAGE[net.slug] || `${net.name} er et dansk netselskab i ${region}.`} Bor du i området, betaler du ${net.name}s nettarif oven i spotprisen — tabellen nedenfor viser den samlede pris time for time.`);
     const rec = tariff?.records?.[0];
@@ -1141,7 +1169,7 @@ async function buildPricesIntro(context, area, net) {
 ${JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'PriceSpecification',
-    name: net ? `Aktuel samlet elpris hos ${net.name} (${areaLabel}) inkl. alt` : `Aktuel samlet elpris ${areaLabel} inkl. alt`,
+    name: net ? `Aktuel samlet elpris hos ${net.name} (${areaLabel}) inkl. alt` : `Aktuel spotpris ${areaLabel} inkl. moms`,
     price: now.price.toFixed(4),
     priceCurrency: 'DKK',
     unitText: 'kWh',
@@ -1152,7 +1180,7 @@ ${JSON.stringify({
   return `<header class="max-w-2xl mx-auto text-center mt-2 mb-4 px-2">
     <h1 class="page-title" style="font-size:1.35rem">${h1}</h1>
     <div class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed text-left sm:text-center">
-      ${ps.map(p => `<p class="mt-2">${p}</p>`).join('')}
+      ${ps.map((p, i) => `<p class="mt-2"${i === 0 ? ' id="priceNowText"' : ''}>${p}</p>`).join('')}
     </div>
   </header>${jsonLd}`;
 }
@@ -1189,7 +1217,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v42');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v43');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
