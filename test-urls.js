@@ -200,6 +200,16 @@ async function main() {
     check(r.status === 404, `ikke publiceret ${p}`, `status ${r.status}`);
   });
 
+  console.log('\n9. FORSIDEN — prognosen skal stå i HTML\'en, ikke kun efter JS');
+  const home = await get('/');
+  const rows = (home.body.match(/class="fc-row"/g) || []).length;
+  check(rows >= 5, 'forside: server-renderede prognoserækker', `fandt ${rows}, forventer mindst 5`);
+  check(home.body.includes('Næste 7 døgn'), 'forside: sektionsoverskrift');
+  // The explanatory HTML comment names the placeholder too, so match the tag.
+  check(!home.body.includes('<!--SSR_FORECAST_ROWS-->'), 'forside: placeholder er erstattet');
+  check(/BØRSPRIS|PROGNOSE/.test(home.body), 'forside: rækkerne er mærket børspris eller prognose');
+  check(!home.body.includes('href="/${k}"'), 'forside: intet skabelon-link i HTML');
+
   console.log('\n8. REGULERBAR KAPACITET — endpoints lever og afviser forkert input');
   // Only payloads that are refused before anything is stored, so a scheduled
   // run against production never writes a row.

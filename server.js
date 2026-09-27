@@ -384,19 +384,37 @@ const MIME = {
 // behaves the same as Cloudflare Pages: visiting /prognose loads the SPA and
 // sets location.hash to #prognose so the correct page activates.
 const SPA_ROUTES = {
+  // Generated from SEO_PAGES in functions/[[path]].js. Kept in step by
+  // test-static.js: a route missing here does not error, it silently serves
+  // the start page in local development while production serves the real one.
   '/dk1': '#DK1/spot_inkl',
   '/dk2': '#DK2/spot_inkl',
   '/tariffer': '#tariffer',
   '/automation': '#automation',
-  '/api': '#api',
   '/om-elpriser': '#om-elpriser',
+  '/no1': '#no1',
+  '/no2': '#no2',
+  '/no3': '#no3',
+  '/no4': '#no4',
+  '/no5': '#no5',
+  '/se1': '#se1',
+  '/se2': '#se2',
+  '/se3': '#se3',
+  '/se4': '#se4',
+  '/fi': '#fi',
+  '/nl': '#nl',
   '/prognose': '#prognose',
+  '/api': '#api',
   '/shelly-tariff': '#shelly-tariff',
+  '/blog': '#blog',
   '/blog/forsta-din-elpris': '#blog/forsta-din-elpris',
   '/blog/shelly-elpris-automation': '#blog/shelly-elpris-automation',
   '/blog/home-assistant-elpriser': '#blog/home-assistant-elpriser',
   '/blog/v2g-v2h-bidirektional-opladning': '#blog/v2g-v2h-bidirektional-opladning',
   '/blog/biler-ladere-v2h-v2g': '#blog/biler-ladere-v2h-v2g',
+  '/blog/hvornaar-er-stroemmen-billigst': '#blog/hvornaar-er-stroemmen-billigst',
+  '/blog/groennest-og-dyrest': '#blog/groennest-og-dyrest',
+  '/blog/elafgift-2028': '#blog/elafgift-2028',
 };
 
 // Mirrors NETS in index.html and functions/[[path]].js. Used to map

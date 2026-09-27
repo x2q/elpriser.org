@@ -18,12 +18,12 @@ const OG_IMAGE = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="6
 const SEO_PAGES = {
   '/dk1': {
     title: 'Elpriser DK1 Vest i dag — Aktuel spotpris lige nu (Jylland og Fyn)',
-    description: 'Aktuel elpris og spotpris lige nu for DK1 (Vestdanmark) — time for time for Jylland og Fyn. Den reelle pris på el inkl. nettariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.',
+    description: 'Aktuel elpris og spotpris lige nu for DK1 (Vestdanmark) — time for time for Jylland og Fyn. Den reelle pris på el inkl. alt — nettariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.',
     hash: '#DK1/spot_inkl',
   },
   '/dk2': {
     title: 'Elpriser DK2 Øst i dag — Aktuel spotpris lige nu (Sjælland)',
-    description: 'Aktuel elpris og spotpris lige nu for DK2 (Østdanmark) — time for time for Sjælland, Lolland-Falster og Bornholm. Den reelle pris på el inkl. nettariffer, elafgift og moms.',
+    description: 'Aktuel elpris og spotpris lige nu for DK2 (Østdanmark) — time for time for Sjælland, Lolland-Falster og Bornholm. Den reelle pris på el inkl. alt — nettariffer, elafgift og moms.',
     hash: '#DK2/spot_inkl',
   },
   '/tariffer': {
@@ -794,6 +794,54 @@ async function fetchAreaSnapshot(context, area) {
   };
 }
 
+/** Seven-day min/max rows for the homepage's "Næste 7 døgn".
+ *
+ *  Rendered here rather than left to the client because the reason the section
+ *  exists is search: the homepage was receiving "elpriser prognose" queries and
+ *  ranking 18th on them with nothing on the page that answered them, while
+ *  /prognose ranked 7th. Rows that only appear after JS runs would not fix that.
+ *  The client replaces these with the same numbers once it loads. */
+const FC_WEEKDAYS = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
+const FC_MONTHS = ['jan.', 'feb.', 'mar.', 'apr.', 'maj', 'jun.', 'jul.', 'aug.', 'sep.', 'okt.', 'nov.', 'dec.'];
+
+function buildForecastRows(fc, todayStr) {
+  const days = (fc.days || []).slice(0, 7).map(d => {
+    const ps = (d.prices || []).map(p => p.price).filter(p => p != null);
+    if (!ps.length) return null;
+    return { date: d.date, type: d.type, lo: Math.min(...ps), hi: Math.max(...ps) };
+  }).filter(Boolean);
+  if (days.length < 2) return '';
+
+  const glo = Math.min(...days.map(d => d.lo));
+  const ghi = Math.max(...days.map(d => d.hi));
+  // A flat week would divide by zero and paint every bar full width.
+  const span = Math.max(ghi - glo, 0.01);
+  const cheapest = days.reduce((a, b) => (b.lo < a.lo ? b : a));
+  const f = v => v.toFixed(2).replace('.', ',');
+  const dayNo = str => Math.round(Date.parse(str + 'T12:00:00Z') / 86_400_000);
+  const today = dayNo(todayStr);
+
+  return days.map(d => {
+    const dt = new Date(d.date + 'T12:00:00Z');
+    const diff = dayNo(d.date) - today;
+    const name = diff === 0 ? 'I dag' : diff === 1 ? 'I morgen'
+      : FC_WEEKDAYS[dt.getUTCDay()].replace(/^./, c => c.toUpperCase());
+    const sub = `${dt.getUTCDate()}. ${FC_MONTHS[dt.getUTCMonth()]}`;
+    const l = ((d.lo - glo) / span * 100).toFixed(1);
+    const w = ((d.hi - d.lo) / span * 100).toFixed(1);
+    const real = d.type === 'actual';
+    return `<div class="fc-row">`
+      + `<div class="fc-day">${name}<small>${sub}</small></div>`
+      + `<div class="fc-tag${real ? ' real' : ''}">${real ? 'BØRSPRIS' : 'PROGNOSE'}</div>`
+      + `<div class="fc-min">${f(d.lo)}</div>`
+      + `<div class="fc-bar"><i style="left:${l}%;width:${w}%"></i></div>`
+      + `<div class="fc-max">${f(d.hi)}</div>`
+      + (d === cheapest ? `<span class="fc-badge">UGENS BILLIGSTE</span>`
+                        : `<span class="fc-spacer"></span>`)
+      + `</div>`;
+  }).join('');
+}
+
 /** Build the live-price JSON-LD block + Reader-summary prose. */
 function buildLivePriceMarkup(dk1, dk2) {
   const hh = String(dk1.hour).padStart(2, '0');
@@ -947,21 +995,32 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v31');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v32');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
   const indexUrl = new URL('/', context.request.url);
-  const [resHtml, dk1, dk2] = await Promise.all([
+  const origin = new URL(context.request.url).origin;
+  const [resHtml, dk1, dk2, fc] = await Promise.all([
     context.env.ASSETS.fetch(indexUrl),
     fetchAreaSnapshot(context, 'DK1'),
     fetchAreaSnapshot(context, 'DK2'),
+    fetch(`${origin}/api/forecast?area=DK1&mode=inkl_alt`)
+      .then(r => (r.ok ? r.json() : null)).catch(() => null),
   ]);
   let html = await resHtml.text();
   if (dk1 && dk2) {
     const { jsonLd, summary } = buildLivePriceMarkup(dk1, dk2);
     html = html.replace('<!--SSR_LIVE_PRICE_JSONLD-->', jsonLd);
     html = html.replace('<!--SSR_READER_SUMMARY-->', summary);
+  }
+  if (fc) {
+    // Danish calendar date, for the "I dag"/"I morgen" labels. fmtUTC and
+    // danishNow live in the API function, not this one — calling them here
+    // threw a ReferenceError and took the whole homepage down with a 500.
+    const todayDk = new Intl.DateTimeFormat('en-CA',
+      { timeZone: 'Europe/Copenhagen' }).format(new Date());
+    html = html.replace('<!--SSR_FORECAST_ROWS-->', buildForecastRows(fc, todayDk));
   }
   html = stripInactiveMains(html, 'start');
   const res = new Response(html, {

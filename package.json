@@ -14,7 +14,8 @@
     "build": "bash scripts/build-dist.sh",
     "test:urls": "node test-urls.js",
     "test:shelly": "node test-shelly-script.mjs",
-    "test:flex": "node test-flex-api.mjs"
+    "test:flex": "node test-flex-api.mjs",
+    "test:forecast": "node test-forecast-rows.mjs"
   },
   "devDependencies": {
     "playwright": "^1.59.1"

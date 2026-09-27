@@ -41,10 +41,13 @@ test('seo: <title> contains "Elpriser i dag"', () => {
 
 test('seo: <h1> on start page is "Elpriser i dag" (not "Elpris")', () => {
   // Fixed in commit ef47a0b — Google was picking up the one-word H1
-  const m = INDEX.match(/<h1[^>]*>([^<]+)<\/h1>/);
+  // The h1 carries a <span> for the live area, so match across tags and strip
+  // them rather than requiring text-only content.
+  const m = INDEX.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
   assert.ok(m, 'missing <h1>');
-  assert.equal(m[1].trim(), 'Elpriser i dag',
-    `h1 is "${m[1]}" — a short/ambiguous H1 causes Google to use it as SERP title`);
+  const text = m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  assert.ok(text.startsWith('Elpriser i dag'),
+    `h1 is "${text}" — a short/ambiguous H1 causes Google to use it as SERP title`);
 });
 
 test('seo: meta description present and non-trivial', () => {
@@ -165,6 +168,68 @@ function routedByFunction(routes, p) {
   if ((routes.exclude || []).some(x => routeMatches(x, p))) return false;
   return routes.include.some(x => routeMatches(x, p));
 }
+
+test('seo: client-side titles match the ones the server sends', () => {
+  // The router rewrites document.title on navigation. Where that string drifts
+  // from SEO_PAGES, one page has two titles — the one in the HTML and the one
+  // Google's rendering pass sees. The homepage had three.
+  const ROUTES_SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const block = ROUTES_SRC.match(/const SEO_PAGES = \{([\s\S]*?)\n\};/);
+  assert.ok(block, 'SEO_PAGES not found');
+  const seo = {};
+  for (const m of block[1].matchAll(/'(\/[^']*)': \{\s*\n\s*title: '((?:[^'\\]|\\.)*)'/g)) seo[m[1]] = m[2];
+  seo['/'] = INDEX.match(/<title>([^<]*)<\/title>/)[1];
+
+  const checked = [];
+  for (const m of INDEX.matchAll(/h==='([^']*)'\)\{[^\n]*?document\.title='((?:[^'\\]|\\.)*)'/g)) {
+    const want = seo['/' + m[1]];
+    if (!want) continue;
+    checked.push(m[1]);
+    assert.equal(m[2], want,
+      `router title for /${m[1]} is "${m[2]}" but the server sends "${want}"`);
+  }
+  const start = INDEX.match(/\[data-page="start"\]'\)\.classList\.add\('active'\);document\.title='((?:[^'\\]|\\.)*)'/);
+  assert.ok(start, 'start route no longer sets a title');
+  assert.equal(start[1], seo['/'],
+    `router title for / is "${start[1]}" but the page ships "${seo['/']}"`);
+  assert.ok(checked.length >= 8, `expected many routed titles, checked ${checked.length}`);
+});
+
+test('homepage: the 7-day forecast section is server-rendered, not JS-only', () => {
+  // The section exists to answer "elpriser prognose" searches that land on the
+  // homepage. Rows that appear only after JS runs would not do that, so the
+  // placeholder and the code that fills it both have to be present.
+  assert.ok(INDEX.includes('<!--SSR_FORECAST_ROWS-->'),
+    'index.html lost the SSR_FORECAST_ROWS placeholder');
+  assert.ok(/<div class="fc" id="homeForecast">/.test(INDEX),
+    'the forecast container is missing from the homepage');
+  assert.ok(INDEX.includes('Næste 7 døgn'), 'the section heading is missing');
+  const ROUTES_SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  assert.ok(ROUTES_SRC.includes('function buildForecastRows('),
+    'functions/[[path]].js no longer builds the forecast rows');
+  assert.ok(ROUTES_SRC.includes("html.replace('<!--SSR_FORECAST_ROWS-->'"),
+    'the server never substitutes SSR_FORECAST_ROWS');
+});
+
+test('homepage: forecast-row styles are hand-written, not Tailwind utilities', () => {
+  // These classes only ever appear in JS-generated and server-generated markup,
+  // which Tailwind does not scan — utilities would be purged out of style.css
+  // and the section would render unstyled.
+  const style = INDEX.match(/<style>([\s\S]*?)<\/style>/);
+  assert.ok(style, 'no <style> block in index.html');
+  for (const cls of ['.fc-row', '.fc-day', '.fc-tag', '.fc-min', '.fc-max',
+                     '.fc-bar', '.fc-badge', '.fc-spacer', '.fc-wrap', '.fc-head']) {
+    assert.ok(style[1].includes(cls + '{') || style[1].includes(cls + ','),
+      `${cls} is not defined in the hand-written style block`);
+  }
+});
+
+test('seo: no literal href="/${k}" template text in the served markup', () => {
+  // Google crawled and indexed /${k} — 55 impressions — because the template
+  // literal sat inside an href in the HTML it was served.
+  assert.ok(!INDEX.includes('href="/${k}"'),
+    'a template placeholder is written into an href again; attach it in JS instead');
+});
 
 test('flex: appliance types in the UI match what the API accepts and refuses', () => {
   // The UI decides which appliances get a switching script; the API decides
@@ -295,7 +360,7 @@ test('router: all data-page slugs in the router have a matching <main>', () => {
     .map(m => m[1]);
   assert.ok(routed.length >= 7, `expected multiple routed pages, got ${routed.length}`);
   routed.forEach(slug => {
-    assert.ok(new RegExp(`<main\\s+data-page="${slug}"`).test(INDEX),
+    assert.ok(new RegExp(`<main[^>]*\\sdata-page="${slug}"`).test(INDEX),
       `no <main data-page="${slug}"> found for router slug`);
   });
 });
@@ -347,11 +412,12 @@ test('css: heading-binding rule — .stats-section and .prose-article gap ≥ 2r
 });
 
 test('design: GPS button has generous top margin (regression: was mt-7 = cramped)', () => {
-  // GPS bar and "Find mig" were merged into one button (gpsBtn carries gps-bar class)
-  const gpsBtn = INDEX.match(/id="gpsBtn"[^>]*class="gps-bar\s+mt-(\d+)/);
-  assert.ok(gpsBtn, 'gpsBtn not found or gps-bar class/top margin removed');
-  assert.ok(parseInt(gpsBtn[1], 10) >= 10,
-    `gpsBtn uses mt-${gpsBtn[1]} — should be mt-10 or larger for breathing room`);
+  // The button now sits in a centred wrapper that carries the spacing, so the
+  // margin is asserted on the wrapper rather than on the button itself.
+  const wrap = INDEX.match(/<div class="text-center mt-(\d+)">\s*<button id="gpsBtn"/);
+  assert.ok(wrap, 'gpsBtn is no longer inside a centred wrapper with a top margin');
+  assert.ok(parseInt(wrap[1], 10) >= 8,
+    `the GPS wrapper uses mt-${wrap[1]} — should be mt-8 or larger for breathing room`);
 });
 
 test('design: GPS button is a single <button> (not a bar + separate button)', () => {
