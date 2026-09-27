@@ -430,6 +430,24 @@ test('prices: nothing prints a minus in front of a zero', () => {
   assert.equal(ctx.n(-0.6, 0), '-1'); assert.equal(ctx.n(-1.25, 2), '-1,25'); assert.equal(ctx.n(3.456, 1), '3,5');
 });
 
+test('/prognose: curve above the heading, server-drawn, redrawn from the table\'s data', () => {
+  const main = INDEX.slice(INDEX.indexOf('data-page="prognose"'), INDEX.indexOf('id="fcTableWrapper"'));
+  assert.ok(main.indexOf('id="prognoseForecastWrap"') > 0 && main.indexOf('id="prognoseForecastWrap"') < main.indexOf('class="page-title"'),
+    'the /prognose chart is not above the page heading');
+  assert.ok(/<div id="prognoseForecast"><!--SSR_PROGNOSE_CHART--><\/div>/.test(INDEX), 'no server placeholder for the chart');
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  assert.ok(/'\/prognose'\) opts\.forecastChart = true/.test(SRV) &&
+            /html\.replace\('<!--SSR_PROGNOSE_CHART-->', fcChartHTML\(/.test(SRV), 'the server does not draw the /prognose chart');
+  // The server draws the page's default view; it must be what the dropdowns default to.
+  assert.ok(/<option value="DK1">DK1 Vest<\/option>/.test(INDEX.slice(INDEX.indexOf('id="fcArea"'))) &&
+            /<option value="inkl_alt" selected>/.test(INDEX.slice(INDEX.indexOf('id="fcMode"'))),
+    '/prognose no longer defaults to DK1 inkl alt — update the server-drawn chart to match');
+  assert.ok(/api\/forecast\?area=DK1&mode=inkl_alt/.test(SRV.slice(SRV.indexOf('if (opts.forecastChart)'))), 'server chart is not DK1 inkl alt');
+  assert.ok(/if\(!days\.length\)return;\n  renderPrognoseForecast\(days\);/.test(INDEX), 'the chart is not redrawn from the table\'s data');
+  const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
+  assert.ok(/#prognoseForecast\{min-height|,#prognoseForecast\{min-height/.test(style), 'no reserved height for the /prognose chart');
+});
+
 test('homepage: the hero curve has a price scale that lines up', () => {
   // The scale sits in a gutter left of the curve. The CO2 strip below takes the
   // same gutter, or its hours stop lining up with the price curve's.

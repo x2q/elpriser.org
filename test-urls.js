@@ -215,6 +215,11 @@ async function main() {
         'forside: døgnenes spænd står som tekst');
   check(!home.body.includes('href="/${k}"'), 'forside: intet skabelon-link i HTML');
 
+  const prog = await get('/prognose');
+  check(/<svg id="fcCurve"/.test(prog.body), '/prognose: kurven står i HTML\'en');
+  check(!prog.body.includes('<div id="prognoseForecast"><!--SSR_PROGNOSE_CHART-->'), '/prognose: placeholder er erstattet');
+  check(/<div class="v">\d,\d\d–\d,\d\d<\/div>/.test(prog.body), '/prognose: døgnenes spænd står som tekst');
+
   console.log('\n8. REGULERBAR KAPACITET — endpoints lever og afviser forkert input');
   // Only payloads that are refused before anything is stored, so a scheduled
   // run against production never writes a row.

@@ -716,8 +716,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .dark .fc-head .fc-title{color:#e8edf5}
   /* Measured rendered heights: the three day cards wrap to two rows below
      ~440 px. Reserved so the page's h1 does not jump when the data lands. */
-  #pricesForecast,#zoneForecast{min-height:322px}
-  @media (max-width:440px){#pricesForecast{min-height:404px}}
+  #pricesForecast,#zoneForecast,#prognoseForecast{min-height:322px}
+  @media (max-width:440px){#pricesForecast,#prognoseForecast{min-height:404px}}
   /* Zone labels run longer ("Tänään · Toteutunut" wraps), measured 419 px. */
   @media (max-width:440px){#zoneForecast{min-height:420px}}
   .fc-head a{font-size:.8rem;font-weight:600;color:#1b57f5;white-space:nowrap;text-decoration:underline}
@@ -1720,6 +1720,22 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
 <!-- ═══════ FORECAST PAGE ═══════ -->
 <main style="display:none" data-page="prognose" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
+  <!-- The front page's curve for this page's own area and view. Server-drawn
+       for the default (DK1, inkl alt) so the figures are in the HTML, then
+       redrawn by renderForecastTable from the very response its table uses,
+       so the two cannot disagree when the dropdowns change. -->
+  <div class="fc-wrap fc-prices" id="prognoseForecastWrap">
+    <div class="fc-head">
+      <div>
+        <p class="fc-title">Nu og 2 døgn frem</p>
+        <p>Time for time: faktiske børspriser så langt de er afregnet, prognose resten af vejen.</p>
+      </div>
+    </div>
+    <div class="chartcard">
+      <div class="chd"><span>Time for time</span><span>DKK/kWh</span></div>
+      <div id="prognoseForecast"><!--SSR_PROGNOSE_CHART--></div>
+    </div>
+  </div>
   <div class="flex items-center justify-between mb-3">
     <div>
       <div class="page-eyebrow">Forventede elpriser de næste 10 døgn</div>
@@ -4892,6 +4908,18 @@ async function testApiUrl(){
 // ═══ FORECAST PAGE ═══
 const DAY_FULL=['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
 let _fcLoadId=0;
+/** /prognose's curve, from the same days its table renders. Hours and "today"
+ *  in Copenhagen time, as the feed and the server-drawn version use. */
+function renderPrognoseForecast(days){
+  const el=document.getElementById('prognoseForecast'),wrap=document.getElementById('prognoseForecastWrap');
+  if(!el||!wrap)return;
+  const cph={timeZone:'Europe/Copenhagen'};
+  const today=new Intl.DateTimeFormat('en-CA',cph).format(new Date());
+  const nowH=+new Intl.DateTimeFormat('en-GB',{...cph,hour:'2-digit',hour12:false}).format(new Date());
+  const html=fcChartHTML(days,today,nowH);
+  if(!html){wrap.style.display='none';return;}
+  el.innerHTML=html;wrap.style.display='';
+}
 async function loadForecastPage(){
   const loadId=++_fcLoadId;
   const area=document.getElementById('fcArea')?.value||S.area||'DK1';
@@ -4915,6 +4943,7 @@ function renderForecastTable(data){
   const dk=isDark();
   const days=data.days||[];
   if(!days.length)return;
+  renderPrognoseForecast(days);
   const allP=[];
   days.forEach(d=>d.prices.forEach(p=>{if(p.price!=null)allP.push(p.price);}));
   setColorRange(allP);

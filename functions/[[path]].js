@@ -715,6 +715,7 @@ export async function onRequest(context) {
       opts.pricesIntro = { area: url.pathname.slice(1).toUpperCase(), net: null };
     }
     if (url.pathname === '/tariffer') opts.tariffFacts = true;
+    if (url.pathname === '/prognose') opts.forecastChart = true;
     const zoneKey = url.pathname.slice(1);
     if (SSR_ZONES[zoneKey]) opts.zone = zoneKey;
     return renderSPA(context, url.pathname, page, opts);
@@ -1361,6 +1362,20 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   }
   if (opts.tariffFacts) {
     html = html.replace('<!--SSR_TARIFF_FACTS-->', await buildTariffFacts(context));
+  }
+  if (opts.forecastChart) {
+    // The same curve as the front page, drawn here for /prognose's default view
+    // (DK1, inkl alt — the page's own dropdown defaults) so the numbers are in
+    // the HTML; the browser redraws it from the table's data on any change.
+    const origin = new URL(context.request.url).origin;
+    const fc = await fetch(`${origin}/api/forecast?area=DK1&mode=inkl_alt`)
+      .then(r => (r.ok ? r.json() : null)).catch(() => null);
+    if (fc) {
+      const cph = { timeZone: 'Europe/Copenhagen' };
+      const todayDk = new Intl.DateTimeFormat('en-CA', cph).format(new Date());
+      const nowH = +new Intl.DateTimeFormat('en-GB', { ...cph, hour: '2-digit', hour12: false }).format(new Date());
+      html = html.replace('<!--SSR_PROGNOSE_CHART-->', fcChartHTML(fc.days || [], todayDk, nowH));
+    }
   }
   // Zone pages are served in the local language of that bidding zone, so the
   // document has to say so — a Norwegian page still labelled lang="da" gets
