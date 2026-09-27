@@ -121,7 +121,7 @@ const SEO_PAGES = {
   },
   '/api': {
     title: 'elpriser.org API — Gratis JSON API for danske elpriser',
-    description: 'Gratis JSON API for danske elpriser: aktuel pris, time-for-time-priser, 7-dages prognose, CO₂-udledning, nettariffer og Tibber-kompatibel Shelly-tarif. Ingen nøgle, fuld CORS, OpenAPI 3.1.',
+    description: 'Gratis JSON API for danske elpriser: aktuel pris, time-for-time-priser, 10-dages prognose, CO₂-udledning, nettariffer og Tibber-kompatibel Shelly-tarif. Ingen nøgle, fuld CORS, OpenAPI 3.1.',
     hash: '#api',
   },
   '/shelly-tariff': {
@@ -358,6 +358,43 @@ tariffs + elafgift + 25 % VAT. \`hour\` is the current Danish local hour
 - Sprog: Dansk · CORS-headers: \`Access-Control-Allow-Origin: *\`
 `;
 
+/** "Elpriser lige nu" for llms-full.txt: each figure in a sentence that names
+ *  its basis and carries the date and hour, so it stays true when quoted out
+ *  of context. Any source failing drops its line, never the file. */
+async function llmsNowSection(context) {
+  const origin = new URL(context.request.url).origin;
+  const get = u => fetch(origin + u).then(r => (r.ok ? r.json() : null)).catch(() => null);
+  const f = v => (v == null ? null : v.toFixed(2).replace('.', ',').replace(/^-(0,00)$/, '$1'));
+  const cph = { timeZone: 'Europe/Copenhagen' };
+  const today = new Intl.DateTimeFormat('en-CA', cph).format(new Date());
+  const hh = new Intl.DateTimeFormat('en-GB', { ...cph, hour: '2-digit', hour12: false }).format(new Date());
+  const areas = [['DK1', 'Vestdanmark'], ['DK2', 'Østdanmark']];
+  const rows = await Promise.all(areas.map(async ([a, name]) => {
+    const [spot, alt, day, fc] = await Promise.all([
+      get(`/api/now?area=${a}&mode=spot_inkl`), get(`/api/now?area=${a}&mode=inkl_alt`),
+      get(`/api/prices?area=${a}&mode=inkl_alt&date=${today}`), get(`/api/forecast?area=${a}&mode=inkl_alt`)]);
+    const out = [];
+    if (spot && alt && spot.price != null && alt.price != null)
+      out.push(`- ${a} (${name}), kl. ${hh}:00: spotpris ${f(spot.price)} kr/kWh inkl. moms; med Energinets tariffer, elafgift og moms ${f(alt.price)} kr/kWh — før nettariffen fra det lokale netselskab.`);
+    const ps = (day && (day.prices || day.hours || [])).map((p, h) => ({ h: p.hour ?? h, p: p.price ?? p.total ?? p }))
+      .filter(x => typeof x.p === 'number');
+    if (ps.length >= 20) {
+      const lo = ps.reduce((a, b) => (b.p < a.p ? b : a)), hi = ps.reduce((a, b) => (b.p > a.p ? b : a));
+      const t = h => `${String(h).padStart(2, '0')}–${String((h + 1) % 24).padStart(2, '0')}`;
+      out.push(`- ${a} i dag (${today}): billigst kl. ${t(lo.h)} (${f(lo.p)} kr/kWh), dyrest kl. ${t(hi.h)} (${f(hi.p)} kr/kWh), begge inkl. Energinets tariffer, elafgift og moms.`);
+    }
+    const tm = fc && (fc.days || []).find(d => d.date > today);
+    const tv = tm && tm.prices.map(p => p.price).filter(v => v != null);
+    if (tv && tv.length)
+      out.push(`- ${a} i morgen (${tm.date}): ${f(Math.min(...tv))}–${f(Math.max(...tv))} kr/kWh inkl. Energinets tariffer, elafgift og moms (${tm.type === 'actual' ? 'faktiske børspriser' : 'prognose'}).`);
+    return out.join('\n');
+  }));
+  const body = rows.filter(Boolean).join('\n');
+  if (!body) return '';
+  return `\n## Elpriser lige nu (${today} kl. ${hh}:00, dansk tid)\n\n` +
+    `Tallene skifter hver time. Citér dem med dato og time, eller hent dem live fra /api/now.\n\n${body}\n`;
+}
+
 const LLMS_FULL_TXT = LLMS_TXT + `
 ## Prisområder
 
@@ -541,7 +578,7 @@ Slug bruges i URL-mønsteret \`https://elpriser.org/dk1/<slug>\` eller \`https:/
 ## Åbne datasæt og værktøjer
 
 - **Hugging Face** — [huggingface.co/Elpriser](https://huggingface.co/Elpriser): historiske pris-, produktions- og markedsdatasæt som parquet-filer, ét datasæt pr. land, licenseret under CC BY 4.0. Velegnet til backtesting, ML-træning og statistisk analyse uden at skulle scrape API'et for historik.
-- **MCP-server** — [github.com/x2q/elpriser-mcp](https://github.com/x2q/elpriser-mcp): en Model Context Protocol-server til LLM-agenter. Kør \`npx -y elpriser-mcp\` for at give Claude Desktop og andre MCP-klienter native værktøjer til aktuel pris, billigste timer og 7-dages prognose — uden selv at skulle bygge HTTP-kald.
+- **MCP-server** — [github.com/x2q/elpriser-mcp](https://github.com/x2q/elpriser-mcp): en Model Context Protocol-server til LLM-agenter. Kør \`npx -y elpriser-mcp\` for at give Claude Desktop og andre MCP-klienter native værktøjer til aktuel pris, billigste timer og prisprognosen — uden selv at skulle bygge HTTP-kald.
 - **JS/TS-klient** — [github.com/x2q/elpriser-client](https://github.com/x2q/elpriser-client): en letvægts JavaScript/TypeScript-klient til elpriser.org's API, til brug i Node.js, browser eller edge-funktioner.
 `;
 
@@ -615,8 +652,11 @@ Sitemap: https://elpriser.org/sitemap.xml`,
     type: 'text/plain; charset=utf-8',
   },
   '/llms-full.txt': {
-    body: LLMS_FULL_TXT,
+    // Static text plus today's figures, dated to the hour, so an answer engine
+    // quoting this file quotes numbers that were true when it read them.
+    body: async context => LLMS_FULL_TXT + await llmsNowSection(context),
     type: 'text/plain; charset=utf-8',
+    maxAge: 900,
   },
   '/og-image': {
     body: OG_IMAGE,
@@ -679,11 +719,11 @@ export async function onRequest(context) {
   // Static routes (sitemap, robots, og-image)
   const staticRoute = STATIC_ROUTES[url.pathname];
   if (staticRoute) {
-    const body = typeof staticRoute.body === 'function' ? staticRoute.body() : staticRoute.body;
+    const body = typeof staticRoute.body === 'function' ? await staticRoute.body(context) : staticRoute.body;
     return new Response(body, {
       headers: {
         'Content-Type': staticRoute.type,
-        'Cache-Control': 'public, max-age=3600',
+        'Cache-Control': `public, max-age=${staticRoute.maxAge || 3600}`,
       },
     });
   }
@@ -1241,7 +1281,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v47');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v50');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1328,6 +1368,29 @@ function dataPageForHash(hash) {
   return 'start';
 }
 
+/** BreadcrumbList for every page but the front page, built from the URL:
+ *  Elpriser › DK1 Vest › N1, Elpriser › Blog › <post>, Elpriser › <page>. */
+function breadcrumbLd(pathname, meta, opts) {
+  if (pathname === '/') return '';
+  const short = t => String(t || '').split(' — ')[0].split(': ')[0].trim();
+  const items = [{ name: 'Elpriser', url: 'https://elpriser.org/' }];
+  const pi = opts.pricesIntro;
+  if (pi && pi.net) {
+    items.push({ name: AREA_LABEL[pi.area], url: `https://elpriser.org/${pi.area.toLowerCase()}` });
+    items.push({ name: pi.net.name, url: `https://elpriser.org${pathname}` });
+  } else if (pi) {
+    items.push({ name: AREA_LABEL[pi.area], url: `https://elpriser.org${pathname}` });
+  } else if (pathname.startsWith('/blog/')) {
+    items.push({ name: 'Blog', url: 'https://elpriser.org/blog' });
+    items.push({ name: short(meta.title), url: `https://elpriser.org${pathname}` });
+  } else {
+    items.push({ name: short(meta.title), url: `https://elpriser.org${pathname}` });
+  }
+  const ld = { '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it.name, item: it.url })) };
+  return `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`;
+}
+
 async function renderSPA(context, pathname, meta, opts = {}) {
   const pageUrl = `https://elpriser.org${pathname}`;
   const indexUrl = new URL('/', context.request.url);
@@ -1339,6 +1402,7 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   // Section titles are h2 in the shared markup (only one section per page
   // after stripping) — promote the served section's title to the page's h1.
   html = promoteSectionTitle(html);
+  html = html.replace('</head>', `  ${breadcrumbLd(pathname, meta, opts)}\n</head>`);
   if (opts.pricesIntro) {
     html = html.replace('<!--SSR_PRICES_INTRO-->',
       await buildPricesIntro(context, opts.pricesIntro.area, opts.pricesIntro.net));

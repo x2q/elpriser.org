@@ -1196,7 +1196,7 @@ export async function onRequest(context) {
     const res = await context.env.ASSETS.fetch(indexUrl);
     let html = await res.text();
     const title = 'elpriser.org API — Gratis JSON API for danske elpriser';
-    const desc  = 'Gratis public JSON API for danske elpriser (DK1 og DK2). Aktuel pris, 24h timepriser, 7-dages prognose, Tibber-kompatibel tariff. CORS-fri, ingen nøgle, OpenAPI 3.1 spec.';
+    const desc  = 'Gratis public JSON API for danske elpriser (DK1 og DK2). Aktuel pris, 24h timepriser, 10-dages prognose, Tibber-kompatibel tariff. CORS-fri, ingen nøgle, OpenAPI 3.1 spec.';
     const url   = 'https://elpriser.org/api';
     // Server-side equivalent of the client router's classList.add('active') —
     // otherwise the crawlable HTML shows the homepage section under an "API" title.
@@ -1212,6 +1212,15 @@ export async function onRequest(context) {
     html = html.replace(/<title>[^<]*<\/title>/,                         `<title>${title}</title>`);
     html = html.replace(/<meta name="description" content="[^"]*">/,    `<meta name="description" content="${desc}">`);
     html = html.replace(/<link rel="canonical" href="[^"]*">/,          `<link rel="canonical" href="${url}">`);
+    // The template's hreflang="da" points at the front page; left alone it
+    // declared the front page to be the Danish version of /api.
+    html = html.replace(/<link rel="alternate" hreflang="da" href="[^"]*">/, `<link rel="alternate" hreflang="da" href="${url}">`);
+    // This page is rendered here rather than by renderSPA, so it needs its own
+    // breadcrumbs to match every other sub-page.
+    html = html.replace('</head>', `  <script type="application/ld+json">${JSON.stringify({
+      '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Elpriser', item: 'https://elpriser.org/' },
+        { '@type': 'ListItem', position: 2, name: 'API', item: url }] })}</script>\n</head>`);
     html = html.replace(/<meta property="og:title" content="[^"]*">/,   `<meta property="og:title" content="${title}">`);
     html = html.replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${desc}">`);
     html = html.replace(/<meta property="og:url" content="[^"]*">/,     `<meta property="og:url" content="${url}">`);

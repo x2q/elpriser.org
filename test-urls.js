@@ -229,6 +229,25 @@ async function main() {
   const home2 = await get('/');
   check(!/name="description" content="[^"]*inkl\. nettariffer/.test(home2.body), 'forside: beskrivelsen påstår ikke nettarif');
 
+  const ldOf = body => [...body.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+    .map(m => { try { return JSON.parse(m[1]); } catch { return { '@type': 'INVALID' }; } });
+  const types = body => ldOf(body).flatMap(j => j['@graph'] ? j['@graph'].map(x => x['@type']) : [j['@type']]);
+  const se3t = types(se3.body);
+  check(!se3t.some(t => ['FAQPage', 'Article', 'BlogPosting', 'Dataset', 'INVALID'].includes(t)), '/se3: ingen fremmed struktureret data', se3t.join(','));
+  const post = await get('/blog/forsta-din-elpris');
+  const bp = ldOf(post.body).filter(j => j['@type'] === 'BlogPosting');
+  check(bp.length === 1 && bp[0].url.endsWith('/blog/forsta-din-elpris'), 'blogindlæg: præcis sit eget BlogPosting');
+  const n1 = await get('/dk1/n1');
+  const bc = ldOf(n1.body).find(j => j['@type'] === 'BreadcrumbList');
+  check(bc && bc.itemListElement.map(i => i.name).join(' › ') === 'Elpriser › DK1 Vest › N1', '/dk1/n1: brødkrummer', bc && JSON.stringify(bc.itemListElement.map(i => i.name)));
+  check(types(home2.body).includes('FAQPage'), 'forside: FAQ-markup');
+  const apiPage = await get('/api');
+  check(types(apiPage.body).includes('Dataset') && types(apiPage.body).includes('BreadcrumbList'), '/api: Dataset og brødkrummer');
+  check(/hreflang="da" href="https:\/\/elpriser\.org\/api"/.test(apiPage.body) && !/7-dages/.test(apiPage.body), '/api: hreflang peger på sig selv, 10-dages prognose');
+  const full = await get('/llms-full.txt');
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Copenhagen' }).format(new Date());
+  check(full.body.includes(`## Elpriser lige nu (${today}`) && /DK1 \(Vestdanmark\), kl\. \d\d:00: spotpris -?\d+,\d\d kr\/kWh/.test(full.body), 'llms-full.txt: dagens tal med dato');
+
   console.log('\n8. REGULERBAR KAPACITET — endpoints lever og afviser forkert input');
   // Only payloads that are refused before anything is stored, so a scheduled
   // run against production never writes a row.

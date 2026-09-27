@@ -452,8 +452,14 @@ test('seo/llm: nothing claims what the page does not show', () => {
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   // /prognose shows ten days from a daily-trained model — not "7 dage" from
   // "historiske prismønstre", which its title, description and llms.txt said.
+  const APIF = fs.readFileSync(path.join(ROOT, 'functions/api/[[catchall]].js'), 'utf8');
+  // /api is rendered by the API function, not the page function — the first
+  // version of this test missed its "7-dages prognose" for exactly that reason.
+  assert.ok(!/7-dages prognose/.test(APIF), '/api still describes a 7-day forecast');
   for (const [where, txt] of [['functions/[[path]].js', SRV], ['index.html', INDEX]]) {
-    assert.ok(!/næste 7 dage|7-day (price )?forecast|baseret på historiske prismønstre/.test(txt), `${where} still describes the forecast as 7 days / historical patterns`);
+    // Every spelling: "7 dage", "7-dages", "7-døgns", "7-day", "7 days".
+    const hit = txt.match(/\b7[- ](?:dage|dages|døgn|døgns|day|days)\b[^\n]{0,40}|baseret på historiske prismønstre/);
+    assert.ok(!hit, `${where} still describes the forecast as 7 days / historical patterns: "${hit && hit[0]}"`);
   }
   // The homepage figure is inkl alt, which excludes the local nettarif.
   const head = INDEX.slice(0, INDEX.indexOf('</head>'));
@@ -475,6 +481,37 @@ test('seo: zone pages carry no hreflang cluster', () => {
   const branch = SRV.slice(SRV.indexOf('if (meta.lang) {'), SRV.indexOf('html = html.replace(\n    /<title>'));
   assert.ok(!/hreflang="\$\{m\.lang\}"/.test(branch) && !/x-default/.test(branch), 'the zone-page hreflang cluster is back');
   assert.ok(/hreflang="\[\^"\]\*" href="\[\^"\]\*">\/g, ''\)/.test(branch), 'zone pages do not strip the base hreflang');
+});
+
+test('structured data: each block is served only on the page it describes', () => {
+  // <head> goes to every URL, so FAQ, article and dataset markup there made
+  // /se3 and every blog post claim content they do not have. Only the
+  // genuinely sitewide blocks may stay in <head>.
+  const head = INDEX.slice(0, INDEX.indexOf('</head>'));
+  const headTypes = [...head.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+    .flatMap(m => [...m[1].matchAll(/"@type"\s*:\s*"([A-Za-z]+)"/g)].map(x => x[1]));
+  for (const t of ['FAQPage', 'Article', 'BlogPosting', 'Dataset', 'Service'])
+    assert.ok(!headTypes.includes(t), `${t} is in <head> and so on every page`);
+  const blocksIn = page => {
+    const a = INDEX.search(new RegExp(`<main[^>]*data-page="${page}"`));
+    const b = INDEX.indexOf('</main>', a);
+    return [...INDEX.slice(a, b).matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => JSON.parse(m[1]));
+  };
+  assert.ok(blocksIn('start').some(j => j['@type'] === 'FAQPage'), 'the homepage FAQ markup is gone');
+  const api = blocksIn('api').find(j => j['@type'] === 'Dataset');
+  assert.ok(api && api.url === 'https://elpriser.org/api', 'the dataset is not on /api with its own URL');
+  for (const slug of ['forsta-din-elpris', 'shelly-elpris-automation', 'home-assistant-elpriser', 'v2g-v2h-bidirektional-opladning',
+                      'biler-ladere-v2h-v2g', 'elafgift-2028', 'hvornaar-er-stroemmen-billigst', 'groennest-og-dyrest']) {
+    const posts = blocksIn('blog-' + slug).filter(j => j['@type'] === 'BlogPosting');
+    assert.equal(posts.length, 1, `blog-${slug} has ${posts.length} BlogPosting blocks`);
+    assert.equal(posts[0].url, `https://elpriser.org/blog/${slug}`, `blog-${slug} describes another post`);
+  }
+  assert.equal(blocksIn('blog').find(j => j['@type'] === 'Blog')?.blogPost?.length, 8, '/blog does not list its eight posts');
+  // Every block must parse; a stray quote silently voids the whole block.
+  for (const m of INDEX.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) JSON.parse(m[1]);
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  assert.ok(/html\.replace\('<\/head>', `  \$\{breadcrumbLd\(pathname, meta, opts\)\}/.test(SRV), 'sub-pages get no breadcrumbs');
+  assert.ok(/body: async context => LLMS_FULL_TXT \+ await llmsNowSection\(context\)/.test(SRV), 'llms-full.txt carries no dated figures');
 });
 
 test('homepage: the hero curve has a price scale that lines up', () => {

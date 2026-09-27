@@ -69,341 +69,17 @@
   for queries like "elpriser Aarhus", "spotpris Odense", "elpris
   Sønderborg", "elpriser Hvidovre" etc.
 -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Service",
-  "name": "Elpriser i Danmark",
-  "serviceType": "Electricity price information",
-  "description": "Aktuelle spotpriser og samlede elpriser time for time for hele Danmark, opdelt på prisområderne DK1 (Vestdanmark) og DK2 (Østdanmark).",
-  "url": "https://elpriser.org",
-  "inLanguage": "da",
-  "provider": {
-    "@type": "Organization",
-    "name": "elpriser.org",
-    "url": "https://elpriser.org"
-  },
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "DKK" },
-  "areaServed": [
-    { "@type": "Country", "name": "Denmark", "alternateName": "Danmark" },
-    { "@type": "City", "name": "København",        "geo": { "@type": "GeoCoordinates", "latitude": 55.6761, "longitude": 12.5683 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Aarhus",           "geo": { "@type": "GeoCoordinates", "latitude": 56.1629, "longitude": 10.2039 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Odense",           "geo": { "@type": "GeoCoordinates", "latitude": 55.4038, "longitude": 10.4024 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Aalborg",          "geo": { "@type": "GeoCoordinates", "latitude": 57.0488, "longitude":  9.9217 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Esbjerg",          "geo": { "@type": "GeoCoordinates", "latitude": 55.4761, "longitude":  8.4602 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Randers",          "geo": { "@type": "GeoCoordinates", "latitude": 56.4607, "longitude": 10.0369 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Kolding",          "geo": { "@type": "GeoCoordinates", "latitude": 55.4904, "longitude":  9.4722 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Horsens",          "geo": { "@type": "GeoCoordinates", "latitude": 55.8607, "longitude":  9.8503 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Vejle",            "geo": { "@type": "GeoCoordinates", "latitude": 55.7099, "longitude":  9.5359 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Roskilde",         "geo": { "@type": "GeoCoordinates", "latitude": 55.6415, "longitude": 12.0803 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Herning",          "geo": { "@type": "GeoCoordinates", "latitude": 56.1364, "longitude":  8.9744 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Silkeborg",        "geo": { "@type": "GeoCoordinates", "latitude": 56.1697, "longitude":  9.5450 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Næstved",          "geo": { "@type": "GeoCoordinates", "latitude": 55.2300, "longitude": 11.7600 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Fredericia",       "geo": { "@type": "GeoCoordinates", "latitude": 55.5667, "longitude":  9.7500 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Viborg",           "geo": { "@type": "GeoCoordinates", "latitude": 56.4519, "longitude":  9.4006 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Køge",             "geo": { "@type": "GeoCoordinates", "latitude": 55.4576, "longitude": 12.1816 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Holstebro",        "geo": { "@type": "GeoCoordinates", "latitude": 56.3601, "longitude":  8.6164 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Taastrup",         "geo": { "@type": "GeoCoordinates", "latitude": 55.6500, "longitude": 12.3000 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Slagelse",         "geo": { "@type": "GeoCoordinates", "latitude": 55.4019, "longitude": 11.3551 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Hillerød",         "geo": { "@type": "GeoCoordinates", "latitude": 55.9333, "longitude": 12.3167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Sønderborg",       "geo": { "@type": "GeoCoordinates", "latitude": 54.9089, "longitude":  9.7886 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Svendborg",        "geo": { "@type": "GeoCoordinates", "latitude": 55.0593, "longitude": 10.6082 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Hjørring",         "geo": { "@type": "GeoCoordinates", "latitude": 57.4630, "longitude":  9.9821 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Helsingør",        "geo": { "@type": "GeoCoordinates", "latitude": 56.0367, "longitude": 12.6136 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Holbæk",           "geo": { "@type": "GeoCoordinates", "latitude": 55.7167, "longitude": 11.7167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Frederikshavn",    "geo": { "@type": "GeoCoordinates", "latitude": 57.4407, "longitude": 10.5364 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Ringsted",         "geo": { "@type": "GeoCoordinates", "latitude": 55.4422, "longitude": 11.7902 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Haderslev",        "geo": { "@type": "GeoCoordinates", "latitude": 55.2522, "longitude":  9.4942 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Skive",            "geo": { "@type": "GeoCoordinates", "latitude": 56.5667, "longitude":  9.0333 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Nykøbing Falster", "geo": { "@type": "GeoCoordinates", "latitude": 54.7691, "longitude": 11.8744 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-
-    { "@type": "City", "name": "Hvidovre",          "geo": { "@type": "GeoCoordinates", "latitude": 55.6500, "longitude": 12.4667 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Greve",             "geo": { "@type": "GeoCoordinates", "latitude": 55.5833, "longitude": 12.3000 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Ballerup",          "geo": { "@type": "GeoCoordinates", "latitude": 55.7314, "longitude": 12.3636 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Albertslund",       "geo": { "@type": "GeoCoordinates", "latitude": 55.6878, "longitude": 12.3661 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Hørsholm",          "geo": { "@type": "GeoCoordinates", "latitude": 55.8800, "longitude": 12.5042 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Ishøj",             "geo": { "@type": "GeoCoordinates", "latitude": 55.6167, "longitude": 12.3500 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Glostrup",          "geo": { "@type": "GeoCoordinates", "latitude": 55.6667, "longitude": 12.4000 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Birkerød",          "geo": { "@type": "GeoCoordinates", "latitude": 55.8421, "longitude": 12.4321 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Allerød",           "geo": { "@type": "GeoCoordinates", "latitude": 55.8694, "longitude": 12.3667 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Frederikssund",     "geo": { "@type": "GeoCoordinates", "latitude": 55.8378, "longitude": 12.0578 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Kalundborg",        "geo": { "@type": "GeoCoordinates", "latitude": 55.6810, "longitude": 11.0903 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Solrød Strand",     "geo": { "@type": "GeoCoordinates", "latitude": 55.5333, "longitude": 12.2167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Korsør",            "geo": { "@type": "GeoCoordinates", "latitude": 55.3322, "longitude": 11.1372 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Værløse",           "geo": { "@type": "GeoCoordinates", "latitude": 55.7833, "longitude": 12.3667 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Rønne",             "geo": { "@type": "GeoCoordinates", "latitude": 55.0985, "longitude": 14.7058 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Vordingborg",       "geo": { "@type": "GeoCoordinates", "latitude": 55.0103, "longitude": 11.9069 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Nakskov",           "geo": { "@type": "GeoCoordinates", "latitude": 54.8311, "longitude": 11.1394 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Sorø",              "geo": { "@type": "GeoCoordinates", "latitude": 55.4319, "longitude": 11.5572 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-    { "@type": "City", "name": "Maribo",            "geo": { "@type": "GeoCoordinates", "latitude": 54.7733, "longitude": 11.4992 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
-
-    { "@type": "City", "name": "Skanderborg",       "geo": { "@type": "GeoCoordinates", "latitude": 56.0386, "longitude":  9.9333 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Aabenraa",          "geo": { "@type": "GeoCoordinates", "latitude": 55.0444, "longitude":  9.4218 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Nyborg",            "geo": { "@type": "GeoCoordinates", "latitude": 55.3127, "longitude": 10.7926 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Middelfart",        "geo": { "@type": "GeoCoordinates", "latitude": 55.5036, "longitude":  9.7397 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Ikast",             "geo": { "@type": "GeoCoordinates", "latitude": 56.1369, "longitude":  9.1542 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Grenaa",            "geo": { "@type": "GeoCoordinates", "latitude": 56.4147, "longitude": 10.8814 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Varde",             "geo": { "@type": "GeoCoordinates", "latitude": 55.6225, "longitude":  8.4806 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Thisted",           "geo": { "@type": "GeoCoordinates", "latitude": 56.9558, "longitude":  8.6962 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Brønderslev",       "geo": { "@type": "GeoCoordinates", "latitude": 57.2700, "longitude":  9.9436 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Hobro",             "geo": { "@type": "GeoCoordinates", "latitude": 56.6394, "longitude":  9.7944 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Struer",            "geo": { "@type": "GeoCoordinates", "latitude": 56.4928, "longitude":  8.5933 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Ringkøbing",        "geo": { "@type": "GeoCoordinates", "latitude": 56.0905, "longitude":  8.2429 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Vejen",             "geo": { "@type": "GeoCoordinates", "latitude": 55.4806, "longitude":  9.1469 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Sæby",              "geo": { "@type": "GeoCoordinates", "latitude": 57.3303, "longitude": 10.5253 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Skjern",            "geo": { "@type": "GeoCoordinates", "latitude": 55.9472, "longitude":  8.4972 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Aars",              "geo": { "@type": "GeoCoordinates", "latitude": 56.8000, "longitude":  9.5167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Støvring",          "geo": { "@type": "GeoCoordinates", "latitude": 56.8833, "longitude":  9.8333 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Ribe",              "geo": { "@type": "GeoCoordinates", "latitude": 55.3308, "longitude":  8.7647 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Tønder",            "geo": { "@type": "GeoCoordinates", "latitude": 54.9333, "longitude":  8.8667 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Bjerringbro",       "geo": { "@type": "GeoCoordinates", "latitude": 56.3756, "longitude":  9.6606 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Faaborg",           "geo": { "@type": "GeoCoordinates", "latitude": 55.1000, "longitude": 10.2417 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Lemvig",            "geo": { "@type": "GeoCoordinates", "latitude": 56.5469, "longitude":  8.3083 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Hadsten",           "geo": { "@type": "GeoCoordinates", "latitude": 56.3286, "longitude": 10.0481 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Kerteminde",        "geo": { "@type": "GeoCoordinates", "latitude": 55.4503, "longitude": 10.6597 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
-    { "@type": "City", "name": "Hadsund",           "geo": { "@type": "GeoCoordinates", "latitude": 56.7167, "longitude": 10.1167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } }
-  ]
-}
-</script>
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "Hvad er elprisen i dag?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Elprisen i Danmark skifter time for time og fastsættes dagen i forvejen på den nordiske elbørs Nord Pool. Prisen kaldes spotprisen og offentliggøres dagligt omkring kl. 13 for det kommende døgn. På elpriser.org kan du se den aktuelle elpris live for både DK1 (Vestdanmark) og DK2 (Østdanmark), opdateret med data fra Energi Data Service."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Hvad koster strøm lige nu?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Hvad strøm koster lige nu afhænger af spotprisen på Nord Pool samt dit netselskabs nettarif, elafgift og moms — tilsammen den reelle pris pr. kWh. El priser og strømpriser dækker reelt det samme: prisen på elektricitet, opdateret time for time. Se de aktuelle el priser for i dag på elpriser.org for DK1 Vest eller DK2 Øst, eller vælg dit netselskab for at se præcis, hvad strøm koster hos dig lige nu."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Er energipriser det samme som elpriser?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Energipriser bruges ofte i daglig tale om elpriser — altså prisen på strøm (el) per kWh. Strengt taget dækker energipriser bredt over al energi (el, gas og fjernvarme), men når folk søger på energipriser mener de typisk den aktuelle elpris. På elpriser.org viser vi elpriser og strømpriser time for time for hele Danmark, inkl. nettariffer, elafgift og moms, så du kan se hvad strøm reelt koster lige nu."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Hvad er forskellen på DK1 og DK2?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Danmark er delt i to prisområder: DK1 dækker Vestdanmark (Jylland og Fyn) og DK2 dækker Østdanmark (Sjælland, Lolland-Falster og Bornholm). Priserne kan variere mellem de to områder, da de har forskellige forbindelser til nabolande og forskellige produktionsforhold med vindmøller og solceller."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Hvornår er strømmen billigst?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Strømmen er typisk billigst om natten mellem kl. 00 og 06, og dyrest i spidstimerne kl. 17-21 hvor mange husholdninger bruger mest energi. Den faktiske pris afhænger af vejr, vind og forbrug, så det kan variere fra dag til dag. Med elpriser.org kan du se præcis hvilke timer der er billigst og planlægge dit forbrug."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Hvad indgår i den samlede elpris?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Den samlede elpris består af: spotprisen (markedsprisen fra Nord Pool), nettariffer (betaling til dit lokale netselskab), systemtarif og transmissionstarif (til Energinet), elafgift (statslig afgift) og moms (25%). På elpriser.org kan du se prisen med alle dele inkluderet."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Hvad er den aktuelle spotpris på el lige nu?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Spotprisen på el opdateres time for time og varierer mellem DK1 (Vest) og DK2 (Øst). Prisen offentliggøres dagen før af Nord Pool. Tjek den aktuelle spotpris live på elpriser.org for DK1 Vest eller DK2 Øst. Du kan også se prisen inkl. nettariffer, elafgift og moms — den reelle pris du betaler per kWh."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Hvad er nettariffen hos Trefor, RAH, N1 og Radius?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Nettariffen varierer efter dit netselskab og tidspunkt på dagen (lav-, mellem- og spidslast). De største netselskaber i Danmark er N1 og Trefor (DK1/Vest) samt Radius og Cerius (DK2/Øst). Mindre selskaber som RAH Net, Konstant, Nord Energi og Vores Elnet har egne tariffer. Se og sammenlign alle tariffer på elpriser.org."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Kan jeg se elpriser live og time for time?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Ja. Elpriser.org viser elpriser live, opdateret time for time med data fra Energi Data Service. Du kan se priserne for hele dagens 24 timer som tabel eller graf, sammenligne med morgendagens priser (tilgængelige efter kl. 13), og se historiske priser uge for uge."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Hvad er den dyreste og billigste elpris nogensinde i Danmark?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Den dyreste elpris i Danmark var 16,69 kr/kWh (spotpris ex. moms) i DK2 den 5. september 2022 kl. 19 under energikrisen. Den billigste var −2,76 kr/kWh i DK1 den 2. juli 2023 kl. 14. Negative elpriser opstår ved høj vindproduktion og lavt forbrug, hvor producenter betaler forbrugere for at aftage strøm."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Hvad er det billigste netselskab i Danmark?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Nettariffen varierer mellem netselskaber med op til 15-25 øre/kWh forskel, svarende til ca. 500-1.000 kr/år for en typisk husstand. I DK1 (Vest) har RAH Net og Trefor typisk de laveste spidstariffer (33-37 øre), mens N1 ligger højere (46 øre). I DK2 (Øst) er Cerius billigst (47 øre spids), mens Radius er dyrest (65 øre). Du kan ikke selv vælge netselskab, men du kan spare ved at flytte forbrug til lavsats-timerne."
-      }
-    }
-  ]
-}
-</script>
 <!--
   Article markup for the 5 blog guides. Each entry tells Google "this is a
   long-form article, here's its author/publisher". Helps with rich snippets
   (date, author byline) in SERPs. The pages themselves are SPA routes
   served by functions/[[path]].js with per-route <title> + <meta>.
 -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "Article",
-      "headline": "Forstå din elpris: Hvad bestemmer elprisen i Danmark?",
-      "description": "Komplet guide til elpriser i Danmark: spotpris, nettarif, elafgift, DK1 vs DK2, hvornår strømmen er billigst, negative elpriser og sådan sparer du penge.",
-      "url": "https://elpriser.org/blog/forsta-din-elpris",
-      "datePublished": "2026-04-17",
-      "dateModified": "2026-07-24",
-      "inLanguage": "da",
-      "author":    { "@type": "Organization", "name": "elpriser.org" },
-      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
-      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/forsta-din-elpris" }
-    },
-    {
-      "@type": "Article",
-      "headline": "Shelly og elpriser: Automatisk tænd og sluk efter spotprisen",
-      "description": "Styr Shelly Plus, Pro og Plug efter elprisen med gratis API. Script- og tidsbaseret automation af elbil, varmepumpe og vandvarmer efter billig strøm.",
-      "url": "https://elpriser.org/blog/shelly-elpris-automation",
-      "datePublished": "2026-04-17",
-      "dateModified": "2026-07-24",
-      "inLanguage": "da",
-      "author":    { "@type": "Organization", "name": "elpriser.org" },
-      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
-      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/shelly-elpris-automation" }
-    },
-    {
-      "@type": "Article",
-      "headline": "Home Assistant og elpriser: Komplet guide til smart elforbrug",
-      "description": "Opsæt Home Assistant med danske elpriser: REST-sensorer, schedule-automations og dashboards — spar automatisk penge på strøm efter de billigste timer.",
-      "url": "https://elpriser.org/blog/home-assistant-elpriser",
-      "datePublished": "2026-04-17",
-      "dateModified": "2026-07-24",
-      "inLanguage": "da",
-      "author":    { "@type": "Organization", "name": "elpriser.org" },
-      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
-      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/home-assistant-elpriser" }
-    },
-    {
-      "@type": "Article",
-      "headline": "V2G, V2H og V2L: Bidirektional elbilopladning forklaret",
-      "description": "Forstå Vehicle-to-Grid (V2G), Vehicle-to-Home (V2H) og Vehicle-to-Load (V2L). Sådan kan din elbil sælge strøm til nettet eller forsyne dit hus, og hvordan det fungerer med spotpriser i Danmark.",
-      "url": "https://elpriser.org/blog/v2g-v2h-bidirektional-opladning",
-      "datePublished": "2026-05-15",
-      "dateModified": "2026-07-24",
-      "inLanguage": "da",
-      "author":    { "@type": "Organization", "name": "elpriser.org" },
-      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
-      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/v2g-v2h-bidirektional-opladning" }
-    },
-    {
-      "@type": "Article",
-      "headline": "Elbiler og ladere med V2H/V2G — Komplet liste 2026",
-      "description": "Opdateret liste over elbiler og bidirektionale ladere der understøtter V2L, V2H og V2G. Inkluderer Hyundai Ioniq 5, Kia EV9, Nissan Leaf, Wallbox Quasar 2, Sigenergy og flere.",
-      "url": "https://elpriser.org/blog/biler-ladere-v2h-v2g",
-      "datePublished": "2026-05-15",
-      "dateModified": "2026-07-24",
-      "inLanguage": "da",
-      "author":    { "@type": "Organization", "name": "elpriser.org" },
-      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
-      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/biler-ladere-v2h-v2g" }
-    },
-    {
-      "@type": "Article",
-      "headline": "Elafgift 2028: Sådan stiger elafgiften igen",
-      "description": "Elafgiften er sænket til 0,8 øre/kWh i 2026-2027, men stiger igen fra 2028. Se de nye satser, hvorfor regeringen endnu ikke har forlænget den lave afgift, og hvad det betyder for din elregning og dine solceller.",
-      "url": "https://elpriser.org/blog/elafgift-2028",
-      "datePublished": "2026-07-14",
-      "dateModified": "2026-07-24",
-      "inLanguage": "da",
-      "author":    { "@type": "Organization", "name": "elpriser.org" },
-      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
-      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/elafgift-2028" }
-    },
-    {
-      "@type": "Article",
-      "headline": "Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret",
-      "description": "Nattestrøm er ikke længere billigst: i 2026 ligger døgnets billigste time midt på dagen på 68 % af dagene. Analyse af 48.594 timers forbrugs- og prisdata fra Energinet.",
-      "url": "https://elpriser.org/blog/hvornaar-er-stroemmen-billigst",
-      "inLanguage": "da",
-      "datePublished": "2026-07-28",
-      "dateModified": "2026-07-28",
-      "author":    { "@type": "Organization", "name": "elpriser.org" },
-      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
-      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/hvornaar-er-stroemmen-billigst" }
-    },
-    {
-      "@type": "Article",
-      "headline": "Hvorfor er strømmen grønnest netop i den dyreste time?",
-      "description": "Den dyreste time på døgnet er ofte også den grønneste. Analyse af 22.504 timers data: pris sættes marginalt på et europæisk marked, mens CO₂ er et gennemsnit der afhænger af, hvilke naboer Danmark handler med.",
-      "url": "https://elpriser.org/blog/groennest-og-dyrest",
-      "inLanguage": "da",
-      "datePublished": "2026-08-01",
-      "dateModified": "2026-08-01",
-      "author":    { "@type": "Organization", "name": "elpriser.org" },
-      "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
-      "mainEntityOfPage": { "@type": "WebPage", "@id": "https://elpriser.org/blog/groennest-og-dyrest" }
-    }
-  ]
-}
-</script>
 <!--
   Dataset schema — surfaces the price feed in Google Dataset Search and gives
   LLMs an unambiguous machine-readable description of what's available.
   Distribution links point at the live JSON API endpoints.
 -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Dataset",
-  "name": "Danish hourly electricity prices (DK1 og DK2)",
-  "description": "Hourly day-ahead spot prices and totals (spot + nettarif + systemtarif + transmissionstarif + elafgift + moms) for the Danish price zones DK1 (Vestdanmark) and DK2 (Østdanmark). Updated daily from Energi Data Service (Energinet).",
-  "url": "https://elpriser.org/",
-  "inLanguage": "da",
-  "isAccessibleForFree": true,
-  "license": "https://www.energidataservice.dk/legal-information",
-  "creator":   { "@type": "Organization", "name": "Energinet", "url": "https://energidataservice.dk" },
-  "publisher": { "@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org" },
-  "keywords": ["elpriser", "spotpris", "elpris", "DK1", "DK2", "Denmark", "electricity prices", "Nord Pool"],
-  "spatialCoverage": { "@type": "Country", "name": "Denmark" },
-  "temporalCoverage": "2020-01-01/..",
-  "variableMeasured": [
-    { "@type": "PropertyValue", "name": "Spot price",                "unitText": "DKK/kWh" },
-    { "@type": "PropertyValue", "name": "Spot price incl. VAT",      "unitText": "DKK/kWh" },
-    { "@type": "PropertyValue", "name": "Total price incl. tariffs", "unitText": "DKK/kWh" }
-  ],
-  "distribution": [
-    { "@type": "DataDownload", "name": "Current price (DK1) — JSON", "contentUrl": "https://elpriser.org/api/now?area=DK1&mode=inkl_alt",   "encodingFormat": "application/json" },
-    { "@type": "DataDownload", "name": "Current price (DK2) — JSON", "contentUrl": "https://elpriser.org/api/now?area=DK2&mode=inkl_alt",   "encodingFormat": "application/json" },
-    { "@type": "DataDownload", "name": "24h prices (DK1) — JSON",    "contentUrl": "https://elpriser.org/api/prices?area=DK1&mode=inkl_alt", "encodingFormat": "application/json" },
-    { "@type": "DataDownload", "name": "24h prices (DK2) — JSON",    "contentUrl": "https://elpriser.org/api/prices?area=DK2&mode=inkl_alt", "encodingFormat": "application/json" },
-    { "@type": "DataDownload", "name": "Tibber-compatible JSON",     "contentUrl": "https://elpriser.org/api/shelly/tariff?area=DK1&mode=inkl_alt", "encodingFormat": "application/json" }
-  ]
-}
-</script>
 <!-- Server-injected live price JSON-LD (homepage only, see functions/[[path]].js). -->
 <!--SSR_LIVE_PRICE_JSONLD-->
 <!-- Google tag (gtag.js) -->
@@ -682,7 +358,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .mini.tmr.has-range .v{font-size:1.3rem;font-weight:700;color:#0e1421;margin-top:1px}
   .dark .mini.tmr.has-range .v{color:#e8edf5}
 
-  /* ── Næste 7 døgn (designoplæg 02) ── */
+  /* ── Kurvesektionerne: forside, prissider, zonesider og /prognose (designoplæg 02) ── */
   .fc-wrap{max-width:66rem;margin:2.5rem auto 0;padding:0 1rem}
   .fc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:.75rem}
   .fc-head h2{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;margin:0;color:#0e1421}
@@ -913,6 +589,196 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
 <!-- ═══════ START PAGE ═══════ -->
 <main data-page="start" class="active">
+  <!-- The questions and answers in the FAQ further down this page. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Hvad er elprisen i dag?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Elprisen i Danmark skifter time for time og fastsættes dagen i forvejen på den nordiske elbørs Nord Pool. Prisen kaldes spotprisen og offentliggøres dagligt omkring kl. 13 for det kommende døgn. På elpriser.org kan du se den aktuelle elpris live for både DK1 (Vestdanmark) og DK2 (Østdanmark), opdateret med data fra Energi Data Service."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad koster strøm lige nu?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Hvad strøm koster lige nu afhænger af spotprisen på Nord Pool samt dit netselskabs nettarif, elafgift og moms — tilsammen den reelle pris pr. kWh. El priser og strømpriser dækker reelt det samme: prisen på elektricitet, opdateret time for time. Se de aktuelle el priser for i dag på elpriser.org for DK1 Vest eller DK2 Øst, eller vælg dit netselskab for at se præcis, hvad strøm koster hos dig lige nu."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Er energipriser det samme som elpriser?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Energipriser bruges ofte i daglig tale om elpriser — altså prisen på strøm (el) per kWh. Strengt taget dækker energipriser bredt over al energi (el, gas og fjernvarme), men når folk søger på energipriser mener de typisk den aktuelle elpris. På elpriser.org viser vi elpriser og strømpriser time for time for hele Danmark, inkl. nettariffer, elafgift og moms, så du kan se hvad strøm reelt koster lige nu."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad er forskellen på DK1 og DK2?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Danmark er delt i to prisområder: DK1 dækker Vestdanmark (Jylland og Fyn) og DK2 dækker Østdanmark (Sjælland, Lolland-Falster og Bornholm). Priserne kan variere mellem de to områder, da de har forskellige forbindelser til nabolande og forskellige produktionsforhold med vindmøller og solceller."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvornår er strømmen billigst?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Strømmen er typisk billigst om natten mellem kl. 00 og 06, og dyrest i spidstimerne kl. 17-21 hvor mange husholdninger bruger mest energi. Den faktiske pris afhænger af vejr, vind og forbrug, så det kan variere fra dag til dag. Med elpriser.org kan du se præcis hvilke timer der er billigst og planlægge dit forbrug."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad indgår i den samlede elpris?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Den samlede elpris består af: spotprisen (markedsprisen fra Nord Pool), nettariffer (betaling til dit lokale netselskab), systemtarif og transmissionstarif (til Energinet), elafgift (statslig afgift) og moms (25%). På elpriser.org kan du se prisen med alle dele inkluderet."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad er den aktuelle spotpris på el lige nu?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Spotprisen på el opdateres time for time og varierer mellem DK1 (Vest) og DK2 (Øst). Prisen offentliggøres dagen før af Nord Pool. Tjek den aktuelle spotpris live på elpriser.org for DK1 Vest eller DK2 Øst. Du kan også se prisen inkl. nettariffer, elafgift og moms — den reelle pris du betaler per kWh."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad er nettariffen hos Trefor, RAH, N1 og Radius?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nettariffen varierer efter dit netselskab og tidspunkt på dagen (lav-, mellem- og spidslast). De største netselskaber i Danmark er N1 og Trefor (DK1/Vest) samt Radius og Cerius (DK2/Øst). Mindre selskaber som RAH Net, Konstant, Nord Energi og Vores Elnet har egne tariffer. Se og sammenlign alle tariffer på elpriser.org."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Kan jeg se elpriser live og time for time?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja. Elpriser.org viser elpriser live, opdateret time for time med data fra Energi Data Service. Du kan se priserne for hele dagens 24 timer som tabel eller graf, sammenligne med morgendagens priser (tilgængelige efter kl. 13), og se historiske priser uge for uge."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad er den dyreste og billigste elpris nogensinde i Danmark?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Den dyreste elpris i Danmark var 16,69 kr/kWh (spotpris ex. moms) i DK2 den 5. september 2022 kl. 19 under energikrisen. Den billigste var −2,76 kr/kWh i DK1 den 2. juli 2023 kl. 14. Negative elpriser opstår ved høj vindproduktion og lavt forbrug, hvor producenter betaler forbrugere for at aftage strøm."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hvad er det billigste netselskab i Danmark?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nettariffen varierer mellem netselskaber med op til 15-25 øre/kWh forskel, svarende til ca. 500-1.000 kr/år for en typisk husstand. I DK1 (Vest) har RAH Net og Trefor typisk de laveste spidstariffer (33-37 øre), mens N1 ligger højere (46 øre). I DK2 (Øst) er Cerius billigst (47 øre spids), mens Radius er dyrest (65 øre). Du kan ikke selv vælge netselskab, men du kan spare ved at flytte forbrug til lavsats-timerne."
+      }
+    }
+  ]
+}</script>
+  <!-- Structured data for this page only: the server strips every other page's main, so what sits here is served on / and nowhere else. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "Elpriser i Danmark",
+  "serviceType": "Electricity price information",
+  "description": "Aktuelle spotpriser og samlede elpriser time for time for hele Danmark, opdelt på prisområderne DK1 (Vestdanmark) og DK2 (Østdanmark).",
+  "url": "https://elpriser.org",
+  "inLanguage": "da",
+  "provider": {
+    "@type": "Organization",
+    "name": "elpriser.org",
+    "url": "https://elpriser.org"
+  },
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "DKK" },
+  "areaServed": [
+    { "@type": "Country", "name": "Denmark", "alternateName": "Danmark" },
+    { "@type": "City", "name": "København",        "geo": { "@type": "GeoCoordinates", "latitude": 55.6761, "longitude": 12.5683 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Aarhus",           "geo": { "@type": "GeoCoordinates", "latitude": 56.1629, "longitude": 10.2039 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Odense",           "geo": { "@type": "GeoCoordinates", "latitude": 55.4038, "longitude": 10.4024 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Aalborg",          "geo": { "@type": "GeoCoordinates", "latitude": 57.0488, "longitude":  9.9217 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Esbjerg",          "geo": { "@type": "GeoCoordinates", "latitude": 55.4761, "longitude":  8.4602 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Randers",          "geo": { "@type": "GeoCoordinates", "latitude": 56.4607, "longitude": 10.0369 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Kolding",          "geo": { "@type": "GeoCoordinates", "latitude": 55.4904, "longitude":  9.4722 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Horsens",          "geo": { "@type": "GeoCoordinates", "latitude": 55.8607, "longitude":  9.8503 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Vejle",            "geo": { "@type": "GeoCoordinates", "latitude": 55.7099, "longitude":  9.5359 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Roskilde",         "geo": { "@type": "GeoCoordinates", "latitude": 55.6415, "longitude": 12.0803 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Herning",          "geo": { "@type": "GeoCoordinates", "latitude": 56.1364, "longitude":  8.9744 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Silkeborg",        "geo": { "@type": "GeoCoordinates", "latitude": 56.1697, "longitude":  9.5450 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Næstved",          "geo": { "@type": "GeoCoordinates", "latitude": 55.2300, "longitude": 11.7600 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Fredericia",       "geo": { "@type": "GeoCoordinates", "latitude": 55.5667, "longitude":  9.7500 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Viborg",           "geo": { "@type": "GeoCoordinates", "latitude": 56.4519, "longitude":  9.4006 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Køge",             "geo": { "@type": "GeoCoordinates", "latitude": 55.4576, "longitude": 12.1816 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Holstebro",        "geo": { "@type": "GeoCoordinates", "latitude": 56.3601, "longitude":  8.6164 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Taastrup",         "geo": { "@type": "GeoCoordinates", "latitude": 55.6500, "longitude": 12.3000 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Slagelse",         "geo": { "@type": "GeoCoordinates", "latitude": 55.4019, "longitude": 11.3551 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Hillerød",         "geo": { "@type": "GeoCoordinates", "latitude": 55.9333, "longitude": 12.3167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Sønderborg",       "geo": { "@type": "GeoCoordinates", "latitude": 54.9089, "longitude":  9.7886 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Svendborg",        "geo": { "@type": "GeoCoordinates", "latitude": 55.0593, "longitude": 10.6082 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Hjørring",         "geo": { "@type": "GeoCoordinates", "latitude": 57.4630, "longitude":  9.9821 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Helsingør",        "geo": { "@type": "GeoCoordinates", "latitude": 56.0367, "longitude": 12.6136 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Holbæk",           "geo": { "@type": "GeoCoordinates", "latitude": 55.7167, "longitude": 11.7167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Frederikshavn",    "geo": { "@type": "GeoCoordinates", "latitude": 57.4407, "longitude": 10.5364 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Ringsted",         "geo": { "@type": "GeoCoordinates", "latitude": 55.4422, "longitude": 11.7902 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Haderslev",        "geo": { "@type": "GeoCoordinates", "latitude": 55.2522, "longitude":  9.4942 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Skive",            "geo": { "@type": "GeoCoordinates", "latitude": 56.5667, "longitude":  9.0333 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Nykøbing Falster", "geo": { "@type": "GeoCoordinates", "latitude": 54.7691, "longitude": 11.8744 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+
+    { "@type": "City", "name": "Hvidovre",          "geo": { "@type": "GeoCoordinates", "latitude": 55.6500, "longitude": 12.4667 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Greve",             "geo": { "@type": "GeoCoordinates", "latitude": 55.5833, "longitude": 12.3000 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Ballerup",          "geo": { "@type": "GeoCoordinates", "latitude": 55.7314, "longitude": 12.3636 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Albertslund",       "geo": { "@type": "GeoCoordinates", "latitude": 55.6878, "longitude": 12.3661 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Hørsholm",          "geo": { "@type": "GeoCoordinates", "latitude": 55.8800, "longitude": 12.5042 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Ishøj",             "geo": { "@type": "GeoCoordinates", "latitude": 55.6167, "longitude": 12.3500 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Glostrup",          "geo": { "@type": "GeoCoordinates", "latitude": 55.6667, "longitude": 12.4000 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Birkerød",          "geo": { "@type": "GeoCoordinates", "latitude": 55.8421, "longitude": 12.4321 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Allerød",           "geo": { "@type": "GeoCoordinates", "latitude": 55.8694, "longitude": 12.3667 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Frederikssund",     "geo": { "@type": "GeoCoordinates", "latitude": 55.8378, "longitude": 12.0578 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Kalundborg",        "geo": { "@type": "GeoCoordinates", "latitude": 55.6810, "longitude": 11.0903 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Solrød Strand",     "geo": { "@type": "GeoCoordinates", "latitude": 55.5333, "longitude": 12.2167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Korsør",            "geo": { "@type": "GeoCoordinates", "latitude": 55.3322, "longitude": 11.1372 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Værløse",           "geo": { "@type": "GeoCoordinates", "latitude": 55.7833, "longitude": 12.3667 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Rønne",             "geo": { "@type": "GeoCoordinates", "latitude": 55.0985, "longitude": 14.7058 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Vordingborg",       "geo": { "@type": "GeoCoordinates", "latitude": 55.0103, "longitude": 11.9069 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Nakskov",           "geo": { "@type": "GeoCoordinates", "latitude": 54.8311, "longitude": 11.1394 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Sorø",              "geo": { "@type": "GeoCoordinates", "latitude": 55.4319, "longitude": 11.5572 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+    { "@type": "City", "name": "Maribo",            "geo": { "@type": "GeoCoordinates", "latitude": 54.7733, "longitude": 11.4992 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK2 (Østdanmark)" } },
+
+    { "@type": "City", "name": "Skanderborg",       "geo": { "@type": "GeoCoordinates", "latitude": 56.0386, "longitude":  9.9333 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Aabenraa",          "geo": { "@type": "GeoCoordinates", "latitude": 55.0444, "longitude":  9.4218 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Nyborg",            "geo": { "@type": "GeoCoordinates", "latitude": 55.3127, "longitude": 10.7926 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Middelfart",        "geo": { "@type": "GeoCoordinates", "latitude": 55.5036, "longitude":  9.7397 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Ikast",             "geo": { "@type": "GeoCoordinates", "latitude": 56.1369, "longitude":  9.1542 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Grenaa",            "geo": { "@type": "GeoCoordinates", "latitude": 56.4147, "longitude": 10.8814 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Varde",             "geo": { "@type": "GeoCoordinates", "latitude": 55.6225, "longitude":  8.4806 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Thisted",           "geo": { "@type": "GeoCoordinates", "latitude": 56.9558, "longitude":  8.6962 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Brønderslev",       "geo": { "@type": "GeoCoordinates", "latitude": 57.2700, "longitude":  9.9436 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Hobro",             "geo": { "@type": "GeoCoordinates", "latitude": 56.6394, "longitude":  9.7944 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Struer",            "geo": { "@type": "GeoCoordinates", "latitude": 56.4928, "longitude":  8.5933 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Ringkøbing",        "geo": { "@type": "GeoCoordinates", "latitude": 56.0905, "longitude":  8.2429 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Vejen",             "geo": { "@type": "GeoCoordinates", "latitude": 55.4806, "longitude":  9.1469 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Sæby",              "geo": { "@type": "GeoCoordinates", "latitude": 57.3303, "longitude": 10.5253 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Skjern",            "geo": { "@type": "GeoCoordinates", "latitude": 55.9472, "longitude":  8.4972 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Aars",              "geo": { "@type": "GeoCoordinates", "latitude": 56.8000, "longitude":  9.5167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Støvring",          "geo": { "@type": "GeoCoordinates", "latitude": 56.8833, "longitude":  9.8333 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Ribe",              "geo": { "@type": "GeoCoordinates", "latitude": 55.3308, "longitude":  8.7647 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Tønder",            "geo": { "@type": "GeoCoordinates", "latitude": 54.9333, "longitude":  8.8667 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Bjerringbro",       "geo": { "@type": "GeoCoordinates", "latitude": 56.3756, "longitude":  9.6606 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Faaborg",           "geo": { "@type": "GeoCoordinates", "latitude": 55.1000, "longitude": 10.2417 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Lemvig",            "geo": { "@type": "GeoCoordinates", "latitude": 56.5469, "longitude":  8.3083 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Hadsten",           "geo": { "@type": "GeoCoordinates", "latitude": 56.3286, "longitude": 10.0481 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Kerteminde",        "geo": { "@type": "GeoCoordinates", "latitude": 55.4503, "longitude": 10.6597 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } },
+    { "@type": "City", "name": "Hadsund",           "geo": { "@type": "GeoCoordinates", "latitude": 56.7167, "longitude": 10.1167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } }
+  ]
+}</script>
   <!-- Answer-first hero: the current price IS the headline, like a weather
        app's temperature. Curve replaces the price table; the advice card
        turns pris+CO₂ data into one actionable sentence. -->
@@ -1009,7 +875,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
     <!-- Intro paragraph — natural keyword coverage for "elpris lige nu", "strømpris", "pris på el" etc. -->
     <section class="max-w-2xl mx-auto px-2 mt-12 mb-2 text-center text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-      <div>Elpriser — også kaldet energipriser eller strømpriser — skifter time for time og fastsættes dagen i forvejen. Her på elpriser.org finder du el priser i dag og kan se, hvad strøm koster lige nu: den aktuelle elpris time for time, både den rå spotpris og den samlede pris på el pr. kWh inkl. nettariffer, elafgift og moms. Vælg dit netselskab ovenfor for en præcis pris for din adresse, eller tjek <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> for de kommende 7 dage.</div>
+      <div>Elpriser — også kaldet energipriser eller strømpriser — skifter time for time og fastsættes dagen i forvejen. Her på elpriser.org finder du el priser i dag og kan se, hvad strøm koster lige nu: den aktuelle elpris time for time, både den rå spotpris og den samlede pris på el pr. kWh inkl. nettariffer, elafgift og moms. Vælg dit netselskab ovenfor for en præcis pris for din adresse, eller tjek <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> for de kommende 10 døgn.</div>
     </section>
 
     <!-- Reader-summary article. Deliberately the ONE <article> with real <p>
@@ -1810,6 +1676,91 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
 <!-- ═══════ API DOCS PAGE ═══════ -->
 <main style="display:none" data-page="api" class="max-w-3xl mx-auto px-4 py-6">
+  <!-- The dataset this page documents; it used to be served on every URL. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  "name": "Danish hourly electricity prices (DK1 og DK2)",
+  "description": "Hourly day-ahead spot prices and totals (spot + nettarif + systemtarif + transmissionstarif + elafgift + moms) for the Danish price zones DK1 (Vestdanmark) and DK2 (Østdanmark). Updated daily from Energi Data Service (Energinet).",
+  "url": "https://elpriser.org/api",
+  "inLanguage": "da",
+  "isAccessibleForFree": true,
+  "license": "https://www.energidataservice.dk/legal-information",
+  "creator": {
+    "@type": "Organization",
+    "name": "Energinet",
+    "url": "https://energidataservice.dk"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "elpriser.org",
+    "url": "https://elpriser.org"
+  },
+  "keywords": [
+    "elpriser",
+    "spotpris",
+    "elpris",
+    "DK1",
+    "DK2",
+    "Denmark",
+    "electricity prices",
+    "Nord Pool"
+  ],
+  "spatialCoverage": {
+    "@type": "Country",
+    "name": "Denmark"
+  },
+  "temporalCoverage": "2020-01-01/..",
+  "variableMeasured": [
+    {
+      "@type": "PropertyValue",
+      "name": "Spot price",
+      "unitText": "DKK/kWh"
+    },
+    {
+      "@type": "PropertyValue",
+      "name": "Spot price incl. VAT",
+      "unitText": "DKK/kWh"
+    },
+    {
+      "@type": "PropertyValue",
+      "name": "Total price incl. tariffs",
+      "unitText": "DKK/kWh"
+    }
+  ],
+  "distribution": [
+    {
+      "@type": "DataDownload",
+      "name": "Current price (DK1) — JSON",
+      "contentUrl": "https://elpriser.org/api/now?area=DK1&mode=inkl_alt",
+      "encodingFormat": "application/json"
+    },
+    {
+      "@type": "DataDownload",
+      "name": "Current price (DK2) — JSON",
+      "contentUrl": "https://elpriser.org/api/now?area=DK2&mode=inkl_alt",
+      "encodingFormat": "application/json"
+    },
+    {
+      "@type": "DataDownload",
+      "name": "24h prices (DK1) — JSON",
+      "contentUrl": "https://elpriser.org/api/prices?area=DK1&mode=inkl_alt",
+      "encodingFormat": "application/json"
+    },
+    {
+      "@type": "DataDownload",
+      "name": "24h prices (DK2) — JSON",
+      "contentUrl": "https://elpriser.org/api/prices?area=DK2&mode=inkl_alt",
+      "encodingFormat": "application/json"
+    },
+    {
+      "@type": "DataDownload",
+      "name": "Tibber-compatible JSON",
+      "contentUrl": "https://elpriser.org/api/shelly/tariff?area=DK1&mode=inkl_alt",
+      "encodingFormat": "application/json"
+    }
+  ]
+}</script>
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="page-eyebrow">Gratis JSON API — ingen nøgle, fuld CORS, OpenAPI 3.1</div>
@@ -1855,7 +1806,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         </div>
         <div class="px-4 py-3">
           <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/forecast?area=DK1&amp;mode=inkl_alt</p>
-          <p class="text-xs mt-1">7-dages prognose — kombinerer faktiske day-ahead-priser med vejrkorrigeret forecast.</p>
+          <p class="text-xs mt-1">Prognose time for time for i dag og de næste 9 døgn — faktiske day-ahead-priser, hvor de er offentliggjort, og ellers en maskinlæringsmodel med vejrprognoser.</p>
         </div>
         <div class="px-4 py-3">
           <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/shelly/tariff?area=DK1&amp;mode=inkl_alt</p>
@@ -2016,6 +1967,69 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 
 <!-- ═══════ BLOG: Forstå din elpris ═══════ -->
 <main style="display:none" data-page="blog" class="max-w-2xl mx-auto px-4 py-6">
+  <!-- The post list shown on this page. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  "name": "elpriser.org blog",
+  "url": "https://elpriser.org/blog",
+  "inLanguage": "da",
+  "publisher": {
+    "@type": "Organization",
+    "name": "elpriser.org",
+    "url": "https://elpriser.org"
+  },
+  "blogPost": [
+    {
+      "@type": "BlogPosting",
+      "headline": "Forstå din elpris: Hvad bestemmer elprisen i Danmark?",
+      "url": "https://elpriser.org/blog/forsta-din-elpris",
+      "datePublished": "2026-04-17"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "Shelly og elpriser: Automatisk tænd og sluk efter spotprisen",
+      "url": "https://elpriser.org/blog/shelly-elpris-automation",
+      "datePublished": "2026-04-17"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "Home Assistant og elpriser: Komplet guide til smart elforbrug",
+      "url": "https://elpriser.org/blog/home-assistant-elpriser",
+      "datePublished": "2026-04-17"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "V2G, V2H og V2L: Bidirektional elbilopladning forklaret",
+      "url": "https://elpriser.org/blog/v2g-v2h-bidirektional-opladning",
+      "datePublished": "2026-05-15"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "Elbiler og ladere med V2H/V2G — Komplet liste 2026",
+      "url": "https://elpriser.org/blog/biler-ladere-v2h-v2g",
+      "datePublished": "2026-05-15"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "Elafgift 2028: Sådan stiger elafgiften igen",
+      "url": "https://elpriser.org/blog/elafgift-2028",
+      "datePublished": "2026-07-14"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret",
+      "url": "https://elpriser.org/blog/hvornaar-er-stroemmen-billigst",
+      "datePublished": "2026-07-28"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "Hvorfor er strømmen grønnest netop i den dyreste time?",
+      "url": "https://elpriser.org/blog/groennest-og-dyrest",
+      "datePublished": "2026-08-01"
+    }
+  ]
+}</script>
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="page-eyebrow">Guides og analyser</div>
@@ -2071,6 +2085,30 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 </main>
 
 <main style="display:none" data-page="blog-forsta-din-elpris" class="max-w-2xl mx-auto px-4 py-6">
+  <!-- This post only. All eight used to share one @graph served on every page. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Forstå din elpris: Hvad bestemmer elprisen i Danmark?",
+  "description": "Komplet guide til elpriser i Danmark: spotpris, nettarif, elafgift, DK1 vs DK2, hvornår strømmen er billigst, negative elpriser og sådan sparer du penge.",
+  "url": "https://elpriser.org/blog/forsta-din-elpris",
+  "datePublished": "2026-04-17",
+  "dateModified": "2026-07-24",
+  "inLanguage": "da",
+  "author": {
+    "@type": "Organization",
+    "name": "elpriser.org"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "elpriser.org",
+    "url": "https://elpriser.org"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://elpriser.org/blog/forsta-din-elpris"
+  }
+}</script>
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="page-eyebrow">Guide</div>
@@ -2171,7 +2209,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
         <li><strong class="text-gray-800 dark:text-gray-200">Vælg en variabel elaftale</strong> — med spotpris betaler du markedspris i stedet for fastpris. I de fleste år er det billigst.</li>
         <li><strong class="text-gray-800 dark:text-gray-200">Flyt forbrug til billige timer</strong> — opvaskemaskine, vaskemaskine og elbil om natten. Spar 30-50% vs. aftenspids.</li>
         <li><strong class="text-gray-800 dark:text-gray-200">Automatiser med smart home</strong> — <a href="/blog/shelly-elpris-automation" class="text-brand-500 underline">Shelly</a> og <a href="/blog/home-assistant-elpriser" class="text-brand-500 underline">Home Assistant</a> kan automatisk styre forbrug efter elprisen.</li>
-        <li><strong class="text-gray-800 dark:text-gray-200">Hold øje med prognosen</strong> — <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> viser forventede priser 7 dage frem.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Hold øje med prognosen</strong> — <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> viser forventede priser 10 døgn frem.</li>
       </ol>
     </section>
 
@@ -2188,6 +2226,30 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 
 <!-- ═══════ BLOG: Shelly automation ═══════ -->
 <main style="display:none" data-page="blog-shelly-elpris-automation" class="max-w-2xl mx-auto px-4 py-6">
+  <!-- This post only. All eight used to share one @graph served on every page. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Shelly og elpriser: Automatisk tænd og sluk efter spotprisen",
+  "description": "Styr Shelly Plus, Pro og Plug efter elprisen med gratis API. Script- og tidsbaseret automation af elbil, varmepumpe og vandvarmer efter billig strøm.",
+  "url": "https://elpriser.org/blog/shelly-elpris-automation",
+  "datePublished": "2026-04-17",
+  "dateModified": "2026-07-24",
+  "inLanguage": "da",
+  "author": {
+    "@type": "Organization",
+    "name": "elpriser.org"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "elpriser.org",
+    "url": "https://elpriser.org"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://elpriser.org/blog/shelly-elpris-automation"
+  }
+}</script>
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="page-eyebrow">Guide</div>
@@ -2296,6 +2358,30 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 
 <!-- ═══════ BLOG: Home Assistant ═══════ -->
 <main style="display:none" data-page="blog-home-assistant-elpriser" class="max-w-2xl mx-auto px-4 py-6">
+  <!-- This post only. All eight used to share one @graph served on every page. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Home Assistant og elpriser: Komplet guide til smart elforbrug",
+  "description": "Opsæt Home Assistant med danske elpriser: REST-sensorer, schedule-automations og dashboards — spar automatisk penge på strøm efter de billigste timer.",
+  "url": "https://elpriser.org/blog/home-assistant-elpriser",
+  "datePublished": "2026-04-17",
+  "dateModified": "2026-07-24",
+  "inLanguage": "da",
+  "author": {
+    "@type": "Organization",
+    "name": "elpriser.org"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "elpriser.org",
+    "url": "https://elpriser.org"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://elpriser.org/blog/home-assistant-elpriser"
+  }
+}</script>
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="page-eyebrow">Guide</div>
@@ -2476,6 +2562,30 @@ entities:
 
 <!-- ═══════ BLOG: V2G/V2H/V2L explainer ═══════ -->
 <main style="display:none" data-page="blog-v2g-v2h-bidirektional-opladning" class="max-w-2xl mx-auto px-4 py-6">
+  <!-- This post only. All eight used to share one @graph served on every page. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "V2G, V2H og V2L: Bidirektional elbilopladning forklaret",
+  "description": "Forstå Vehicle-to-Grid (V2G), Vehicle-to-Home (V2H) og Vehicle-to-Load (V2L). Sådan kan din elbil sælge strøm til nettet eller forsyne dit hus, og hvordan det fungerer med spotpriser i Danmark.",
+  "url": "https://elpriser.org/blog/v2g-v2h-bidirektional-opladning",
+  "datePublished": "2026-05-15",
+  "dateModified": "2026-07-24",
+  "inLanguage": "da",
+  "author": {
+    "@type": "Organization",
+    "name": "elpriser.org"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "elpriser.org",
+    "url": "https://elpriser.org"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://elpriser.org/blog/v2g-v2h-bidirektional-opladning"
+  }
+}</script>
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="page-eyebrow">Guide</div>
@@ -2564,6 +2674,30 @@ entities:
 
 <!-- ═══════ BLOG: V2H/V2G cars & chargers list ═══════ -->
 <main style="display:none" data-page="blog-biler-ladere-v2h-v2g" class="max-w-2xl mx-auto px-4 py-6">
+  <!-- This post only. All eight used to share one @graph served on every page. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Elbiler og ladere med V2H/V2G — Komplet liste 2026",
+  "description": "Opdateret liste over elbiler og bidirektionale ladere der understøtter V2L, V2H og V2G. Inkluderer Hyundai Ioniq 5, Kia EV9, Nissan Leaf, Wallbox Quasar 2, Sigenergy og flere.",
+  "url": "https://elpriser.org/blog/biler-ladere-v2h-v2g",
+  "datePublished": "2026-05-15",
+  "dateModified": "2026-07-24",
+  "inLanguage": "da",
+  "author": {
+    "@type": "Organization",
+    "name": "elpriser.org"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "elpriser.org",
+    "url": "https://elpriser.org"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://elpriser.org/blog/biler-ladere-v2h-v2g"
+  }
+}</script>
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="page-eyebrow">Liste · 2026</div>
@@ -2772,6 +2906,30 @@ entities:
 
 <!-- ═══════ BLOG: Elafgift 2028 ═══════ -->
 <main style="display:none" data-page="blog-elafgift-2028" class="max-w-2xl mx-auto px-4 py-6">
+  <!-- This post only. All eight used to share one @graph served on every page. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Elafgift 2028: Sådan stiger elafgiften igen",
+  "description": "Elafgiften er sænket til 0,8 øre/kWh i 2026-2027, men stiger igen fra 2028. Se de nye satser, hvorfor regeringen endnu ikke har forlænget den lave afgift, og hvad det betyder for din elregning og dine solceller.",
+  "url": "https://elpriser.org/blog/elafgift-2028",
+  "datePublished": "2026-07-14",
+  "dateModified": "2026-07-24",
+  "inLanguage": "da",
+  "author": {
+    "@type": "Organization",
+    "name": "elpriser.org"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "elpriser.org",
+    "url": "https://elpriser.org"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://elpriser.org/blog/elafgift-2028"
+  }
+}</script>
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="page-eyebrow">Guide</div>
@@ -2859,6 +3017,30 @@ entities:
 
 <!-- ═══════ BLOG: Grønnest og dyrest på samme tid ═══════ -->
 <main style="display:none" data-page="blog-groennest-og-dyrest" class="max-w-2xl mx-auto px-4 py-6">
+  <!-- This post only. All eight used to share one @graph served on every page. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Hvorfor er strømmen grønnest netop i den dyreste time?",
+  "description": "Den dyreste time på døgnet er ofte også den grønneste. Analyse af 22.504 timers data: pris sættes marginalt på et europæisk marked, mens CO₂ er et gennemsnit der afhænger af, hvilke naboer Danmark handler med.",
+  "url": "https://elpriser.org/blog/groennest-og-dyrest",
+  "inLanguage": "da",
+  "datePublished": "2026-08-01",
+  "dateModified": "2026-08-01",
+  "author": {
+    "@type": "Organization",
+    "name": "elpriser.org"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "elpriser.org",
+    "url": "https://elpriser.org"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://elpriser.org/blog/groennest-og-dyrest"
+  }
+}</script>
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="page-eyebrow">Analyse · august 2026</div>
@@ -2978,6 +3160,30 @@ entities:
 
 <!-- ═══════ BLOG: Hvornår er strømmen billigst ═══════ -->
 <main style="display:none" data-page="blog-hvornaar-er-stroemmen-billigst" class="max-w-2xl mx-auto px-4 py-6">
+  <!-- This post only. All eight used to share one @graph served on every page. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret",
+  "description": "Nattestrøm er ikke længere billigst: i 2026 ligger døgnets billigste time midt på dagen på 68 % af dagene. Analyse af 48.594 timers forbrugs- og prisdata fra Energinet.",
+  "url": "https://elpriser.org/blog/hvornaar-er-stroemmen-billigst",
+  "inLanguage": "da",
+  "datePublished": "2026-07-28",
+  "dateModified": "2026-07-28",
+  "author": {
+    "@type": "Organization",
+    "name": "elpriser.org"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "elpriser.org",
+    "url": "https://elpriser.org"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://elpriser.org/blog/hvornaar-er-stroemmen-billigst"
+  }
+}</script>
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="page-eyebrow">Analyse · juli 2026</div>
@@ -3505,7 +3711,7 @@ function renderHeroTomorrow(fj,todayStr){
     card.classList.remove('has-range');
   }
 }
-// ═══ Næste 7 døgn (forside) ═══
+// ═══ Kurven "Nu og 2 døgn frem" (forside) ═══
 // Fed the same /api/forecast response the "I morgen"-mini uses, so adding the
 // section costs no extra request. Replaces the server-rendered rows in place.
 // ═══ Forsidens kurve: nu og 2 døgn frem ═══
