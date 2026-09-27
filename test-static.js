@@ -293,6 +293,11 @@ test('price table: 4 days back, today, 3 ahead — and paging neither skips nor 
   assert.ok(/if\(S\.weekOffset===0\)\{[^\n]*s\.setDate\(s\.getDate\(\)-7\)/.test(loader),
     'the current window no longer fetches seven days back');
   assert.ok(!/fcTomorrow|showFc/.test(INDEX), 'leftovers of the single forecast column');
+  // PROGNOSE once across the forecast columns — repeated under each weekday it
+  // was wider than any price and stretched those columns.
+  const render = INDEX.slice(INDEX.indexOf('function renderTable(){'), INDEX.indexOf('// Answer block above the table'));
+  assert.equal((render.match(/>PROGNOSE</g) || []).length, 1, 'PROGNOSE is written more than once per table');
+  assert.ok(/colspan="\$\{j-i\}"[^>]*>PROGNOSE</.test(render), 'PROGNOSE does not span the forecast columns');
 });
 
 test('homepage: the hero curve has a price scale that lines up', () => {

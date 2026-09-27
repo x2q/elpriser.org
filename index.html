@@ -4033,13 +4033,25 @@ function renderTable(){
   const monthLbl=f0.getMonth()===f1.getMonth()?`${MON_FULL[f0.getMonth()]} ${f0.getFullYear()}`
     :f0.getFullYear()===f1.getFullYear()?`${MON_FULL[f0.getMonth()]} – ${MON_FULL[f1.getMonth()]} ${f1.getFullYear()}`
     :`${MON_FULL[f0.getMonth()]} ${f0.getFullYear()} – ${MON_FULL[f1.getMonth()]} ${f1.getFullYear()}`;
-  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal"></th><th colspan="${cols.length}" class="text-xs ${thSub} font-normal">${monthLbl}</th></tr>`;
+  // "PROGNOSE" is said once, across the forecast columns, not under each
+  // weekday: the word is wider than any price, so repeating it made those
+  // columns half as wide again as the rest. Runs rather than a single split,
+  // in case a forecast day is ever missing between two present ones.
+  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal"></th>`;
+  let monthDone=false;
+  for(let i=0;i<cols.length;){
+    let j=i;while(j<cols.length&&cols[j].fc===cols[i].fc)j++;
+    if(cols[i].fc)h+=`<th colspan="${j-i}" class="text-xs" style="color:#0e9888;font-size:.6rem;font-weight:600;letter-spacing:.06em">PROGNOSE</th>`;
+    else{h+=`<th colspan="${j-i}" class="text-xs ${thSub} font-normal">${monthDone?'':monthLbl}</th>`;monthDone=true;}
+    i=j;
+  }
+  h+='</tr>';
   h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Dag</th>`;
   cols.forEach(c=>{h+=`<th class="px-0.5 sm:px-1.5 ${thDay}"${c.fc?' style="color:#0e9888"':''}>${new Date(c.d).getDate()}</th>`;});
   h+=`</tr><tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Time</th>`;
   cols.forEach(c=>{
     const dow=DAY[new Date(c.d).getDay()];
-    if(c.fc)h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal" style="color:#0e9888">${dow}<br><span style="font-size:.55rem;font-weight:600;letter-spacing:.04em">PROGNOSE</span></th>`;
+    if(c.fc)h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal" style="color:#0e9888">${dow}</th>`;
     else h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${c.d===today?thDay:thSub}">${c.d===today?'I dag':dow}</th>`;
   });
   h+='</tr>';
