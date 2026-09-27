@@ -545,6 +545,57 @@ test('a11y: buttons with onclick also have readable text', () => {
 // Run & report
 // ─────────────────────────────────────────────────────────────────────────────
 
+
+test('gps: the remembered pick is the answer, never the coordinates', () => {
+  // A geolocation grant is not permanent and the site cannot make it so —
+  // Safari drops it after about a day. What makes the lookup stick is
+  // remembering the netselskab it resolved to. Coordinates must not be what
+  // gets stored: they are a location log the site has no use for, and the
+  // grid company is settled by address anyway.
+  const fn = INDEX.slice(INDEX.indexOf('function saveNetPick'),
+                         INDEX.indexOf('async function detectLocation'));
+  assert.ok(fn.length > 100, 'saveNetPick/readNetPick not found');
+  assert.ok(!/\b(lat|lng|latitude|longitude|coords)\b/.test(fn),
+    `the remembered value must not carry coordinates: ${fn.slice(0, 200)}`);
+  assert.ok(/localStorage\.setItem\(NET_PICK_KEY/.test(fn), 'the pick is not persisted');
+});
+
+test('gps: an approximate IP position is not remembered', () => {
+  // The IP fallback is city-level and routinely lands Danish users in Lund or
+  // Flensburg because of ISP peering. Persisting that would pin the wrong
+  // grid company indefinitely — far worse than asking again.
+  const save = INDEX.match(/if\(!approx\)saveNetPick\(pick\);/);
+  assert.ok(save, 'the save is not guarded by the approx flag');
+});
+
+test('gps: a remembered pick is validated before it is used', () => {
+  // Slugs get renamed. A stored value that is read back unchecked would route
+  // to a netselskab page that no longer exists.
+  const read = INDEX.slice(INDEX.indexOf('function readNetPick'),
+                           INDEX.indexOf('function forgetNetPick'));
+  assert.ok(/netBySlug/.test(read) && /DK1.*DK2/.test(read),
+    `readNetPick does not validate what it read back: ${read.slice(0, 200)}`);
+});
+
+test('gps: the remembered pick can be cleared by the user', () => {
+  assert.ok(/function forgetNetPick/.test(INDEX), 'no way to forget the pick');
+  assert.ok(/removeItem\(NET_PICK_KEY\)/.test(INDEX), 'forgetNetPick does not remove the key');
+  assert.ok(/id="gpsForget"/.test(INDEX), 'no control offering to forget it');
+});
+
+test('gps: location is only ever requested from a click, never on load', () => {
+  // An unprompted permission request on load is both rude and
+  // counter-productive: Chrome demotes origins that ask without a user
+  // gesture, so it lowers the grant rate it was meant to raise.
+  const calls = [...INDEX.matchAll(/(\w+)\s*\(\s*\)\s*;?\s*(?=\n)/g)];
+  assert.ok(!/(DOMContentLoaded|window\.onload)[\s\S]{0,400}?detectLocation\(/.test(INDEX),
+    'detectLocation is wired to page load');
+  const auto = INDEX.match(/^\s*detectLocation\(\);/m);
+  assert.equal(auto, null, `detectLocation is called unconditionally: ${auto && auto[0]}`);
+  assert.ok(/id="gpsBtn" onclick="detectLocation\(\)"/.test(INDEX),
+    'the GPS lookup should be reached from the button');
+});
+
 console.log('\n⚡ Static integrity tests\n' + '─'.repeat(50));
 for (const r of results) {
   console.log(`${r.ok ? '✅' : '❌'} ${r.name}${r.ok ? '' : '\n   └─ ' + r.msg}`);

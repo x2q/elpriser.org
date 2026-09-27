@@ -970,6 +970,9 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
       <span id="gpsText">Find dit netselskab automatisk</span>
     </button>
+    <div id="gpsForget" style="display:none" class="mt-2">
+      <button type="button" onclick="forgetNetPick()" class="text-xs text-gray-400 dark:text-gray-500 underline hover:text-gray-600 dark:hover:text-gray-300">Glem mit netselskab</button>
+    </div>
   </div>
 
   <div class="max-w-4xl mx-auto px-4 py-12">
@@ -3077,6 +3080,49 @@ let priceData={},tariffCache={},allTariffsLoaded=false,enCharges=null,fcTomorrow
 
 
 // ═══ GPS — auto-navigate on detection ═══
+
+// What gets remembered is the ANSWER ("N1, DK1"), never the coordinates. A
+// netselskab is decided by your address and does not change, so one lookup is
+// good indefinitely — and storing a grid company is storing a preference,
+// whereas storing lat/lng would be keeping a location log we have no use for.
+//
+// This is also what makes the lookup survive the permission expiring: Safari
+// drops a geolocation grant after about a day and iOS often per session, so a
+// site that leans on the permission persisting re-prompts people forever. A
+// site that remembers the answer never has to ask twice.
+const NET_PICK_KEY='dk_net_pick';
+function saveNetPick(v){try{localStorage.setItem(NET_PICK_KEY,v);}catch(_){}}
+function readNetPick(){
+  try{
+    const v=localStorage.getItem(NET_PICK_KEY);
+    // Validate before trusting it: a slug that has since been renamed or
+    // removed would otherwise route to a page that no longer exists.
+    if(!v)return null;
+    const p=v.split('/');
+    if(!['DK1','DK2'].includes(p[0])||!netBySlug(p[0],p[2]||''))return null;
+    return v;
+  }catch(_){return null;}
+}
+function forgetNetPick(){
+  try{localStorage.removeItem(NET_PICK_KEY);}catch(_){}
+  const t=document.getElementById('gpsText'),b=document.getElementById('gpsBtn');
+  if(t)t.textContent='Find dit netselskab automatisk';
+  if(b)b.onclick=detectLocation;
+  const f=document.getElementById('gpsForget');
+  if(f)f.style.display='none';
+  gtag('event','gps_pick_forgotten');
+}
+/** On a later visit, offer the remembered answer instead of asking again. */
+function restoreNetPick(){
+  const v=readNetPick(); if(!v)return;
+  const net=netBySlug(v.split('/')[0],v.split('/')[2]);
+  const t=document.getElementById('gpsText'),b=document.getElementById('gpsBtn');
+  if(!t||!b)return;
+  t.textContent=`Vis priser for ${net.name}`;
+  b.onclick=()=>{gtag('event','gps_pick_reused');location.hash=v;};
+  const f=document.getElementById('gpsForget');
+  if(f)f.style.display='';
+}
 async function detectLocation(){
   const svg=document.getElementById('gpsIconSvg');
   const text=document.getElementById('gpsText');
@@ -3134,7 +3180,12 @@ async function detectLocation(){
       text.textContent=`${m.net.name} (${m.area})${approx?' · omtrentlig':''} — navigerer...`;
       gtag('event','gps_detect_success',{net:m.net.name,area:m.area,approx});
       // Auto-navigate directly to the detected netselskab page
-      location.hash=`${m.area}/net_inkl_alt/${m.net.slug}`;
+      const pick=`${m.area}/net_inkl_alt/${m.net.slug}`;
+      // Only a real GPS fix is worth remembering. The IP fallback is
+      // city-level and lands Danish users in Lund or Flensburg often enough
+      // that persisting it would quietly show the wrong grid company forever.
+      if(!approx)saveNetPick(pick);
+      location.hash=pick;
     }else{
       const area=lng>11.0?'DK2':'DK1';
       text.textContent=net.name?`${net.name} (${area})`:`Kunne ikke finde netselskab — viser ${area}`;
@@ -3317,7 +3368,7 @@ function route(){
   // Helper: send page_view with clean path for GA4
   const pv=(title,path)=>gtag('event','page_view',{page_title:title,page_location:location.origin+(path||location.pathname)});
   if(!h){
-    document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpriser i dag — aktuel spotpris lige nu, Vest og Øst';pv('Start','/');return;
+    document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpriser i dag — aktuel spotpris lige nu, Vest og Øst';pv('Start','/');restoreNetPick();return;
   }
   if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Nettariffer 2026: Sammenlign 14 netselskaber — op til 25 øre/kWh forskel';pv('Tariffer','/tariffer');loadTariffPage();return;}
   if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpris Automation — Home Assistant, Shelly & REST API';pv('Automation','/automation');loadAutomationPage();return;}
