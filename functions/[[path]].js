@@ -873,16 +873,39 @@ const SSR_ZONES = {
   nl:  { name: 'NL',  city: 'Nederland',    lang: 'nl', rate: 1,    sub: 'cent' },
 };
 
+// `total` is the only real prose here and is copied verbatim from the reviewed
+// I18N block in index.html rather than translated afresh. The other two currency
+// labels are the unit itself — "øre/kWh", "EUR/MWh" — which needs no language.
 const ZONE_T = {
   no: { eyebrow: 'Strømprisprognose', title: (n, c) => `Strømpriser ${n} ${c}`,
-        table: n => `Neste ${n} døgn`, today: 'I dag', fc: 'prognose', act: 'faktisk' },
+        table: n => `Neste ${n} døgn`, today: 'I dag', fc: 'prognose', act: 'faktisk',
+        total: 'Inkl. nettleie og avgifter' },
   sv: { eyebrow: 'Elprisprognos', title: (n, c) => `Elpriser ${n} ${c}`,
-        table: n => `Kommande ${n} dygn`, today: 'I dag', fc: 'prognos', act: 'faktisk' },
+        table: n => `Kommande ${n} dygn`, today: 'I dag', fc: 'prognos', act: 'faktisk',
+        total: 'Inkl. elnätsavgift och skatt' },
   fi: { eyebrow: 'Sähkön hintaennuste', title: (n, c) => `Sähkön hinta ${n} ${c}`,
-        table: n => `Seuraavat ${n} vuorokautta`, today: 'Tänään', fc: 'ennuste', act: 'toteutunut' },
+        table: n => `Seuraavat ${n} vuorokautta`, today: 'Tänään', fc: 'ennuste', act: 'toteutunut',
+        total: 'Sis. siirto ja verot' },
   nl: { eyebrow: 'Stroomprijsverwachting', title: (n, c) => `Stroomprijzen ${n} ${c}`,
-        table: n => `Komende ${n} dagen`, today: 'Vandaag', fc: 'verwachting', act: 'werkelijk' },
+        table: n => `Komende ${n} dagen`, today: 'Vandaag', fc: 'verwachting', act: 'werkelijk',
+        total: 'Incl. netkosten en belasting' },
 };
+
+/** The three currency options, rendered in the zone's own language.
+ *
+ * Only Norway and Sweden have per-kWh grid tariffs we can add, so for FI and NL
+ * the "incl. grid" option is hidden here exactly as loadTariffs() hides it on
+ * the client — otherwise a crawler, and a reader on a slow connection, sees an
+ * option that disappears a moment later. */
+const ZONE_CUR_RE = /<option value="local"[\s\S]*?id="zCurTotal">[^<]*<\/option>/;
+
+function buildZoneCurrency(key) {
+  const z = SSR_ZONES[key], t = ZONE_T[z.lang];
+  const hasTariff = z.lang === 'no' || z.lang === 'sv';
+  return `<option value="local" id="zCurLocal">${z.sub}/kWh</option>`
+       + `<option value="eur" id="zCurEur">EUR/MWh</option>`
+       + `<option value="total" id="zCurTotal"${hasTariff ? '' : ' style="display:none"'}>${t.total}</option>`;
+}
 
 function buildZoneIntro(key, data, todayStr) {
   const z = SSR_ZONES[key];
@@ -1186,6 +1209,10 @@ async function renderSPA(context, pathname, meta, opts = {}) {
       .then(r => (r.ok ? r.json() : null)).catch(() => null);
     const todayDk = new Intl.DateTimeFormat('en-CA',
       { timeZone: 'Europe/Copenhagen' }).format(new Date());
+    // The currency labels do not depend on the price feed, so they are filled
+    // in even when it fails — a reader who gets an error still gets it in their
+    // own language rather than "Incl. grid + tax".
+    html = html.replace(ZONE_CUR_RE, buildZoneCurrency(opts.zone));
     const intro = data && buildZoneIntro(opts.zone, data, todayDk);
     if (intro) {
       // The client rewrites these two on load; filling them here is what puts

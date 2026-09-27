@@ -17,8 +17,8 @@ const end = src.indexOf('/** Build the live-price JSON-LD block');
 if (start < 0 || end < 0) throw new Error('buildZoneIntro not found in functions/[[path]].js');
 const ctx = { console, Intl, Date };
 vm.createContext(ctx);
-vm.runInContext(src.slice(start, end) + '\nglobalThis.b = buildZoneIntro; globalThis.Z = SSR_ZONES;', ctx);
-const { b: build, Z: ZONES } = ctx;
+vm.runInContext(src.slice(start, end) + '\nglobalThis.b = buildZoneIntro; globalThis.Z = SSR_ZONES; globalThis.cur = buildZoneCurrency; globalThis.curRe = ZONE_CUR_RE;', ctx);
+const { b: build, Z: ZONES, cur, curRe } = ctx;
 
 const TODAY = '2026-09-27';
 let pass = 0; const fails = [];
@@ -104,6 +104,44 @@ ok(build('se1', data(1), TODAY) === null, 'ét døgn alene giver null');
      '"I dag" står ud for den rigtige dato', rows[0].slice(0, 110));
   ok(!rows[1].includes('I dag'), 'kun ét døgn hedder "i dag"');
   ok(r.html.includes('Kommande 3 dygn'), 'overskriften tæller de viste døgn', r.html.slice(0, 90));
+}
+
+// ── The currency dropdown, in the zone's own language ──────────────────────
+{
+  const idx = fs.readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+  // If someone reformats the three <option>s the swap stops happening and the
+  // dropdown silently reverts to English. That must fail here, not in Google's
+  // index, so the regex is tested against the markup it has to match.
+  ok(curRe.test(idx), 'ZONE_CUR_RE rammer stadig valuta-dropdownen i index.html');
+  const matched = idx.match(curRe)[0];
+  ok(/Local/.test(matched) && /Incl\. grid \+ tax/.test(matched),
+     'den engelske standardtekst ligger inden for det, der bliver skiftet ud', matched.slice(0, 80));
+
+  ok(/öre\/kWh/.test(cur('se3')), 'SE3 får öre med svensk ö', cur('se3').slice(0, 60));
+  ok(/øre\/kWh/.test(cur('no1')), 'NO1 får øre med norsk ø');
+  ok(/snt\/kWh/.test(cur('fi')), 'FI får snt');
+  ok(/cent\/kWh/.test(cur('nl')), 'NL får cent');
+
+  for (const [k, want] of [['no1', 'Inkl. nettleie og avgifter'],
+                           ['se3', 'Inkl. elnätsavgift och skatt'],
+                           ['fi',  'Sis. siirto ja verot'],
+                           ['nl',  'Incl. netkosten en belasting']]) {
+    ok(cur(k).includes(want), `${k} oversætter "inkl. nettarif"`, cur(k));
+  }
+
+  for (const k of Object.keys(ZONES)) {
+    const h = cur(k);
+    const texts = [...h.matchAll(/>([^<]*)</g)].map(m => m[1]);
+    ok(!texts.some(x => x === 'Local' || x === 'Incl. grid + tax'),
+       `${k} har ingen engelsk rest tilbage`, JSON.stringify(texts));
+    ok((h.match(/<option /g) || []).length === 3, `${k} har stadig tre valg`);
+    // FI has no usable tariff register and NL's grid cost is a fixed annual
+    // charge, so neither can offer "incl. grid" — the client hides it, and the
+    // server must agree or the option flickers in and out on load.
+    const hidden = /id="zCurTotal" style="display:none"/.test(h);
+    ok(hidden === (k === 'fi' || k === 'nl'),
+       `${k}: "inkl. nettarif"-valget er skjult netop når der ikke findes tariffer`, h);
+  }
 }
 
 console.log(`${pass} beståede, ${fails.length} fejl`);
