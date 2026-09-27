@@ -3829,7 +3829,7 @@ function updateHeader(){
     document.title=`Elpris ${S.netName} ${al} i dag — Spotpris inkl. nettarif`;
   } else if(S.mode==='inkl_alt'){
     // Must equal SEO_PAGES' title for /dk1 and /dk2, the view those URLs open in.
-    document.title=`Elpriser ${al} i dag — aktuel elpris inkl. afgifter (${S.area==='DK1'?'Jylland og Fyn':'Sjælland'})`;
+    document.title=`Elpriser ${al} i dag — elpris og spotpris lige nu (${S.area==='DK1'?'Jylland og Fyn':'Sjælland'})`;
   } else {
     document.title=`Elpriser ${al} — ${ml[S.mode]||'Elspot'}`;
   }

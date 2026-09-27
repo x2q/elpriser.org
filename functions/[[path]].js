@@ -21,13 +21,13 @@ const SEO_PAGES = {
   // is spot + Energinet's tariffs + elafgift + moms, NOT the local nettarif,
   // which depends on the grid company; title and description must not say it.
   '/dk1': {
-    title: 'Elpriser DK1 Vest i dag — aktuel elpris inkl. afgifter (Jylland og Fyn)',
+    title: 'Elpriser DK1 Vest i dag — elpris og spotpris lige nu (Jylland og Fyn)',
     description: 'Aktuel elpris lige nu for DK1 (Vestdanmark) — time for time for Jylland og Fyn, inkl. Energinets tariffer, elafgift og moms. Vælg dit netselskab for prisen med nettarif, eller se den rene spotpris.',
     hash: '#DK1/inkl_alt',
   },
   '/dk2': {
-    title: 'Elpriser DK2 Øst i dag — aktuel elpris inkl. afgifter (Sjælland)',
-    description: 'Aktuel elpris lige nu for DK2 (Østdanmark) — time for time for Sjælland, Lolland-Falster og Bornholm, inkl. Energinets tariffer, elafgift og moms. Vælg dit netselskab for prisen med nettarif.',
+    title: 'Elpriser DK2 Øst i dag — elpris og spotpris lige nu (Sjælland)',
+    description: 'Aktuel elpris lige nu for DK2 (Østdanmark) — time for time for Sjælland, Lolland-Falster og Bornholm, inkl. Energinets tariffer, elafgift og moms. Vælg dit netselskab for prisen med nettarif, eller se den rene spotpris.',
     hash: '#DK2/inkl_alt',
   },
   '/tariffer': {

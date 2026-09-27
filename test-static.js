@@ -331,13 +331,20 @@ test('price pages: dropdown, sentence and unit describe the same price in every 
     'SEO_PAGES opens /dk1 or /dk2 in a different view than pathToHash');
   // The title the browser sets for that view must be the one the server sent.
   for (const [a, reg] of [['DK1 Vest', 'Jylland og Fyn'], ['DK2 Øst', 'Sjælland']]) {
-    const t = `Elpriser ${a} i dag — aktuel elpris inkl. afgifter (${reg})`;
+    const t = `Elpriser ${a} i dag — elpris og spotpris lige nu (${reg})`;
     assert.ok(SRV.includes(`title: '${t}'`), `server title for ${a} is not "${t}"`);
   }
-  assert.ok(INDEX.includes("document.title=`Elpriser ${al} i dag — aktuel elpris inkl. afgifter (${S.area==='DK1'?'Jylland og Fyn':'Sjælland'})`"),
+  assert.ok(INDEX.includes("document.title=`Elpriser ${al} i dag — elpris og spotpris lige nu (${S.area==='DK1'?'Jylland og Fyn':'Sjælland'})`"),
     'the browser sets a different title for the inkl alt view than the server sends');
   assert.ok(!/nettariffer, elafgift og moms\./.test(SRV.slice(SRV.indexOf("'/dk1': {"), SRV.indexOf("'/tariffer': {"))),
     '/dk1 or /dk2 description claims the nettarif is included');
+  // "spotpris" is a query these pages rank for; opening on inkl alt must not
+  // cost them the word. Title and description both keep it.
+  for (const k of ["'/dk1': {", "'/dk2': {"]) {
+    const blk = SRV.slice(SRV.indexOf(k), SRV.indexOf('},', SRV.indexOf(k)));
+    assert.ok(/title: '[^']*spotpris/.test(blk), `${k} title lost "spotpris"`);
+    assert.ok(/description: '[^']*spotpris/.test(blk), `${k} description lost "spotpris"`);
+  }
   assert.ok(/id="priceNowText"/.test(SRV) && /getElementById\('priceNowText'\)/.test(INDEX), 'the sentence is not rewritten when the view changes');
   // Another area or grid company is another page; only views of the same URL stay in-page.
   assert.ok(/hashToPath\(val\)!==location\.pathname/.test(INDEX), 'the dropdown can switch company without reloading the page');
