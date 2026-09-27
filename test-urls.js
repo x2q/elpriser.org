@@ -227,6 +227,15 @@ async function main() {
   fr = await fetch(BASE + '/api/flex/summary', { headers: { 'User-Agent': UA } });
   check(fr.status === 401, 'flex: summary kræver token', `status ${fr.status}`);
 
+  console.log('\n10. TARIFFER OG MOBIL');
+  const tar = await get('/tariffer');
+  for (const term of ['Transmissions', 'Systemtarif', 'lavlast', 'spidslast']) {
+    check(tar.body.includes(term), `tariffer: dækker "${term}"`);
+  }
+  check((home.body.match(/id="tabBar"/g) || []).length === 1, 'forside: mobil tab-bar er med');
+  const sub = await get('/prognose');
+  check(sub.body.includes('id="tabBar"'), 'undersider: tab-baren overlever sektionsfjernelsen');
+
   console.log('\n' + '─'.repeat(60));
   console.log(`${passed} beståede, ${failures.length} fejl`);
   if (failures.length) {

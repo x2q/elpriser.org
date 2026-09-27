@@ -195,6 +195,50 @@ test('seo: client-side titles match the ones the server sends', () => {
   assert.ok(checked.length >= 8, `expected many routed titles, checked ${checked.length}`);
 });
 
+test('mobile: the tab bar lives outside every <main>', () => {
+  // The server strips the sections a URL does not own. A fixed tab bar placed
+  // inside one would vanish on every page that is not that section.
+  assert.ok(/<nav class="tabbar" id="tabBar"/.test(INDEX), 'the mobile tab bar is missing');
+  // Match the tag, not the word: a comment above the nav mentions "<main".
+  const firstMain = INDEX.search(/<main[^>]*\sdata-page=/);
+  assert.ok(firstMain > 0, 'no <main data-page> found');
+  assert.ok(INDEX.indexOf('id="tabBar"') < firstMain,
+    'the tab bar sits inside the <main> region and will be stripped on subpages');
+  for (const href of ['/prognose', '/automation']) {
+    assert.ok(new RegExp(`data-tab="${href}"`).test(INDEX), `tab for ${href} is missing`);
+  }
+});
+
+test('mobile: phone styles are hand-written and scoped to small screens', () => {
+  const style = INDEX.match(/<style>([\s\S]*?)<\/style>/)[1];
+  assert.ok(style.includes('.tabbar{display:none}'),
+    'the tab bar must be hidden by default and shown only on phones');
+  assert.ok(/@media \(max-width:640px\)\{[\s\S]*?\.tabbar\{display:flex/.test(style),
+    'the tab bar is never shown at phone width');
+  for (const cls of ['.answer-col', '.tabbar a', '.tabbar .on']) {
+    assert.ok(style.includes(cls), `${cls} is not defined in the hand-written style block`);
+  }
+  assert.ok(/body\{padding-bottom:/.test(style),
+    'without bottom padding the floating bar covers the last row of content');
+});
+
+test('tariffer: the page answers the tariff searches it was ranking for', () => {
+  const start = INDEX.indexOf('data-page="tariffer"');
+  const end = INDEX.indexOf('data-page="automation"');
+  assert.ok(start > 0 && end > start, 'tariffer section not found');
+  const page = INDEX.slice(start, end);
+  // Each of these matched a query cluster that drew impressions and no clicks.
+  for (const term of ['Transmissions', 'Systemtarif', 'Elafgift',
+                      'lavlast', 'spidslast', 'effekt', 'Nettarif C']) {
+    assert.ok(new RegExp(term, 'i').test(page),
+      `the tariff page no longer covers "${term}"`);
+  }
+  assert.ok(page.includes('id="tariffNetLinks"'),
+    'the per-company links are gone — those pages rank 25th and need the internal links');
+  assert.ok(INDEX.includes('function renderTariffNetLinks()'),
+    'the per-company chips are no longer built from NETS');
+});
+
 test('homepage: the 7-day forecast section is server-rendered, not JS-only', () => {
   // The section exists to answer "elpriser prognose" searches that land on the
   // homepage. Rows that appear only after JS runs would not do that, so the
@@ -224,11 +268,14 @@ test('homepage: forecast-row styles are hand-written, not Tailwind utilities', (
   }
 });
 
-test('seo: no literal href="/${k}" template text in the served markup', () => {
-  // Google crawled and indexed /${k} — 55 impressions — because the template
-  // literal sat inside an href in the HTML it was served.
-  assert.ok(!INDEX.includes('href="/${k}"'),
-    'a template placeholder is written into an href again; attach it in JS instead');
+test('seo: no JS expression is written into an href', () => {
+  // Google crawled and indexed /${k} — 55 impressions — because a template
+  // literal sat inside an href in the served HTML. Concatenation does the same:
+  // href="/'+a.toLowerCase()+' ships as literal text and gets crawled too.
+  // Build the markup, then assign the href from JS.
+  const bad = [...INDEX.matchAll(/href="\/[^"]*(\$\{|'\s*\+)/g)].map(m => m[0]);
+  assert.equal(bad.length, 0,
+    `a JS expression is written into an href: ${bad.join(', ')}`);
 });
 
 test('flex: appliance types in the UI match what the API accepts and refuses', () => {

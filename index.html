@@ -714,6 +714,35 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .fc-badge{flex-shrink:0;font-size:.58rem;font-weight:700;color:#1e9e4a;background:rgba(52,199,89,.14);padding:3px 7px;border-radius:7px;white-space:nowrap}
   .dark .fc-badge{color:#4cd964}
   .fc-b-short{display:none}
+
+  /* ── Mobil (designoplæg 01): svaret centreret, app-agtig tab-bar ──
+     The mockup's thesis is that nobody reads 24 numbers on a phone — the
+     current price is the answer, centred like the Weather app's temperature,
+     and the sections below are reached from a fixed tab bar rather than a
+     hamburger. Mobile is where this matters: 6.02 % CTR against desktop's
+     2.71 %, and more clicks than desktop and tablet combined. */
+  .tabbar{display:none}
+  @media (max-width:640px){
+    .answer-col{text-align:center}
+    .answer-price{font-size:4rem}
+    .answer-pills{justify-content:center}
+    .answer-context,.answer-advice,.answer-toggle{margin-left:auto;margin-right:auto}
+    .answer-tip{margin-left:auto;margin-right:auto;text-align:left}
+    /* Room for the floating bar, so it never covers the last row of content. */
+    body{padding-bottom:5.25rem}
+    .tabbar{display:flex;position:fixed;left:.8rem;right:.8rem;bottom:.7rem;height:3.5rem;z-index:60;
+      align-items:center;justify-content:space-around;border-radius:1.75rem;
+      background:rgba(255,255,255,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+      box-shadow:0 6px 24px rgba(14,20,33,.14),0 0 0 .5px rgba(14,20,33,.06)}
+    .dark .tabbar{background:rgba(19,27,41,.86);
+      box-shadow:0 6px 24px rgba(0,0,0,.4),0 0 0 .5px rgba(255,255,255,.07)}
+  }
+  .tabbar a,.tabbar button{display:flex;flex-direction:column;align-items:center;gap:2px;
+    font:inherit;font-size:.6rem;font-weight:500;color:#8e8e93;background:none;border:none;
+    padding:.25rem .5rem;cursor:pointer;text-decoration:none;-webkit-tap-highlight-color:transparent}
+  .tabbar svg{width:1.3rem;height:1.3rem}
+  .tabbar .on{color:#1b57f5}
+  .dark .tabbar .on{color:#6d9aff}
   .fc-spacer{width:5.9rem;flex-shrink:0}
   @media (max-width:640px){
     .fc-row{gap:.45rem;padding:.65rem .7rem}
@@ -862,13 +891,23 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
 </header>
 
+<!-- Mobile tab bar (designoplæg 01). Deliberately outside every <main>: the
+     server strips the sections a URL does not own, and anything inside one
+     would disappear with them. -->
+<nav class="tabbar" id="tabBar" aria-label="Mobilnavigation">
+  <a href="/" data-tab="/"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>Nu</a>
+  <a href="/prognose" data-tab="/prognose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 6-8"/><path d="M14 6h4v4"/></svg>Prognose</a>
+  <a href="/automation" data-tab="/automation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Automation</a>
+  <button type="button" onclick="toggleBurger()" aria-label="Flere sider"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>Mere</button>
+</nav>
+
 <!-- ═══════ START PAGE ═══════ -->
 <main data-page="start" class="active">
   <!-- Answer-first hero: the current price IS the headline, like a weather
        app's temperature. Curve replaces the price table; the advice card
        turns pris+CO₂ data into one actionable sentence. -->
   <div class="answer-hero">
-    <div>
+    <div class="answer-col">
       <h1 class="answer-eyebrow">Elpriser i dag — <span id="heroLoc">Vestdanmark · DK1</span> · lige nu</h1>
       <div class="answer-price" id="heroPrice">—</div>
       <div class="answer-unit">kr/kWh inkl. tarif, afgift og moms</div>
@@ -1250,6 +1289,59 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <h3 class="font-bold text-gray-900 dark:text-white mb-2">Nettarif inkl. afgift — den samlede elpris</h3>
       <p>Nettariffen er kun én del af den elpris, du reelt betaler. Læg spotpris, nettarif, systemtarif, transmissionstarif og elafgift sammen, og gang med moms (25%), så får du den samlede pris pr. kWh inkl. afgift. Vil du se den fulde beregning for dit netselskab time for time, kan du vælge "Netselskab inkl alt" på <a href="/dk1" class="text-brand-500 underline">DK1 Vest</a>- eller <a href="/dk2" class="text-brand-500 underline">DK2 Øst</a>-siden.</p>
     </div>
+  </section>
+
+  <!-- Depth for the tariff queries that drew 949 impressions and no clicks:
+       "nettarif el", "transmissions nettarif", "systemtarif", "hvad er
+       nettarif", "nettarif 2023", "reducere effekttarif", and the per-company
+       searches that belong on the /dk1/<slug> pages linked at the end. -->
+  <section class="mt-10">
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-3">Hvad består din nettarif af?</h2>
+    <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">Det, folk kalder «nettarif», er i virkeligheden tre regninger oven på spotprisen. To af dem er ens for alle i Danmark, og én afhænger af, hvor du bor.</p>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm tabular">
+        <thead><tr class="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-left">
+          <th class="py-2 pr-3 font-semibold">Led</th><th class="py-2 pr-3 font-semibold">Hvem opkræver</th>
+          <th class="py-2 pr-3 font-semibold text-right">2026</th><th class="py-2 font-semibold text-right">2025</th>
+        </tr></thead>
+        <tbody class="text-gray-600 dark:text-gray-400">
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Nettarif C</strong><div class="text-xs">Det lokale elnet frem til din måler</div></td><td class="py-2 pr-3">Dit netselskab</td><td class="py-2 pr-3 text-right" colspan="2">Se tabellen ovenfor — den varierer pr. selskab og time</td></tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Transmissions&shy;nettarif</strong><div class="text-xs">Det overordnede net mellem landsdelene</div></td><td class="py-2 pr-3">Energinet</td><td class="py-2 pr-3 text-right tabular">4,3 øre</td><td class="py-2 text-right tabular">6,1 øre</td></tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Systemtarif</strong><div class="text-xs">Forsyningssikkerhed og balancering af nettet</div></td><td class="py-2 pr-3">Energinet</td><td class="py-2 pr-3 text-right tabular">7,2 øre</td><td class="py-2 text-right tabular">7,4 øre</td></tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="py-2 pr-3"><strong class="text-gray-900 dark:text-white">Elafgift</strong><div class="text-xs">Statens afgift på el</div></td><td class="py-2 pr-3">Staten, via Energinet</td><td class="py-2 pr-3 text-right tabular">0,8 øre</td><td class="py-2 text-right tabular">72,0 øre</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-xs text-gray-500 dark:text-gray-500 mt-3 leading-relaxed">Satser pr. kWh ekskl. moms, fra Energinets DataHub-prisliste. Oven i alle fire led lægges 25 % moms. Elafgiften faldt fra 72 til 0,8 øre pr. 1. januar 2026 — det er langt den største enkeltændring i en dansk elregning i mange år, og den er midlertidig: se <a href="/blog/elafgift-2028" class="text-brand-500 underline">elafgift 2028</a>.</p>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-3">De tre tidsbånd: lavlast, højlast og spidslast</h2>
+    <div class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed space-y-3">
+      <p>Nettarif C er den eneste del af elprisen, der afhænger af, <em>hvornår</em> på døgnet du bruger strømmen — spotprisen svinger også, men den er ens for alle i prisområdet. Netselskaberne deler døgnet i tre bånd:</p>
+      <p><strong class="text-gray-900 dark:text-white">Lavlast</strong> dækker typisk natten, hvor nettet har rigelig kapacitet. <strong class="text-gray-900 dark:text-white">Højlast</strong> dækker resten af dagen. <strong class="text-gray-900 dark:text-white">Spidslast</strong> er de timer sidst på eftermiddagen, hvor flest danskere bruger strøm samtidig — det er dér, nettet er tættest på sin grænse, og dér tariffen er dyrest.</p>
+      <p>Båndene skifter mellem sommer og vinter. I vinterhalvåret, hvor forbruget er højest, er spidslasttariffen typisk flere gange lavlasttariffen; i sommerhalvåret er forskellen mindre, og nogle selskaber har slet ingen spidslast om sommeren. Tabellen øverst på siden viser de satser, der gælder <em>i dag</em> for hvert selskab, så du ikke behøver regne ud, hvilken periode vi er i.</p>
+    </div>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-3">Sådan sænker du din nettarif</h2>
+    <div class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed space-y-3">
+      <p>Du kan ikke skifte netselskab — det følger adressen. Til gengæld kan du flytte forbruget, og det er den eneste håndtag, der virker på nettariffen.</p>
+      <ul class="list-disc pl-5 space-y-1.5">
+        <li><strong class="text-gray-900 dark:text-white">Flyt de store forbrugere ud af spidslasten.</strong> Elbil, varmepumpe, vaskemaskine og opvasker er de fire, der batter. Flytter du dem fra spidslast til lavlast, sparer du både på nettariffen og som regel på spotprisen samtidig.</li>
+        <li><strong class="text-gray-900 dark:text-white">Automatisér det.</strong> Manuel disciplin holder sjældent. <a href="/automation" class="text-brand-500 underline">Automation-siden</a> genererer klar-til-brug opsætning til Home Assistant og Shelly, der selv følger dagens billigste timer.</li>
+        <li><strong class="text-gray-900 dark:text-white">Vær opmærksom på effekttarif.</strong> Nettarif C betales pr. kWh, men enkelte netselskaber og kundegrupper afregnes helt eller delvist efter <em>effekt</em> — altså hvor mange kW du trækker samtidig, ikke hvor mange kWh du bruger i alt. Dér hjælper det ikke kun at flytte forbruget: du skal undgå at køre elbil, varmepumpe og ovn på én gang. Tjek din regning eller dit netselskabs prisblad, hvis du er i tvivl om, hvilken model du er på.</li>
+      </ul>
+      <p>En sidste ting: spar ikke på nettariffen ved at bruge strøm på et tidspunkt, hvor spotprisen er høj. Det er den samlede pris, der betaler sig at optimere, og den viser <a href="/" class="text-brand-500 underline">forsiden</a> time for time med nettariffen lagt oveni.</p>
+    </div>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-3">Nettariffer for dit netselskab</h2>
+    <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">Hvert selskab har sin egen side med aktuelle priser time for time, hvor nettariffen allerede er lagt oven i spotprisen:</p>
+    <div class="flex flex-wrap gap-2" id="tariffNetLinks"></div>
+    <p class="text-xs text-gray-500 dark:text-gray-500 mt-3">Kender du ikke dit selskab, finder <a href="/" class="text-brand-500 underline">forsiden</a> det ud fra din placering.</p>
   </section>
 
   <!-- FAQ — visible + FAQPage schema, route-specific (lives inside this section) -->
@@ -3192,7 +3284,16 @@ function dataPageFor(h){
   if(ZONES[h]&&h!=='dk1'&&h!=='dk2')return 'zone';
   return h.replace(/\//g,'-'); // blog/x -> blog-x; others map 1:1
 }
+function markTab(){
+  const p=location.pathname;
+  document.querySelectorAll('#tabBar a[data-tab]').forEach(a=>{
+    // "Nu" stays lit on the homepage only; the others on their own section.
+    const t=a.dataset.tab;
+    a.classList.toggle('on', t==='/' ? (p==='/'||p==='') : p.startsWith(t));
+  });
+}
 function route(){
+  markTab();
   let h=decodeURIComponent(location.hash.slice(1));
   if(!h)h=pathToHash(location.pathname);
   // Section not in this page's HTML (server-stripped) → full navigation to
@@ -3797,7 +3898,15 @@ async function updatePricesAnswer(){
 
 
 // ═══ TARIFF PAGE ═══
+function renderTariffNetLinks(){
+  const el=document.getElementById('tariffNetLinks'); if(!el||el.dataset.built)return;
+  el.innerHTML=['DK1','DK2'].flatMap(a=>NETS[a].map(n=>
+    '<a class="net-chip" data-net="'+a.toLowerCase()+'/'+n.slug+'">'+n.name+'</a>')).join('');
+  el.querySelectorAll('a[data-net]').forEach(a=>{a.href='/'+a.dataset.net;});
+  el.dataset.built='1';
+}
 async function loadTariffPage(){
+  renderTariffNetLinks();
   document.getElementById('tariffLoading').style.display='block';document.getElementById('tariffTable').style.display='none';
   await loadAllNettarifC();const en=await fetchEnCharges();const all=[...NETS.DK1,...NETS.DK2];
   const hd='text-gray-700 dark:text-gray-300',bd='text-gray-600 dark:text-gray-400',nm='text-gray-800 dark:text-gray-200';
@@ -4739,9 +4848,9 @@ function buildGlobe(){
   const byCountry={};
   Object.entries(ZONES).forEach(([k,z])=>{(byCountry[z.country]=byCountry[z.country]||[]).push([k,z]);});
   // The href is attached afterwards, not written into the template. Written
-  // inline, the literal text href="/${k} sits in the served HTML, and Google
-  // crawled and indexed it: /${k} collected 55 impressions and a click before
-  // the routing fix started returning 404 for it.
+  // inline, the unevaluated expression ships as literal text in the served
+  // HTML, and Google crawls it: that URL collected 55 impressions and a click
+  // before the routing fix started returning 404 for it.
   grid.innerHTML=Object.entries(byCountry).map(([c,list])=>
     `<div class="globe-col"><h3>${c}</h3>`+
     list.map(([k,z])=>`<a data-zone="${k}" onclick="closeGlobe()"><span class="gz">${z.name}</span><span class="gc">${z.city}</span></a>`).join('')+
