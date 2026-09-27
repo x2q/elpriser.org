@@ -112,8 +112,11 @@ const SEO_PAGES = {
     lang: 'nl',
   },
   '/prognose': {
-    title: 'Elprisprognose — Forventede elpriser næste 7 dage',
-    description: 'Se forventede elpriser for DK1 og DK2 de næste 7 dage. Prognose baseret på historiske prismønstre fra Energi Data Service.',
+    // The page shows ten days, and every forecast day comes from the daily-
+    // trained model (weather forecasts for wind and sun, plus the same weekday
+    // over the last four weeks), not "historical price patterns" alone.
+    title: 'Elprisprognose — forventede elpriser time for time de næste 10 døgn',
+    description: 'Forventede elpriser for DK1 og DK2 time for time de næste 10 døgn. Prognosen laves dagligt af en maskinlæringsmodel ud fra vejrprognoser for vind og sol og prisen samme ugedag de seneste fire uger — og skifter til de faktiske børspriser, når de offentliggøres ca. kl. 13.',
     hash: '#prognose',
   },
   '/api': {
@@ -282,16 +285,17 @@ const LLMS_TXT = `# elpriser.org
 
 > Aktuelle elpriser (spotpriser) for Danmark — DK1 og DK2 — time for time.
 
-elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dagligt med data fra Energi Data Service (Energinet). Prisen inkluderer spotpris, nettariffer, systemtarif, transmissionstarif, elafgift og moms.
+elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dagligt med data fra Energi Data Service (Energinet). Med dit netselskab valgt er prisen spotpris + dit netselskabs nettarif + Energinets systemtarif og transmissionstarif + elafgift + moms. Uden netselskab ("inkl alt") er det alt undtagen den lokale nettarif, som afhænger af netselskabet.
 
 ## Sider
 
 - [Forside](https://elpriser.org/): Overblik over dagens elpriser for DK1 og DK2 med aktuel pris og netselskaber.
-- [Elpriser DK1 Vest](https://elpriser.org/dk1): Time-for-time spotpriser for Vestdanmark (Jylland og Fyn).
-- [Elpriser DK2 Øst](https://elpriser.org/dk2): Time-for-time spotpriser for Østdanmark (Sjælland, Lolland-Falster, Bornholm).
+- [Elpriser DK1 Vest](https://elpriser.org/dk1): Elpris time for time for Vestdanmark (Jylland og Fyn) — åbner på "inkl alt" (spot + Energinets tariffer + elafgift + moms); ren spotpris og netselskaber vælges i menuen. 4 dage tilbage, i dag og 3 døgn frem.
+- [Elpriser DK2 Øst](https://elpriser.org/dk2): Samme for Østdanmark (Sjælland, Lolland-Falster, Bornholm).
 - Per-netselskab priser: \`/dk1/<slug>\` eller \`/dk2/<slug>\` viser dagens pris inkl. nettarif for det valgte netselskab (fx https://elpriser.org/dk1/n1, https://elpriser.org/dk2/radius).
 - [Nettariffer](https://elpriser.org/tariffer): Sammenligning af nettariffer for alle danske netselskaber.
-- [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser de næste 7 dage baseret på historiske prismønstre.
+- [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser for DK1 og DK2 time for time de næste 10 døgn. Laves dagligt af en maskinlæringsmodel ud fra vejrprognoser (vind og sol) og prisen samme ugedag de seneste fire uger; skifter til faktiske børspriser, når de offentliggøres ca. kl. 13.
+- Norden og Holland — én side pr. budområde på lokalt sprog: [NO1 Oslo](https://elpriser.org/no1), [NO2 Kristiansand](https://elpriser.org/no2), [NO3 Trondheim](https://elpriser.org/no3), [NO4 Tromsø](https://elpriser.org/no4), [NO5 Bergen](https://elpriser.org/no5), [SE1 Luleå](https://elpriser.org/se1), [SE2 Sundsvall](https://elpriser.org/se2), [SE3 Stockholm](https://elpriser.org/se3), [SE4 Malmö](https://elpriser.org/se4), [FI Suomi](https://elpriser.org/fi), [NL Nederland](https://elpriser.org/nl). Spotpris time for time for i dag og i morgen og prognose 10 døgn frem fra én åben maskinlæringsmodel for alle 13 prisområder ([model på Hugging Face](https://huggingface.co/Elpriser/nordic-price-forecast)). Omregnet til lokal valuta med Den Europæiske Centralbanks daglige referencekurs; for Norge og Sverige kan nettarif og afgifter lægges til (kilder: NVE og Energimarknadsinspektionen).
 - [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home.
 - [Om elpriser](https://elpriser.org/om-elpriser): Forklaring af priskomponenter, prisområder og datakilder.
 - [Forstå din elpris](https://elpriser.org/blog/forsta-din-elpris): Guide til hvad der bestemmer elprisen, spotpriser, tariffer, afgifter og sparetips.
@@ -315,13 +319,14 @@ Human-readable docs: [/api](https://elpriser.org/api).
 
 **MCP server**: [elpriser-mcp](https://github.com/x2q/elpriser-mcp) — a free Model Context
 Protocol server (run \`npx -y elpriser-mcp\`) gives Claude Desktop and other MCP clients
-native tools for current price, cheapest hours and the 7-day forecast.
+native tools for current price, cheapest hours and the price forecast.
 
-- \`GET /api/now?area=DK1&mode=inkl_alt\` — Current total price right now (DKK/kWh, incl. all tariffs + VAT)
+- \`GET /api/now?area=DK1&mode=inkl_alt\` — Current price right now (DKK/kWh) incl. Energinet's tariffs, electricity tax and VAT — NOT the local grid tariff, which depends on the grid company (use \`mode=net_inkl_alt&gln=…\` for that)
 - \`GET /api/now?area=DK1&mode=spot_inkl\` — Current raw spot price incl. VAT
 - \`GET /api/prices?area=DK1&mode=inkl_alt&date=YYYY-MM-DD\` — 24 hourly prices for a date
 - \`GET /api/schedule?area=DK1&strategy=cheapest_n&hours=6\` — The N cheapest hours of the day
-- \`GET /api/forecast?area=DK1&mode=inkl_alt\` — 7-day price forecast
+- \`GET /api/forecast?area=DK1&mode=inkl_alt\` — Hourly price forecast, today and the next 9 days (settled prices where published)
+- \`GET /api/nordic?zone=se3\` — Same for any of the 13 Nordic/NL bidding zones (dk1, dk2, no1–no5, se1–se4, fi, nl), in EUR/MWh, with the ECB rate to the local currency in \`zoneInfo\`
 - \`GET /api/shelly/tariff?area=DK1&mode=inkl_alt\` — Tibber-compatible 24h JSON
 - \`GET /api/raw/prices?area=DK1&start=YYYY-MM-DD&end=YYYY-MM-DD\` — Raw DayAheadPrices records
 - \`GET /api/raw/tariff?gln=5790000704842\` — Single net company's Nettarif C (24 values)
@@ -1236,7 +1241,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v46');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v47');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1382,14 +1387,14 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   // read (and indexed, and spoken by screen readers) as Danish.
   if (meta.lang) {
     html = html.replace(/<html lang="[^"]*"/, `<html lang="${meta.lang}"`);
-    // hreflang across the sibling zone pages: same content, different market
-    // and language, which is exactly what these annotations are for.
-    const alts = Object.entries(SEO_PAGES)
-      .filter(([, m]) => m.lang)
-      .map(([p, m]) => `<link rel="alternate" hreflang="${m.lang}" href="https://elpriser.org${p}">`)
-      .join('\n  ');
-    html = html.replace('</head>',
-      `  ${alts}\n  <link rel="alternate" hreflang="x-default" href="https://elpriser.org/">\n</head>`);
+    // No hreflang here. It used to link all eleven zone pages to one another as
+    // alternates, but they are not translations of one page — NO1 and SE3 are
+    // different markets with different prices — so five pages each claimed to
+    // be "the Norwegian version" and four "the Swedish". The base template's
+    // hreflang="da" is removed too: on /se3 it was rewritten to point at /se3
+    // itself, declaring a Swedish page its own Danish alternate. The html lang
+    // attribute above is what states the page's language.
+    html = html.replace(/\s*<link rel="alternate" hreflang="[^"]*" href="[^"]*">/g, '');
   }
 
   html = html.replace(

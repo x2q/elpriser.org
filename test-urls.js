@@ -220,6 +220,15 @@ async function main() {
   check(!prog.body.includes('<div id="prognoseForecast"><!--SSR_PROGNOSE_CHART-->'), '/prognose: placeholder er erstattet');
   check(/<div class="v">\d,\d\d–\d,\d\d<\/div>/.test(prog.body), '/prognose: døgnenes spænd står som tekst');
 
+  const se3 = await get('/se3');
+  check(!/hreflang=/.test(se3.body.replace(/<!--[\s\S]*?-->/g, '')), '/se3: ingen hreflang-klynge');
+  check(/<html lang="sv"/.test(se3.body), '/se3: html lang="sv"');
+  check(/<title>Elprisprognose — forventede elpriser time for time de næste 10 døgn<\/title>/.test(prog.body), '/prognose: titel siger 10 døgn');
+  const llms = await get('/llms.txt');
+  check(!/7 dage|7-day/.test(llms.body) && /elpriser\.org\/se3\)/.test(llms.body), 'llms.txt: 10 døgn og zone-siderne');
+  const home2 = await get('/');
+  check(!/name="description" content="[^"]*inkl\. nettariffer/.test(home2.body), 'forside: beskrivelsen påstår ikke nettarif');
+
   console.log('\n8. REGULERBAR KAPACITET — endpoints lever og afviser forkert input');
   // Only payloads that are refused before anything is stored, so a scheduled
   // run against production never writes a row.

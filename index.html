@@ -9,14 +9,14 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<meta name="description" content="Aktuelle elpriser og energipriser lige nu — se hvad strøm koster time for time for DK1 (Vest) og DK2 (Øst). Den reelle pris på el inkl. nettariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.">
+<meta name="description" content="Aktuelle elpriser og energipriser lige nu — hvad strøm koster time for time i DK1 (Vest) og DK2 (Øst), inkl. Energinets tariffer, elafgift og moms, med prognose for de kommende døgn. Vælg dit netselskab for prisen med nettarif.">
 <link rel="canonical" href="https://elpriser.org/">
 <link rel="alternate" hreflang="da" href="https://elpriser.org/">
 <meta name="robots" content="index, follow">
 <!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Elpriser i dag — aktuel spotpris lige nu, Vest og Øst">
-<meta property="og:description" content="Aktuelle elpriser og spotpriser lige nu — time for time for DK1 og DK2. Den reelle pris på el inkl. nettariffer, elafgift og moms.">
+<meta property="og:description" content="Aktuelle elpriser og spotpriser lige nu — time for time for DK1 og DK2, inkl. Energinets tariffer, elafgift og moms. Vælg dit netselskab for prisen med nettarif.">
 <meta property="og:url" content="https://elpriser.org/">
 <meta property="og:locale" content="da_DK">
 <meta property="og:site_name" content="elpriser.org">
@@ -922,7 +922,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <div class="answer-price" id="heroPrice">—</div>
       <div class="answer-unit">kr/kWh inkl. Energinets tariffer, elafgift og moms</div>
       <div class="answer-pills" id="heroPills"></div>
-      <div class="answer-context" id="heroContext">Tjek aktuel elpris lige nu — spotpriser time for time for DK1 (Vestdanmark) og DK2 (Østdanmark), inkl. nettariffer, elafgift og moms. Opdateret fra Energi Data Service.</div>
+      <div class="answer-context" id="heroContext">Tjek aktuel elpris lige nu — time for time for DK1 (Vestdanmark) og DK2 (Østdanmark), inkl. Energinets tariffer, elafgift og moms. Vælg dit netselskab for prisen med nettarif. Opdateret fra Energi Data Service.</div>
       <div class="answer-advice" id="heroAdvice" style="display:none"></div>
       <div class="answer-tip" id="heroTimerTip" style="display:none"></div>
       <div class="answer-toggle" role="tablist" aria-label="Prisområde">
@@ -1023,7 +1023,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <p id="readerLive"><!--SSR_READER_SUMMARY--></p>
       <p id="readerDay" class="mt-3"></p>
       <p class="mt-3">Den samlede elpris pr. kWh består af spotprisen fra elbørsen Nord Pool plus nettarif til dit lokale netselskab, systemtarif og transmissionstarif til Energinet, elafgift og 25 % moms. Vælg dit netselskab ovenfor for at se den præcise pris for din adresse time for time.</p>
-      <p class="mt-3">CO₂-tallene viser Energinets prognose for udledningen pr. kWh, time for time. De billigste timer er ikke altid de grønneste — midt på dagen kan lav pris falde sammen med høj import, så tjek begge kurver, hvis du vil bruge strømmen, når den både er billig og grøn. Se også <a href="/prognose" class="text-brand-500 underline">elprisprognosen for de næste 7 dage</a> eller <a href="/automation" class="text-brand-500 underline">automatisér dit forbrug</a> efter de billigste timer.</p>
+      <p class="mt-3">CO₂-tallene viser Energinets prognose for udledningen pr. kWh, time for time. De billigste timer er ikke altid de grønneste — midt på dagen kan lav pris falde sammen med høj import, så tjek begge kurver, hvis du vil bruge strømmen, når den både er billig og grøn. Se også <a href="/prognose" class="text-brand-500 underline">elprisprognosen for de næste 10 døgn</a> eller <a href="/automation" class="text-brand-500 underline">automatisér dit forbrug</a> efter de billigste timer.</p>
     </article>
 
     <!-- FAQ — static crawlable content for SEO -->
@@ -3438,7 +3438,7 @@ function route(){
   if(h==='blog/groennest-og-dyrest'){document.querySelector('[data-page="blog-groennest-og-dyrest"]').classList.add('active');document.title='Hvorfor er strømmen grønnest netop i den dyreste time?';pv('Blog: Grønnest og dyrest','/blog/groennest-og-dyrest');return;}
   if(h==='blog/elafgift-2028'){document.querySelector('[data-page="blog-elafgift-2028"]').classList.add('active');document.title='Elafgift 2028: Sådan stiger elafgiften igen';pv('Blog: Elafgift 2028','/blog/elafgift-2028');return;}
   if(ZONES[h]&&h!=='dk1'&&h!=='dk2'){document.querySelector('[data-page="zone"]').classList.add('active');const z=ZONES[h];document.title=I18N[z.lang].title(z)+' — elpriser.org';pv('Zone '+z.name,'/'+h);loadZone(h);return;}
-  if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elprisprognose — Forventede elpriser næste 7 dage';pv('Prognose','/prognose');loadForecastPage();return;}
+  if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elprisprognose — forventede elpriser time for time de næste 10 døgn';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){location.hash='';return;}
   S.area=area;S.mode=mode;S.weekOffset=0;

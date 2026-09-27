@@ -448,6 +448,35 @@ test('/prognose: curve above the heading, server-drawn, redrawn from the table\'
   assert.ok(/#prognoseForecast\{min-height|,#prognoseForecast\{min-height/.test(style), 'no reserved height for the /prognose chart');
 });
 
+test('seo/llm: nothing claims what the page does not show', () => {
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  // /prognose shows ten days from a daily-trained model — not "7 dage" from
+  // "historiske prismønstre", which its title, description and llms.txt said.
+  for (const [where, txt] of [['functions/[[path]].js', SRV], ['index.html', INDEX]]) {
+    assert.ok(!/næste 7 dage|7-day (price )?forecast|baseret på historiske prismønstre/.test(txt), `${where} still describes the forecast as 7 days / historical patterns`);
+  }
+  // The homepage figure is inkl alt, which excludes the local nettarif.
+  const head = INDEX.slice(0, INDEX.indexOf('</head>'));
+  assert.ok(!/name="description" content="[^"]*inkl\. nettariffer/.test(head) && !/og:description" content="[^"]*inkl\. nettariffer/.test(head),
+    'the homepage description claims the price includes nettariffer');
+  assert.ok(!/id="heroContext">[^<]*inkl\. nettariffer/.test(INDEX), 'the sentence under the homepage price claims nettariffer');
+  assert.ok(!/mode=inkl_alt\\` — Current total price right now \(DKK\/kWh, incl\. all tariffs/.test(SRV), 'llms.txt says inkl_alt includes all tariffs');
+  // llms.txt lists every zone page.
+  const llms = SRV.slice(SRV.indexOf('const LLMS_TXT = `'), SRV.indexOf('const LLMS_FULL_TXT'));
+  for (const z of ['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl'])
+    assert.ok(llms.includes(`https://elpriser.org/${z})`), `llms.txt does not list /${z}`);
+  assert.ok(/\/api\/nordic\?zone=/.test(llms), 'llms.txt does not list /api/nordic');
+});
+
+test('seo: zone pages carry no hreflang cluster', () => {
+  // They are different markets, not translations of one page. Linking them as
+  // alternates made five pages "the Norwegian version" and /se3 its own Danish one.
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const branch = SRV.slice(SRV.indexOf('if (meta.lang) {'), SRV.indexOf('html = html.replace(\n    /<title>'));
+  assert.ok(!/hreflang="\$\{m\.lang\}"/.test(branch) && !/x-default/.test(branch), 'the zone-page hreflang cluster is back');
+  assert.ok(/hreflang="\[\^"\]\*" href="\[\^"\]\*">\/g, ''\)/.test(branch), 'zone pages do not strip the base hreflang');
+});
+
 test('homepage: the hero curve has a price scale that lines up', () => {
   // The scale sits in a gutter left of the curve. The CO2 strip below takes the
   // same gutter, or its hours stop lining up with the price curve's.
