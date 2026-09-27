@@ -16,15 +16,19 @@ const OG_IMAGE = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="6
 
 // Pages with unique SEO metadata, served as modified index.html
 const SEO_PAGES = {
+  // /dk1 and /dk2 open on "inkl alt" — the same figure as the front page hero,
+  // so following "DK1 Vest" from there does not change the number. That view
+  // is spot + Energinet's tariffs + elafgift + moms, NOT the local nettarif,
+  // which depends on the grid company; title and description must not say it.
   '/dk1': {
-    title: 'Elpriser DK1 Vest i dag — Aktuel spotpris lige nu (Jylland og Fyn)',
-    description: 'Aktuel elpris og spotpris lige nu for DK1 (Vestdanmark) — time for time for Jylland og Fyn. Den reelle pris på el inkl. alt — nettariffer, elafgift og moms. Opdateret dagligt fra Energi Data Service.',
-    hash: '#DK1/spot_inkl',
+    title: 'Elpriser DK1 Vest i dag — aktuel elpris inkl. afgifter (Jylland og Fyn)',
+    description: 'Aktuel elpris lige nu for DK1 (Vestdanmark) — time for time for Jylland og Fyn, inkl. Energinets tariffer, elafgift og moms. Vælg dit netselskab for prisen med nettarif, eller se den rene spotpris.',
+    hash: '#DK1/inkl_alt',
   },
   '/dk2': {
-    title: 'Elpriser DK2 Øst i dag — Aktuel spotpris lige nu (Sjælland)',
-    description: 'Aktuel elpris og spotpris lige nu for DK2 (Østdanmark) — time for time for Sjælland, Lolland-Falster og Bornholm. Den reelle pris på el inkl. alt — nettariffer, elafgift og moms.',
-    hash: '#DK2/spot_inkl',
+    title: 'Elpriser DK2 Øst i dag — aktuel elpris inkl. afgifter (Sjælland)',
+    description: 'Aktuel elpris lige nu for DK2 (Østdanmark) — time for time for Sjælland, Lolland-Falster og Bornholm, inkl. Energinets tariffer, elafgift og moms. Vælg dit netselskab for prisen med nettarif.',
+    hash: '#DK2/inkl_alt',
   },
   '/tariffer': {
     title: 'Nettariffer 2026: Sammenlign 14 netselskaber — op til 25 øre/kWh forskel',
@@ -1136,9 +1140,9 @@ async function buildPricesIntro(context, area, net) {
   const areaLabel = AREA_LABEL[area];
   const region = AREA_REGION[area];
   // The view each URL opens in: pathToHash in index.html sends /dk1 and /dk2 to
-  // spot inkl. moms and a grid-company page to its all-in price. The sentence
-  // must describe that same figure, or it contradicts the number under it.
-  const mode = net ? 'net_inkl_alt' : 'spot_inkl';
+  // inkl alt and a grid-company page to its all-in price. The sentence must
+  // describe that same figure, or it contradicts the number under it.
+  const mode = net ? 'net_inkl_alt' : 'inkl_alt';
   const glnQ = net ? `&gln=${net.gln}` : '';
 
   const [now, tariff] = await Promise.all([
@@ -1169,7 +1173,7 @@ async function buildPricesIntro(context, area, net) {
 ${JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'PriceSpecification',
-    name: net ? `Aktuel samlet elpris hos ${net.name} (${areaLabel}) inkl. alt` : `Aktuel spotpris ${areaLabel} inkl. moms`,
+    name: net ? `Aktuel samlet elpris hos ${net.name} (${areaLabel}) inkl. alt` : `Aktuel elpris ${areaLabel} inkl. Energinets tariffer, elafgift og moms`,
     price: now.price.toFixed(4),
     priceCurrency: 'DKK',
     unitText: 'kWh',
@@ -1217,7 +1221,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v43');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v44');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 

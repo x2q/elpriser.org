@@ -322,10 +322,22 @@ test('price pages: dropdown, sentence and unit describe the same price in every 
   }
   // The server writes the sentence for the view the URL opens in, which is
   // what pathToHash sends /dk1 and /dk2 to.
-  assert.ok(/const mode = net \? 'net_inkl_alt' : 'spot_inkl';/.test(SRV), 'server sentence is not for the URL\'s own view');
-  assert.ok(INDEX.includes("'/dk1':'DK1/spot_inkl','/dk2':'DK2/spot_inkl'") &&
+  assert.ok(/const mode = net \? 'net_inkl_alt' : 'inkl_alt';/.test(SRV), 'server sentence is not for the URL\'s own view');
+  assert.ok(INDEX.includes("'/dk1':'DK1/inkl_alt','/dk2':'DK2/inkl_alt'") &&
             INDEX.includes("m[1].toUpperCase()+'/net_inkl_alt/'"),
-    'pathToHash no longer opens /dk1 in spot inkl. moms and net pages in inkl alt — update the server sentence to match');
+    'pathToHash no longer opens /dk1 in inkl alt and net pages in net inkl alt — update the server sentence to match');
+  // And the server's own record of that view must agree with the browser's.
+  assert.ok(/'\/dk1': \{[\s\S]*?hash: '#DK1\/inkl_alt'/.test(SRV) && /'\/dk2': \{[\s\S]*?hash: '#DK2\/inkl_alt'/.test(SRV),
+    'SEO_PAGES opens /dk1 or /dk2 in a different view than pathToHash');
+  // The title the browser sets for that view must be the one the server sent.
+  for (const [a, reg] of [['DK1 Vest', 'Jylland og Fyn'], ['DK2 Øst', 'Sjælland']]) {
+    const t = `Elpriser ${a} i dag — aktuel elpris inkl. afgifter (${reg})`;
+    assert.ok(SRV.includes(`title: '${t}'`), `server title for ${a} is not "${t}"`);
+  }
+  assert.ok(INDEX.includes("document.title=`Elpriser ${al} i dag — aktuel elpris inkl. afgifter (${S.area==='DK1'?'Jylland og Fyn':'Sjælland'})`"),
+    'the browser sets a different title for the inkl alt view than the server sends');
+  assert.ok(!/nettariffer, elafgift og moms\./.test(SRV.slice(SRV.indexOf("'/dk1': {"), SRV.indexOf("'/tariffer': {"))),
+    '/dk1 or /dk2 description claims the nettarif is included');
   assert.ok(/id="priceNowText"/.test(SRV) && /getElementById\('priceNowText'\)/.test(INDEX), 'the sentence is not rewritten when the view changes');
   // Another area or grid company is another page; only views of the same URL stay in-page.
   assert.ok(/hashToPath\(val\)!==location\.pathname/.test(INDEX), 'the dropdown can switch company without reloading the page');

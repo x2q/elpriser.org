@@ -3286,7 +3286,7 @@ function initBehaviorTracking(){
 // hash; we derive the SPA route from the pathname instead of doing a redirect
 // that would clobber the clean URL to /#hash.
 const PATH_ROUTES={
-  '/dk1':'DK1/spot_inkl','/dk2':'DK2/spot_inkl',
+  '/dk1':'DK1/inkl_alt','/dk2':'DK2/inkl_alt',
   '/tariffer':'tariffer','/automation':'automation','/api':'api','/shelly-tariff':'shelly-tariff',
   '/om-elpriser':'om-elpriser','/prognose':'prognose',
   '/no1':'no1','/no2':'no2','/no3':'no3','/no4':'no4','/no5':'no5','/se1':'se1','/se2':'se2','/se3':'se3','/se4':'se4','/fi':'fi','/nl':'nl',
@@ -3827,8 +3827,9 @@ function updateHeader(){
   // SEO-aligned titles for crawlable URLs (/dk1, /dk2, /dk1/<slug>, /dk2/<slug>)
   if(S.netName && (S.mode==='net_inkl_alt'||S.mode==='net_inkl_tarif')){
     document.title=`Elpris ${S.netName} ${al} i dag — Spotpris inkl. nettarif`;
-  } else if(S.mode==='spot_inkl'){
-    document.title=`Elpriser ${al} i dag — Spotpriser ${region}`;
+  } else if(S.mode==='inkl_alt'){
+    // Must equal SEO_PAGES' title for /dk1 and /dk2, the view those URLs open in.
+    document.title=`Elpriser ${al} i dag — aktuel elpris inkl. afgifter (${S.area==='DK1'?'Jylland og Fyn':'Sjælland'})`;
   } else {
     document.title=`Elpriser ${al} — ${ml[S.mode]||'Elspot'}`;
   }

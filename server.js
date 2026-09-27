@@ -387,8 +387,8 @@ const SPA_ROUTES = {
   // Generated from SEO_PAGES in functions/[[path]].js. Kept in step by
   // test-static.js: a route missing here does not error, it silently serves
   // the start page in local development while production serves the real one.
-  '/dk1': '#DK1/spot_inkl',
-  '/dk2': '#DK2/spot_inkl',
+  '/dk1': '#DK1/inkl_alt',
+  '/dk2': '#DK2/inkl_alt',
   '/tariffer': '#tariffer',
   '/automation': '#automation',
   '/om-elpriser': '#om-elpriser',
