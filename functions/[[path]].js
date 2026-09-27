@@ -856,18 +856,12 @@ function fcChartHTML(days, todayStr, nowHour){
   // The colour language is the hero curve's, so the two charts read the same.
   var col=function(p){var t=(p-lo)/span;
     return t<.25?'#34c759':t<.5?'#a8d84a':t<.75?'#ffcc00':t<.9?'#ff9500':'#ff3b30';};
-  // One stop per hour would be 96 of them. Emitting only the ends of each
-  // colour run is a handful, and renders the same: the run's last stop is what
-  // stops the gradient bleeding across a band it should not.
-  var stops='', run=null;
-  var stop=function(i,c){return '<stop offset="'+(i/(N-1)*100).toFixed(1)+'%" stop-color="'+c+'"/>';};
-  for(var q=0;q<pts.length;q++){
-    var c=col(pts[q].p);
-    if(run===null){stops+=stop(pts[q].i,c);run={c:c,i:pts[q].i};continue;}
-    if(c!==run.c){stops+=stop(run.i,run.c)+stop(pts[q].i,c);}
-    run={c:c,i:pts[q].i};
-  }
-  stops+=stop(pts[pts.length-1].i,run.c);
+  // One stop per hour, exactly as the hero curve does it. Emitting only the
+  // ends of each colour run is fewer stops, but it stops adjacent stops
+  // interpolating and the curve comes out in hard-edged bands instead of the
+  // blend the hero has — and the two charts sit on the same page.
+  var stops=pts.map(function(x){
+    return '<stop offset="'+(x.i/(N-1)*100).toFixed(1)+'%" stop-color="'+col(x.p)+'"/>';}).join('');
   // Split at the last settled hour. The two polylines share that point, so the
   // solid and dashed halves meet with no gap.
   var lastReal=-1;
@@ -875,14 +869,10 @@ function fcChartHTML(days, todayStr, nowHour){
   var solid=lastReal>=0?pts.slice(0,lastReal+1):[];
   var dashed=lastReal>=0?pts.slice(lastReal):pts;
   var poly=function(a){return a.map(xy).join(' ');};
-  var svg='<defs><linearGradient id="fcg" x1="0" y1="0" x2="1" y2="0">'+stops+'</linearGradient>'
+  var svg='<defs><linearGradient id="fcg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="'+W+'" y2="0">'+stops+'</linearGradient>'
     +'<linearGradient id="fcf" x1="0" y1="0" x2="0" y2="1">'
     +'<stop offset="0%" stop-color="#5b8bff" stop-opacity=".22"/>'
     +'<stop offset="100%" stop-color="#5b8bff" stop-opacity="0"/></linearGradient></defs>';
-  // A tinted band behind the forecast, so the distinction survives even when
-  // the dashes are too small to notice on a phone.
-  if(lastReal>=0&&lastReal<pts.length-1)
-    svg+='<rect x="'+X(pts[lastReal].i)+'" y="0" width="'+(W-X(pts[lastReal].i))+'" height="'+(H-PB+12)+'" fill="currentColor" fill-opacity=".035"/>';
   svg+='<polygon points="'+X(pts[0].i)+','+(H-PB+12)+' '+poly(pts)+' '+X(pts[pts.length-1].i)+','+(H-PB+12)+'" fill="url(#fcf)"/>';
   if(solid.length>1)
     svg+='<polyline points="'+poly(solid)+'" fill="none" stroke="url(#fcg)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>';
@@ -1164,7 +1154,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v37');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v40');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 

@@ -82,7 +82,17 @@ const span = (n, los, his, types = []) => ({
   // They must share the boundary point, or the line breaks visibly.
   ok(solid[1].split(' ').pop() === dash[1].split(' ')[0],
      'de to dele mødes i samme punkt');
-  ok(/fill-opacity="\.035"/.test(h), 'prognosedelen har et bånd bag sig');
+  ok(!/<rect[^>]*fill-opacity/.test(h), 'der tegnes intet bånd bag prognosen');
+  // The curve is two polylines sharing one gradient. Left to default to
+  // objectBoundingBox, each stretches the whole window's ramp across its own
+  // width and today gets painted in tomorrow's colours — cheap hours came out
+  // red. The offsets must be pinned to the viewBox.
+  ok(/id="fcg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="720"/.test(h),
+     'prisgradienten er bundet til viewBox, ikke til hver enkelt polylines bbox',
+     (h.match(/<linearGradient id="fcg"[^>]*>/) || [''])[0]);
+  // And the cheapest hour in the window must actually be the green end.
+  ok(/<stop offset="[^"]*" stop-color="#34c759"\/>/.test(h), 'billigste timer er grønne');
+  ok(/<stop offset="[^"]*" stop-color="#ff3b30"\/>/.test(h), 'dyreste timer er røde');
   ok(/<circle[^>]*fill="#1b57f5"/.test(h), '"nu" markeres på kurven');
 
   const geo = [...h.matchAll(/(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)/g)].map(m => [+m[1], +m[2]]);
