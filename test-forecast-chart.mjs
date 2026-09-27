@@ -27,7 +27,12 @@ const lift = (src, what) => {
   const a = src.indexOf(MARK);
   if (a < 0) throw new Error(`fcChartHTML not found in ${what}`);
   const b = src.indexOf('\nfunction fcChartHTML', a);
-  const c = src.indexOf('\n}', src.indexOf('return \'<svg id="fcCurve"', b));
+  // The body is indented, so the first brace at column 0 closes the function.
+  // Keying this off the text of the return line broke silently when that line
+  // changed: both copies came back EMPTY, and "the two copies are identical"
+  // passed because two empty strings are.
+  const c = b < 0 ? -1 : src.indexOf('\n}', b + 1);
+  if (c < 0) throw new Error(`end of fcChartHTML not found in ${what}`);
   return src.slice(a, c + 2);
 };
 const serverCopy = lift(ROUTES, 'functions/[[path]].js');
@@ -44,8 +49,8 @@ ok(serverCopy.length > 2000, 'fcChartHTML blev faktisk hentet ud', `${serverCopy
 
 const ctx = { console, Intl, Date, Math };
 vm.createContext(ctx);
-vm.runInContext(serverCopy + '\nglobalThis.chart = fcChartHTML;', ctx);
-const chart = ctx.chart;
+vm.runInContext(serverCopy + '\nglobalThis.chart = fcChartHTML; globalThis.ticks = fcTicks;', ctx);
+const chart = ctx.chart, ticks = (a, b) => [...ctx.ticks(a, b)];
 
 const day = (date, lo, hi, type = 'forecast') => ({
   date, type,
@@ -67,7 +72,7 @@ const span = (n, los, his, types = []) => ({
   ok((h.match(/<div class="mini[ "]/g) || []).length === 3, 'tre døgn: i dag og to frem', h.slice(-300));
   ok(/>I dag · Børspris</.test(h), 'i dag mærkes som afregnet børspris');
   ok(/>I morgen · Prognose</.test(h), 'i morgen mærkes som prognose');
-  ok(/<div class="fc-days">/.test(h), 'dagnavnene ligger i HTML, ikke i den strakte svg');
+  ok(/<div class="fc-days[ "]/.test(h), 'dagnavnene ligger i HTML, ikke i den strakte svg');
   ok(/<span>I dag<small>27\. sep<\/small><\/span>/.test(h), 'første etiket er "I dag" med dato');
   ok(!/<text[^>]*>I dag</.test(h), 'dagnavnene står ikke længere inde i svg\'en');
   ok(/>0,15–1,86</.test(h), 'dagens spænd står som tekst med komma');
@@ -172,6 +177,34 @@ const span = (n, los, his, types = []) => ({
   const h = chart(f.days, TODAY, 11);
   ok((h.match(/class="mini best"/g) || []).length === 1, 'præcis ét døgn markeres som billigst');
   ok(/class="mini best"[\s\S]{0,140}0,12/.test(h), 'markeringen sidder på det billigste døgn', h.slice(-400));
+}
+
+// ── The price scale ───────────────────────────────────────────────────────
+{
+  const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  ok(eq(ticks(0.15, 3.35), [1, 2, 3]), 'skala 0,15–3,35 giver 1 2 3', JSON.stringify(ticks(0.15, 3.35)));
+  ok(eq(ticks(0.15, 1.86), [0.5, 1, 1.5]), 'skala 0,15–1,86 giver 0,5 1 1,5', JSON.stringify(ticks(0.15, 1.86)));
+  ok(ticks(-0.3, 0.8).includes(0), 'negative priser: skalaen går gennem 0', JSON.stringify(ticks(-0.3, 0.8)));
+  ok(eq(ticks(1, 1), [1]), 'flad kurve: ét mærke, ingen division med nul');
+  let bad = [];
+  for (let k = 0; k < 400; k++) {
+    const lo = +(Math.random() * 4 - 1).toFixed(3), hi = +(lo + 0.05 + Math.random() * 5).toFixed(3);
+    const t = ticks(lo, hi);
+    if (t.length < 2 || t.length > 6 || t.some(v => v < lo - 1e-9 || v > hi + 1e-9)) bad.push([lo, hi, t]);
+  }
+  ok(bad.length === 0, 'mellem to og seks mærker, alle inden for kurvens spænd', JSON.stringify(bad.slice(0, 3)));
+
+  const f = span(3, [0.15, 1.40, 1.02], [1.86, 3.35, 2.48], ['actual', 'actual']);
+  const h = chart(f.days, TODAY, 11);
+  const grid = [...h.matchAll(/<line x1="0" y1="([\d.]+)" x2="720" y2="[\d.]+" stroke="currentColor" stroke-opacity="\.07"\/>/g)].map(m => +m[1]);
+  const labs = [...h.match(/<div class="yax">([\s\S]*?)<\/div>/)[1].matchAll(/top:([\d.]+)%">([^<]+)</g)];
+  ok(grid.length >= 2 && grid.length === labs.length, 'én etiket pr. gitterlinje', `${grid.length} linjer, ${labs.length} etiketter`);
+  ok(labs.every((m, i) => Math.abs(+m[1] - grid[i] / 190 * 100) < 0.01),
+     'hver etiket står i samme højde som sin linje', JSON.stringify(labs.map(m => m[1])));
+  ok(labs.every(m => /^-?\d+,\d\d$/.test(m[2])), 'etiketterne har komma og to decimaler', labs.map(m => m[2]).join(' '));
+  ok(/<div class="yplot"><svg id="fcCurve"/.test(h), 'kurven ligger i en ramme med skalaen ved siden af');
+  ok(/<div class="fc-hours ygut">/.test(h) && /<div class="fc-days ygut">/.test(h),
+     'time- og dagrækken rykker ind sammen med kurven, så de stadig flugter');
 }
 
 console.log(`${pass} beståede, ${fails.length} fejl`);

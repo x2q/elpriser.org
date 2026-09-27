@@ -265,6 +265,20 @@ test('server: every top-level piece the renderer calls still exists', () => {
   }
 });
 
+test('homepage: the hero curve has a price scale that lines up', () => {
+  // The scale sits in a gutter left of the curve. The CO2 strip below takes the
+  // same gutter, or its hours stop lining up with the price curve's.
+  assert.ok(/<div class="yplot"><svg id="heroCurve"[^>]*><\/svg><div class="yax" id="heroYax"><\/div><\/div>/.test(INDEX),
+    'heroCurve is not wrapped with its axis');
+  assert.ok(/<svg id="heroCo2" class="ygut"/.test(INDEX), 'the CO2 strip does not share the gutter');
+  // renderHero hides the CO2 header through previousElementSibling, so the
+  // strip must stay the header's next sibling rather than gain a wrapper.
+  assert.ok(/<div class="chd co2">[^\n]*<\/div>\s*<svg id="heroCo2"/.test(INDEX),
+    'heroCo2 is no longer directly after its header');
+  assert.ok(/const ticks=fcTicks\(pMin,pMax\)/.test(INDEX) && /heroYax'\)\.innerHTML=fcYaxis\(ticks,Y,H\)/.test(INDEX),
+    'renderHero does not draw the scale');
+});
+
 test('homepage: the forecast curve is server-rendered, not JS-only', () => {
   // The section exists to answer "elpriser prognose" searches that land on the
   // homepage. A chart that appears only after JS runs would not do that, so the
@@ -298,7 +312,7 @@ test('homepage: the chart reuses the hero card styles, which are hand-written', 
   // The chart deliberately reuses .chartcard/.minirow/.mini rather than
   // inventing new classes, and those must stay in the hand-written block.
   const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
-  for (const cls of ['.chartcard', '.minirow', '.mini{', '.mini .v', '.mini.best', '.fc-days', '.fc-hours']) {
+  for (const cls of ['.chartcard', '.minirow', '.mini{', '.mini .v', '.mini.best', '.fc-days', '.fc-hours', '.yplot', '.yax', '.ygut']) {
     assert.ok(style.includes(cls), `${cls} is not hand-written in the <style> block`);
   }
 });

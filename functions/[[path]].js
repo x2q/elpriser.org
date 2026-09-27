@@ -816,6 +816,27 @@ async function fetchAreaSnapshot(context, area) {
 // Everything here is deterministic on purpose: weekday and month names come
 // from the arrays below rather than toLocaleDateString, whose output depends
 // on the ICU build and would differ between Workers and a browser.
+/** Round price-axis values between lo and hi: steps of 1, 2, 2.5 or 5 times a
+ *  power of ten, aiming at about four. Shared by both homepage charts so their
+ *  scales read alike; the hero calls it from renderHero. */
+function fcTicks(lo, hi){
+  var span=hi-lo;
+  if(!(span>0))return [lo];
+  var raw=span/4, mag=Math.pow(10,Math.floor(Math.log(raw)/Math.LN10)), n=raw/mag;
+  var step=(n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*mag;
+  var out=[];
+  for(var v=Math.ceil(lo/step-1e-9)*step;v<=hi+1e-9;v+=step)out.push(+v.toFixed(6));
+  return out;
+}
+/** The scale's labels, as HTML beside the svg. Like the day names, they cannot
+ *  be <text> inside it: the svg is stretched with preserveAspectRatio="none"
+ *  and glyphs would be squashed on a phone. Each sits at the same fraction of
+ *  the height the svg draws its gridline at. */
+function fcYaxis(ticks, Y, H){
+  return ticks.map(function(v){
+    return '<span style="top:'+(Y(v)/H*100).toFixed(2)+'%">'+v.toFixed(2).replace('.',',')+'</span>';
+  }).join('');
+}
 function fcChartHTML(days, todayStr, nowHour){
   var WD=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
   var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
@@ -873,6 +894,9 @@ function fcChartHTML(days, todayStr, nowHour){
     +'<linearGradient id="fcf" x1="0" y1="0" x2="0" y2="1">'
     +'<stop offset="0%" stop-color="#5b8bff" stop-opacity=".22"/>'
     +'<stop offset="100%" stop-color="#5b8bff" stop-opacity="0"/></linearGradient></defs>';
+  var ticks=fcTicks(lo,hi);
+  for(var ti=0;ti<ticks.length;ti++)
+    svg+='<line x1="0" y1="'+Y(ticks[ti])+'" x2="'+W+'" y2="'+Y(ticks[ti])+'" stroke="currentColor" stroke-opacity=".07"/>';
   svg+='<polygon points="'+X(pts[0].i)+','+(H-PB+12)+' '+poly(pts)+' '+X(pts[pts.length-1].i)+','+(H-PB+12)+'" fill="url(#fcf)"/>';
   if(solid.length>1)
     svg+='<polyline points="'+poly(solid)+'" fill="none" stroke="url(#fcg)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>';
@@ -914,9 +938,10 @@ function fcChartHTML(days, todayStr, nowHour){
       +'<div class="v">'+f2(Math.min.apply(null,v))+'–'+f2(Math.max.apply(null,v))+'</div>'
       +'<div class="s">'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+' · kr/kWh</div></div>';
   }).join('');
-  return '<svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="Elpris time for time i dag og '+(sel.length-1)+' døgn frem">'+svg+'</svg>'
-    +'<div class="fc-hours">'+hours+'</div>'
-    +'<div class="fc-days">'+labels+'</div>'
+  return '<div class="yplot"><svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="Elpris time for time i dag og '+(sel.length-1)+' døgn frem">'+svg+'</svg>'
+    +'<div class="yax">'+fcYaxis(ticks,Y,H)+'</div></div>'
+    +'<div class="fc-hours ygut">'+hours+'</div>'
+    +'<div class="fc-days ygut">'+labels+'</div>'
     +'<div class="minirow">'+cards+'</div>';
 }
 
@@ -1164,7 +1189,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v41');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v42');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 

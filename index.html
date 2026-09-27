@@ -697,10 +697,20 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .fc-hours span{position:absolute;top:0;transform:translateX(-50%);font-size:.62rem;color:#8a95a8;font-variant-numeric:tabular-nums}
   .fc-hours span.first{transform:none}
   .dark .fc-hours span{color:#6b778a}
-  .fc-days{display:flex;margin:.1rem .25rem 0}
+  .fc-days{display:flex;margin:.1rem 0 0}
+  .ygut{margin-left:2.2rem}
+  .chartcard svg.ygut{width:calc(100% - 2.2rem)}
   .fc-days span{flex:1;text-align:center;font-size:.78rem;font-weight:600;color:#3d4756;line-height:1.25}
   .dark .fc-days span{color:#c3ccdb}
   .fc-days small{display:block;font-size:.66rem;font-weight:500;color:#8a95a8}
+  /* Price scale beside both homepage curves. HTML, not svg <text>: the curves
+     are stretched with preserveAspectRatio="none", which squashes glyphs.
+     Everything under a curve that must line up with it takes .ygut. */
+  .yplot{position:relative;margin-left:2.2rem}
+  .yplot>svg{display:block;width:100%}
+  .yax{position:absolute;top:0;bottom:0;right:100%;width:2.2rem}
+  .yax span{position:absolute;right:.4rem;transform:translateY(-50%);font-size:.6rem;color:#8a95a8;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .dark .yax span{color:#6b778a}
   .fc-head a{font-size:.8rem;font-weight:600;color:#1b57f5;white-space:nowrap;text-decoration:underline}
   .dark .fc-head a{color:#6d9aff}
   .fc-b-short{display:none}
@@ -913,9 +923,9 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     </div>
     <div class="chartcard">
       <div class="chd"><span>I dag, time for time</span><span>DKK/kWh</span></div>
-      <svg id="heroCurve" viewBox="0 0 720 200" preserveAspectRatio="none" style="min-height:170px"></svg>
+      <div class="yplot"><svg id="heroCurve" viewBox="0 0 720 200" preserveAspectRatio="none" style="min-height:170px"></svg><div class="yax" id="heroYax"></div></div>
       <div class="chd co2"><span>CO₂-udledning</span><span>g/kWh</span></div>
-      <svg id="heroCo2" viewBox="0 0 720 48" preserveAspectRatio="none" style="height:48px"></svg>
+      <svg id="heroCo2" class="ygut" viewBox="0 0 720 48" preserveAspectRatio="none" style="height:48px"></svg>
       <div class="minirow">
         <div class="mini best"><div class="k">Billigst</div><div class="v" id="heroBestV">—</div><div class="s" id="heroBestS"></div></div>
         <div class="mini worst"><div class="k">Dyrest</div><div class="v" id="heroWorstV">—</div><div class="s" id="heroWorstS"></div></div>
@@ -3449,6 +3459,27 @@ function renderHeroTomorrow(fj,todayStr){
 // Everything here is deterministic on purpose: weekday and month names come
 // from the arrays below rather than toLocaleDateString, whose output depends
 // on the ICU build and would differ between Workers and a browser.
+/** Round price-axis values between lo and hi: steps of 1, 2, 2.5 or 5 times a
+ *  power of ten, aiming at about four. Shared by both homepage charts so their
+ *  scales read alike; the hero calls it from renderHero. */
+function fcTicks(lo, hi){
+  var span=hi-lo;
+  if(!(span>0))return [lo];
+  var raw=span/4, mag=Math.pow(10,Math.floor(Math.log(raw)/Math.LN10)), n=raw/mag;
+  var step=(n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*mag;
+  var out=[];
+  for(var v=Math.ceil(lo/step-1e-9)*step;v<=hi+1e-9;v+=step)out.push(+v.toFixed(6));
+  return out;
+}
+/** The scale's labels, as HTML beside the svg. Like the day names, they cannot
+ *  be <text> inside it: the svg is stretched with preserveAspectRatio="none"
+ *  and glyphs would be squashed on a phone. Each sits at the same fraction of
+ *  the height the svg draws its gridline at. */
+function fcYaxis(ticks, Y, H){
+  return ticks.map(function(v){
+    return '<span style="top:'+(Y(v)/H*100).toFixed(2)+'%">'+v.toFixed(2).replace('.',',')+'</span>';
+  }).join('');
+}
 function fcChartHTML(days, todayStr, nowHour){
   var WD=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
   var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
@@ -3506,6 +3537,9 @@ function fcChartHTML(days, todayStr, nowHour){
     +'<linearGradient id="fcf" x1="0" y1="0" x2="0" y2="1">'
     +'<stop offset="0%" stop-color="#5b8bff" stop-opacity=".22"/>'
     +'<stop offset="100%" stop-color="#5b8bff" stop-opacity="0"/></linearGradient></defs>';
+  var ticks=fcTicks(lo,hi);
+  for(var ti=0;ti<ticks.length;ti++)
+    svg+='<line x1="0" y1="'+Y(ticks[ti])+'" x2="'+W+'" y2="'+Y(ticks[ti])+'" stroke="currentColor" stroke-opacity=".07"/>';
   svg+='<polygon points="'+X(pts[0].i)+','+(H-PB+12)+' '+poly(pts)+' '+X(pts[pts.length-1].i)+','+(H-PB+12)+'" fill="url(#fcf)"/>';
   if(solid.length>1)
     svg+='<polyline points="'+poly(solid)+'" fill="none" stroke="url(#fcg)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>';
@@ -3547,9 +3581,10 @@ function fcChartHTML(days, todayStr, nowHour){
       +'<div class="v">'+f2(Math.min.apply(null,v))+'–'+f2(Math.max.apply(null,v))+'</div>'
       +'<div class="s">'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+' · kr/kWh</div></div>';
   }).join('');
-  return '<svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="Elpris time for time i dag og '+(sel.length-1)+' døgn frem">'+svg+'</svg>'
-    +'<div class="fc-hours">'+hours+'</div>'
-    +'<div class="fc-days">'+labels+'</div>'
+  return '<div class="yplot"><svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="Elpris time for time i dag og '+(sel.length-1)+' døgn frem">'+svg+'</svg>'
+    +'<div class="yax">'+fcYaxis(ticks,Y,H)+'</div></div>'
+    +'<div class="fc-hours ygut">'+hours+'</div>'
+    +'<div class="fc-days ygut">'+labels+'</div>'
     +'<div class="minirow">'+cards+'</div>';
 }
 
@@ -3674,16 +3709,19 @@ function renderHero(prices,co2,nowH){
   const stops=valid.map(x=>{const t=(x.p-pMin)/(pMax-pMin||1);
     const c=t<.25?'#34c759':t<.5?'#a8d84a':t<.75?'#ffcc00':t<.9?'#ff9500':'#ff3b30';
     return `<stop offset="${(x.h/23*100).toFixed(1)}%" stop-color="${c}"/>`}).join('');
+  const ticks=fcTicks(pMin,pMax);
   document.getElementById('heroCurve').innerHTML=`
     <defs><linearGradient id="hpg" x1="0" y1="0" x2="1" y2="0">${stops}</linearGradient>
     <linearGradient id="hfade" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#5b8bff" stop-opacity=".25"/><stop offset="100%" stop-color="#5b8bff" stop-opacity="0"/>
     </linearGradient></defs>
+    ${ticks.map(v=>`<line x1="0" y1="${Y(v)}" x2="${W}" y2="${Y(v)}" stroke="currentColor" stroke-opacity=".07"/>`).join('')}
     <polygon points="${X(valid[0].h)},${H-PB+16} ${pts} ${X(valid[valid.length-1].h)},${H-PB+16}" fill="url(#hfade)"/>
     <polyline points="${pts}" fill="none" stroke="url(#hpg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     ${nowP!=null?`<line x1="${X(nowH)}" y1="${PT-6}" x2="${X(nowH)}" y2="${H-PB+10}" stroke="currentColor" stroke-opacity=".18" stroke-dasharray="3 4"/>
     <circle cx="${X(nowH)}" cy="${Y(nowP)}" r="6" fill="#1b57f5" stroke="#fff" stroke-width="2.5"/>`:''}
     ${[0,6,12,18,23].map(h=>`<text x="${X(h)}" y="${H-5}" font-size="10.5" fill="currentColor" fill-opacity=".45" text-anchor="${h===0?'start':h===23?'end':'middle'}" font-family="system-ui">${String(h).padStart(2,'0')}</text>`).join('')}`;
+  document.getElementById('heroYax').innerHTML=fcYaxis(ticks,Y,H);
   // CO₂ strip
   const co2El=document.getElementById('heroCo2');
   if(co2Valid.length){
