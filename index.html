@@ -1226,7 +1226,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <div class="answer-pills" id="pricesAnswerPills" style="justify-content:center"></div>
   </div>
   <div class="subcard mt-2">
-    <div class="chd2"><span>Time for time, seneste uge</span><span>DKK/kWh</span></div>
+    <div class="chd2"><span id="tableTitle">Time for time · 4 dage tilbage, 3 døgn frem</span><span>DKK/kWh</span></div>
     <div id="tableView">
       <div class="text-center py-12 text-gray-400 dark:text-gray-500" id="loadingIndicator">
         <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>
@@ -1236,10 +1236,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         <table class="mx-auto text-xs sm:text-sm tabular" id="priceTable"></table>
       </div>
     </div>
-    <p id="fcTableNote" class="text-center text-xs mt-2" style="color:#0e9888;display:none">Kolonnen "i morgen" er en prognose — de faktiske priser offentliggøres ca. kl. 13.</p>
+    <p id="fcTableNote" class="text-center text-xs mt-2" style="color:#0e9888;display:none">Kolonner mærket PROGNOSE er modellens forventning, ikke faktiske børspriser. Morgendagens priser offentliggøres ca. kl. 13.</p>
     <div class="flex items-center justify-center gap-2 mt-4">
       <button onclick="changeWeek(-1)" class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs">← Forrige</button>
-      <span id="weekLabel" class="text-xs text-gray-500 dark:text-gray-400 w-24 text-center">Denne uge</span>
+      <span id="weekLabel" class="text-xs text-gray-500 dark:text-gray-400 w-28 text-center">Nu</span>
       <button id="nextWeekBtn" onclick="changeWeek(1)" disabled class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs disabled:opacity-30 disabled:cursor-not-allowed">Næste →</button>
     </div>
   </div>
@@ -3069,7 +3069,7 @@ const ZONE_BTNS=[
 const isDark=()=>document.documentElement.classList.contains('dark');
 
 let S={area:'DK1',mode:'spot_inkl',gln:null,netName:'',view:'table',_loadId:0,weekOffset:0};
-let priceData={},tariffCache={},allTariffsLoaded=false,enCharges=null,fcTomorrow=null;
+let priceData={},tariffCache={},allTariffsLoaded=false,enCharges=null,fcDays={};
 
 
 // ═══ GPS — auto-navigate on detection ═══
@@ -3963,32 +3963,37 @@ async function loadPriceData(loadId){
   if(S.mode.startsWith('net_')&&S.gln)proms.push(loadNetTariff(S.gln));
   if(proms.length)await Promise.all(proms);
   if(loadId!==S._loadId)return;
-  const now=new Date();const center=new Date(now);center.setDate(center.getDate()+S.weekOffset*7);
-  const s=new Date(center),e=new Date(center);s.setDate(s.getDate()-7);e.setDate(e.getDate()+2);
+  // The table shows eight consecutive days: four back, today and three ahead,
+  // and each step of Forrige/Næste moves the whole window by eight so no day
+  // is skipped or repeated. On the current window the fetch still starts seven
+  // days back, because the automation page reuses priceData and plans over the
+  // last seven days — narrowing this fetch would quietly shorten that.
+  const win=tableWindow();
+  const s=new Date(win[0]+'T12:00:00'),e=new Date(win[7]+'T12:00:00');
+  if(S.weekOffset===0){const t=new Date();t.setHours(12,0,0,0);s.setTime(t.getTime());s.setDate(s.getDate()-7);e.setTime(t.getTime());e.setDate(e.getDate()+2);}
+  else e.setDate(e.getDate()+1);
   try{
     const j=await fetchPricesWithRetry(`/api/raw/prices?area=${S.area}&start=${fmt(s)}&end=${fmt(e)}`);
     if(loadId!==S._loadId)return;
     priceData=processRecords(j.records||[]);
     if(!Object.keys(priceData).length)throw new Error('no parseable records');
-    // Tomorrow's column: actual børspriser once published (~13:00, already in
-    // priceData via the +2d fetch window) — otherwise the ML forecast, fetched
-    // as raw spot so cvt() can apply the exact same tariff/afgift pipeline as
-    // the rest of the table (works for net_ modes too).
-    fcTomorrow=null;
-    if(S.weekOffset===0){
-      const tmr=new Date();tmr.setDate(tmr.getDate()+1);const tmrStr=fmt(tmr);
-      if(!priceData[tmrStr]){
-        try{
-          const fj=await dedupedFetch(`/api/forecast?area=${S.area}&mode=spot_ex`);
-          const day=fj?.days?.find(x=>x.date===tmrStr);
-          if(day){
-            const hours={};let n=0;
-            day.prices.forEach(p=>{if(p.price!=null){hours[p.hour]=p.price*1000;n++;}});
-            if(n)fcTomorrow={date:tmrStr,hours};
-          }
-        }catch(_){/* prognosekolonnen er valgfri */}
-        if(loadId!==S._loadId)return;
-      }
+    // Days ahead of today: actual børspriser where published (tomorrow, from
+    // ~13:00, already in priceData) — otherwise the ML forecast, fetched as raw
+    // spot so cvt() applies the exact same tariff/afgift pipeline as the rest
+    // of the table (works for net_ modes too).
+    fcDays={};
+    const ahead=win.filter(d=>d>fmt(new Date())&&!priceData[d]);
+    if(S.weekOffset===0&&ahead.length){
+      try{
+        const fj=await dedupedFetch(`/api/forecast?area=${S.area}&mode=spot_ex`);
+        (fj?.days||[]).forEach(day=>{
+          if(!ahead.includes(day.date))return;
+          const hours={};let n=0;
+          day.prices.forEach(p=>{if(p.price!=null){hours[p.hour]=p.price*1000;n++;}});
+          if(n)fcDays[day.date]=hours;
+        });
+      }catch(_){/* prognosekolonnerne er valgfrie */}
+      if(loadId!==S._loadId)return;
     }
     renderTable();
   }catch(err){
@@ -3997,17 +4002,24 @@ async function loadPriceData(loadId){
   }
 }
 
+/** The eight dates the table shows for the current S.weekOffset. */
+function tableWindow(){
+  const s=new Date();s.setHours(12,0,0,0);s.setDate(s.getDate()-4+S.weekOffset*8);
+  return Array.from({length:8},(_,i)=>{const d=new Date(s);d.setDate(s.getDate()+i);return fmt(d);});
+}
 function renderTable(){
-  // Forecast column only while tomorrow's actual prices are still unpublished
-  const showFc=S.weekOffset===0&&fcTomorrow&&!priceData[fcTomorrow.date];
-  const dates=Object.keys(priceData).sort().slice(showFc?-7:-8);
-  if(!dates.length){document.getElementById('loadingIndicator').textContent='Ingen data';return;}
+  // A day is a column when it has settled prices or, ahead of today, a
+  // forecast. Trailing days with neither are dropped rather than drawn empty.
+  const cols=tableWindow().map(d=>priceData[d]?{d,fc:false}:fcDays[d]?{d,fc:true}:{d,fc:false,empty:true});
+  while(cols.length&&cols[cols.length-1].empty)cols.pop();
+  if(!cols.some(c=>!c.empty)){document.getElementById('loadingIndicator').textContent='Ingen data';return;}
+  const src=c=>c.fc?fcDays[c.d]:priceData[c.d];
+  const anyFc=cols.some(c=>c.fc);
   const today=fmt(new Date()),tbl=document.getElementById('priceTable');
   const dk=isDark();
   // Compute dynamic color range from all visible prices (incl. forecast)
   const allPrices=[];
-  dates.forEach(d=>{for(let hr=0;hr<24;hr++){const raw=priceData[d]?.[hr];if(raw!==undefined)allPrices.push(cvt(raw,hr,d));}});
-  if(showFc)for(let hr=0;hr<24;hr++){const raw=fcTomorrow.hours[hr];if(raw!=null)allPrices.push(cvt(raw,hr,fcTomorrow.date));}
+  cols.forEach(c=>{const m=src(c);if(m)for(let hr=0;hr<24;hr++){const raw=m[hr];if(raw!=null)allPrices.push(cvt(raw,hr,c.d));}});
   setColorRange(allPrices);
   // Adaptive text classes
   const thSub=dk?'text-gray-500':'text-gray-400';
@@ -4017,27 +4029,39 @@ function renderTable(){
   const emptyBg=dk?'bg-gray-800':'bg-gray-100';
 
   let h='';
-  const fd=new Date(dates[0]);
-  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal"></th><th colspan="${dates.length+(showFc?1:0)}" class="text-xs ${thSub} font-normal">${MON_FULL[fd.getMonth()]} ${fd.getFullYear()}</th></tr>`;
+  const f0=new Date(cols[0].d),f1=new Date(cols[cols.length-1].d);
+  const monthLbl=f0.getMonth()===f1.getMonth()?`${MON_FULL[f0.getMonth()]} ${f0.getFullYear()}`
+    :f0.getFullYear()===f1.getFullYear()?`${MON_FULL[f0.getMonth()]} – ${MON_FULL[f1.getMonth()]} ${f1.getFullYear()}`
+    :`${MON_FULL[f0.getMonth()]} ${f0.getFullYear()} – ${MON_FULL[f1.getMonth()]} ${f1.getFullYear()}`;
+  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal"></th><th colspan="${cols.length}" class="text-xs ${thSub} font-normal">${monthLbl}</th></tr>`;
   h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Dag</th>`;
-  dates.forEach(d=>{const dt=new Date(d);h+=`<th class="px-0.5 sm:px-1.5 ${thDay}">${dt.getDate()}</th>`;});
-  if(showFc)h+=`<th class="px-0.5 sm:px-1.5 ${thDay}">${new Date(fcTomorrow.date).getDate()}</th>`;
+  cols.forEach(c=>{h+=`<th class="px-0.5 sm:px-1.5 ${thDay}"${c.fc?' style="color:#0e9888"':''}>${new Date(c.d).getDate()}</th>`;});
   h+=`</tr><tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Time</th>`;
-  dates.forEach(d=>{const dt=new Date(d);const l=(S.weekOffset===0&&d===today)?'I dag':DAY[dt.getDay()];const isToday=S.weekOffset===0&&d===today;h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${isToday?thDay:thSub}">${l}</th>`;});
-  if(showFc)h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal" style="color:#0e9888">i morgen<br><span style="font-size:.6rem;font-weight:600;letter-spacing:.04em">PROGNOSE</span></th>`;
+  cols.forEach(c=>{
+    const dow=DAY[new Date(c.d).getDay()];
+    if(c.fc)h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal" style="color:#0e9888">${dow}<br><span style="font-size:.55rem;font-weight:600;letter-spacing:.04em">PROGNOSE</span></th>`;
+    else h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${c.d===today?thDay:thSub}">${c.d===today?'I dag':dow}</th>`;
+  });
   h+='</tr>';
   const curHour=new Date().getHours();
   const isMobile=window.innerWidth<640;
   for(let hr=0;hr<24;hr++){
     const lb=isMobile?String(hr):String(hr).padStart(2,'0')+'-'+String(hr+1===24?0:hr+1).padStart(2,'0');
-    const isNow=S.weekOffset===0&&hr===curHour;
     h+=`<tr><td class="pr-1 sm:pr-3 text-right text-xs ${tdHour} py-0.5">${lb}</td>`;
-    dates.forEach(d=>{const raw=priceData[d]?.[hr];if(raw!==undefined){const p=cvt(raw,hr,d),b2=bg(p),f2=fg(p),v=p.toFixed(2).replace('.',',');const isCurCell=isNow&&S.weekOffset===0&&d===today;h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center cursor-pointer hover:ring-2 hover:ring-inset hover:ring-white/60 active:opacity-80 transition-opacity${isCurCell?' ring-2 ring-inset ring-gray-800/40 dark:ring-white/50':''}" style="background:${b2};color:${f2}" data-d="${d}" data-hr="${hr}" onclick="showPriceDetail(this)">${v}</td>`;}else h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;});
-    if(showFc){const raw=fcTomorrow.hours[hr];if(raw!=null){const p=cvt(raw,hr,fcTomorrow.date),b2=bg(p),f2=fg(p);h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center" style="background:${b2};color:${f2};opacity:.72" title="Prognose — faktiske priser kommer ca. kl. 13">${p.toFixed(2).replace('.',',')}</td>`;}else h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;}
+    cols.forEach(c=>{
+      const raw=src(c)?.[hr];
+      if(raw==null){h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;return;}
+      const p=cvt(raw,hr,c.d),b2=bg(p),f2=fg(p),v=p.toFixed(2).replace('.',',');
+      if(c.fc){h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center" style="background:${b2};color:${f2};opacity:.72" title="Prognose — ikke en faktisk børspris">${v}</td>`;return;}
+      const isCurCell=hr===curHour&&c.d===today;
+      h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center cursor-pointer hover:ring-2 hover:ring-inset hover:ring-white/60 active:opacity-80 transition-opacity${isCurCell?' ring-2 ring-inset ring-gray-800/40 dark:ring-white/50':''}" style="background:${b2};color:${f2}" data-d="${c.d}" data-hr="${hr}" onclick="showPriceDetail(this)">${v}</td>`;
+    });
     h+='</tr>';
   }
   tbl.innerHTML=h;document.getElementById('loadingIndicator').style.display='none';document.getElementById('tableWrapper').style.display='block';
-  const note=document.getElementById('fcTableNote');if(note)note.style.display=showFc?'':'none';
+  const note=document.getElementById('fcTableNote');if(note)note.style.display=anyFc?'':'none';
+  const tt=document.getElementById('tableTitle');
+  if(tt)tt.textContent=S.weekOffset===0?'Time for time · 4 dage tilbage, 3 døgn frem':'Time for time · tidligere priser';
   updatePricesAnswer();
 }
 
@@ -4123,7 +4147,11 @@ function changeWeek(delta){
 function updateWeekNav(){
   const lbl=document.getElementById('weekLabel');
   const btn=document.getElementById('nextWeekBtn');
-  if(lbl)lbl.textContent=S.weekOffset===0?'Denne uge':S.weekOffset===-1?'Forrige uge':`${Math.abs(S.weekOffset)} uger siden`;
+  if(lbl){
+    const w=tableWindow(),a=new Date(w[0]),b=new Date(w[7]);
+    lbl.textContent=a.getMonth()===b.getMonth()?`${a.getDate()}.–${b.getDate()}. ${MON[b.getMonth()]}`
+      :`${a.getDate()}. ${MON[a.getMonth()]} – ${b.getDate()}. ${MON[b.getMonth()]}`;
+  }
   if(btn)btn.disabled=S.weekOffset>=0;
 }
 

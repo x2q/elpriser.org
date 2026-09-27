@@ -265,6 +265,36 @@ test('server: every top-level piece the renderer calls still exists', () => {
   }
 });
 
+test('price table: 4 days back, today, 3 ahead — and paging neither skips nor repeats', () => {
+  // Lifted out of index.html and run as-is, so what is tested is what ships.
+  const vm = require('vm');
+  const fmtSrc = INDEX.match(/const fmt=d=>[^\n]+/)[0];
+  const winSrc = INDEX.slice(INDEX.indexOf('function tableWindow(){'),
+                             INDEX.indexOf('function renderTable(){'));
+  assert.ok(winSrc.length > 50, 'tableWindow not found');
+  const ctx = { S: { weekOffset: 0 } };
+  vm.createContext(ctx);
+  vm.runInContext(fmtSrc + '\n' + winSrc + '\nglobalThis.tw = tableWindow; globalThis.f = fmt;', ctx);
+  const at = k => { ctx.S.weekOffset = k; return [...ctx.tw()]; };
+  const day = (s, n) => { const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() + n); return ctx.f(d); };
+  const w0 = at(0), today = ctx.f(new Date());
+  assert.equal(w0.length, 8, 'the window is not eight days');
+  assert.equal(w0[4], today, `today is not the fifth column: ${w0.join(' ')}`);
+  assert.equal(w0[0], day(today, -4), 'the window does not start four days back');
+  assert.equal(w0[7], day(today, 3), 'the window does not end three days ahead');
+  for (let k = 0; k > -5; k--) {
+    const cur = at(k), prev = at(k - 1);
+    cur.forEach((d, i) => { if (i) assert.equal(d, day(cur[i - 1], 1), `gap inside window ${k}: ${cur.join(' ')}`); });
+    assert.equal(prev[7], day(cur[0], -1), `paging from ${k} to ${k - 1} skips or repeats a day`);
+  }
+  // The automation page reuses priceData and plans over its last seven days,
+  // so the current window's fetch must still reach seven days back.
+  const loader = INDEX.slice(INDEX.indexOf('async function loadPriceData('), INDEX.indexOf('function tableWindow(){'));
+  assert.ok(/if\(S\.weekOffset===0\)\{[^\n]*s\.setDate\(s\.getDate\(\)-7\)/.test(loader),
+    'the current window no longer fetches seven days back');
+  assert.ok(!/fcTomorrow|showFc/.test(INDEX), 'leftovers of the single forecast column');
+});
+
 test('homepage: the hero curve has a price scale that lines up', () => {
   // The scale sits in a gutter left of the curve. The CO2 strip below takes the
   // same gutter, or its hours stop lining up with the price curve's.
