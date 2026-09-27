@@ -714,6 +714,19 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .fc-badge{flex-shrink:0;font-size:.58rem;font-weight:700;color:#1e9e4a;background:rgba(52,199,89,.14);padding:3px 7px;border-radius:7px;white-space:nowrap}
   .dark .fc-badge{color:#4cd964}
   .fc-b-short{display:none}
+  /* Location/view selector — took the globe icon's place in the nav. */
+  .nav-select{max-width:15rem;font-size:.8rem;font-weight:500;padding:.3rem 1.6rem .3rem .6rem;
+    border:1px solid #e2e7f0;border-radius:.6rem;background:#fff;color:#3d495c;cursor:pointer;
+    font-family:inherit;appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235c6675' stroke-width='2.5' stroke-linecap='round'%3e%3cpath d='m6 9 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat:no-repeat;background-position:right .45rem center;background-size:.7rem}
+  .nav-select:hover{border-color:#1b57f5;color:#1b57f5}
+  .site-links+.nav-select{margin-left:.75rem}
+  .site-logo+.nav-select{margin-left:auto}
+  .dark .nav-select{background-color:#131b29;border-color:#242e44;color:#c2cce0}
+  .dark .nav-select:hover{border-color:#6d9aff;color:#6d9aff}
+  @media (max-width:900px){.nav-select{max-width:9.5rem}}
+  @media (max-width:640px){.nav-select{max-width:11rem;margin-left:auto}}
 
   /* ── Mobil (designoplæg 01): svaret centreret, app-agtig tab-bar ──
      The mockup's thesis is that nobody reads 24 numbers on a phone — the
@@ -844,7 +857,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <a href="/dk1" data-nav="dk1">DK1 Vest</a>
       <a href="/dk2" data-nav="dk2">DK2 Øst</a>
       <a href="/prognose" data-nav="prognose">Prognose</a>
-      <button onclick="openGlobe()" data-nav="zone" class="globe-btn" aria-label="Choose price area"><svg width="17" height="17" class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></button>
       <a href="/tariffer" data-nav="tariffer">Tariffer</a>
       <a href="/automation" data-nav="automation">Automation</a>
       <a href="/api" data-nav="api">API</a>
@@ -866,6 +878,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         </div>
       </div>
     </nav>
+    <select id="priceSelector" onchange="onPriceSelectorChange()" class="nav-select" aria-label="Vælg prisområde og prisvisning"></select>
     <button type="button" class="site-burger" id="burgerBtn" aria-label="Åbn menu" aria-expanded="false" onclick="toggleBurger()">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path id="burgerIcon" d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
@@ -1206,12 +1219,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
 <!-- ═══════ PRICE PAGE ═══════ -->
 <main style="display:none" data-page="prices" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
-  <div class="flex items-center justify-center gap-2 mb-3">
-    <!-- Combined area/net/mode selector -->
-    <select id="priceSelector" onchange="onPriceSelectorChange()"
-      class="flex-1 max-w-xs text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-    </select>
-  </div>
   <!-- SSR: unique per-URL intro (H1 + live-price sentence + net coverage +
        tariff rates + PriceSpecification JSON-LD), injected by functions/[[path]].js -->
   <!--SSR_PRICES_INTRO-->
@@ -2692,6 +2699,7 @@ entities:
     <select id="zNet" onchange="pickNet()" style="display:none"
             class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 max-w-[15rem]"></select>
   </div>
+  <!--SSR_ZONE_INTRO-->
   <div class="subcard">
     <div class="chd2"><span id="zTableTitle">&nbsp;</span><span id="zUnit">&nbsp;</span></div>
     <div id="zLoading" class="text-center py-12 text-gray-400 dark:text-gray-500">
@@ -3283,6 +3291,7 @@ function markTab(){
 }
 function route(){
   markTab();
+  syncPriceSelector();
   let h=decodeURIComponent(location.hash.slice(1));
   if(!h)h=pathToHash(location.pathname);
   // Section not in this page's HTML (server-stripped) → full navigation to
@@ -3604,11 +3613,23 @@ function buildPriceSelector(){
     });
     opts.push(`</optgroup>`);
   });
+  // The globe icon used to open a zone picker; the selector replaces it, so
+  // the other eleven bidding zones have to be reachable from here.
+  opts.push('<optgroup label="── Andre prisområder ──">');
+  Object.entries(ZONES).forEach(([k,z])=>{
+    if(k==='dk1'||k==='dk2')return;
+    opts.push(`<option value="zone:${k}">${z.name} ${z.city}</option>`);
+  });
+  opts.push('</optgroup>');
   sel.innerHTML=opts.join('');
+  syncPriceSelector();
 }
 function syncPriceSelector(){
   const sel=document.getElementById('priceSelector');
-  if(!sel)return;
+  if(!sel||!sel.options.length)return;
+  // On a zone page the selector shows that zone, not a Danish default.
+  const zk=location.pathname.slice(1);
+  if(ZONES[zk]&&zk!=='dk1'&&zk!=='dk2'){sel.value='zone:'+zk;return;}
   // Build the value that matches current state
   let val=`${S.area}/${S.mode}`;
   const net=S.gln?(NETS[S.area]||[]).find(n=>n.gln===S.gln):null;
@@ -3617,7 +3638,14 @@ function syncPriceSelector(){
 }
 function onPriceSelectorChange(){
   const val=document.getElementById('priceSelector').value;
-  if(val){gtag('event','select_price_view',{value:val});location.hash=val;}
+  if(!val)return;
+  gtag('event','select_price_view',{value:val});
+  // A zone is its own page; a DK view is a hash on the price page.
+  if(val.startsWith('zone:')){location.href='/'+val.slice(5);return;}
+  if(dataPageFor(val)&&!document.querySelector('[data-page="prices"]')){
+    location.href=hashToPath(val)+'#'+val;return;
+  }
+  location.hash=val;
 }
 function updateHeader(){
   const al=S.area==='DK1'?'DK1 Vest':'DK2 Øst';

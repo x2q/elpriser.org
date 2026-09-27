@@ -15,7 +15,8 @@
     "test:urls": "node test-urls.js",
     "test:shelly": "node test-shelly-script.mjs",
     "test:flex": "node test-flex-api.mjs",
-    "test:forecast": "node test-forecast-rows.mjs"
+    "test:forecast": "node test-forecast-rows.mjs",
+    "test:zone": "node test-zone-intro.mjs"
   },
   "devDependencies": {
     "playwright": "^1.59.1"

@@ -717,6 +717,8 @@ export async function onRequest(context) {
       opts.pricesIntro = { area: url.pathname.slice(1).toUpperCase(), net: null };
     }
     if (url.pathname === '/tariffer') opts.tariffFacts = true;
+    const zoneKey = url.pathname.slice(1);
+    if (SSR_ZONES[zoneKey]) opts.zone = zoneKey;
     return renderSPA(context, url.pathname, page, opts);
   }
 
@@ -848,6 +850,87 @@ function buildForecastRows(fc, todayStr) {
                         : `<span class="fc-spacer"></span>`)
       + `</div>`;
   }).join('');
+}
+
+/**
+ * Server-rendered content for the eleven non-Danish bidding zones.
+ *
+ * These pages shipped an empty shell: an <h1> containing &nbsp;, the word
+ * "Loading…", and 85 characters of text in total. They work for a visitor —
+ * the table fills in client-side, correctly localised — but a crawler sees a
+ * blank page, which is why five of them have never been indexed and the rest
+ * rank between 20th and 52nd.
+ *
+ * Only labels that already exist as reviewed translations in index.html's
+ * I18N table are used here. No prose is composed in languages nobody on this
+ * side can check; everything else is dates and numbers.
+ */
+const SSR_ZONES = {
+  no1: { name: 'NO1', city: 'Oslo',         lang: 'no', rate: 11.7, sub: 'øre' },
+  no2: { name: 'NO2', city: 'Kristiansand', lang: 'no', rate: 11.7, sub: 'øre' },
+  no3: { name: 'NO3', city: 'Trondheim',    lang: 'no', rate: 11.7, sub: 'øre' },
+  no4: { name: 'NO4', city: 'Tromsø',       lang: 'no', rate: 11.7, sub: 'øre' },
+  no5: { name: 'NO5', city: 'Bergen',       lang: 'no', rate: 11.7, sub: 'øre' },
+  se1: { name: 'SE1', city: 'Luleå',        lang: 'sv', rate: 11.3, sub: 'öre' },
+  se2: { name: 'SE2', city: 'Sundsvall',    lang: 'sv', rate: 11.3, sub: 'öre' },
+  se3: { name: 'SE3', city: 'Stockholm',    lang: 'sv', rate: 11.3, sub: 'öre' },
+  se4: { name: 'SE4', city: 'Malmö',        lang: 'sv', rate: 11.3, sub: 'öre' },
+  fi:  { name: 'FI',  city: 'Suomi',        lang: 'fi', rate: 1,    sub: 'snt' },
+  nl:  { name: 'NL',  city: 'Nederland',    lang: 'nl', rate: 1,    sub: 'cent' },
+};
+
+const ZONE_T = {
+  no: { eyebrow: 'Strømprisprognose', title: (n, c) => `Strømpriser ${n} ${c}`,
+        table: n => `Neste ${n} døgn`, today: 'I dag', fc: 'prognose', act: 'faktisk' },
+  sv: { eyebrow: 'Elprisprognos', title: (n, c) => `Elpriser ${n} ${c}`,
+        table: n => `Kommande ${n} dygn`, today: 'I dag', fc: 'prognos', act: 'faktisk' },
+  fi: { eyebrow: 'Sähkön hintaennuste', title: (n, c) => `Sähkön hinta ${n} ${c}`,
+        table: n => `Seuraavat ${n} vuorokautta`, today: 'Tänään', fc: 'ennuste', act: 'toteutunut' },
+  nl: { eyebrow: 'Stroomprijsverwachting', title: (n, c) => `Stroomprijzen ${n} ${c}`,
+        table: n => `Komende ${n} dagen`, today: 'Vandaag', fc: 'verwachting', act: 'werkelijk' },
+};
+
+function buildZoneIntro(key, data, todayStr) {
+  const z = SSR_ZONES[key];
+  const t = ZONE_T[z.lang];
+  if (!z || !t) return null;
+
+  // The feed can open on yesterday. Labelling row 0 "today" regardless put the
+  // wrong date under the word, so past days are dropped and the label follows
+  // the date itself.
+  const days = (data.days || []).filter(d => !todayStr || d.date >= todayStr).map(d => {
+    const ps = (d.prices || []).map(p => p.eur_mwh).filter(v => v != null);
+    if (!ps.length) return null;
+    // EUR/MWh to the zone's own sub-unit per kWh, as the client does.
+    const conv = v => v / 1000 * z.rate * 100;
+    return { date: d.date, actual: d.actual === true || d.type === 'actual',
+             lo: conv(Math.min(...ps)), hi: conv(Math.max(...ps)) };
+  }).filter(Boolean);
+  if (days.length < 2) return null;
+
+  const dec = Math.max(...days.map(d => Math.abs(d.hi))) >= 100 ? 0 : 1;
+  const f = v => v.toFixed(dec).replace('.', ',');
+  const wd = new Intl.DateTimeFormat(z.lang, { weekday: 'long', timeZone: 'UTC' });
+  const md = new Intl.DateTimeFormat(z.lang, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+  const rows = days.map(d => {
+    const dt = new Date(d.date + 'T12:00:00Z');
+    const name = d.date === todayStr ? t.today
+      : wd.format(dt).replace(/^./, c => c.toUpperCase());
+    return `<tr><td class="py-1.5 pr-3 font-medium text-gray-800 dark:text-gray-200">${name}`
+      + `<span class="text-gray-400 dark:text-gray-500"> · ${md.format(dt)}</span></td>`
+      + `<td class="py-1.5 pr-3 text-xs text-gray-500 dark:text-gray-400">${d.actual ? t.act : t.fc}</td>`
+      + `<td class="py-1.5 text-right tabular text-gray-700 dark:text-gray-300">`
+      + `${f(d.lo)} – ${f(d.hi)}</td></tr>`;
+  }).join('');
+
+  return {
+    eyebrow: t.eyebrow,
+    title: t.title(z.name, z.city),
+    html: `<section class="mb-4"><h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">`
+      + `${t.table(days.length)} · ${z.sub}/kWh</h2>`
+      + `<table class="w-full text-sm"><tbody>${rows}</tbody></table></section>`,
+  };
 }
 
 /** Build the live-price JSON-LD block + Reader-summary prose. */
@@ -1102,6 +1185,24 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   if (opts.pricesIntro) {
     html = html.replace('<!--SSR_PRICES_INTRO-->',
       await buildPricesIntro(context, opts.pricesIntro.area, opts.pricesIntro.net));
+  }
+  if (opts.zone) {
+    const origin = new URL(context.request.url).origin;
+    const data = await fetch(`${origin}/api/nordic?zone=${opts.zone}`)
+      .then(r => (r.ok ? r.json() : null)).catch(() => null);
+    const todayDk = new Intl.DateTimeFormat('en-CA',
+      { timeZone: 'Europe/Copenhagen' }).format(new Date());
+    const intro = data && buildZoneIntro(opts.zone, data, todayDk);
+    if (intro) {
+      // The client rewrites these two on load; filling them here is what puts
+      // a real heading in the HTML a crawler is served.
+      // Tag-agnostic: promoteSectionTitle has already turned the section's
+      // h2 into the page's h1 by the time this runs, so matching on <h2> here
+      // silently did nothing and the heading stayed &nbsp;.
+      html = html.replace('id="zEyebrow">&nbsp;<', `id="zEyebrow">${intro.eyebrow}<`);
+      html = html.replace('id="zTitle">&nbsp;<', `id="zTitle">${intro.title}<`);
+      html = html.replace('<!--SSR_ZONE_INTRO-->', intro.html);
+    }
   }
   if (opts.tariffFacts) {
     html = html.replace('<!--SSR_TARIFF_FACTS-->', await buildTariffFacts(context));
