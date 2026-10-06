@@ -32,7 +32,10 @@ import pandas as pd
 # gitignored-but-present data-backup/ folder still blocks deploys once it
 # has anything in it over Pages' 25MiB per-file limit (learned the hard way).
 OUT_DIR = os.environ.get("BACKUP_OUT_DIR", os.path.expanduser("~/elpriser-data-backup"))
-JAO_TOKEN = os.environ.get("JAO_TOKEN", "66d45fc6-a2ce-499b-9d81-b92de7c8bb97")
+# No default, deliberately. This line once carried the token as a fallback value
+# and the repository is public; it is read from the environment only
+# (~/.config/elpriser.env on the machine that runs this).
+JAO_TOKEN = os.environ["JAO_TOKEN"]
 ENTSOE_TOKEN = os.environ["ENTSOE_TOKEN"]
 DE_LU_EIC = "10Y1001A1001A82H"
 DK_EIC = {"DK1": "10YDK-1--------W", "DK2": "10YDK-2--------M"}

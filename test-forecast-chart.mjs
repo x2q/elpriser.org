@@ -49,8 +49,8 @@ ok(serverCopy.length > 2000, 'fcChartHTML blev faktisk hentet ud', `${serverCopy
 
 const ctx = { console, Intl, Date, Math };
 vm.createContext(ctx);
-vm.runInContext(serverCopy + '\nglobalThis.chart = fcChartHTML; globalThis.ticks = fcTicks;', ctx);
-const chart = ctx.chart, ticks = (a, b) => [...ctx.ticks(a, b)];
+vm.runInContext(serverCopy + '\nglobalThis.chart = fcChartHTML; globalThis.ticks = fcTicks; globalThis.week = fcWeekHTML;', ctx);
+const chart = ctx.chart, week = ctx.week, ticks = (a, b) => [...ctx.ticks(a, b)];
 
 const day = (date, lo, hi, type = 'forecast') => ({
   date, type,
@@ -230,6 +230,36 @@ const span = (n, los, his, types = []) => ({
   ok(/>0–179</.test(h) && !/-0[–<]/.test(h), 'et beløb der runder til nul vises uden minus', h.slice(-600));
   const g = span(3, [-2.4, 60, 30], [179, 180, 90], ['actual', 'actual']);
   ok(/>-2–179</.test(chart(g.days, TODAY, 11, { dec: 0 })), 'rigtige negative priser beholder fortegnet');
+}
+
+// ── The week as text (fcWeekHTML, /prognose) ──────────────────────────────
+{
+  const f = span(9, [0.15, 1.40, 1.02, 0.71, 0.13, 0.42, 0.38, 0.5, 0.6], [1.86, 3.35, 2.48, 1.74, 0.86, 1.71, 1.66, 1.9, 2.0], ['actual', 'actual']);
+  // put the cheapest hour of day 0 somewhere other than hour 0 so the column is tested
+  f.days[0].prices = f.days[0].prices.map(p => ({ ...p, price: p.hour === 14 ? 0.15 : 1 + p.hour / 100 }));
+  const h = week(f.days, TODAY, 7);
+  const rows = h.split('<tr><th scope="row">').slice(1);
+  ok(rows.length === 7, 'syv rækker, ikke ti', `${rows.length}`);
+  ok(/^I dag<small>27\. sep<\/small>/.test(rows[0]) && /^I morgen<small>28\. sep<\/small>/.test(rows[1]), 'i dag og i morgen, med dato');
+  ok(/^Tirsdag<small>29\. sep/.test(rows[2]), 'tredje dag får ugedag');
+  ok(/<td>0,15–1,23<\/td><td>kl\. 14–15<\/td>/.test(rows[0]), 'spænd og billigste time står som tekst', rows[0]);
+  ok(/class="real">Børspris/.test(rows[1]) && /class="fc">Prognose/.test(rows[2]), 'børspris og prognose er mærket');
+  ok(/<th scope="col">Billigst<\/th>/.test(h) && /<th scope="col">Spænd<\/th>/.test(h), 'kolonnerne har overskrifter');
+  ok(!/<th scope="row">[^<]*<small>[^<]*<\/small><\/th><td>[^<]*NaN/.test(h) && !/NaN|Infinity/.test(h), 'ingen NaN');
+
+  // The feed opens on yesterday: "I dag" is a date, not row 0.
+  const y = { days: [day('2026-09-26', 0.1, 1.1, 'actual'), ...span(3, [0.2, 0.3, 0.4], [1.2, 1.3, 1.4], ['actual']).days] };
+  const hy = week(y.days, TODAY, 7);
+  ok(/^I dag<small>27\. sep/.test(hy.split('<tr><th scope="row">')[1]) && !/26\. sep/.test(hy), 'gårsdagen er ikke med');
+
+  // A hole ends the list rather than closing up.
+  const holed = span(5, [0.5, 0.7, 0.9, 1.1, 1.3], [1.5, 1.7, 1.9, 2.1, 2.3], ['actual']);
+  holed.days[2].prices = holed.days[2].prices.map(p => ({ ...p, price: null }));
+  ok((week(holed.days, TODAY, 7).match(/<tr><th scope="row">/g) || []).length === 2, 'et hul afkorter listen i stedet for at lime døgn sammen');
+  ok(week([], TODAY, 7) === '' && week(span(1, [0.5], [1.5]).days, TODAY, 7) === '', 'tomt eller ét døgn giver ingenting');
+  ok((week(f.days, TODAY, 3).match(/<tr><th scope="row">/g) || []).length === 3, 'antallet af dage kan begrænses');
+  const neg = span(3, [-0.004, 0.3, 0.4], [1, 1, 1], ['actual']);
+  ok(/<td>0,00–1,00<\/td>/.test(week(neg.days, TODAY, 7)) && !/-0,00/.test(week(neg.days, TODAY, 7)), 'et beløb der runder til nul vises uden minus');
 }
 
 console.log(`${pass} beståede, ${fails.length} fejl`);

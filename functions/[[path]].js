@@ -21,12 +21,12 @@ const SEO_PAGES = {
   // is spot + Energinet's tariffs + elafgift + moms, NOT the local nettarif,
   // which depends on the grid company; title and description must not say it.
   '/dk1': {
-    title: 'Elpriser DK1 Vest i dag — elpris og spotpris lige nu (Jylland og Fyn)',
+    title: 'Elpris Vest (DK1) i dag — spotpris og afgifter time for time',
     description: 'Aktuel elpris lige nu for DK1 (Vestdanmark) — time for time for Jylland og Fyn, inkl. Energinets tariffer, elafgift og moms. Vælg dit netselskab for prisen med nettarif, eller se den rene spotpris.',
     hash: '#DK1/inkl_alt',
   },
   '/dk2': {
-    title: 'Elpriser DK2 Øst i dag — elpris og spotpris lige nu (Sjælland)',
+    title: 'Elpris Øst (DK2) i dag — spotpris og afgifter time for time',
     description: 'Aktuel elpris lige nu for DK2 (Østdanmark) — time for time for Sjælland, Lolland-Falster og Bornholm, inkl. Energinets tariffer, elafgift og moms. Vælg dit netselskab for prisen med nettarif, eller se den rene spotpris.',
     hash: '#DK2/inkl_alt',
   },
@@ -115,8 +115,13 @@ const SEO_PAGES = {
     // The page shows ten days, and every forecast day comes from the daily-
     // trained model (weather forecasts for wind and sun, plus the same weekday
     // over the last four weeks), not "historical price patterns" alone.
-    title: 'Elprisprognose — forventede elpriser time for time de næste 10 døgn',
-    description: 'Forventede elpriser for DK1 og DK2 time for time de næste 10 døgn. Prognosen laves dagligt af en maskinlæringsmodel ud fra vejrprognoser for vind og sol og prisen samme ugedag de seneste fire uger — og skifter til de faktiske børspriser, når de offentliggøres ca. kl. 13.',
+    // "elpriser prognose 7 dage" is the biggest query this page ranks for (667
+    // impressions, 49 clicks in Search Console's three months to 2026-10-04,
+    // position 6.5), and the first rewrite of this title — "…de næste 10 døgn" —
+    // dropped the words people type. Both are true: the page forecasts ten days,
+    // and the first seven are in the list and the curve above its table.
+    title: 'Elpriser prognose 7 dage — time for time, op til 10 døgn frem',
+    description: 'Elpriser prognose for de næste 7 dage — og op til 10 døgn frem — time for time for DK1 og DK2. Laves dagligt af en maskinlæringsmodel ud fra vejrprognoser for vind og sol. Skifter til faktiske børspriser, når de offentliggøres ca. kl. 13.',
     hash: '#prognose',
   },
   '/api': {
@@ -170,8 +175,11 @@ const SEO_PAGES = {
     hash: '#blog/groennest-og-dyrest',
   },
   '/blog/elafgift-2028': {
-    title: 'Elafgift 2028: Sådan stiger elafgiften igen',
-    description: 'Elafgiften er sænket til 0,8 øre/kWh i 2026-2027, men stiger igen fra 2028. Se de nye satser, hvorfor regeringen endnu ikke har forlænget den lave afgift, og hvad det betyder for din elregning og dine solceller.',
+    // Questions like "kommer elafgiften tilbage" rank this post 1.7–3.6 yet
+    // click at 1.6–2.4 %: the page answers in its first paragraph, the snippet
+    // did not. Title and description now say yes, with the figures from the post.
+    title: 'Elafgift 2028: Elafgiften stiger igen, fra 0,8 til 60+ øre/kWh',
+    description: 'Kommer elafgiften tilbage? Ja — fra 2028 stiger den fra 0,8 til 60,9 øre/kWh (2015-prisniveau, pristalsreguleret). Regeringen har endnu ikke planer om at forlænge den lave afgift. Se satserne og hvad det koster dig.',
     hash: '#blog/elafgift-2028',
   },
 };
@@ -898,6 +906,47 @@ function fcYaxis(ticks, Y, H, dec){
     return '<span style="top:'+(Y(v)/H*100).toFixed(2)+'%">'+s.replace('.',',')+'</span>';
   }).join('');
 }
+/** The next days as text, one row per day: range and cheapest hour. The curve
+ *  is a picture; this is what a crawler — and a reader who wants the week at a
+ *  glance — can actually read. Same contiguity rule as the curve: it starts on
+ *  today and stops at the first missing day, so a hole never closes up and
+ *  shifts "I morgen" onto the wrong date. */
+function fcWeekHTML(days, todayStr, n){
+  var WD=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+  var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  var f2=function(v){var s=v.toFixed(2);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',',');};
+  var hh=function(h){return (h<10?'0':'')+h;};
+  var dayNo=function(x){
+    return Math.round((Date.parse(x+'T12:00:00Z')-Date.parse(todayStr+'T12:00:00Z'))/86400000);};
+  var rows='',got=0;
+  for(var k=0;k<days.length&&got<n;k++){
+    var d=days[k];
+    if(!d||!d.date||!d.prices)continue;
+    var i=dayNo(d.date);
+    if(i<0)continue;
+    if(i!==got)break;
+    var lo=null,hi=null,loH=0;
+    for(var p=0;p<d.prices.length;p++){
+      var pr=d.prices[p], v=pr&&pr.price!=null?pr.price:null;
+      if(v==null)continue;
+      if(lo==null||v<lo){lo=v;loH=pr.hour!=null?pr.hour:p;}
+      if(hi==null||v>hi)hi=v;
+    }
+    if(lo==null)break;
+    var dt=new Date(d.date+'T12:00:00Z');
+    var label=got===0?'I dag':got===1?'I morgen':WD[dt.getUTCDay()];
+    var real=d.type==='actual';
+    rows+='<tr><th scope="row">'+label+'<small>'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+'</small></th>'
+      +'<td>'+f2(lo)+'–'+f2(hi)+'</td>'
+      +'<td>kl. '+hh(loH)+'–'+hh((loH+1)%24)+'</td>'
+      +'<td class="'+(real?'real':'fc')+'">'+(real?'Børspris':'Prognose')+'</td></tr>';
+    got++;
+  }
+  if(got<2)return '';
+  return '<table class="fcweek"><thead><tr><th scope="col">Dag</th><th scope="col">Spænd</th>'
+    +'<th scope="col">Billigst</th><th scope="col">Type</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
 // `o` is optional and only the zone pages pass it: their labels, date format,
 // unit and decimals come from the zone's own locale and currency. Without it
 // the output is the Danish chart, byte for byte as before.
@@ -1290,7 +1339,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v50');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v52');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1453,6 +1502,9 @@ async function renderSPA(context, pathname, meta, opts = {}) {
       const todayDk = new Intl.DateTimeFormat('en-CA', cph).format(new Date());
       const nowH = +new Intl.DateTimeFormat('en-GB', { ...cph, hour: '2-digit', hour12: false }).format(new Date());
       html = html.replace('<!--SSR_PROGNOSE_CHART-->', fcChartHTML(fc.days || [], todayDk, nowH));
+      // The next seven days as text — what "elpriser prognose 7 dage" asks for,
+      // and the part of the page's ten-day forecast a crawler can otherwise not read.
+      html = html.replace('<!--SSR_PROGNOSE_WEEK-->', fcWeekHTML(fc.days || [], todayDk, 7));
     }
   }
   // Zone pages are served in the local language of that bidding zone, so the

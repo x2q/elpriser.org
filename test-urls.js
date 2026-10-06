@@ -223,7 +223,13 @@ async function main() {
   const se3 = await get('/se3');
   check(!/hreflang=/.test(se3.body.replace(/<!--[\s\S]*?-->/g, '')), '/se3: ingen hreflang-klynge');
   check(/<html lang="sv"/.test(se3.body), '/se3: html lang="sv"');
-  check(/<title>Elprisprognose — forventede elpriser time for time de næste 10 døgn<\/title>/.test(prog.body), '/prognose: titel siger 10 døgn');
+  check(/<title>Elpriser prognose 7 dage — time for time, op til 10 døgn frem<\/title>/.test(prog.body), '/prognose: titel har "7 dage" og de sande 10 døgn');
+  // Count inside the week container: the page's own script carries the same
+  // markup as a string literal, which is not a row anyone can read.
+  const weekHtml = prog.body.slice(prog.body.indexOf('id="prognoseWeek">'), prog.body.indexOf('id="prognoseWeek">') + 4000);
+  check((weekHtml.match(/<tr><th scope="row">/g) || []).length === 7, '/prognose: syv dage som tekst i HTML\'en');
+  check(/<title>Elafgift 2028: Elafgiften stiger igen/.test((await get('/blog/elafgift-2028')).body), 'elafgift-indlægget: titlen svarer ja');
+  check(/<title>Elpris Vest \(DK1\) i dag/.test((await get('/dk1')).body), '/dk1: titlen starter med "Elpris Vest"');
   const llms = await get('/llms.txt');
   check(!/7 dage|7-day/.test(llms.body) && /elpriser\.org\/se3\)/.test(llms.body), 'llms.txt: 10 døgn og zone-siderne');
   const home2 = await get('/');

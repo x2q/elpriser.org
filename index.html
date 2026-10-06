@@ -388,6 +388,21 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .yax span{position:absolute;right:.4rem;transform:translateY(-50%);font-size:.6rem;color:#8a95a8;font-variant-numeric:tabular-nums;white-space:nowrap}
   .dark .yax span{color:#6b778a}
   .fc-prices{padding:0;margin:.25rem 0 1.5rem}
+  /* The week as text on /prognose: one row per day. */
+  .fcweek{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.82rem}
+  .fcweek th,.fcweek td{padding:.55rem .5rem;text-align:right;border-top:1px solid #e2e7f0;white-space:nowrap}
+  .fcweek thead th{border-top:none;font-size:.6rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#5c6675}
+  .fcweek th[scope=row],.fcweek thead th:first-child{text-align:left}
+  .fcweek th[scope=row]{font-weight:600;color:#0e1421}
+  .fcweek th[scope=row] small{display:block;font-size:.66rem;font-weight:500;color:#5c6675}
+  .fcweek td.real{color:#1b57f5;font-weight:600;font-size:.7rem}
+  .fcweek td.fc{color:#0e9888;font-weight:600;font-size:.7rem}
+  .dark .fcweek th,.dark .fcweek td{border-color:#223046}
+  .dark .fcweek th[scope=row]{color:#e8edf5}
+  .dark .fcweek th[scope=row] small,.dark .fcweek thead th{color:#8a95a8}
+  .dark .fcweek td.real{color:#6d9aff}
+  /* 375 px leaves ~320 px inside the card: tighter cells keep the table in it. */
+  @media (max-width:440px){.fcweek th,.fcweek td{padding:.55rem .3rem}.fcweek{font-size:.78rem}}
   .fc-head .fc-title{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;margin:0;color:#0e1421}
   .dark .fc-head .fc-title{color:#e8edf5}
   /* Measured rendered heights: the three day cards wrap to two rows below
@@ -1604,7 +1619,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
   <div class="flex items-center justify-between mb-3">
     <div>
-      <div class="page-eyebrow">Forventede elpriser de næste 10 døgn</div>
+      <div class="page-eyebrow">Forventede elpriser: næste 7 dage og op til 10 døgn frem</div>
       <h2 class="page-title">Elprisprognose</h2>
     </div>
     <div class="flex items-center gap-1">
@@ -1628,6 +1643,13 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   <div class="flex gap-4 text-xs text-gray-500 dark:text-gray-400 mb-3">
     <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded border-2 border-brand-400"></span> Faktisk pris</span>
     <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded border-2 border-dashed border-gray-400"></span> Prognose</span>
+  </div>
+  <!-- The week at a glance. Server-drawn for the default view (DK1, inkl alt)
+       so the numbers are in the HTML, then redrawn from the same response as
+       the table below it. -->
+  <div class="subcard mb-4" id="prognoseWeekWrap">
+    <div class="chd2"><span>Næste 7 dage, dag for dag</span><span>DKK/kWh</span></div>
+    <div id="prognoseWeek"><!--SSR_PROGNOSE_WEEK--></div>
   </div>
   <!-- Table -->
   <div class="subcard">
@@ -3642,9 +3664,9 @@ function route(){
   if(h==='blog/biler-ladere-v2h-v2g'){document.querySelector('[data-page="blog-biler-ladere-v2h-v2g"]').classList.add('active');document.title='Elbiler og ladere med V2H/V2G — Komplet liste 2026';pv('Blog: Biler & ladere V2H/V2G','/blog/biler-ladere-v2h-v2g');return;}
   if(h==='blog/hvornaar-er-stroemmen-billigst'){document.querySelector('[data-page="blog-hvornaar-er-stroemmen-billigst"]').classList.add('active');document.title='Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret';pv('Blog: Hvornår billigst','/blog/hvornaar-er-stroemmen-billigst');return;}
   if(h==='blog/groennest-og-dyrest'){document.querySelector('[data-page="blog-groennest-og-dyrest"]').classList.add('active');document.title='Hvorfor er strømmen grønnest netop i den dyreste time?';pv('Blog: Grønnest og dyrest','/blog/groennest-og-dyrest');return;}
-  if(h==='blog/elafgift-2028'){document.querySelector('[data-page="blog-elafgift-2028"]').classList.add('active');document.title='Elafgift 2028: Sådan stiger elafgiften igen';pv('Blog: Elafgift 2028','/blog/elafgift-2028');return;}
+  if(h==='blog/elafgift-2028'){document.querySelector('[data-page="blog-elafgift-2028"]').classList.add('active');document.title='Elafgift 2028: Elafgiften stiger igen, fra 0,8 til 60+ øre/kWh';pv('Blog: Elafgift 2028','/blog/elafgift-2028');return;}
   if(ZONES[h]&&h!=='dk1'&&h!=='dk2'){document.querySelector('[data-page="zone"]').classList.add('active');const z=ZONES[h];document.title=I18N[z.lang].title(z)+' — elpriser.org';pv('Zone '+z.name,'/'+h);loadZone(h);return;}
-  if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elprisprognose — forventede elpriser time for time de næste 10 døgn';pv('Prognose','/prognose');loadForecastPage();return;}
+  if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elpriser prognose 7 dage — time for time, op til 10 døgn frem';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){location.hash='';return;}
   S.area=area;S.mode=mode;S.weekOffset=0;
@@ -3748,6 +3770,47 @@ function fcYaxis(ticks, Y, H, dec){
     return '<span style="top:'+(Y(v)/H*100).toFixed(2)+'%">'+s.replace('.',',')+'</span>';
   }).join('');
 }
+/** The next days as text, one row per day: range and cheapest hour. The curve
+ *  is a picture; this is what a crawler — and a reader who wants the week at a
+ *  glance — can actually read. Same contiguity rule as the curve: it starts on
+ *  today and stops at the first missing day, so a hole never closes up and
+ *  shifts "I morgen" onto the wrong date. */
+function fcWeekHTML(days, todayStr, n){
+  var WD=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+  var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  var f2=function(v){var s=v.toFixed(2);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',',');};
+  var hh=function(h){return (h<10?'0':'')+h;};
+  var dayNo=function(x){
+    return Math.round((Date.parse(x+'T12:00:00Z')-Date.parse(todayStr+'T12:00:00Z'))/86400000);};
+  var rows='',got=0;
+  for(var k=0;k<days.length&&got<n;k++){
+    var d=days[k];
+    if(!d||!d.date||!d.prices)continue;
+    var i=dayNo(d.date);
+    if(i<0)continue;
+    if(i!==got)break;
+    var lo=null,hi=null,loH=0;
+    for(var p=0;p<d.prices.length;p++){
+      var pr=d.prices[p], v=pr&&pr.price!=null?pr.price:null;
+      if(v==null)continue;
+      if(lo==null||v<lo){lo=v;loH=pr.hour!=null?pr.hour:p;}
+      if(hi==null||v>hi)hi=v;
+    }
+    if(lo==null)break;
+    var dt=new Date(d.date+'T12:00:00Z');
+    var label=got===0?'I dag':got===1?'I morgen':WD[dt.getUTCDay()];
+    var real=d.type==='actual';
+    rows+='<tr><th scope="row">'+label+'<small>'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+'</small></th>'
+      +'<td>'+f2(lo)+'–'+f2(hi)+'</td>'
+      +'<td>kl. '+hh(loH)+'–'+hh((loH+1)%24)+'</td>'
+      +'<td class="'+(real?'real':'fc')+'">'+(real?'Børspris':'Prognose')+'</td></tr>';
+    got++;
+  }
+  if(got<2)return '';
+  return '<table class="fcweek"><thead><tr><th scope="col">Dag</th><th scope="col">Spænd</th>'
+    +'<th scope="col">Billigst</th><th scope="col">Type</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
 // `o` is optional and only the zone pages pass it: their labels, date format,
 // unit and decimals come from the zone's own locale and currency. Without it
 // the output is the Danish chart, byte for byte as before.
@@ -4108,7 +4171,7 @@ function updateHeader(){
     document.title=`Elpris ${S.netName} ${al} i dag — Spotpris inkl. nettarif`;
   } else if(S.mode==='inkl_alt'){
     // Must equal SEO_PAGES' title for /dk1 and /dk2, the view those URLs open in.
-    document.title=`Elpriser ${al} i dag — elpris og spotpris lige nu (${S.area==='DK1'?'Jylland og Fyn':'Sjælland'})`;
+    document.title=`Elpris ${S.area==='DK1'?'Vest':'Øst'} (${S.area}) i dag — spotpris og afgifter time for time`;
   } else {
     document.title=`Elpriser ${al} — ${ml[S.mode]||'Elspot'}`;
   }
@@ -5126,6 +5189,15 @@ function renderPrognoseForecast(days){
   if(!html){wrap.style.display='none';return;}
   el.innerHTML=html;wrap.style.display='';
 }
+/** The week list from the same days the table renders. */
+function renderPrognoseWeek(days){
+  const el=document.getElementById('prognoseWeek'),wrap=document.getElementById('prognoseWeekWrap');
+  if(!el||!wrap)return;
+  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Copenhagen'}).format(new Date());
+  const html=fcWeekHTML(days,today,7);
+  if(!html){wrap.style.display='none';return;}
+  el.innerHTML=html;wrap.style.display='';
+}
 async function loadForecastPage(){
   const loadId=++_fcLoadId;
   const area=document.getElementById('fcArea')?.value||S.area||'DK1';
@@ -5150,6 +5222,7 @@ function renderForecastTable(data){
   const days=data.days||[];
   if(!days.length)return;
   renderPrognoseForecast(days);
+  renderPrognoseWeek(days);
   const allP=[];
   days.forEach(d=>d.prices.forEach(p=>{if(p.price!=null)allP.push(p.price);}));
   setColorRange(allP);

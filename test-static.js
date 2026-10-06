@@ -330,11 +330,11 @@ test('price pages: dropdown, sentence and unit describe the same price in every 
   assert.ok(/'\/dk1': \{[\s\S]*?hash: '#DK1\/inkl_alt'/.test(SRV) && /'\/dk2': \{[\s\S]*?hash: '#DK2\/inkl_alt'/.test(SRV),
     'SEO_PAGES opens /dk1 or /dk2 in a different view than pathToHash');
   // The title the browser sets for that view must be the one the server sent.
-  for (const [a, reg] of [['DK1 Vest', 'Jylland og Fyn'], ['DK2 Øst', 'Sjælland']]) {
-    const t = `Elpriser ${a} i dag — elpris og spotpris lige nu (${reg})`;
+  for (const [a, w] of [['DK1', 'Vest'], ['DK2', 'Øst']]) {
+    const t = `Elpris ${w} (${a}) i dag — spotpris og afgifter time for time`;
     assert.ok(SRV.includes(`title: '${t}'`), `server title for ${a} is not "${t}"`);
   }
-  assert.ok(INDEX.includes("document.title=`Elpriser ${al} i dag — elpris og spotpris lige nu (${S.area==='DK1'?'Jylland og Fyn':'Sjælland'})`"),
+  assert.ok(INDEX.includes("document.title=`Elpris ${S.area==='DK1'?'Vest':'Øst'} (${S.area}) i dag — spotpris og afgifter time for time`"),
     'the browser sets a different title for the inkl alt view than the server sends');
   assert.ok(!/nettariffer, elafgift og moms\./.test(SRV.slice(SRV.indexOf("'/dk1': {"), SRV.indexOf("'/tariffer': {"))),
     '/dk1 or /dk2 description claims the nettarif is included');
@@ -458,7 +458,17 @@ test('seo/llm: nothing claims what the page does not show', () => {
   assert.ok(!/7-dages prognose/.test(APIF), '/api still describes a 7-day forecast');
   for (const [where, txt] of [['functions/[[path]].js', SRV], ['index.html', INDEX]]) {
     // Every spelling: "7 dage", "7-dages", "7-døgns", "7-day", "7 days".
-    const hit = txt.match(/\b7[- ](?:dage|dages|døgn|døgns|day|days)\b[^\n]{0,40}|baseret på historiske prismønstre/);
+    // "7 dage" is the biggest query /prognose ranks for, so it may appear — but
+    // only beside the truth ("op til 10 døgn"), or in a code comment. On its
+    // own it claims the forecast is a week long, which it is not.
+    const hit = [...txt.matchAll(/\b7[- ](?:dage|dages|døgn|døgns|day|days)\b[^\n]{0,40}|baseret på historiske prismønstre/g)]
+      .find(m => {
+        const ls = txt.lastIndexOf('\n', m.index) + 1, le = txt.indexOf('\n', m.index);
+        const line = txt.slice(ls, le < 0 ? txt.length : le);
+        if (/^\s*(\/\/|\*|\/\*)/.test(line)) return false;
+        if (m[0].startsWith('7 dage, dag for dag')) return false;   // the week list's own heading: it is seven days
+        return !/10 (døgn|dage)/.test(txt.slice(Math.max(0, m.index - 140), m.index + 160));
+      });
     assert.ok(!hit, `${where} still describes the forecast as 7 days / historical patterns: "${hit && hit[0]}"`);
   }
   // The homepage figure is inkl alt, which excludes the local nettarif.
@@ -472,6 +482,28 @@ test('seo/llm: nothing claims what the page does not show', () => {
   for (const z of ['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl'])
     assert.ok(llms.includes(`https://elpriser.org/${z})`), `llms.txt does not list /${z}`);
   assert.ok(/\/api\/nordic\?zone=/.test(llms), 'llms.txt does not list /api/nordic');
+});
+
+test('seo: the pages keep the words Search Console shows people typing', () => {
+  // Evidence, not taste (Performance on Search, 3 months to 2026-10-04):
+  //  - /prognose: "elpriser prognose 7 dage" is its biggest query, ~700 impressions
+  //    with its variants. The title must carry "7 dage" — beside the true "10 døgn".
+  //  - the elafgift post ranks 1.7-3.6 for "kommer elafgiften tilbage" and clicked
+  //    at 1.6-2.4 %: the snippet has to say yes.
+  //  - /dk1 and /dk2: people type "elpris vest" / "elpriser øst"; "spotpris" stays.
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const entry = k => SRV.slice(SRV.indexOf(`'${k}': {`), SRV.indexOf('},', SRV.indexOf(`'${k}': {`)));
+  const field = (k, f) => (entry(k).match(new RegExp(`${f}: '([^']*)'`)) || [])[1] || '';
+  assert.ok(/7 dage/.test(field('/prognose', 'title')) && /10 døgn/.test(field('/prognose', 'title')), '/prognose title lost "7 dage" or the true "10 døgn"');
+  assert.ok(/7 dage/.test(field('/prognose', 'description')) && /10 døgn/.test(field('/prognose', 'description')), '/prognose description lost "7 dage" or "10 døgn"');
+  assert.ok(/elafgiften/i.test(field('/blog/elafgift-2028', 'title')) && /stiger igen/.test(field('/blog/elafgift-2028', 'title')) && /^Elafgift 2028/.test(field('/blog/elafgift-2028', 'title')),
+    'the elafgift title no longer leads with "Elafgift 2028" and answers');
+  assert.ok(/^Kommer elafgiften tilbage\? Ja/.test(field('/blog/elafgift-2028', 'description')), 'the elafgift description does not answer the question first');
+  assert.ok(/60,9 øre/.test(field('/blog/elafgift-2028', 'description')) && /2015-prisniveau/.test(field('/blog/elafgift-2028', 'description')),
+    'the elafgift figure is not qualified as 2015 price level, which is what the post says');
+  assert.ok(/^Elpris Vest/.test(field('/dk1', 'title')) && /^Elpris Øst/.test(field('/dk2', 'title')), '/dk1 or /dk2 title does not lead with "Elpris Vest/Øst"');
+  for (const k of ['/prognose', '/dk1', '/dk2', '/blog/elafgift-2028'])
+    assert.ok(field(k, 'title').length <= 62, `${k} title is ${field(k, 'title').length} characters; results cut it near 60`);
 });
 
 test('seo: zone pages carry no hreflang cluster', () => {
@@ -527,6 +559,36 @@ test('indexnow: the served key and the submitting script agree', () => {
     'deploy does not submit to IndexNow, or lets an IndexNow failure fail the deploy');
 });
 
+test('/prognose: the week is text in the HTML and follows the table', () => {
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  assert.ok(/<div id="prognoseWeek"><!--SSR_PROGNOSE_WEEK--><\/div>/.test(INDEX), 'no placeholder for the week list');
+  assert.ok(/html\.replace\('<!--SSR_PROGNOSE_WEEK-->', fcWeekHTML\(fc\.days \|\| \[\], todayDk, 7\)\)/.test(SRV), 'the server does not draw the week list');
+  assert.ok(/renderPrognoseForecast\(days\);\n  renderPrognoseWeek\(days\);/.test(INDEX), 'the week list is not redrawn with the table');
+  assert.ok(INDEX.includes('Næste 7 dage, dag for dag'), 'the week list has no "næste 7 dage" heading');
+});
+
+test('security: no credential is written into tracked code', () => {
+  // The repository is public. A JAO API token sat as a default value in a
+  // committed script from 2026-07 until it was found; once pushed it lives in
+  // history, so the only real control is not to commit it in the first place.
+  // Tokens come from the environment (~/.config/elpriser.env, Pages secrets).
+  const { execSync } = require('child_process');
+  const files = execSync('git ls-files', { cwd: ROOT, encoding: 'utf8' }).split('\n')
+    .filter(f => /\.(py|js|mjs|sh|json|md|html|toml|yml|yaml)$/.test(f) && !/^(node_modules|dist)\//.test(f) && f !== 'test-static.js');
+  const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+  const rules = [
+    [new RegExp(`(token|secret|api[_-]?key|password|bearer)[^\\n]{0,60}["']${uuid}["']`, 'i'), 'a UUID assigned to something token-like'],
+    [/["'](?:hf_|ghp_|gho_|github_pat_|sk-ant-|sk-|cfut_|xox[bp]-)[A-Za-z0-9_-]{20,}["']/, 'a provider-prefixed secret'],
+    [/(?:TOKEN|SECRET|API_KEY)\w*\s*=\s*os\.environ\.get\([^)]*,\s*["'][^"']{12,}["']\)/, 'a secret given as a default value'],
+  ];
+  const hits = [];
+  for (const f of files) {
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    src.split('\n').forEach((line, i) => rules.forEach(([re, why]) => { if (re.test(line)) hits.push(`${f}:${i + 1} (${why})`); }));
+  }
+  assert.deepEqual(hits, [], `credential-like literal in tracked code: ${hits.join(', ')}`);
+});
+
 test('homepage: the hero curve has a price scale that lines up', () => {
   // The scale sits in a gutter left of the curve. The CO2 strip below takes the
   // same gutter, or its hours stop lining up with the price curve's.
@@ -574,7 +636,7 @@ test('homepage: the chart reuses the hero card styles, which are hand-written', 
   // The chart deliberately reuses .chartcard/.minirow/.mini rather than
   // inventing new classes, and those must stay in the hand-written block.
   const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
-  for (const cls of ['.chartcard', '.minirow', '.mini{', '.mini .v', '.mini.best', '.fc-days', '.fc-hours', '.yplot', '.yax', '.ygut']) {
+  for (const cls of ['.chartcard', '.minirow', '.mini{', '.mini .v', '.mini.best', '.fc-days', '.fc-hours', '.yplot', '.yax', '.ygut', '.fcweek']) {
     assert.ok(style.includes(cls), `${cls} is not hand-written in the <style> block`);
   }
 });
