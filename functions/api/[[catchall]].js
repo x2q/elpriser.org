@@ -1107,6 +1107,13 @@ const OPENAPI_SPEC = {
           '"heuristic"` days they are the lowest and highest price seen for that weekday and hour over the last four',
           'weeks — not quantiles. They are in the same unit and mode as `price`. Actual days carry neither.',
           '',
+          '**How far to trust it.** Backtest, 486 days (2025-04-01 to 2026-07-30), mean absolute error of the model median on spot',
+          'price, DK1 / DK2, by forecast day `D+h` counted from the day the run is made (D+1 is already published in the',
+          'afternoon): ' + [[2, 149, 165], [3, 155, 169], [5, 179, 192], [7, 195, 207], [9, 197, 211]]
+            .map(([h, a, b]) => `D+${h}: ${a} / ${b} DKK/MWh`).join(', ') + ' — 23–32 % of the mean price, against 35–38 % for a',
+          'four-week same-weekday average. Error grows with horizon but flattens after D+7, where weather stops adding information.',
+          'Rank is better than level: the model\'s own measure of the cheapest hours is in the model card.',
+          '',
           '**Grid company.** The `net_` modes add the company\'s nettarif and require `gln`. The tariff is the one in force on',
           'each day\'s own date, so a forecast that crosses a tariff change (many companies raise their day and peak rates',
           'from 1 October to 31 March) switches at the right midnight. `days[].tariff` is `"published"`, or',
@@ -1130,6 +1137,22 @@ const OPENAPI_SPEC = {
           '400': { description: 'A `net_` mode without a valid 13-digit `gln`.' },
           '404': { description: 'No nettarif is published for that `gln`.' },
         },
+      },
+    },
+    '/api/forecast/archive': {
+      get: {
+        operationId: 'getForecastArchive',
+        summary: 'What a past forecast run said',
+        description: [
+          'Every daily forecast run is kept for 400 days, so you can measure the error of the forecasts that were actually served,',
+          'by how far ahead they looked: compare `days[].prices[]` of a run with the settled prices from `/api/prices`.',
+          '',
+          'Without `issued` it lists the run dates available for the area. With `issued=YYYY-MM-DD` it returns that run.',
+          'Prices are raw spot in DKK/MWh excl. VAT (`spot_dkk_mwh`, with `spot_min_dkk_mwh` / `spot_max_dkk_mwh` as P10 / P90),',
+          'as the model wrote them — not converted to an all-in mode. The archive starts on 2026-10-06; earlier runs were not kept.',
+        ].join('\n'),
+        parameters: [AREA_PARAM, { name: 'issued', in: 'query', schema: { type: 'string', format: 'date' }, description: 'Run date, YYYY-MM-DD. Omit to list available dates.' }],
+        responses: { '200': { description: 'The run, or the list of run dates.' }, '404': { description: 'No run archived for that date.' } },
       },
     },
     '/api/shelly/tariff': {
@@ -1351,6 +1374,14 @@ export async function onRequest(context) {
   // winter) — on the stated ground that a future tariff "would have to be
   // guessed". It does not: DataHub publishes tariffs with valid-from dates
   // ahead of time, and the site's own tables already apply them to forecast days.
+  if (seg1 === 'forecast' && seg2 === 'archive') {
+    try {
+      return await handleForecastArchive(area, q.get('issued'), request, context.env);
+    } catch (e) {
+      console.error(e);
+      return fail(500, String(e.message || e));
+    }
+  }
   if (seg1 === 'forecast') {
     if (mode.startsWith('net_')) {
       if (!gln) return fail(400, `mode "${mode}" needs gln — the grid tariff depends on the network company`);
@@ -2140,6 +2171,32 @@ function applyGridTariff(days, records) {
       }),
     };
   });
+}
+
+/** What a past forecast run said. The daily job keeps every run (400 days) under
+ *  forecast-v3-archive-<area>-<issued>, because the live key is overwritten each
+ *  day and expires after three — so a user measuring error by horizon on the
+ *  forecasts actually served had nothing to measure against. Raw spot in
+ *  DKK/MWh excl. VAT, exactly as the model wrote it: converting a past run to
+ *  an all-in price would need the tariffs and taxes of every target day, and a
+ *  caller who wants that can apply them to the same hours /api/prices uses. */
+async function handleForecastArchive(area, issued, request, env) {
+  if (!env || !env.PRICE_CACHE) return fail(503, 'forecast archive unavailable');
+  const prefix = `forecast-v3-archive-${area}-`;
+  if (!issued) {
+    const list = await env.PRICE_CACHE.list({ prefix });
+    const dates = list.keys.map(k => k.name.slice(prefix.length)).sort();
+    return jsonResponse({ area, issued: dates }, { maxAge: 600, request });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(issued)) return fail(400, 'issued must be YYYY-MM-DD');
+  const run = await env.PRICE_CACHE.get(prefix + issued, 'json');
+  if (!run) return fail(404, `no archived forecast for ${area} issued ${issued}`);
+  return jsonResponse({
+    area, issued,
+    unit: 'DKK/MWh, spot, excl. VAT',
+    model: { name: run.model || 'v3', generated: run.generated, generatedAt: run.generatedAt || null, shapeBlend: run.shapeBlend ?? null },
+    days: run.days,
+  }, { maxAge: 86400, request });   // a past run never changes
 }
 
 async function handleForecast(area, mode, gln, request, env) {

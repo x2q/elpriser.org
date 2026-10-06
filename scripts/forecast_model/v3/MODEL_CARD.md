@@ -170,6 +170,23 @@ neighbour-weather row).
 | Min-hour hit-rate (cheapest hour in predicted top-3) | 69.0% | 70.0% |
 | P10-P90 coverage after calibration | 80.5% | 80.3% |
 
+**By forecast day** (mean absolute error of the model median on spot price, DKK/MWh;
+backtest 2025-04-01 → 2026-07-30, 486 days; `D+h` counts from the day the daily run is
+made, so D+1 is already published and D+2 is the first forecast day, h = 2). The shipped
+configuration before its regime guard (`D_congest`); the seasonal four-week baseline is
+222.6 / 236.6 DKK/MWh at h = 2–8 (DK1 / DK2) and 233 / 249 at h = 9.
+
+| Day | DK1 MAE | DK1 % of mean | DK2 MAE | DK2 % of mean |
+|---|---|---|---|---|
+| D+2 | 149 | 23.3 % | 165 | 25.2 % |
+| D+3 | 155 | 24.2 % | 169 | 25.9 % |
+| D+4 | 166 | 25.9 % | 180 | 27.5 % |
+| D+5 | 179 | 27.9 % | 192 | 29.4 % |
+| D+6 | 190 | 29.7 % | 203 | 31.0 % |
+| D+7 | 195 | 30.4 % | 207 | 31.8 % |
+| D+8 | 195 | 30.4 % | 207 | 31.7 % |
+| D+9 | 197 | 30.7 % | 211 | 32.2 % |
+
 Baselines on the same backtest: seasonal 4-week heuristic ~35-38% MAE, naive
 persistence ~41-46%.
 

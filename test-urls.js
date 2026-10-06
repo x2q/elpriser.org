@@ -283,9 +283,18 @@ async function main() {
     check(!mdays.length || (fcN1.j.model && fcN1.j.model.generatedAt), '/api/forecast: model.generatedAt oplyses når modellen er brugt');
     check(fcPlain.j.days.filter(d => d.type === 'forecast').every(d => d.source === 'model' || d.source === 'heuristic'), '/api/forecast: forecast-dage er mærket model eller heuristic');
   }
+  // The archive: lists the runs, returns one as issued, rejects nonsense.
+  const arcList = await jget('/api/forecast/archive?area=DK1');
+  check(arcList.status === 200 && Array.isArray(arcList.j.issued) && arcList.j.issued.includes('2026-10-06'), '/api/forecast/archive: lister de gemte kørsler', JSON.stringify(arcList.j).slice(0, 120));
+  const arcRun = await jget('/api/forecast/archive?area=DK1&issued=2026-10-06');
+  check(arcRun.status === 200 && arcRun.j.days.length === 10 && arcRun.j.days.some(d => d.prices.some(p => p.spot_dkk_mwh != null)) && /DKK\/MWh/.test(arcRun.j.unit),
+        '/api/forecast/archive: en kørsel som den lød, i DKK/MWh', arcRun.status);
+  check((await jget('/api/forecast/archive?area=DK1&issued=1999-01-01')).status === 404, '/api/forecast/archive: ukendt dato giver 404');
+  check((await jget('/api/forecast/archive?area=DK1&issued=igaar')).status === 400, '/api/forecast/archive: ugyldig dato giver 400');
   const oa = await jget('/api/openapi.json');
   const oaFc = oa.j && oa.j.paths['/api/forecast'].get;
   check(oaFc && oaFc.parameters.some(p => p.name === 'gln') && /P10/.test(oaFc.description), 'OpenAPI: /api/forecast har gln og forklarer min/max');
+  check(oa.j && oa.j.paths['/api/forecast/archive'], 'OpenAPI: arkivet er beskrevet');
   check(oa.j && /User-Agent/.test(oa.j.info.description), 'OpenAPI: User-Agent-kravet står i dokumentationen');
 
   console.log('\n8. REGULERBAR KAPACITET — endpoints lever og afviser forkert input');

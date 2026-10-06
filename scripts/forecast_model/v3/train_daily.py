@@ -518,12 +518,22 @@ def main():
             days = score_area(area, models, feats, prices, est, est_de, live,
                               ntc_by_day(area, today), today, alpha)
             update_monitoring(area, days, today, account, token)
-            kv_put(f"forecast-v3-{area}",
-                   {"area": area, "generated": today.isoformat(),
-                    "generatedAt": datetime.now(timezone.utc).isoformat(),
-                    "model": "v3", "shapeBlend": round(alpha, 2), "days": days},
-                   3 * 86400, account, token)
+            payload = {"area": area, "generated": today.isoformat(),
+                       "generatedAt": datetime.now(timezone.utc).isoformat(),
+                       "model": "v3", "shapeBlend": round(alpha, 2), "days": days}
+            kv_put(f"forecast-v3-{area}", payload, 3 * 86400, account, token)
             print(f"  KV written: forecast-v3-{area}", flush=True)
+            # Keep every run. The live key above is overwritten daily and expires
+            # after three days, so "what did the forecast say on Tuesday for
+            # Friday 14:00" had no answer — nobody, including us, could measure
+            # error by horizon on the forecasts actually served. Served by
+            # /api/forecast/archive. Best effort: it must never fail the run.
+            try:
+                kv_put(f"forecast-v3-archive-{area}-{today.isoformat()}", payload,
+                       400 * 86400, account, token)
+                print(f"  KV written: forecast-v3-archive-{area}-{today.isoformat()}", flush=True)
+            except Exception as e:
+                print(f"  archive write failed (non-fatal): {e}", flush=True)
             models_all[area] = models
             est_all[area] = {"dk": est, "de": est_de}
         except Exception:
