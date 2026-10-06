@@ -980,6 +980,10 @@ const OPENAPI_SPEC = {
       'edge-cached at Cloudflare for 1–5 min so calling /api/now every minute from a Shelly',
       'or Home Assistant is free and fine.',
       '',
+      '**Send a `User-Agent` header.** Cloudflare\'s bot protection answers `403` to the exact',
+      'default of Python\'s `urllib` (`Python-urllib/3.x`). Any other value works — `curl`, `requests`,',
+      'or your own, e.g. `my-heatpump/1.0`. In Python: `Request(url, headers={"User-Agent": "my-app/1.0"})`.',
+      '',
       'Designed to be consumed by:',
       '- Browser apps (CORS-friendly JSON, no preflight needed for simple GETs)',
       '- Home automation (Shelly Plus/Pro scripts, Home Assistant REST sensors)',
@@ -1092,12 +1096,40 @@ const OPENAPI_SPEC = {
       get: {
         operationId: 'getForecast',
         summary: '10-day electricity price forecast',
-        description: 'Actual day-ahead prices for today/tomorrow plus an ML forecast (LightGBM quantile model trained on lead-correct weather forecasts, price lags and DK+DE weather) for days 2-9, with calibrated min/max bands.',
-        parameters: [AREA_PARAM, MODE_PARAM],
+        description: [
+          'Today and the next nine days, hour by hour. Days with a published day-ahead price are `type: "actual"`; the rest',
+          'are `type: "forecast"` from a LightGBM quantile model trained daily on lead-correct weather forecasts, price lags',
+          'and neighbouring-zone weather and capacity (`source: "model"`), or, when no fresh model run exists, a',
+          'weekday-average fallback (`source: "heuristic"`).',
+          '',
+          '**`min` / `max`.** On `source: "model"` days they are the model\'s P10 and P90, widened until they cover 80 % of',
+          'outcomes in backtests (measured 80.3–80.5 %), so about one hour in five falls outside them. On `source:',
+          '"heuristic"` days they are the lowest and highest price seen for that weekday and hour over the last four',
+          'weeks — not quantiles. They are in the same unit and mode as `price`. Actual days carry neither.',
+          '',
+          '**Grid company.** The `net_` modes add the company\'s nettarif and require `gln`. The tariff is the one in force on',
+          'each day\'s own date, so a forecast that crosses a tariff change (many companies raise their day and peak rates',
+          'from 1 October to 31 March) switches at the right midnight. `days[].tariff` is `"published"`, or',
+          '`"last_known"` when none is published for that date yet and the newest earlier one is used. A date before',
+          'every published tariff has `null` prices rather than a silent zero. The forecast is the untariffed sum plus the',
+          'tariff × 1.25 — so it equals `/api/prices` on a published day.',
+          '',
+          '**`model`** names the run behind the model days: `name`, `generated` (the run\'s date), `generatedAt` (UTC',
+          'timestamp) and `shapeBlend`. All forecast days come from the same run. It is `null` on a heuristic-only response.',
+        ].join('\n'),
+        parameters: [AREA_PARAM, MODE_PARAM, GLN_PARAM],
         responses: { '200': {
-          description: '10 days × 24 hours of forecasted prices.',
-          content: { 'application/json': { example: { area: 'DK1', mode: 'inkl_alt', generated: '2026-05-15T13:00:00Z', days: [{ date: '2026-05-15', type: 'actual', weekday: 5, prices: [{ hour: 0, price: 0.84 }] }] } } }
-        } },
+          description: '10 days × 24 hours of prices.',
+          content: { 'application/json': { example: { area: 'DK1', mode: 'net_inkl_alt', gln: '5790001089030', generated: '2026-10-06',
+            model: { name: 'v3', generated: '2026-10-06', generatedAt: '2026-10-06T12:13:02Z', shapeBlend: 0 },
+            days: [
+              { date: '2026-10-06', type: 'actual', weekday: 2, tariff: 'published', prices: [{ hour: 0, price: 1.76 }] },
+              { date: '2026-10-08', type: 'forecast', weekday: 4, source: 'model', tariff: 'published', prices: [{ hour: 0, price: 1.52, min: 1.18, max: 2.04 }] },
+            ] } } },
+          },
+          '400': { description: 'A `net_` mode without a valid 13-digit `gln`.' },
+          '404': { description: 'No nettarif is published for that `gln`.' },
+        },
       },
     },
     '/api/shelly/tariff': {
@@ -1312,11 +1344,20 @@ export async function onRequest(context) {
   }
 
   // ── /api/forecast ───────────────────────────────────────────────────────
-  // Checked before the gln requirement below: a forecast covers days that have
-  // not happened, so it never applies a grid tariff and has no use for a GLN.
+  // A net_ mode adds the grid company's tariff, valid on each day's own date,
+  // so it needs a GLN like every other endpoint. This used to return the
+  // untariffed sum for net_ modes with or without a GLN — identical to
+  // inkl_alt, short by exactly the nettarif (0,11 / 0,33 / 0,99 kr at N1 in
+  // winter) — on the stated ground that a future tariff "would have to be
+  // guessed". It does not: DataHub publishes tariffs with valid-from dates
+  // ahead of time, and the site's own tables already apply them to forecast days.
   if (seg1 === 'forecast') {
+    if (mode.startsWith('net_')) {
+      if (!gln) return fail(400, `mode "${mode}" needs gln — the grid tariff depends on the network company`);
+      if (!/^\d{13}$/.test(gln)) return fail(400, 'gln must be 13 digits');
+    }
     try {
-      return await handleForecast(area, mode, request, context.env);
+      return await handleForecast(area, mode, gln, request, context.env);
     } catch (e) {
       console.error(e);
       return fail(500, String(e.message || e));
@@ -1646,6 +1687,9 @@ function buildForecast(historicalPrices, mode, enCharges) {
       date: d,
       type: isActual ? 'actual' : 'forecast',
       weekday: new Date(d).getUTCDay(),
+      // Named so a caller can tell the fallback from a model day; the model
+      // overlay replaces it with 'model'. Published days carry no source.
+      ...(isActual ? {} : { source: 'heuristic' }),
       prices,
     });
   }
@@ -2056,7 +2100,49 @@ function applyModelForecast(days, modelOutput, mode, enCharges) {
   });
 }
 
-async function handleForecast(area, mode, request, env) {
+/** The mode whose untariffed sum the forecast is built in, before the grid
+ *  tariff is added. net_inkl_tarif has no elafgift, so it starts from
+ *  inkl_alt_minus — it used to fall into the default branch of cvtForecast and
+ *  carry the afgift it is defined not to have. */
+const FORECAST_BASE_MODE = {
+  net_inkl_alt: 'inkl_alt',
+  net_inkl_alt_elvarme: 'inkl_alt_elvarme',
+  net_inkl_tarif: 'inkl_alt_minus',
+};
+
+/** Add the grid tariff, per day and per hour, to an untariffed forecast.
+ *
+ *  The tariff is the one in force on each day's own date, so a forecast that
+ *  crosses a tariff change (N1 and others double their day and peak rates from
+ *  1 October to 31 March) switches at the right midnight. A day that has no
+ *  published record yet takes the newest earlier one and says so in `tariff`;
+ *  a date before every record stays null rather than becoming a zero tariff. */
+function applyGridTariff(days, records) {
+  return days.map(day => {
+    let t = getTariffHourly(records, day.date);
+    let basis = 'published';
+    if (!t) {
+      const earlier = records.find(r => r.fromStr <= day.date);
+      if (earlier) { t = { hourly: earlier.hourly }; basis = 'last_known'; }
+    }
+    if (!t) {
+      return { ...day, tariff: null, prices: day.prices.map(p => ({ hour: p.hour, price: null })) };
+    }
+    const add = (v, h) => (v == null ? v : +(v + (t.hourly[h] ?? 0) * 1.25).toFixed(4));
+    return {
+      ...day,
+      tariff: basis,
+      prices: day.prices.map(p => {
+        const out = { ...p, price: add(p.price, p.hour) };
+        if (p.min != null) out.min = add(p.min, p.hour);
+        if (p.max != null) out.max = add(p.max, p.hour);
+        return out;
+      }),
+    };
+  });
+}
+
+async function handleForecast(area, mode, gln, request, env) {
   const dkNow = danishNow();
   const start = new Date(dkNow.getTime() - 28 * 86_400_000);
   const end   = new Date(dkNow.getTime() + 2 * 86_400_000); // Include tomorrow
@@ -2069,17 +2155,23 @@ async function handleForecast(area, mode, request, env) {
   // request with 526 — which arrived here as a JSON parse error and left the
   // endpoint returning 500 for days. Reading the archive removes the
   // dependency rather than working around their chain.
-  const [historicalPrices, chargeHistory] = await Promise.all([
+  const net = mode.startsWith('net_');
+  const baseMode = FORECAST_BASE_MODE[mode] || mode;
+  const [historicalPrices, chargeHistory, tariffRecords] = await Promise.all([
     loadPrices(area, fmtUTC(start), fmtUTC(end), env),
     edgeCached('charge-history-v1', 6 * 3600, fetchChargeHistory, env),
+    net ? loadTariffRecords(gln, fmtUTC(new Date(dkNow.getTime() + 12 * 86_400_000)), env) : Promise.resolve([]),
   ]);
+  if (net && !tariffRecords.length) {
+    return fail(404, `no nettarif published for gln ${gln}`);
+  }
   // A forecast is about days that have not happened, so the rates in force
   // today are the right ones — but the reduced duty still has to follow the
   // mode, or an elvarme forecast would be priced at the ordinary duty.
   const enCharges = chargesOn(chargeHistory, fmtUTC(new Date()),
                               { reduced: usesReducedTax(mode) });
 
-  let days = buildForecast(historicalPrices, mode, enCharges);
+  let days = buildForecast(historicalPrices, baseMode, enCharges);
 
   // Trained-model overlay: best-effort, never blocks or fails the request.
   // Prefers v2 (Spark-trained: lead-correct weather, hybrid shape, calibrated
@@ -2087,6 +2179,7 @@ async function handleForecast(area, mode, request, env) {
   // so a dead Spark degrades to v1, and a dead v1 degrades to the heuristic.
   // Accepts today's or yesterday's run (the daily cron may not have fired yet,
   // or DK-local vs. UTC date bucketing may be off by one near midnight).
+  let modelMeta = null;
   if (env && env.PRICE_CACHE) {
     try {
       const isFresh = r => r && (r.generated === fmtUTC(dkNow) || r.generated === fmtUTC(new Date(dkNow.getTime() - 86_400_000)));
@@ -2101,7 +2194,14 @@ async function handleForecast(area, mode, request, env) {
       // rather than serving a stale forecast.
       for (const key of [`forecast-v3-${area}`]) {
         const m = await env.PRICE_CACHE.get(key, 'json');
-        if (isFresh(m)) { days = applyModelForecast(days, m, mode, enCharges); break; }
+        if (isFresh(m)) {
+          days = applyModelForecast(days, m, baseMode, enCharges);
+          // Which run the model days came from, so a change in the numbers can
+          // be told apart from a change in the model.
+          modelMeta = { name: m.model || 'v3', generated: m.generated,
+                        generatedAt: m.generatedAt || null, shapeBlend: m.shapeBlend ?? null };
+          break;
+        }
       }
     } catch (e) {
       console.error('forecast KV read failed', e);
@@ -2110,10 +2210,16 @@ async function handleForecast(area, mode, request, env) {
 
   // `generated` is bucketed to the date (not the millisecond) so the ETag is
   // stable within a caching window and conditional requests can 304.
+  if (net) days = applyGridTariff(days, tariffRecords);
+
   return jsonResponse({
     area,
     mode,
+    ...(net ? { gln } : {}),
     generated: fmtUTC(dkNow),
+    // null when no model run was fresh and every forecast day is the
+    // weekday-average fallback (source: "heuristic" on those days).
+    model: modelMeta,
     days,
   }, { maxAge: 1800, request });
 }

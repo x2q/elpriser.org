@@ -17,7 +17,8 @@
     "test:flex": "node test-flex-api.mjs",
     "test:forecast": "node test-forecast-chart.mjs",
     "test:zone": "node test-zone-intro.mjs",
-    "indexnow": "node scripts/indexnow.mjs"
+    "indexnow": "node scripts/indexnow.mjs",
+    "test:forecast-tariff": "node test-forecast-tariff.mjs"
   },
   "devDependencies": {
     "playwright": "^1.59.1"

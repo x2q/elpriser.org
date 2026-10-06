@@ -243,6 +243,16 @@ def main():
         m.fit(tr[FEATS], tr["y"], categorical_feature=["zone"])
         models[name] = m
     print(f"  trained on {len(tr):,} rows across {tr.zone.nunique()} zones", flush=True)
+    # The newest day the model has learned from. A frozen source shows up here
+    # as a date that stops moving; the line above looked healthy for ten weeks
+    # because it only counts rows.
+    trained_through = pd.to_datetime(tr["t"]).max().date()
+    lag_days = (today - trained_through).days
+    print(f"  trained through {trained_through} ({lag_days} days before today)", flush=True)
+    if lag_days > 7:
+        print(f"  WARNING: the newest training row is {lag_days} days old — a source "
+              f"(weather, prices or reservoir) has stopped refreshing. Publishing anyway: "
+              f"a stale model beats forecasts that expire off the site.", flush=True)
 
     prices = ds.load_prices()
     res = ds.load_reservoir()
@@ -251,6 +261,7 @@ def main():
 
     payload = {"generated": today.isoformat(),
                "generatedAt": datetime.now(timezone.utc).isoformat(),
+               "trainedThrough": trained_through.isoformat(),
                "unit": "EUR/MWh", "model": "nordic-pooled-v1", "zones": out}
     with open(f"{DIR}/forecast_latest.json", "w") as f:
         json.dump(payload, f)
@@ -266,6 +277,7 @@ def main():
             try:
                 kv_put(f"nordic-forecast-{z}",
                        {"zone": z, "generated": today.isoformat(),
+                        "trainedThrough": trained_through.isoformat(),
                         "unit": "EUR/MWh", "days": days},
                        3 * 86400, acct, tok)
                 written += 1

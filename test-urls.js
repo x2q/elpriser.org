@@ -259,6 +259,35 @@ async function main() {
   const inKey = await get('/ede0d7c16ca973f60282b7079da12804.txt');
   check(inKey.status === 200 && inKey.body.trim() === 'ede0d7c16ca973f60282b7079da12804', 'IndexNow: nøglefilen serveres');
 
+  // /api/forecast with a grid company. A user planning a heat pump against N1 saw
+  // the forecast sit short of /api/prices by exactly N1's nettarif: net_ modes
+  // returned the untariffed sum. On a published day the two must agree.
+  const N1 = '5790001089030';
+  const jget = async u => { const r = await get(u); try { return { status: r.status, j: JSON.parse(r.body) }; } catch { return { status: r.status, j: null }; } };
+  const fcNoGln = await jget('/api/forecast?area=DK1&mode=net_inkl_alt');
+  check(fcNoGln.status === 400, '/api/forecast: net_-mode uden gln afvises', `status ${fcNoGln.status}`);
+  const fcBadGln = await jget('/api/forecast?area=DK1&mode=net_inkl_alt&gln=123');
+  check(fcBadGln.status === 400, '/api/forecast: ugyldig gln afvises', `status ${fcBadGln.status}`);
+  const fcN1 = await jget(`/api/forecast?area=DK1&mode=net_inkl_alt&gln=${N1}`);
+  const fcPlain = await jget('/api/forecast?area=DK1&mode=inkl_alt');
+  check(fcN1.status === 200 && fcN1.j && fcN1.j.gln === N1, '/api/forecast: gln virker og gentages i svaret');
+  if (fcN1.j && fcPlain.j) {
+    const d0 = fcN1.j.days.find(d => d.type === 'actual');
+    const pr = await jget(`/api/prices?area=DK1&mode=net_inkl_alt&gln=${N1}&date=${d0.date}`);
+    const diffs = d0.prices.map((p, h) => Math.abs(p.price - pr.j.prices[h].price)).filter(x => !Number.isNaN(x));
+    check(diffs.length >= 20 && Math.max(...diffs) < 0.0006, '/api/forecast = /api/prices for N1 på en offentliggjort dag', `største afvigelse ${Math.max(...diffs).toFixed(4)} kr`);
+    const plain0 = fcPlain.j.days.find(d => d.date === d0.date);
+    check(d0.prices[19].price > plain0.prices[19].price + 0.1, '/api/forecast: net_inkl_alt ligger over inkl_alt med nettariffen', `${d0.prices[19].price} vs ${plain0.prices[19].price}`);
+    check(fcN1.j.days.every(d => d.tariff === 'published' || d.tariff === 'last_known'), '/api/forecast: hver dag oplyser sin tarifbasis');
+    const mdays = fcN1.j.days.filter(d => d.source === 'model');
+    check(!mdays.length || (fcN1.j.model && fcN1.j.model.generatedAt), '/api/forecast: model.generatedAt oplyses når modellen er brugt');
+    check(fcPlain.j.days.filter(d => d.type === 'forecast').every(d => d.source === 'model' || d.source === 'heuristic'), '/api/forecast: forecast-dage er mærket model eller heuristic');
+  }
+  const oa = await jget('/api/openapi.json');
+  const oaFc = oa.j && oa.j.paths['/api/forecast'].get;
+  check(oaFc && oaFc.parameters.some(p => p.name === 'gln') && /P10/.test(oaFc.description), 'OpenAPI: /api/forecast har gln og forklarer min/max');
+  check(oa.j && /User-Agent/.test(oa.j.info.description), 'OpenAPI: User-Agent-kravet står i dokumentationen');
+
   console.log('\n8. REGULERBAR KAPACITET — endpoints lever og afviser forkert input');
   // Only payloads that are refused before anything is stored, so a scheduled
   // run against production never writes a row.

@@ -329,11 +329,13 @@ Human-readable docs: [/api](https://elpriser.org/api).
 Protocol server (run \`npx -y elpriser-mcp\`) gives Claude Desktop and other MCP clients
 native tools for current price, cheapest hours and the price forecast.
 
+Send a User-Agent header: Cloudflare answers 403 to Python's default \`Python-urllib/3.x\`; any other value (curl, requests, \`my-app/1.0\`) works.
+
 - \`GET /api/now?area=DK1&mode=inkl_alt\` — Current price right now (DKK/kWh) incl. Energinet's tariffs, electricity tax and VAT — NOT the local grid tariff, which depends on the grid company (use \`mode=net_inkl_alt&gln=…\` for that)
 - \`GET /api/now?area=DK1&mode=spot_inkl\` — Current raw spot price incl. VAT
 - \`GET /api/prices?area=DK1&mode=inkl_alt&date=YYYY-MM-DD\` — 24 hourly prices for a date
 - \`GET /api/schedule?area=DK1&strategy=cheapest_n&hours=6\` — The N cheapest hours of the day
-- \`GET /api/forecast?area=DK1&mode=inkl_alt\` — Hourly price forecast, today and the next 9 days (settled prices where published)
+- \`GET /api/forecast?area=DK1&mode=inkl_alt\` — Hourly price forecast, today and the next 9 days (settled prices where published, \`type: actual\`). \`mode=net_inkl_alt&gln=…\` adds that grid company's nettarif as in force on each day's own date, so it equals /api/prices on a published day. \`min\`/\`max\` are P10/P90 widened to 80 % backtested coverage on model days; \`model.generatedAt\` names the run.
 - \`GET /api/nordic?zone=se3\` — Same for any of the 13 Nordic/NL bidding zones (dk1, dk2, no1–no5, se1–se4, fi, nl), in EUR/MWh, with the ECB rate to the local currency in \`zoneInfo\`
 - \`GET /api/shelly/tariff?area=DK1&mode=inkl_alt\` — Tibber-compatible 24h JSON
 - \`GET /api/raw/prices?area=DK1&start=YYYY-MM-DD&end=YYYY-MM-DD\` — Raw DayAheadPrices records
@@ -1339,7 +1341,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v52');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v53');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
