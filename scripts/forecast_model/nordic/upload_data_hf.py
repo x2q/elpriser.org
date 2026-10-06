@@ -178,7 +178,7 @@ static physical mapping, fed forecast weather at both train and serve time).
 | `market/generation_by_type_de_lu.parquet` | German/Luxembourg generation by production type — the main driver of Danish price spikes | hourly |
 | `market/hydro_reservoir_weekly.parquet` | Reservoir energy content, 10 hydro zones. The driver behind Nordic price levels — producers hold water back when reservoirs are low | 2022 → present, weekly |
 | `market/transfer_capacity_daily.parquet` | Month-ahead forecast transfer capacity per border and direction, for Denmark's six interconnectors | 2024-03 → present, daily |
-| `training_dataset_nordic.parquet` | The assembled, leakage-guarded training set: one row per (zone, hour, horizon 2-9), 30 features | 2.1M rows |
+| `training_dataset_nordic.parquet` | The assembled, leakage-guarded training set: one row per (zone, hour, horizon 2-9), 30 features | 2.3M rows |
 
 ## Zones
 

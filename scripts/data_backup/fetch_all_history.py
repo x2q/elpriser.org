@@ -34,8 +34,14 @@ import pandas as pd
 OUT_DIR = os.environ.get("BACKUP_OUT_DIR", os.path.expanduser("~/elpriser-data-backup"))
 # No default, deliberately. This line once carried the token as a fallback value
 # and the repository is public; it is read from the environment only
-# (~/.config/elpriser.env on the machine that runs this).
-JAO_TOKEN = os.environ["JAO_TOKEN"]
+# (~/.config/elpriser.env on the machine that runs this), and only when a JAO
+# function actually runs — importing this module for the EDS and ENTSO-E
+# fetchers, as refresh_hf_datasets.py does, never needs it and cannot reach JAO.
+def _jao_token():
+    tok = os.environ.get("JAO_TOKEN")
+    if not tok:
+        raise RuntimeError("JAO_TOKEN is not set (source ~/.config/elpriser.env)")
+    return tok
 ENTSOE_TOKEN = os.environ["ENTSOE_TOKEN"]
 DE_LU_EIC = "10Y1001A1001A82H"
 DK_EIC = {"DK1": "10YDK-1--------W", "DK2": "10YDK-2--------M"}
@@ -258,7 +264,7 @@ def fetch_jao_day(d):
         "Skip": 0, "Take": 0, "Filter": json.dumps({"NonRedundant": True}),
     }
     full_url = url + "?" + urllib.parse.urlencode(params)
-    req = urllib.request.Request(full_url, headers={"Authorization": f"Bearer {JAO_TOKEN}"})
+    req = urllib.request.Request(full_url, headers={"Authorization": f"Bearer {_jao_token()}"})
     with urllib.request.urlopen(req, timeout=30) as r:
         probe = json.loads(r.read())
     total = probe.get("totalRowsWithFilter", 0)
@@ -266,7 +272,7 @@ def fetch_jao_day(d):
         return []
     params["Take"] = total
     full_url2 = url + "?" + urllib.parse.urlencode(params)
-    req2 = urllib.request.Request(full_url2, headers={"Authorization": f"Bearer {JAO_TOKEN}"})
+    req2 = urllib.request.Request(full_url2, headers={"Authorization": f"Bearer {_jao_token()}"})
     with urllib.request.urlopen(req2, timeout=60) as r:
         full = json.loads(r.read())
     return full.get("data", [])
