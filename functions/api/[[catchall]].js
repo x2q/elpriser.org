@@ -2082,33 +2082,55 @@ async function handleSupplierLookup(lat, lng, request) {
   // Cache by ~11m grid (5 decimals) so nearby clicks share a result.
   const key = `gps-${flat.toFixed(5)}-${flng.toFixed(5)}`;
   const result = await cached(key, 24 * 60 * 60_000, async () => {
-    // 1. Reverse-geocode via OpenStreetMap Nominatim (server-side, one round-trip
-    //    for the client). Its usage policy asks for a real User-Agent and at most
-    //    one request per second; the 24h cache above keeps us far below that.
-    const osm = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${flat}&lon=${flng}&zoom=18&addressdetails=1&accept-language=da`,
-      { headers: { 'User-Agent': 'elpriser.org/1.0 (+https://elpriser.org; hello@elpriser.org)' } }
-    ).then(r => r.ok ? r.json() : null).catch(() => null);
-
-    const fullAddr  = osm?.display_name || null;
-    const cleanAddr = buildGpdAddress(osm?.address);
-    if (osm?.address?.country_code && osm.address.country_code !== 'dk') {
-      return { address: fullAddr, name: null, error: 'outside_denmark' };
+    // Reverse-geocode with OpenStreetMap Nominatim (server-side, one round-trip for
+    // the client), then ask GPD which grid company owns the address.
+    //
+    // The nearest OSM object is often a road, square or shop rather than an address
+    // (about half of all lookups, and most with an approximate phone position), and
+    // GPD needs a house number. So: ask for address objects only (layer=address), and
+    // if the point still has no house number, look around it — first 40 m, then 90 m
+    // out — until a numbered address turns up. Nominatim's policy is at most one
+    // request per second, so the probes are spaced, and the 24h cache above keeps
+    // the volume low.
+    const UA = { 'User-Agent': 'elpriser.org/1.0 (+https://elpriser.org; hello@elpriser.org)' };
+    const mPerDegLat = 111320, mPerDegLng = 111320 * Math.cos(flat * Math.PI / 180);
+    const probes = [[0, 0]];
+    for (const [r, n] of [[40, 4], [90, 8]]) {
+      for (let k = 0; k < n; k++) {
+        const ang = 2 * Math.PI * k / n;
+        probes.push([r * Math.cos(ang), r * Math.sin(ang)]);
+      }
     }
-    if (!cleanAddr) return { address: fullAddr, name: null, error: 'no_address' };
+    let fullAddr = null, lastErr = 'no_address', gpdTries = 0;
+    for (let i = 0; i < probes.length && gpdTries < 3; i++) {
+      if (i > 0) await new Promise(res => setTimeout(res, 1000));
+      const [dn, de] = probes[i];
+      const plat = flat + dn / mPerDegLat, plng = flng + de / mPerDegLng;
+      const osm = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${plat}&lon=${plng}&zoom=18&addressdetails=1&layer=address&accept-language=da`,
+        { headers: UA }
+      ).then(r => r.ok ? r.json() : null).catch(() => null);
+      if (i === 0) fullAddr = osm?.display_name || null;
+      if (osm?.address?.country_code && osm.address.country_code !== 'dk') {
+        return { address: fullAddr, name: null, error: 'outside_denmark' };
+      }
+      const cleanAddr = buildGpdAddress(osm?.address);
+      if (!cleanAddr) continue;
 
-    // 2. Look up net company. Treat 404/500 as "unknown net" rather than fatal —
-    //    the client falls back to area-based navigation.
-    const r = await fetch(
-      `https://api.elnet.greenpowerdenmark.dk/api/supplierlookup/${encodeURIComponent(cleanAddr)}`
-    );
-    if (!r.ok) return { address: fullAddr, name: null, error: `gpd_${r.status}` };
-
-    const ct = r.headers.get('content-type') || '';
-    if (!ct.includes('json')) return { address: fullAddr, name: null, error: 'gpd_nonjson' };
-
-    const j = await r.json().catch(() => null);
-    return { address: fullAddr, name: j?.name || null };
+      // Treat 404/500 as "unknown net" rather than fatal — try the next address,
+      // and the client falls back to the manual list if none of them resolve.
+      gpdTries++;
+      const r = await fetch(
+        `https://api.elnet.greenpowerdenmark.dk/api/supplierlookup/${encodeURIComponent(cleanAddr)}`
+      ).catch(() => null);
+      if (!r || !r.ok) { lastErr = r ? `gpd_${r.status}` : 'gpd_unreachable'; continue; }
+      const ct = r.headers.get('content-type') || '';
+      if (!ct.includes('json')) { lastErr = 'gpd_nonjson'; continue; }
+      const j = await r.json().catch(() => null);
+      if (j?.name) return { address: osm.display_name || fullAddr, name: j.name };
+      lastErr = 'gpd_noname';
+    }
+    return { address: fullAddr, name: null, error: lastErr };
   });
   // Address → net mapping is effectively static → cache a day, ETag for 304s.
   return jsonResponse(result, { maxAge: 86400, request });
