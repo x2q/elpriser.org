@@ -1207,7 +1207,7 @@ const OPENAPI_SPEC = {
       get: {
         operationId: 'lookupSupplier',
         summary: 'Lat/lng → DK address → net company',
-        description: 'Reverse-geocodes coordinates via DAWA and looks up the netselskab via GreenPowerDenmark. Proxied here because GPD returns no CORS headers.',
+        description: 'Reverse-geocodes coordinates via OpenStreetMap (Nominatim) and looks up the netselskab via GreenPowerDenmark. Proxied here because GPD returns no CORS headers.',
         parameters: [
           { name: 'lat', in: 'query', required: true, schema: { type: 'number' } },
           { name: 'lng', in: 'query', required: true, schema: { type: 'number' } },
@@ -2054,20 +2054,23 @@ async function handleRawTariffs(request, env) {
 // ── Supplier lookup (GPS → address → net company) ───────────────────────────
 
 /**
- * Build a GPD-friendly address string from DAWA structured fields.
+ * Build a GPD-friendly address string from Nominatim's structured address.
  *
  *   DAWA's `adressebetegnelse` includes `supplerendebynavn` (parish), e.g.
  *   "P.O. Pedersens Vej 2, Skejby, 8200 Aarhus N" — GPD's API returns 404 for
  *   that. It also chokes on dots in street names ("P.O." → 404). Constructing
  *   the address from structured fields and stripping dots fixes both.
  */
-function buildGpdAddress(dawa) {
+function buildGpdAddress(a) {
+  // `a` is the `address` object from Nominatim's reverse geocoder. DAWA (the
+  // Danish address API this used to call) was shut down on 1 July 2026 and now
+  // answers 410 Gone, so the coordinates are resolved with OpenStreetMap instead.
   // Replace dots with spaces (not strip): "P.O." → "P O", not "PO" — GPD treats
   // those differently and "PO Pedersens Vej" returns 500 while "P O" returns 200.
-  const street = (dawa?.vejstykke?.navn || '').replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
-  const husnr  = dawa?.husnr || '';
-  const postnr = dawa?.postnummer?.nr || '';
-  const town   = dawa?.postnummer?.navn || '';
+  const street = (a?.road || '').replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
+  const husnr  = a?.house_number || '';
+  const postnr = a?.postcode || '';
+  const town   = a?.city || a?.town || a?.village || a?.suburb || a?.municipality || '';
   if (!street || !husnr || !postnr || !town) return null;
   return `${street} ${husnr}, ${postnr} ${town}`;
 }
@@ -2079,14 +2082,19 @@ async function handleSupplierLookup(lat, lng, request) {
   // Cache by ~11m grid (5 decimals) so nearby clicks share a result.
   const key = `gps-${flat.toFixed(5)}-${flng.toFixed(5)}`;
   const result = await cached(key, 24 * 60 * 60_000, async () => {
-    // 1. Reverse-geocode via DAWA (CORS-friendly upstream, but server-side
-    //    here so we get structured fields and one round-trip from the client).
-    const dawa = await fetch(
-      `https://dawa.aws.dk/adgangsadresser/reverse?x=${flng}&y=${flat}&srid=4326`
-    ).then(r => r.json()).catch(() => null);
+    // 1. Reverse-geocode via OpenStreetMap Nominatim (server-side, one round-trip
+    //    for the client). Its usage policy asks for a real User-Agent and at most
+    //    one request per second; the 24h cache above keeps us far below that.
+    const osm = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${flat}&lon=${flng}&zoom=18&addressdetails=1&accept-language=da`,
+      { headers: { 'User-Agent': 'elpriser.org/1.0 (+https://elpriser.org; hello@elpriser.org)' } }
+    ).then(r => r.ok ? r.json() : null).catch(() => null);
 
-    const fullAddr  = dawa?.adressebetegnelse || null;
-    const cleanAddr = buildGpdAddress(dawa);
+    const fullAddr  = osm?.display_name || null;
+    const cleanAddr = buildGpdAddress(osm?.address);
+    if (osm?.address?.country_code && osm.address.country_code !== 'dk') {
+      return { address: fullAddr, name: null, error: 'outside_denmark' };
+    }
     if (!cleanAddr) return { address: fullAddr, name: null, error: 'no_address' };
 
     // 2. Look up net company. Treat 404/500 as "unknown net" rather than fatal —

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privatlivspolitik — Elpriser</title>
+<meta name="description" content="Sådan behandler Elpriser-appen og elpriser.org dine oplysninger: position bruges kun til at finde dit netselskab og gemmes ikke.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+  :root{color-scheme:light dark;--bg:#f4f7fc;--fg:#0e1421;--muted:#4d596b;--card:#fff;--line:#dbe3f0;--brand:#1747d6}
+  @media (prefers-color-scheme:dark){:root{--bg:#0b1220;--fg:#e8edf5;--muted:#a9b5c9;--card:#131b29;--line:#26324a;--brand:#7ea2ff}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  main{max-width:720px;margin:0 auto;padding:32px 20px 64px}
+  h1{font-size:30px;line-height:1.2;margin:0 0 4px;letter-spacing:-.02em}
+  h2{font-size:19px;margin:32px 0 6px}
+  p,li{color:var(--fg)}
+  .muted{color:var(--muted);font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:16px 0}
+  a{color:var(--brand)}
+  ul{padding-left:20px}
+</style>
+</head>
+<body>
+<main>
+  <p class="muted"><a href="/">← elpriser.org</a></p>
+  <h1>Privatlivspolitik</h1>
+  <p class="muted">Gælder Elpriser-appen til Android og hjemmesiden elpriser.org. Senest opdateret 7. oktober 2026.</p>
+
+  <div class="card">
+    <strong>Kort fortalt:</strong> Vi har ingen brugerkonti, ingen reklamer og ingen analyseværktøjer. Appen spørger kun om din position, når du selv trykker på “Find mit netselskab”. Positionen bruges én gang til at finde dit netselskab og gemmes aldrig — hverken i appen eller hos os. Kun netselskabets navn gemmes, på din egen enhed.
+  </div>
+
+  <h2>Hvem er ansvarlig?</h2>
+  <p>Elpriser (elpriser.org) drives af Sandbox Ventures. Spørgsmål om privatliv kan stilles til <a href="mailto:hello@elpriser.org">hello@elpriser.org</a>.</p>
+
+  <h2>Position</h2>
+  <p>Appen kan finde dit netselskab ud fra din placering. Det sker kun, når du trykker på knappen, og først efter at Android har spurgt dig om tilladelse. Du kan vælge omtrentlig eller præcis position, og du kan i stedet vælge netselskab fra en liste uden at dele din position.</p>
+  <ul>
+    <li>Koordinaterne sendes fra din enhed til vores server (elpriser.org), som slår den nærmeste adresse op hos OpenStreetMap (Nominatim) og spørger Green Power Denmark, hvilket netselskab adressen hører til. Svaret sendes tilbage til appen.</li>
+    <li>Vi gemmer ikke koordinaterne, adressen eller dit netselskab i en log koblet til dig. Opslaget kan ligge i en teknisk cache i op til et døgn, nøglet på et koordinatnet på ca. 11 meter, uden at være knyttet til en enhed eller en person.</li>
+    <li>Appen gemmer kun <strong>netselskabets navn og prisområde</strong> på din enhed. Det kan du til enhver tid slette under Indstillinger → “Glem”.</li>
+    <li>Appen indhenter aldrig position i baggrunden.</li>
+  </ul>
+
+  <h2>Hvad appen ellers gemmer på din enhed</h2>
+  <p>Dine valg af prisvisning og udseende samt automations-indstillinger (hvilke enheder du har slået til, og hvor mange timer de skal køre). Intet af det forlader din enhed.</p>
+
+  <h2>Hvad serveren ser</h2>
+  <p>Når appen henter priser, modtager vores server (hostet af Cloudflare) en almindelig forespørgsel med din IP-adresse, som i netværkets tekniske logs bruges til drift og misbrugsbeskyttelse. Forespørgslen indeholder prisområde og netselskab (så vi kan beregne dine priser), men ikke dit navn, din e-mail eller et enheds-id. Vi bruger ikke oplysningerne til profilering eller reklame og videregiver dem ikke.</p>
+
+  <h2>Tredjeparter</h2>
+  <ul>
+    <li><strong>Energi Data Service og ENTSO-E</strong> — kilder til priser og data (hentes af vores server, ikke af din enhed).</li>
+    <li><strong>OpenStreetMap (Nominatim)</strong> og <strong>Green Power Denmark</strong> — kun ved opslag af netselskab, som beskrevet ovenfor.</li>
+    <li><strong>Cloudflare</strong> — hosting af elpriser.org.</li>
+  </ul>
+
+  <h2>Dine rettigheder</h2>
+  <p>Fordi vi ikke har en profil om dig, er der ingen persondata at give indsigt i eller slette hos os. Det, appen har gemt, ligger på din enhed, og du sletter det med “Glem” i Indstillinger eller ved at afinstallere appen. Du har ret til at klage til Datatilsynet (datatilsynet.dk).</p>
+
+  <h2>Børn</h2>
+  <p>Appen er ikke rettet mod børn og indsamler ikke oplysninger om dem.</p>
+
+  <h2>Ændringer</h2>
+  <p>Ændrer vi, hvordan oplysninger behandles, opdaterer vi denne side og datoen øverst.</p>
+</main>
+</body>
+</html>

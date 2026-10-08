@@ -969,6 +969,24 @@ test('gps: location is only ever requested from a click, never on load', () => {
     'the GPS lookup should be reached from the button');
 });
 
+test('privacy: /privatliv is a shipped static page that states what happens to the position', () => {
+  const page = fs.readFileSync(path.join(__dirname, 'privatliv.html'), 'utf8');
+  assert.ok(/gemmes aldrig/i.test(page), 'the policy must say the position is never stored');
+  assert.ok(/<title>Privatlivspolitik/.test(page), 'page title');
+  const build = fs.readFileSync(path.join(__dirname, 'scripts', 'build-dist.sh'), 'utf8');
+  assert.ok(/^\s*privatliv\.html$/m.test(build), 'privatliv.html is in the dist manifest');
+  const fn = fs.readFileSync(path.join(__dirname, 'functions', '[[path]].js'), 'utf8');
+  assert.ok(/STATIC_ASSETS = new Set\(\[[^\]]*'\/privatliv'/.test(fn), 'the catch-all lets /privatliv through to the static file');
+});
+
+test('supplierlookup: reverse-geocodes with Nominatim, not the retired DAWA', () => {
+  const api = fs.readFileSync(path.join(__dirname, 'functions', 'api', '[[catchall]].js'), 'utf8');
+  assert.ok(!/fetch\(\s*`https:\/\/dawa\.aws\.dk/.test(api), 'DAWA was shut down on 2026-07-01 (410 Gone)');
+  assert.ok(/nominatim\.openstreetmap\.org\/reverse/.test(api), 'reverse lookup goes to Nominatim');
+  assert.ok(/User-Agent/.test(api), 'Nominatim requires an identifying User-Agent');
+  assert.ok(/outside_denmark/.test(api), 'positions outside Denmark are reported, not looked up at GPD');
+});
+
 console.log('\n⚡ Static integrity tests\n' + '─'.repeat(50));
 for (const r of results) {
   console.log(`${r.ok ? '✅' : '❌'} ${r.name}${r.ok ? '' : '\n   └─ ' + r.msg}`);

@@ -800,7 +800,7 @@ export async function onRequest(context) {
 const STATIC_ASSETS = new Set([
   '/style.css', '/favicon.ico', '/favicon.svg', '/favicon-32.png',
   '/favicon-192.png', '/favicon-512.png', '/apple-touch-icon.png',
-  '/og-image.png',
+  '/og-image.png', '/privatliv', '/privatliv.html',
 ]);
 
 /** Paths that resolve to a page, for the case-normalising redirect. */

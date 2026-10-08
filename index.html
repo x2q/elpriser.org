@@ -1594,7 +1594,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     Elspot inkl moms = Spotpris + 25% moms<br>
     Inkl alt = Spot + moms + nettarif + system + transmission + elafgift<br>
     Inkl tarif = Som ovenfor, uden elafgift</p>
-    <p>GPS-funktionen finder dit netselskab via <a href="https://dawa.aws.dk" target="_blank" class="text-brand-500 underline">DAWA</a> og <a href="https://elnet.dk" target="_blank" class="text-brand-500 underline">Green Power Denmark</a>.</p>
+    <p>GPS-funktionen finder dit netselskab via <a href="https://www.openstreetmap.org" target="_blank" class="text-brand-500 underline">OpenStreetMap</a> og <a href="https://elnet.dk" target="_blank" class="text-brand-500 underline">Green Power Denmark</a>.</p>
     <p>Data fra <a href="https://www.energidataservice.dk" target="_blank" class="text-brand-500 underline">energidataservice.dk</a></p>
   </div>
 </dialog>
@@ -1842,7 +1842,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         </div>
         <div class="px-4 py-3">
           <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/supplierlookup?lat=…&amp;lng=…</p>
-          <p class="text-xs mt-1">Reverse-geocode af koordinater til adresse + netselskab (CORS-fri proxy over DAWA + GPD).</p>
+          <p class="text-xs mt-1">Reverse-geocode af koordinater til adresse + netselskab (CORS-fri proxy over OpenStreetMap Nominatim + GPD).</p>
         </div>
         <div class="px-4 py-3">
           <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/raw/{prices,encharges,tariff,tariffs}</p>
@@ -1980,7 +1980,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
     </section>
     <section>
       <h3 class="font-bold text-gray-900 dark:text-white mb-2">Find dit netselskab</h3>
-      <p>GPS-funktionen finder automatisk dit netselskab via <a href="https://dawa.aws.dk" target="_blank" class="text-brand-500 underline">DAWA</a> (Danmarks Adressers Web API) og <a href="https://elnet.dk" target="_blank" class="text-brand-500 underline">Green Power Denmark</a>. Du kan også vælge netselskab manuelt fra listen, eller finde det på <a href="https://www.danskenergi.dk/vejledning/nettilslutning/find-dit-netselskab" target="_blank" class="text-brand-500 underline">Dansk Energi</a>.</p>
+      <p>GPS-funktionen finder automatisk dit netselskab via <a href="https://www.openstreetmap.org" target="_blank" class="text-brand-500 underline">OpenStreetMap</a> (Nominatim) og <a href="https://elnet.dk" target="_blank" class="text-brand-500 underline">Green Power Denmark</a>. Du kan også vælge netselskab manuelt fra listen, eller finde det på <a href="https://www.danskenergi.dk/vejledning/nettilslutning/find-dit-netselskab" target="_blank" class="text-brand-500 underline">Dansk Energi</a>.</p>
     </section>
     <section>
       <h3 class="font-bold text-gray-900 dark:text-white mb-2">Datakilder</h3>
@@ -3458,7 +3458,7 @@ async function detectLocation(){
   }
   try{
     text.textContent='Finder netselskab...';
-    // Server-side proxy: DAWA reverse → address normalisation → GPD lookup.
+    // Server-side proxy: OpenStreetMap reverse → address normalisation → GPD lookup.
     // Single round-trip; avoids GPD's missing CORS headers.
     const net=await(await fetch(`/api/supplierlookup?lat=${lat}&lng=${lng}`)).json();
     const m=net.name?matchNet(net.name):null;
