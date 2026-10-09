@@ -1230,7 +1230,20 @@ const OPENAPI_SPEC = {
 
 // ── Main handler ──────────────────────────────────────────────────────────────
 
+// Every /api/<endpoint> answer is data, not a page: Google was crawling the
+// parameterised ones (?area=DK1&hours=6 …) and listing them under "Crawled -
+// currently not indexed". X-Robots-Tag keeps them out of the index while the
+// URLs stay fetchable. The plain /api docs page is HTML and stays indexable.
 export async function onRequest(context) {
+  const res = await handleApi(context);
+  const hasSubPath = new URL(context.request.url).pathname.split('/').filter(Boolean).length > 1;
+  if (!hasSubPath || res.headers.has('X-Robots-Tag')) return res;
+  const out = new Response(res.body, res);
+  out.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  return out;
+}
+
+async function handleApi(context) {
   const { request } = context;
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS });

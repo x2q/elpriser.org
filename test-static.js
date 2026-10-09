@@ -998,5 +998,28 @@ test('app: the front page carries the iOS smart app banner and an App Store link
   assert.ok(html.includes('https://apps.apple.com/dk/app/id6820474476'), 'App Store link');
 });
 
+test('seo: every net-company page is linked from the footer and the tariff page, so Google can discover it', () => {
+  const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+  const fn = fs.readFileSync(path.join(__dirname, 'functions', '[[path]].js'), 'utf8');
+  const slugs = [...fn.matchAll(/slug: '([a-z0-9-]+)'/g)].map(m => m[1]);
+  assert.ok(slugs.length >= 14, 'found the net slugs');
+  const footer = html.slice(html.indexOf('aria-label="Netselskaber"'));
+  const tariff = html.slice(html.indexOf('data-page="tariffer"'), html.indexOf('data-page="tariffer"') + 20000);
+  for (const area of ['dk1', 'dk2']) {
+    for (const m of fn.matchAll(new RegExp(`${area.toUpperCase()}: \\[([\\s\\S]*?)\\],`, 'g'))) {
+      for (const s of m[1].matchAll(/slug: '([a-z0-9-]+)'/g)) {
+        assert.ok(footer.includes(`href="/${area}/${s[1]}"`), `footer links /${area}/${s[1]}`);
+        assert.ok(tariff.includes(`href="/${area}/${s[1]}"`), `tariff page links /${area}/${s[1]}`);
+      }
+    }
+  }
+});
+
+test('seo: /api/<endpoint> answers carry X-Robots-Tag noindex, the /api docs page does not', () => {
+  const src = fs.readFileSync(path.join(__dirname, 'functions', 'api', '[[catchall]].js'), 'utf8');
+  assert.ok(/X-Robots-Tag', 'noindex, nofollow'/.test(src), 'sets X-Robots-Tag noindex');
+  assert.ok(/hasSubPath/.test(src), 'only for paths below /api');
+});
+
 console.log(`\n${_passed} passed, ${_failed} failed\n`);
 process.exit(_failed > 0 ? 1 : 0);
