@@ -996,6 +996,7 @@ test('app: the front page carries the iOS smart app banner and an App Store link
   const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
   assert.ok(/<meta name="apple-itunes-app" content="app-id=6820474476">/.test(html), 'smart app banner meta tag');
   assert.ok(html.includes('https://apps.apple.com/dk/app/id6820474476'), 'App Store link');
+  assert.ok(html.includes('https://play.google.com/store/apps/details?id=org.elpriser.app'), 'Google Play link');
 });
 
 test('seo: every net-company page is linked from the footer and the tariff page, so Google can discover it', () => {
