@@ -1,0 +1,35 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # Fast and hermetic: no network, no server, no browser. This is the gate that
+  # `npm run deploy` runs too.
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run test:gate
+
+  # Browser and server-backed suites: Playwright against server.js and
+  # `wrangler pages dev`. They also read live Energi Data Service data, so a
+  # red run here is worth a look but is not always the code.
+  browser:
+    runs-on: ubuntu-latest
+    needs: gate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm i -g wrangler
+      - run: node test.js
+      - run: node test-regressions.js
+      - run: node test-e2e.js

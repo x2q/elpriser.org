@@ -11,6 +11,7 @@
 
 const assert  = require('node:assert/strict');
 const http    = require('node:http');
+const { spawn } = require('node:child_process');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline copies of the pure functions from server.js so unit tests have no
@@ -522,16 +523,40 @@ async function runAPITests() {
 // Run everything
 // ─────────────────────────────────────────────────────────────────────────────
 
+// The integration tests need server.js on :8080. Start it when nothing is
+// listening (and stop it afterwards), so `npm test` works from a clean checkout
+// instead of failing 15 tests with "is server running?".
+function serverUp() {
+  return new Promise(res => {
+    const req = http.get('http://localhost:8080/api/now?area=DK1&mode=inkl_alt', r => { r.resume(); res(true); });
+    req.on('error', () => res(false));
+    req.setTimeout(1500, () => { req.destroy(); res(false); });
+  });
+}
+
+async function startServer() {
+  if (await serverUp()) return null;
+  const server = spawn('node', ['server.js'], { stdio: ['ignore', 'pipe', 'pipe'], cwd: __dirname });
+  await new Promise((ok, no) => {
+    const t = setTimeout(() => no(new Error('server.js did not start within 8s')), 8000);
+    server.stdout.on('data', d => { if (d.toString().includes('Elpris server')) { clearTimeout(t); ok(); } });
+    server.on('exit', code => { clearTimeout(t); no(new Error(`server.js exited with code ${code}`)); });
+  });
+  return server;
+}
+
 (async () => {
   console.log('\n⚡ Elpris Test Suite\n' + '─'.repeat(50));
+  const server = await startServer();
 
   // Unit tests (sync, no network)
   console.log('\n📋 Unit tests');
   // (already run above via test())
 
   // Integration tests (require server)
-  console.log('\n🌐 API integration tests (requires server on :8080)');
+  console.log('\n🌐 API integration tests (server.js on :8080, live upstream data)');
   await runAPITests();
+  if (server) server.kill();
 
   // Report
   console.log('\n' + '─'.repeat(50));

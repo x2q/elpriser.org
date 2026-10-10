@@ -555,8 +555,11 @@ test('indexnow: the served key and the submitting script agree', () => {
   assert.equal(served, sent, 'the key the site serves is not the key the script submits');
   assert.ok(SRV.includes(`'/${served}.txt': {`), 'the key file route does not match the key');
   const pj = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
-  assert.ok(/wrangler pages deploy[^&]*&& \(node scripts\/indexnow\.mjs \|\| true\)$/.test(pj.scripts.deploy),
+  // IndexNow is wrapped in (… || true) so its failure cannot fail the deploy;
+  // the only thing allowed after it is the post-deploy smoke test.
+  assert.ok(/wrangler pages deploy[^&]*&& \(node scripts\/indexnow\.mjs \|\| true\)( && npm run test:smoke)?$/.test(pj.scripts.deploy),
     'deploy does not submit to IndexNow, or lets an IndexNow failure fail the deploy');
+  assert.ok(/^npm run test:gate && /.test(pj.scripts.deploy), 'deploy must run the test gate before building');
 });
 
 test('/prognose: the week is text in the HTML and follows the table', () => {
@@ -1020,6 +1023,16 @@ test('seo: /api/<endpoint> answers carry X-Robots-Tag noindex, the /api docs pag
   const src = fs.readFileSync(path.join(__dirname, 'functions', 'api', '[[catchall]].js'), 'utf8');
   assert.ok(/X-Robots-Tag', 'noindex, nofollow'/.test(src), 'sets X-Robots-Tag noindex');
   assert.ok(/hasSubPath/.test(src), 'only for paths below /api');
+});
+
+test('meta: no test is registered after the summary line, where it would silently never run', () => {
+  // The file ends with the summary and process.exit(). A test() appended below
+  // that is parsed but never executed, and nothing reports it.
+  const src = fs.readFileSync(__filename, 'utf8');
+  const cut = src.lastIndexOf('console.log(`\\n${_passed} passed');
+  assert.ok(cut > 0, 'could not find the summary line');
+  const after = src.slice(cut);
+  assert.ok(!/^test\(/m.test(after), 'a test() call sits after the summary line and will never run');
 });
 
 console.log(`\n${_passed} passed, ${_failed} failed\n`);

@@ -4,8 +4,9 @@
  * weeks. Each test cites the commit it would have caught.
  *
  *   1. Static source checks   — fast, no server needed (grep-based)
- *   2. API endpoint tests     — needs wrangler (Cloudflare Pages Functions)
- *   3. Browser flow tests     — needs wrangler + Playwright (GPS detect)
+ *   2. Browser flow tests     — needs wrangler + Playwright (GPS detect)
+ *
+ * The /api/* endpoint tests live in test-api.mjs (hermetic, no server).
  *
  * Run: npm run test:regressions
  *
@@ -188,244 +189,12 @@ async function staticChecks() {
     });
 }
 
-// ── 2. API ENDPOINT TESTS ────────────────────────────────────────────────────
-
-async function apiTests() {
-  section('API endpoint /api/supplierlookup');
-
-  const json = async (path, init) => {
-    const r = await fetch(BASE + path, init);
-    const ct = r.headers.get('content-type') || '';
-    const body = ct.includes('json') ? await r.json() : await r.text();
-    return { status: r.status, headers: r.headers, body };
-  };
-
-  // CORS — the original symptom from the user's screenshot
-  await test('GET /api/supplierlookup → Access-Control-Allow-Origin: * — guards 75fd5c9',
-    async () => {
-      const r = await json('/api/supplierlookup?lat=55.6&lng=12.5');
-      assert.equal(r.headers.get('access-control-allow-origin'), '*',
-        'CORS header missing — this is the original "Failed to fetch" cause.');
-    });
-
-  await test('OPTIONS /api/supplierlookup → 204 with CORS preflight headers',
-    async () => {
-      const r = await json('/api/supplierlookup', { method: 'OPTIONS' });
-      assert.equal(r.status, 204);
-      assert.equal(r.headers.get('access-control-allow-methods'), 'GET, OPTIONS');
-    });
-
-  await test('missing lat/lng → 400 (graceful, not 500 crash)',
-    async () => {
-      const r = await json('/api/supplierlookup');
-      assert.equal(r.status, 400);
-      assert.match(r.body.error, /lat/i);
-    });
-
-  await test('lat/lng with NaN → 400 (no NaN propagation into upstream URL)',
-    async () => {
-      const r = await json('/api/supplierlookup?lat=abc&lng=xyz');
-      assert.equal(r.status, 400);
-    });
-
-  // The original failing case — the screenshot showed CORS-blocked lookup of
-  // "P.O. Pedersens Vej 2, Skejby, 8200 Aarhus N". The address is now resolved by Nominatim (DAWA, which
-  // the coordinates originally came from, was shut down on 2026-07-01).
-  await test('resolves "P.O. Pedersens Vej 2, Skejby" → KONSTANT Net A/S — guards 75fd5c9 (parish + dots)',
-    async () => {
-      const r = await json('/api/supplierlookup?lat=56.20137046&lng=10.19037183');
-      assert.equal(r.status, 200);
-      assert.equal(r.body.name, 'KONSTANT Net A/S',
-        `name was "${r.body.name}" (error="${r.body.error}"). The address-normalisation ` +
-        `step is broken — check buildGpdAddress() handles parishes (supplerendebynavn) ` +
-        `and dots correctly.`);
-    });
-
-  await test('coordinates outside DK return JSON (not unhandled 500)',
-    async () => {
-      const r = await json('/api/supplierlookup?lat=0&lng=0');
-      assert.equal(r.status, 200);
-      assert.ok('name' in r.body, 'response must always include a "name" field');
-    });
-
-  await test('response is cached (second call < 100ms)',
-    async () => {
-      const url = '/api/supplierlookup?lat=55.673&lng=12.564';
-      await json(url); // warm
-      const t0 = Date.now();
-      await json(url);
-      const elapsed = Date.now() - t0;
-      assert.ok(elapsed < 200, `cached call took ${elapsed}ms, expected <200ms`);
-    });
-
-  // ── /api/raw/* — guards EDS-CORS bug ("Fejl ved hentning af data") ──
-  section('API endpoint /api/raw/* (Energi Data Service proxy)');
-
-  await test('GET /api/raw/prices returns DayAhead records with CORS + cache headers',
-    async () => {
-      const today = new Date(), s = new Date(today), e = new Date(today);
-      s.setUTCDate(s.getUTCDate() - 7); e.setUTCDate(e.getUTCDate() + 2);
-      const fmt = d => d.toISOString().slice(0, 10);
-      const r = await json(`/api/raw/prices?area=DK1&start=${fmt(s)}&end=${fmt(e)}`);
-      assert.equal(r.status, 200);
-      assert.equal(r.headers.get('access-control-allow-origin'), '*',
-        'CORS header missing — direct EDS calls fail without this proxy.');
-      assert.match(r.headers.get('cache-control') || '', /s-maxage=\d+/,
-        'edge cache TTL missing — server cache must be configured.');
-      assert.ok(Array.isArray(r.body.records),
-        'response must have a records array');
-      assert.ok(r.body.records.length > 0,
-        'expected non-empty records (proxied response empty? check upstream).');
-    });
-
-  await test('GET /api/raw/prices missing params → 400',
-    async () => {
-      const r = await json('/api/raw/prices?area=DK1');
-      assert.equal(r.status, 400);
-    });
-
-  // ── Cache-poisoning guard: an empty upstream result must NOT be cached ──
-  // A transient EDS blip once returned [], which got stored in the edge cache
-  // (and sent with a 6h max-age the browser honoured) → "Kunne ikke hente
-  // elpriser" stuck for hours. Empty responses must be max-age=0.
-  await test('empty /api/raw/prices result is not cached (max-age=0) — guards cache-poisoning',
-    async () => {
-      // A far-future window has no published prices → empty records.
-      const r = await json('/api/raw/prices?area=DK1&start=2035-01-01&end=2035-01-05');
-      assert.equal(r.status, 200);
-      assert.equal(r.body.records.length, 0, 'far-future window should be empty');
-      const m = (r.headers.get('cache-control') || '').match(/max-age=(\d+)/);
-      assert.ok(m, 'cache-control present');
-      assert.equal(+m[1], 0,
-        `empty result was sent with max-age=${m[1]} — must be 0 so a transient ` +
-        `empty never sticks in the browser/edge cache.`);
-    });
-
-  // ── ETag / conditional requests — "only fetch when there's actually new data" ──
-  await test('/api/raw/prices sends an ETag and 304s on If-None-Match',
-    async () => {
-      const today = new Date(), s = new Date(today), e = new Date(today);
-      s.setUTCDate(s.getUTCDate() - 7); e.setUTCDate(e.getUTCDate() + 2);
-      const fmt = d => d.toISOString().slice(0, 10);
-      const url = `/api/raw/prices?area=DK1&start=${fmt(s)}&end=${fmt(e)}`;
-      const first = await json(url);
-      const etag = first.headers.get('etag');
-      assert.ok(etag, 'response must carry an ETag');
-      // Raw fetch — a 304 has an empty body the json() helper can't parse.
-      const second = await fetch(BASE + url, { headers: { 'If-None-Match': etag } });
-      assert.equal(second.status, 304,
-        `re-request with matching If-None-Match must 304 (got ${second.status}) — ` +
-        `otherwise we re-transfer unchanged data.`);
-    });
-
-  await test('/api/raw/prices caches until next publication, not 60s',
-    async () => {
-      const today = new Date(), s = new Date(today), e = new Date(today);
-      s.setUTCDate(s.getUTCDate() - 7); e.setUTCDate(e.getUTCDate() + 2);
-      const fmt = d => d.toISOString().slice(0, 10);
-      const r = await json(`/api/raw/prices?area=DK1&start=${fmt(s)}&end=${fmt(e)}`);
-      const m = (r.headers.get('cache-control') || '').match(/max-age=(\d+)/);
-      assert.ok(m, 'cache-control max-age missing');
-      assert.ok(+m[1] >= 300,
-        `max-age was ${m && m[1]}s — day-ahead prices are stable for hours, ` +
-        `should cache well beyond the old flat 60s.`);
-    });
-
-  await test('/api/now carries an ETag (conditional revalidation)',
-    async () => {
-      const r = await json('/api/now?area=DK1&mode=inkl_alt');
-      assert.ok(r.headers.get('etag'), '/api/now must send an ETag');
-    });
-
-  await test('GET /api/raw/prices invalid date format → 400',
-    async () => {
-      const r = await json('/api/raw/prices?area=DK1&start=foo&end=bar');
-      assert.equal(r.status, 400);
-    });
-
-  await test('GET /api/raw/encharges returns charge records',
-    async () => {
-      const r = await json('/api/raw/encharges');
-      assert.equal(r.status, 200);
-      assert.equal(r.headers.get('access-control-allow-origin'), '*');
-      assert.ok(Array.isArray(r.body.records));
-    });
-
-  await test('GET /api/raw/tariff?gln= returns single-net tariff (not all nets)',
-    async () => {
-      // Konstant — same GLN that was the failing case end-to-end
-      const r = await json('/api/raw/tariff?gln=5790000704842');
-      assert.equal(r.status, 200);
-      assert.ok(Array.isArray(r.body.records));
-      // Single-net response should be tiny (a few currently-active records).
-      // If we accidentally regress to all-nets we'd see thousands of records.
-      assert.ok(r.body.records.length < 50,
-        `single-net tariff returned ${r.body.records.length} records — ` +
-        `>50 suggests regression to all-nets behaviour.`);
-    });
-
-  await test('GET /api/raw/tariff missing/bad gln → 400',
-    async () => {
-      const r1 = await json('/api/raw/tariff');
-      assert.equal(r1.status, 400);
-      const r2 = await json('/api/raw/tariff?gln=foo');
-      assert.equal(r2.status, 400);
-    });
-
-  // ── smart strategy (max consecutive OFF constraint) ──────────────────────
-  await test('strategy=smart respects max_off — no run > Y consecutive OFF hours',
-    async () => {
-      const r = await json('/api/schedule?area=DK1&mode=spot_inkl&strategy=smart&hours=8&max_off=2');
-      assert.equal(r.status, 200);
-      const sched = r.body.schedule;
-      // Find runs of consecutive OFF
-      let maxRun = 0, cur = 0;
-      for (const h of sched) {
-        if (!h.on) { cur++; if (cur > maxRun) maxRun = cur; }
-        else cur = 0;
-      }
-      assert.ok(maxRun <= 2,
-        `smart strategy produced run of ${maxRun} consecutive OFF hours, ` +
-        `exceeds max_off=2. Greedy algorithm broken.`);
-      const offCount = sched.filter(h => !h.on).length;
-      assert.equal(offCount, 8, `expected 8 OFF hours, got ${offCount}`);
-    });
-
-  await test('strategy=smart max_off=1 produces no adjacent OFF hours',
-    async () => {
-      const r = await json('/api/schedule?area=DK1&mode=spot_inkl&strategy=smart&hours=4&max_off=1');
-      const sched = r.body.schedule;
-      for (let i = 1; i < sched.length; i++) {
-        assert.ok(sched[i].on || sched[i-1].on,
-          `hours ${i-1} and ${i} both OFF — violates max_off=1`);
-      }
-    });
-
-  await test('strategy=smart picks the most expensive hours OFF (not random)',
-    async () => {
-      const r = await json('/api/schedule?area=DK1&mode=spot_inkl&strategy=smart&hours=4&max_off=4');
-      const sched = r.body.schedule;
-      const offPrices = sched.filter(h => !h.on).map(h => h.price);
-      const onPrices  = sched.filter(h =>  h.on).map(h => h.price);
-      const minOff = Math.min(...offPrices);
-      const maxOn  = Math.max(...onPrices);
-      // With max_off=4 (no constraint binding for 4 hours), the 4 most
-      // expensive hours should be OFF — minimum OFF price ≥ maximum ON price.
-      assert.ok(minOff >= maxOn,
-        `cheapest OFF hour (${minOff}) should be ≥ most expensive ON hour (${maxOn}) — ` +
-        `algorithm not picking by price.`);
-    });
-
-  await test('/api/raw/tariff edge-cached: second call < 50ms',
-    async () => {
-      const url = '/api/raw/tariff?gln=5790000704842';
-      await json(url); // warm
-      const t0 = Date.now();
-      await json(url);
-      const elapsed = Date.now() - t0;
-      assert.ok(elapsed < 100, `cached call took ${elapsed}ms — edge cache broken?`);
-    });
-}
+// ── 2. API ENDPOINT TESTS — moved to test-api.mjs ────────────────────────────
+//
+// They ran here against `wrangler pages dev`, so their result depended on the
+// network and on what Energi Data Service happened to answer. test-api.mjs runs
+// the same handler in-process with its upstreams faked, which is what makes a
+// red result mean something.
 
 // ── 3. BROWSER FLOW TESTS (GPS detect) ───────────────────────────────────────
 
@@ -442,6 +211,10 @@ async function browserTests() {
 
   // Helper: install stubs in the page, run detectLocation, return state.
   async function runWithStubs(stubScript) {
+    // The previous test leaves the page mid-navigation (detectLocation ends by
+    // setting location.hash/href). Going straight to '/' from there aborts with
+    // net::ERR_ABORTED, so start each test from a blank page.
+    await page.goto('about:blank');
     await page.goto(BASE + '/');
     return await page.evaluate(async (script) => {
       // eslint-disable-next-line no-new-func
@@ -492,11 +265,43 @@ async function browserTests() {
           return 1;
         };
         navigator.geolocation.clearWatch = () => {};
+        // detectLocation falls back to an IP-based position (/api/geo) when the
+        // browser denies. Without a stub that answers depends on where the test
+        // runs, so say explicitly that the IP lookup finds nothing.
+        const f = window.fetch;
+        window.fetch = (u, i) => (typeof u === 'string' && u.startsWith('/api/geo'))
+          ? Promise.resolve({ json: async () => ({ lat: null, lng: null }) })
+          : f(u, i);
         return ctx;
       `);
       assert.ok(r.elapsed < 2000,
         `PERMISSION_DENIED took ${r.elapsed}ms — should fail fast, not wait for the 15s timeout`);
       assert.match(r.finalText, /nægt/i, `expected "nægtet" message, got "${r.finalText}"`);
+    });
+
+  // ── the IP fallback that makes a denied permission non-fatal ─────────────
+  await test('PERMISSION_DENIED with an IP position → approximate lookup instead of an error',
+    async () => {
+      const r = await runWithStubs(`
+        const ctx = { geoCalls: 0, lookups: 0 };
+        navigator.geolocation.watchPosition = (ok, no) => {
+          setTimeout(() => no({code:1, message:'denied'}), 30);
+          return 1;
+        };
+        navigator.geolocation.clearWatch = () => {};
+        const f = window.fetch;
+        window.fetch = (u, i) => {
+          if (typeof u !== 'string') return f(u, i);
+          if (u.startsWith('/api/geo')) { ctx.geoCalls++; return Promise.resolve({ json: async () => ({ lat: 55.676, lng: 12.568 }) }); }
+          if (u.startsWith('/api/supplierlookup')) { ctx.lookups++; return Promise.resolve({ json: async () => ({ name: 'Radius Elnet A/S', address: 'X' }) }); }
+          return f(u, i);
+        };
+        return ctx;
+      `);
+      assert.equal(r.geoCalls, 1, 'expected one IP-position request');
+      assert.equal(r.lookups, 1, 'expected the approximate position to be looked up');
+      assert.ok(r.hash.length > 0, `expected navigation, hash=${r.hash}`);
+      assert.doesNotMatch(r.finalText, /nægt/i, 'a denied permission must not be a dead end when the IP position works');
     });
 
   // ── e194eaf: getCurrentPosition is not used (runtime check, complements static) ─
@@ -573,11 +378,10 @@ async function browserTests() {
   // Static checks first — fastest, fail loudly without needing a server
   await staticChecks();
 
-  // Boot wrangler for API + browser tests
+  // Boot wrangler for the browser tests
   let wrangler = null;
   try {
     wrangler = await startWrangler();
-    await apiTests();
     await browserTests();
   } finally {
     if (wrangler) wrangler.kill();

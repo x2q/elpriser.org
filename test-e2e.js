@@ -229,10 +229,13 @@ async function startServer() {
   // FAQ accordions
   await test('faq: every <details> opens when summary is clicked', async () => {
     await page.goto(BASE + '/');
-    const count = await page.locator('details.faq').count();
-    assert.ok(count >= 5, `expected ≥5 FAQ items, got ${count}`);
+    // Hidden sections (other pages of the SPA) carry <details class="faq"> too;
+    // a user can only open the ones on the page that is showing.
+    const faqs = page.locator('main.active details.faq');
+    const count = await faqs.count();
+    assert.ok(count >= 5, `expected ≥5 FAQ items on the start page, got ${count}`);
     for (let i = 0; i < count; i++) {
-      const d = page.locator('details.faq').nth(i);
+      const d = faqs.nth(i);
       assert.equal(await d.evaluate(el => el.open), false, `faq #${i} starts closed`);
       await d.locator('summary').click();
       assert.equal(await d.evaluate(el => el.open), true, `faq #${i} did not open on click`);
@@ -312,10 +315,16 @@ async function startServer() {
     await page.waitForFunction(() => document.getElementById('autoArea').value === 'DK2');
   });
 
-  await test('automation: #autoDevice dropdown is removed', async () => {
+  await test('automation: the appliance picker lists controllable appliances, no old "Enhed" device list', async () => {
+    // "Enhed" (a Shelly/HA device-type list) was removed in ce46406; #autoDevice
+    // came back as "Apparat" with appliance types for the flex-capacity feature.
     await page.goto(BASE + '/#automation');
-    const count = await page.locator('#autoDevice').count();
-    assert.equal(count, 0, 'Enhed dropdown should be gone');
+    const label = await page.locator('label[for="autoDevice"]').first().textContent();
+    assert.match(label, /apparat/i, `label was "${label}"`);
+    const values = await page.locator('#autoDevice option').evaluateAll(os => os.map(o => o.value));
+    for (const v of ['ev_charger', 'water_heater', 'heat_pump']) {
+      assert.ok(values.includes(v), `appliance option ${v} missing (have ${values.join(', ')})`);
+    }
   });
 
   await test('automation: code examples are syntax-highlighted (hl-* spans present)', async () => {
@@ -449,7 +458,10 @@ async function startServer() {
       await page.goto(BASE + url);
       const dp = await page.evaluate(() =>
         document.querySelector('main.active')?.dataset.page);
-      await page.locator(`[data-page="${dp}"] a[title="Startside"]`).first().click();
+      // Sub-pages have either the in-page home icon or the header logo; both
+      // must lead to "/". (The prices page only has the logo.)
+      await page.locator(
+        `[data-page="${dp}"] a[title="Startside"], header.site-nav a.site-logo`).first().click();
       await page.waitForSelector('main[data-page="start"].active');
       assert.equal(await page.evaluate(() => location.pathname), '/',
         'home icon must land on / (not keep sub-page pathname)');

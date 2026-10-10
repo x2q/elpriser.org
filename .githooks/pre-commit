@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Runs the hermetic gate (static invariants, API handler, unit tests) — about a
+# second, no network. Enable with:  git config core.hooksPath .githooks
+# Skip once with:                   git commit --no-verify
+set -e
+cd "$(git rev-parse --show-toplevel)"
+npm run --silent test:pre-commit
