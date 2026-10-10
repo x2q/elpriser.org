@@ -32,7 +32,11 @@ object Api {
     suspend fun forecast(area: String, mode: String, gln: String?): Forecast {
         val params = mutableMapOf("area" to area, "mode" to mode)
         if (gln != null && mode.startsWith("net_")) params["gln"] = gln
-        val j = get("/forecast", params)
+        return parseForecast(get("/forecast", params), area, mode)
+    }
+
+    /** Kun hele døgn (24 timepriser) tæller; båndet P10/P90 er valgfrit. Adskilt fra netværket, så det kan enhedstestes. */
+    fun parseForecast(j: JSONObject, area: String, mode: String): Forecast {
         val days = j.getJSONArray("days")
         val out = ArrayList<Day>(days.length())
         for (i in 0 until days.length()) {
@@ -59,8 +63,11 @@ object Api {
     }
 
     /** CO₂ i g/kWh pr. time, pr. dato. */
-    suspend fun co2(area: String): Map<String, List<Int>> {
-        val recs = get("/raw/co2", mapOf("area" to area)).getJSONArray("records")
+    suspend fun co2(area: String): Map<String, List<Int>> = parseCo2(get("/raw/co2", mapOf("area" to area)))
+
+    /** Kun datoer med alle 24 timer. */
+    fun parseCo2(j: JSONObject): Map<String, List<Int>> {
+        val recs = j.getJSONArray("records")
         val byDate = LinkedHashMap<String, IntArray>()
         for (i in 0 until recs.length()) {
             val r = recs.getJSONObject(i)

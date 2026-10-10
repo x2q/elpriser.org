@@ -25,7 +25,11 @@ enum Api {
     static func forecast(area: String, mode: String, gln: String?) async throws -> Forecast {
         var params = ["area": area, "mode": mode]
         if let gln, mode.hasPrefix("net_") { params["gln"] = gln }
-        let j = try await get("/forecast", params)
+        return parseForecast(try await get("/forecast", params), area: area, mode: mode)
+    }
+
+    /// Kun hele døgn (24 timepriser) tæller; båndet P10/P90 er valgfrit. Adskilt fra netværket, så det kan enhedstestes.
+    static func parseForecast(_ j: [String: Any], area: String, mode: String) -> Forecast {
         var out: [Day] = []
         for d in (j["days"] as? [[String: Any]]) ?? [] {
             guard let date = d["date"] as? String, let type = d["type"] as? String else { continue }
@@ -49,7 +53,11 @@ enum Api {
 
     /// CO₂ i g/kWh pr. time, pr. dato.
     static func co2(area: String) async throws -> [String: [Int]] {
-        let j = try await get("/raw/co2", ["area": area])
+        parseCo2(try await get("/raw/co2", ["area": area]))
+    }
+
+    /// Kun datoer med alle 24 timer.
+    static func parseCo2(_ j: [String: Any]) -> [String: [Int]] {
         var byDate: [String: [Int]] = [:]
         for r in (j["records"] as? [[String: Any]]) ?? [] {
             guard let date = r["date"] as? String, let h = r["hour"] as? Int, (0..<24).contains(h),

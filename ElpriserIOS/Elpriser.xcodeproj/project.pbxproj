@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		070BEEC5A7E4520F5503AF13 /* ContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98356D215B7AF4BC0982A5DD /* ContractTests.swift */; };
 		075D0A017923CB44963697ED /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C2F7685A6040B8334198A8 /* SettingsScreen.swift */; };
 		15CCDC52BDDD3835C6C5590F /* AutomationScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81FE4CF78994273B13EC4E0 /* AutomationScreen.swift */; };
 		22A35C23EF2857E016C0023E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F9AEB4CCD32B4F828818D38E /* Assets.xcassets */; };
@@ -25,6 +26,16 @@
 		F20459218D6C20BE212A65E9 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BA379703921B8B52E7A017 /* Models.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		04431525767E88D8FA217AD6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F3A76920F600002C1EAB4A60 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EA65FD94E9206566BFB0453F;
+			remoteInfo = Elpriser;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		069C1B68BF4CE26810998F12 /* ElpriserApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElpriserApp.swift; sourceTree = "<group>"; };
 		16DDB4C03F208F45BBD9C78F /* PositionFinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionFinder.swift; sourceTree = "<group>"; };
@@ -37,9 +48,11 @@
 		5D66E273760FB843CBE6C2C4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		769138C3213A541E2B3C043C /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		85C2F7685A6040B8334198A8 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
+		98356D215B7AF4BC0982A5DD /* ContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractTests.swift; sourceTree = "<group>"; };
 		9D3EF2BA24B75A83BB44F18B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A81FE4CF78994273B13EC4E0 /* AutomationScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationScreen.swift; sourceTree = "<group>"; };
 		C445F043FFD3C41CF8EB07D4 /* Api.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Api.swift; sourceTree = "<group>"; };
+		CF2895F3B64B67D56DD28B8E /* ElpriserTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ElpriserTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1FA340C8E3EBF989BC55FC1 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		F5A860138AFCD80A54639457 /* Elpriser.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Elpriser.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9AEB4CCD32B4F828818D38E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -51,6 +64,7 @@
 			isa = PBXGroup;
 			children = (
 				F5A860138AFCD80A54639457 /* Elpriser.app */,
+				CF2895F3B64B67D56DD28B8E /* ElpriserTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -81,8 +95,17 @@
 			children = (
 				DA98E6AA1260831BB3146F67 /* Resources */,
 				4880ED02766BAF03DB569568 /* Sources */,
+				C9A32AD11E8C80BFB8E5929E /* Tests */,
 				1FDA69FF956608227AC41C89 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		C9A32AD11E8C80BFB8E5929E /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				98356D215B7AF4BC0982A5DD /* ContractTests.swift */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 		DA98E6AA1260831BB3146F67 /* Resources */ = {
@@ -98,6 +121,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		A5428CFD9235270961D58827 /* ElpriserTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F254BFB6689B6A082EBE69B3 /* Build configuration list for PBXNativeTarget "ElpriserTests" */;
+			buildPhases = (
+				9AA5EA63D189C3D1D7C8B821 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0AE3B8ED503739FFE0FF0C49 /* PBXTargetDependency */,
+			);
+			name = ElpriserTests;
+			packageProductDependencies = (
+			);
+			productName = ElpriserTests;
+			productReference = CF2895F3B64B67D56DD28B8E /* ElpriserTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		EA65FD94E9206566BFB0453F /* Elpriser */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7D368E8E0721D6AF42EC3537 /* Build configuration list for PBXNativeTarget "Elpriser" */;
@@ -125,6 +166,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					A5428CFD9235270961D58827 = {
+						DevelopmentTeam = 356K9LKCC6;
+						ProvisioningStyle = Automatic;
+					};
 					EA65FD94E9206566BFB0453F = {
 						DevelopmentTeam = 356K9LKCC6;
 						ProvisioningStyle = Automatic;
@@ -146,6 +191,7 @@
 			projectRoot = "";
 			targets = (
 				EA65FD94E9206566BFB0453F /* Elpriser */,
+				A5428CFD9235270961D58827 /* ElpriserTests */,
 			);
 		};
 /* End PBXProject section */
@@ -184,9 +230,43 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9AA5EA63D189C3D1D7C8B821 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				070BEEC5A7E4520F5503AF13 /* ContractTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		0AE3B8ED503739FFE0FF0C49 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EA65FD94E9206566BFB0453F /* Elpriser */;
+			targetProxy = 04431525767E88D8FA217AD6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		389A12D4A1B1720308C586B9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 356K9LKCC6;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.elpriser.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Elpriser.app/Elpriser";
+			};
+			name = Release;
+		};
 		489FABEED5C51294BAED1CEC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -273,6 +353,24 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		76CAE1012D794CF876D37CA6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 356K9LKCC6;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.elpriser.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Elpriser.app/Elpriser";
 			};
 			name = Debug;
 		};
@@ -375,6 +473,15 @@
 			buildConfigurations = (
 				63A77159644538B598EDCADB /* Debug */,
 				ED675354CD68E6FE73B47ABB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F254BFB6689B6A082EBE69B3 /* Build configuration list for PBXNativeTarget "ElpriserTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				76CAE1012D794CF876D37CA6 /* Debug */,
+				389A12D4A1B1720308C586B9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

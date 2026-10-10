@@ -50,3 +50,24 @@ targets:
         INFOPLIST_FILE: Resources/Info.plist
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+  ElpriserTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: Elpriser
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: org.elpriser.app.tests
+        DEVELOPMENT_TEAM: 356K9LKCC6
+schemes:
+  Elpriser:
+    build:
+      targets:
+        Elpriser: all
+        ElpriserTests: [test]
+    test:
+      targets:
+        - ElpriserTests

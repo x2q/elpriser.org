@@ -53,6 +53,13 @@ android {
         buildConfig = true
     }
     lint { abortOnError = false }
+    testOptions {
+        unitTests.all {
+            // The contract file lives outside the project; without declaring it, Gradle
+            // calls the test task up to date when only that file changed.
+            it.inputs.file(rootProject.file("../tests/golden/app-contract.json")).withPropertyName("goldenContract")
+        }
+    }
 }
 
 dependencies {
@@ -67,4 +74,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
     implementation("androidx.core:core-ktx:1.16.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+
+    testImplementation("junit:junit:4.13.2")
+    // android.jar's org.json is a stub on the JVM; tests need the real one.
+    testImplementation("org.json:json:20240303")
 }
