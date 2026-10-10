@@ -6,7 +6,7 @@
 // had nothing to do with the code. Each test names the bug it guards.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApi } from './tests/upstream.mjs';
+import { createApi, makeKv, priceArchiveYear, tariffArchive } from './tests/upstream.mjs';
 
 const day = offset => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
 const range = `start=${day(-7)}&end=${day(2)}`;
@@ -246,4 +246,65 @@ test('the browser never has to reach Nominatim or GPD itself — the proxy answe
   });
   const r = await api.get('/api/supplierlookup?lat=55.673&lng=12.564');
   assert.equal(r.body.name, 'Radius Elnet A/S');
+});
+
+// ── Workers KV usage — the free plan allows 100,000 reads a day ─────────────
+//
+// Every price call used to read the archive year(s) and the grid tariff straight
+// from KV, and a page render makes several such calls: 55-85 thousand reads a
+// day on a small site. The values change once a day, so a key should cost one
+// read per location per TTL, not one per request.
+
+const year = new Date().getUTCFullYear();
+const seededKv = () => makeKv({
+  [`prices-archive-DK1-${year}`]: priceArchiveYear(year),
+  [`prices-archive-DK1-${year - 1}`]: priceArchiveYear(year - 1),
+  'dk-nettarif-5790001089030': tariffArchive(),
+});
+const GLN_N1 = '5790001089030';
+
+test('KV: 30 price requests cost one read per key, not 30', async () => {
+  const kv = seededKv();
+  const api = await createApi({ kv });
+  for (let i = 0; i < 30; i++) {
+    const r = await api.get(`/api/now?area=DK1&mode=net_inkl_alt&gln=${GLN_N1}`);
+    assert.equal(r.status, 200);
+  }
+  const perKey = {};
+  for (const k of kv.ops.get) perKey[k] = (perKey[k] || 0) + 1;
+  for (const [k, n] of Object.entries(perKey)) assert.ok(n <= 1, `${k} was read ${n} times`);
+  assert.ok(kv.reads() <= 4, `expected a handful of reads, got ${kv.reads()}: ${JSON.stringify(perKey)}`);
+});
+
+test('KV: the answer is the same with and without the cache layers', async () => {
+  const kv = seededKv();
+  const api = await createApi({ kv });
+  const first = await api.get(`/api/now?area=DK1&mode=net_inkl_alt&gln=${GLN_N1}`);
+  const again = await api.get(`/api/now?area=DK1&mode=net_inkl_alt&gln=${GLN_N1}`);
+  assert.deepEqual(again.body, first.body);
+  assert.ok(typeof first.body.price === 'number' || first.body.price == null);
+});
+
+test('KV: a key that is not in KV is remembered as missing, not re-read per request', async () => {
+  const kv = makeKv({});                         // no tariff archive for any net
+  const api = await createApi({ kv });
+  for (let i = 0; i < 10; i++) await api.get(`/api/now?area=DK1&mode=net_inkl_alt&gln=${GLN_N1}`);
+  const n = kv.ops.get.filter(k => k === `dk-nettarif-${GLN_N1}`).length;
+  assert.equal(n, 1, `the missing tariff key was read ${n} times`);
+});
+
+test('KV: /api/raw/prices does not read the rolling backup on every request', async () => {
+  const kv = makeKv({});
+  const api = await createApi({ kv });
+  for (let i = 0; i < 15; i++) await api.get(`/api/raw/prices?area=DK1&${range}`);
+  const reads = kv.ops.getWithMetadata.filter(k => k.startsWith('raw-prices-backup-')).length;
+  assert.ok(reads <= 1, `rolling backup was read ${reads} times in 15 requests`);
+});
+
+test('KV: the forecast model key is read once however many forecasts are served', async () => {
+  const kv = seededKv();
+  const api = await createApi({ kv });
+  for (let i = 0; i < 10; i++) await api.get('/api/forecast?area=DK1&mode=inkl_alt');
+  const n = kv.ops.get.filter(k => k === 'forecast-v3-DK1').length;
+  assert.ok(n <= 1, `forecast-v3-DK1 was read ${n} times`);
 });

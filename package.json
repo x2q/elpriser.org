@@ -26,6 +26,7 @@
     "test:forecast": "node test-forecast-chart.mjs",
     "test:zone": "node test-zone-intro.mjs",
     "indexnow": "node scripts/indexnow.mjs",
+    "kv:usage": "node scripts/kv-usage.mjs",
     "test:forecast-tariff": "node test-forecast-tariff.mjs",
     "test:refresh": "python3 scripts/data_backup/test_refresh_merge.py"
   },

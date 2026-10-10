@@ -581,7 +581,7 @@ function cached(key, ttlMs, fn) {
  */
 async function loadTariffRecords(gln, to, env) {
   if (env && env.PRICE_CACHE) {
-    const a = await env.PRICE_CACHE.get(`dk-nettarif-${gln}`, 'json').catch(() => null);
+    const a = await kvJson(env, `dk-nettarif-${gln}`, { ttl: 3600 }).catch(() => null);
     if (a && Array.isArray(a.periods) && a.periods.length) {
       return a.periods.map(p => ({
         fromStr: p.from,
@@ -613,7 +613,7 @@ async function loadPriceArchive(area, from, to, env) {
   const years = [];
   for (let y = y0; y <= y1; y++) years.push(y);
   const parts = await Promise.all(years.map(y =>
-    env.PRICE_CACHE.get(`prices-archive-${area}-${y}`, 'json').catch(() => null)));
+    kvJson(env, `prices-archive-${area}-${y}`, { ttl: 1800 }).catch(() => null)));
   const out = {};
   for (const part of parts) {
     if (!part) continue;
@@ -650,8 +650,13 @@ async function loadPrices(area, from, to, env) {
   const liveFrom = missing[0];
   const liveTo   = fmtUTC(new Date(Date.parse(missing[missing.length - 1]) + 86_400_000));
   try {
+    // The KV backup behind edgeCached is a stale-if-error fallback for the
+    // window every visitor asks for. A span that begins further back is a caller
+    // choosing a range (bots and scripts try many), and each distinct one would
+    // otherwise become its own KV key and its own write.
+    const recent = liveFrom >= fmtUTC(new Date(Date.now() - 3 * 86_400_000));
     const live = await edgeCached(`prices-${area}-${liveFrom}-${liveTo}`, priceTtl(liveTo),
-      () => fetchSpotPrices(area, liveFrom, liveTo), env);
+      () => fetchSpotPrices(area, liveFrom, liveTo), recent ? env : undefined);
     return { ...archive, ...live };
   } catch (err) {
     if (Object.keys(archive).length) {
@@ -1328,7 +1333,7 @@ async function handleApi(context) {
     }
     if (!context.env || !context.env.PRICE_CACHE) return fail(503, 'tariff store unavailable');
     try {
-      const raw = await context.env.PRICE_CACHE.get(`tariffs-${country}`, 'json');
+      const raw = await kvJson(context.env, `tariffs-${country}`, { ttl: 3600 });
       if (!raw) return fail(404, `no tariff data for ${country}`);
       // Tariffs move at most monthly (NO) or yearly (SE) — cache hard.
       return jsonResponse(raw, { maxAge: 6 * 3600, sMaxAge: 86400, request });
@@ -1347,7 +1352,7 @@ async function handleApi(context) {
     }
     if (!context.env || !context.env.PRICE_CACHE) return fail(503, 'forecast store unavailable');
     try {
-      const raw = await context.env.PRICE_CACHE.get(`nordic-forecast-${zone}`, 'json');
+      const raw = await kvJson(context.env, `nordic-forecast-${zone}`, { ttl: 900 });
       if (!raw) return fail(404, `no forecast available for ${zone}`);
       const fx = await ecbRates();
       const info = NORDIC_ZONE_INFO[zone];
@@ -1791,6 +1796,92 @@ function isCacheable(d) {
   return d != null;
 }
 
+// ── Free layers in front of Workers KV ───────────────────────────────────────
+//
+// The free KV plan allows 100,000 reads a day, and this site was using 55,000 to
+// 85,000 of them. Almost all of that was the same few values read again and
+// again: every /api/now, /api/prices, /api/schedule and /api/forecast call read
+// the price-archive year(s) and the grid tariff straight from KV, and each page
+// render (functions/[[path]].js) makes three to five such calls of its own.
+// Those values change once a day at most.
+//
+// kvJson() puts two layers that cost nothing in front of KV: a Map in the
+// isolate, and the Cache API, which every isolate in the same location shares.
+// Neither counts as a KV operation. A key is then read from KV roughly once per
+// location per TTL instead of once per request.
+//
+// A key that does not exist is remembered too (for less time): a company without
+// a tariff archive otherwise reads — and misses — on every single request.
+const _kvMem = new Map();
+const KV_MEM_MAX = 96;
+
+function _memGet(k) {
+  const e = _kvMem.get(k);
+  if (!e) return undefined;
+  if (Date.now() > e.exp) { _kvMem.delete(k); return undefined; }
+  return e;
+}
+function _memSet(k, v, ttlSec) {
+  if (_kvMem.size >= KV_MEM_MAX) _kvMem.delete(_kvMem.keys().next().value); // oldest first
+  _kvMem.set(k, { v, exp: Date.now() + ttlSec * 1000 });
+}
+const _cacheStore = () => (typeof caches !== 'undefined' ? caches.default : null);
+const _cacheReq = (ns, key) => new Request(`https://cache.local/${ns}/${encodeURIComponent(key)}`);
+
+async function kvJson(env, key, { ttl = 1800, nullTtl = 300 } = {}) {
+  const kv = env && env.PRICE_CACHE;
+  if (!kv) return null;
+  const mem = _memGet(key);
+  if (mem) return mem.v;
+
+  const cache = _cacheStore();
+  const ck = _cacheReq('kv/v1', key);
+  if (cache) {
+    try {
+      const hit = await cache.match(ck);
+      if (hit) {
+        const { v } = await hit.json();
+        _memSet(key, v, v == null ? nullTtl : ttl);
+        return v;
+      }
+    } catch { /* a broken cache must not break the request: fall through to KV */ }
+  }
+
+  const v = await kv.get(key, 'json');   // throws on a KV error: callers decide what that means
+  const t = v == null ? nullTtl : ttl;
+  _memSet(key, v ?? null, t);
+  if (cache) {
+    try {
+      await cache.put(ck, new Response(JSON.stringify({ v: v ?? null }), {
+        headers: { 'Cache-Control': `public, max-age=${t}` },
+      }));
+    } catch { /* best effort */ }
+  }
+  return v ?? null;
+}
+
+/** True when `key` was marked within the last `ttlSec`; otherwise marks it and
+ *  returns false. Lets a caller skip a KV read whose only purpose is to find out
+ *  that it was done recently — per location, which is all that is needed to cut
+ *  a per-request read down to one per interval. */
+async function recently(key, ttlSec) {
+  if (_memGet('mark:' + key)) return true;
+  const cache = _cacheStore();
+  const ck = _cacheReq('mark/v1', key);
+  if (cache) {
+    try {
+      if (await cache.match(ck)) { _memSet('mark:' + key, 1, ttlSec); return true; }
+    } catch { /* fall through */ }
+  }
+  _memSet('mark:' + key, 1, ttlSec);
+  if (cache) {
+    try {
+      await cache.put(ck, new Response('1', { headers: { 'Cache-Control': `public, max-age=${ttlSec}` } }));
+    } catch { /* best effort */ }
+  }
+  return false;
+}
+
 // Writes to KV only if the key hasn't been written in the last `minIntervalMs`,
 // checked via KV's own stored metadata rather than in-memory state -- an
 // in-memory gate (a JS Map surviving across requests) only holds within a
@@ -1800,8 +1891,13 @@ function isCacheable(d) {
 // what caused KV's daily PUT limit (1000/day free tier) to be exceeded --
 // reads are far more generous (100k/day free), so paying for one read to
 // decide whether a write is even needed is the fix.
+//
+// That read is itself a KV operation, and it returned the whole value each time.
+// `recently()` answers "was this written a moment ago?" for free, per location,
+// so the metadata read only happens once per interval per location.
 async function kvPutThrottled(kv, key, body, { minIntervalMs, expirationTtl }) {
   try {
+    if (await recently('put:' + key, Math.max(60, Math.floor(minIntervalMs / 1000)))) return false;
     const { metadata } = await kv.getWithMetadata(key);
     const now = Date.now();
     if (metadata && metadata.writtenAt && now - metadata.writtenAt < minIntervalMs) return false;
@@ -1884,6 +1980,9 @@ async function updateRollingPriceBackup(area, records, env) {
   if (!env || !env.PRICE_CACHE || !records.length) return;
   const key = `raw-prices-backup-${area}`;
   const now = Date.now();
+  // Every /api/raw/prices request lands here, and the check below is a KV read
+  // of the whole backup. Once per 20 minutes per location is all it needs.
+  if (await recently('rolling-backup:' + area, 20 * 60)) return;
   try {
     // Throttle check (KV-metadata-based, not in-memory -- see kvPutThrottled)
     // before doing the more expensive get+merge+put, since most calls will
@@ -2293,7 +2392,7 @@ async function handleForecast(area, mode, gln, request, env) {
       // a short TTL, so if it stops the chain falls through to the heuristic
       // rather than serving a stale forecast.
       for (const key of [`forecast-v3-${area}`]) {
-        const m = await env.PRICE_CACHE.get(key, 'json');
+        const m = await kvJson(env, key, { ttl: 900 });
         if (isFresh(m)) {
           days = applyModelForecast(days, m, baseMode, enCharges);
           // Which run the model days came from, so a change in the numbers can

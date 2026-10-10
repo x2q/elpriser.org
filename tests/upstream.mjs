@@ -98,8 +98,9 @@ function eds(url) {
  * Load a fresh copy of the handler (own module-level cache) with a fake network.
  *   nominatim(lat, lon) -> object | null   body for /reverse, null = HTTP 500
  *   gpd(address)        -> {status, body?, contentType?}
+ *   kv                  -> a makeKv() store bound as PRICE_CACHE (default: none)
  */
-export async function createApi({ nominatim = () => null, gpd = () => ({ status: 404 }) } = {}) {
+export async function createApi({ nominatim = () => null, gpd = () => ({ status: 404 }), kv = null } = {}) {
   const calls = [];
   const store = new Map();
   globalThis.caches = {
@@ -133,7 +134,7 @@ export async function createApi({ nominatim = () => null, gpd = () => ({ status:
   };
 
   const mod = await import(pathToFileURL(HANDLER).href + '?instance=' + (++instance));
-  const env = {};
+  const env = kv ? { PRICE_CACHE: kv } : {};
   return {
     calls,
     async get(pathAndQuery, headers = {}) {
@@ -147,4 +148,38 @@ export async function createApi({ nominatim = () => null, gpd = () => ({ status:
       return { status: res.status, headers: res.headers, body };
     },
   };
+}
+
+/** A Workers KV stand-in that counts every operation, so a test can assert on how
+ *  many reads a request pattern costs — the free plan allows 100,000 a day. */
+export function makeKv(seed = {}) {
+  const data = new Map(Object.entries(seed).map(([k, v]) => [k, JSON.stringify(v)]));
+  const meta = new Map();
+  const ops = { get: [], getWithMetadata: [], put: [], list: [] };
+  const parse = (raw, type) => (raw === undefined ? null : type === 'json' ? JSON.parse(raw) : raw);
+  return {
+    ops,
+    reads: () => ops.get.length + ops.getWithMetadata.length + ops.list.length,
+    async get(key, type) { ops.get.push(key); return parse(data.get(key), type); },
+    async getWithMetadata(key, type) {
+      ops.getWithMetadata.push(key);
+      return { value: parse(data.get(key), type), metadata: meta.get(key) ?? null };
+    },
+    async put(key, value, opts = {}) { ops.put.push(key); data.set(key, value); meta.set(key, opts.metadata); },
+    async list({ prefix = '' } = {}) { ops.list.push(prefix); return { keys: [...data.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })) }; },
+  };
+}
+
+/** A year of settled hourly prices in the shape scripts/data_backup writes: date -> 24 DKK/MWh. */
+export function priceArchiveYear(year) {
+  const out = {};
+  for (let t = Date.parse(`${year}-01-01T00:00:00Z`); t < Date.parse(`${year + 1}-01-01T00:00:00Z`); t += 86_400_000) {
+    const d = new Date(t);
+    out[d.toISOString().slice(0, 10)] = Array.from({ length: 24 }, (_, h) => spotAt(new Date(t + h * 3_600_000)));
+  }
+  return out;
+}
+
+export function tariffArchive() {
+  return { periods: [{ from: '2025-01-01', to: null, kind: 'hourly', hourly: Array.from({ length: 24 }, (_, h) => (h >= 17 && h <= 20 ? 0.5 : 0.2)) }] };
 }

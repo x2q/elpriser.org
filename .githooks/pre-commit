@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Runs the hermetic gate (static invariants, API handler, unit tests) — about a
-# second, no network. Enable with:  git config core.hooksPath .githooks
-# Skip once with:                   git commit --no-verify
-set -e
+# Runs the hermetic gate (static invariants, API handler, contract, unit tests) —
+# about two seconds, no network. Output is shown only when something fails.
+# Enable with:  git config core.hooksPath .githooks
+# Skip once:    git commit --no-verify
 cd "$(git rev-parse --show-toplevel)"
-npm run --silent test:pre-commit
+if ! out=$(npm run --silent test:pre-commit 2>&1); then
+  echo "$out"; echo; echo "pre-commit: the test gate failed — commit aborted (git commit --no-verify skips it)"; exit 1
+fi
