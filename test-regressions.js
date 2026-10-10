@@ -104,7 +104,8 @@ async function staticChecks() {
     () => {
       const directCalls = [
         ['greenpowerdenmark.dk', 'GreenPowerDenmark supplier API has no CORS headers'],
-        ['dawa.aws.dk',          'DAWA reverse-geocode is now done server-side'],
+        ['nominatim.openstreetmap.org', 'OpenStreetMap reverse-geocode (Nominatim) is done server-side'],
+        ['dawa.aws.dk',          'DAWA was shut down on 2026-07-01 and must not be called at all'],
       ];
       for (const [host, why] of directCalls) {
         assert.ok(!new RegExp(host.replace('.', '\\.')).test(detectFn),
@@ -228,7 +229,8 @@ async function apiTests() {
     });
 
   // The original failing case — the screenshot showed CORS-blocked lookup of
-  // "P.O. Pedersens Vej 2, Skejby, 8200 Aarhus N". Coordinates from DAWA.
+  // "P.O. Pedersens Vej 2, Skejby, 8200 Aarhus N". The address is now resolved by Nominatim (DAWA, which
+  // the coordinates originally came from, was shut down on 2026-07-01).
   await test('resolves "P.O. Pedersens Vej 2, Skejby" → KONSTANT Net A/S — guards 75fd5c9 (parish + dots)',
     async () => {
       const r = await json('/api/supplierlookup?lat=56.20137046&lng=10.19037183');
@@ -533,7 +535,7 @@ async function browserTests() {
         };
         return ctx;
       `);
-      const direct = r.calls.filter(u => /greenpowerdenmark|dawa\.aws/i.test(u));
+      const direct = r.calls.filter(u => /greenpowerdenmark|nominatim\.openstreetmap|dawa\.aws/i.test(u));
       assert.deepEqual(direct, [],
         `detectLocation made ${direct.length} direct upstream call(s) — must proxy via /api/*: ${direct.join(', ')}`);
       const proxied = r.calls.filter(u => u.includes('/api/supplierlookup'));

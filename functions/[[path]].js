@@ -438,7 +438,7 @@ Den samlede elpris per kWh består af:
 Understøttede netselskaber i DK1: N1, Trefor, Konstant, Vores Elnet, RAH Net, Elværk, Nord Energi, NOE Net, Elnet Midt m.fl.
 Understøttede netselskaber i DK2: Radius, Cerius, Dinel, Midtfyns Elforsyning m.fl.
 
-GPS-funktionen finder automatisk dit netselskab via DAWA (Danmarks Adressers Web API) og Green Power Denmark.
+GPS-funktionen finder automatisk dit netselskab ud fra din position via OpenStreetMap (adresseopslag) og Green Power Denmark. Positionen bruges kun ét øjeblik og gemmes aldrig — kun netselskabets navn gemmes.
 
 ## Hvornår er strømmen billigst?
 

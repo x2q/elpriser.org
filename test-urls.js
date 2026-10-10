@@ -193,7 +193,8 @@ async function main() {
     '/test-static.js', '/package-lock.json', '/tailwind.config.cjs',
     '/scripts/forecast_model/train_and_score.py',
     '/scripts/forecast_model/nordic/fetch_prices.py',
-    '/ElpriserApp/ElpriserApp/ElpriserApp.swift',
+    '/ElpriserIOS/Sources/ElpriserApp.swift',
+    '/ElpriserAndroid/app/build.gradle.kts',
   ];
   await pool(secret, async p => {
     const r = await get(p);
