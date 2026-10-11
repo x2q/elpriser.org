@@ -167,8 +167,20 @@ async function startServer() {
   });
 
   await test('start: GPS button label reads "Find dit netselskab automatisk"', async () => {
+    // A net chosen earlier in the run is remembered (that is the point), so the
+    // button would offer it instead. Start from a visitor who has chosen nothing.
+    await page.evaluate(() => localStorage.clear());
+    await page.goto(BASE + '/');
     const txt = (await page.locator('#gpsText').textContent()).trim();
     assert.equal(txt, 'Find dit netselskab automatisk');
+  });
+
+  await test('start: after visiting a net page the button offers that net', async () => {
+    await page.goto(BASE + '/dk1/n1');
+    await page.waitForFunction(() => localStorage.getItem('dk_net_pick') === 'DK1/net_inkl_alt/n1');
+    await page.goto(BASE + '/');
+    await page.waitForFunction(() => /Vis priser for N1/.test(document.getElementById('gpsText').textContent));
+    await page.evaluate(() => localStorage.clear());
   });
 
   await test('start: both DK1 and DK2 zone cards render 4 mode anchors each', async () => {

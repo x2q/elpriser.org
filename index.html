@@ -1982,6 +1982,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
     <section>
       <h3 class="font-bold text-gray-900 dark:text-white mb-2">Find dit netselskab</h3>
       <p>GPS-funktionen finder automatisk dit netselskab via <a href="https://www.openstreetmap.org" target="_blank" class="text-brand-500 underline">OpenStreetMap</a> (Nominatim) og <a href="https://elnet.dk" target="_blank" class="text-brand-500 underline">Green Power Denmark</a>. Du kan også vælge netselskab manuelt fra listen, eller finde det på <a href="https://www.danskenergi.dk/vejledning/nettilslutning/find-dit-netselskab" target="_blank" class="text-brand-500 underline">Dansk Energi</a>.</p>
+      <p class="mt-2">Første gang du besøger forsiden, spørger din browser, om siden må bruge din position, så netselskabet kan findes. Svarer du nej, spørger vi ikke igen i 30 dage, og du kan vælge netselskab fra listen. Det er netselskabet, ikke din position, der huskes — og kun i din egen browser.</p>
     </section>
     <section>
       <h3 class="font-bold text-gray-900 dark:text-white mb-2">Datakilder</h3>
@@ -3416,11 +3417,23 @@ function restoreNetPick(){
   const f=document.getElementById('gpsForget');
   if(f)f.style.display='';
 }
-async function detectLocation(){
+async function detectLocation(opts){
+  // `auto` is the lookup the front page starts by itself on a first visit. It
+  // differs from the button in three ways: it never falls back to the IP-based
+  // position (a wrong grid company must not appear without the visitor having
+  // asked), it fails silently instead of printing an error, and a failure is
+  // remembered so the browser is not asked again.
+  const auto=!!(opts&&opts.auto===true);
   const svg=document.getElementById('gpsIconSvg');
   const text=document.getElementById('gpsText');
   const btn=document.getElementById('gpsBtn');
-  gtag('event','gps_detect_start');
+  const idleText=text.textContent;
+  const giveUp=()=>{
+    svg.style.animation='';text.textContent=idleText;
+    btn.disabled=false;btn.classList.remove('opacity-50');
+    markAutoDeclined();
+  };
+  gtag('event',auto?'gps_auto_start':'gps_detect_start');
   svg.style.animation='spin .7s linear infinite';
   text.textContent='Finder din position...';
   btn.disabled=true; btn.classList.add('opacity-50');
@@ -3441,6 +3454,7 @@ async function detectLocation(){
     });
     ({latitude:lat,longitude:lng}=pos.coords);
   }catch(err){
+    if(auto){gtag('event','gps_auto_declined',{reason:err.code===1?'denied':err.code===2?'unavailable':'timeout'});giveUp();return;}
     // Browser geolocation failed (timed out, denied, or unavailable — common
     // on desktops with location services off). Fall back to Cloudflare's
     // IP-based position: city-level accuracy, which is enough to determine
@@ -3468,6 +3482,7 @@ async function detectLocation(){
     // Single round-trip; avoids GPD's missing CORS headers.
     const net=await(await fetch(`/api/supplierlookup?lat=${lat}&lng=${lng}`)).json();
     const m=net.name?matchNet(net.name):null;
+    if(auto&&!m){gtag('event','gps_auto_nomatch');giveUp();return;}
     svg.style.animation='';
     if(m){
       text.textContent=`${m.net.name} (${m.area})${approx?' · omtrentlig':''} — navigerer...`;
@@ -3485,13 +3500,71 @@ async function detectLocation(){
       location.hash=`${area}/inkl_alt`;
     }
   }catch(err){
+    if(auto){gtag('event','gps_auto_error',{reason:'lookup: '+(err.message||'ukendt')});giveUp();return;}
     svg.style.animation='';
     gtag('event','gps_detect_error',{reason:'lookup: '+(err.message||'ukendt')});
     text.textContent='Kunne ikke slå netselskab op — vælg det nedenfor';
   }
   btn.disabled=false; btn.classList.remove('opacity-50');
 }
-function matchNet(n){const l=n.toLowerCase();for(const a of['DK1','DK2'])for(const net of NETS[a])for(const m of net.match)if(l.includes(m.toLowerCase()))return{area:a,net};return null;}
+/** The name GPD returns → one of our nets. The LONGEST matching string wins:
+ *  "TREFOR El-net Øst A/S" contains both "TREFOR El-net" (DK1) and
+ *  "TREFOR El-Net Øst" (DK2), and the first one in list order used to win,
+ *  which put every Trefor Øst customer on the wrong net. The apps and
+ *  tests/golden/reference.mjs do the same. */
+function matchNet(n){
+  const l=n.toLowerCase();let best=null;
+  for(const a of['DK1','DK2'])for(const net of NETS[a])for(const m of net.match){
+    if(l.includes(m.toLowerCase())&&(!best||m.length>best.len))best={area:a,net,len:m.length};
+  }
+  return best?{area:best.area,net:best.net}:null;
+}
+
+// ═══ Remember the net company, however it was chosen ═══
+//
+// localStorage rather than a cookie: it is read synchronously with no network
+// involved, and it is not attached to every request. A cookie would be sent on
+// each page, image and API call, and the server could do nothing with it — the
+// pages are generic and cached, and the choice only matters to the client.
+// What is stored is the answer ("DK1/net_inkl_alt/n1"), never coordinates.
+
+/** A visit to a net page by ANY route — GPS, the menu, a chip, a shared link —
+ *  is a choice of net company worth remembering. */
+function rememberNetFromHash(h){
+  const m=/^(DK[12])\/net_[a-z_]+\/([a-z0-9-]+)$/.exec(h||'');
+  if(!m||!netBySlug(m[1],m[2]))return;
+  const pick=`${m[1]}/net_inkl_alt/${m[2]}`;
+  if(readNetPick()!==pick)saveNetPick(pick);
+}
+
+// ═══ Ask for the position by itself — once, politely, and not for crawlers ═══
+const AUTO_TRIED_KEY='gps_auto_tried';        // sessionStorage: one attempt per visit
+const AUTO_DECLINED_KEY='gps_auto_declined';  // localStorage: when a request last came to nothing
+const AUTO_RETRY_DAYS=30;
+function markAutoDeclined(){try{localStorage.setItem(AUTO_DECLINED_KEY,String(Date.now()));}catch(_){}}
+async function maybeAutoDetect(){
+  // Someone who already has a net company is not asked again.
+  if(readNetPick())return;
+  if(!('geolocation' in navigator))return;
+  // Crawlers and test drivers do not answer permission prompts, and a
+  // headless Googlebot that "found" a net would navigate the page it indexes.
+  if(navigator.webdriver||/bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(navigator.userAgent||''))return;
+  try{
+    if(sessionStorage.getItem(AUTO_TRIED_KEY))return;
+    sessionStorage.setItem(AUTO_TRIED_KEY,'1');
+    const d=+localStorage.getItem(AUTO_DECLINED_KEY)||0;
+    if(d&&Date.now()-d<AUTO_RETRY_DAYS*864e5)return;
+  }catch(_){return;}  // no storage = we cannot remember a "no", so do not ask
+  try{
+    // A browser that has said no already must not be asked a second time.
+    const st=await navigator.permissions.query({name:'geolocation'});
+    if(st.state==='denied'){markAutoDeclined();return;}
+  }catch(_){/* Permissions API missing (older Safari): the prompt is the check */}
+  // Let the page paint first, so the prompt arrives after something to read.
+  await new Promise(r=>setTimeout(r,600));
+  if(location.hash&&location.hash!=='#')return;   // they have already navigated
+  detectLocation({auto:true});
+}
 
 // ═══ TOP NAV ═══
 function toggleBurger(){
@@ -3638,6 +3711,7 @@ function route(){
   syncPriceSelector();
   let h=decodeURIComponent(location.hash.slice(1));
   if(!h)h=pathToHash(location.pathname);
+  rememberNetFromHash(h);
   // Section not in this page's HTML (server-stripped) → full navigation to
   // the section's own URL, carrying the hash so in-page state survives.
   const dp=dataPageFor(h);
@@ -3661,7 +3735,7 @@ function route(){
   // Helper: send page_view with clean path for GA4
   const pv=(title,path)=>gtag('event','page_view',{page_title:title,page_location:location.origin+(path||location.pathname)});
   if(!h){
-    document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpriser i dag og i morgen — spotpris lige nu, Vest og Øst';pv('Start','/');restoreNetPick();return;
+    document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpriser i dag og i morgen — spotpris lige nu, Vest og Øst';pv('Start','/');restoreNetPick();maybeAutoDetect();return;
   }
   if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Nettariffer 2026: Sammenlign 14 netselskaber — op til 25 øre/kWh forskel';pv('Tariffer','/tariffer');loadTariffPage();return;}
   if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpris Automation — Home Assistant, Shelly & REST API';pv('Automation','/automation');loadAutomationPage();return;}

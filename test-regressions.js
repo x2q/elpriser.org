@@ -85,7 +85,7 @@ async function staticChecks() {
   const indexHtml      = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const apiCatchall    = fs.readFileSync(path.join(ROOT, 'functions/api/[[catchall]].js'), 'utf8');
   const detectFn       = (() => {
-    const m = indexHtml.match(/async function detectLocation\(\)\{[\s\S]+?\n\}/);
+    const m = indexHtml.match(/async function detectLocation\([^)]*\)\{[\s\S]+?\n\}/);
     if (!m) throw new Error('detectLocation() not found in index.html');
     return m[0];
   })();
@@ -360,6 +360,109 @@ async function browserTests() {
       `);
       assert.match(r.hash, /^#DK[12]\//, `expected fallback to #DK?/…, got "${r.hash}"`);
       assert.equal(r.btnDisabled, false, 'button must be re-enabled even on upstream error');
+    });
+
+  // ── Asking for the position by itself, and remembering the answer ────────
+  //
+  // Each of these gets its own context: the guards live in sessionStorage and
+  // localStorage, and a granted permission belongs to the context.
+  async function visitor({ grant = false, pick = null, watch = false } = {}) {
+    // Playwright's default user agent says "HeadlessChrome", which the page treats
+    // as a crawler and (correctly) never asks. Present as an ordinary phone.
+    const ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
+    const c = await browser.newContext(grant
+      ? { userAgent: ua, permissions: ['geolocation'], geolocation: { latitude: 55.676, longitude: 12.568 } }
+      : { userAgent: ua });
+    // Test drivers advertise navigator.webdriver, which the page rightly treats as a bot.
+    await c.addInitScript(({ pick, watch }) => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => false });
+      if (pick) localStorage.setItem('dk_net_pick', pick);
+      if (watch) {
+        window.__watchCalls = 0;
+        const w = navigator.geolocation.watchPosition.bind(navigator.geolocation);
+        navigator.geolocation.watchPosition = (...a) => { window.__watchCalls++; return w(...a); };
+      }
+    }, { pick, watch });
+    await c.route('**/*', r => (/googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.continue()));
+    await c.route('**/api/supplierlookup*', r => r.fulfill({ json: { name: 'Radius Elnet A/S', address: 'X 1, 1000 København K' } }));
+    return c;
+  }
+
+  await test('first visit with permission granted → net found, remembered and opened',
+    async () => {
+      const c = await visitor({ grant: true });
+      const p = await c.newPage();
+      await p.goto(BASE + '/');
+      // The page navigates (hash, then a full load of the net's own URL), so poll
+      // for the outcome instead of reading state in between.
+      await p.waitForFunction(() => localStorage.getItem('dk_net_pick') === 'DK2/net_inkl_alt/radius', null, { timeout: 10000 });
+      await p.waitForFunction(() => /radius/.test(location.href), null, { timeout: 10000 });
+      await c.close();
+    });
+
+  await test('first visit with permission denied → no navigation, no error text, not asked again for 30 days',
+    async () => {
+      const c = await visitor({ grant: false });
+      const p = await c.newPage();
+      await p.goto(BASE + '/');
+      await p.waitForFunction(() => !!localStorage.getItem('gps_auto_declined'), null, { timeout: 8000 });
+      assert.equal(await p.evaluate(() => location.hash), '', 'must stay on the front page');
+      assert.equal(await p.evaluate(() => localStorage.getItem('dk_net_pick')), null);
+      assert.doesNotMatch(await p.locator('#gpsText').textContent(), /nægt|Kunne ikke/i, 'no error message for an automatic request');
+      assert.equal(await p.locator('#gpsBtn').isEnabled(), true, 'the button must still work');
+      await c.close();
+    });
+
+  await test('a crawler-like visitor is never asked, and never navigated',
+    async () => {
+      const c = await browser.newContext({ userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', permissions: ['geolocation'], geolocation: { latitude: 55.676, longitude: 12.568 } });
+      await c.addInitScript(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => false });
+        window.__watchCalls = 0;
+        const w = navigator.geolocation.watchPosition.bind(navigator.geolocation);
+        navigator.geolocation.watchPosition = (...a) => { window.__watchCalls++; return w(...a); };
+      });
+      await c.route('**/*', r => (/googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.continue()));
+      const p = await c.newPage();
+      await p.goto(BASE + '/');
+      await p.waitForTimeout(1500);
+      assert.equal(await p.evaluate(() => window.__watchCalls), 0, 'a crawler was asked for its position');
+      assert.equal(await p.evaluate(() => location.hash), '', 'a crawler was navigated');
+      await c.close();
+    });
+
+  await test('a remembered net is never asked for again',
+    async () => {
+      const c = await visitor({ grant: true, pick: 'DK1/net_inkl_alt/n1', watch: true });
+      const p = await c.newPage();
+      await p.goto(BASE + '/');
+      await p.waitForTimeout(1500);
+      assert.equal(await p.evaluate(() => window.__watchCalls), 0, 'geolocation was requested although a net is remembered');
+      await c.close();
+    });
+
+  await test('a net chosen through the menu or a link is remembered too',
+    async () => {
+      const c = await visitor({ grant: false });
+      const p = await c.newPage();
+      await p.goto(BASE + '/dk1/trefor');
+      await p.waitForFunction(() => localStorage.getItem('dk_net_pick') === 'DK1/net_inkl_alt/trefor', null, { timeout: 8000 });
+      await c.close();
+    });
+
+  await test('"TREFOR El-net Øst" resolves to Trefor Øst, not to Trefor — longest match wins',
+    async () => {
+      await page.goto('about:blank');
+      await page.goto(BASE + '/');
+      const r = await page.evaluate(() => ({
+        ost: window.matchNet('TREFOR El-net Øst A/S'),
+        vest: window.matchNet('TREFOR El-Net A/S'),
+        none: window.matchNet('Ukendt Net ApS'),
+      }));
+      assert.equal(r.ost.net.name, 'Trefor Øst');
+      assert.equal(r.ost.area, 'DK2');
+      assert.equal(r.vest.net.name, 'Trefor');
+      assert.equal(r.none, null);
     });
 
   // Note: the dynamic home-icon click test is already covered in test-e2e.js

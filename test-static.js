@@ -959,17 +959,41 @@ test('gps: the remembered pick can be cleared by the user', () => {
   assert.ok(/id="gpsForget"/.test(INDEX), 'no control offering to forget it');
 });
 
-test('gps: location is only ever requested from a click, never on load', () => {
-  // An unprompted permission request on load is both rude and
-  // counter-productive: Chrome demotes origins that ask without a user
-  // gesture, so it lowers the grant rate it was meant to raise.
-  const calls = [...INDEX.matchAll(/(\w+)\s*\(\s*\)\s*;?\s*(?=\n)/g)];
-  assert.ok(!/(DOMContentLoaded|window\.onload)[\s\S]{0,400}?detectLocation\(/.test(INDEX),
-    'detectLocation is wired to page load');
-  const auto = INDEX.match(/^\s*detectLocation\(\);/m);
-  assert.equal(auto, null, `detectLocation is called unconditionally: ${auto && auto[0]}`);
-  assert.ok(/id="gpsBtn" onclick="detectLocation\(\)"/.test(INDEX),
-    'the GPS lookup should be reached from the button');
+test('gps: the position is asked for once, by the front page, with every guard in place', () => {
+  // A permission prompt on load is a decision with a cost: Chrome demotes origins
+  // that ask without a gesture, and an unguarded one would nag. So the only
+  // unprompted request is maybeAutoDetect(), from the start page, and it must
+  // keep each of the guards below.
+  assert.equal(INDEX.match(/^\s*detectLocation\(\);/m), null, 'detectLocation is called unconditionally');
+  assert.ok(!/(DOMContentLoaded|window\.onload)[\s\S]{0,400}?detectLocation\(/.test(INDEX), 'detectLocation is wired to page load');
+  const calls = [...INDEX.matchAll(/detectLocation\(\{auto:true\}\)/g)];
+  assert.equal(calls.length, 1, 'exactly one automatic call site');
+  const fn = INDEX.slice(INDEX.indexOf('async function maybeAutoDetect'), INDEX.indexOf('detectLocation({auto:true})'));
+  for (const [what, re] of [
+    ['skip when a net is already remembered', /if\(readNetPick\(\)\)return/],
+    ['skip crawlers and test drivers', /navigator\.webdriver\|\|\/bot\|crawl/],
+    ['once per visit', /sessionStorage\.getItem\(AUTO_TRIED_KEY\)/],
+    ['not again for 30 days after a no', /AUTO_RETRY_DAYS\*864e5/],
+    ['never re-prompt a denied permission', /st\.state==='denied'/],
+    ['not when storage is unavailable', /catch\(_\)\{return;\}/],
+    ['not after the visitor has navigated', /location\.hash&&location\.hash!==/],
+  ]) assert.ok(re.test(fn), `maybeAutoDetect lost a guard: ${what}`);
+  assert.ok(/pv\('Start','\/'\);restoreNetPick\(\);maybeAutoDetect\(\)/.test(INDEX), 'only the start page asks');
+  assert.ok(/id="gpsBtn" onclick="detectLocation\(\)"/.test(INDEX), 'the button still starts the lookup');
+});
+
+test('gps: an automatic lookup never falls back to the IP position and fails silently', () => {
+  const body = INDEX.slice(INDEX.indexOf('async function detectLocation'), INDEX.indexOf('function matchNet'));
+  assert.ok(/if\(auto\)\{[\s\S]{0,200}?giveUp\(\);return;\}\s*\/\/ Browser geolocation failed/.test(body),
+    'the auto path must leave before the IP-position fallback');
+  assert.ok(/function markAutoDeclined/.test(INDEX) && /const giveUp=\(\)=>\{[\s\S]{0,300}?markAutoDeclined\(\)/.test(body), 'a failure is remembered');
+});
+
+test('gps: a net chosen by any route is remembered (GPS, menu, chip, link)', () => {
+  assert.ok(/function rememberNetFromHash/.test(INDEX), 'helper exists');
+  assert.ok(/h=pathToHash\(location\.pathname\);\s*rememberNetFromHash\(h\);/.test(INDEX), 'route() records the pick');
+  assert.ok(/localStorage\.setItem\(NET_PICK_KEY/.test(INDEX), 'stored in localStorage');
+  assert.ok(!/document\.cookie[^;]*dk_net_pick/.test(INDEX), 'not in a cookie');
 });
 
 test('privacy: /privatliv is a shipped static page that states what happens to the position', () => {

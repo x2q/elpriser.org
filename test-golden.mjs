@@ -12,7 +12,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { build } from './tests/golden/generate.mjs';
+import vm from 'node:vm';
+import { build, webNets } from './tests/golden/generate.mjs';
 
 const ROOT = import.meta.dirname;
 const golden = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests/golden/app-contract.json'), 'utf8'));
@@ -52,4 +53,19 @@ test('the contract covers the cases that have bitten before', () => {
   // Days that are incomplete are not days; a band on some hours still counts.
   assert.deepEqual(golden.forecast.expect.days.map(d => d.date), ['2026-10-10', '2026-10-11', '2026-10-14']);
   assert.deepEqual(Object.keys(golden.co2.expect), ['2026-10-10']);
+});
+
+test('the web app resolves every grid-company name exactly as the contract says', () => {
+  // The web's own matchNet(), taken out of index.html and run against the same
+  // cases as the apps. (It used to take the FIRST match in list order, which put
+  // "TREFOR El-net Øst" on the DK1 Trefor net.)
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const nets = html.match(/const NETS=(\{[\s\S]*?\]\});/)[1];
+  const fn = html.match(/function matchNet\(n\)\{[\s\S]*?\n\}/)[0];
+  const web = vm.runInNewContext(`const NETS=${nets};${fn};matchNet`);
+  for (const c of golden.matchCases) {
+    const got = c.input && c.input.trim() ? web(c.input) : null;
+    assert.equal(got ? got.net.name : null, c.expect, `matchNet(${JSON.stringify(c.input)})`);
+  }
+  assert.ok(webNets().length === golden.nets.length);
 });
