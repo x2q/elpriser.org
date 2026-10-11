@@ -31,7 +31,7 @@ const SEO_PAGES = {
     hash: '#DK2/inkl_alt',
   },
   '/tariffer': {
-    title: 'Nettariffer 2026: Sammenlign 14 netselskaber — op til 25 øre/kWh forskel',
+    title: 'Nettariffer 2026: Sammenlign 14 netselskaber — op til 25 øre/kWh',
     description: 'Se aktuelle nettariffer (Nettarif C) for alle 14 danske netselskaber — lav-, høj- og spidslast for N1, Radius, Trefor, Cerius, RAH, Konstant m.fl. Forskellen kan koste dig flere hundrede kroner om året.',
     hash: '#tariffer',
   },
@@ -214,7 +214,7 @@ function netPageMeta(area, net) {
   const areaLabel = AREA_LABEL[area];
   const region = AREA_REGION[area];
   return {
-    title:       `Elpris ${net.name} ${areaLabel} i dag — Aktuel pris lige nu inkl. nettarif`,
+    title:       `Elpris ${net.name} i dag (${area}) — time for time inkl. nettarif`,
     description: `Aktuel elpris og spotpris lige nu hos ${net.name} i ${region} — time for time. Den reelle pris pr. kWh du betaler inkl. ${net.name}-nettarif, elafgift og moms. Opdateret dagligt fra Energi Data Service.`,
     hash:        `#${area}/net_inkl_alt/${net.slug}`,
   };
@@ -1452,7 +1452,26 @@ function breadcrumbLd(pathname, meta, opts) {
   return `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`;
 }
 
+/** A meta description Google will show whole. Search results cut a snippet at
+ *  about 155 characters (less on a phone); 34 of the 43 pages ran past that and
+ *  were cut mid-clause. Keep whole sentences while they fit; if not even the
+ *  first sentence fits, cut at a word and say so with an ellipsis. */
+const DESC_MAX = 155;
+function tidyDescription(d) {
+  if (!d || d.length <= DESC_MAX) return d;
+  let out = '';
+  for (const part of d.split(/(?<=[.!?])\s+/)) {
+    const next = out ? out + ' ' + part : part;
+    if (next.length > DESC_MAX) break;
+    out = next;
+  }
+  if (out.length >= 70) return out;
+  const cut = d.slice(0, DESC_MAX - 1);
+  return cut.slice(0, cut.lastIndexOf(' ')).replace(/[\s,;:—-]+$/, '') + '…';
+}
+
 async function renderSPA(context, pathname, meta, opts = {}) {
+  meta = { ...meta, description: tidyDescription(meta.description) };
   const pageUrl = `https://elpriser.org${pathname}`;
   const indexUrl = new URL('/', context.request.url);
   const res = await context.env.ASSETS.fetch(indexUrl);

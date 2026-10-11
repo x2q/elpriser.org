@@ -1082,5 +1082,18 @@ test('urls: every view a user can pick has one clean URL and maps back to the sa
   assert.equal(new Set(Object.values(PRIS)).size, 4, 'values are unique');
 });
 
+test('seo: descriptions are trimmed to what a results page shows, titles stay short', () => {
+  const SRV2 = fs.readFileSync(path.join(__dirname, 'functions', '[[path]].js'), 'utf8');
+  assert.ok(/const DESC_MAX = 155;/.test(SRV2) && /function tidyDescription/.test(SRV2), 'tidyDescription exists');
+  assert.ok(/meta = \{ \.\.\.meta, description: tidyDescription\(meta\.description\) \}/.test(SRV2), 'renderSPA applies it');
+  // The per-net title template, with the longest net name, must stay under ~66.
+  const t = SRV2.match(/title:\s+`(Elpris \$\{net\.name\} i dag \(\$\{area\}\)[^`]*)`/);
+  assert.ok(t, 'net title template');
+  assert.ok(t[1].replace('${net.name}', 'Nord Energi').replace('${area}', 'DK1').length <= 66, 'net title too long');
+  for (const m of SRV2.matchAll(/'(\/[^']*)': \{\s*\n\s*title: '((?:[^'\\]|\\.)*)'/g)) {
+    assert.ok(m[2].length <= 66, `title for ${m[1]} is ${m[2].length} characters`);
+  }
+});
+
 console.log(`\n${_passed} passed, ${_failed} failed\n`);
 process.exit(_failed > 0 ? 1 : 0);

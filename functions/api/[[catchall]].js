@@ -1269,7 +1269,7 @@ async function handleApi(context) {
     const res = await context.env.ASSETS.fetch(indexUrl);
     let html = await res.text();
     const title = 'elpriser.org API — Gratis JSON API for danske elpriser';
-    const desc  = 'Gratis public JSON API for danske elpriser (DK1 og DK2). Aktuel pris, 24h timepriser, 10-dages prognose, Tibber-kompatibel tariff. CORS-fri, ingen nøgle, OpenAPI 3.1 spec.';
+    const desc  = 'Gratis JSON API for danske elpriser (DK1 og DK2): aktuel pris, timepriser, 10-dages prognose og Tibber-kompatibel tariff. Ingen nøgle, OpenAPI 3.1.';
     const url   = 'https://elpriser.org/api';
     // Server-side equivalent of the client router's classList.add('active') —
     // otherwise the crawlable HTML shows the homepage section under an "API" title.

@@ -95,6 +95,10 @@ async function checkPage(path, { expectStart = false } = {}) {
 
   const title = one(r.body, /<title>([^<]*)<\/title>/);
   check(!!title && title.trim().length > 0, label, 'empty <title>');
+  // What a results page shows whole: ~60 characters of title, ~155 of snippet.
+  check(!title || title.trim().length <= 66, label, `title is ${title.trim().length} characters, longer than a results page shows`);
+  const desc = one(r.body, /<meta name="description" content="([^"]*)"/);
+  check(!!desc && desc.length >= 60 && desc.length <= 160, label, `description is ${desc ? desc.length : 0} characters, wanted 60-160`);
 
   const h1s = (r.body.match(/<h1[\s>]/g) || []).length;
   check(h1s === 1, label, `${h1s} <h1> elements, expected 1`);

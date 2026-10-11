@@ -10,7 +10,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <meta name="apple-itunes-app" content="app-id=6820474476">
-<meta name="description" content="Aktuelle elpriser og energipriser lige nu — hvad strøm koster time for time i DK1 (Vest) og DK2 (Øst), inkl. Energinets tariffer, elafgift og moms, med prognose for de kommende døgn. Vælg dit netselskab for prisen med nettarif.">
+<meta name="description" content="Aktuelle elpriser lige nu — time for time i DK1 (Vest) og DK2 (Øst) inkl. tariffer, elafgift og moms, med prognose. Vælg dit netselskab for din pris.">
 <link rel="canonical" href="https://elpriser.org/">
 <link rel="alternate" hreflang="da" href="https://elpriser.org/">
 <meta name="robots" content="index, follow">
@@ -3802,7 +3802,7 @@ function route(){
   if(!h){
     document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpriser i dag og i morgen — spotpris lige nu, Vest og Øst';pv('Start','/');restoreNetPick();maybeAutoDetect();return;
   }
-  if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Nettariffer 2026: Sammenlign 14 netselskaber — op til 25 øre/kWh forskel';pv('Tariffer','/tariffer');loadTariffPage();return;}
+  if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Nettariffer 2026: Sammenlign 14 netselskaber — op til 25 øre/kWh';pv('Tariffer','/tariffer');loadTariffPage();return;}
   if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpris Automation — Home Assistant, Shelly & REST API';pv('Automation','/automation');loadAutomationPage();return;}
   if(h==='api'){document.querySelector('[data-page="api"]').classList.add('active');document.title='elpriser.org API — Gratis JSON API for danske elpriser';pv('API','/api');return;}
   if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — Tibber-kompatibel elpris-JSON';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}
@@ -4317,7 +4317,7 @@ function updateHeader(){
   const ml={spot_inkl:'Elspot inkl moms',spot_ex:'Elspot ex moms',inkl_alt:'Inkl alt',inkl_alt_minus:'Inkl alt minus afgift',net_inkl_alt:`${S.netName} Inkl alt`,net_inkl_tarif:`${S.netName} Inkl tarif`};
   // SEO-aligned titles for crawlable URLs (/dk1, /dk2, /dk1/<slug>, /dk2/<slug>)
   if(S.netName && (S.mode==='net_inkl_alt'||S.mode==='net_inkl_tarif')){
-    document.title=`Elpris ${S.netName} ${al} i dag — Spotpris inkl. nettarif`;
+    document.title=`Elpris ${S.netName} i dag (${S.area}) — time for time inkl. nettarif`;
   } else if(S.mode==='inkl_alt'){
     // Must equal SEO_PAGES' title for /dk1 and /dk2, the view those URLs open in.
     document.title=`Elpris ${S.area==='DK1'?'Vest':'Øst'} (${S.area}) i dag — spotpris og afgifter time for time`;
