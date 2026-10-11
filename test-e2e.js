@@ -190,18 +190,19 @@ async function startServer() {
     assert.equal(dk2, 4, `DK2 should have 4 mode buttons, got ${dk2}`);
   });
 
-  for (const [selector, expectedHash] of [
-    ['#dk1-zone a:has-text("Inkl alt")',               '#DK1/inkl_alt'],
-    ['#dk1-zone a:has-text("Elspot inkl moms")',       '#DK1/spot_inkl'],
-    ['#dk1-zone a:has-text("Elspot ex moms")',         '#DK1/spot_ex'],
-    ['#dk1-zone a:has-text("Inkl alt minus afgift")',  '#DK1/inkl_alt_minus'],
-    ['#dk2-zone a:has-text("Inkl alt")',               '#DK2/inkl_alt'],
-    ['#dk2-zone a:has-text("Elspot ex moms")',         '#DK2/spot_ex'],
+  for (const [selector, expectedUrl] of [
+    ['#dk1-zone a:has-text("Inkl alt")',               '/dk1'],
+    ['#dk1-zone a:has-text("Elspot inkl moms")',       '/dk1?pris=spot'],
+    ['#dk1-zone a:has-text("Elspot ex moms")',         '/dk1?pris=spot-ex'],
+    ['#dk1-zone a:has-text("Inkl alt minus afgift")',  '/dk1?pris=alt-uden-afgift'],
+    ['#dk2-zone a:has-text("Inkl alt")',               '/dk2'],
+    ['#dk2-zone a:has-text("Elspot ex moms")',         '/dk2?pris=spot-ex'],
   ]) {
-    await test(`zone: clicking "${selector.split('"')[1]}" navigates to ${expectedHash}`, async () => {
+    await test(`zone: clicking "${selector.split('"')[1]}" navigates to ${expectedUrl}`, async () => {
       await page.goto(BASE + '/');
       await page.locator(selector).first().click();
-      await page.waitForURL(u => u.hash === expectedHash);
+      // A clean address: the path (and ?pris= for a non-default price), never a #hash.
+      await page.waitForURL(u => u.pathname + u.search === expectedUrl && u.hash === '');
       await page.waitForSelector('main[data-page="prices"].active');
     });
   }
@@ -221,7 +222,7 @@ async function startServer() {
   await test('start: clicking a net chip navigates to net_inkl_alt path', async () => {
     await page.goto(BASE + '/');
     await page.locator('#dk1-nets .net-row').first().locator('.net-chip').first().click();
-    await page.waitForURL(u => /^#DK1\/net_inkl_alt\//.test(u.hash));
+    await page.waitForURL(u => /^\/dk1\/[a-z0-9-]+$/.test(u.pathname) && u.hash === '' && u.search === '');
   });
 
   // Nav pills
@@ -265,14 +266,45 @@ async function startServer() {
     assert.ok(opts >= 20, `#priceSelector has ${opts} options, expected ≥20`);
   });
 
-  await test('prices: changing #priceSelector updates the URL hash', async () => {
-    await page.goto(BASE + '/#DK1/inkl_alt');
+  await test('prices: changing #priceSelector moves to the clean URL of that view (no hash)', async () => {
+    await page.goto(BASE + '/dk1');
     await page.waitForSelector('#priceSelector');
     await page.waitForFunction(() =>
       document.querySelectorAll('#priceSelector option').length >= 20);
     await page.selectOption('#priceSelector', 'DK2/inkl_alt');
-    await page.waitForURL(u => u.hash === '#DK2/inkl_alt');
+    await page.waitForURL(u => u.pathname === '/dk2' && u.hash === '' && u.search === '');
   });
+
+  await test('prices: another view of the same page is a query, not a hash — and back returns', async () => {
+    await page.goto(BASE + '/dk1');
+    await page.waitForFunction(() => document.querySelectorAll('#priceSelector option').length >= 20);
+    await page.selectOption('#priceSelector', 'DK1/spot_inkl');
+    await page.waitForURL(u => u.pathname === '/dk1' && u.search === '?pris=spot' && u.hash === '');
+    assert.equal(await page.locator('#priceSelector').inputValue(), 'DK1/spot_inkl');
+    await page.goBack();
+    await page.waitForURL(u => u.pathname === '/dk1' && u.search === '' && u.hash === '');
+    assert.equal(await page.locator('#priceSelector').inputValue(), 'DK1/inkl_alt');
+  });
+
+  await test('prices: ?pris= on a net page selects the tariff view and keeps the net', async () => {
+    await page.goto(BASE + '/dk1/trefor?pris=tarif');
+    await page.waitForFunction(() => document.querySelectorAll('#priceSelector option').length >= 20);
+    assert.equal(await page.locator('#priceSelector').inputValue(), 'DK1/net_inkl_tarif/trefor');
+    assert.equal(await page.evaluate(() => location.pathname + location.search), '/dk1/trefor?pris=tarif');
+  });
+
+  for (const [legacy, clean] of [
+    ['/#tariffer', '/tariffer'],
+    ['/#DK1/net_inkl_alt/n1', '/dk1/n1'],
+    ['/dk1#DK1/spot_inkl', '/dk1?pris=spot'],
+    ['/dk1/trefor#DK1/net_inkl_tarif/trefor', '/dk1/trefor?pris=tarif'],
+    ['/tariffer#tariffer', '/tariffer'],
+  ]) {
+    await test(`legacy link ${legacy} is rewritten to ${clean}`, async () => {
+      await page.goto(BASE + legacy);
+      await page.waitForURL(u => u.pathname + u.search === clean && u.hash === '');
+    });
+  }
 
   await test('prices: "Forrige" button changes week and enables "Næste"', async () => {
     await page.goto(BASE + '/#DK1/inkl_alt');

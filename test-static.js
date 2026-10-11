@@ -347,7 +347,9 @@ test('price pages: dropdown, sentence and unit describe the same price in every 
   }
   assert.ok(/id="priceNowText"/.test(SRV) && /getElementById\('priceNowText'\)/.test(INDEX), 'the sentence is not rewritten when the view changes');
   // Another area or grid company is another page; only views of the same URL stay in-page.
-  assert.ok(/hashToPath\(val\)!==location\.pathname/.test(INDEX), 'the dropdown can switch company without reloading the page');
+  assert.ok(/function goRoute\(h\)\{[\s\S]*?path===location\.pathname[\s\S]*?location\.href=u/.test(INDEX),
+    'goRoute: same page stays in place, another page is a normal load');
+  assert.ok(/function onPriceSelectorChange\(\)\{[\s\S]*?goRoute\(val\)/.test(INDEX), 'the dropdown goes through goRoute');
   assert.ok(!/inkl\. nettarif, systemtarif, transmissionstarif, elafgift og moms er \$\{fmt\(dk1\.total\)\}/.test(SRV),
     'the homepage summary still says the no-company total includes the nettarif');
 });
@@ -991,7 +993,7 @@ test('gps: an automatic lookup never falls back to the IP position and fails sil
 
 test('gps: a net chosen by any route is remembered (GPS, menu, chip, link)', () => {
   assert.ok(/function rememberNetFromHash/.test(INDEX), 'helper exists');
-  assert.ok(/h=pathToHash\(location\.pathname\);\s*rememberNetFromHash\(h\);/.test(INDEX), 'route() records the pick');
+  assert.ok(/let h=routeFromLocation\(\);\s*rememberNetFromHash\(h\);/.test(INDEX), 'route() records the pick');
   assert.ok(/localStorage\.setItem\(NET_PICK_KEY/.test(INDEX), 'stored in localStorage');
   assert.ok(!/document\.cookie[^;]*dk_net_pick/.test(INDEX), 'not in a cookie');
 });
@@ -1057,6 +1059,27 @@ test('meta: no test is registered after the summary line, where it would silentl
   assert.ok(cut > 0, 'could not find the summary line');
   const after = src.slice(cut);
   assert.ok(!/^test\(/m.test(after), 'a test() call sits after the summary line and will never run');
+});
+
+test('urls: the address bar never carries a route hash — views are paths and ?pris=', () => {
+  // The route key (DK1/net_inkl_tarif/trefor) is internal. Writing it to
+  // location.hash put the same state in the address twice and made shared links
+  // look broken; navigation goes through goRoute(), which writes a clean URL.
+  assert.ok(!/location\.hash\s*=[^=]/.test(INDEX), 'something assigns location.hash');
+  assert.ok(!/href="#(DK[12]|\$\{)/.test(INDEX) && !/href=`#/.test(INDEX), 'a link still points at a route hash');
+  assert.ok(/function syncUrl\(h\)/.test(INDEX) && /history\.replaceState\(null,'',next\)/.test(INDEX), 'old hash links are rewritten');
+  assert.ok(/addEventListener\('popstate',route\)/.test(INDEX), 'back/forward works between views');
+  assert.ok(/syncUrl\(h\);/.test(INDEX.slice(INDEX.indexOf('function route()'))), 'route() syncs the address');
+});
+
+test('urls: every view a user can pick has one clean URL and maps back to the same route', () => {
+  const m = INDEX.match(/const PRIS_PARAM=(\{[^}]*\});/);
+  assert.ok(m, 'PRIS_PARAM table');
+  const PRIS = JSON.parse(m[1].replace(/(\w+):/g, '"$1":').replace(/'/g, '"'));
+  assert.deepEqual(Object.keys(PRIS).sort(), ['inkl_alt_minus', 'net_inkl_tarif', 'spot_ex', 'spot_inkl']);
+  // Parameters are readable Danish-ish words, never the internal mode names.
+  for (const v of Object.values(PRIS)) assert.ok(/^[a-z-]+$/.test(v) && !v.includes('_'), `pris value ${v}`);
+  assert.equal(new Set(Object.values(PRIS)).size, 4, 'values are unique');
 });
 
 console.log(`\n${_passed} passed, ${_failed} failed\n`);

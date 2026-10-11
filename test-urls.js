@@ -178,6 +178,20 @@ async function main() {
           `status ${r.status} -> ${r.location}`);
   });
 
+  console.log('\n5b. PRISVISNINGER (?pris=) ER EN VARIANT AF SIDEN, IKKE EN NY SIDE');
+  // A view of the same page — spot price, tariff view — is addressed with ?pris=.
+  // It must answer 200 and name the plain page as its canonical, or Google sees
+  // a dozen near-duplicates of every price page.
+  for (const [p, canon] of [
+    ['/dk1?pris=spot', '/dk1'], ['/dk1?pris=spot-ex', '/dk1'], ['/dk2?pris=alt-uden-afgift', '/dk2'],
+    ['/dk1/trefor?pris=tarif', '/dk1/trefor'],
+  ]) {
+    const r = await get(p);
+    if (!check(r.status === 200, `variant ${p}`, `status ${r.status}`)) continue;
+    const c = one(r.body, /<link rel="canonical" href="([^"]*)"/);
+    check(c === CANONICAL_ORIGIN + canon, `variant ${p}`, `canonical is ${c}, expected ${CANONICAL_ORIGIN + canon}`);
+  }
+
   console.log('\n6. UKENDTE STIER SKAL 404');
   const gone = ['/norden', '/findes-ikke', '/dk1/ukendt-net', '/blog/ukendt-indlaeg'];
   await pool(gone, async p => {

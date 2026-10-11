@@ -248,10 +248,11 @@ async function browserTests() {
         window.fetch = (u, i) => (typeof u === 'string' && u.startsWith('/api/'))
           ? Promise.resolve({ json: async () => ({ name: 'Radius Elnet A/S', address: 'X 1, 1000 København K' }) })
           : f(u, i);
+        window.goRoute = h => { ctx.route = h; };   // record where it would go instead of leaving the page
         return ctx;
       `);
       assert.equal(r.errors, 3, `expected 3 transient errors before success, saw ${r.errors}`);
-      assert.ok(r.hash.length > 0, `expected navigation, hash=${r.hash}`);
+      assert.match(r.route || '', /^DK[12]\/net_inkl_alt\//, `expected navigation, route=${r.route}`);
       assert.equal(r.btnDisabled, false, 'button must be re-enabled after success');
     });
 
@@ -296,11 +297,12 @@ async function browserTests() {
           if (u.startsWith('/api/supplierlookup')) { ctx.lookups++; return Promise.resolve({ json: async () => ({ name: 'Radius Elnet A/S', address: 'X' }) }); }
           return f(u, i);
         };
+        window.goRoute = h => { ctx.route = h; };
         return ctx;
       `);
       assert.equal(r.geoCalls, 1, 'expected one IP-position request');
       assert.equal(r.lookups, 1, 'expected the approximate position to be looked up');
-      assert.ok(r.hash.length > 0, `expected navigation, hash=${r.hash}`);
+      assert.match(r.route || '', /^DK[12]\//, `expected navigation, route=${r.route}`);
       assert.doesNotMatch(r.finalText, /nægt/i, 'a denied permission must not be a dead end when the IP position works');
     });
 
@@ -356,9 +358,10 @@ async function browserTests() {
         navigator.geolocation.watchPosition = (ok) => { setTimeout(()=>ok({coords:{latitude:55.6,longitude:12.5}}),10); return 1; };
         navigator.geolocation.clearWatch = () => {};
         window.fetch = () => Promise.resolve({ json: async () => ({ name: null, error: 'gpd_404' }) });
+        window.goRoute = h => { ctx.route = h; };
         return ctx;
       `);
-      assert.match(r.hash, /^#DK[12]\//, `expected fallback to #DK?/…, got "${r.hash}"`);
+      assert.match(r.route || '', /^DK[12]\/inkl_alt$/, `expected the area-only fallback, got "${r.route}"`);
       assert.equal(r.btnDisabled, false, 'button must be re-enabled even on upstream error');
     });
 

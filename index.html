@@ -885,7 +885,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
       <a href="/tariffer" class="nav-pill">Tariffer</a>
       <a href="/automation" class="nav-pill">Automation</a>
-      <a href="#shelly-tariff" class="nav-pill">Shelly Live Tariff</a>
+      <a href="/shelly-tariff" class="nav-pill">Shelly Live Tariff</a>
       <a href="https://www.danskenergi.dk/vejledning/nettilslutning/find-dit-netselskab" target="_blank" rel="noopener" class="nav-pill">Find dit netselskab &rarr;</a>
     </div>
 
@@ -1462,7 +1462,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
   <!-- Cross-links -->
   <div class="text-center text-xs text-gray-400 dark:text-gray-500">
-    Se også: <a href="#shelly-tariff" class="text-brand-500 underline">Shelly Live Tariff</a> — Tibber-kompatibelt API til Shelly med timepriser
+    Se også: <a href="/shelly-tariff" class="text-brand-500 underline">Shelly Live Tariff</a> — Tibber-kompatibelt API til Shelly med timepriser
   </div>
 </main>
 
@@ -3413,7 +3413,7 @@ function restoreNetPick(){
   const t=document.getElementById('gpsText'),b=document.getElementById('gpsBtn');
   if(!t||!b)return;
   t.textContent=`Vis priser for ${net.name}`;
-  b.onclick=()=>{gtag('event','gps_pick_reused');location.hash=v;};
+  b.onclick=()=>{gtag('event','gps_pick_reused');goRoute(v);};
   const f=document.getElementById('gpsForget');
   if(f)f.style.display='';
 }
@@ -3493,11 +3493,11 @@ async function detectLocation(opts){
       // city-level and lands Danish users in Lund or Flensburg often enough
       // that persisting it would quietly show the wrong grid company forever.
       if(!approx)saveNetPick(pick);
-      location.hash=pick;
+      goRoute(pick);
     }else{
       const area=lng>11.0?'DK2':'DK1';
       text.textContent=net.name?`${net.name} (${area})`:`Kunne ikke finde netselskab — viser ${area}`;
-      location.hash=`${area}/inkl_alt`;
+      goRoute(`${area}/inkl_alt`);
     }
   }catch(err){
     if(auto){gtag('event','gps_auto_error',{reason:'lookup: '+(err.message||'ukendt')});giveUp();return;}
@@ -3690,6 +3690,71 @@ function hashToPath(h){
   }
   return '/'+h; // tariffer, automation, api, prognose, om-elpriser, shelly-tariff, blog/…
 }
+// ═══ Clean URLs ═══
+//
+// A view is a path, and the only thing a path ever needs besides itself is which
+// price to show: /dk1, /dk1?pris=spot, /dk1/trefor, /dk1/trefor?pris=tarif.
+// The internal route key ("DK1/net_inkl_tarif/trefor") is what the code keys on;
+// it is never shown. The address bar used to carry it as a hash on top of the
+// path — /dk1/trefor#DK1/net_inkl_tarif/trefor — which is the same thing said
+// twice, cannot be indexed, and made every shared link look broken. Old hash
+// links still work and are rewritten to the clean form on arrival.
+const PRIS_PARAM={spot_ex:'spot-ex',spot_inkl:'spot',inkl_alt_minus:'alt-uden-afgift',net_inkl_tarif:'tarif'};
+const PRIS_MODE=Object.fromEntries(Object.entries(PRIS_PARAM).map(([m,p])=>[p,m]));
+
+/** The route key for the page as it is right now. */
+function routeFromLocation(){
+  const hash=decodeURIComponent(location.hash.slice(1));
+  if(hash)return hash;                       // an old or hand-typed link: honoured, then rewritten
+  const base=pathToHash(location.pathname);  // 'DK1/inkl_alt' | 'DK1/net_inkl_alt/n1' | 'tariffer' | ''
+  const pris=new URLSearchParams(location.search).get('pris');
+  const mode=pris&&PRIS_MODE[pris];
+  if(!mode||!/^DK[12]\//.test(base))return base;
+  const [area,,slug]=base.split('/');
+  if(slug)return mode==='net_inkl_tarif'?`${area}/net_inkl_tarif/${slug}`:base;   // a net page: tarif is its one variant
+  return mode==='net_inkl_tarif'?base:`${area}/${mode}`;                          // an area page: the spot variants
+}
+
+/** The address a route key stands for. */
+function urlForRoute(h){
+  if(!h)return '/';
+  const m=/^(DK[12])\/([a-z_]+)(?:\/([a-z0-9-]+))?/.exec(h);
+  if(!m)return hashToPath(h);
+  const area=m[1].toLowerCase(),mode=m[2];
+  let slug=m[3]||'';
+  // Very old links carry the 13-digit GLN instead of the slug.
+  if(/^\d{13}$/.test(slug)){const n=(NETS[m[1]]||[]).find(x=>x.gln===slug);slug=n?n.slug:'';}
+  if(mode.startsWith('net_')){
+    if(slug&&netBySlug(m[1],slug))return `/${area}/${slug}`+(mode==='net_inkl_tarif'?'?pris=tarif':'');
+    return `/${area}`;
+  }
+  const p=PRIS_PARAM[mode];
+  return `/${area}`+(p?`?pris=${p}`:'');
+}
+
+/** Make the address bar say what the page shows — no hash, no duplicate state. */
+function syncUrl(h){
+  const want=new URL(urlForRoute(h),location.origin);
+  // Anything else on the query (utm_*, gclid, …) belongs to the visitor, not to us.
+  for(const [k,v] of new URLSearchParams(location.search))if(k!=='pris'&&!want.searchParams.has(k))want.searchParams.set(k,v);
+  const next=want.pathname+want.search;
+  if(location.hash||location.pathname+location.search!==next){
+    try{history.replaceState(null,'',next);}catch(_){}
+  }
+}
+
+/** Go to a view: in place when it is the same page, otherwise a normal page load. */
+function goRoute(h){
+  const u=urlForRoute(h);
+  const path=u.split('?')[0];
+  if(path===location.pathname&&document.querySelector(`[data-page="${dataPageFor(h)}"]`)){
+    history.pushState(null,'',u);
+    route();
+  }else{
+    location.href=u;
+  }
+}
+
 function dataPageFor(h){
   if(!h)return 'start';
   if(/^DK[12]\//.test(h))return 'prices';
@@ -3709,8 +3774,7 @@ function markTab(){
 function route(){
   markTab();
   syncPriceSelector();
-  let h=decodeURIComponent(location.hash.slice(1));
-  if(!h)h=pathToHash(location.pathname);
+  let h=routeFromLocation();
   rememberNetFromHash(h);
   // Section not in this page's HTML (server-stripped) → full navigation to
   // the section's own URL, carrying the hash so in-page state survives.
@@ -3721,10 +3785,11 @@ function route(){
     // /net_inkl_alt/ came from, and Google crawled and indexed it.
     const path=hashToPath(h);
     const known=path==='/'||!!PATH_ROUTES[path]||/^\/(dk[12])\/[a-z0-9-]+$/.test(path);
-    const target=known?path+(h?'#'+h:''):'/';
-    if(location.pathname+location.hash!==target)location.href=target;
+    const target=known?urlForRoute(h):'/';
+    if(location.pathname+location.search+location.hash!==target)location.href=target;
     return;
   }
+  syncUrl(h);
   window._resetScrollDepth?.();
   // Inline display:none (not just the .active class) keeps the hidden pages'
   // text out of Safari Reader's article detection, which only sees inline
@@ -3754,7 +3819,7 @@ function route(){
   if(ZONES[h]&&h!=='dk1'&&h!=='dk2'){document.querySelector('[data-page="zone"]').classList.add('active');const z=ZONES[h];document.title=I18N[z.lang].title(z)+' — elpriser.org';pv('Zone '+z.name,'/'+h);loadZone(h);return;}
   if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elpriser prognose 7 dage — time for time, op til 10 døgn frem';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
-  if(!['DK1','DK2'].includes(area)){location.hash='';return;}
+  if(!['DK1','DK2'].includes(area)){goRoute('');return;}
   S.area=area;S.mode=mode;S.weekOffset=0;
   const slugOrGln=p[2]||null;
   const net=slugOrGln?netBySlug(area,slugOrGln):null;
@@ -3766,7 +3831,8 @@ function route(){
   pv(pTitle,'/'+(S.area==='DK1'?'dk1':'dk2'));
   updateHeader();updateWeekNav();S._loadId++;loadPriceData(S._loadId);
 }
-window.addEventListener('hashchange',route);
+window.addEventListener('hashchange',route);   // an old #link typed or followed by hand
+window.addEventListener('popstate',route);     // back / forward between views of the same page
 
 // ═══ START HERO (answer-first) ═══
 let heroArea='DK1';
@@ -4173,14 +4239,14 @@ function buildStart(){
   loadStartHero();
   ['DK1','DK2'].forEach(area=>{
     document.getElementById(area.toLowerCase()+'-zone').innerHTML=ZONE_BTNS.map(b=>
-      `<a href="#${area}/${b.mode}" class="zone-btn ${b.cls}">${b.label}</a>`
+      `<a href="${urlForRoute(area+'/'+b.mode)}" class="zone-btn ${b.cls}">${b.label}</a>`
     ).join('');
     document.getElementById(area.toLowerCase()+'-nets').innerHTML=NETS[area].map(n=>
       `<div class="net-row">
         <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">${n.name}</span>
         <div class="flex items-center gap-1.5">
-          <a href="#${area}/net_inkl_alt/${n.slug}" class="net-chip">Inkl alt</a>
-          <a href="#${area}/net_inkl_tarif/${n.slug}" class="net-chip">Inkl tarif</a>
+          <a href="${urlForRoute(area+'/net_inkl_alt/'+n.slug)}" class="net-chip">Inkl alt</a>
+          <a href="${urlForRoute(area+'/net_inkl_tarif/'+n.slug)}" class="net-chip">Inkl tarif</a>
         </div>
       </div>`
     ).join('');
@@ -4243,10 +4309,7 @@ function onPriceSelectorChange(){
   // prose — switching it by hash alone left N1's prices under "Elpriser DK1
   // Vest" and DK1's text. Only a change of view within the same URL (spot,
   // inkl alt, inkl tarif …) stays in-page, where the sentence is rewritten.
-  if(dataPageFor(val)&&(!document.querySelector('[data-page="prices"]')||hashToPath(val)!==location.pathname)){
-    location.href=hashToPath(val)+'#'+val;return;
-  }
-  location.hash=val;
+  goRoute(val);
 }
 function updateHeader(){
   const al=S.area==='DK1'?'DK1 Vest':'DK2 Øst';
