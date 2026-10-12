@@ -14,7 +14,7 @@ struct SectionLabel: View {
     let text: String
     var body: some View {
         Text(text.uppercased())
-            .font(.system(size: 12, weight: .heavy))
+            .font(.app(12, .heavy))
             .tracking(1)
             .foregroundStyle(T.text2)
     }
@@ -24,7 +24,7 @@ struct Pill: View {
     let text: String, bg: Color, fg: Color
     var body: some View {
         Text(text)
-            .font(.system(size: 13.5, weight: .bold))
+            .font(.app(13.5, .bold))
             .foregroundStyle(fg)
             .padding(.horizontal, 14).padding(.vertical, 7)
             .background(bg, in: Capsule())
@@ -39,7 +39,7 @@ struct PrimaryButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 15.5, weight: .heavy))
+                .font(.app(15.5, .heavy))
                 .foregroundStyle(enabled ? Color.white : T.text2)
                 .frame(maxWidth: .infinity, minHeight: height)
                 .background(enabled ? T.brandSolid : T.surface2, in: Capsule())
@@ -55,7 +55,7 @@ struct TextAction: View {
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            Text(title).font(.system(size: 15, weight: .heavy)).foregroundStyle(color)
+            Text(title).font(.app(15, .heavy)).foregroundStyle(color)
                 .frame(maxWidth: .infinity, minHeight: 48)
         }
         .buttonStyle(.plain)
@@ -70,7 +70,7 @@ struct SoftButton: View {
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            Text(title).font(.system(size: 13.5, weight: .bold)).foregroundStyle(fg)
+            Text(title).font(.app(13.5, .bold)).foregroundStyle(fg)
                 .padding(.horizontal, 18).frame(minHeight: height)
                 .background(bg, in: Capsule())
         }
@@ -88,7 +88,7 @@ struct Segmented: View {
             ForEach(options.indices, id: \.self) { i in
                 let on = i == selected
                 Button { onSelect(i) } label: {
-                    Text(options[i]).font(.system(size: 13.5, weight: .bold))
+                    Text(options[i]).font(.app(13.5, .bold))
                         .foregroundStyle(on ? Color.white : T.text2)
                         .frame(maxWidth: .infinity, minHeight: 38)
                         .background(on ? T.brandSolid : Color.clear, in: Capsule())
@@ -106,10 +106,10 @@ struct StatTile: View {
     let label: String, value: String, sub: String, color: Color
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(label.uppercased()).font(.system(size: 11, weight: .bold)).tracking(0.6).foregroundStyle(T.text2)
+            Text(label.uppercased()).font(.app(11, .bold)).tracking(0.6).foregroundStyle(T.text2)
             HStack(alignment: .lastTextBaseline, spacing: 4) {
-                Text(value).font(.system(size: 19, weight: .heavy)).foregroundStyle(color)
-                Text(sub).font(.system(size: 12, weight: .semibold)).foregroundStyle(T.text2)
+                Text(value).font(.app(19, .heavy)).foregroundStyle(color)
+                Text(sub).font(.app(12, .semibold)).foregroundStyle(T.text2)
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 9)
@@ -125,8 +125,8 @@ struct ScreenHeader<Trailing: View>: View {
     var body: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 0) {
-                Text(title).font(.system(size: 28, weight: .heavy)).tracking(-0.5)
-                Text(subtitle).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(T.text2)
+                Text(title).font(.app(28, .heavy)).tracking(-0.5)
+                Text(subtitle).font(.app(12.5, .semibold)).foregroundStyle(T.text2)
             }
             Spacer(minLength: 8)
             trailing()
@@ -152,7 +152,7 @@ struct ErrorCard: View {
     var onRetry: (() -> Void)?
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(text).font(.system(size: 14.5, weight: .semibold)).lineSpacing(3)
+            Text(text).font(.app(14.5, .semibold)).lineSpacing(3)
             if let onRetry { SoftButton(title: "Prøv igen", bg: T.brandSoft, fg: T.brand, action: onRetry) }
         }
         .card()
@@ -192,6 +192,6 @@ struct RangeBar: View {
 struct HourTag: View {
     let text: String, color: Color
     var body: some View {
-        Text(text).font(.system(size: 11, weight: .bold)).foregroundStyle(color).frame(height: 15)
+        Text(text).font(.app(11, .bold)).foregroundStyle(color).frame(height: 15)
     }
 }

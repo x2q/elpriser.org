@@ -22,9 +22,9 @@ struct FlowHost: View {
 private struct Brand: View {
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "bolt.fill").font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
+            Image(systemName: "bolt.fill").font(.app(15, .bold)).foregroundStyle(.white)
                 .frame(width: 28, height: 28).background(T.brandSolid, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            Text("elpriser").font(.system(size: 15, weight: .heavy))
+            Text("elpriser").font(.app(15, .heavy))
         }
     }
 }
@@ -48,7 +48,7 @@ private struct WelcomeView: View {
                     Button(vm.settings.onboarded ? "Annullér" : "Spring over") {
                         vm.settings.onboarded ? vm.closeStep() : vm.skip()
                     }
-                    .font(.system(size: 13, weight: .bold)).foregroundStyle(T.brand)
+                    .font(.app(13, .bold)).foregroundStyle(T.brand)
                 }
                 .padding(.horizontal, 20).frame(height: 56)
                 ScrollView {
@@ -56,13 +56,13 @@ private struct WelcomeView: View {
                         ZStack {
                             Circle().fill(T.brandSoft.opacity(0.45)).frame(width: 200, height: 200)
                             Circle().fill(T.brandSoft.opacity(0.8)).frame(width: 144, height: 144)
-                            Image(systemName: "mappin.and.ellipse").font(.system(size: 38, weight: .semibold)).foregroundStyle(.white)
+                            Image(systemName: "mappin.and.ellipse").font(.app(38, .semibold)).foregroundStyle(.white)
                                 .frame(width: 88, height: 88).background(T.brandSolid, in: Circle())
                         }
                         .frame(maxWidth: .infinity).frame(height: 210)
-                        Text("Find dit netselskab").font(.system(size: 30, weight: .heavy)).tracking(-0.8).padding(.top, 12)
+                        Text("Find dit netselskab").font(.app(30, .heavy)).tracking(-0.8).padding(.top, 12)
                         Text("Din elregning afhænger af, hvem der ejer ledningerne til dit hus. Med din position finder vi netselskabet, så priserne i appen er dem, du faktisk betaler.")
-                            .font(.system(size: 15, weight: .medium)).lineSpacing(4).foregroundStyle(T.text2).padding(.top, 10)
+                            .font(.app(15, .medium)).lineSpacing(4).foregroundStyle(T.text2).padding(.top, 10)
                         VStack(alignment: .leading, spacing: 12) {
                             ForEach([
                                 "Vi spørger kun, når du trykker på knappen — aldrig i baggrunden.",
@@ -70,9 +70,9 @@ private struct WelcomeView: View {
                                 "Du kan altid skifte eller glemme netselskabet under Indstillinger.",
                             ], id: \.self) { t in
                                 HStack(alignment: .top, spacing: 12) {
-                                    Image(systemName: "checkmark").font(.system(size: 14, weight: .bold)).foregroundStyle(T.brand)
+                                    Image(systemName: "checkmark").font(.app(14, .bold)).foregroundStyle(T.brand)
                                         .frame(width: 32, height: 32).background(T.surface, in: Circle()).overlay(Circle().stroke(T.outline))
-                                    Text(t).font(.system(size: 14, weight: .semibold)).lineSpacing(3).padding(.top, 5)
+                                    Text(t).font(.app(14, .semibold)).lineSpacing(3).padding(.top, 5)
                                 }
                             }
                         }
@@ -94,8 +94,8 @@ private struct SearchingView: View {
     var body: some View {
         VStack(spacing: 6) {
             LoadingView()
-            Text("Finder dit netselskab …").font(.system(size: 17, weight: .heavy))
-            Text("Det tager et øjeblik. Positionen bliver ikke gemt.").font(.system(size: 13.5)).foregroundStyle(T.text2)
+            Text("Finder dit netselskab …").font(.app(17, .heavy))
+            Text("Det tager et øjeblik. Positionen bliver ikke gemt.").font(.app(13.5)).foregroundStyle(T.text2)
         }
         .padding(32)
     }
@@ -110,11 +110,11 @@ private struct FoundView: View {
                 HStack { Brand(); Spacer() }.padding(.horizontal, 20).frame(height: 56)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        Image(systemName: "checkmark").font(.system(size: 34, weight: .bold)).foregroundStyle(T.good)
+                        Image(systemName: "checkmark").font(.app(34, .bold)).foregroundStyle(T.good)
                             .frame(width: 72, height: 72).background(T.goodSoft, in: Circle())
-                        Text("VI FANDT").font(.system(size: 14, weight: .heavy)).tracking(1).foregroundStyle(T.text2).padding(.top, 20)
-                        Text(net.name).font(.system(size: 44, weight: .heavy)).tracking(-1.4)
-                        Text("Prisområde \(net.areaLabel) · netselskab for din adresse").font(.system(size: 16, weight: .semibold)).foregroundStyle(T.text2).padding(.top, 4)
+                        Text("VI FANDT").font(.app(14, .heavy)).tracking(1).foregroundStyle(T.text2).padding(.top, 20)
+                        Text(net.name).font(.app(44, .heavy)).tracking(-1.4)
+                        Text("Prisområde \(net.areaLabel) · netselskab for din adresse").font(.app(16, .semibold)).foregroundStyle(T.text2).padding(.top, 4)
                         VStack(alignment: .leading, spacing: 10) {
                             SectionLabel(text: "Hvad bliver gemt")
                             row("Netselskab: \(net.name) (prisområde \(net.area))", ok: true)
@@ -123,7 +123,7 @@ private struct FoundView: View {
                         }
                         .card(padding: 16).padding(.top, 22)
                         Text("Står netselskabet forkert? Positionen kan være upræcis tæt på en grænse mellem to netselskaber — så vælg det på listen.")
-                            .font(.system(size: 12.5)).lineSpacing(3).foregroundStyle(T.text2).padding(.top, 14)
+                            .font(.app(12.5)).lineSpacing(3).foregroundStyle(T.text2).padding(.top, 14)
                     }
                     .padding(.horizontal, 24)
                 }
@@ -138,9 +138,9 @@ private struct FoundView: View {
 
     private func row(_ text: String, ok: Bool) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: ok ? "checkmark" : "xmark").font(.system(size: 13, weight: .bold)).foregroundStyle(ok ? T.good : T.text2)
+            Image(systemName: ok ? "checkmark" : "xmark").font(.app(13, .bold)).foregroundStyle(ok ? T.good : T.text2)
                 .frame(width: 28, height: 28).background(ok ? T.goodSoft : T.surface2, in: Circle())
-            Text(text).font(.system(size: 14, weight: .semibold)).lineSpacing(2)
+            Text(text).font(.app(14, .semibold)).lineSpacing(2)
         }
     }
 }
@@ -158,31 +158,31 @@ private struct PickerView: View {
             VStack(spacing: 0) {
                 HStack(spacing: 4) {
                     Button { vm.settings.onboarded ? vm.closeStep() : vm.openWelcome() } label: {
-                        Image(systemName: "arrow.left").font(.system(size: 20, weight: .semibold)).foregroundStyle(T.text).frame(width: 48, height: 48)
+                        Image(systemName: "arrow.left").font(.app(20, .semibold)).foregroundStyle(T.text).frame(width: 48, height: 48)
                     }
                     .accessibilityLabel("Tilbage")
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("Vælg netselskab").font(.system(size: 22, weight: .heavy)).tracking(-0.4)
-                        Text("Står på din elregning").font(.system(size: 12, weight: .semibold)).foregroundStyle(T.text2)
+                        Text("Vælg netselskab").font(.app(22, .heavy)).tracking(-0.4)
+                        Text("Står på din elregning").font(.app(12, .semibold)).foregroundStyle(T.text2)
                     }
                     Spacer()
                 }
                 .padding(.horizontal, 8).frame(height: 60)
                 VStack(spacing: 10) {
                     if let note {
-                        Text(note).font(.system(size: 13, weight: .semibold)).lineSpacing(3)
+                        Text(note).font(.app(13, .semibold)).lineSpacing(3)
                             .padding(.horizontal, 14).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
                             .background(T.midSoft, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass").foregroundStyle(T.text2)
-                        TextField("Søg netselskab", text: $q).font(.system(size: 16, weight: .semibold)).textInputAutocapitalization(.never).autocorrectionDisabled()
+                        TextField("Søg netselskab", text: $q).font(.app(16, .semibold)).textInputAutocapitalization(.never).autocorrectionDisabled()
                     }
                     .padding(.horizontal, 18).frame(height: 52).background(T.surface2, in: Capsule())
                     Button { vm.openWelcome() } label: {
                         HStack(spacing: 10) {
                             Image(systemName: "mappin.and.ellipse")
-                            Text("Ved du det ikke? Find det med din position").font(.system(size: 14, weight: .heavy))
+                            Text("Ved du det ikke? Find det med din position").font(.app(14, .heavy))
                             Spacer(minLength: 0)
                         }
                         .foregroundStyle(T.brand).padding(.horizontal, 16).frame(height: 48)
@@ -201,7 +201,7 @@ private struct PickerView: View {
                                     ForEach(group) { n in
                                         Button { sel = n } label: {
                                             HStack {
-                                                Text(n.name).font(.system(size: 15, weight: .bold)).foregroundStyle(T.text)
+                                                Text(n.name).font(.app(15, .bold)).foregroundStyle(T.text)
                                                 Spacer()
                                                 RadioMark(selected: sel?.gln == n.gln)
                                             }
@@ -215,7 +215,7 @@ private struct PickerView: View {
                             }
                         }
                         if nets.isEmpty {
-                            Text("Ingen netselskaber matcher “\(q)”.").font(.system(size: 14)).foregroundStyle(T.text2).frame(maxWidth: .infinity).padding(40)
+                            Text("Ingen netselskaber matcher “\(q)”.").font(.app(14)).foregroundStyle(T.text2).frame(maxWidth: .infinity).padding(40)
                         }
                     }
                     .padding(.horizontal, 16).padding(.bottom, 16)

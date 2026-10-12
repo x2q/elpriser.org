@@ -28,12 +28,12 @@ struct SettingsScreen: View {
         return VStack(alignment: .leading, spacing: 12) {
             SectionLabel(text: "Netselskab")
             HStack(spacing: 12) {
-                Image(systemName: "mappin.and.ellipse").font(.system(size: 22, weight: .semibold)).foregroundStyle(T.brand)
+                Image(systemName: "mappin.and.ellipse").font(.app(22, .semibold)).foregroundStyle(T.brand)
                     .frame(width: 48, height: 48).background(T.brandSoft, in: Circle())
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(net.map { "\($0.name) · \($0.areaLabel)" } ?? "Intet netselskab valgt").font(.system(size: 17, weight: .heavy))
+                    Text(net.map { "\($0.name) · \($0.areaLabel)" } ?? "Intet netselskab valgt").font(.app(17, .heavy))
                     Text(net != nil ? (s.netHow == "gps" ? "Fundet med din position · gemt på enheden" : "Valgt af dig · gemt på enheden") : "Priserne vises uden nettarif")
-                        .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(T.text2)
+                        .font(.app(12.5, .semibold)).foregroundStyle(T.text2)
                 }
                 Spacer()
                 SoftButton(title: "Skift") { vm.openPicker() }
@@ -47,7 +47,7 @@ struct SettingsScreen: View {
                 Segmented(options: ["DK1 Vest", "DK2 Øst"], selected: s.area == "DK1" ? 0 : 1) { s.updateArea($0 == 0 ? "DK1" : "DK2") }
             }
             Text("Vi spørger kun om din position, når du trykker. Vi gemmer svaret — netselskabet — og aldrig koordinaterne.")
-                .font(.system(size: 12.5)).lineSpacing(3).foregroundStyle(T.text2)
+                .font(.app(12.5)).lineSpacing(3).foregroundStyle(T.text2)
         }
         .card()
     }
@@ -65,9 +65,9 @@ struct SettingsScreen: View {
                 Button { s.updateView(i) } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 0) {
-                            Text(defs[i].0).font(.system(size: 14.5, weight: .bold)).foregroundStyle(T.text)
+                            Text(defs[i].0).font(.app(14.5, .bold)).foregroundStyle(T.text)
                             Text(i == 0 && s.net == nil ? "\(defs[i].1) — vælg først et netselskab" : defs[i].1)
-                                .font(.system(size: 12, weight: .semibold)).foregroundStyle(T.text2).multilineTextAlignment(.leading)
+                                .font(.app(12, .semibold)).foregroundStyle(T.text2).multilineTextAlignment(.leading)
                         }
                         Spacer()
                         RadioMark(selected: s.view == i)
@@ -99,7 +99,7 @@ struct SettingsScreen: View {
         return VStack(alignment: .leading, spacing: 10) {
             SectionLabel(text: "Om appen")
             Text("Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra en åben model på Hugging Face · elpriser \(v)")
-                .font(.system(size: 12.5, weight: .medium)).lineSpacing(3).foregroundStyle(T.text2)
+                .font(.app(12.5, .medium)).lineSpacing(3).foregroundStyle(T.text2)
             HStack(spacing: 8) {
                 SoftButton(title: "Privatliv", bg: T.brandSoft, fg: T.brand) { openURL(URL(string: "https://elpriser.org/privatliv")!) }
                 SoftButton(title: "elpriser.org", bg: T.brandSoft, fg: T.brand) { openURL(URL(string: "https://elpriser.org")!) }

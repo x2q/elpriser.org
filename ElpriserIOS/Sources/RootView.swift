@@ -13,23 +13,64 @@ struct Adaptive<Content: View>: View {
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var phase
+    /// Kun til skærmbilleder (-debugTime YES): åbner "Time for time" direkte i Nu-fanens stak.
+    @State private var nuPath: [Route] = {
+        #if DEBUG
+        return UserDefaults.standard.bool(forKey: "debugTime") ? [.time] : []
+        #else
+        return []
+        #endif
+    }()
 
     var body: some View {
-        #if DEBUG
-        // Kun til skærmbilleder: -debugTime YES åbner "Time for time" direkte.
-        if UserDefaults.standard.bool(forKey: "debugTime") {
-            NavigationStack { TimeScreen() }.task { model.refresh() }
-        } else { tabs }
-        #else
         tabs
-        #endif
     }
 
     @ViewBuilder private var tabs: some View {
         @Bindable var m = model
-        TabView(selection: $m.tab) {
+        // Bredde, ikke enhedstype: en iPad i en smal Split View-rude skal have iPhone-opbygningen,
+        // og en stor iPhone i landscape har plads til skinnen.
+        GeometryReader { g in
+            Group {
+                if g.size.width >= 700 { railLayout } else { compactLayout }
+            }
+        }
+        .tint(T.brandSolid)
+        .preferredColorScheme(scheme)
+        .fullScreenCover(isPresented: Binding(get: { model.step != nil }, set: { if !$0 { model.closeStep() } })) {
+            FlowHost().environment(model).preferredColorScheme(scheme)
+        }
+        .task { model.refresh() }
+        .onChange(of: phase) { _, p in if p == .active { model.refresh() } }
+        .onChange(of: model.settings.mode) { _, _ in model.refresh() }
+        .onChange(of: model.settings.netGln) { _, _ in model.refresh() }
+        .onChange(of: model.settings.area) { _, _ in model.refresh() }
+    }
+
+    /// iPad: skinne til venstre og indholdet til højre, som i Android-tabletudgaven.
+    private var railLayout: some View {
+        @Bindable var m = model
+        return HStack(spacing: 0) {
+            SideRail(selected: $m.tab)
+            ZStack {
+                switch model.tab {
+                case .nu: NavigationStack(path: $nuPath) { NuScreen().routes() }
+                case .prognose: NavigationStack { PrognoseScreen().routes() }
+                case .automation: NavigationStack { AutomationScreen().toolbar(.hidden, for: .navigationBar) }
+                case .settings: NavigationStack { SettingsScreen().toolbar(.hidden, for: .navigationBar) }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(T.bg.ignoresSafeArea())
+        }
+    }
+
+    /// iPhone: faneliste i bunden.
+    private var compactLayout: some View {
+        @Bindable var m = model
+        return TabView(selection: $m.tab) {
             Tab("Nu", systemImage: "bolt", value: AppTab.nu) {
-                NavigationStack { NuScreen().routes() }
+                NavigationStack(path: $nuPath) { NuScreen().routes() }
             }
             Tab("Prognose", systemImage: "chart.line.uptrend.xyaxis", value: AppTab.prognose) {
                 NavigationStack { PrognoseScreen().routes() }
@@ -41,17 +82,6 @@ struct RootView: View {
                 NavigationStack { SettingsScreen().toolbar(.hidden, for: .navigationBar) }
             }
         }
-        .tabViewStyle(.sidebarAdaptable)
-        .tint(T.brandSolid)
-        .preferredColorScheme(scheme)
-        .fullScreenCover(isPresented: Binding(get: { model.step != nil }, set: { if !$0 { model.closeStep() } })) {
-            FlowHost().environment(model).preferredColorScheme(scheme)
-        }
-        .task { model.refresh() }
-        .onChange(of: phase) { _, p in if p == .active { model.refresh() } }
-        .onChange(of: model.settings.mode) { _, _ in model.refresh() }
-        .onChange(of: model.settings.netGln) { _, _ in model.refresh() }
-        .onChange(of: model.settings.area) { _, _ in model.refresh() }
     }
 
     private var scheme: ColorScheme? {
@@ -110,8 +140,8 @@ struct NuScreen: View {
                 ScreenHeader(title: "Nu", subtitle: todayLong()) {
                     Button { vm.openPicker() } label: {
                         HStack(spacing: 6) {
-                            Text(netLabel).font(.system(size: 13.5, weight: .bold))
-                            Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
+                            Text(netLabel).font(.app(13.5, .bold))
+                            Image(systemName: "chevron.down").font(.app(11, .bold))
                         }
                         .foregroundStyle(T.text)
                         .padding(.horizontal, 14).frame(minHeight: 44)
@@ -121,12 +151,19 @@ struct NuScreen: View {
                 }
                 if let today {
                     if wide {
-                        HStack(alignment: .top, spacing: 20) {
-                            ScrollView { NuMain(today: today, days: days).padding(.bottom, 20) }
+                        // Grafen får den højde, der er til overs, så siden fylder skærmen i stedet for at ende halvvejs.
+                        GeometryReader { g in
+                            HStack(alignment: .top, spacing: 20) {
+                                ScrollView {
+                                    NuMain(today: today, days: days, fill: true)
+                                        .padding(.bottom, 20)
+                                        .frame(minHeight: g.size.height, alignment: .top)
+                                }
                                 .refreshable { await vm.load(force: true) }
-                            ScrollView { WeekList(days: days).padding(.bottom, 20) }.frame(width: 360)
+                                ScrollView { WeekList(days: days).padding(.bottom, 20) }.frame(width: 360)
+                            }
+                            .padding(.horizontal, 20)
                         }
-                        .padding(.horizontal, 20)
                     } else {
                         ScrollView { NuMain(today: today, days: days).padding(.horizontal, 16).padding(.bottom, 16) }
                             .refreshable { await vm.load(force: true) }
@@ -147,6 +184,7 @@ private struct NuMain: View {
     @Environment(AppModel.self) private var vm
     let today: Day
     let days: [Day]
+    var fill = false
     @State private var range = 0
 
     var body: some View {
@@ -165,13 +203,13 @@ private struct NuMain: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 Text("\(areaName(s.effectiveArea)) · \(s.effectiveArea)\(s.net.map { " · \($0.name)" } ?? "") · LIGE NU KL. \(pad(now))".uppercased())
-                    .font(.system(size: 11.5, weight: .bold)).tracking(0.8).foregroundStyle(T.text2)
+                    .font(.app(11.5, .bold)).tracking(0.8).foregroundStyle(T.text2)
                 HStack(alignment: .lastTextBaseline, spacing: 6) {
-                    Text(fmt(price)).font(.system(size: 68, weight: .bold)).tracking(-2.5).minimumScaleFactor(0.6).lineLimit(1)
-                    Text("kr/kWh").font(.system(size: 16, weight: .bold)).foregroundStyle(T.text2)
+                    Text(fmt(price)).font(.app(68, .bold)).tracking(-2.5).minimumScaleFactor(0.6).lineLimit(1)
+                    Text("kr/kWh").font(.app(16, .bold)).foregroundStyle(T.text2)
                 }
                 .padding(.top, 2)
-                Text(viewNote(s)).font(.system(size: 13, weight: .medium)).foregroundStyle(T.text2)
+                Text(viewNote(s)).font(.app(13, .medium)).foregroundStyle(T.text2)
                 HStack(spacing: 8) {
                     Pill(text: v.label, bg: vbg, fg: vfg)
                     if let co2 { Pill(text: "\(co2[now]) g CO₂/kWh", bg: T.co2Soft, fg: T.co2) }
@@ -182,26 +220,26 @@ private struct NuMain: View {
 
             let inCheap = now >= cheap.s && now < cheap.e
             Text((inCheap ? "Strømmen er billig nu. " : "") + "De tre billigste timer i dag er kl. \(cheap.label) — \(fmt(cheap.avg)) kr/kWh i snit, \(save) % under spidsen kl. \(peak.label).")
-                .font(.system(size: 14.5, weight: .semibold)).lineSpacing(3).foregroundStyle(.white)
+                .font(.app(14.5, .semibold)).lineSpacing(3).foregroundStyle(.white)
                 .padding(.horizontal, 18).padding(.vertical, 14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(T.brandSolid, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Text("Prisen time for time").font(.system(size: 15, weight: .heavy))
-                    Spacer()
-                    Segmented(options: ["I dag", "3 døgn"], selected: range) { range = $0 }.frame(width: 190)
+                    Text("Prisen time for time").font(.app(15, .heavy)).lineLimit(1).minimumScaleFactor(0.85)
+                    Spacer(minLength: 8)
+                    Segmented(options: ["I dag", "3 døgn"], selected: range) { range = $0 }.frame(width: 176)
                 }
                 if range == 0 {
-                    PriceChart(vals: vals, nSolid: today.actual ? 24 : 0, nowIndex: now, lo: today.lo, hi: today.hi)
+                    PriceChart(vals: vals, nSolid: today.actual ? 24 : 0, nowIndex: now, lo: today.lo, hi: today.hi, flexible: fill)
                 } else {
                     let three = Array(days.prefix(3))
                     let c = combine(three)
-                    PriceChart(vals: c.vals, nSolid: c.nSolid, nowIndex: now, lo: c.lo, hi: c.hi, bandFrom: c.nSolid, days: three.count, dayNames: three.map(dayLabel))
+                    PriceChart(vals: c.vals, nSolid: c.nSolid, nowIndex: now, lo: c.lo, hi: c.hi, bandFrom: c.nSolid, days: three.count, dayNames: three.map(dayLabel), flexible: fill)
                 }
                 NavigationLink(value: Route.time) {
-                    Text("Se time for time").font(.system(size: 13.5, weight: .bold)).foregroundStyle(T.brand)
+                    Text("Se time for time").font(.app(13.5, .bold)).foregroundStyle(T.brand)
                         .padding(.horizontal, 18).frame(minHeight: 44)
                         .background(T.brandSoft, in: Capsule())
                 }
@@ -233,12 +271,12 @@ struct WeekList: View {
                 Button { vm.selDay = days.firstIndex { $0.id == d.id } ?? 0; vm.tab = .prognose } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 0) {
-                            Text(dayLabel(d)).font(.system(size: 14, weight: .bold))
-                            Text(d.actual ? "Børspris" : "Prognose").font(.system(size: 11.5, weight: .semibold)).foregroundStyle(T.text2)
+                            Text(dayLabel(d)).font(.app(14, .bold))
+                            Text(d.actual ? "Børspris" : "Prognose").font(.app(11.5, .semibold)).foregroundStyle(T.text2)
                         }
                         .frame(width: 92, alignment: .leading)
                         RangeBar(min: d.price.min()!, max: d.price.max()!, lo: lo, hi: hi)
-                        Text(fmt(d.price.reduce(0, +) / 24)).font(.system(size: 14, weight: .heavy)).frame(width: 52, alignment: .trailing)
+                        Text(fmt(d.price.reduce(0, +) / 24)).font(.app(14, .heavy)).frame(width: 52, alignment: .trailing)
                     }
                     .padding(.vertical, 9)
                 }
@@ -268,7 +306,8 @@ struct PrognoseScreen: View {
                 if days.isEmpty {
                     ScrollView { Group { vm.loading ? AnyView(LoadingView()) : AnyView(ErrorCard(text: vm.error ?? "Ingen data endnu.", onRetry: { vm.refresh(force: true) })) }.padding(16) }
                 } else {
-                    let list = VStack(spacing: 12) {
+                    // `minH` er den højde, listen skal fylde på iPad: rækkerne deler den, så kortet når bunden.
+                    let list: (CGFloat?) -> AnyView = { minH in AnyView(VStack(spacing: 12) {
                         if s.mode != "spot_inkl" {
                             Segmented(options: [ownLabel, "Spot inkl. moms"], selected: basis) { basis = $0 }
                         }
@@ -278,30 +317,40 @@ struct PrognoseScreen: View {
                                 Button { vm.selDay = i } label: {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 0) {
-                                            Text(dayLabel(d)).font(.system(size: 14, weight: .bold))
-                                            Text("\(dayMonth(d)) · \(d.actual ? "børspris" : "prognose")").font(.system(size: 11.5, weight: .semibold)).foregroundStyle(T.text2)
+                                            Text(dayLabel(d)).font(.app(14, .bold))
+                                            Text("\(dayMonth(d)) · \(d.actual ? "børspris" : "prognose")").font(.app(11.5, .semibold)).foregroundStyle(T.text2)
                                         }
                                         .frame(width: wide ? 128 : 104, alignment: .leading)
                                         RangeBar(min: d.price.min()!, max: d.price.max()!, lo: lo, hi: hi)
-                                        Text(fmt(d.price.reduce(0, +) / 24)).font(.system(size: 14.5, weight: .heavy)).frame(width: 54, alignment: .trailing)
+                                        Text(fmt(d.price.reduce(0, +) / 24)).font(.app(14.5, .heavy)).frame(width: 54, alignment: .trailing)
                                     }
                                     .padding(.horizontal, 10).padding(.vertical, 10)
+                                    .frame(minHeight: minH == nil ? nil : 60)
                                     .background(i == sel ? T.brandSoft : Color.clear, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                                 }
                                 .buttonStyle(.plain)
+                                .hoverEffect(.highlight)
                             }
                         }
                         .card(padding: 8)
-                    }
-                    let detail = DayDetail(day: days[sel])
+                    }) }
                     if wide {
-                        HStack(alignment: .top, spacing: 20) {
-                            ScrollView { list.padding(.bottom, 20) }
-                            ScrollView { detail.padding(.bottom, 20) }
+                        GeometryReader { g in
+                            // Segmenteret vælger (44) + afstand (12) + bundmargen (20) trækkes fra listens højde.
+                            HStack(alignment: .top, spacing: 20) {
+                                ScrollView {
+                                    list(g.size.height).padding(.bottom, 20)
+                                        .frame(minHeight: g.size.height, alignment: .top)
+                                }
+                                ScrollView {
+                                    DayDetail(day: days[sel], fill: true).padding(.bottom, 20)
+                                        .frame(minHeight: g.size.height, alignment: .top)
+                                }
+                            }
+                            .padding(.horizontal, 20)
                         }
-                        .padding(.horizontal, 20)
                     } else {
-                        ScrollView { VStack(spacing: 12) { list; detail }.padding(.horizontal, 16).padding(.bottom, 16) }
+                        ScrollView { VStack(spacing: 12) { list(nil); DayDetail(day: days[sel]) }.padding(.horizontal, 16).padding(.bottom, 16) }
                             .refreshable { await vm.load(force: true) }
                     }
                 }
@@ -314,26 +363,27 @@ struct PrognoseScreen: View {
 private struct DayDetail: View {
     @Environment(AppModel.self) private var vm
     let day: Day
+    var fill = false
     var body: some View {
         let cheap = cheapestWindow(day.price, 3), peak = cheapestWindow(day.price, 3, highest: true)
         VStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 10) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(dayLong(day)).font(.system(size: 17, weight: .heavy))
+                    Text(dayLong(day)).font(.app(17, .heavy))
                     Text(day.actual ? "Offentliggjorte børspriser" : "Modelprognose med P10–P90-bånd")
-                        .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(T.text2)
+                        .font(.app(12.5, .semibold)).foregroundStyle(T.text2)
                 }
-                PriceChart(vals: day.price, nSolid: day.actual ? 24 : 0, nowIndex: nil, lo: day.lo, hi: day.hi)
+                PriceChart(vals: day.price, nSolid: day.actual ? 24 : 0, nowIndex: nil, lo: day.lo, hi: day.hi, flexible: fill, maxHeight: 400)
                 HStack(spacing: 8) {
                     StatTile(label: "Billigste 3 t", value: fmt(cheap.avg), sub: "kl. \(cheap.label)", color: T.good)
                     StatTile(label: "Dyreste 3 t", value: fmt(peak.avg), sub: "kl. \(peak.label)", color: T.bad)
                 }
                 if let lo = day.lo, let hi = day.hi {
                     Text("Usikkerhed: gennemsnittet ligger mellem \(fmt(lo.reduce(0, +) / 24)) og \(fmt(hi.reduce(0, +) / 24)) kr/kWh (P10–P90). Jo længere frem, jo bredere bånd.")
-                        .font(.system(size: 12.5, weight: .medium)).lineSpacing(3).foregroundStyle(T.text2)
+                        .font(.app(12.5, .medium)).lineSpacing(3).foregroundStyle(T.text2)
                 }
                 NavigationLink(value: Route.time) {
-                    Text("Se time for time").font(.system(size: 13.5, weight: .bold)).foregroundStyle(T.brand)
+                    Text("Se time for time").font(.app(13.5, .bold)).foregroundStyle(T.brand)
                         .padding(.horizontal, 18).frame(minHeight: 44)
                         .background(T.brandSoft, in: Capsule())
                 }
@@ -342,7 +392,7 @@ private struct DayDetail: View {
             .card()
             if let m = vm.modelName {
                 Text("Prognosen kommer fra en åben model (\(m)) og opdateres hver dag. Se modellen og data på huggingface.co/Elpriser.")
-                    .font(.system(size: 11.5)).lineSpacing(3).foregroundStyle(T.text2).padding(.horizontal, 8)
+                    .font(.app(11.5)).lineSpacing(3).foregroundStyle(T.text2).padding(.horizontal, 8)
             }
         }
     }

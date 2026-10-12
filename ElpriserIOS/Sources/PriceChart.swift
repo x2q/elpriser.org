@@ -21,17 +21,20 @@ struct PriceChart: View {
     var days = 1
     var dayNames: [String] = []
     var height: CGFloat = 170
+    /// Vokser med den plads, kortet får (op til `maxHeight`) — iPad-layoutet bruger den til at fylde skærmen.
+    var flexible = false
+    var maxHeight: CGFloat = 360
 
     var body: some View {
         VStack(spacing: 2) {
             Canvas { ctx, size in draw(&ctx, size) }
-                .frame(height: height)
+                .frame(minHeight: height, maxHeight: flexible ? maxHeight : height)
                 .accessibilityElement()
                 .accessibilityLabel("Prisgraf time for time")
             if !dayNames.isEmpty {
                 HStack(spacing: 0) {
                     ForEach(dayNames.indices, id: \.self) { i in
-                        Text(dayNames[i]).font(.system(size: 11, weight: .bold)).foregroundStyle(T.text2).frame(maxWidth: .infinity)
+                        Text(dayNames[i]).font(.app(11, .bold)).foregroundStyle(T.text2).frame(maxWidth: .infinity)
                     }
                 }
             }
@@ -50,7 +53,7 @@ struct PriceChart: View {
         func x(_ i: Int) -> CGFloat { CGFloat(i) / CGFloat(n - 1) * size.width }
         func y(_ v: Double) -> CGFloat { top + CGFloat(1 - (v - minV) / span) * (bottom - top) }
 
-        let tickFont = Font.system(size: 10, weight: .semibold)
+        let tickFont = Font.app(10, .semibold)
         let ticks = niceTicks(minV, maxV)
         for v in ticks {
             var p = Path(); p.move(to: CGPoint(x: 0, y: y(v))); p.addLine(to: CGPoint(x: size.width, y: y(v)))

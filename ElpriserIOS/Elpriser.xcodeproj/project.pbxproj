@@ -9,9 +9,12 @@
 /* Begin PBXBuildFile section */
 		070BEEC5A7E4520F5503AF13 /* ContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98356D215B7AF4BC0982A5DD /* ContractTests.swift */; };
 		075D0A017923CB44963697ED /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C2F7685A6040B8334198A8 /* SettingsScreen.swift */; };
+		091F45B8AC00FC57820DD97F /* Manrope-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4953B2B40682C6BBCE0E47DE /* Manrope-ExtraBold.ttf */; };
+		0E5A82713B5C72BB0053AA96 /* Manrope-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3D6E5BFC81A4F27463032FB8 /* Manrope-Bold.ttf */; };
 		15CCDC52BDDD3835C6C5590F /* AutomationScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81FE4CF78994273B13EC4E0 /* AutomationScreen.swift */; };
 		22A35C23EF2857E016C0023E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F9AEB4CCD32B4F828818D38E /* Assets.xcassets */; };
 		26962E88476CD6BA1B417A07 /* Api.swift in Sources */ = {isa = PBXBuildFile; fileRef = C445F043FFD3C41CF8EB07D4 /* Api.swift */; };
+		27C40F05FFF9D189D9A0C436 /* Manrope-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6A0B84831207BC11D4231A5D /* Manrope-Regular.ttf */; };
 		28BAC5942EC23DEE59C5712D /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FF88DD5797EF12AB34969DA /* Theme.swift */; };
 		28C5E936F9A4022ED4AE170E /* PriceChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC66EA68E8E258BE36DD7CAC /* PriceChart.swift */; };
 		37766E2CD2C2EBCF5D323B2A /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1FA340C8E3EBF989BC55FC1 /* Settings.swift */; };
@@ -21,8 +24,11 @@
 		5FF1C34B530F233B527A4F09 /* PositionFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16DDB4C03F208F45BBD9C78F /* PositionFinder.swift */; };
 		6DA635596A73DDAFBA0397D0 /* FlowViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3480C4E02FF1E6233316CA51 /* FlowViews.swift */; };
 		80B6169C935ABEFDA126D60B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 9D3EF2BA24B75A83BB44F18B /* PrivacyInfo.xcprivacy */; };
+		867993E3EA0F0E0748A78BF1 /* SideRail.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8769A2AAA47103E3A24B1F6 /* SideRail.swift */; };
 		899D5A3608836379BD041D61 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769138C3213A541E2B3C043C /* AppModel.swift */; };
 		A7865E389888B63613F97A6A /* TimeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380F6F85BFE48B203A4F3B6E /* TimeScreen.swift */; };
+		B28B090D1276231CAA19C0AE /* Manrope-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EE806A861F959B78C5209974 /* Manrope-SemiBold.ttf */; };
+		B9A71EFB6188DA40EB28FC76 /* Manrope-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CF6308EF906FA984651F9D8D /* Manrope-Medium.ttf */; };
 		F20459218D6C20BE212A65E9 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BA379703921B8B52E7A017 /* Models.swift */; };
 /* End PBXBuildFile section */
 
@@ -44,8 +50,11 @@
 		2FF88DD5797EF12AB34969DA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		3480C4E02FF1E6233316CA51 /* FlowViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowViews.swift; sourceTree = "<group>"; };
 		380F6F85BFE48B203A4F3B6E /* TimeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeScreen.swift; sourceTree = "<group>"; };
+		3D6E5BFC81A4F27463032FB8 /* Manrope-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Bold.ttf"; sourceTree = "<group>"; };
+		4953B2B40682C6BBCE0E47DE /* Manrope-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-ExtraBold.ttf"; sourceTree = "<group>"; };
 		55BA379703921B8B52E7A017 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		5D66E273760FB843CBE6C2C4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6A0B84831207BC11D4231A5D /* Manrope-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Regular.ttf"; sourceTree = "<group>"; };
 		769138C3213A541E2B3C043C /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		85C2F7685A6040B8334198A8 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		98356D215B7AF4BC0982A5DD /* ContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractTests.swift; sourceTree = "<group>"; };
@@ -53,7 +62,10 @@
 		A81FE4CF78994273B13EC4E0 /* AutomationScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationScreen.swift; sourceTree = "<group>"; };
 		C445F043FFD3C41CF8EB07D4 /* Api.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Api.swift; sourceTree = "<group>"; };
 		CF2895F3B64B67D56DD28B8E /* ElpriserTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ElpriserTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF6308EF906FA984651F9D8D /* Manrope-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Medium.ttf"; sourceTree = "<group>"; };
 		E1FA340C8E3EBF989BC55FC1 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		E8769A2AAA47103E3A24B1F6 /* SideRail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideRail.swift; sourceTree = "<group>"; };
+		EE806A861F959B78C5209974 /* Manrope-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-SemiBold.ttf"; sourceTree = "<group>"; };
 		F5A860138AFCD80A54639457 /* Elpriser.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Elpriser.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9AEB4CCD32B4F828818D38E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FC66EA68E8E258BE36DD7CAC /* PriceChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceChart.swift; sourceTree = "<group>"; };
@@ -84,6 +96,7 @@
 				204D1733B1B18A449F11A1F1 /* RootView.swift */,
 				E1FA340C8E3EBF989BC55FC1 /* Settings.swift */,
 				85C2F7685A6040B8334198A8 /* SettingsScreen.swift */,
+				E8769A2AAA47103E3A24B1F6 /* SideRail.swift */,
 				2FF88DD5797EF12AB34969DA /* Theme.swift */,
 				380F6F85BFE48B203A4F3B6E /* TimeScreen.swift */,
 			);
@@ -100,6 +113,18 @@
 			);
 			sourceTree = "<group>";
 		};
+		84E67061ACBF545D2EC5611F /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				3D6E5BFC81A4F27463032FB8 /* Manrope-Bold.ttf */,
+				4953B2B40682C6BBCE0E47DE /* Manrope-ExtraBold.ttf */,
+				CF6308EF906FA984651F9D8D /* Manrope-Medium.ttf */,
+				6A0B84831207BC11D4231A5D /* Manrope-Regular.ttf */,
+				EE806A861F959B78C5209974 /* Manrope-SemiBold.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
 		C9A32AD11E8C80BFB8E5929E /* Tests */ = {
 			isa = PBXGroup;
 			children = (
@@ -114,6 +139,7 @@
 				F9AEB4CCD32B4F828818D38E /* Assets.xcassets */,
 				5D66E273760FB843CBE6C2C4 /* Info.plist */,
 				9D3EF2BA24B75A83BB44F18B /* PrivacyInfo.xcprivacy */,
+				84E67061ACBF545D2EC5611F /* Fonts */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -202,6 +228,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				22A35C23EF2857E016C0023E /* Assets.xcassets in Resources */,
+				0E5A82713B5C72BB0053AA96 /* Manrope-Bold.ttf in Resources */,
+				091F45B8AC00FC57820DD97F /* Manrope-ExtraBold.ttf in Resources */,
+				B9A71EFB6188DA40EB28FC76 /* Manrope-Medium.ttf in Resources */,
+				27C40F05FFF9D189D9A0C436 /* Manrope-Regular.ttf in Resources */,
+				B28B090D1276231CAA19C0AE /* Manrope-SemiBold.ttf in Resources */,
 				80B6169C935ABEFDA126D60B /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -225,6 +256,7 @@
 				3B8A80D572D489A0E7E6CC56 /* RootView.swift in Sources */,
 				37766E2CD2C2EBCF5D323B2A /* Settings.swift in Sources */,
 				075D0A017923CB44963697ED /* SettingsScreen.swift in Sources */,
+				867993E3EA0F0E0748A78BF1 /* SideRail.swift in Sources */,
 				28BAC5942EC23DEE59C5712D /* Theme.swift in Sources */,
 				A7865E389888B63613F97A6A /* TimeScreen.swift in Sources */,
 			);
@@ -322,7 +354,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 356K9LKCC6;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -343,7 +375,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -429,7 +461,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 356K9LKCC6;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -444,7 +476,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

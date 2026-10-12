@@ -115,3 +115,19 @@ func todayLong() -> String {
     let d = Day(date: Clock.today(), actual: true, price: [], lo: nil, hi: nil)
     return dayLong(d)
 }
+
+extension Font {
+    /// Manrope — samme skrift som Android-appen og designet. Fast størrelse, som `.system(size:)`, den afløser,
+    /// så layoutet er det samme uanset Dynamic Type-indstillingen.
+    static func app(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        let face: String
+        switch weight {
+        case .medium: face = "Manrope-Medium"
+        case .semibold: face = "Manrope-SemiBold"
+        case .bold: face = "Manrope-Bold"
+        case .heavy, .black: face = "Manrope-ExtraBold"
+        default: face = "Manrope-Regular"
+        }
+        return .custom(face, fixedSize: size)
+    }
+}

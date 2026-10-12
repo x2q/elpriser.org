@@ -41,9 +41,9 @@ struct TimeScreen: View {
                     let on = i == sel
                     Button { vm.selDay = i } label: {
                         VStack(spacing: 0) {
-                            Text(dayShort(d)).font(.system(size: 11.5, weight: .semibold)).foregroundStyle(on ? .white : T.text2)
-                            Text("\(dayNum(d))").font(.system(size: 18, weight: .heavy)).foregroundStyle(on ? .white : T.text)
-                            Text(d.actual ? "børs" : "prog.").font(.system(size: 10.5, weight: .semibold)).foregroundStyle(on ? Color.white.opacity(0.85) : T.text2)
+                            Text(dayShort(d)).font(.app(11.5, .semibold)).foregroundStyle(on ? .white : T.text2)
+                            Text("\(dayNum(d))").font(.app(18, .heavy)).foregroundStyle(on ? .white : T.text)
+                            Text(d.actual ? "børs" : "prog.").font(.app(10.5, .semibold)).foregroundStyle(on ? Color.white.opacity(0.85) : T.text2)
                         }
                         .frame(width: 62).padding(.vertical, 8)
                         .background(on ? T.brandSolid : T.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -69,7 +69,7 @@ private struct PhoneDay: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 6) {
                 Text("\(dayLong(day)) · tryk på en time for prisopbygningen")
-                    .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(T.text2).padding(.bottom, 2)
+                    .font(.app(12.5, .semibold)).foregroundStyle(T.text2).padding(.bottom, 2)
                 ForEach(0..<12, id: \.self) { r in
                     HStack(spacing: 6) {
                         ForEach([r, r + 12], id: \.self) { h in
@@ -79,8 +79,8 @@ private struct PhoneDay: View {
                                 HStack(spacing: 0) {
                                     Rectangle().fill(ramp(hi == lo ? 0 : (p - lo) / (hi - lo))).frame(width: 6)
                                     VStack(alignment: .leading, spacing: 0) {
-                                        Text(hh(h)).font(.system(size: 11.5, weight: .semibold)).foregroundStyle(T.text2)
-                                        Text(fmt(p)).font(.system(size: 16, weight: .heavy)).foregroundStyle(T.text)
+                                        Text(hh(h)).font(.app(11.5, .semibold)).foregroundStyle(T.text2)
+                                        Text(fmt(p)).font(.app(16, .heavy)).foregroundStyle(T.text)
                                     }
                                     .padding(.leading, 10)
                                     Spacer(minLength: 0)
@@ -114,12 +114,12 @@ private struct WideDay: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(dayLong(day)).font(.system(size: 17, weight: .heavy))
-                        Text(day.actual ? "Offentliggjorte børspriser" : "Modelprognose med P10–P90-bånd").font(.system(size: 12.5, weight: .semibold)).foregroundStyle(T.text2)
+                        Text(dayLong(day)).font(.app(17, .heavy))
+                        Text(day.actual ? "Offentliggjorte børspriser" : "Modelprognose med P10–P90-bånd").font(.app(12.5, .semibold)).foregroundStyle(T.text2)
                         PriceChart(vals: day.price, nSolid: day.actual ? 24 : 0, nowIndex: isToday ? now : nil, lo: day.lo, hi: day.hi, height: 170)
                     }
                     .card()
-                    Text("Tryk på en time for at se, hvad prisen består af").font(.system(size: 13, weight: .semibold)).foregroundStyle(T.text2)
+                    Text("Tryk på en time for at se, hvad prisen består af").font(.app(13, .semibold)).foregroundStyle(T.text2)
                     ForEach(0..<4, id: \.self) { r in
                         HStack(spacing: 8) {
                             ForEach(0..<6, id: \.self) { c in
@@ -131,8 +131,8 @@ private struct WideDay: View {
                                     VStack(alignment: .leading, spacing: 0) {
                                         Rectangle().fill(ramp(hi == lo ? 0 : (p - lo) / (hi - lo))).frame(height: 6)
                                         VStack(alignment: .leading, spacing: 0) {
-                                            Text(hh(h)).font(.system(size: 12, weight: .semibold)).foregroundStyle(T.text2)
-                                            Text(fmt(p)).font(.system(size: 22, weight: .heavy)).foregroundStyle(T.text)
+                                            Text(hh(h)).font(.app(12, .semibold)).foregroundStyle(T.text2)
+                                            Text(fmt(p)).font(.app(22, .heavy)).foregroundStyle(T.text)
                                             HourTag(text: tag, color: tag == "billigst" ? T.good : tag == "dyrest" ? T.bad : T.brand)
                                         }
                                         .padding(.horizontal, 12).padding(.vertical, 8)
@@ -170,11 +170,11 @@ struct Breakdown: View {
         let a = at("inkl_alt"), sp = at("spot_inkl"), n = hasNet ? at("net_inkl_alt") : nil
         let total = n ?? a
         VStack(alignment: .leading, spacing: 0) {
-            Text("Kl. \(hh(hour)) · \(dayLong(day))").font(.system(size: 13, weight: .bold)).foregroundStyle(T.text2)
+            Text("Kl. \(hh(hour)) · \(dayLong(day))").font(.app(13, .bold)).foregroundStyle(T.text2)
             if let total, let a, let sp {
                 HStack(alignment: .lastTextBaseline, spacing: 6) {
-                    Text(fmt(total)).font(.system(size: 52, weight: .bold)).tracking(-2)
-                    Text("kr/kWh").font(.system(size: 15, weight: .bold)).foregroundStyle(T.text2)
+                    Text(fmt(total)).font(.app(52, .bold)).tracking(-2)
+                    Text("kr/kWh").font(.app(15, .bold)).foregroundStyle(T.text2)
                 }
                 .padding(.top, 4)
                 let spot = sp / 1.25
@@ -198,19 +198,19 @@ struct Breakdown: View {
                     ForEach(parts) { p in
                         HStack(spacing: 10) {
                             RoundedRectangle(cornerRadius: 4).fill(p.color).frame(width: 12, height: 12)
-                            Text(p.label).font(.system(size: 14.5, weight: .semibold))
+                            Text(p.label).font(.app(14.5, .semibold))
                             Spacer()
-                            Text(fmt(p.value)).font(.system(size: 14.5, weight: .heavy))
+                            Text(fmt(p.value)).font(.app(14.5, .heavy))
                         }
                         .padding(.vertical, 7)
                     }
                 }
                 .padding(.top, 10)
                 if !hasNet {
-                    Text("Vælg dit netselskab under Mere for at få nettariffen med.").font(.system(size: 12.5)).foregroundStyle(T.text2).padding(.top, 6)
+                    Text("Vælg dit netselskab under Mere for at få nettariffen med.").font(.app(12.5)).foregroundStyle(T.text2).padding(.top, 6)
                 }
             } else {
-                Text("Prisopbygningen er ikke hentet endnu.").font(.system(size: 15)).padding(.vertical, 24)
+                Text("Prisopbygningen er ikke hentet endnu.").font(.app(15)).padding(.vertical, 24)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

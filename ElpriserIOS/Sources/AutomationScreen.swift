@@ -39,16 +39,16 @@ struct AutomationScreen: View {
 
                     let summary = HStack {
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("BESPARELSE I DAG").font(.system(size: 12, weight: .bold)).tracking(1).foregroundStyle(.white.opacity(0.85))
+                            Text("BESPARELSE I DAG").font(.app(12, .bold)).tracking(1).foregroundStyle(.white.opacity(0.85))
                             HStack(alignment: .lastTextBaseline, spacing: 4) {
-                                Text(fmt(saveTotal)).font(.system(size: 36, weight: .bold)).tracking(-1)
-                                Text("kr").font(.system(size: 16, weight: .bold))
+                                Text(fmt(saveTotal)).font(.app(36, .bold)).tracking(-1)
+                                Text("kr").font(.app(16, .bold))
                             }
                             .foregroundStyle(.white)
                         }
                         Spacer()
                         Text("\(active.count) \(active.count == 1 ? "enhed aktiv" : "enheder aktive")\n\(fmt(kwhTotal, 1)) kWh flyttet")
-                            .font(.system(size: 13, weight: .semibold)).lineSpacing(3).multilineTextAlignment(.trailing).foregroundStyle(.white)
+                            .font(.app(13, .semibold)).lineSpacing(3).multilineTextAlignment(.trailing).foregroundStyle(.white)
                     }
                     .padding(.horizontal, 20).padding(.vertical, 16)
                     .background(T.brandSolid, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
@@ -91,11 +91,11 @@ private struct DeviceCard: View {
         let d = plan.d
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
-                Image(systemName: iconFor(d.key)).font(.system(size: 20, weight: .semibold)).foregroundStyle(T.brand)
+                Image(systemName: iconFor(d.key)).font(.app(20, .semibold)).foregroundStyle(T.brand)
                     .frame(width: 44, height: 44).background(T.brandSoft, in: Circle())
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(d.name).font(.system(size: 16, weight: .heavy))
-                    Text("\(fmt(d.kw, 1)) kW · billigste timer").font(.system(size: 12.5, weight: .semibold)).foregroundStyle(T.text2)
+                    Text(d.name).font(.app(16, .heavy))
+                    Text("\(fmt(d.kw, 1)) kW · billigste timer").font(.app(12.5, .semibold)).foregroundStyle(T.text2)
                 }
                 Spacer()
                 Toggle("\(d.name) automatik", isOn: Binding(get: { d.on }, set: { v in var x = d; x.on = v; change(x) }))
@@ -104,18 +104,18 @@ private struct DeviceCard: View {
             HStack {
                 HStack(spacing: 4) {
                     Button { var x = d; x.hours = max(1, d.hours - 1); change(x) } label: {
-                        Text("−").font(.system(size: 22, weight: .bold)).foregroundStyle(T.text).frame(width: 40, height: 40)
+                        Text("−").font(.app(22, .bold)).foregroundStyle(T.text).frame(width: 40, height: 40)
                     }
-                    Text("\(d.hours) \(d.hours == 1 ? "time" : "timer")").font(.system(size: 14, weight: .heavy)).frame(width: 78)
+                    Text("\(d.hours) \(d.hours == 1 ? "time" : "timer")").font(.app(14, .heavy)).frame(width: 78)
                     Button { var x = d; x.hours = min(12, d.hours + 1); change(x) } label: {
-                        Text("+").font(.system(size: 22, weight: .bold)).foregroundStyle(T.text).frame(width: 40, height: 40)
+                        Text("+").font(.app(22, .bold)).foregroundStyle(T.text).frame(width: 40, height: 40)
                     }
                 }
                 .buttonStyle(.plain)
                 .padding(2).background(T.surface2, in: Capsule())
                 Spacer()
                 Text("gns. \(fmt(plan.avg)) kr/kWh\nspar \(fmt(plan.save)) kr")
-                    .font(.system(size: 12.5, weight: .semibold)).lineSpacing(2).multilineTextAlignment(.trailing).foregroundStyle(T.text2)
+                    .font(.app(12.5, .semibold)).lineSpacing(2).multilineTextAlignment(.trailing).foregroundStyle(T.text2)
             }
             .padding(.top, 8)
             HStack(spacing: 2) {
@@ -127,7 +127,7 @@ private struct DeviceCard: View {
             }
             .padding(.top, 10)
             HStack {
-                ForEach(["00", "06", "12", "18", "24"], id: \.self) { Text($0).font(.system(size: 10.5)).foregroundStyle(T.text2); if $0 != "24" { Spacer() } }
+                ForEach(["00", "06", "12", "18", "24"], id: \.self) { Text($0).font(.app(10.5)).foregroundStyle(T.text2); if $0 != "24" { Spacer() } }
             }
             .padding(.top, 3)
         }
@@ -143,13 +143,13 @@ private struct PlanCard: View {
         VStack(alignment: .leading, spacing: 8) {
             SectionLabel(text: "Dagens plan")
             HStack(spacing: 10) {
-                Text("Pris").font(.system(size: 12.5, weight: .bold)).foregroundStyle(T.text2).frame(width: 96, alignment: .leading)
+                Text("Pris").font(.app(12.5, .bold)).foregroundStyle(T.text2).frame(width: 96, alignment: .leading)
                 HStack(spacing: 1) { ForEach(0..<24, id: \.self) { h in RoundedRectangle(cornerRadius: 3).fill(ramp(tOf(prices[h], prices))).frame(height: 22) } }
             }
             .padding(.top, 4)
             ForEach(rows, id: \.0.key) { d, hrs in
                 HStack(spacing: 10) {
-                    Text(d.name).font(.system(size: 12.5, weight: .bold)).lineLimit(1).frame(width: 96, alignment: .leading)
+                    Text(d.name).font(.app(12.5, .bold)).lineLimit(1).frame(width: 96, alignment: .leading)
                     HStack(spacing: 1) { ForEach(0..<24, id: \.self) { h in RoundedRectangle(cornerRadius: 3).fill(d.on && hrs.contains(h) ? T.brandSolid : T.surface2).frame(height: 22) } }
                 }
             }
@@ -177,8 +177,8 @@ private struct ExportCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Hent planen til Home Assistant").font(.system(size: 14.5, weight: .heavy))
-                    Text("eller Shelly — JSON med de valgte timer").font(.system(size: 12, weight: .semibold)).foregroundStyle(T.text2)
+                    Text("Hent planen til Home Assistant").font(.app(14.5, .heavy))
+                    Text("eller Shelly — JSON med de valgte timer").font(.app(12, .semibold)).foregroundStyle(T.text2)
                 }
                 Spacer()
                 SoftButton(title: copied ? "Kopieret" : "Kopiér", bg: T.brandSoft, fg: T.brand) {
