@@ -1420,7 +1420,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   <!-- API URL -->
   <div class="subcard mb-4">
     <h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-2">API-adresse</h3>
-    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Brug denne URL direkte i Shelly-scripts eller Home Assistant REST-sensorer.</p>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Til et enkelt kald eller en test. Eksporterne herunder bruger i stedet døgnets plan (<code>/api/schedule</code>), som hentes én gang i døgnet — det er pænere mod API'et end at spørge hvert minut.</p>
     <div class="relative">
       <pre id="apiUrlDisplay" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 overflow-x-auto text-gray-700 dark:text-gray-300 leading-relaxed font-mono whitespace-pre-wrap"></pre>
       <button onclick="copyApiUrl()" class="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition">Kopiér</button>
@@ -1438,7 +1438,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <button onclick="switchExport('shelly')" id="exportBtnShelly" class="tab-btn">Shelly</button>
     </div>
     <div id="exportHA">
-      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">To varianter: <strong>REST-sensor</strong> (bruger API direkte — enklest) og <strong>Template-automation</strong> (kræver <a href="https://github.com/MTrab/energidataservice" target="_blank" class="text-brand-500 underline">Energi Data Service integration</a>).</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">To varianter: <strong>døgnplan</strong> (henter hele døgnets plan én gang og afgør selv resten — enklest og venligst mod API'et) og <strong>Template-automation</strong> (kræver <a href="https://github.com/MTrab/energidataservice" target="_blank" class="text-brand-500 underline">Energi Data Service integration</a>).</p>
       <div class="relative"><pre id="exportHACode" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"></pre><button onclick="copyExport('ha')" class="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition">Kopiér</button></div>
     </div>
     <div id="exportShelly" style="display:none">
@@ -5012,30 +5012,61 @@ function generateExports(strategy,param,param2,daySchedules,dates,mode,gln){
   setHighlighted(document.getElementById('apiUrlDisplay'),apiUrl,'url');
   // ── HA export (REST sensor + automation) ──────────────────────────────────
   const haCode=
-`# ── Option 1: REST sensor (bruger elpriser.org API) ──────────────────────
+`# ── Option 1: Døgnets plan fra elpriser.org (anbefalet) ───────────────────
+# Priserne for hele døgnet er kendt på forhånd. Home Assistant henter derfor
+# planen ÉN gang (og igen lidt efter midnat) og regner selv ud, hvad der skal
+# ske hver time — uden at spørge elpriser.org hele tiden.
 # Tilføj til configuration.yaml eller en pakke-fil.
 
 sensor:
   - platform: rest
-    name: "Elpris on"
-    unique_id: ${entityId}_on
-    resource: "${apiUrl}"
-    value_template: "{{ value_json.on | lower }}"
+    name: "${entityId}_plan"          # entity: sensor.${entityId}_plan
+    unique_id: ${entityId}_plan
+    resource: "${scheduleUrl}"
+    value_template: "{{ value_json.date }}"
     json_attributes:
-      - price
-      - hour
-    scan_interval: 300   # prisen skifter kun på timen; 5 min er rigeligt
+      - schedule
+      - area
+    scan_interval: 43200               # 12 timer; en frisk plan hentes også ved midnat (nedenfor)
 
-# Automation der reagerer på sensor-opdatering:
+template:
+  - binary_sensor:
+      - name: "${entityId}_on"         # entity: binary_sensor.${entityId}_on
+        unique_id: ${entityId}_on
+        state: >
+          {% set s = state_attr('sensor.${entityId}_plan', 'schedule') %}
+          {{ s is not none and s[now().hour].on }}
+        attributes:
+          price: >
+            {% set s = state_attr('sensor.${entityId}_plan', 'schedule') %}
+            {{ s[now().hour].price if s is not none else none }}
+          plan_date: "{{ states('sensor.${entityId}_plan') }}"
+
 automation:
+  # Skift kontakten, når planen siger det (hver time, uden nye kald).
   - alias: "${stratLabel}"
     trigger:
       - platform: state
-        entity_id: sensor.${entityId}_on
+        entity_id: binary_sensor.${entityId}_on
+        to:
+          - "on"
+          - "off"
     action:
       - service: "switch.turn_{{ trigger.to_state.state }}"
         target:
           entity_id: switch.${entityId}
+
+  # Hent næste døgns plan lidt efter midnat. Forsinkelsen spreder kaldene,
+  # så ikke alle installationer rammer serveren i samme sekund.
+  - alias: "${stratLabel} — ny plan"
+    trigger:
+      - platform: time
+        at: "00:02:00"
+    action:
+      - delay: "{{ range(0, 300) | random }}"
+      - service: homeassistant.update_entity
+        target:
+          entity_id: sensor.${entityId}_plan
 
 # ── Option 2: Template-automation (kræver Energi Data Service integration) ─
 
@@ -5084,7 +5115,7 @@ rest_command:
        "category":"${flexCat}","area":"${area}","phases":${flexPhases},
        "rated_w":${flexRated},"max_off_min":${flexMaxOff},
        "on":{{ is_state('switch.${entityId}','on') | lower }},
-       "commanded_on":{{ is_state('sensor.${entityId}_on','true') | lower }},
+       "commanded_on":{{ is_state('binary_sensor.${entityId}_on','on') | lower }},
        "power_w":{{ states('sensor.${entityId}_power') | float(none) | tojson }},
        "measured":{{ (states('sensor.${entityId}_power') | float(none)) is not none | lower }}}
 

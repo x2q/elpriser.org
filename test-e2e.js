@@ -371,6 +371,24 @@ async function startServer() {
     }
   });
 
+  await test('automation: the generated Home Assistant code reads the day plan and decides per hour', async () => {
+    await page.goto(BASE + '/#automation');
+    await page.waitForFunction(() => (document.getElementById('exportHACode')?.textContent || '').includes('binary_sensor'));
+    const ha = await page.locator('#exportHACode').textContent();
+    assert.ok(!ha.includes('${'), 'an unreplaced template placeholder is left in the YAML');
+    assert.match(ha, /resource: "https:\/\/elpriser\.org\/api\/schedule\?/, 'must fetch /api/schedule');
+    assert.doesNotMatch(ha, /resource: "[^"]*\/api\/now/, 'must not poll /api/now');
+    const m = ha.match(/scan_interval:\s*(\d+)/);
+    assert.ok(m && +m[1] >= 21600, `scan_interval ${m && m[1]}`);
+    assert.match(ha, /s\[now\(\)\.hour\]\.on/);
+    // Every entity the automation and the flex block refer to is one the YAML defines.
+    for (const ref of ha.matchAll(/(sensor|binary_sensor)\.([a-z0-9_]+)/g)) {
+      const [, domain, id] = ref;
+      if (id === 'energidataservice' || id.endsWith('_power')) continue;
+      assert.ok(ha.includes(`name: "${id}"`), `${domain}.${id} is referenced but never defined`);
+    }
+  });
+
   await test('automation: code examples are syntax-highlighted (hl-* spans present)', async () => {
     await page.goto(BASE + '/#automation');
     await page.waitForFunction(() =>
