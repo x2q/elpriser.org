@@ -1095,18 +1095,22 @@ test('seo: descriptions are trimmed to what a results page shows, titles stay sh
   }
 });
 
-test('api etiquette: the snippets we generate never poll faster than every 5 minutes', () => {
+test('api etiquette: generated snippets poll rarely — Shelly fetches the day plan once', () => {
   // Prices change on the hour. The generated Home Assistant YAML used to say
-  // scan_interval: 60 and the Shelly script checked every minute — while the
-  // page told people to use at least 300. Those two snippets were most of the
-  // site's 70-80 thousand function invocations a day, against a free-plan limit
-  // of 100,000.
+  // scan_interval: 60 and the Shelly script asked /api/now every minute — most
+  // of the site's 70-80 thousand function invocations a day, against a free-plan
+  // limit of 100,000. Shelly now fetches the day's schedule once and decides
+  // locally; Home Assistant keeps a floor of 5 minutes.
   for (const m of INDEX.matchAll(/scan_interval:\s*(\d+)/g)) {
     assert.ok(+m[1] >= 300, `scan_interval: ${m[1]} is faster than every 5 minutes`);
   }
-  const shelly = INDEX.match(/var CHECK_INTERVAL_MS = (\d+);/);
-  assert.ok(shelly, 'Shelly script interval constant');
-  assert.ok(+shelly[1] >= 300000, `Shelly script polls every ${shelly[1]} ms`);
+  const num = name => { const m = INDEX.match(new RegExp(`var ${name} = ([0-9* ]+);`)); assert.ok(m, `${name} missing`); return eval(m[1]); };
+  assert.ok(/var API = "\$\{scheduleUrl\}";/.test(INDEX), 'the Shelly script must fetch /api/schedule, not /api/now');
+  assert.ok(/const scheduleUrl=apiUrl\.replace\('\/api\/now\?','\/api\/schedule\?'\)/.test(INDEX), 'schedule URL derivation');
+  assert.ok(num('PLAN_MAX_AGE_MS') >= 20 * 3600 * 1000, 'plan is re-fetched more often than daily');
+  assert.ok(num('RETRY_MS') >= 5 * 60 * 1000, 'failed fetches are retried too eagerly');
+  assert.ok(num('FALLBACK_POLL_MS') >= 15 * 60 * 1000, 'the no-clock fallback polls too eagerly');
+  assert.ok(!/Shelly\.call\("HTTP\.GET"[\s\S]{0,120}\}\s*\n\s*Timer\.set\(\w+, true, check\)/.test(INDEX), 'a periodic HTTP check came back');
 });
 
 console.log(`\n${_passed} passed, ${_failed} failed\n`);

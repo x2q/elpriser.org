@@ -1442,7 +1442,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <div class="relative"><pre id="exportHACode" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"></pre><button onclick="copyExport('ha')" class="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition">Kopiér</button></div>
     </div>
     <div id="exportShelly" style="display:none">
-      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Shelly Plus/Pro script — kalder API hvert minut og sætter output til ON/OFF. Indsæt via <strong>Scripts → Create Script</strong>, brug navnet nedenfor, indsæt koden og sæt "Run on startup" til ON.</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Shelly Plus/Pro script — henter døgnets plan én gang, husker den (også efter genstart) og sætter selv output til ON/OFF time for time. Indsæt via <strong>Scripts → Create Script</strong>, brug navnet nedenfor, indsæt koden og sæt "Run on startup" til ON.</p>
       <div class="flex items-center gap-2 mb-2 flex-wrap">
         <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">Scriptnavn:</span>
         <code id="exportShellyName" class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-gray-700 dark:text-gray-300 flex-1 min-w-0 truncate"></code>
@@ -5006,6 +5006,8 @@ function generateExports(strategy,param,param2,daySchedules,dates,mode,gln){
   const labels={cheapest_n:`Billigste ${param} timer/dag`,cheapest_pct:`Billigste ${param}% af timer`,avoid_expensive_n:`Undgå dyreste ${param} timer/dag`,avoid_expensive_pct:`Undgå dyreste ${param}% af timer`,avoid_peak:'Undgå spidstimer (17-21)',night_cheap:'Kun nattetimer (23-06)',smart:`Undgå dyreste ${param} timer, men maks ${param2} i træk`};
   const stratLabel=labels[strategy]||strategy;
   const apiUrl=buildApiUrl(mode,area,strategy,param,param2,gln);
+  // The Shelly script fetches the whole day's plan once and decides hour by hour itself.
+  const scheduleUrl=apiUrl.replace('/api/now?','/api/schedule?');
   // Show API URL (highlighted)
   setHighlighted(document.getElementById('apiUrlDisplay'),apiUrl,'url');
   // ── HA export (REST sensor + automation) ──────────────────────────────────
@@ -5108,9 +5110,17 @@ automation:
 // Bruger elpriser.org API til at bestemme ON/OFF dynamisk.
 // Aktiver "Run on startup" i Scripts-menuen.
 
-var API = "${apiUrl}";
+// Døgnets priser er kendt på forhånd. Scriptet henter derfor planen for hele
+// døgnet ÉN gang, husker den (også efter genstart) og afgør selv, hvad der skal
+// ske hver time — uden at spørge elpriser.org igen. Det er ca. ét kald i døgnet
+// i stedet for flere hundrede.
+var API = "${scheduleUrl}";
 var OUTPUT_ID = 0;  // Shelly output nummer (0 = første relæ)
-var CHECK_INTERVAL_MS = 300000;  // Tjek hvert 5. minut — prisen skifter kun på timen
+var TICK_MS = 60000;                      // lokalt tjek hvert minut — bruger intet netværk
+var PLAN_MAX_AGE_MS = 23 * 3600 * 1000;   // en plan er friskere end dette; ellers hentes en ny
+var STALE_OK_MS = 48 * 3600 * 1000;       // fejler hentningen, bruges den gamle plan højst så længe
+var RETRY_MS = 5 * 60 * 1000;             // ... og der prøves igen med dette mellemrum
+var FALLBACK_POLL_MS = 15 * 60 * 1000;    // uden klokkeslæt på enheden spørges hvert kvarter
 
 // ── Del regulerbar kapacitet (valgfrit, slået FRA som standard) ──────────
 // Sæt SHARE_FLEX = true for at indsende, hvor mange watt elpriser.org
@@ -5168,41 +5178,119 @@ function report(area, commandedOn) {
 }
 
 var lastArea = null;
+var plan = null;          // { on: [24 x bool], price: [24] eller null, area, onNow, at: ms }
+var lastHour = -1;
+var nextTry = 0;          // ikke hent før dette tidspunkt (fordeler kaldene, tager højde for fejl)
+var wantFresh = false;    // en ny dag er begyndt: planen skal fornyes, så snart det er tid
 
-function check() {
-  Shelly.call("HTTP.GET", { url: API, timeout: 10 }, function(res, err) {
-    if (err || !res || res.code !== 200) {
-      print("Elpris API fejl: " + (err || res.code));
-      return;
+// Lokal time på enheden ("HH:MM" fra sys), eller -1 hvis klokken endnu ikke er sat.
+function hourNow() {
+  var sys = Shelly.getComponentStatus("sys");
+  if (!sys || typeof sys.time !== "string" || sys.time.length < 4) return -1;
+  var h = parseInt(sys.time.slice(0, 2), 10);
+  return h >= 0 && h <= 23 ? h : -1;
+}
+
+// Planen gemmes som "<ms>|0110…" (24 tegn) — få bytes, og overlever en genstart.
+function savePlan() {
+  var f = "";
+  for (var i = 0; i < 24; i++) f += plan.on[i] ? "1" : "0";
+  Shelly.call("KVS.Set", { key: "elpriser_plan", value: plan.at + "|" + f });
+}
+
+function restorePlan(cb) {
+  Shelly.call("KVS.Get", { key: "elpriser_plan" }, function (res) {
+    if (res && res.value && res.value.indexOf("|") > 0) {
+      var p = res.value.split("|");
+      var at = parseInt(p[0], 10);
+      if (p[1].length === 24 && at > 0 && Date.now() - at < STALE_OK_MS) {
+        var on = [];
+        for (var i = 0; i < 24; i++) on.push(p[1].charAt(i) === "1");
+        plan = { on: on, price: null, area: null, onNow: on[0], at: at };
+      }
     }
-    var data = JSON.parse(res.body);
-    var on = data.on === true;
-    var now = Date.now();
-
-    // Sikkerhedsgrænse for køl/frys: ingen pris er billig nok til at lade
-    // maden tø. Efter MAX_OFF_MIN slukket tændes den i mindst MIN_ON_MIN.
-    if (MAX_OFF_MIN > 0) {
-      if (now < forcedUntil) on = true;
-      else if (!on) {
-        if (offSince === null) offSince = now;
-        if (now - offSince >= MAX_OFF_MIN * 60000) {
-          forcedUntil = now + MIN_ON_MIN * 60000;
-          offSince = null;
-          on = true;
-        }
-      } else offSince = null;
-    }
-
-    print("Elpris: " + data.price + " kr/kWh — output " + (on ? "ON" : "OFF"));
-    Shelly.call("Switch.Set", { id: OUTPUT_ID, on: on });
-    lastArea = data.area;
-    // Report on every change, so the capacity picture follows the switching.
-    if (on !== lastCommanded) { lastCommanded = on; report(data.area, on); }
+    cb();
   });
 }
 
-check();
-Timer.set(CHECK_INTERVAL_MS, true, check);
+function fetchPlan(done) {
+  Shelly.call("HTTP.GET", { url: API, timeout: 10 }, function (res, err) {
+    if (err || !res || res.code !== 200) {
+      print("Elpris API fejl: " + (err || res.code) + " — bruger " + (plan ? "den gemte plan" : "intet"));
+      nextTry = Date.now() + RETRY_MS;
+      return done();
+    }
+    var d = JSON.parse(res.body);
+    var on = [], price = [];
+    for (var i = 0; i < d.schedule.length; i++) {
+      on.push(d.schedule[i].on === true);
+      price.push(d.schedule[i].price);
+    }
+    if (on.length !== 24) {
+      nextTry = Date.now() + RETRY_MS;
+      return done();
+    }
+    plan = { on: on, price: price, area: d.area, onNow: d.on_now === true, at: Date.now() };
+    nextTry = 0;
+    wantFresh = false;
+    savePlan();
+    print("Elpris: plan hentet for " + d.date + " — næste hentning om ca. et døgn");
+    done();
+  });
+}
+
+function apply() {
+  if (!plan) return;
+  var h = hourNow();
+  var on = h >= 0 ? plan.on[h] === true : plan.onNow === true;
+  var now = Date.now();
+
+  // Sikkerhedsgrænse for køl/frys: ingen pris er billig nok til at lade
+  // maden tø. Efter MAX_OFF_MIN slukket tændes den i mindst MIN_ON_MIN.
+  if (MAX_OFF_MIN > 0) {
+    if (now < forcedUntil) on = true;
+    else if (!on) {
+      if (offSince === null) offSince = now;
+      if (now - offSince >= MAX_OFF_MIN * 60000) {
+        forcedUntil = now + MIN_ON_MIN * 60000;
+        offSince = null;
+        on = true;
+      }
+    } else offSince = null;
+  }
+
+  Shelly.call("Switch.Set", { id: OUTPUT_ID, on: on });
+  if (plan.area) lastArea = plan.area;
+  // Rapportér ved hver ændring, så kapacitetsbilledet følger omskiftningerne.
+  if (on !== lastCommanded) {
+    print("Elpris: " + (h >= 0 && plan.price ? plan.price[h] + " kr/kWh — " : "") + "output " + (on ? "ON" : "OFF"));
+    lastCommanded = on;
+    if (lastArea) report(lastArea, on);
+  }
+}
+
+function tick() {
+  var now = Date.now();
+  var h = hourNow();
+  var wrapped = h >= 0 && lastHour >= 0 && h < lastHour;   // ny dag
+  if (h >= 0) lastHour = h;
+  var age = plan ? now - plan.at : 0;
+  if (wrapped) {
+    wantFresh = true;
+    nextTry = now + Math.floor(Math.random() * 300000);  // spred kaldene omkring midnat
+  }
+  var stale = !plan || wantFresh || age > PLAN_MAX_AGE_MS || (h < 0 && age > FALLBACK_POLL_MS);
+  if (stale && now >= nextTry) {
+    if (!plan) nextTry = 0;
+    return fetchPlan(apply);
+  }
+  apply();
+}
+
+restorePlan(function () {
+  tick();
+  Timer.set(TICK_MS, true, tick);
+});
 Timer.set(REPORT_EVERY_MS, true, function () {
   if (lastArea) report(lastArea, lastCommanded);
 });`;

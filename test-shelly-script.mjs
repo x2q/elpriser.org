@@ -17,14 +17,17 @@ const b = html.indexOf('`;', a);
 // Device placeholders are filled per run below; everything else here.
 const code = html.slice(a, b)
   .replace('${shellyName}', 'Elpris DK1 — test')
-  .replace('${apiUrl}', 'https://elpriser.org/api/now?area=DK1&strategy=cheapest_n&hours=6');
+  .replace('${scheduleUrl}', 'https://elpriser.org/api/schedule?area=DK1&strategy=cheapest_n&hours=6');
 for (const ph of ['${flexCat}', '${flexLabel}', '${flexRated}', '${flexPhases}', '${flexMaxOff}']) {
   if (!code.includes(ph)) throw new Error(`script template no longer has ${ph}`);
 }
 
-function run({ share, category = 'freezer', maxOff = 0, metered = true, priceOn }) {
-  let now = 1_700_000_000_000;
-  const timers = [], posts = [], sets = [], kvs = {};
+// Planen: priceOn(t) svarer for tidspunktet t (ms) — scriptet henter hele døgnets 24 timer på én gang.
+// `startMs` er enhedens ur ved start; `kvsInit` er det, der ligger i enhedens KVS; `failHttp(n)` får
+// hentning nr. n (0-baseret) til at fejle.
+function run({ share, category = 'freezer', maxOff = 0, metered = true, priceOn, startMs = 1_700_000_000_000, kvsInit = {}, failHttp = () => false, noClock = false }) {
+  let now = startMs;
+  const timers = [], posts = [], sets = [], kvs = { ...kvsInit }, gets = [];
   let relay = true;
   const src = code
     .replace('var SHARE_FLEX = false;', `var SHARE_FLEX = ${share};`)
@@ -37,13 +40,27 @@ function run({ share, category = 'freezer', maxOff = 0, metered = true, priceOn 
   if (!src.includes(`var SHARE_FLEX = ${share};`)) throw new Error('SHARE_FLEX default changed');
   const Shelly = {
     call(method, params, cb) {
-      if (method === 'HTTP.GET') cb({ code: 200, body: JSON.stringify({ on: priceOn(now), price: 1.2, hour: 12, area: 'DK1' }) });
+      if (method === 'HTTP.GET') {
+        gets.push(now);
+        if (failHttp(gets.length - 1)) return cb(null, 'timeout');
+        const day0 = Math.floor(now / 86_400_000) * 86_400_000;
+        const schedule = Array.from({ length: 24 }, (_, h) => ({ hour: h, price: 1.2, on: priceOn(day0 + h * 3_600_000) }));
+        const hNow = Math.floor((now - day0) / 3_600_000);
+        cb({ code: 200, body: JSON.stringify({ area: 'DK1', date: new Date(day0).toISOString().slice(0, 10), on_now: schedule[hNow].on, schedule }) });
+      }
       else if (method === 'Switch.Set') { relay = params.on; sets.push({ t: now, on: params.on }); }
       else if (method === 'HTTP.POST') posts.push({ t: now, body: JSON.parse(params.body), url: params.url });
       else if (method === 'KVS.Get') cb(kvs[params.key] ? { value: kvs[params.key] } : null);
       else if (method === 'KVS.Set') kvs[params.key] = params.value;
     },
-    getComponentStatus: () => (metered ? { output: relay, apower: relay ? 95 : 0 } : { output: relay }),
+    getComponentStatus: (comp) => {
+      if (comp === 'sys') {
+        if (noClock) return { time: null };
+        const d = new Date(now);
+        return { time: String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0') };
+      }
+      return metered ? { output: relay, apower: relay ? 95 : 0 } : { output: relay };
+    },
   };
   const ctx = {
     Shelly, print() {}, JSON, Math,
@@ -61,7 +78,7 @@ function run({ share, category = 'freezer', maxOff = 0, metered = true, priceOn 
     }
     now = end;
   };
-  return { advance, posts, sets, kvs, get relay() { return relay; }, get now() { return now; } };
+  return { advance, posts, sets, kvs, gets, get relay() { return relay; }, get now() { return now; } };
 }
 
 let pass = 0; const fails = [];
@@ -72,7 +89,8 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const s = run({ share: false, priceOn: () => false });
   s.advance(120);
   ok(s.posts.length === 0, 'standard: ingen data sendes', `${s.posts.length} posts`);
-  ok(Object.keys(s.kvs).length === 0, 'standard: intet id oprettes');
+  ok(s.kvs.elpriser_flex_id === undefined, 'standard: intet enheds-id oprettes');
+  ok(Object.keys(s.kvs).every(k => k === 'elpriser_plan'), 'standard: kun planen gemmes', Object.keys(s.kvs).join(','));
 }
 
 // 2. Opted in: payload shape, id persistence, reporting cadence.
@@ -135,6 +153,55 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const s = run({ share: false, maxOff: 45, priceOn: () => true });
   s.advance(180);
   ok(s.sets.every(e => e.on === true), 'pris siger tænd: grænsen blander sig ikke');
+}
+
+// 7. Plan once, decide locally: the network is only touched about once a day.
+{
+  const s = run({ share: false, priceOn: t => Math.floor(t / 3_600_000) % 24 < 12 });
+  s.advance(48 * 60);
+  ok(s.gets.length >= 2 && s.gets.length <= 4, 'plan: ca. ét kald i døgnet (højst 4 på 48 t)', `${s.gets.length} kald på 48 t`);
+  // The relay follows the hourly plan: on for hours 0-11 (UTC here), off for 12-23.
+  const wrong = s.sets.filter(e => (Math.floor(e.t / 3_600_000) % 24 < 12) !== e.on);
+  ok(wrong.length <= 3, 'plan: relæet følger timeplanen', `${wrong.length} kommandoer afveg`);
+}
+
+// 8. A reboot restores the saved plan instead of asking again.
+{
+  const first = run({ share: false, priceOn: t => Math.floor(t / 3_600_000) % 24 < 12 });
+  first.advance(5);
+  const saved = first.kvs.elpriser_plan;
+  ok(typeof saved === 'string' && /^\d+\|[01]{24}$/.test(saved), 'plan: gemmes i KVS som "<ms>|24 tegn"', String(saved));
+  ok(saved.length < 64, 'plan: får plads i KVS-værdien');
+  const second = run({ share: false, priceOn: () => false, startMs: first.now, kvsInit: { elpriser_plan: saved } });
+  second.advance(30);
+  ok(second.gets.length === 0, 'genstart: bruger den gemte plan, spørger ikke igen', `${second.gets.length} kald`);
+  ok(second.sets.length > 0, 'genstart: styrer straks efter planen');
+}
+
+// 9. A new day (the clock wraps past midnight) fetches a fresh plan.
+{
+  const day = 86_400_000;
+  const s = run({ share: false, priceOn: () => true, startMs: Math.floor(1_700_000_000_000 / day) * day + 20 * 3_600_000 });
+  s.advance(30);
+  const before = s.gets.length;
+  s.advance(5 * 60);   // over midnat
+  ok(s.gets.length > before, 'ny dag: henter en ny plan efter midnat', `${before} -> ${s.gets.length}`);
+}
+
+// 10. API failure: the saved plan keeps working, and retries are spaced out.
+{
+  const s = run({ share: false, priceOn: () => true, failHttp: n => n >= 1 });
+  s.advance(60);                         // first plan succeeds
+  s.advance(24 * 60 + 60);               // plan goes stale, every refetch fails
+  ok(s.sets.length > 0 && s.sets.every(e => e.on === true), 'fejl: den gemte plan bruges videre');
+  ok(s.gets.length <= 1 + (24 * 60 + 60) / 5 + 1, 'fejl: genforsøg med afstand, ikke hvert minut', `${s.gets.length} kald`);
+}
+
+// 11. No clock on the device yet: falls back to asking every quarter of an hour.
+{
+  const s = run({ share: false, priceOn: () => true, noClock: true });
+  s.advance(120);
+  ok(s.gets.length >= 6 && s.gets.length <= 10, 'uden ur: spørger hvert kvarter', `${s.gets.length} kald på 2 t`);
 }
 
 console.log(`${pass} beståede, ${fails.length} fejl`);
