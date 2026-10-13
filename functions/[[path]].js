@@ -21,23 +21,23 @@ const SEO_PAGES = {
   // is spot + Energinet's tariffs + elafgift + moms, NOT the local nettarif,
   // which depends on the grid company; title and description must not say it.
   '/dk1': {
-    title: 'Elpris Vest (DK1) i dag — spotpris og afgifter time for time',
-    description: 'Aktuel elpris lige nu for DK1 (Vestdanmark) — time for time for Jylland og Fyn, inkl. Energinets tariffer, elafgift og moms. Vælg dit netselskab for prisen med nettarif, eller se den rene spotpris.',
+    title: 'Elpris Vest (DK1) i dag — spotpris inkl. alt, time for time',
+    description: 'Elpris Vest (DK1) lige nu og i morgen, time for time — spotpris inkl. alt: Energinets tariffer, elafgift og moms. Vælg netselskab for prisen med nettarif.',
     hash: '#DK1/inkl_alt',
   },
   '/dk2': {
-    title: 'Elpris Øst (DK2) i dag — spotpris og afgifter time for time',
-    description: 'Aktuel elpris lige nu for DK2 (Østdanmark) — time for time for Sjælland, Lolland-Falster og Bornholm, inkl. Energinets tariffer, elafgift og moms. Vælg dit netselskab for prisen med nettarif, eller se den rene spotpris.',
+    title: 'Elpris Øst (DK2) i dag — spotpris inkl. alt, time for time',
+    description: 'Elpris Øst (DK2) lige nu og i morgen, time for time — spotpris inkl. alt: Energinets tariffer, elafgift og moms. Vælg netselskab for prisen med nettarif.',
     hash: '#DK2/inkl_alt',
   },
   '/tariffer': {
-    title: 'Nettariffer 2026: Sammenlign 14 netselskaber — op til 25 øre/kWh',
-    description: 'Se aktuelle nettariffer (Nettarif C) for alle 14 danske netselskaber — lav-, høj- og spidslast for N1, Radius, Trefor, Cerius, RAH, Konstant m.fl. Forskellen kan koste dig flere hundrede kroner om året.',
+    title: 'Nettariffer 2026: Nettarif C for alle 14 netselskaber, pr. kWh',
+    description: 'Nettarif 2026 (nettarif C) for N1, Radius, Trefor, Cerius, RAH, Konstant m.fl. — lav-, høj- og spidslast i øre/kWh. Se hvad dit netselskab koster.',
     hash: '#tariffer',
   },
   '/automation': {
-    title: 'Elpris Automation — Home Assistant, Shelly & REST API',
-    description: 'Automatisér elforbrug efter de billigste timer. Gratis REST API og klar-til-brug kode til Home Assistant, Shelly, Tibber-kompatibel tariff og smart home.',
+    title: 'Elpriser API til Home Assistant og Shelly — gratis, med kode',
+    description: 'Gratis elpriser-API (JSON, ingen nøgle) og færdig kode til Home Assistant og Shelly. Styr varmepumpe, elbil og vandvarmer efter de billigste timer.',
     hash: '#automation',
   },
   '/om-elpriser': {
@@ -1342,7 +1342,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v58');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v59');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 

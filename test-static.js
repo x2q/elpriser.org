@@ -331,10 +331,10 @@ test('price pages: dropdown, sentence and unit describe the same price in every 
     'SEO_PAGES opens /dk1 or /dk2 in a different view than pathToHash');
   // The title the browser sets for that view must be the one the server sent.
   for (const [a, w] of [['DK1', 'Vest'], ['DK2', 'Øst']]) {
-    const t = `Elpris ${w} (${a}) i dag — spotpris og afgifter time for time`;
+    const t = `Elpris ${w} (${a}) i dag — spotpris inkl. alt, time for time`;
     assert.ok(SRV.includes(`title: '${t}'`), `server title for ${a} is not "${t}"`);
   }
-  assert.ok(INDEX.includes("document.title=`Elpris ${S.area==='DK1'?'Vest':'Øst'} (${S.area}) i dag — spotpris og afgifter time for time`"),
+  assert.ok(INDEX.includes("document.title=`Elpris ${S.area==='DK1'?'Vest':'Øst'} (${S.area}) i dag — spotpris inkl. alt, time for time`"),
     'the browser sets a different title for the inkl alt view than the server sends');
   assert.ok(!/nettariffer, elafgift og moms\./.test(SRV.slice(SRV.indexOf("'/dk1': {"), SRV.indexOf("'/tariffer': {"))),
     '/dk1 or /dk2 description claims the nettarif is included');
