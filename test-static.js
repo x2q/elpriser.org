@@ -1095,5 +1095,19 @@ test('seo: descriptions are trimmed to what a results page shows, titles stay sh
   }
 });
 
+test('api etiquette: the snippets we generate never poll faster than every 5 minutes', () => {
+  // Prices change on the hour. The generated Home Assistant YAML used to say
+  // scan_interval: 60 and the Shelly script checked every minute — while the
+  // page told people to use at least 300. Those two snippets were most of the
+  // site's 70-80 thousand function invocations a day, against a free-plan limit
+  // of 100,000.
+  for (const m of INDEX.matchAll(/scan_interval:\s*(\d+)/g)) {
+    assert.ok(+m[1] >= 300, `scan_interval: ${m[1]} is faster than every 5 minutes`);
+  }
+  const shelly = INDEX.match(/var CHECK_INTERVAL_MS = (\d+);/);
+  assert.ok(shelly, 'Shelly script interval constant');
+  assert.ok(+shelly[1] >= 300000, `Shelly script polls every ${shelly[1]} ms`);
+});
+
 console.log(`\n${_passed} passed, ${_failed} failed\n`);
 process.exit(_failed > 0 ? 1 : 0);

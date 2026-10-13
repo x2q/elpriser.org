@@ -61,7 +61,7 @@ function run({ share, category = 'freezer', maxOff = 0, metered = true, priceOn 
     }
     now = end;
   };
-  return { advance, posts, sets, kvs, get relay() { return relay; } };
+  return { advance, posts, sets, kvs, get relay() { return relay; }, get now() { return now; } };
 }
 
 let pass = 0; const fails = [];
@@ -112,8 +112,15 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     if (e.on && offStart !== null) { longestOff = Math.max(longestOff, e.t - offStart); offStart = null; }
   }
   ok(longestOff > 0 && longestOff <= 46 * 60000, 'fryser: aldrig slukket over 45 min', `længst slukket ${(longestOff / 60000).toFixed(0)} min`);
-  const onMinutes = s.sets.filter(e => e.on).length;
-  ok(onMinutes >= 60, 'fryser: får reelle tændte perioder', `${onMinutes} tændte minut-kommandoer på 6 t`);
+  // Tændt TID, ikke antal kommandoer: scriptet tjekker hvert 5. minut, så en tændt periode består af
+  // flere kommandoer, og antallet siger intet om, hvor længe frysen faktisk har haft strøm.
+  let onMs = 0, last = null;
+  for (const e of s.sets) {
+    if (last && last.on) onMs += e.t - last.t;
+    last = e;
+  }
+  if (last && last.on) onMs += s.now - last.t;
+  ok(onMs >= 60 * 60000, 'fryser: får reelle tændte perioder', `${(onMs / 60000).toFixed(0)} tændte minutter på 6 t`);
 }
 
 // 5. Guard off (MAX_OFF_MIN = 0) keeps today's behaviour exactly.

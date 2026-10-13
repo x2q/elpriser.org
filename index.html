@@ -5022,7 +5022,7 @@ sensor:
     json_attributes:
       - price
       - hour
-    scan_interval: 60
+    scan_interval: 300   # prisen skifter kun på timen; 5 min er rigeligt
 
 # Automation der reagerer på sensor-opdatering:
 automation:
@@ -5110,7 +5110,7 @@ automation:
 
 var API = "${apiUrl}";
 var OUTPUT_ID = 0;  // Shelly output nummer (0 = første relæ)
-var CHECK_INTERVAL_MS = 60000;  // Tjek hvert minut
+var CHECK_INTERVAL_MS = 300000;  // Tjek hvert 5. minut — prisen skifter kun på timen
 
 // ── Del regulerbar kapacitet (valgfrit, slået FRA som standard) ──────────
 // Sæt SHARE_FLEX = true for at indsende, hvor mange watt elpriser.org
