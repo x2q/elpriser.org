@@ -378,6 +378,7 @@ const MIME = {
   '.html': 'text/html', '.js': 'application/javascript',
   '.css': 'text/css',   '.json': 'application/json',
   '.png': 'image/png',  '.ico': 'image/x-icon', '.svg': 'image/svg+xml',
+  '.woff2': 'font/woff2',
 };
 
 // Clean-URL → hash mapping. Mirrors functions/[[path]].js so the dev server

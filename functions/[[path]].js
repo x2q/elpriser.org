@@ -800,7 +800,7 @@ export async function onRequest(context) {
 const STATIC_ASSETS = new Set([
   '/style.css', '/favicon.ico', '/favicon.svg', '/favicon-32.png',
   '/favicon-192.png', '/favicon-512.png', '/apple-touch-icon.png',
-  '/og-image.png', '/privatliv', '/privatliv.html',
+  '/og-image.png', '/manrope.woff2', '/privatliv', '/privatliv.html',
 ]);
 
 /** Paths that resolve to a page, for the case-normalising redirect. */
@@ -877,9 +877,9 @@ async function fetchAreaSnapshot(context, area) {
  *  that — which is also why the per-day figures below it stay as text. */
 // ═══ Forsidens kurve: nu og 2 døgn frem ═══
 // This function is CANONICAL and exists verbatim in two places: here and in
-// functions/[[path]].js. The server draws it so a crawler gets the numbers,
-// the client redraws it when the visitor switches DK1/DK2 — and neither
-// runtime can import from the other. test-forecast-chart.mjs runs both copies
+// functions/[[path]].js. The server draws it so a crawler gets the numbers on
+// /prognose and the zone pages, the client redraws it from the table's data —
+// and neither runtime can import from the other. test-forecast-chart.mjs runs both copies
 // over the same fixtures and fails on the first differing byte, so the
 // duplication cannot rot quietly.
 //
@@ -887,8 +887,7 @@ async function fetchAreaSnapshot(context, area) {
 // from the arrays below rather than toLocaleDateString, whose output depends
 // on the ICU build and would differ between Workers and a browser.
 /** Round price-axis values between lo and hi: steps of 1, 2, 2.5 or 5 times a
- *  power of ten, aiming at about four. Shared by both homepage charts so their
- *  scales read alike; the hero calls it from renderHero. */
+ *  power of ten, aiming at about four. */
 function fcTicks(lo, hi){
   var span=hi-lo;
   if(!(span>0))return [lo];
@@ -1195,6 +1194,260 @@ ${JSON.stringify({
   return { jsonLd, summary };
 }
 
+// ═══ Pris-skærmen (Design A: ét svar) ═══
+// CANONICAL, like fcChartHTML: verbatim in index.html and functions/[[path]].js.
+// The server draws it, so a crawler is served the price, the sentence, the
+// bars' numbers and the day list as text; the browser redraws it from the same
+// /api/forecast shape when the visitor switches Din pris / Spotpris or the area.
+// Neither runtime can import from the other; test-static.js diffs the two copies
+// and test-forecast-chart.mjs runs both over the same fixtures.
+//
+// Deterministic on purpose: weekday and month names come from the arrays below
+// rather than toLocaleDateString, whose output depends on the ICU build and would
+// differ between Workers and a browser.
+var PRIS_WD=['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+var PRIS_WS=['søn','man','tir','ons','tor','fre','lør'];
+var PRIS_MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+var PRIS_VERDICT=['Billig lige nu','Middel lige nu','Dyr lige nu'];
+
+/** A price with d decimals and a Danish comma; never "-0,00". */
+function prisNum(v,d){var s=v.toFixed(d);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',',');}
+function prisHH(h){return (h<10?'0':'')+h;}
+function prisEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function prisDate(date){
+  var dt=new Date(date+'T12:00:00Z');
+  return {wd:PRIS_WD[dt.getUTCDay()],ws:PRIS_WS[dt.getUTCDay()],d:dt.getUTCDate(),m:PRIS_MON[dt.getUTCMonth()]};
+}
+
+/** The forecast feed as up to ten consecutive days from today, 24 slots each.
+ *  Same contiguity rule as fcChartHTML: it starts on today and stops at the first
+ *  missing day, so a hole never closes up and shifts "I morgen" onto the wrong
+ *  date. */
+function prisDays(days,todayStr){
+  var out=[];
+  var dayNo=function(x){
+    return Math.round((Date.parse(x+'T12:00:00Z')-Date.parse(todayStr+'T12:00:00Z'))/86400000);};
+  for(var k=0;k<days.length&&out.length<10;k++){
+    var d=days[k];
+    if(!d||!d.date||!d.prices)continue;
+    var n=dayNo(d.date);
+    if(n<0)continue;
+    if(n!==out.length)break;
+    var ps=[];
+    for(var h=0;h<24;h++)ps.push(null);
+    for(var j=0;j<d.prices.length;j++){
+      var p=d.prices[j];
+      if(!p||p.price==null)continue;
+      var hr=p.hour!=null?p.hour:j;
+      if(hr>=0&&hr<24)ps[hr]=p.price;
+    }
+    out.push({date:d.date,real:d.type==='actual',ps:ps});
+  }
+  return out;
+}
+
+/** 0 cheap, 1 middle, 2 dear: by how many of the reference hours are cheaper —
+ *  the verdict the apps use too (tests/golden/reference.mjs). */
+function prisTier(p,ref){
+  if(!ref.length)return 1;
+  var c=0;
+  for(var i=0;i<ref.length;i++)if(ref[i]<p)c++;
+  var pct=Math.round(c/ref.length*100);
+  return pct<=33?0:pct<=66?1:2;
+}
+
+/** The axis: zero-based, top at the highest price + ~12 % rounded up to the next
+ *  0.5 so the tallest bar never touches the frame. Whole-krone steps, halves
+ *  only when the whole axis is two and a half kroner or less. A negative price
+ *  extends it below zero by the same rule. */
+function prisAxis(vals){
+  var mx=0,mn=0;
+  for(var i=0;i<vals.length;i++){if(vals[i]>mx)mx=vals[i];if(vals[i]<mn)mn=vals[i];}
+  var hi=Math.ceil(mx*1.12/0.5-1e-9)*0.5;
+  if(hi<0.5)hi=0.5;
+  var lo=mn<0?-Math.ceil(-mn*1.12/0.5-1e-9)*0.5:0;
+  var span=hi-lo,step=span<=2.5?0.5:span<=10?1:span<=20?2:5;
+  var ticks=[];
+  for(var t=Math.ceil(lo/step-1e-9)*step;t<=hi+1e-9;t+=step)ticks.push(+t.toFixed(6));
+  return {lo:lo,hi:hi,step:step,ticks:ticks};
+}
+
+/** The cheapest and the dearest hour among `slots` ({d:day index,h:hour,p:price}). */
+function prisExtremes(slots){
+  var lo=null,hi=null;
+  for(var i=0;i<slots.length;i++){
+    var s=slots[i];
+    if(s.p==null)continue;
+    if(lo==null||s.p<lo.p)lo=s;
+    if(hi==null||s.p>hi.p)hi=s;
+  }
+  return {lo:lo,hi:hi};
+}
+function prisWhen(s){return s.d===0?'i dag':'i morgen';}
+
+/** The one sentence under the verdict: the cheapest hour of the next 24 if it is
+ *  cheaper than now, otherwise that now is it. */
+function prisSentence(all,nowHour,nowP){
+  if(nowP==null)return '';
+  var win=[];
+  for(var k=1;k<24;k++){
+    var a=nowHour+k,d=a<24?0:1,h=a%24;
+    if(all[d])win.push({d:d,h:h,p:all[d].ps[h]});
+  }
+  var best=prisExtremes(win).lo;
+  if(best&&best.p<nowP)
+    return 'Billigere '+prisWhen(best)+' kl. '+prisHH(best.h)+' — <b>'+prisNum(best.p,2)+' kr</b>';
+  return 'Billigste time de næste 24 timer';
+}
+
+/** Two tiles: cheapest and dearest of the hours still to come (this one on). */
+function prisTiles(all,nowHour){
+  var up=[];
+  for(var d=0;d<all.length&&d<2;d++)
+    for(var h=0;h<24;h++)if(d>0||h>=nowHour)up.push({d:d,h:h,p:all[d].ps[h]});
+  var ex=prisExtremes(up),out='';
+  var tile=function(k,s){
+    return '<div class="pris-tile"><div class="k">'+k+'</div><div class="v">'+prisNum(s.p,2)
+      +' <small>kr · kl. '+prisHH(s.h)+'</small></div></div>';};
+  if(ex.lo)out+=tile('Billigst '+prisWhen(ex.lo),ex.lo);
+  if(ex.hi)out+=tile('Dyrest '+(ex.hi.d===0?(ex.hi.h>=17?'i aften':'i dag'):'i morgen'),ex.hi);
+  return out?'<div class="pris-tiles">'+out+'</div>':'';
+}
+
+/** The caption under the Din pris / Spotpris switch. */
+function prisCaption(view,net){
+  if(view==='spot')return 'Spotpris inkl. moms';
+  return net?'Inkl. nettarif, afgifter og moms':'Inkl. Energinets tariffer, afgifter og moms';
+}
+
+function prisSwitch(view,cls,spotLabel){
+  var b=function(v,label){
+    return '<button type="button" data-pris-view="'+v+'" aria-pressed="'+(view===v)+'"'+(view===v?' class="on"':'')+'>'+label+'</button>';};
+  return '<div class="pris-seg '+cls+'" role="group" aria-label="Prisvisning">'+b('din','Din pris')+b('spot',spotLabel)+'</div>';
+}
+
+/** One chart card: bars coloured by tier, the hours already gone dimmed, a dot
+ *  over the current hour, a zero-based axis with gridlines, and the exact price
+ *  of every hour in data-tip for the browser's hover/tap tooltip. */
+function prisChart(rows,nDays,o){
+  var n=nDays*24,vals=[],i;
+  for(i=0;i<rows.length;i++)for(var h0=0;h0<24;h0++)if(rows[i].ps[h0]!=null)vals.push(rows[i].ps[h0]);
+  var ax=prisAxis(vals),span=ax.hi-ax.lo;
+  var ref=o.ref||vals;
+  var y=function(v){return (v-ax.lo)/span*100;};
+  var grid='',yl='';
+  for(i=0;i<ax.ticks.length;i++){
+    var top=(100-y(ax.ticks[i])).toFixed(2);
+    grid+='<span class="pris-gl" style="top:'+top+'%"></span>';
+    yl+='<span style="top:'+top+'%">'+(ax.step<1?prisNum(ax.ticks[i],1):prisNum(ax.ticks[i],0))+'</span>';
+  }
+  var cols='',seps='',fcAt=-1;
+  for(var s=0;s<n;s++){
+    var r=rows[Math.floor(s/24)],h=s%24,p=r?r.ps[h]:null;
+    if(fcAt<0&&r&&!r.real)fcAt=s;
+    if(s%24===0&&s>0&&o.seps)seps+='<span class="pris-sep" style="left:'+(s/n*100).toFixed(2)+'%"></span>';
+    if(p==null){cols+='<span class="pc"></span>';continue;}
+    var base=y(Math.min(p,0)),ht=Math.abs(p)/span*100,dt=prisDate(r.date);
+    var tip=(o.tipDay?(Math.floor(s/24)===0?'I dag':'I morgen'):dt.ws+' '+dt.d+'. '+dt.m)
+      +' kl. '+prisHH(h)+' · '+prisNum(p,2)+' kr/kWh';
+    cols+='<span class="pc'+(s<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
+      +'" style="bottom:'+base.toFixed(1)+'%;height:'+ht.toFixed(1)+'%"></i>'
+      +(s===o.nowSlot?'<b class="pd" style="bottom:calc('+(base+ht).toFixed(1)+'% + 3px)"></b>':'')+'</span>';
+  }
+  // "Prognose" where the settled prices end: a thin divider with its label.
+  var fc=fcAt>=0?'<span class="pris-fc'+(fcAt>0?' mid':'')+'" style="left:'+(fcAt/n*100).toFixed(2)+'%"><i></i>Prognose</span>':'';
+  var xl='';
+  if(o.xDays){
+    for(i=0;i<nDays;i++){
+      var dd=rows[i]?prisDate(rows[i].date):null;
+      if(dd)xl+='<span class="xd" style="left:'+((i*24+12)/n*100).toFixed(2)+'%">'+dd.ws+' '+dd.d+'</span>';
+    }
+  }else{
+    for(var hx=0;hx<n;hx+=6){
+      var lbl=hx===0?'I dag 00':hx===24?'I morgen 00':prisHH(hx%24);
+      xl+='<span class="'+(hx%12?'x6':'x12')+(hx===0?' first':'')+'" style="left:'+(hx/n*100).toFixed(2)+'%">'+lbl+'</span>';
+    }
+  }
+  var ex=prisExtremes(prisFlat(rows));
+  var aria=o.title+': '+(ex.lo?'billigst '+prisNum(ex.lo.p,2)+' kr/kWh kl. '+prisHH(ex.lo.h)+', ':'')
+    +(ex.hi?'dyrest '+prisNum(ex.hi.p,2)+' kr/kWh kl. '+prisHH(ex.hi.h)+'.':'');
+  return '<div class="pris-plotwrap"><span class="pris-unit">kr/kWh</span><div class="pris-yl">'+yl+'</div>'
+    +'<div class="pris-plot" role="img" tabindex="0" aria-label="'+prisEsc(aria)+'" data-n="'+n+'">'
+    +grid+seps+'<div class="pris-cols">'+cols+'</div>'+fc+'<div class="pris-tip" role="status" hidden></div></div>'
+    +'<div class="pris-xl'+(o.xDays?' days':'')+'">'+xl+'</div></div>';
+}
+function prisFlat(rows){
+  var out=[];
+  for(var d=0;d<rows.length;d++)for(var h=0;h<24;h++)out.push({d:d,h:h,p:rows[d].ps[h]});
+  return out;
+}
+
+/** Per-day range and cheapest hour, as text. */
+function prisDayRows(all){
+  var rows='';
+  for(var i=0;i<all.length;i++){
+    var d=all[i],lo=null,hi=null,loH=0;
+    for(var h=0;h<24;h++){
+      var v=d.ps[h];
+      if(v==null)continue;
+      if(lo==null||v<lo){lo=v;loH=h;}
+      if(hi==null||v>hi)hi=v;
+    }
+    if(lo==null)continue;
+    var dt=prisDate(d.date);
+    var name=i===0?'I dag':i===1?'I morgen':dt.wd.charAt(0).toUpperCase()+dt.wd.slice(1);
+    rows+='<tr class="'+(i<2?'r2':'r10')+'"><th scope="row">'+name+'<small>'+dt.d+'. '+dt.m+'</small></th>'
+      +'<td>'+prisNum(lo,2)+'–'+prisNum(hi,2)+'</td>'
+      +'<td>kl. '+prisHH(loH)+'–'+prisHH((loH+1)%24)+'</td>'
+      +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?'Børspris':'Prognose')+'</td></tr>';
+  }
+  if(!rows)return '';
+  return '<section class="pris-days" aria-label="Dag for dag"><p class="pris-dt">Dag for dag</p>'
+    +'<table class="pris-week"><thead><tr><th scope="col">Dag</th><th scope="col">Spænd, kr/kWh</th>'
+    +'<th scope="col">Billigst</th><th scope="col">Type</th></tr></thead><tbody>'+rows+'</tbody></table></section>';
+}
+
+/** The whole screen. `o`: {view:'din'|'spot', period:2|10, net:name|null, where:'DK1 Vest', key}. */
+function prisHTML(days,todayStr,nowHour,o){
+  o=o||{};
+  var view=o.view==='spot'?'spot':'din',period=o.period===10?10:2;
+  var all=prisDays(days||[],todayStr);
+  var today=all.length?all[0]:null;
+  var nowP=today?today.ps[nowHour]:null;
+  var td=today?[]:null,i;
+  if(today)for(i=0;i<24;i++)if(today.ps[i]!=null)td.push(today.ps[i]);
+  var verdict=nowP!=null?prisTier(nowP,td):1;
+  var sentence=prisSentence(all,nowHour,nowP);
+  var caption=prisCaption(view,o.net);
+  var wd=today?prisDate(todayStr).wd:'';
+  var hero='<section class="pris-hero" aria-label="Elpris lige nu'+(o.where?' — '+prisEsc(o.where):'')+'">'
+    +'<p class="pris-label">Elpris lige nu · '+(wd?'<span class="pris-wd">'+wd+' </span>':'')+'kl. '+prisHH(nowHour)+'</p>'
+    +'<p class="pris-price"><span class="pris-now">'+(nowP!=null?prisNum(nowP,2):'—')+'</span><span class="pris-u">kr/kWh</span></p>'
+    +'<div class="pris-vrow">'
+    +(nowP!=null?'<span class="pris-pill t'+verdict+'"><i></i>'+PRIS_VERDICT[verdict]+'</span>':'')
+    +(sentence?'<p class="pris-sent">'+sentence+'</p>':'<p class="pris-sent">'+(today?'':'Priserne kunne ikke hentes lige nu.')+'</p>')
+    +'</div>'
+    +'<div class="pris-modebox">'+prisSwitch(view,'pris-seg-hero','Kun spotpris')
+    +'<p class="pris-cap">'+caption+'</p></div></section>';
+  var tabs='<div class="pris-period" role="tablist" aria-label="Periode">'
+    +'<button type="button" role="tab" aria-selected="'+(period===2)+'" data-pris-period="2">2 døgn</button>'
+    +'<button type="button" role="tab" aria-selected="'+(period===10)+'" data-pris-period="10">3–10 døgn</button></div>';
+  var legend='<div class="pris-legend"><span><i class="t0"></i>Billig</span><span><i class="t1"></i>Middel</span><span><i class="t2"></i>Dyr</span></div>';
+  var head=function(t){
+    return '<div class="pris-ch"><p class="pris-ct">'+t+'</p>'+legend+prisSwitch(view,'pris-seg-card','Spotpris')+'</div>'
+      +'<p class="pris-cap pris-cap-card">'+caption+'</p>';};
+  var two=all.slice(0,2),ten=all.slice(2,10);
+  var card2='<section class="pris-card pp2" aria-label="Næste 2 døgn">'+head('Næste 2 døgn')
+    +prisChart(two,2,{ref:td||[],nowSlot:today&&today.date===todayStr?nowHour:-1,tipDay:true,title:'Elpris time for time næste 2 døgn'})+'</section>';
+  var card10='<section class="pris-card pp10" aria-label="Døgn 3–10">'+head('Døgn 3–10')
+    +prisChart(ten,8,{nowSlot:-1,xDays:true,seps:true,title:'Elpris time for time døgn 3 til 10'})+'</section>';
+  return '<div class="pris" data-period="'+period+'" data-view="'+view+'" data-key="'+prisEsc(o.key||'')
+    +'" data-hour="'+nowHour+'" data-date="'+todayStr+'">'+hero
+    +'<div class="pris-right">'+tabs+card2+card10+prisTiles(all,nowHour)+'</div>'
+    +prisDayRows(all)+'</div>';
+}
+// ═══ /Pris-skærmen ═══
+
 // Per-netselskab coverage prose for the SSR price-page intros. Deliberately
 // number-free (live numbers are injected separately) and hedged for the small
 // companies where coverage isn't common knowledge.
@@ -1237,7 +1490,7 @@ function priceNowText(mode, hh, price, area, net){
   var p=price.toFixed(2);if(/^-0\.?0*$/.test(p))p=p.slice(1);p=p.replace('.',',');
   var at='Lige nu (kl. '+hh+':00) er ';
   var where='i '+area+', '+R[area]+', ';
-  var local=' Nettariffen fra dit lokale netselskab kommer oveni — vælg netselskab i menuen ovenfor for den fulde pris.';
+  var local=' Nettariffen fra dit lokale netselskab kommer oveni — vælg netselskab øverst på siden for den fulde pris.';
   switch(mode){
     case 'spot_ex': return at+'spotprisen '+where+p+' kr/kWh ekskl. moms. Moms, nettarif, systemtarif, transmissionstarif og elafgift kommer oveni.';
     case 'spot_inkl': return at+'spotprisen '+where+p+' kr/kWh inkl. moms. Nettarif, systemtarif, transmissionstarif og elafgift kommer oveni.';
@@ -1287,7 +1540,7 @@ async function buildPricesIntro(context, area, net) {
       ps.push(`${net.name}s aktuelle Nettarif C (${daDateLabel()}) er ${t(1)} kr/kWh i lavlast (kl. 00–06), ${t(7)} kr/kWh i højlast (kl. 06–17) og ${t(18)} kr/kWh i spidslast (kl. 17–21), ekskl. moms. Sammenlign alle netselskaber på <a href="/tariffer" class="text-brand-500 underline">tarifsiden</a>.`);
     }
   } else {
-    ps.push(`${area} dækker ${region}. Priserne fastsættes dagen i forvejen på elbørsen Nord Pool og opdateres her time for time — vælg dit netselskab i menuen ovenfor for den præcise pris inkl. din lokale nettarif.`);
+    ps.push(`${area} dækker ${region}. Priserne fastsættes dagen i forvejen på elbørsen Nord Pool og opdateres her time for time — vælg dit netselskab øverst på siden for den præcise pris inkl. din lokale nettarif.`);
   }
 
   const jsonLd = (now && now.price != null) ? `<script type="application/ld+json">
@@ -1334,6 +1587,15 @@ async function buildTariffFacts(context) {
   } catch { return ''; }
 }
 
+/** The Danish calendar date and clock hour, whatever zone the Worker runs in. */
+function danishClock() {
+  const cph = { timeZone: 'Europe/Copenhagen' };
+  return {
+    todayDk: new Intl.DateTimeFormat('en-CA', cph).format(new Date()),
+    nowH: +new Intl.DateTimeFormat('en-GB', { ...cph, hour: '2-digit', hourCycle: 'h23' }).format(new Date()),
+  };
+}
+
 async function renderHomepage(context) {
   // Edge-cache the fully-rendered homepage. Pages Function responses aren't
   // CDN-cached automatically (cf-cache-status: DYNAMIC), so without this every
@@ -1342,7 +1604,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v59');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v60');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1361,17 +1623,17 @@ async function renderHomepage(context) {
     html = html.replace('<!--SSR_LIVE_PRICE_JSONLD-->', jsonLd);
     html = html.replace('<!--SSR_READER_SUMMARY-->', summary);
   }
-  if (fc) {
-    // Danish calendar date, for the "I dag"/"I morgen" labels. fmtUTC and
-    // danishNow live in the API function, not this one — calling them here
-    // threw a ReferenceError and took the whole homepage down with a 500.
-    const todayDk = new Intl.DateTimeFormat('en-CA',
-      { timeZone: 'Europe/Copenhagen' }).format(new Date());
-    const nowH = +new Intl.DateTimeFormat('en-GB',
-      { timeZone: 'Europe/Copenhagen', hour: '2-digit', hour12: false }).format(new Date());
-    html = html.replace('<!--SSR_FORECAST_CHART-->', fcChartHTML(fc.days || [], todayDk, nowH));
-  }
   html = stripInactiveMains(html, 'start');
+  if (fc) {
+    // The Pris screen, drawn for the front page's own view: DK1, Din pris with no
+    // net company chosen. Danish calendar date and hour, for the "I dag" /
+    // "I morgen" labels and the current bar. fmtUTC and danishNow live in the API
+    // function, not this one — calling them here threw a ReferenceError and took
+    // the whole homepage down with a 500.
+    const { todayDk, nowH } = danishClock();
+    html = html.replace('<!--SSR_PRIS-->', prisHTML(fc.days || [], todayDk, nowH,
+      { view: 'din', period: 2, net: null, where: 'DK1 Vest', key: 'DK1|din|' }));
+  }
   const res = new Response(html, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
@@ -1379,9 +1641,9 @@ async function renderHomepage(context) {
       'Cache-Control': 'public, max-age=60, s-maxage=300',
     },
   });
-  // Only cache a fully-rendered page (both snapshots present); never cache a
-  // fallback that's missing the live strip.
-  if (dk1 && dk2) {
+  // Only cache a fully-rendered page (both snapshots and the forecast present);
+  // never cache a fallback that's missing the live strip or the chart.
+  if (dk1 && dk2 && fc) {
     try { await cache.put(cacheKey, res.clone()); } catch {}
   }
   return res;
@@ -1445,7 +1707,10 @@ function breadcrumbLd(pathname, meta, opts) {
     items.push({ name: 'Blog', url: 'https://elpriser.org/blog' });
     items.push({ name: short(meta.title), url: `https://elpriser.org${pathname}` });
   } else {
-    items.push({ name: short(meta.title), url: `https://elpriser.org${pathname}` });
+    // /automation is "Smart hjem" in the interface; its search title stays the one
+    // that was tuned for the queries, so the breadcrumb names it the way the site does.
+    const label = pathname === '/automation' ? 'Smart hjem' : short(meta.title);
+    items.push({ name: label, url: `https://elpriser.org${pathname}` });
   }
   const ld = { '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it.name, item: it.url })) };
@@ -1484,8 +1749,28 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   html = promoteSectionTitle(html);
   html = html.replace('</head>', `  ${breadcrumbLd(pathname, meta, opts)}\n</head>`);
   if (opts.pricesIntro) {
-    html = html.replace('<!--SSR_PRICES_INTRO-->',
-      await buildPricesIntro(context, opts.pricesIntro.area, opts.pricesIntro.net));
+    const { area, net } = opts.pricesIntro;
+    const origin = new URL(context.request.url).origin;
+    // The Pris screen for the URL's own view — Din pris, which is the net
+    // company's all-in price on a net page and the area's otherwise.
+    const [intro, fc] = await Promise.all([
+      buildPricesIntro(context, area, net),
+      fetch(`${origin}/api/forecast?area=${area}&mode=${net ? 'net_inkl_alt' : 'inkl_alt'}${net ? `&gln=${net.gln}` : ''}`)
+        .then(r => (r.ok ? r.json() : null)).catch(() => null),
+    ]);
+    html = html.replace('<!--SSR_PRICES_INTRO-->', intro);
+    if (fc) {
+      const { todayDk, nowH } = danishClock();
+      html = html.replace('<!--SSR_PRIS-->', prisHTML(fc.days || [], todayDk, nowH, {
+        view: 'din', period: 2, net: net ? net.name : null,
+        where: AREA_LABEL[area] + (net ? ' · ' + net.name : ''),
+        key: `${area}|din|${net ? net.slug : ''}`,
+      }));
+    }
+    // The net chip in the header, for the page's own net.
+    const pre = net ? net.name : area;
+    html = html.replace(/id="netChipLong">[^<]*</, `id="netChipLong">${pre} · ${area === 'DK2' ? 'Østdanmark' : 'Vestdanmark'}<`);
+    html = html.replace(/id="netChipShort">[^<]*</, `id="netChipShort">${pre} · ${area === 'DK2' ? 'Øst' : 'Vest'}<`);
   }
   if (opts.zone) {
     const origin = new URL(context.request.url).origin;

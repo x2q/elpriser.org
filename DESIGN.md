@@ -328,3 +328,18 @@ The exception is the chevron in the custom strategy dropdown, which uses
 Each "don't" above corresponds to a fix already shipped, with a
 regression test in `test-regressions.js`. Adding code that violates one
 will fail CI.
+
+---
+
+## 11. Pris-skærmen (Design A, 2026-10)
+
+The front page and the area/net pages (`/dk1`, `/dk2`, `/dk1/<net>`) share one
+screen, drawn by `prisHTML()` (canonical, verbatim in `index.html` and
+`functions/[[path]].js`): hero (label, price, verdict, one sentence, Din pris /
+Spotpris), period pill (2 døgn | 3–10 døgn), bar chart with a zero-based axis and
+an exact-price tooltip, two stat tiles, and a day list as text. Tokens are the
+`--p-*` custom properties (ground `#f4f6fb`, card `#fff`, ink `#0e1530`, tiers
+`#1e9e5a` / `#f0a30a` / `#e5484d`), remapped under `.dark`. Font: Manrope,
+self-hosted as `/manrope.woff2`. Wide layout (>= 900 px) is two columns; below it
+is the phone layout with the bottom bar (Pris, Smart hjem). The net chip in the
+header opens the "Netselskab og indstillinger" dialog.

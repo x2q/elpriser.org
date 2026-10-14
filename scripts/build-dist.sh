@@ -26,6 +26,7 @@ FILES=(
   favicon-512.png
   apple-touch-icon.png
   og-image.png
+  manrope.woff2
   privatliv.html
 )
 

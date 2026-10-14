@@ -262,6 +262,95 @@ const span = (n, los, his, types = []) => ({
   ok(/<td>0,00–1,00<\/td>/.test(week(neg.days, TODAY, 7)) && !/-0,00/.test(week(neg.days, TODAY, 7)), 'et beløb der runder til nul vises uden minus');
 }
 
+// ── The Pris screen (prisHTML): Design A ───────────────────────────────────
+// Like fcChartHTML it exists verbatim in index.html and functions/[[path]].js.
+{
+  const PM = '// ═══ Pris-skærmen (Design A: ét svar) ═══', PE = '// ═══ /Pris-skærmen ═══';
+  const liftPris = (src, what) => {
+    const a = src.indexOf(PM), b = src.indexOf(PE);
+    if (a < 0 || b < a) throw new Error(`the Pris block was not found in ${what}`);
+    return src.slice(a, b + PE.length);
+  };
+  const ps = liftPris(ROUTES, 'functions/[[path]].js'), pc = liftPris(INDEX, 'index.html');
+  ok(ps === pc, 'server- og klientudgaven af Pris-skærmen er tegn for tegn ens', ps === pc ? '' : `${ps.length} vs ${pc.length} tegn`);
+  ok(ps.length > 5000, 'Pris-blokken blev faktisk hentet ud', `${ps.length} tegn`);
+  const pctx = { console, Date, Math };
+  vm.createContext(pctx);
+  vm.runInContext(ps + '\nglobalThis.pris = prisHTML;', pctx);
+  const pris = pctx.pris;
+
+  // The numbers of the A-Desktop mock (N1, 14 Oct, 21:00).
+  const T = [1.32,1.37,1.35,1.31,1.30,1.43,1.78,1.92,2.11,1.97,1.86,1.74,1.52,1.39,1.44,1.63,1.98,3.21,3.68,3.90,3.67,2.67,2.43,2.20];
+  const M = [1.73,1.69,1.69,1.69,1.64,1.63,1.95,2.23,2.45,2.18,2.07,1.84,1.53,1.38,1.42,1.63,2.00,3.03,3.33,3.34,2.98,2.15,2.10,2.09];
+  const dayOf = (date, vals, type) => ({ date, type, prices: vals.map((p, hour) => ({ hour, price: p })) });
+  const D0 = '2026-10-14';
+  const nextDate = n => new Date(Date.UTC(2026, 9, 14 + n)).toISOString().slice(0, 10);
+  const feed = [dayOf(D0, T, 'actual'), dayOf(nextDate(1), M, 'actual'),
+    ...Array.from({ length: 8 }, (_, i) => dayOf(nextDate(i + 2), M.map(v => +(v + 0.01 * i).toFixed(2)), 'forecast'))];
+  const o = { view: 'din', period: 2, net: 'N1', where: 'DK1 Vest · N1', key: 'DK1|din|n1' };
+  const h = pris(feed, D0, 21, o);
+  const text = re => (h.match(re) || [])[1];
+
+  ok(text(/class="pris-now">([^<]+)</) === '2,67', 'den store pris er 2,67 med komma', text(/class="pris-now">([^<]+)</));
+  ok(/<p class="pris-label">Elpris lige nu · <span class="pris-wd">onsdag <\/span>kl\. 21<\/p>/.test(h), 'etiketten: Elpris lige nu · (ugedag) kl. 21');
+  ok(/class="pris-pill t2"><i><\/i>Dyr lige nu</.test(h), '2,67 er dyrt i forhold til dagens timer');
+  ok(/<p class="pris-sent">Billigere i morgen kl\. 13 — <b>1,38 kr<\/b><\/p>/.test(h), 'sætningen: billigere i morgen kl. 13 — 1,38 kr', text(/class="pris-sent">([^<]*<b>[^<]*<\/b>)/));
+  ok(/<div class="k">Billigst i morgen<\/div><div class="v">1,38 <small>kr · kl\. 13<\/small>/.test(h), 'felt 1: Billigst i morgen 1,38 kr · kl. 13');
+  ok(/<div class="k">Dyrest i morgen<\/div><div class="v">3,34 <small>kr · kl\. 19<\/small>/.test(h), 'felt 2: dyrest af de kommende timer er i morgen kl. 19');
+  ok(/Inkl\. nettarif, afgifter og moms/.test(h), 'billedtekst med net');
+  ok(/data-pris-view="din" aria-pressed="true" class="on">Din pris/.test(h) && /data-pris-view="spot" aria-pressed="false">Kun spotpris/.test(h) && />Spotpris<\/button>/.test(h),
+     'omskifteren har præcis Din pris og Spotpris (Kun spotpris på bred)');
+  ok(/<section class="pris-card pp2" aria-label="Næste 2 døgn">/.test(h) && /<p class="pris-ct">Næste 2 døgn<\/p>/.test(h) && /<p class="pris-ct">Døgn 3–10<\/p>/.test(h), 'korttitlerne er Næste 2 døgn og Døgn 3–10');
+  ok(/role="tablist" aria-label="Periode"/.test(h) && (h.match(/role="tab"/g) || []).length === 2 && />2 døgn</.test(h) && />3–10 døgn</.test(h), 'periodepillen er en tablist med 2 døgn og 3–10 døgn');
+  const two = h.slice(h.indexOf('pris-card pp2'), h.indexOf('pris-card pp10'));
+  ok((two.match(/<span class="pc[ "]/g) || []).length === 48, 'to døgn er 48 søjler');
+  ok((two.match(/class="pc past"/g) || []).length === 21, 'de 21 timer der er gået er dæmpet');
+  ok((two.match(/<b class="pd"/g) || []).length === 1, 'én prik over den nuværende time');
+  ok(/data-tip="I dag kl\. 19 · 3,90 kr\/kWh"/.test(two) && /data-tip="I morgen kl\. 13 · 1,38 kr\/kWh"/.test(two), 'den præcise pris står i tip-teksten');
+  ok(/<div class="pris-yl"><span style="top:[\d.]+%">0<\/span>(<span[^>]*>\d<\/span>){4}<\/div>/.test(two), 'y-aksen er 0 1 2 3 4', text(/class="pris-yl">([\s\S]*?)<\/div>/));
+  ok(/class="pris-unit">kr\/kWh</.test(two), 'enhedsmærket kr/kWh står over aksen');
+  ok(/>I dag 00<\/span>/.test(two) && />I morgen 00<\/span>/.test(two) && />12<\/span>/.test(two), 'x-aksen: I dag 00, 06 12 18, I morgen 00');
+  // The tallest bar (3,90 on an axis to 4,5) is 86,7 % high — never touching the top.
+  ok(/height:86\.7%/.test(two), 'aksen når 4,5, så den højeste søjle er 86,7 %');
+  // Tiers by the same verdict the apps use: the current bar is the pill's colour.
+  const nowCol = two.match(/<span class="pc"[^>]*><i class="pb t(\d)"[^>]*><\/i><b class="pd"/);
+  ok(nowCol && nowCol[1] === '2', 'den nuværende søjle har pillens farve', nowCol && nowCol[1]);
+  const ten = h.slice(h.indexOf('pris-card pp10'));
+  ok((ten.match(/<span class="pc[ "]/g) || []).length === 192, 'døgn 3–10 er otte døgn, 192 søjler');
+  ok(/data-tip="fre 16\. okt kl\. 13 · \d,\d\d kr\/kWh"/.test(ten), 'tip for døgn 3–10 har ugedag og dato');
+  ok(/<span class="xd"[^>]*>fre 16<\/span>/.test(ten) && /<span class="xd"[^>]*>fre 23<\/span>/.test(ten), 'x-aksen har dagetiketter');
+  ok(/<span class="pris-fc"[^>]*><i><\/i>Prognose<\/span>/.test(ten), 'prognosedage er mærket');
+  // The day list: text, one row per day, settled or forecast.
+  ok((h.match(/<tr class="r\d+"><th scope="row">/g) || []).length === 10, 'ti dage i dagslisten');
+  ok(/<tr class="r2"><th scope="row">I dag<small>14\. okt<\/small><\/th><td>1,30–3,90<\/td><td>kl\. 04–05<\/td><td class="real">Børspris/.test(h), 'dagens spænd og billigste time står som tekst');
+
+  // It is the cheapest hour of the next 24: say so.
+  const night = pris(feed, D0, 4, o);
+  ok(/Billigste time de næste 24 timer/.test(night) && !/Billigere/.test(night), 'er nu den billigste time, siges det');
+  ok(/class="pris-pill t0"/.test(night), 'og pillen er grøn');
+  // Dearest today, in the evening: "i aften".
+  const eve = pris(feed.slice(0, 1), D0, 15, o);
+  ok(/Dyrest i aften<\/div><div class="v">3,90 <small>kr · kl\. 19/.test(eve), 'dyrest i dag efter kl. 17 hedder i aften');
+  ok(/Billigere i dag kl\. /.test(eve) === false && /Billigste time de næste 24|Billigere i dag/.test(eve), 'uden i morgen findes sætningen stadig, med i dag');
+  // Tomorrow missing: one day, no crash, no "i morgen".
+  const one = pris(feed.slice(0, 1), D0, 21, o);
+  ok((one.slice(one.indexOf('pris-card pp2'), one.indexOf('pris-card pp10')).match(/data-tip=/g) || []).length === 24 && !/i morgen/.test(one.replace(/Næste 2 døgn/g, '')),
+     'uden i morgen tegnes kun i dag');
+  // Spotpris and no net: the captions.
+  ok(/Spotpris inkl\. moms/.test(pris(feed, D0, 21, { ...o, view: 'spot' })), 'billedtekst for spotpris');
+  ok(/Inkl\. Energinets tariffer, afgifter og moms/.test(pris(feed, D0, 21, { ...o, net: null })), 'billedtekst uden net');
+  ok(/data-period="10"/.test(pris(feed, D0, 21, { ...o, period: 10 })) && /aria-selected="true" data-pris-period="10"/.test(pris(feed, D0, 21, { ...o, period: 10 })), 'perioden kan være 3–10 døgn');
+  // No data at all: a screen with a dash, not a crash.
+  const none = pris([], D0, 21, {});
+  ok(/class="pris-now">—</.test(none) && !/NaN|undefined|Infinity/.test(none) && !/pris-pill/.test(none), 'uden data: tankestreg og ingen pille');
+  // Negative prices: bars below zero, a zero-line on the axis, never NaN.
+  const neg = pris([dayOf(D0, T.map((v, i) => i === 3 ? -0.8 : v), 'actual'), dayOf(nextDate(1), M, 'actual')], D0, 21, o);
+  ok(!/NaN|Infinity/.test(neg) && /<span style="top:[\d.]+%">-1<\/span>/.test(neg), 'negative priser giver en akse under nul');
+  ok(!/-0,00/.test(pris([dayOf(D0, T.map(() => -0.004), 'actual')], D0, 5, o)), 'et beløb der runder til nul vises uden minus');
+  ok(/aria-label="Elpris lige nu — DK1 Vest · N1"/.test(h) && /role="img" tabindex="0" aria-label="Elpris time for time næste 2 døgn: billigst 1,30 kr\/kWh kl\. 04, dyrest 3,90 kr\/kWh kl\. 19\./.test(h), 'grafen har en tekstlig beskrivelse');
+  ok(!/<h[1-6]/.test(h), 'skærmen indeholder ingen overskriftstags — sidens h1 står andetsteds');
+}
+
 console.log(`${pass} beståede, ${fails.length} fejl`);
 fails.forEach(f => console.log('  ✗ ' + f));
 process.exit(fails.length ? 1 : 0);

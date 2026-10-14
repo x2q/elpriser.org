@@ -221,17 +221,18 @@ async function main() {
 
   console.log('\n9. FORSIDEN — prognosen skal stå i HTML\'en, ikke kun efter JS');
   const home = await get('/');
-  const fcSection = home.body.slice(home.body.indexOf('id="homeForecast"'));
-  const days = (fcSection.match(/<div class="mini[ "]/g) || []).length;
-  check(days === 3, 'forside: server-renderede døgntal', `fandt ${days}, forventer 3`);
-  check(/<svg id="fcCurve"/.test(home.body), 'forside: kurven står i HTML\'en');
-  check(home.body.includes('Nu og 2 døgn frem'), 'forside: sektionsoverskrift');
-  // The explanatory HTML comment names the placeholder too, so match the tag.
-  check(!home.body.includes('<!--SSR_FORECAST_CHART-->'), 'forside: placeholder er erstattet');
-  check(/Børspris|Prognose/.test(home.body), 'forside: døgnene er mærket børspris eller prognose');
-  // The numbers are the reason the section is server-rendered at all.
-  check(/<div class="v">\d,\d\d–\d,\d\d<\/div>/.test(home.body),
-        'forside: døgnenes spænd står som tekst');
+  // The front page is the Pris screen, drawn by prisHTML on the server: the
+  // bars' numbers, the sentence and the day list are text in the HTML.
+  check(/<div class="pris" data-period="2" data-view="din"/.test(home.body), 'forside: Pris-skærmen står i HTML\'en');
+  check(!home.body.includes('<!--SSR_PRIS--></div>'), 'forside: placeholder er erstattet');
+  check(/<p class="pris-ct">Næste 2 døgn<\/p>/.test(home.body) && /<p class="pris-ct">Døgn 3–10<\/p>/.test(home.body), 'forside: begge korttitler');
+  check((home.body.match(/data-tip="[^"]+ kl\. \d\d · -?\d+,\d\d kr\/kWh"/g) || []).length >= 48 + 100, 'forside: hver times pris står i HTML\'en');
+  check(/class="pris-now">-?\d+,\d\d</.test(home.body), 'forside: prisen lige nu står som tekst');
+  check(/class="pris-pill t[012]"/.test(home.body), 'forside: dommen billig / middel / dyr');
+  const dayRows = (home.body.match(/<tr class="r\d+"><th scope="row">/g) || []).length;
+  check(dayRows >= 8, 'forside: dagslisten står som tekst', `fandt ${dayRows} rækker`);
+  check(/class="(real|fc)">(Børspris|Prognose)</.test(home.body), 'forside: døgnene er mærket børspris eller prognose');
+  check(/<td>\d,\d\d–\d,\d\d<\/td>/.test(home.body), 'forside: døgnenes spænd står som tekst');
   check(!home.body.includes('href="/${k}"'), 'forside: intet skabelon-link i HTML');
 
   const prog = await get('/prognose');

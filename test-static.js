@@ -204,9 +204,11 @@ test('mobile: the tab bar lives outside every <main>', () => {
   assert.ok(firstMain > 0, 'no <main data-page> found');
   assert.ok(INDEX.indexOf('id="tabBar"') < firstMain,
     'the tab bar sits inside the <main> region and will be stripped on subpages');
-  for (const href of ['/prognose', '/automation']) {
-    assert.ok(new RegExp(`data-tab="${href}"`).test(INDEX), `tab for ${href} is missing`);
-  }
+  // Design A: the phone bar has the two destinations, Pris and Smart hjem.
+  const bar = INDEX.match(/<nav class="tabbar" id="tabBar"[\s\S]*?<\/nav>/)[0];
+  assert.deepEqual([...bar.matchAll(/data-tab="([^"]+)"/g)].map(m => m[1]), ['/', '/automation'],
+    'the phone bar is not exactly Pris and Smart hjem');
+  assert.ok(/>Pris<\/a>/.test(bar) && />Smart hjem<\/a>/.test(bar), 'the phone bar labels are not Pris / Smart hjem');
 });
 
 test('mobile: phone styles are hand-written and scoped to small screens', () => {
@@ -215,7 +217,7 @@ test('mobile: phone styles are hand-written and scoped to small screens', () => 
     'the tab bar must be hidden by default and shown only on phones');
   assert.ok(/@media \(max-width:640px\)\{[\s\S]*?\.tabbar\{display:flex/.test(style),
     'the tab bar is never shown at phone width');
-  for (const cls of ['.answer-col', '.tabbar a', '.tabbar .on']) {
+  for (const cls of ['.pris-page', '.pris-hero', '.tabbar a', '.tabbar .on']) {
     assert.ok(style.includes(cls), `${cls} is not defined in the hand-written style block`);
   }
   assert.ok(/body\{padding-bottom:/.test(style),
@@ -300,7 +302,7 @@ test('price table: 4 days back, today, 3 ahead — and paging neither skips nor 
   assert.ok(/colspan="\$\{j-i\}"[^>]*>PROGNOSE</.test(render), 'PROGNOSE does not span the forecast columns');
 });
 
-test('price pages: dropdown, sentence and unit describe the same price in every view', () => {
+test('price pages: switch, sentence and unit describe the same price in every view', () => {
   const vm = require('vm');
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const MARK = '// ═══ Pris lige nu, i ord ═══';
@@ -317,9 +319,22 @@ test('price pages: dropdown, sentence and unit describe the same price in every 
     // A view without a grid company must never claim to include the nettarif.
     if (!m.startsWith('net_')) assert.ok(!/0,31 kr\/kWh inkl\.[^.]*nettarif/.test(txt), `${m} claims the local nettarif: ${txt}`);
     if (m.endsWith('_minus') || m === 'net_inkl_tarif') assert.ok(/uden elafgift/.test(txt), `${m} does not say it excludes elafgift`);
-    // Every view has its own option, or the dropdown goes blank on it.
-    if (!m.startsWith('net_')) assert.ok(INDEX.includes('value="${area}/' + m + '"'), `no dropdown option for ${m}`);
   }
+  // Design A: the UI offers two views, Din pris and Spotpris — no dropdown of six
+  // modes. Old links to the other four still open, on the nearest of the two.
+  assert.ok(!/id="priceSelector"/.test(INDEX) && !/onPriceSelectorChange/.test(INDEX), 'the six-mode dropdown is back');
+  assert.equal((INDEX.match(/const ZONE_BTNS=\[([\s\S]*?)\];/)[1].match(/mode:'/g) || []).length, 2, 'the front page offers more than two views');
+  const nr = INDEX.slice(INDEX.indexOf('function normaliseRoute(h){'), INDEX.indexOf('/** The route key for the page as it is right now. */'));
+  assert.ok(nr.length > 100, 'normaliseRoute not found');
+  const rctx = {}; vm.createContext(rctx);
+  vm.runInContext(nr + '\nglobalThis.n = normaliseRoute;', rctx);
+  for (const [from, to] of [
+    ['DK1/inkl_alt', 'DK1/inkl_alt'], ['DK1/inkl_alt_minus', 'DK1/inkl_alt'],
+    ['DK1/spot_inkl', 'DK1/spot_inkl'], ['DK2/spot_ex', 'DK2/spot_inkl'],
+    ['DK1/net_inkl_alt/n1', 'DK1/net_inkl_alt/n1'], ['DK1/net_inkl_tarif/trefor', 'DK1/net_inkl_alt/trefor'],
+    ['DK1/spot_inkl/n1', 'DK1/spot_inkl/n1'], ['DK1/spot_ex/n1', 'DK1/spot_inkl/n1'],
+    ['DK1/net_inkl_alt', 'DK1/inkl_alt'], ['DK2/ukendt', 'DK2/inkl_alt'], ['tariffer', 'tariffer'], ['', ''],
+  ]) assert.equal(rctx.n(from), to, `normaliseRoute(${from})`);
   // The server writes the sentence for the view the URL opens in, which is
   // what pathToHash sends /dk1 and /dk2 to.
   assert.ok(/const mode = net \? 'net_inkl_alt' : 'inkl_alt';/.test(SRV), 'server sentence is not for the URL\'s own view');
@@ -349,32 +364,30 @@ test('price pages: dropdown, sentence and unit describe the same price in every 
   // Another area or grid company is another page; only views of the same URL stay in-page.
   assert.ok(/function goRoute\(h\)\{[\s\S]*?path===location\.pathname[\s\S]*?location\.href=u/.test(INDEX),
     'goRoute: same page stays in place, another page is a normal load');
-  assert.ok(/function onPriceSelectorChange\(\)\{[\s\S]*?goRoute\(val\)/.test(INDEX), 'the dropdown goes through goRoute');
+  assert.ok(/function setPrisView\([\s\S]*?goRoute\(/.test(INDEX), 'the Din pris / Spotpris switch goes through goRoute');
   assert.ok(!/inkl\. nettarif, systemtarif, transmissionstarif, elafgift og moms er \$\{fmt\(dk1\.total\)\}/.test(SRV),
     'the homepage summary still says the no-company total includes the nettarif');
 });
 
-test('price pages: the curve is drawn from the table\'s own data and conversion', () => {
-  // The chart sits between the big number and the table. If it fetched its own
-  // prices (say the front page's inkl_alt feed) it would disagree with both on
-  // /dk1/n1 or in "Inkl tarif". It must use priceData/fcDays through cvt().
+test('price pages: the Pris screen sits above the heading and is drawn for the view the URL and the switch imply', () => {
   const main = INDEX.slice(INDEX.indexOf('data-page="prices"'), INDEX.indexOf('<!-- ═══════ TARIFF PAGE'));
-  assert.ok(/id="pricesForecast"/.test(main), 'no chart container on the price pages');
-  assert.ok(main.indexOf('id="pricesForecastWrap"') < main.indexOf('<!--SSR_PRICES_INTRO-->'),
-    'the chart is not above the page heading');
-  // Above the h1, its title must not be a heading, or the outline starts at h2.
-  const wrapHtml = main.slice(main.indexOf('id="pricesForecastWrap"'), main.indexOf('<!--SSR_PRICES_INTRO-->'));
-  assert.ok(!/<h[1-6]/.test(wrapHtml), 'a heading element sits above the page h1');
-  const fn = INDEX.slice(INDEX.indexOf('function pricesChartDays(){'), INDEX.indexOf('function renderPricesForecast(){'));
-  assert.ok(/priceData\[ds\]\|\|fcDays\[ds\]/.test(fn) && /cvt\(src\[h\],h,ds\)/.test(fn),
-    'pricesChartDays does not use the table\'s data through cvt()');
-  assert.ok(!/fetch\(/.test(fn), 'pricesChartDays fetches its own prices');
-  assert.ok(/if\(S\.weekOffset===0\)renderPricesForecast\(\);/.test(INDEX), 'the chart is not redrawn with the table');
-  // Above the heading the box must be reserved before the data arrives, or
-  // the h1 jumps down under the reader when it does.
-  const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
-  assert.ok(/#pricesForecast[^{]*\{min-height:\d+px\}/.test(style), 'no reserved height for the chart');
-  assert.ok(!/id="pricesForecastWrap" style="display:none"/.test(INDEX), 'the chart box starts collapsed and will shift the page');
+  // The mount comes first, then the server-written intro with the page's h1 —
+  // and nothing above the h1 may be a heading element, or the outline starts at h2.
+  assert.ok(/data-pris-mount><!--SSR_PRIS--><\/div>/.test(main), 'no server placeholder for the Pris screen on the price pages');
+  assert.ok(main.indexOf('data-pris-mount') < main.indexOf('<!--SSR_PRICES_INTRO-->'), 'the Pris screen is not above the page intro');
+  assert.ok(!/<h[1-6]/.test(main.slice(0, main.indexOf('<!--SSR_PRICES_INTRO-->'))), 'a heading element sits above the page h1');
+  // Din pris on a net page is that net's all-in price; /api/forecast applies the
+  // tariff in force on each day's own date, so it equals the table's figure.
+  const q = INDEX.slice(INDEX.indexOf('function prisQuery(){'), INDEX.indexOf('function prisOpts(){'));
+  assert.ok(/mode=spot_inkl/.test(q) && /mode=net_inkl_alt&gln=\$\{net\.gln\}/.test(q) && /mode=inkl_alt`/.test(q),
+    'the Pris screen does not ask for Spotpris / the net\'s price / the area\'s price');
+  assert.ok(/loadPriceData\(S\._loadId\);loadPris\(\);/.test(INDEX), 'a price page does not load the Pris screen');
+  // The server draws the same screen for the URL's own view, with the net's gln.
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const sp = SRV.slice(SRV.indexOf('if (opts.pricesIntro) {'), SRV.indexOf('if (opts.zone) {'));
+  assert.ok(/api\/forecast\?area=\$\{area\}&mode=\$\{net \? 'net_inkl_alt' : 'inkl_alt'\}\$\{net \? `&gln=\$\{net\.gln\}` : ''\}/.test(sp), 'server forecast is not the net\'s own');
+  assert.ok(/html\.replace\('<!--SSR_PRIS-->', prisHTML\(/.test(sp), 'the server does not draw the Pris screen on price pages');
+  assert.ok(/netChipLong/.test(sp) && /netChipShort/.test(sp), 'the net chip is not written for the page\'s net');
 });
 
 test('seo: no heading tag written inside an HTML comment', () => {
@@ -594,34 +607,42 @@ test('security: no credential is written into tracked code', () => {
   assert.deepEqual(hits, [], `credential-like literal in tracked code: ${hits.join(', ')}`);
 });
 
-test('homepage: the hero curve has a price scale that lines up', () => {
-  // The scale sits in a gutter left of the curve. The CO2 strip below takes the
-  // same gutter, or its hours stop lining up with the price curve's.
-  assert.ok(/<div class="yplot"><svg id="heroCurve"[^>]*><\/svg><div class="yax" id="heroYax"><\/div><\/div>/.test(INDEX),
-    'heroCurve is not wrapped with its axis');
-  assert.ok(/<svg id="heroCo2" class="ygut"/.test(INDEX), 'the CO2 strip does not share the gutter');
-  // renderHero hides the CO2 header through previousElementSibling, so the
-  // strip must stay the header's next sibling rather than gain a wrapper.
-  assert.ok(/<div class="chd co2">[^\n]*<\/div>\s*<svg id="heroCo2"/.test(INDEX),
-    'heroCo2 is no longer directly after its header');
-  assert.ok(/const ticks=fcTicks\(pMin,pMax\)/.test(INDEX) && /heroYax'\)\.innerHTML=fcYaxis\(ticks,Y,H\)/.test(INDEX),
-    'renderHero does not draw the scale');
+test('homepage: the bar chart has a zero-based price scale, a unit label and gridlines', () => {
+  const src = INDEX.slice(INDEX.indexOf('function prisAxis('), INDEX.indexOf('/** The cheapest and the dearest hour among'));
+  assert.ok(src.length > 200, 'prisAxis not found');
+  const vm = require('vm'); const ctx = {}; vm.createContext(ctx);
+  vm.runInContext(src + '\nglobalThis.ax = prisAxis;', ctx);
+  const ax = v => JSON.parse(JSON.stringify(ctx.ax(v)));
+  // The mock: highest 3,90 → 4,37 → 4,5; whole-krone steps from zero.
+  assert.deepEqual(ax([1.2, 3.9, 2]).ticks, [0, 1, 2, 3, 4]);
+  assert.equal(ax([1.2, 3.9, 2]).hi, 4.5);
+  assert.equal(ax([1.2, 3.9, 2]).lo, 0);
+  // The tallest bar never touches the top, also on an exact multiple.
+  assert.ok(ax([4]).hi > 4 && ax([4.46]).hi === 5);
+  // Halves only when the whole axis is two and a half kroner or less.
+  assert.deepEqual(ax([0.6, 0.9]).ticks, [0, 0.5, 1, 1.5]);
+  // A negative price extends the axis below zero instead of being clipped.
+  assert.ok(ax([-0.7, 1.2]).lo < 0 && ax([-0.7, 1.2]).ticks.includes(0));
+  const html = INDEX.slice(INDEX.indexOf('function prisChart('), INDEX.indexOf('function prisFlat('));
+  assert.ok(/class="pris-unit">kr\/kWh</.test(html) && /class="pris-gl"/.test(html) && /pris-yl/.test(html), 'unit label, gridlines or axis labels are gone');
 });
 
-test('homepage: the forecast curve is server-rendered, not JS-only', () => {
-  // The section exists to answer "elpriser prognose" searches that land on the
-  // homepage. A chart that appears only after JS runs would not do that, so the
-  // placeholder and the code that fills it both have to be present.
-  assert.ok(INDEX.includes('<!--SSR_FORECAST_CHART-->'),
-    'index.html lost the SSR_FORECAST_CHART placeholder');
-  assert.ok(/<div id="homeForecast">/.test(INDEX),
-    'the forecast container is missing from the homepage');
-  assert.ok(INDEX.includes('Nu og 2 døgn frem'), 'the section heading is missing');
+test('homepage: the Pris screen is server-rendered, not JS-only', () => {
+  // The front page answers "elpriser lige nu" and "elpriser prognose": the price,
+  // the sentence, every bar's number and the day list have to be in the HTML a
+  // crawler is served, so the placeholder and the code that fills it both exist.
+  assert.ok(/<div class="pris-page" data-pris-mount><!--SSR_PRIS--><\/div>/.test(INDEX), 'index.html lost the SSR_PRIS placeholder');
   const ROUTES_SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
-  assert.ok(ROUTES_SRC.includes('function fcChartHTML('),
-    'functions/[[path]].js no longer builds the forecast chart');
-  assert.ok(ROUTES_SRC.includes("html.replace('<!--SSR_FORECAST_CHART-->'"),
-    'the server never substitutes SSR_FORECAST_CHART');
+  assert.ok(ROUTES_SRC.includes('function prisHTML('), 'functions/[[path]].js no longer builds the Pris screen');
+  assert.ok(ROUTES_SRC.includes("html.replace('<!--SSR_PRIS-->', prisHTML("), 'the server never substitutes SSR_PRIS');
+  assert.ok(!INDEX.includes('<!--SSR_FORECAST_CHART-->') && !ROUTES_SRC.includes('SSR_FORECAST_CHART'), 'the old forecast placeholder is back');
+  // prisHTML must put the day list and the per-hour numbers in text.
+  const fn = ROUTES_SRC.slice(ROUTES_SRC.indexOf('function prisDayRows('), ROUTES_SRC.indexOf('// ═══ /Pris-skærmen ═══'));
+  assert.ok(/class="pris-week"/.test(fn) && /Børspris/.test(fn) && /Prognose/.test(fn), 'the day list is not text');
+  assert.ok(/data-tip="/.test(ROUTES_SRC), 'the hourly figures are gone');
+  // The homepage render is cached; a changed markup needs a new key.
+  assert.ok(/homepage-ssr-v(\d+)/.test(ROUTES_SRC) && +ROUTES_SRC.match(/homepage-ssr-v(\d+)/)[1] >= 60,
+    'the homepage cache key was not bumped for the Pris markup');
 });
 
 test('homepage: the forecast numbers stay as text, not just path data', () => {
@@ -747,7 +768,7 @@ test('crawlable: _routes.json routes every page through the function', () => {
 test('crawlable: _routes.json keeps static assets off the function', () => {
   const routes = JSON.parse(fs.readFileSync(path.join(ROOT, '_routes.json'), 'utf8'));
   ['/style.css', '/favicon.ico', '/favicon.svg', '/og-image.png',
-   '/apple-touch-icon.png'].forEach(p => {
+   '/apple-touch-icon.png', '/manrope.woff2'].forEach(p => {
     assert.ok(!routedByFunction(routes, p),
       `_routes.json sends "${p}" through the function — it should be served directly`);
   });

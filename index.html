@@ -98,9 +98,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   document.documentElement.classList.toggle('dark', e.matches);
 });
 </script>
-<!-- Native system-font stack — no webfont download, no cross-origin connection,
-     no FOUT/swap: text paints instantly with the OS UI font (SF Pro on Apple,
-     Segoe UI on Windows, Roboto on Android). -->
+<!-- Manrope, self-hosted (/manrope.woff2, a 22 KB Latin subset of the variable
+     font the apps bundle): no cross-origin connection. font-display:swap, with the
+     OS UI font as fallback, so text paints at once and never waits for the file. -->
+<link rel="preload" href="/manrope.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style.css">
 <style>
   :root{
@@ -119,7 +120,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     --ring:0 1px 2px rgba(0,0,0,.35), 0 8px 24px -8px rgba(0,0,0,.55);
     --ring-hover:0 2px 4px rgba(0,0,0,.45), 0 18px 40px -12px rgba(7,12,30,.8);
   }
-  html,body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+  html,body{font-family:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes float-slow{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,-14px) scale(1.06)}}
   @keyframes float-slower{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-18px,16px) scale(1.08)}}
@@ -271,29 +272,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .zone-stack{display:flex;flex-direction:column;align-items:center;gap:.625rem;padding:.25rem 0 .5rem}
   .net-list{display:flex;flex-direction:column;gap:.125rem;padding:.5rem 0}
 
-  /* ═══ Answer-first hero (start page) ═══ */
-  .answer-hero{display:grid;grid-template-columns:340px 1fr;gap:1.75rem;align-items:stretch;max-width:66rem;margin:0 auto;padding:2rem 1rem 0}
-  @media (max-width:820px){.answer-hero{grid-template-columns:1fr;padding-top:1.25rem}}
-  .answer-eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#5c6675;margin:0}
-  .dark .answer-eyebrow{color:#8a95a8}
-  .answer-price{font-size:5.5rem;font-weight:250;letter-spacing:-.04em;line-height:1.02;margin:.25rem 0 0;font-variant-numeric:tabular-nums;color:#0e1421}
-  .dark .answer-price{color:#e8edf5}
-  .answer-unit{font-size:.9rem;font-weight:500;color:#5c6675;margin-top:.15rem}
-  .dark .answer-unit{color:#8a95a8}
-  .answer-pills{display:flex;gap:.5rem;margin-top:.9rem;flex-wrap:wrap}
-  .apill{width:max-content;padding:.32rem .85rem;border-radius:9999px;font-size:.82rem;font-weight:600}
-  .apill.billig{background:rgba(52,199,89,.14);color:#1e9e4a}
-  .apill.normal{background:rgba(255,159,10,.14);color:#b46a00}
-  .apill.dyr{background:rgba(255,59,48,.12);color:#d02b22}
-  .apill.co2{background:rgba(14,152,136,.12);color:#0e9888}
-  .dark .apill.billig{color:#4cd964}.dark .apill.normal{color:#ffb340}.dark .apill.dyr{color:#ff6b61}.dark .apill.co2{color:#2fd4bf}
-  .answer-context{margin-top:.65rem;font-size:.85rem;color:#5c6675;line-height:1.5;max-width:34ch}
-  .dark .answer-context{color:#8a95a8}
-  .answer-advice{margin-top:1.1rem;background:linear-gradient(135deg,#1b57f5,#1a3f9e);color:#fff;border-radius:1rem;padding:.85rem 1rem;font-size:.85rem;line-height:1.5;font-weight:500;max-width:22rem}
-  .answer-advice b{font-weight:700}
-  /* Sæson-tip: de billige timer er vandret fra nat til middag, men mange
-     enheder kører stadig på faste natte-timere. Vises kun de dage hvor
-     middagen faktisk er markant billigere end natten. */
   /* Zone-tabellen har 10 kolonner og skal kunne rummes i max-w-3xl uden at
      den sidste bliver klippet. Reglen står her frem for som Tailwind-klasse,
      fordi det purgede build kun kender klasser der findes ved build-tid. */
@@ -328,21 +306,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .dark .globe-col .gz{color:#7ba4ff}
   .globe-col .gc{font-size:.75rem;color:#6b7280}
   .dark .globe-col .gc{color:#9ca3af}
-  .answer-tip{margin-top:.6rem;max-width:22rem;background:rgba(14,152,136,.08);border:1px solid rgba(14,152,136,.2);border-radius:.85rem;padding:.6rem .8rem;font-size:.78rem;line-height:1.45;color:#0b6f64}
-  .answer-tip b{font-weight:700}
-  .answer-tip a{text-decoration:underline}
-  .dark .answer-tip{background:rgba(47,212,191,.1);border-color:rgba(47,212,191,.24);color:#7fe3d6}
-  .answer-toggle{display:inline-flex;background:#fff;border:1px solid #e2e7f0;border-radius:9999px;padding:3px;font-size:.78rem;font-weight:600;margin-top:1.1rem;width:max-content}
-  .dark .answer-toggle{background:#131b29;border-color:#223046}
-  .answer-toggle button{padding:.3rem .9rem;border-radius:9999px;color:#5c6675;border:none;background:none;cursor:pointer;font:inherit}
-  .dark .answer-toggle button{color:#8a95a8}
-  .answer-toggle button.on{background:#1b57f5;color:#fff}
   .chartcard{background:#fff;border-radius:1.25rem;box-shadow:0 1px 2px rgba(14,20,33,.05),0 8px 24px rgba(14,20,33,.05);padding:1.1rem 1.2rem .9rem;display:flex;flex-direction:column}
   .dark .chartcard{background:#131b29;box-shadow:0 1px 2px rgba(0,0,0,.3)}
   .chartcard .chd{display:flex;justify-content:space-between;align-items:baseline;font-size:.7rem;font-weight:600;color:#5c6675;text-transform:uppercase;letter-spacing:.06em;padding:0 .25rem .45rem}
   .dark .chartcard .chd{color:#8a95a8}
-  .chartcard .chd.co2{color:#0e9888;padding-top:.7rem}
-  .dark .chartcard .chd.co2{color:#2fd4bf}
   .chartcard svg{width:100%;color:#0e1421}
   .dark .chartcard svg{color:#e8edf5}
   .minirow{display:flex;gap:.7rem;margin-top:.8rem;flex-wrap:wrap}
@@ -353,11 +320,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .mini .v{font-size:1.3rem;font-weight:700;font-variant-numeric:tabular-nums;margin-top:1px}
   .mini .s{font-size:.72rem;color:#5c6675}
   .dark .mini .s{color:#8a95a8}
-  .mini.best .v{color:#1e9e4a}.mini.worst .v{color:#d02b22}.mini.green .v{color:#0e9888}
-  .dark .mini.best .v{color:#4cd964}.dark .mini.worst .v{color:#ff6b61}.dark .mini.green .v{color:#2fd4bf}
-  .mini.tmr .v{font-size:.85rem;font-weight:600;color:#5c6675;margin-top:.35rem}
-  .mini.tmr.has-range .v{font-size:1.3rem;font-weight:700;color:#0e1421;margin-top:1px}
-  .dark .mini.tmr.has-range .v{color:#e8edf5}
+  .mini.best .v{color:#1e9e4a}
+  .dark .mini.best .v{color:#4cd964}
 
   /* ── Kurvesektionerne: forside, prissider, zonesider og /prognose (designoplæg 02) ── */
   .fc-wrap{max-width:66rem;margin:2.5rem auto 0;padding:0 1rem}
@@ -408,103 +372,76 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .dark .fc-head .fc-title{color:#e8edf5}
   /* Measured rendered heights: the three day cards wrap to two rows below
      ~440 px. Reserved so the page's h1 does not jump when the data lands. */
-  #pricesForecast,#zoneForecast,#prognoseForecast{min-height:322px}
-  @media (max-width:440px){#pricesForecast,#prognoseForecast{min-height:404px}}
+  #zoneForecast,#prognoseForecast{min-height:322px}
+  @media (max-width:440px){#prognoseForecast{min-height:404px}}
   /* Zone labels run longer ("Tänään · Toteutunut" wraps), measured 419 px. */
   @media (max-width:440px){#zoneForecast{min-height:420px}}
   .fc-head a{font-size:.8rem;font-weight:600;color:#1b57f5;white-space:nowrap;text-decoration:underline}
   .dark .fc-head a{color:#6d9aff}
   .fc-b-short{display:none}
-  /* Location/view selector — took the globe icon's place in the nav. */
-  .nav-select{max-width:15rem;font-size:.8rem;font-weight:500;padding:.3rem 1.6rem .3rem .6rem;
-    border:1px solid #e2e7f0;border-radius:.6rem;background:#fff;color:#3d495c;cursor:pointer;
-    font-family:inherit;appearance:none;-webkit-appearance:none;
-    background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235c6675' stroke-width='2.5' stroke-linecap='round'%3e%3cpath d='m6 9 6 6 6-6'/%3e%3c/svg%3e");
-    background-repeat:no-repeat;background-position:right .45rem center;background-size:.7rem}
-  .nav-select:hover{border-color:#1b57f5;color:#1b57f5}
-  .site-links+.nav-select{margin-left:.75rem}
-  .site-logo+.nav-select{margin-left:auto}
-  .dark .nav-select{background-color:#131b29;border-color:#242e44;color:#c2cce0}
-  .dark .nav-select:hover{border-color:#6d9aff;color:#6d9aff}
-  @media (max-width:900px){.nav-select{max-width:9.5rem}}
-  @media (max-width:640px){.nav-select{max-width:11rem;margin-left:auto}}
 
-  /* ── Mobil (designoplæg 01): svaret centreret, app-agtig tab-bar ──
-     The mockup's thesis is that nobody reads 24 numbers on a phone — the
-     current price is the answer, centred like the Weather app's temperature,
-     and the sections below are reached from a fixed tab bar rather than a
-     hamburger. Mobile is where this matters: 6.02 % CTR against desktop's
-     2.71 %, and more clicks than desktop and tablet combined. */
-  .tabbar{display:none}
-  @media (max-width:640px){
-    .answer-col{text-align:center}
-    .answer-price{font-size:4rem}
-    .answer-pills{justify-content:center}
-    .answer-context,.answer-advice,.answer-toggle{margin-left:auto;margin-right:auto}
-    .answer-tip{margin-left:auto;margin-right:auto;text-align:left}
-    /* Room for the floating bar, so it never covers the last row of content. */
-    body{padding-bottom:5.25rem}
-    .tabbar{display:flex;position:fixed;left:.8rem;right:.8rem;bottom:.7rem;height:3.5rem;z-index:60;
-      align-items:center;justify-content:space-around;border-radius:1.75rem;
-      background:rgba(255,255,255,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-      box-shadow:0 6px 24px rgba(14,20,33,.14),0 0 0 .5px rgba(14,20,33,.06)}
-    .dark .tabbar{background:rgba(19,27,41,.86);
-      box-shadow:0 6px 24px rgba(0,0,0,.4),0 0 0 .5px rgba(255,255,255,.07)}
-  }
-  .tabbar a,.tabbar button{display:flex;flex-direction:column;align-items:center;gap:2px;
-    font:inherit;font-size:.6rem;font-weight:500;color:#8e8e93;background:none;border:none;
-    padding:.25rem .5rem;cursor:pointer;text-decoration:none;-webkit-tap-highlight-color:transparent}
-  .tabbar svg{width:1.3rem;height:1.3rem}
-  .tabbar .on{color:#1b57f5}
-  .dark .tabbar .on{color:#6d9aff}
   /* GPS restyled for light hero */
   .gps-light{display:inline-flex;align-items:center;gap:.7rem;border-radius:9999px;font-size:.85rem;font-weight:600;padding:.8rem 1.5rem;background:rgba(27,87,245,.08);border:1px solid rgba(27,87,245,.18);color:#1b57f5;cursor:pointer;transition:background .15s ease}
   .gps-light:hover{background:rgba(27,87,245,.14)}
   .dark .gps-light{background:rgba(58,118,255,.12);border-color:rgba(58,118,255,.25);color:#6d9aff}
 
-  /* ═══ Top nav — sticky, blurred, burger on mobile ═══ */
-  .site-nav{position:sticky;top:0;z-index:50;background:rgba(249,250,251,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid #e2e7f0}
-  .dark .site-nav{background:rgba(13,18,33,.85);border-bottom-color:#242e44}
-  .site-nav-inner{max-width:66rem;margin:0 auto;display:flex;align-items:center;gap:1.5rem;padding:.7rem 1rem}
-  .site-logo{font-size:1.05rem;font-weight:800;letter-spacing:-.02em;color:#0e1421;display:flex;align-items:center;gap:.3rem;flex-shrink:0}
-  .dark .site-logo{color:#e8edf5}
-  .site-logo .bolt{color:#1b57f5}
-  .dark .site-logo .bolt{color:#59a0ff}
-  .site-links{display:flex;align-items:center;gap:1.2rem;font-size:.85rem;font-weight:500;color:#5c6675;margin-left:auto}
-  .dark .site-links{color:#8a95a8}
-  .site-links>a{padding:.25rem 0;border-bottom:2px solid transparent}
-  .site-links>a:hover{color:#0e1421}
-  .dark .site-links>a:hover{color:#e8edf5}
-  .site-links>a.on{color:#1b57f5;border-bottom-color:#1b57f5;font-weight:600}
-  .dark .site-links>a.on{color:#59a0ff;border-bottom-color:#59a0ff}
-  .site-guides{position:relative}
-  .site-guides>button{font:inherit;font-weight:500;color:inherit;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:.25rem;padding:.25rem 0}
-  .site-guides>button:hover{color:#0e1421}
-  .dark .site-guides>button:hover{color:#e8edf5}
-  .site-guides>button.on{color:#1b57f5;font-weight:600}
-  .site-guides-menu{position:absolute;right:0;top:calc(100% + .5rem);min-width:15rem;background:#fff;border:1px solid #e2e7f0;border-radius:.9rem;box-shadow:0 8px 24px rgba(14,20,33,.12);padding:.4rem;display:flex;flex-direction:column}
-  .site-guides-menu[hidden]{display:none}
-  .dark .site-guides-menu{background:#161d30;border-color:#242e44;box-shadow:0 8px 24px rgba(0,0,0,.4)}
-  .site-guides-menu a{padding:.5rem .7rem;border-radius:.5rem;font-size:.85rem;color:#3d495c}
-  .dark .site-guides-menu a{color:#c2cce0}
-  .site-guides-menu a:hover{background:rgba(27,87,245,.07);color:#1b57f5}
-  .dark .site-guides-menu a:hover{background:rgba(89,160,255,.1);color:#59a0ff}
-  .site-burger{display:none;margin-left:auto;background:none;border:none;cursor:pointer;padding:.35rem;color:#3d495c;border-radius:.5rem}
-  .site-burger:hover{background:rgba(27,87,245,.07)}
-  .dark .site-burger{color:#c2cce0}
-  .site-mobile{display:none;border-top:1px solid #e2e7f0;padding:.5rem .8rem .9rem;flex-direction:column}
-  .dark .site-mobile{border-top-color:#242e44}
-  .site-mobile.open{display:flex}
-  .site-mobile a{padding:.6rem .5rem;border-radius:.5rem;font-size:.95rem;font-weight:500;color:#3d495c}
-  .dark .site-mobile a{color:#c2cce0}
-  .site-mobile a:hover{background:rgba(27,87,245,.07)}
-  .site-mobile a.on{color:#1b57f5;font-weight:600}
-  .dark .site-mobile a.on{color:#59a0ff}
-  .site-mobile .grp{margin-top:.5rem;padding:.55rem .5rem .15rem;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8a95a8}
-  @media (max-width:820px){
-    .site-links{display:none}
-    .site-burger{display:block}
+  /* ═══ Top nav — Pris · Smart hjem · Om, the net chip, "Hent appen" ═══ */
+  .site-nav{position:sticky;top:0;z-index:50;background:rgba(244,246,251,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--p-line)}
+  .dark .site-nav{background:rgba(13,18,33,.88)}
+  .site-nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:2rem;padding:.7rem 1.25rem}
+  @media (min-width:900px){.site-nav-inner{padding:.8rem 2.5rem}}
+  .site-logo{display:flex;align-items:center;gap:.6rem;font-size:1.1rem;font-weight:800;letter-spacing:-.02em;color:var(--p-ink);flex-shrink:0}
+  .site-logo .mark{width:30px;height:30px;border-radius:9px;background:#1b57f5;display:inline-flex;align-items:center;justify-content:center}
+  .site-links{display:flex;align-items:center;gap:1.5rem;font-size:.9375rem;font-weight:700;color:var(--p-muted)}
+  .site-links a{padding:.45rem 0 .3rem;border-bottom:2px solid transparent}
+  .site-links a:hover{color:var(--p-ink)}
+  .site-links a.on{color:var(--p-brand);border-bottom-color:var(--p-brand)}
+  .site-actions{margin-left:auto;display:flex;align-items:center;gap:.75rem}
+  .chip-btn,.app-btn{display:inline-flex;align-items:center;gap:.5rem;height:40px;border-radius:20px;font:inherit;font-size:.875rem;font-weight:700;cursor:pointer;white-space:nowrap}
+  .chip-btn{padding:0 1rem;background:var(--p-card);border:1px solid var(--p-chip-line);color:var(--p-ink)}
+  .chip-btn svg{color:var(--p-brand);flex-shrink:0}
+  .app-btn{padding:0 1.1rem;background:var(--p-btn);color:var(--p-btn-ink);border:0;font-weight:800}
+  .chip-btn:focus-visible,.app-btn:focus-visible,.site-links a:focus-visible,.tabbar a:focus-visible{outline:2px solid var(--p-brand);outline-offset:2px}
+  .nc-short{display:none}
+  @media (max-width:640px){
+    .site-links,.app-btn{display:none}
+    .site-nav-inner{gap:1rem}
+    .chip-btn{height:36px;padding:0 .75rem;font-size:.8125rem}
+    .nc-long{display:none}
+    .nc-short{display:inline}
   }
+
+  /* ── Phone: a bar with the two destinations, Pris and Smart hjem ── */
+  .tabbar{display:none}
+  @media (max-width:640px){
+    /* Room for the bar, so it never covers the last row of content. */
+    body{padding-bottom:calc(4.75rem + env(safe-area-inset-bottom))}
+    .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;justify-content:space-around;
+      padding:10px 40px calc(10px + env(safe-area-inset-bottom));background:var(--p-card);border-top:1px solid var(--p-line)}
+  }
+  .tabbar a{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px;min-height:44px;
+    font-size:12px;font-weight:700;color:var(--p-muted);text-decoration:none;-webkit-tap-highlight-color:transparent}
+  .tabbar svg{width:24px;height:24px}
+  .tabbar .on{color:var(--p-brand);font-weight:800}
+
+  /* ── Net chip + "Hent appen" open a dialog ── */
+  .pris-dialog{border:0;padding:0;border-radius:22px;width:calc(100% - 2rem);max-width:34rem;max-height:calc(100vh - 2rem);overflow:auto;
+    background:var(--p-card);color:var(--p-ink);box-shadow:0 24px 60px rgba(0,0,0,.3)}
+  .pris-dialog::backdrop{background:rgba(14,21,48,.5);backdrop-filter:blur(3px)}
+  .pd-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.1rem 1.25rem .4rem}
+  .pd-head h2{margin:0;font-size:1.05rem;font-weight:800}
+  .pd-x{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;margin:-8px -10px -8px 0;border:0;border-radius:22px;background:none;color:var(--p-muted);cursor:pointer}
+  .pd-x:hover{background:var(--p-seg)}
+  .pd-body{display:flex;flex-direction:column;gap:1.1rem;padding:.25rem 1.25rem 1.25rem}
+  .pd-gt{margin:0 0 .45rem;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--p-muted)}
+  .pd-links{display:flex;flex-wrap:wrap;gap:.5rem}
+  .pd-links a{display:inline-flex;align-items:center;min-height:44px;padding:0 .9rem;border-radius:22px;border:1px solid var(--p-chip-line);font-size:.875rem;font-weight:700;color:var(--p-ink)}
+  .pd-links a:hover{border-color:var(--p-brand);color:var(--p-brand)}
+  .pd-links a.on{background:var(--p-pill);border-color:var(--p-pill);color:#fff}
+  .pd-foot{margin:0;font-size:.8125rem;font-weight:600;color:var(--p-muted)}
+  .pd-foot a{text-decoration:underline}
+  .pd-body .gps-light{min-height:44px}
+  .pd-body .mt-8{margin-top:0}
 
   /* ═══ Shared subpage design — same language as the answer-first hero ═══ */
   .page-eyebrow{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#5c6675}
@@ -515,8 +452,172 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .dark .subcard{background:#131b29;box-shadow:0 1px 2px rgba(0,0,0,.3)}
   .chd2{display:flex;justify-content:space-between;align-items:baseline;font-size:.7rem;font-weight:600;color:#5c6675;text-transform:uppercase;letter-spacing:.06em;padding:0 .25rem .6rem}
   .dark .chd2{color:#8a95a8}
-  .answer-price-sm{font-size:3.4rem;font-weight:250;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums;color:#0e1421}
-  .dark .answer-price-sm{color:#e8edf5}
+
+  /* ═══ Pris-skærmen (Design A: ét svar) ═══
+     Hand-written on purpose: the markup is generated by prisHTML() in the
+     browser and in the Function, so Tailwind never sees it and its purged
+     stylesheet would silently drop every utility used there. */
+  @font-face{font-family:'Manrope';src:url(/manrope.woff2) format('woff2');font-weight:200 800;font-style:normal;font-display:swap}
+  :root{
+    --p-ground:#f4f6fb; --p-card:#fff; --p-line:#e3e7f2; --p-hair:#e9ecf4;
+    --p-ink:#0e1530; --p-ink2:#2b3354; --p-muted:#5b6480; --p-brand:#1b57f5;
+    --p-pill:#14308f; --p-pill-ink:#14308f; --p-seg:#eef1f8; --p-chip-line:#dde2ee;
+    --p-btn:#0e1530; --p-btn-ink:#fff; --p-tip:#0e1530; --p-tip-ink:#fff;
+    --p-lo:#1e9e5a; --p-lo-bg:#e4f6ec; --p-lo-ink:#137a43;
+    --p-mi:#f0a30a; --p-mi-bg:#fef3d7; --p-mi-ink:#9a6700;
+    --p-hi:#e5484d; --p-hi-bg:#fdecec; --p-hi-ink:#b42318;
+  }
+  .dark{
+    /* The same roles on the site's existing dark ramp (page #0d1221, card #161d30). */
+    --p-ground:#0d1221; --p-card:#161d30; --p-line:#242e44; --p-hair:#242e44;
+    --p-ink:#eef2f9; --p-ink2:#c2cce0; --p-muted:#8a95a8; --p-brand:#6d9aff;
+    --p-pill:#2f5be0; --p-pill-ink:#b4c4ff; --p-seg:#0d1221; --p-chip-line:#2d3853;
+    --p-btn:#eef2f9; --p-btn-ink:#0d1221; --p-tip:#080c18; --p-tip-ink:#eef2f9;
+    --p-lo:#2fbf71; --p-lo-bg:rgba(47,191,113,.16); --p-lo-ink:#5fe0a0;
+    --p-mi:#f5b13a; --p-mi-bg:rgba(245,177,58,.16); --p-mi-ink:#f7c667;
+    --p-hi:#ff6b70; --p-hi-bg:rgba(255,107,112,.16); --p-hi-ink:#ff9a9e;
+  }
+  /* body carries Tailwind's font-sans and bg-gray-50, which would win over html,body. */
+  body.min-h-screen{background-color:var(--p-ground);font-family:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}
+  .vh{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;padding:0}
+  .pris-page{max-width:1200px;margin:0 auto;padding:1.25rem 1.25rem 0}
+  .pris{display:flex;flex-direction:column;gap:20px;color:var(--p-ink);font-family:inherit}
+  .pris p{margin:0}
+  .pris button{font-family:inherit}
+
+  /* Hero: label, the price, verdict, one sentence, Din pris / Spotpris */
+  .pris-hero{display:flex;flex-direction:column;gap:10px}
+  .pris-label{font-size:13px;font-weight:600;color:var(--p-muted)}
+  .pris-wd{display:none}
+  .pris-price{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .pris-now{font-size:76px;line-height:.95;font-weight:800;letter-spacing:-3px;font-variant-numeric:tabular-nums}
+  .pris-u{font-size:18px;font-weight:700;color:var(--p-muted)}
+  .pris-vrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  .pris-pill{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:15px;font-size:14px;font-weight:800}
+  .pris-pill i{width:8px;height:8px;border-radius:50%}
+  .pris-pill.t0{background:var(--p-lo-bg);color:var(--p-lo-ink)}.pris-pill.t0 i{background:var(--p-lo)}
+  .pris-pill.t1{background:var(--p-mi-bg);color:var(--p-mi-ink)}.pris-pill.t1 i{background:var(--p-mi)}
+  .pris-pill.t2{background:var(--p-hi-bg);color:var(--p-hi-ink)}.pris-pill.t2 i{background:var(--p-hi)}
+  .pris-sent{font-size:14px;font-weight:600;color:var(--p-ink2)}
+  .pris-sent b{font-weight:800}
+  .pris-modebox{display:none}
+  .pris-cap{font-size:12px;font-weight:600;color:var(--p-muted)}
+
+  /* The two-way switch. Buttons stay small to the eye; the ::after gives each a 44 px target. */
+  .pris-seg{display:inline-flex;gap:3px;background:var(--p-seg);border-radius:12px;padding:3px}
+  .pris-seg button{position:relative;border:0;background:none;padding:5px 10px;border-radius:9px;font-size:12px;font-weight:700;color:var(--p-muted);cursor:pointer;line-height:1.3}
+  .pris-seg button::after{content:"";position:absolute;inset:-9px -1px}
+  .pris-seg button.on{background:var(--p-card);color:var(--p-ink);font-weight:800;box-shadow:0 1px 2px rgba(14,21,48,.12)}
+  .dark .pris-seg button.on{background:#2a3350}
+  .pris-seg button:focus-visible,.pris-period button:focus-visible,.pris-plot:focus-visible{outline:2px solid var(--p-brand);outline-offset:2px}
+
+  /* Period pill */
+  .pris-right{display:flex;flex-direction:column;gap:20px;min-width:0}
+  .pris-period{display:flex;background:var(--p-card);border-radius:28px;padding:4px;box-shadow:0 2px 12px rgba(14,21,48,.08)}
+  .dark .pris-period{box-shadow:0 0 0 1px var(--p-line)}
+  .pris-period button{flex:1;border:0;background:none;padding:12px 0;min-height:44px;border-radius:24px;font-size:15px;font-weight:800;color:var(--p-pill-ink);cursor:pointer}
+  .pris-period button[aria-selected="true"]{background:var(--p-pill);color:#fff}
+
+  /* Chart card */
+  .pris-card{background:var(--p-card);border:1px solid var(--p-line);border-radius:22px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .pris-ch{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .pris-ct{font-size:14px;font-weight:800}
+  .pris-legend{display:none}
+  .pris-legend span{display:flex;align-items:center;gap:6px}
+  .pris-legend i{width:10px;height:10px;border-radius:3px}
+  .pris-legend .t0{background:var(--p-lo)}.pris-legend .t1{background:var(--p-mi)}.pris-legend .t2{background:var(--p-hi)}
+  .pris-cap-card{margin-top:-4px}
+  .pris-plotwrap{position:relative;margin:16px 0 0 24px}
+  .pris-unit{position:absolute;left:-24px;top:-17px;font-size:10px;font-weight:700;color:var(--p-muted)}
+  .pris-yl{position:absolute;right:100%;top:0;height:160px;width:24px}
+  .pris-yl span{position:absolute;right:6px;transform:translateY(-50%);font-size:11px;font-weight:700;color:var(--p-muted);font-variant-numeric:tabular-nums}
+  .pris-plot{position:relative;height:160px;touch-action:pan-y;-webkit-tap-highlight-color:transparent;cursor:crosshair}
+  .pris-gl{position:absolute;left:0;right:0;height:1px;background:var(--p-hair)}
+  .pris-sep{position:absolute;top:0;bottom:0;width:1px;background:var(--p-hair)}
+  .pris-cols{position:absolute;inset:0;display:flex;gap:2px}
+  .pc{flex:1;position:relative;border-radius:3px}
+  .pb{position:absolute;left:0;right:0;border-radius:2px 2px 0 0}
+  .pb.t0{background:var(--p-lo)}.pb.t1{background:var(--p-mi)}.pb.t2{background:var(--p-hi)}
+  .pc.past .pb{opacity:.35}
+  .pc.on{background:rgba(27,87,245,.07)}
+  .dark .pc.on{background:rgba(109,154,255,.14)}
+  .pc.on .pb{filter:brightness(.8)}
+  .dark .pc.on .pb{filter:brightness(1.25)}
+  .pd{position:absolute;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--p-ink)}
+  .pris-fc{position:absolute;top:0;bottom:0;padding:2px 0 0 5px;font-size:10px;font-weight:700;color:var(--p-muted);pointer-events:none}
+  .pris-fc i{display:none}
+  .pris-fc.mid i{display:block;position:absolute;left:-1px;top:0;bottom:0;border-left:1px dashed var(--p-muted);opacity:.55}
+  .pris-tip{position:absolute;z-index:20;background:var(--p-tip);color:var(--p-tip-ink);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;white-space:nowrap;pointer-events:none;box-shadow:0 4px 12px rgba(14,21,48,.28)}
+  .dark .pris-tip{box-shadow:0 0 0 1px #3a4768,0 4px 12px rgba(0,0,0,.5)}
+  .pris-tip[hidden]{display:none}
+  .pris-xl{position:relative;height:14px;margin-top:6px}
+  .pris-xl span{position:absolute;top:0;transform:translateX(-50%);font-size:11px;font-weight:700;color:var(--p-muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .pris-xl span.first{transform:none}
+  .pris-xl .x6{display:none}
+  .pris-xl.days span{font-size:10px}
+  .pp10 .pris-cols{gap:0}
+  .pp10 .pb{border-radius:0}
+
+  /* Two stat tiles and the day list */
+  .pris-tiles{display:flex;gap:12px}
+  .pris-tile{flex:1;min-width:0;background:var(--p-card);border:1px solid var(--p-line);border-radius:18px;padding:14px}
+  .pris-tile .k{font-size:12px;font-weight:700;color:var(--p-muted)}
+  .pris-tile .v{margin-top:4px;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+  .pris-tile small{font-size:12px;font-weight:700;color:var(--p-muted)}
+  .pris-days{background:var(--p-card);border:1px solid var(--p-line);border-radius:22px;padding:16px 16px 6px}
+  .pris-dt{font-size:14px;font-weight:800;margin-bottom:4px}
+  .pris-week{width:100%;border-collapse:collapse;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+  .pris-week th,.pris-week td{padding:9px 6px;text-align:right;border-top:1px solid var(--p-hair);white-space:nowrap}
+  .pris-week thead th{border-top:0;font-size:11px;font-weight:700;color:var(--p-muted)}
+  .pris-week th[scope=row],.pris-week thead th:first-child{text-align:left}
+  .pris-week th[scope=row]{font-weight:800}
+  .pris-week small{display:block;font-size:11px;font-weight:600;color:var(--p-muted)}
+  .pris-week td.real{color:var(--p-brand)}.pris-week td.fc{color:var(--p-muted)}
+  .pris[data-period="2"] .pp10,.pris[data-period="10"] .pp2{display:none}
+  .pris[data-period="2"] .r10,.pris[data-period="10"] .r2{display:none}
+  @media (max-width:420px){.pris-week th,.pris-week td{padding:9px 3px}.pris-week{font-size:12px}}
+  @media (max-width:400px){.pris-xl.days span{font-size:9px}}
+
+  /* Wide: hero card left, period + chart card + tiles right (the A-Desktop mock) */
+  @media (min-width:900px){
+    .pris-page{padding:1.5rem 2.5rem 0}
+    .pris{display:grid;grid-template-columns:minmax(340px,440px) minmax(0,1fr);gap:24px;align-items:stretch}
+    .pris-days{grid-column:1/-1;border-radius:28px;padding:22px 28px 10px}
+    .pris-hero{background:var(--p-card);border:1px solid var(--p-line);border-radius:28px;padding:32px;gap:18px}
+    .pris-label{font-size:14px}
+    .pris-wd{display:inline}
+    .pris-price{gap:10px}
+    .pris-now{font-size:104px;line-height:.92;letter-spacing:-5px}
+    .pris-u{font-size:22px}
+    .pris-vrow{flex-direction:column;align-items:flex-start;gap:18px}
+    .pris-pill{height:34px;padding:0 14px;border-radius:17px;font-size:15px;gap:8px}
+    .pris-pill i{width:9px;height:9px}
+    .pris-sent{font-size:18px;line-height:1.45;color:var(--p-ink2)}
+    .pris-modebox{display:flex;flex-direction:column;gap:8px;margin-top:4px;align-items:flex-start}
+    .pris-seg-hero{border-radius:14px;padding:4px}
+    .pris-seg-hero button{padding:8px 16px;border-radius:11px;font-size:14px}
+    .pris-seg-card,.pris-cap-card{display:none}
+    .pris-period{display:inline-flex;align-self:flex-start;padding:5px;border-radius:30px;box-shadow:0 2px 14px rgba(14,21,48,.08)}
+    .pris-period button{flex:none;padding:12px 26px;border-radius:26px}
+    .pris-card{border-radius:28px;padding:24px 28px 20px;gap:14px}
+    .pris-ct{font-size:17px}
+    .pris-legend{display:flex;gap:16px;font-size:12px;font-weight:700;color:var(--p-muted)}
+    .pris-plotwrap{margin:22px 0 0 40px}
+    .pris-unit{left:-40px;top:-22px;font-size:11px}
+    .pris-yl{height:240px;width:40px}
+    .pris-yl span{right:10px;font-size:12px}
+    .pris-plot{height:240px}
+    .pris-cols{gap:4px}
+    .pp10 .pris-cols{gap:1px}
+    .pc{border-radius:4px}
+    .pb{border-radius:3px 3px 0 0}
+    .pd{width:6px;height:6px;margin-left:-3px}
+    .pris-tip{padding:7px 11px;font-size:13px}
+    .pris-xl{height:16px;margin-top:8px}
+    .pris-xl span{font-size:12px}
+    .pris-xl .x6{display:block}
+    .pris-xl.days span{font-size:12px}
+  }
 
   /* ═══ Light syntax highlighting (YAML / JS / URL) ═══ */
   .hl-attr{color:#0969da}     /* YAML keys, URL query params — blue */
@@ -538,69 +639,33 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-950 dark:text-gray-100 min-h-screen font-sans transition-colors">
 
 <!-- ═══════ TOP NAV — lives outside the <main> sections so the SSR
-     stripping keeps it on every page. Burger menu below 820px. ═══════ -->
+     stripping keeps it on every page. Pris · Smart hjem · Om, the net chip
+     (which opens "Netselskab og indstillinger") and "Hent appen". Prognose,
+     Tariffer, API, the guides and the zone pages are in the footer. ═══════ -->
 <header class="site-nav">
   <div class="site-nav-inner">
-    <a href="/" class="site-logo" aria-label="elpriser.org forside"><span class="bolt">⚡</span>elpriser</a>
+    <a href="/" class="site-logo" aria-label="elpriser.org forside"><span class="mark"><svg width="16" height="16" viewBox="0 0 512 512" aria-hidden="true"><polygon points="294,60 150,290 232,290 206,452 374,206 278,206 304,100" fill="#fff"/></svg></span>elpriser</a>
     <nav class="site-links" aria-label="Hovedmenu">
-      <a href="/dk1" data-nav="dk1">DK1 Vest</a>
-      <a href="/dk2" data-nav="dk2">DK2 Øst</a>
-      <a href="/prognose" data-nav="prognose">Prognose</a>
-      <a href="/tariffer" data-nav="tariffer">Tariffer</a>
-      <a href="/automation" data-nav="automation">Automation</a>
-      <a href="/api" data-nav="api">API</a>
-      <div class="site-guides">
-        <button type="button" id="guidesBtn" aria-haspopup="true" aria-expanded="false" onclick="toggleGuides(event)">Guides
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
-        </button>
-        <div class="site-guides-menu" id="guidesMenu" hidden>
-          <a href="/blog/forsta-din-elpris">Forstå din elpris</a>
-          <a href="/blog/hvornaar-er-stroemmen-billigst">Hvornår er strømmen billigst?</a>
-          <a href="/blog/groennest-og-dyrest">Grønnest og dyrest på samme tid</a>
-          <a href="/blog/elafgift-2028">Elafgift 2028</a>
-          <a href="/blog/home-assistant-elpriser">Home Assistant</a>
-          <a href="/blog/shelly-elpris-automation">Shelly automation</a>
-          <a href="/blog/v2g-v2h-bidirektional-opladning">V2G &amp; V2H</a>
-          <a href="/blog/biler-ladere-v2h-v2g">Biler &amp; ladere</a>
-          <a href="/blog">Alle guides</a>
-          <a href="/om-elpriser">Om elpriser</a>
-        </div>
-      </div>
+      <a href="/" data-nav="pris">Pris</a>
+      <a href="/automation" data-nav="automation">Smart hjem</a>
+      <a href="/om-elpriser" data-nav="om">Om</a>
     </nav>
-    <select id="priceSelector" onchange="onPriceSelectorChange()" class="nav-select" aria-label="Vælg prisområde og prisvisning"></select>
-    <button type="button" class="site-burger" id="burgerBtn" aria-label="Åbn menu" aria-expanded="false" onclick="toggleBurger()">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path id="burgerIcon" d="M4 7h16M4 12h16M4 17h16"/></svg>
-    </button>
-  </div>
-  <div class="site-mobile" id="mobileMenu">
-    <a href="/dk1" data-nav="dk1">DK1 Vest</a>
-    <a href="/dk2" data-nav="dk2">DK2 Øst</a>
-    <a href="/prognose" data-nav="prognose">Prognose</a>
-    <a href="#" onclick="event.preventDefault();toggleBurger();openGlobe()" data-nav="zone">🌐 Prisområder</a>
-    <a href="/tariffer" data-nav="tariffer">Tariffer</a>
-    <a href="/automation" data-nav="automation">Automation</a>
-    <a href="/api" data-nav="api">API</a>
-    <div class="grp">Guides</div>
-    <a href="/blog/forsta-din-elpris">Forstå din elpris</a>
-    <a href="/blog/hvornaar-er-stroemmen-billigst">Hvornår er strømmen billigst?</a>
-    <a href="/blog/elafgift-2028">Elafgift 2028</a>
-    <a href="/blog/home-assistant-elpriser">Home Assistant</a>
-    <a href="/blog/shelly-elpris-automation">Shelly automation</a>
-    <a href="/blog/v2g-v2h-bidirektional-opladning">V2G &amp; V2H</a>
-    <a href="/blog/biler-ladere-v2h-v2g">Biler &amp; ladere</a>
-    <a href="/blog">Alle guides</a>
-    <a href="/om-elpriser">Om elpriser</a>
+    <div class="site-actions">
+      <button type="button" class="chip-btn" id="netChip" onclick="openNetDialog()" aria-haspopup="dialog" aria-label="Netselskab og indstillinger">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+        <span><span class="nc-long" id="netChipLong">DK1 · Vestdanmark</span><span class="nc-short" id="netChipShort">DK1 · Vest</span></span>
+      </button>
+      <button type="button" class="app-btn" onclick="openAppDialog()" aria-haspopup="dialog">Hent appen</button>
+    </div>
   </div>
 </header>
 
-<!-- Mobile tab bar (designoplæg 01). Deliberately outside every <main>: the
-     server strips the sections a URL does not own, and anything inside one
+<!-- Phone: a bar with the two destinations. Deliberately outside every <main>:
+     the server strips the sections a URL does not own, and anything inside one
      would disappear with them. -->
 <nav class="tabbar" id="tabBar" aria-label="Mobilnavigation">
-  <a href="/" data-tab="/"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>Nu</a>
-  <a href="/prognose" data-tab="/prognose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 6-8"/><path d="M14 6h4v4"/></svg>Prognose</a>
-  <a href="/automation" data-tab="/automation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Automation</a>
-  <button type="button" onclick="toggleBurger()" aria-label="Flere sider"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>Mere</button>
+  <a href="/" data-tab="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg>Pris</a>
+  <a href="/automation" data-tab="/automation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Smart hjem</a>
 </nav>
 
 <!-- ═══════ START PAGE ═══════ -->
@@ -795,69 +860,14 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     { "@type": "City", "name": "Hadsund",           "geo": { "@type": "GeoCoordinates", "latitude": 56.7167, "longitude": 10.1167 }, "containedInPlace": { "@type": "AdministrativeArea", "name": "DK1 (Vestdanmark)" } }
   ]
 }</script>
-  <!-- Answer-first hero: the current price IS the headline, like a weather
-       app's temperature. Curve replaces the price table; the advice card
-       turns pris+CO₂ data into one actionable sentence. -->
-  <div class="answer-hero">
-    <div class="answer-col">
-      <h1 class="answer-eyebrow">Elpriser i dag — <span id="heroLoc">Vestdanmark · DK1</span> · lige nu</h1>
-      <div class="answer-price" id="heroPrice">—</div>
-      <div class="answer-unit">kr/kWh inkl. Energinets tariffer, elafgift og moms</div>
-      <div class="answer-pills" id="heroPills"></div>
-      <div class="answer-context" id="heroContext">Tjek aktuel elpris lige nu — time for time for DK1 (Vestdanmark) og DK2 (Østdanmark), inkl. Energinets tariffer, elafgift og moms. Vælg dit netselskab for prisen med nettarif. Opdateret fra Energi Data Service.</div>
-      <div class="answer-advice" id="heroAdvice" style="display:none"></div>
-      <div class="answer-tip" id="heroTimerTip" style="display:none"></div>
-      <div class="answer-toggle" role="tablist" aria-label="Prisområde">
-        <button id="heroBtnDK1" class="on" onclick="setHeroArea('DK1')">DK1 Vest</button>
-        <button id="heroBtnDK2" onclick="setHeroArea('DK2')">DK2 Øst</button>
-      </div>
-    </div>
-    <div class="chartcard">
-      <div class="chd"><span>I dag, time for time</span><span>DKK/kWh</span></div>
-      <div class="yplot"><svg id="heroCurve" viewBox="0 0 720 200" preserveAspectRatio="none" style="min-height:170px"></svg><div class="yax" id="heroYax"></div></div>
-      <div class="chd co2"><span>CO₂-udledning</span><span>g/kWh</span></div>
-      <svg id="heroCo2" class="ygut" viewBox="0 0 720 48" preserveAspectRatio="none" style="height:48px"></svg>
-      <div class="minirow">
-        <div class="mini best"><div class="k">Billigst</div><div class="v" id="heroBestV">—</div><div class="s" id="heroBestS"></div></div>
-        <div class="mini worst"><div class="k">Dyrest</div><div class="v" id="heroWorstV">—</div><div class="s" id="heroWorstS"></div></div>
-        <div class="mini green"><div class="k">Grønnest</div><div class="v" id="heroGreenV">—</div><div class="s" id="heroGreenS"></div></div>
-        <div class="mini tmr"><div class="k">I morgen</div><div class="v" id="heroTmrV">Priser klar ca. kl. 13</div><div class="s" id="heroTmrS"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ Nu og 2 døgn frem ═══
-       The forecast belongs on the front page, not only on /prognose: the
-       homepage already received the "elpriser prognose" searches and ranked
-       18th on them with nothing on the page to answer them. Server-rendered
-       into SSR_FORECAST_CHART so a crawler sees the numbers, then replaced
-       client-side from the same /api/forecast response the hero already
-       fetches — the section costs no extra request.
-       The per-day figures under the curve are text, not path data, because a
-       polyline is what a reader can use and a crawler cannot. -->
-  <div class="fc-wrap">
-    <div class="fc-head">
-      <div>
-        <h2>Nu og 2 døgn frem</h2>
-        <p>Time for time: faktiske børspriser så langt de er afregnet, prognose resten af vejen.</p>
-      </div>
-      <a href="/prognose">Se hele prognosen</a>
-    </div>
-    <div class="chartcard">
-      <div class="chd"><span>Time for time</span><span>DKK/kWh</span></div>
-      <div id="homeForecast"><!--SSR_FORECAST_CHART--></div>
-    </div>
-  </div>
-
-  <div class="text-center mt-8">
-    <button id="gpsBtn" onclick="detectLocation()" class="gps-light">
-      <svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-      <span id="gpsText">Find dit netselskab automatisk</span>
-    </button>
-    <div id="gpsForget" style="display:none" class="mt-2">
-      <button type="button" onclick="forgetNetPick()" class="text-xs text-gray-400 dark:text-gray-500 underline hover:text-gray-600 dark:hover:text-gray-300">Glem mit netselskab</button>
-    </div>
-  </div>
+  <!-- ═══ Pris: the answer first (Design A: ét svar) ═══
+       prisHTML() draws it — on the server into the placeholder below, so the
+       price, the sentence, the bars' numbers and the day list are in the HTML a
+       crawler is served, and again in the browser when the view changes.
+       The page heading is visually hidden: the card's own label is the visible
+       title, and the document still needs a heading that says what it is. -->
+  <h1 class="vh">Elpriser i dag — <span id="heroLoc">Vestdanmark · DK1</span> · lige nu</h1>
+  <div class="pris-page" data-pris-mount><!--SSR_PRIS--></div>
 
   <div class="max-w-4xl mx-auto px-4 py-12">
     <div class="grid sm:grid-cols-2 gap-6">
@@ -884,7 +894,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <a href="/prognose" class="nav-pill">Prognose</a>
 
       <a href="/tariffer" class="nav-pill">Tariffer</a>
-      <a href="/automation" class="nav-pill">Automation</a>
+      <a href="/automation" class="nav-pill">Smart hjem</a>
       <a href="/shelly-tariff" class="nav-pill">Shelly Live Tariff</a>
       <a href="https://www.danskenergi.dk/vejledning/nettilslutning/find-dit-netselskab" target="_blank" rel="noopener" class="nav-pill">Find dit netselskab &rarr;</a>
     </div>
@@ -905,7 +915,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <p id="readerLive"><!--SSR_READER_SUMMARY--></p>
       <p id="readerDay" class="mt-3"></p>
       <p class="mt-3">Den samlede elpris pr. kWh består af spotprisen fra elbørsen Nord Pool plus nettarif til dit lokale netselskab, systemtarif og transmissionstarif til Energinet, elafgift og 25 % moms. Vælg dit netselskab ovenfor for at se den præcise pris for din adresse time for time.</p>
-      <p class="mt-3">CO₂-tallene viser Energinets prognose for udledningen pr. kWh, time for time. De billigste timer er ikke altid de grønneste — midt på dagen kan lav pris falde sammen med høj import, så tjek begge kurver, hvis du vil bruge strømmen, når den både er billig og grøn. Se også <a href="/prognose" class="text-brand-500 underline">elprisprognosen for de næste 10 døgn</a> eller <a href="/automation" class="text-brand-500 underline">automatisér dit forbrug</a> efter de billigste timer.</p>
+      <p class="mt-3">CO₂-tallene viser Energinets prognose for udledningen pr. kWh, time for time. De billigste timer er ikke altid de grønneste — midt på dagen kan lav pris falde sammen med høj import, så tjek både pris og CO₂, hvis du vil bruge strømmen, når den både er billig og grøn. Se også <a href="/prognose" class="text-brand-500 underline">elprisprognosen for de næste 10 døgn</a> eller <a href="/automation" class="text-brand-500 underline">automatisér dit forbrug</a> efter de billigste timer.</p>
     </article>
 
     <!-- FAQ — static crawlable content for SEO -->
@@ -1093,7 +1103,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
           <ul class="space-y-1 ml-4 list-disc">
             <li>Flyt forbrug til <strong class="text-gray-800 dark:text-gray-200">de billigste timer</strong> — oplad elbil, kør vaskemaskine og opvaskemaskine om natten.</li>
             <li>Tjek <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a> og planlæg dit forbrug efter de kommende dages priser.</li>
-            <li>Brug <a href="/automation" class="text-brand-500 underline">automation</a> til at styre varmepumpe, Shelly og smart home efter de billigste timer.</li>
+            <li>Brug <a href="/automation" class="text-brand-500 underline">Smart hjem</a> til at styre varmepumpe, Shelly og smart home efter de billigste timer.</li>
             <li>Sammenlign <a href="/tariffer" class="text-brand-500 underline">nettariffer</a> — du kan ikke vælge netselskab, men du kan tilpasse forbruget til lavsats-timerne.</li>
             <li>Overvej variabel elpris (spotaftale) fremfor fastpris — i de fleste år er spotpris billigst.</li>
           </ul>
@@ -1105,42 +1115,16 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 </main>
 
 <!-- ═══════ PRICE PAGE ═══════ -->
-<main style="display:none" data-page="prices" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
-  <!-- ═══ Nu og 2 døgn frem, for this page's own view ═══
-       Same curve as the front page, but drawn from the very data and cvt()
-       conversion the table below uses — on /dk1/n1 it includes N1's nettarif,
-       in "Inkl tarif" it drops elafgift — so the chart, the big number and the
-       table can never disagree.
-       It sits above the page's heading by request, so its title is not a
-       heading element (a level-2 heading ahead of the page's level-1 heading
-       would put the outline out of order), and its box is reserved at full
-       height before the data arrives, or the heading below would jump ~320 px
-       down under the reader. Written without literal tags: crawlers and the
-       live test read markup inside comments too. -->
-  <div class="fc-wrap fc-prices" id="pricesForecastWrap">
-    <div class="fc-head">
-      <div>
-        <p class="fc-title">Nu og 2 døgn frem</p>
-        <p>Time for time: faktiske børspriser så langt de er afregnet, prognose resten af vejen.</p>
-      </div>
-      <a href="/prognose">Se hele prognosen</a>
-    </div>
-    <div class="chartcard">
-      <div class="chd"><span>Time for time</span><span>DKK/kWh</span></div>
-      <div id="pricesForecast"></div>
-    </div>
-  </div>
+<main style="display:none" data-page="prices" class="py-4">
+  <!-- Same Pris screen as the front page, for this page's own area/net. Drawn
+       from /api/forecast with the mode the Din pris / Spotpris switch implies,
+       so on /dk1/n1 it includes N1's nettarif. -->
+  <div class="pris-page" data-pris-mount><!--SSR_PRIS--></div>
+  <div class="max-w-3xl mx-auto px-2 sm:px-4 pt-6">
   <!-- SSR: unique per-URL intro (H1 + live-price sentence + net coverage +
        tariff rates + PriceSpecification JSON-LD), injected by functions/[[path]].js -->
   <!--SSR_PRICES_INTRO-->
-  <!-- Answer block — the current price IS the headline, same as the front page -->
-  <div id="pricesAnswer" class="text-center mt-4 mb-5" style="display:none">
-    <div class="page-eyebrow" id="pricesAnswerLoc"></div>
-    <div class="answer-price-sm" id="pricesAnswerPrice">—</div>
-    <div class="answer-unit" id="pricesAnswerUnit">kr/kWh</div>
-    <div class="answer-pills" id="pricesAnswerPills" style="justify-content:center"></div>
-  </div>
-  <div class="subcard mt-2">
+  <div class="subcard mt-4">
     <div class="chd2"><span id="tableTitle">Time for time · 4 dage tilbage, 3 døgn frem</span><span>DKK/kWh</span></div>
     <div id="tableView">
       <div class="text-center py-12 text-gray-400 dark:text-gray-500" id="loadingIndicator">
@@ -1159,6 +1143,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     </div>
   </div>
   <p class="text-center text-xs text-gray-400 dark:text-gray-600 mt-6">Tip: Bogmærk denne side</p>
+  </div>
 </main>
 
 <!-- ═══════ TARIFF PAGE ═══════ -->
@@ -1237,7 +1222,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <p>Du kan ikke skifte netselskab — det følger adressen. Til gengæld kan du flytte forbruget, og det er den eneste håndtag, der virker på nettariffen.</p>
       <ul class="list-disc pl-5 space-y-1.5">
         <li><strong class="text-gray-900 dark:text-white">Flyt de store forbrugere ud af spidslasten.</strong> Elbil, varmepumpe, vaskemaskine og opvasker er de fire, der batter. Flytter du dem fra spidslast til lavlast, sparer du både på nettariffen og som regel på spotprisen samtidig.</li>
-        <li><strong class="text-gray-900 dark:text-white">Automatisér det.</strong> Manuel disciplin holder sjældent. <a href="/automation" class="text-brand-500 underline">Automation-siden</a> genererer klar-til-brug opsætning til Home Assistant og Shelly, der selv følger dagens billigste timer.</li>
+        <li><strong class="text-gray-900 dark:text-white">Automatisér det.</strong> Manuel disciplin holder sjældent. <a href="/automation" class="text-brand-500 underline">Smart hjem-siden</a> genererer klar-til-brug opsætning til Home Assistant og Shelly, der selv følger dagens billigste timer.</li>
         <li><strong class="text-gray-900 dark:text-white">Vær opmærksom på effekttarif.</strong> Nettarif C betales pr. kWh, men enkelte netselskaber og kundegrupper afregnes helt eller delvist efter <em>effekt</em> — altså hvor mange kW du trækker samtidig, ikke hvor mange kWh du bruger i alt. Dér hjælper det ikke kun at flytte forbruget: du skal undgå at køre elbil, varmepumpe og ovn på én gang. Tjek din regning eller dit netselskabs prisblad, hvis du er i tvivl om, hvilken model du er på.</li>
       </ul>
       <p>En sidste ting: spar ikke på nettariffen ved at bruge strøm på et tidspunkt, hvor spotprisen er høj. Det er den samlede pris, der betaler sig at optimere, og den viser <a href="/" class="text-brand-500 underline">forsiden</a> time for time med nettariffen lagt oveni.</p>
@@ -1287,7 +1272,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   <div class="flex items-center justify-between mb-4">
     <div>
       <div class="page-eyebrow">Styr dit elforbrug efter spotpriserne og samlede elpriser</div>
-      <h2 class="page-title">Automation</h2>
+      <h2 class="page-title">Smart hjem</h2>
     </div>
     <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
       <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1566,7 +1551,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
   <!-- Cross-link -->
   <div class="text-center text-xs text-gray-400 dark:text-gray-500 mt-4">
-    Se også: <a href="/automation" class="text-brand-500 underline">Automation</a> — styr enheder automatisk efter de billigste timer
+    Se også: <a href="/automation" class="text-brand-500 underline">Smart hjem</a> — styr enheder automatisk efter de billigste timer
   </div>
 </main>
 
@@ -1826,7 +1811,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         </div>
         <div class="px-4 py-3">
           <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/schedule?area=DK1&amp;strategy=cheapest_n&amp;hours=6</p>
-          <p class="text-xs mt-1">Hele døgnets ON/OFF-plan for den valgte strategi (se <a href="/automation" class="text-brand-500 underline">automation-siden</a>).</p>
+          <p class="text-xs mt-1">Hele døgnets ON/OFF-plan for den valgte strategi (se <a href="/automation" class="text-brand-500 underline">Smart hjem-siden</a>).</p>
         </div>
         <div class="px-4 py-3">
           <p class="font-mono text-xs text-brand-600 dark:text-brand-400">GET /api/forecast?area=DK1&amp;mode=inkl_alt[&amp;gln=…]</p>
@@ -1927,7 +1912,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
     <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
       <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Se også:</p>
       <div class="flex flex-wrap gap-2">
-        <a href="/automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Automation guide →</a>
+        <a href="/automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Smart hjem →</a>
         <a href="/blog/shelly-elpris-automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Shelly-script →</a>
         <a href="/blog/home-assistant-elpriser" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Home Assistant guide →</a>
       </div>
@@ -1990,7 +1975,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
     </section>
     <section>
       <h3 class="font-bold text-gray-900 dark:text-white mb-2">API til udviklere</h3>
-      <p>Elpriser.org tilbyder et gratis REST API til smart home-integration. Understøtter Home Assistant, Shelly og andre systemer. Se <a href="/automation" class="text-brand-500 underline">Automation-siden</a> for kodeeksempler og dokumentation.</p>
+      <p>Elpriser.org tilbyder et gratis REST API til smart home-integration. Understøtter Home Assistant, Shelly og andre systemer. Se <a href="/automation" class="text-brand-500 underline">Smart hjem-siden</a> for kodeeksempler og dokumentation.</p>
     </section>
   </div>
 </main>
@@ -2363,7 +2348,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
           <span class="font-bold text-green-600 dark:text-green-400">~500-1.000 kr/år</span>
         </div>
       </div>
-      <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">Estimater baseret på prisforskelle mellem billigste og dyreste timer. Se mere på <a href="/automation" class="text-brand-500 underline">automation-siden</a>.</p>
+      <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">Estimater baseret på prisforskelle mellem billigste og dyreste timer. Se mere på <a href="/automation" class="text-brand-500 underline">Smart hjem-siden</a>.</p>
     </section>
 
     <section>
@@ -2686,7 +2671,7 @@ entities:
       <ol class="space-y-2 ml-4 list-decimal">
         <li><strong class="text-gray-800 dark:text-gray-200">Start med V2L</strong> — hvis din bil har en 230V-udgang (de fleste nye EV'er) kan du allerede bruge den til havefester, byggeprojekter og strømsvigt-køleskab.</li>
         <li><strong class="text-gray-800 dark:text-gray-200">Vælg V2H-klar bil ved næste indkøb</strong> — se den <a href="/blog/biler-ladere-v2h-v2g" class="text-brand-500 underline">opdaterede liste over V2H/V2G-biler og ladere</a>.</li>
-        <li><strong class="text-gray-800 dark:text-gray-200">Optimér først med smart opladning</strong> — selv uden bidirektional teknologi kan du spare 30-50% ved kun at oplade i de billigste timer. Se vores <a href="/automation" class="text-brand-500 underline">automation-guide</a>.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Optimér først med smart opladning</strong> — selv uden bidirektional teknologi kan du spare 30-50% ved kun at oplade i de billigste timer. Se vores <a href="/automation" class="text-brand-500 underline">Smart hjem-side</a>.</li>
         <li><strong class="text-gray-800 dark:text-gray-200">Følg med i pilotprojekter</strong> — Energinet, Andel og NRGi har løbende V2G-forsøg i Danmark.</li>
       </ol>
     </section>
@@ -2877,7 +2862,7 @@ entities:
       <div class="flex flex-wrap gap-2">
         <a href="/blog/v2g-v2h-bidirektional-opladning" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">← V2G, V2H & V2L forklaret</a>
         <a href="/blog/forsta-din-elpris" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Forstå din elpris →</a>
-        <a href="/automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Automation API →</a>
+        <a href="/automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Smart hjem →</a>
       </div>
     </div>
   </article>
@@ -3287,7 +3272,7 @@ entities:
       <ol class="space-y-2 ml-4 list-decimal">
         <li><strong class="text-gray-800 dark:text-gray-200">Tjek hvad din elbil og varmepumpe er sat til.</strong> Står de på fast natteopladning, rammer de i dag de billige timer på under en fjerdedel af årets dage. Flyt dem til de faktisk billigste timer — se dem for i dag på <a href="/dk1" class="text-brand-500 underline">DK1</a> eller <a href="/dk2" class="text-brand-500 underline">DK2</a>.</li>
         <li><strong class="text-gray-800 dark:text-gray-200">Lad om dagen, hvis bilen holder hjemme.</strong> Hjemmearbejde, weekend eller ferie: middagstimerne er nu billigst på 68 % af dagene, og på solrige dage er forskellen stor.</li>
-        <li><strong class="text-gray-800 dark:text-gray-200">Automatisér efter prisen i stedet for efter klokken.</strong> Med et gratis API kan Home Assistant, Shelly eller en anden styring vælge de billigste timer dag for dag — se <a href="/automation" class="text-brand-500 underline">automation-guiden</a>.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Automatisér efter prisen i stedet for efter klokken.</strong> Med et gratis API kan Home Assistant, Shelly eller en anden styring vælge de billigste timer dag for dag — se <a href="/automation" class="text-brand-500 underline">Smart hjem-siden</a>.</li>
         <li><strong class="text-gray-800 dark:text-gray-200">Husk at billig ikke altid er grøn.</strong> De billigste timer har ikke altid den laveste CO₂-udledning. Begge dele vises time for time på forsiden.</li>
       </ol>
     </section>
@@ -3303,7 +3288,7 @@ entities:
       <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Læs også:</p>
       <div class="flex flex-wrap gap-2">
         <a href="/blog/forsta-din-elpris" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Forstå din elpris →</a>
-        <a href="/automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Automation →</a>
+        <a href="/automation" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Smart hjem →</a>
         <a href="/blog/elafgift-2028" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Elafgift 2028 →</a>
       </div>
     </div>
@@ -3324,7 +3309,7 @@ entities:
 <footer class="mt-10 py-6 border-t border-gray-200 dark:border-gray-800">
   <div class="max-w-3xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-600">
     <nav class="mb-3" aria-label="Sider">
-      <a href="/dk1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK1</a> · <a href="/dk2" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK2</a> · <a href="/tariffer" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Nettariffer</a> · <a href="/prognose" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elprisprognose</a> · <a href="/se3" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Sverige</a> · <a href="/no1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Norge</a> · <a href="/automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Automation</a> · <a href="/api" class="hover:text-gray-600 dark:hover:text-gray-400 underline">API</a> · <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser</a>
+      <button type="button" onclick="openNetDialog()" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Vælg netselskab</button> · <a href="/dk1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK1</a> · <a href="/dk2" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elpriser DK2</a> · <a href="/tariffer" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Nettariffer</a> · <a href="/prognose" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Elprisprognose</a> · <a href="/se3" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Sverige</a> · <a href="/no1" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Norge</a> · <a href="/automation" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Smart hjem</a> · <a href="/api" class="hover:text-gray-600 dark:hover:text-gray-400 underline">API</a> · <a href="/om-elpriser" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Om elpriser</a>
     </nav>
     <p class="mb-3"><a href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Hent appen til Android i Google Play</a></p>
     <p class="mb-3"><a href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Hent appen til iPhone og iPad i App Store</a></p>
@@ -3337,6 +3322,44 @@ entities:
     <p>&copy; Elpriser.org &mdash; Data fra <a href="https://www.energidataservice.dk" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Energi Data Service</a> (Energinet). Åbne datasæt på <a href="https://huggingface.co/Elpriser" target="_blank" rel="noopener" class="hover:text-gray-600 dark:hover:text-gray-400 underline">Hugging Face</a>.</p>
   </div>
 </footer>
+
+<!-- ═══════ Netselskab og indstillinger — opened by the net chip in the header.
+     Outside every <main>, so it exists on every page. The position lookup lives
+     here, with the net lists; the ids are the ones detectLocation() drives. ═══════ -->
+<dialog id="netDialog" class="pris-dialog" aria-labelledby="netDialogTitle">
+  <div class="pd-head">
+    <h2 id="netDialogTitle">Netselskab og indstillinger</h2>
+    <button type="button" class="pd-x" onclick="closeNetDialog()" aria-label="Luk"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="pd-body">
+    <div class="text-center mt-8">
+      <button id="gpsBtn" onclick="detectLocation()" class="gps-light">
+        <svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="gpsText">Find dit netselskab automatisk</span>
+      </button>
+      <div id="gpsForget" style="display:none" class="mt-2">
+        <button type="button" onclick="forgetNetPick()" class="text-xs text-gray-400 dark:text-gray-500 underline hover:text-gray-600 dark:hover:text-gray-300">Glem mit netselskab</button>
+      </div>
+    </div>
+    <div><p class="pd-gt">Vestdanmark · DK1</p><div class="pd-links" id="netDlgDK1"></div></div>
+    <div><p class="pd-gt">Østdanmark · DK2</p><div class="pd-links" id="netDlgDK2"></div></div>
+    <div><p class="pd-gt">Andre prisområder</p><div class="pd-links"><button type="button" class="gps-light" onclick="closeNetDialog();openGlobe()">Norge, Sverige, Finland og Holland</button></div></div>
+    <p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p>
+  </div>
+</dialog>
+<dialog id="appDialog" class="pris-dialog" aria-labelledby="appDialogTitle">
+  <div class="pd-head">
+    <h2 id="appDialogTitle">Hent appen</h2>
+    <button type="button" class="pd-x" onclick="closeAppDialog()" aria-label="Luk"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="pd-body">
+    <p class="pd-foot">Elprisen lige nu, i morgen og de næste 10 døgn — med dit netselskab — direkte på telefonen.</p>
+    <div class="pd-links">
+      <a href="https://apps.apple.com/dk/app/id6820474476" rel="noopener">App Store — iPhone og iPad</a>
+      <a href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener">Google Play — Android</a>
+    </div>
+  </div>
+</dialog>
 
 <script>
 const NETS={DK1:[
@@ -3361,15 +3384,19 @@ const ENERGINET_GLN='5790000432752';
 const DAY=['sø','ma','ti','on','to','fr','lø'];
 const MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 const MON_FULL=['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
+// The area cards on the front page: Din pris (inkl. alt) and Spotpris. The four
+// other price modes are no longer a view the site offers; old links to them
+// land on the nearest of these two (see normaliseRoute).
 const ZONE_BTNS=[
-  {mode:'inkl_alt',label:'Inkl alt',cls:'zone-btn-primary'},
-  {mode:'spot_inkl',label:'Elspot inkl moms',cls:'zone-btn-soft'},
-  {mode:'spot_ex',label:'Elspot ex moms',cls:'zone-btn-ghost'},
-  {mode:'inkl_alt_minus',label:'Inkl alt minus afgift',cls:'zone-btn-ghost'},
+  {mode:'inkl_alt',label:'Din pris — inkl. alt',cls:'zone-btn-primary'},
+  {mode:'spot_inkl',label:'Kun spotpris',cls:'zone-btn-soft'},
 ];
 const isDark=()=>document.documentElement.classList.contains('dark');
 
 let S={area:'DK1',mode:'spot_inkl',gln:null,netName:'',view:'table',_loadId:0,weekOffset:0};
+// The Pris screen's own state: which area and net it describes, Din pris or
+// Spotpris, and the period pill (2 = næste 2 døgn, 10 = døgn 3-10).
+const PV={area:'DK1',slug:null,view:'din',period:2,days:null,key:'',_load:0};
 let priceData={},tariffCache={},allTariffsLoaded=false,enCharges=null,fcDays={};
 
 
@@ -3531,7 +3558,7 @@ function matchNet(n){
 /** A visit to a net page by ANY route — GPS, the menu, a chip, a shared link —
  *  is a choice of net company worth remembering. */
 function rememberNetFromHash(h){
-  const m=/^(DK[12])\/net_[a-z_]+\/([a-z0-9-]+)$/.exec(h||'');
+  const m=/^(DK[12])\/(?:net|spot)_[a-z_]+\/([a-z0-9-]+)$/.exec(h||'');
   if(!m||!netBySlug(m[1],m[2]))return;
   const pick=`${m[1]}/net_inkl_alt/${m[2]}`;
   if(readNetPick()!==pick)saveNetPick(pick);
@@ -3567,38 +3594,59 @@ async function maybeAutoDetect(){
 }
 
 // ═══ TOP NAV ═══
-function toggleBurger(){
-  const m=document.getElementById('mobileMenu'),b=document.getElementById('burgerBtn');
-  const open=!m.classList.contains('open');
-  m.classList.toggle('open',open);
-  b.setAttribute('aria-expanded',open);
-  document.getElementById('burgerIcon').setAttribute('d',open?'M6 6l12 12M18 6L6 18':'M4 7h16M4 12h16M4 17h16');
-  if(open)track('burger_open');
+// The two dialogs (net chip → "Netselskab og indstillinger", "Hent appen") are
+// native <dialog>s outside every <main>, so they exist on every page.
+function openDlg(id){
+  const d=document.getElementById(id);
+  if(!d)return;
+  if(typeof d.showModal==='function'){if(!d.open)d.showModal();}else d.setAttribute('open','');
 }
-function toggleGuides(e){
-  e.stopPropagation();
-  const m=document.getElementById('guidesMenu'),b=document.getElementById('guidesBtn');
-  const open=m.hidden;
-  m.hidden=!open;
-  b.setAttribute('aria-expanded',open);
+function closeDlg(id){
+  const d=document.getElementById(id);
+  if(!d)return;
+  if(typeof d.close==='function')d.close();else d.removeAttribute('open');
 }
-// Close menus on outside click / after navigating via a menu link
+function openNetDialog(){track('net_dialog_open');markNetDialog();openDlg('netDialog');}
+function closeNetDialog(){closeDlg('netDialog');}
+function openAppDialog(){track('app_dialog_open');openDlg('appDialog');}
+function closeAppDialog(){closeDlg('appDialog');}
+// A click on the backdrop lands on the <dialog> itself (it has no padding).
 document.addEventListener('click',e=>{
-  const gm=document.getElementById('guidesMenu');
-  if(gm&&!gm.hidden&&!e.target.closest('.site-guides')){gm.hidden=true;document.getElementById('guidesBtn')?.setAttribute('aria-expanded','false');}
-  if(e.target.closest('#mobileMenu a, #guidesMenu a')){
-    document.getElementById('mobileMenu')?.classList.remove('open');
-    if(gm)gm.hidden=true;
+  if(e.target instanceof HTMLDialogElement&&e.target.classList.contains('pris-dialog'))closeDlg(e.target.id);
+});
+/** The net chip: "N1 · Vestdanmark" (phone: "N1 · Vest"), or "DK1 · Vest" with no net. */
+function updateNetChip(area,netName){
+  const vest=area==='DK2'?'Øst':'Vest',long=area==='DK2'?'Østdanmark':'Vestdanmark',pre=netName||area;
+  const a=document.getElementById('netChipLong'),b=document.getElementById('netChipShort');
+  if(a)a.textContent=`${pre} · ${long}`;
+  if(b)b.textContent=`${pre} · ${vest}`;
+}
+/** The net lists in the dialog: one link per net, the current one marked. */
+function buildNetDialog(){
+  for(const area of['DK1','DK2']){
+    const el=document.getElementById('netDlg'+area);
+    if(!el)continue;
+    const lc=area.toLowerCase();
+    el.innerHTML=`<a href="${urlForRoute(area+'/inkl_alt')}" data-net="">Uden netselskab</a>`+
+      NETS[area].map(n=>`<a href="${urlForRoute(area+'/net_inkl_alt/'+n.slug)}" data-net="${n.slug}">${n.name}</a>`).join('');
   }
-},{passive:true});
-// Highlight the current page in the nav (desktop links + mobile list + Guides)
+}
+function markNetDialog(){
+  document.querySelectorAll('#netDialog .pd-links a[data-net]').forEach(a=>{
+    const area=a.closest('.pd-links').id==='netDlgDK2'?'DK2':'DK1';
+    a.classList.toggle('on',area===PV.area&&a.dataset.net===(PV.slug||''));
+  });
+}
+// Highlight the current destination in the header: Pris, Smart hjem or Om.
 function updateNavActive(){
   const dp=document.querySelector('[data-page].active')?.getAttribute('data-page')||'start';
-  const key=dp==='prices'?(S.area==='DK2'?'dk2':'dk1'):dp;
-  document.querySelectorAll('.site-links a[data-nav], .site-mobile a[data-nav]').forEach(a=>
-    a.classList.toggle('on',a.dataset.nav===key));
-  const isGuide=dp.startsWith('blog-')||dp==='om-elpriser';
-  document.getElementById('guidesBtn')?.classList.toggle('on',isGuide);
+  const key=dp==='automation'||dp==='shelly-tariff'?'automation':dp==='om-elpriser'?'om'
+    :dp.startsWith('blog')||dp==='api'?'':'pris';
+  document.querySelectorAll('.site-links a[data-nav]').forEach(a=>{
+    const on=a.dataset.nav===key;
+    a.classList.toggle('on',on);
+    if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+  });
 }
 
 // ═══ ADFÆRDSTRACKING (GA4) ═══
@@ -3609,7 +3657,7 @@ function track(name,params){try{gtag('event',name,{page:document.querySelector('
 function initBehaviorTracking(){
   // User properties: theme + preferred area follow the user across sessions
   try{
-    gtag('set','user_properties',{color_scheme:isDark()?'dark':'light',preferred_area:heroArea||S.area||'DK1'});
+    gtag('set','user_properties',{color_scheme:isDark()?'dark':'light',preferred_area:PV.area||S.area||'DK1'});
   }catch(_){}
 
   // Click delegation: outbound links vs. internal navigation, classified by
@@ -3628,7 +3676,6 @@ function initBehaviorTracking(){
       :a.classList.contains('net-chip')?'net_chip'
       :a.classList.contains('zone-btn')?'zone_button'
       :a.closest('footer')?'footer'
-      :a.closest('.answer-advice')?'advice_card'
       :null;
     if(ctx)track('nav_click',{link_url:href,link_text:(a.textContent||'').trim().slice(0,40),component:ctx});
   },{passive:true});
@@ -3702,8 +3749,24 @@ function hashToPath(h){
 const PRIS_PARAM={spot_ex:'spot-ex',spot_inkl:'spot',inkl_alt_minus:'alt-uden-afgift',net_inkl_tarif:'tarif'};
 const PRIS_MODE=Object.fromEntries(Object.entries(PRIS_PARAM).map(([m,p])=>[p,m]));
 
+/** The Pris screen has two views — Din pris and Spotpris — and so one route key
+ *  each: `DK1/inkl_alt` (`DK1/net_inkl_alt/n1` on a net page) and `DK1/spot_inkl`
+ *  (`DK1/spot_inkl/n1`). The other four modes are still understood by the API,
+ *  and old links to them still open: they land on the nearest of the two. */
+function normaliseRoute(h){
+  const m=/^(DK[12])\/([a-z_]+)(?:\/([a-z0-9-]+))?(.*)$/.exec(h||'');
+  if(!m)return h;
+  const [,area,mode,slug,tail]=m;
+  if(mode.startsWith('spot'))return `${area}/spot_inkl${slug?'/'+slug:''}${tail}`;
+  if(mode.startsWith('net_')||(slug&&mode!=='inkl_alt'&&mode!=='inkl_alt_minus'))return slug?`${area}/net_inkl_alt/${slug}${tail}`:`${area}/inkl_alt`;
+  return `${area}/inkl_alt`;
+}
+
 /** The route key for the page as it is right now. */
 function routeFromLocation(){
+  return normaliseRoute(rawRouteFromLocation());
+}
+function rawRouteFromLocation(){
   const hash=decodeURIComponent(location.hash.slice(1));
   if(hash)return hash;                       // an old or hand-typed link: honoured, then rewritten
   const base=pathToHash(location.pathname);  // 'DK1/inkl_alt' | 'DK1/net_inkl_alt/n1' | 'tariffer' | ''
@@ -3711,7 +3774,7 @@ function routeFromLocation(){
   const mode=pris&&PRIS_MODE[pris];
   if(!mode||!/^DK[12]\//.test(base))return base;
   const [area,,slug]=base.split('/');
-  if(slug)return mode==='net_inkl_tarif'?`${area}/net_inkl_tarif/${slug}`:base;   // a net page: tarif is its one variant
+  if(slug)return mode==='net_inkl_tarif'?`${area}/net_inkl_tarif/${slug}`:mode.startsWith('spot')?`${area}/${mode}/${slug}`:base;  // a net page: spot, or its tarif variant
   return mode==='net_inkl_tarif'?base:`${area}/${mode}`;                          // an area page: the spot variants
 }
 
@@ -3729,6 +3792,8 @@ function urlForRoute(h){
     return `/${area}`;
   }
   const p=PRIS_PARAM[mode];
+  // Spotpris on a net page stays on that net's address: /dk1/n1?pris=spot.
+  if(slug&&netBySlug(m[1],slug)&&mode.startsWith('spot'))return `/${area}/${slug}`+(p?`?pris=${p}`:'');
   return `/${area}`+(p?`?pris=${p}`:'');
 }
 
@@ -3764,18 +3829,41 @@ function dataPageFor(h){
   return h.replace(/\//g,'-'); // blog/x -> blog-x; others map 1:1
 }
 function markTab(){
-  const p=location.pathname;
+  const p=location.pathname,auto=p==='/automation'||p==='/shelly-tariff';
   document.querySelectorAll('#tabBar a[data-tab]').forEach(a=>{
-    // "Nu" stays lit on the homepage only; the others on their own section.
-    const t=a.dataset.tab;
-    a.classList.toggle('on', t==='/' ? (p==='/'||p==='') : p.startsWith(t));
+    // Smart hjem is the automation pages; Pris is everything else.
+    const on=a.dataset.tab==='/automation'?auto:!auto;
+    a.classList.toggle('on',on);
+    if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
   });
+}
+/** Which area and net the Pris screen and the net chip describe: the URL's own
+ *  when it is a price page, otherwise the net the visitor has remembered. */
+function syncNetState(h){
+  const m=/^(DK[12])\/([a-z_]+)(?:\/([a-z0-9-]+))?/.exec(h||'');
+  let area='DK1',slug=null;
+  if(m){
+    area=m[1];
+    const n=m[3]?netBySlug(area,m[3])||(NETS[area]||[]).find(x=>x.gln===m[3]):null;
+    slug=n?n.slug:null;
+    PV.view=m[2]==='spot_inkl'?'spot':'din';
+  }else{
+    const pick=readNetPick();
+    if(pick){const p=pick.split('/');area=p[0];slug=p[2];}
+    PV.view='din';
+  }
+  PV.area=area;PV.slug=slug;
+  const net=slug?netBySlug(area,slug):null;
+  updateNetChip(area,net?net.name:'');
+  const hl=document.getElementById('heroLoc');
+  if(hl)hl.textContent=area==='DK2'?'Østdanmark · DK2':'Vestdanmark · DK1';
 }
 function route(){
   markTab();
-  syncPriceSelector();
   let h=routeFromLocation();
   rememberNetFromHash(h);
+  syncNetState(h);
+  restoreNetPick();
   // Section not in this page's HTML (server-stripped) → full navigation to
   // the section's own URL, carrying the hash so in-page state survives.
   const dp=dataPageFor(h);
@@ -3800,7 +3888,7 @@ function route(){
   // Helper: send page_view with clean path for GA4
   const pv=(title,path)=>gtag('event','page_view',{page_title:title,page_location:location.origin+(path||location.pathname)});
   if(!h){
-    document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpriser i dag og i morgen — strømpris lige nu, time for time';pv('Start','/');restoreNetPick();maybeAutoDetect();return;
+    document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpriser i dag og i morgen — strømpris lige nu, time for time';pv('Start','/');restoreNetPick();maybeAutoDetect();loadPris();return;
   }
   if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Nettariffer 2026: Nettarif C for alle 14 netselskaber, pr. kWh';pv('Tariffer','/tariffer');loadTariffPage();return;}
   if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpriser API til Home Assistant og Shelly — gratis, med kode';pv('Automation','/automation');loadAutomationPage();return;}
@@ -3829,70 +3917,185 @@ function route(){
   const pTitle=S.area+(S.netName?' '+S.netName:'')+' — '+mode;
   document.title=pTitle+' — elpriser.org';
   pv(pTitle,'/'+(S.area==='DK1'?'dk1':'dk2'));
-  updateHeader();updateWeekNav();S._loadId++;loadPriceData(S._loadId);
+  updateHeader();updateWeekNav();S._loadId++;loadPriceData(S._loadId);loadPris();
 }
 window.addEventListener('hashchange',route);   // an old #link typed or followed by hand
 window.addEventListener('popstate',route);     // back / forward between views of the same page
 
-// ═══ START HERO (answer-first) ═══
-let heroArea='DK1';
-function setHeroArea(a){
-  heroArea=a;
-  document.getElementById('heroBtnDK1').classList.toggle('on',a==='DK1');
-  document.getElementById('heroBtnDK2').classList.toggle('on',a==='DK2');
-  document.getElementById('heroLoc').textContent=a==='DK1'?'Vestdanmark · DK1':'Østdanmark · DK2';
-  track('hero_area_change',{area:a});
-  try{gtag('set','user_properties',{preferred_area:a});}catch(_){}
-  loadStartHero();
+// ═══ START: Pris-skærmens styring ═══
+// prisHTML() further down is the drawing; this is what feeds it and reacts to it.
+// One request — /api/forecast, which carries today, tomorrow and the days after —
+// serves both periods; Din pris / Spotpris is the only thing that asks again.
+const cphDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Copenhagen'}).format(new Date());
+const cphHour=()=>+new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Copenhagen',hour:'2-digit',hourCycle:'h23'}).format(new Date());
+function prisMount(){return document.querySelector('[data-page].active [data-pris-mount]');}
+function prisNet(){return PV.slug?netBySlug(PV.area,PV.slug):null;}
+/** Din pris is the net's all-in price when a net is chosen, otherwise the area's;
+ *  Spotpris is the spot price incl. moms. The other four modes are API-only now. */
+function prisQuery(){
+  if(PV.view==='spot')return `/api/forecast?area=${PV.area}&mode=spot_inkl`;
+  const net=prisNet();
+  return net?`/api/forecast?area=${PV.area}&mode=net_inkl_alt&gln=${net.gln}`:`/api/forecast?area=${PV.area}&mode=inkl_alt`;
 }
-async function loadStartHero(){
-  if(!document.getElementById('heroPrice'))return; // section stripped on subpages
-  const area=heroArea;
-  try{
-    const [pj,cj,fj]=await Promise.all([
-      dedupedFetch(`/api/prices?area=${area}&mode=inkl_alt`),
-      dedupedFetch(`/api/raw/co2?area=${area}`).catch(()=>null),
-      dedupedFetch(`/api/forecast?area=${area}&mode=inkl_alt`).catch(()=>null),
-    ]);
-    if(heroArea!==area)return; // stale response after toggle
-    const prices=pj.prices.map(p=>p.price);
-    const nowH=pj.current_hour??new Date().getHours();
-    const today=pj.date;
-    const co2=Array(24).fill(null);
-    if(cj)for(const r of cj.records)if(r.date===today&&r.hour<24)co2[r.hour]=r.co2;
-    renderHero(prices,co2,nowH);
-    renderHeroTomorrow(fj,today);
-    renderHomeForecast(fj);
-  }catch(e){console.error('hero load failed',e);}
+function prisOpts(){
+  const net=prisNet();
+  return {view:PV.view,period:PV.period,net:net?net.name:null,
+    where:(PV.area==='DK2'?'DK2 Øst':'DK1 Vest')+(net?' · '+net.name:''),
+    key:`${PV.area}|${PV.view}|${PV.slug||''}`};
 }
-// "I morgen"-mini: show tomorrow's expected span (actual børspriser efter
-// ~kl. 13, ellers ML-prognosen) instead of the useless "priser klar kl. 13".
-function renderHeroTomorrow(fj,todayStr){
-  const vEl=document.getElementById('heroTmrV'),sEl=document.getElementById('heroTmrS');
-  const card=vEl.closest('.mini');
-  const d=new Date(todayStr+'T12:00:00');d.setDate(d.getDate()+1);
-  const tmrStr=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  const day=fj?.days?.find(x=>x.date===tmrStr);
-  const ps=day?day.prices.map(p=>p.price).filter(p=>p!=null):[];
-  if(ps.length){
-    const f=v=>num(v,2);
-    vEl.textContent=`${f(Math.min(...ps))}–${f(Math.max(...ps))}`;
-    sEl.textContent=day.type==='actual'?'kr/kWh · børspris':'kr/kWh · prognose';
-    card.classList.add('has-range');
-  }else{
-    vEl.textContent='Priser klar ca. kl. 13';
-    sEl.textContent='';
-    card.classList.remove('has-range');
+async function loadPris(){
+  const mount=prisMount();
+  if(!mount)return;
+  const id=++PV._load;
+  let j;
+  try{j=await dedupedFetch(prisQuery());}
+  catch(e){
+    console.error('pris load failed',e);
+    if(id===PV._load&&!mount.querySelector('.pris'))
+      mount.innerHTML='<p class="pris-err">Kunne ikke hente priserne lige nu. <button type="button" onclick="loadPris()">Prøv igen</button></p>';
+    return;
+  }
+  if(id!==PV._load||!j||!j.days)return;
+  PV.days=j.days;
+  drawPris(mount);
+  updateReaderDay();
+}
+function drawPris(mount){
+  const o=prisOpts(),today=cphDate(),hour=cphHour();
+  const cur=mount.querySelector('.pris');
+  // The server drew exactly this view for this hour: nothing to redraw.
+  const fresh=cur&&cur.dataset.key===o.key&&cur.dataset.hour===String(hour)&&cur.dataset.date===today;
+  if(!fresh)mount.innerHTML=prisHTML(PV.days,today,hour,o);
+  if(PV._focus){const f=mount.querySelector(PV._focus);PV._focus=null;if(f)f.focus();}
+  const k=o.key+'|'+hour;
+  if(window._prisImpKey!==k){
+    window._prisImpKey=k;
+    const all=prisDays(PV.days,today);
+    const p=all.length?all[0].ps[hour]:null;
+    if(p!=null)track('pris_impression',{area:PV.area,view:PV.view,net:o.net||undefined,price:+p.toFixed(4)});
   }
 }
-// ═══ Kurven "Nu og 2 døgn frem" (forside) ═══
-// Fed the same /api/forecast response the "I morgen"-mini uses, so adding the
-// section costs no extra request. Replaces the server-rendered rows in place.
+function setPrisPeriod(n){
+  PV.period=n===10?10:2;
+  const root=prisMount()?.querySelector('.pris');
+  if(!root)return;
+  root.dataset.period=String(PV.period);
+  root.querySelectorAll('[data-pris-period]').forEach(b=>b.setAttribute('aria-selected',String(+b.dataset.prisPeriod===PV.period)));
+  prisHideTips();
+  track('pris_period',{period:PV.period});
+}
+function setPrisView(v,seg){
+  v=v==='spot'?'spot':'din';
+  if(v===PV.view)return;
+  track('pris_view',{view:v});
+  PV._focus=(seg==='pris-seg-hero'?'':`.pp${PV.period} `)+`.${seg} [data-pris-view="${v}"]`;
+  if(document.querySelector('[data-page="prices"].active')){
+    // A view of the same page: it gets its own address (?pris=spot), and Back returns.
+    const m=v==='spot'?'spot_inkl':PV.slug?'net_inkl_alt':'inkl_alt';
+    goRoute(`${PV.area}/${m}${PV.slug?'/'+PV.slug:''}`);
+  }else{PV.view=v;loadPris();}
+}
+
+// ── The exact price of an hour: on hover, on tap and drag, and from the keyboard ──
+function prisHideTips(){
+  document.querySelectorAll('.pris-tip').forEach(t=>{t.hidden=true;});
+  document.querySelectorAll('.pc.on').forEach(c=>c.classList.remove('on'));
+}
+function prisShowIdx(plot,i){
+  const col=plot.querySelector('.pris-cols').children[i];
+  prisHideTips();
+  if(!col||!col.dataset.tip)return;
+  plot._i=i;
+  col.classList.add('on');
+  const tip=plot.querySelector('.pris-tip');
+  tip.textContent=col.dataset.tip;
+  tip.hidden=false;
+  const card=plot.closest('.pris-card').getBoundingClientRect();
+  const pr=plot.getBoundingClientRect(),cr=col.getBoundingClientRect(),w=tip.offsetWidth;
+  // Centred over the bar, clamped so it never leaves the card.
+  const left=Math.max(card.left+8,Math.min(cr.left+cr.width/2-w/2,card.right-8-w));
+  tip.style.left=(left-pr.left)+'px';
+  const bar=col.querySelector('.pb'),top=bar?bar.getBoundingClientRect().top:pr.bottom;
+  tip.style.bottom=(pr.bottom-top+(innerWidth>=900?22:18))+'px';
+}
+function prisShowAt(plot,x){
+  const r=plot.getBoundingClientRect(),n=+plot.dataset.n;
+  prisShowIdx(plot,Math.max(0,Math.min(n-1,Math.floor((x-r.left)/r.width*n))));
+}
+document.addEventListener('pointermove',e=>{
+  const plot=e.target.closest?e.target.closest('.pris-plot'):null;
+  if(plot)prisShowAt(plot,e.clientX);else if(document.querySelector('.pris-tip:not([hidden])'))prisHideTips();
+},{passive:true});
+document.addEventListener('pointerdown',e=>{
+  const plot=e.target.closest?e.target.closest('.pris-plot'):null;
+  if(plot)prisShowAt(plot,e.clientX);else prisHideTips();
+},{passive:true});
+document.documentElement.addEventListener('mouseleave',prisHideTips);
+document.addEventListener('focusin',e=>{
+  const plot=e.target.closest?e.target.closest('.pris-plot'):null;
+  if(plot&&plot.matches(':focus-visible'))prisShowIdx(plot,plot._i!=null?plot._i:plot.closest('.pp2')?cphHour():0);
+});
+document.addEventListener('focusout',e=>{if(e.target.closest&&e.target.closest('.pris-plot'))prisHideTips();});
+document.addEventListener('keydown',e=>{
+  const plot=e.target.closest?e.target.closest('.pris-plot'):null;
+  if(plot){
+    const n=+plot.dataset.n;
+    let i=plot._i!=null?plot._i:plot.closest('.pp2')?cphHour():0;
+    if(e.key==='ArrowRight')i=Math.min(n-1,i+1);
+    else if(e.key==='ArrowLeft')i=Math.max(0,i-1);
+    else if(e.key==='Home')i=0;
+    else if(e.key==='End')i=n-1;
+    else if(e.key==='Escape'){prisHideTips();return;}
+    else return;
+    e.preventDefault();
+    prisShowIdx(plot,i);
+    return;
+  }
+  // The period pill is a tablist: arrow keys move between its two tabs.
+  const tab=e.target.closest?e.target.closest('.pris-period [role="tab"]'):null;
+  if(tab&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){
+    e.preventDefault();
+    const next=tab.dataset.prisPeriod==='2'?10:2;
+    setPrisPeriod(next);
+    tab.parentElement.querySelector(`[data-pris-period="${next}"]`).focus();
+  }
+});
+document.addEventListener('click',e=>{
+  const v=e.target.closest?e.target.closest('[data-pris-view]'):null;
+  if(v){setPrisView(v.dataset.prisView,v.closest('.pris-seg').classList.contains('pris-seg-hero')?'pris-seg-hero':'pris-seg-card');return;}
+  const p=e.target.closest?e.target.closest('[data-pris-period]'):null;
+  if(p)setPrisPeriod(+p.dataset.prisPeriod);
+});
+
+/** "Dagens overblik" for Safari Reader and crawlers: today's cheapest and dearest
+ *  hour for the view on screen, and — when the CO₂ feed answers — the greenest. */
+async function updateReaderDay(){
+  const rd=document.getElementById('readerDay');
+  if(!rd||!PV.days)return;
+  const today=cphDate(),all=prisDays(PV.days,today);
+  if(!all.length)return;
+  const ex=prisExtremes(prisFlat([all[0]]));
+  if(!ex.lo)return;
+  const t=h=>`${String(h).padStart(2,'0')}–${String((h+1)%24).padStart(2,'0')}`;
+  const net=prisNet();
+  const where=PV.area==='DK1'?'DK1 (Vestdanmark)':'DK2 (Østdanmark)';
+  let txt=`I dag i ${where}${net?' hos '+net.name:''} er strømmen billigst kl. ${t(ex.lo.h)} (${num(ex.lo.p,2)} kr/kWh) og dyrest kl. ${t(ex.hi.h)} (${num(ex.hi.p,2)} kr/kWh).`;
+  rd.textContent=txt;
+  try{
+    const cj=await dedupedFetch(`/api/raw/co2?area=${PV.area}`);
+    const rec=(cj.records||[]).filter(r=>r.date===today&&r.hour<24&&r.co2!=null);
+    if(rec.length){
+      const g=rec.reduce((a,x)=>x.co2<a.co2?x:a);
+      rd.textContent=txt+` Grønnest er strømmen kl. ${String(g.hour).padStart(2,'0')} med ${g.co2} g CO₂ pr. kWh.`;
+    }
+  }catch(_){/* the CO₂ sentence is optional */}
+}
+
 // ═══ Forsidens kurve: nu og 2 døgn frem ═══
 // This function is CANONICAL and exists verbatim in two places: here and in
-// functions/[[path]].js. The server draws it so a crawler gets the numbers,
-// the client redraws it when the visitor switches DK1/DK2 — and neither
-// runtime can import from the other. test-forecast-chart.mjs runs both copies
+// functions/[[path]].js. The server draws it so a crawler gets the numbers on
+// /prognose and the zone pages, the client redraws it from the table's data —
+// and neither runtime can import from the other. test-forecast-chart.mjs runs both copies
 // over the same fixtures and fails on the first differing byte, so the
 // duplication cannot rot quietly.
 //
@@ -3900,8 +4103,7 @@ function renderHeroTomorrow(fj,todayStr){
 // from the arrays below rather than toLocaleDateString, whose output depends
 // on the ICU build and would differ between Workers and a browser.
 /** Round price-axis values between lo and hi: steps of 1, 2, 2.5 or 5 times a
- *  power of ten, aiming at about four. Shared by both homepage charts so their
- *  scales read alike; the hero calls it from renderHero. */
+ *  power of ten, aiming at about four. */
 function fcTicks(lo, hi){
   var span=hi-lo;
   if(!(span>0))return [lo];
@@ -4083,160 +4285,263 @@ function fcChartHTML(days, todayStr, nowHour, o){
 }
 
 
-function renderHomeForecast(fj){
-  const el=document.getElementById('homeForecast');
-  if(!el||!fj||!fj.days)return;
-  // Danish hour, so "nu" lands where the visitor's clock says it should
-  // regardless of the device's timezone.
-  const nowH=+new Intl.DateTimeFormat('en-GB',
-    {timeZone:'Europe/Copenhagen',hour:'2-digit',hour12:false}).format(new Date());
-  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Copenhagen'}).format(new Date());
-  const html=fcChartHTML(fj.days,today,nowH);
-  if(html)el.innerHTML=html;
+// ═══ Pris-skærmen (Design A: ét svar) ═══
+// CANONICAL, like fcChartHTML: verbatim in index.html and functions/[[path]].js.
+// The server draws it, so a crawler is served the price, the sentence, the
+// bars' numbers and the day list as text; the browser redraws it from the same
+// /api/forecast shape when the visitor switches Din pris / Spotpris or the area.
+// Neither runtime can import from the other; test-static.js diffs the two copies
+// and test-forecast-chart.mjs runs both over the same fixtures.
+//
+// Deterministic on purpose: weekday and month names come from the arrays below
+// rather than toLocaleDateString, whose output depends on the ICU build and would
+// differ between Workers and a browser.
+var PRIS_WD=['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+var PRIS_WS=['søn','man','tir','ons','tor','fre','lør'];
+var PRIS_MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+var PRIS_VERDICT=['Billig lige nu','Middel lige nu','Dyr lige nu'];
+
+/** A price with d decimals and a Danish comma; never "-0,00". */
+function prisNum(v,d){var s=v.toFixed(d);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',',');}
+function prisHH(h){return (h<10?'0':'')+h;}
+function prisEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function prisDate(date){
+  var dt=new Date(date+'T12:00:00Z');
+  return {wd:PRIS_WD[dt.getUTCDay()],ws:PRIS_WS[dt.getUTCDay()],d:dt.getUTCDate(),m:PRIS_MON[dt.getUTCMonth()]};
 }
-function renderHero(prices,co2,nowH){
-  const valid=prices.map((p,h)=>({p,h})).filter(x=>x.p!=null);
-  if(!valid.length)return;
-  const fmt2=v=>num(v,2);
-  const nowP=prices[nowH];
-  document.getElementById('heroPrice').textContent=nowP!=null?fmt2(nowP):'—';
-  // Pills: price percentile + CO₂
-  const cheaper=valid.filter(x=>x.p<nowP).length, pct=Math.round(cheaper/valid.length*100);
-  const cls=pct<=33?'billig':pct<=66?'normal':'dyr';
-  const lbl=pct<=33?'Billig lige nu':pct<=66?'Middel lige nu':'Dyr lige nu';
-  const co2Valid=co2.map((v,h)=>({v,h})).filter(x=>x.v!=null);
-  const nowC=co2[nowH];
-  let pills=`<span class="apill ${cls}">${lbl}</span>`;
-  if(nowC!=null){
-    const cMin=Math.min(...co2Valid.map(x=>x.v));
-    pills+=`<span class="apill co2">${nowC===cMin?'Grønnest i dag · ':''}${nowC} g CO₂/kWh</span>`;
-  }
-  document.getElementById('heroPills').innerHTML=pills;
-  // Best / worst / greenest windows
-  const best=valid.reduce((a,x)=>x.p<a.p?x:a), worst=valid.reduce((a,x)=>x.p>a.p?x:a);
-  document.getElementById('heroBestV').textContent=fmt2(best.p);
-  document.getElementById('heroBestS').textContent=`kl. ${String(best.h).padStart(2,'0')}–${String((best.h+1)%24).padStart(2,'0')}`;
-  document.getElementById('heroWorstV').textContent=fmt2(worst.p);
-  document.getElementById('heroWorstS').textContent=`kl. ${String(worst.h).padStart(2,'0')}–${String((worst.h+1)%24).padStart(2,'0')}`;
-  if(co2Valid.length){
-    const g=co2Valid.reduce((a,x)=>x.v<a.v?x:a);
-    document.getElementById('heroGreenV').textContent=g.v+' g';
-    document.getElementById('heroGreenS').textContent=`kl. ${String(g.h).padStart(2,'0')}${g.h===nowH?' · nu':''}`;
-  }
-  // Context line — concrete hours instead of an abstract percentile:
-  // "Dagens billigste time" / "Blandt dagens 3 billigste timer" /
-  // "Billigere end 15 af dagens 24 timer" / same for the expensive end.
-  const total=valid.length,dyrere=total-cheaper-1;
-  let rankTxt;
-  if(cheaper===0)rankTxt='Dagens billigste time';
-  else if(cheaper<=3)rankTxt=`Blandt dagens ${cheaper+1} billigste timer`;
-  else if(dyrere===0)rankTxt='Dagens dyreste time';
-  else if(dyrere<=3)rankTxt=`Blandt dagens ${dyrere+1} dyreste timer`;
-  else rankTxt=`Billigere end ${dyrere} af dagens ${total} timer`;
-  document.getElementById('heroContext').textContent=
-    rankTxt+(nowC!=null&&co2Valid.length&&nowC===Math.min(...co2Valid.map(x=>x.v))?' — og dagens laveste CO₂-udledning netop nu.':'.');
-  // Advice engine — only say what the data actually supports
-  const later=valid.filter(x=>x.h>nowH);
-  const adviceEl=document.getElementById('heroAdvice');
-  let advice='',adviceType='none';
-  if(later.length&&nowP!=null){
-    const lBest=later.reduce((a,x)=>x.p<a.p?x:a), lWorst=later.reduce((a,x)=>x.p>a.p?x:a);
-    const saveWait=Math.round((1-lBest.p/nowP)*100);
-    const savePeak=Math.round((1-nowP/lWorst.p)*100);
-    const co2AtBest=co2[lBest.h], co2AtPeak=co2[lWorst.h];
-    if(saveWait>=25)adviceType='wait';else if(savePeak>=40)adviceType='use_now';
-    if(saveWait>=25){
-      advice=`Vent til kl. ${String(lBest.h).padStart(2,'0')} — så betaler du <b>${saveWait} % mindre</b>`;
-      if(nowC!=null&&co2AtBest!=null&&co2AtBest<=nowC*0.9)advice+=` og udleder <b>${Math.round((1-co2AtBest/nowC)*100)} % mindre CO₂</b>`;
-      else if(nowC!=null&&co2AtBest!=null&&co2AtBest>nowC*1.2)advice+=`. Strømmen er dog grønnere nu (${nowC} g CO₂) end til den tid (${co2AtBest} g)`;
-      advice+='.';
-    }else if(savePeak>=40){
-      advice=`Kør strømtunge apparater nu i stedet for kl. ${String(lWorst.h).padStart(2,'0')} — betal <b>${savePeak} % mindre</b>`;
-      if(nowC!=null&&co2AtPeak!=null&&nowC<=co2AtPeak*0.9)advice+=` og udled <b>${Math.round((1-nowC/co2AtPeak)*100)} % mindre CO₂</b>`;
-      advice+='.';
+
+/** The forecast feed as up to ten consecutive days from today, 24 slots each.
+ *  Same contiguity rule as fcChartHTML: it starts on today and stops at the first
+ *  missing day, so a hole never closes up and shifts "I morgen" onto the wrong
+ *  date. */
+function prisDays(days,todayStr){
+  var out=[];
+  var dayNo=function(x){
+    return Math.round((Date.parse(x+'T12:00:00Z')-Date.parse(todayStr+'T12:00:00Z'))/86400000);};
+  for(var k=0;k<days.length&&out.length<10;k++){
+    var d=days[k];
+    if(!d||!d.date||!d.prices)continue;
+    var n=dayNo(d.date);
+    if(n<0)continue;
+    if(n!==out.length)break;
+    var ps=[];
+    for(var h=0;h<24;h++)ps.push(null);
+    for(var j=0;j<d.prices.length;j++){
+      var p=d.prices[j];
+      if(!p||p.price==null)continue;
+      var hr=p.hour!=null?p.hour:j;
+      if(hr>=0&&hr<24)ps[hr]=p.price;
     }
+    out.push({date:d.date,real:d.type==='actual',ps:ps});
   }
-  adviceEl.innerHTML=advice;
-  adviceEl.style.display=advice?'':'none';
-  // Sæson-tip: solcellerne har flyttet det billige vindue fra nat til middag,
-  // men elbiler og varmepumper kører typisk på faste natte-timere. Vises kun
-  // når dagens tal faktisk bakker det op.
-  const tipEl=document.getElementById('heroTimerTip');
-  if(tipEl){
-    const avg=a=>a.reduce((s,x)=>s+x.p,0)/a.length;
-    const nat=valid.filter(x=>x.h<6), mid=valid.filter(x=>x.h>=10&&x.h<=16);
-    let tip='';
-    if(nat.length>=4&&mid.length>=4){
-      const nP=avg(nat), mP=avg(mid);
-      if(mP<nP*0.85&&nP>0){
-        tip=`Lader du elbil eller varmepumpe om natten? I dag er strømmen <b>${Math.round((1-mP/nP)*100)} % billigere kl. 10–16</b> end kl. 00–06. `
-          +`<a href="/blog/hvornaar-er-stroemmen-billigst">Læs hvorfor →</a>`;
-      }
-    }
-    tipEl.innerHTML=tip;
-    tipEl.style.display=tip?'':'none';
-  }
-  // One impression per area+hour: which verdict/advice did visitors see?
-  const impKey=`${heroArea}|${nowH}`;
-  if(window._heroImpKey!==impKey){
-    window._heroImpKey=impKey;
-    track('hero_impression',{area:heroArea,verdict:cls,price:+nowP.toFixed(4),co2:nowC??undefined,advice_type:adviceType});
-  }
-  // Keep the Reader-summary article in sync with the selected area, so Safari
-  // Reader shows current essentials rather than a stale snapshot.
-  const rd=document.getElementById('readerDay');
-  if(rd){
-    const areaName=heroArea==='DK1'?'DK1 (Vestdanmark)':'DK2 (Østdanmark)';
-    let txt=`I dag i ${areaName} er strømmen billigst kl. ${String(best.h).padStart(2,'0')}–${String((best.h+1)%24).padStart(2,'0')} (${fmt2(best.p)} kr/kWh) og dyrest kl. ${String(worst.h).padStart(2,'0')}–${String((worst.h+1)%24).padStart(2,'0')} (${fmt2(worst.p)} kr/kWh).`;
-    if(co2Valid.length){
-      const g=co2Valid.reduce((a,x)=>x.v<a.v?x:a);
-      txt+=` Grønnest er strømmen kl. ${String(g.h).padStart(2,'0')} med ${g.v} g CO₂ pr. kWh.`;
-    }
-    if(advice)txt+=' '+advice.replace(/<[^>]+>/g,'');
-    rd.textContent=txt;
-  }
-  // Curve
-  const W=720,H=200,PT=16,PB=24;
-  const pMax=Math.max(...valid.map(x=>x.p)),pMin=Math.min(...valid.map(x=>x.p));
-  const X=i=>i/23*W, Y=p=>PT+(1-(p-pMin)/(pMax-pMin||1))*(H-PT-PB);
-  const pts=valid.map(x=>`${X(x.h)},${Y(x.p)}`).join(' ');
-  const stops=valid.map(x=>{const t=(x.p-pMin)/(pMax-pMin||1);
-    const c=t<.25?'#34c759':t<.5?'#a8d84a':t<.75?'#ffcc00':t<.9?'#ff9500':'#ff3b30';
-    return `<stop offset="${(x.h/23*100).toFixed(1)}%" stop-color="${c}"/>`}).join('');
-  const ticks=fcTicks(pMin,pMax);
-  document.getElementById('heroCurve').innerHTML=`
-    <defs><linearGradient id="hpg" x1="0" y1="0" x2="1" y2="0">${stops}</linearGradient>
-    <linearGradient id="hfade" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#5b8bff" stop-opacity=".25"/><stop offset="100%" stop-color="#5b8bff" stop-opacity="0"/>
-    </linearGradient></defs>
-    ${ticks.map(v=>`<line x1="0" y1="${Y(v)}" x2="${W}" y2="${Y(v)}" stroke="currentColor" stroke-opacity=".07"/>`).join('')}
-    <polygon points="${X(valid[0].h)},${H-PB+16} ${pts} ${X(valid[valid.length-1].h)},${H-PB+16}" fill="url(#hfade)"/>
-    <polyline points="${pts}" fill="none" stroke="url(#hpg)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-    ${nowP!=null?`<line x1="${X(nowH)}" y1="${PT-6}" x2="${X(nowH)}" y2="${H-PB+10}" stroke="currentColor" stroke-opacity=".18" stroke-dasharray="3 4"/>
-    <circle cx="${X(nowH)}" cy="${Y(nowP)}" r="6" fill="#1b57f5" stroke="#fff" stroke-width="2.5"/>`:''}
-    ${[0,6,12,18,23].map(h=>`<text x="${X(h)}" y="${H-5}" font-size="10.5" fill="currentColor" fill-opacity=".45" text-anchor="${h===0?'start':h===23?'end':'middle'}" font-family="system-ui">${String(h).padStart(2,'0')}</text>`).join('')}`;
-  document.getElementById('heroYax').innerHTML=fcYaxis(ticks,Y,H);
-  // CO₂ strip
-  const co2El=document.getElementById('heroCo2');
-  if(co2Valid.length){
-    const cH=48,cPT=5,cPB=3,cMax=Math.max(...co2Valid.map(x=>x.v));
-    const cY=v=>cPT+(1-v/(cMax||1))*(cH-cPT-cPB);
-    const cpts=co2Valid.map(x=>`${X(x.h)},${cY(x.v)}`).join(' ');
-    co2El.innerHTML=`
-      <defs><linearGradient id="hcf" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#0e9888" stop-opacity=".3"/><stop offset="100%" stop-color="#0e9888" stop-opacity=".02"/>
-      </linearGradient></defs>
-      <polygon points="${X(co2Valid[0].h)},${cH} ${cpts} ${X(co2Valid[co2Valid.length-1].h)},${cH}" fill="url(#hcf)"/>
-      <polyline points="${cpts}" fill="none" stroke="#0e9888" stroke-width="2" stroke-linejoin="round"/>
-      ${nowC!=null?`<circle cx="${X(nowH)}" cy="${cY(nowC)}" r="4" fill="#0e9888" stroke="#fff" stroke-width="2"/>`:''}`;
-    co2El.style.display='';co2El.previousElementSibling.style.display='';
-  }else{co2El.style.display='none';co2El.previousElementSibling.style.display='none';}
+  return out;
 }
+
+/** 0 cheap, 1 middle, 2 dear: by how many of the reference hours are cheaper —
+ *  the verdict the apps use too (tests/golden/reference.mjs). */
+function prisTier(p,ref){
+  if(!ref.length)return 1;
+  var c=0;
+  for(var i=0;i<ref.length;i++)if(ref[i]<p)c++;
+  var pct=Math.round(c/ref.length*100);
+  return pct<=33?0:pct<=66?1:2;
+}
+
+/** The axis: zero-based, top at the highest price + ~12 % rounded up to the next
+ *  0.5 so the tallest bar never touches the frame. Whole-krone steps, halves
+ *  only when the whole axis is two and a half kroner or less. A negative price
+ *  extends it below zero by the same rule. */
+function prisAxis(vals){
+  var mx=0,mn=0;
+  for(var i=0;i<vals.length;i++){if(vals[i]>mx)mx=vals[i];if(vals[i]<mn)mn=vals[i];}
+  var hi=Math.ceil(mx*1.12/0.5-1e-9)*0.5;
+  if(hi<0.5)hi=0.5;
+  var lo=mn<0?-Math.ceil(-mn*1.12/0.5-1e-9)*0.5:0;
+  var span=hi-lo,step=span<=2.5?0.5:span<=10?1:span<=20?2:5;
+  var ticks=[];
+  for(var t=Math.ceil(lo/step-1e-9)*step;t<=hi+1e-9;t+=step)ticks.push(+t.toFixed(6));
+  return {lo:lo,hi:hi,step:step,ticks:ticks};
+}
+
+/** The cheapest and the dearest hour among `slots` ({d:day index,h:hour,p:price}). */
+function prisExtremes(slots){
+  var lo=null,hi=null;
+  for(var i=0;i<slots.length;i++){
+    var s=slots[i];
+    if(s.p==null)continue;
+    if(lo==null||s.p<lo.p)lo=s;
+    if(hi==null||s.p>hi.p)hi=s;
+  }
+  return {lo:lo,hi:hi};
+}
+function prisWhen(s){return s.d===0?'i dag':'i morgen';}
+
+/** The one sentence under the verdict: the cheapest hour of the next 24 if it is
+ *  cheaper than now, otherwise that now is it. */
+function prisSentence(all,nowHour,nowP){
+  if(nowP==null)return '';
+  var win=[];
+  for(var k=1;k<24;k++){
+    var a=nowHour+k,d=a<24?0:1,h=a%24;
+    if(all[d])win.push({d:d,h:h,p:all[d].ps[h]});
+  }
+  var best=prisExtremes(win).lo;
+  if(best&&best.p<nowP)
+    return 'Billigere '+prisWhen(best)+' kl. '+prisHH(best.h)+' — <b>'+prisNum(best.p,2)+' kr</b>';
+  return 'Billigste time de næste 24 timer';
+}
+
+/** Two tiles: cheapest and dearest of the hours still to come (this one on). */
+function prisTiles(all,nowHour){
+  var up=[];
+  for(var d=0;d<all.length&&d<2;d++)
+    for(var h=0;h<24;h++)if(d>0||h>=nowHour)up.push({d:d,h:h,p:all[d].ps[h]});
+  var ex=prisExtremes(up),out='';
+  var tile=function(k,s){
+    return '<div class="pris-tile"><div class="k">'+k+'</div><div class="v">'+prisNum(s.p,2)
+      +' <small>kr · kl. '+prisHH(s.h)+'</small></div></div>';};
+  if(ex.lo)out+=tile('Billigst '+prisWhen(ex.lo),ex.lo);
+  if(ex.hi)out+=tile('Dyrest '+(ex.hi.d===0?(ex.hi.h>=17?'i aften':'i dag'):'i morgen'),ex.hi);
+  return out?'<div class="pris-tiles">'+out+'</div>':'';
+}
+
+/** The caption under the Din pris / Spotpris switch. */
+function prisCaption(view,net){
+  if(view==='spot')return 'Spotpris inkl. moms';
+  return net?'Inkl. nettarif, afgifter og moms':'Inkl. Energinets tariffer, afgifter og moms';
+}
+
+function prisSwitch(view,cls,spotLabel){
+  var b=function(v,label){
+    return '<button type="button" data-pris-view="'+v+'" aria-pressed="'+(view===v)+'"'+(view===v?' class="on"':'')+'>'+label+'</button>';};
+  return '<div class="pris-seg '+cls+'" role="group" aria-label="Prisvisning">'+b('din','Din pris')+b('spot',spotLabel)+'</div>';
+}
+
+/** One chart card: bars coloured by tier, the hours already gone dimmed, a dot
+ *  over the current hour, a zero-based axis with gridlines, and the exact price
+ *  of every hour in data-tip for the browser's hover/tap tooltip. */
+function prisChart(rows,nDays,o){
+  var n=nDays*24,vals=[],i;
+  for(i=0;i<rows.length;i++)for(var h0=0;h0<24;h0++)if(rows[i].ps[h0]!=null)vals.push(rows[i].ps[h0]);
+  var ax=prisAxis(vals),span=ax.hi-ax.lo;
+  var ref=o.ref||vals;
+  var y=function(v){return (v-ax.lo)/span*100;};
+  var grid='',yl='';
+  for(i=0;i<ax.ticks.length;i++){
+    var top=(100-y(ax.ticks[i])).toFixed(2);
+    grid+='<span class="pris-gl" style="top:'+top+'%"></span>';
+    yl+='<span style="top:'+top+'%">'+(ax.step<1?prisNum(ax.ticks[i],1):prisNum(ax.ticks[i],0))+'</span>';
+  }
+  var cols='',seps='',fcAt=-1;
+  for(var s=0;s<n;s++){
+    var r=rows[Math.floor(s/24)],h=s%24,p=r?r.ps[h]:null;
+    if(fcAt<0&&r&&!r.real)fcAt=s;
+    if(s%24===0&&s>0&&o.seps)seps+='<span class="pris-sep" style="left:'+(s/n*100).toFixed(2)+'%"></span>';
+    if(p==null){cols+='<span class="pc"></span>';continue;}
+    var base=y(Math.min(p,0)),ht=Math.abs(p)/span*100,dt=prisDate(r.date);
+    var tip=(o.tipDay?(Math.floor(s/24)===0?'I dag':'I morgen'):dt.ws+' '+dt.d+'. '+dt.m)
+      +' kl. '+prisHH(h)+' · '+prisNum(p,2)+' kr/kWh';
+    cols+='<span class="pc'+(s<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
+      +'" style="bottom:'+base.toFixed(1)+'%;height:'+ht.toFixed(1)+'%"></i>'
+      +(s===o.nowSlot?'<b class="pd" style="bottom:calc('+(base+ht).toFixed(1)+'% + 3px)"></b>':'')+'</span>';
+  }
+  // "Prognose" where the settled prices end: a thin divider with its label.
+  var fc=fcAt>=0?'<span class="pris-fc'+(fcAt>0?' mid':'')+'" style="left:'+(fcAt/n*100).toFixed(2)+'%"><i></i>Prognose</span>':'';
+  var xl='';
+  if(o.xDays){
+    for(i=0;i<nDays;i++){
+      var dd=rows[i]?prisDate(rows[i].date):null;
+      if(dd)xl+='<span class="xd" style="left:'+((i*24+12)/n*100).toFixed(2)+'%">'+dd.ws+' '+dd.d+'</span>';
+    }
+  }else{
+    for(var hx=0;hx<n;hx+=6){
+      var lbl=hx===0?'I dag 00':hx===24?'I morgen 00':prisHH(hx%24);
+      xl+='<span class="'+(hx%12?'x6':'x12')+(hx===0?' first':'')+'" style="left:'+(hx/n*100).toFixed(2)+'%">'+lbl+'</span>';
+    }
+  }
+  var ex=prisExtremes(prisFlat(rows));
+  var aria=o.title+': '+(ex.lo?'billigst '+prisNum(ex.lo.p,2)+' kr/kWh kl. '+prisHH(ex.lo.h)+', ':'')
+    +(ex.hi?'dyrest '+prisNum(ex.hi.p,2)+' kr/kWh kl. '+prisHH(ex.hi.h)+'.':'');
+  return '<div class="pris-plotwrap"><span class="pris-unit">kr/kWh</span><div class="pris-yl">'+yl+'</div>'
+    +'<div class="pris-plot" role="img" tabindex="0" aria-label="'+prisEsc(aria)+'" data-n="'+n+'">'
+    +grid+seps+'<div class="pris-cols">'+cols+'</div>'+fc+'<div class="pris-tip" role="status" hidden></div></div>'
+    +'<div class="pris-xl'+(o.xDays?' days':'')+'">'+xl+'</div></div>';
+}
+function prisFlat(rows){
+  var out=[];
+  for(var d=0;d<rows.length;d++)for(var h=0;h<24;h++)out.push({d:d,h:h,p:rows[d].ps[h]});
+  return out;
+}
+
+/** Per-day range and cheapest hour, as text. */
+function prisDayRows(all){
+  var rows='';
+  for(var i=0;i<all.length;i++){
+    var d=all[i],lo=null,hi=null,loH=0;
+    for(var h=0;h<24;h++){
+      var v=d.ps[h];
+      if(v==null)continue;
+      if(lo==null||v<lo){lo=v;loH=h;}
+      if(hi==null||v>hi)hi=v;
+    }
+    if(lo==null)continue;
+    var dt=prisDate(d.date);
+    var name=i===0?'I dag':i===1?'I morgen':dt.wd.charAt(0).toUpperCase()+dt.wd.slice(1);
+    rows+='<tr class="'+(i<2?'r2':'r10')+'"><th scope="row">'+name+'<small>'+dt.d+'. '+dt.m+'</small></th>'
+      +'<td>'+prisNum(lo,2)+'–'+prisNum(hi,2)+'</td>'
+      +'<td>kl. '+prisHH(loH)+'–'+prisHH((loH+1)%24)+'</td>'
+      +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?'Børspris':'Prognose')+'</td></tr>';
+  }
+  if(!rows)return '';
+  return '<section class="pris-days" aria-label="Dag for dag"><p class="pris-dt">Dag for dag</p>'
+    +'<table class="pris-week"><thead><tr><th scope="col">Dag</th><th scope="col">Spænd, kr/kWh</th>'
+    +'<th scope="col">Billigst</th><th scope="col">Type</th></tr></thead><tbody>'+rows+'</tbody></table></section>';
+}
+
+/** The whole screen. `o`: {view:'din'|'spot', period:2|10, net:name|null, where:'DK1 Vest', key}. */
+function prisHTML(days,todayStr,nowHour,o){
+  o=o||{};
+  var view=o.view==='spot'?'spot':'din',period=o.period===10?10:2;
+  var all=prisDays(days||[],todayStr);
+  var today=all.length?all[0]:null;
+  var nowP=today?today.ps[nowHour]:null;
+  var td=today?[]:null,i;
+  if(today)for(i=0;i<24;i++)if(today.ps[i]!=null)td.push(today.ps[i]);
+  var verdict=nowP!=null?prisTier(nowP,td):1;
+  var sentence=prisSentence(all,nowHour,nowP);
+  var caption=prisCaption(view,o.net);
+  var wd=today?prisDate(todayStr).wd:'';
+  var hero='<section class="pris-hero" aria-label="Elpris lige nu'+(o.where?' — '+prisEsc(o.where):'')+'">'
+    +'<p class="pris-label">Elpris lige nu · '+(wd?'<span class="pris-wd">'+wd+' </span>':'')+'kl. '+prisHH(nowHour)+'</p>'
+    +'<p class="pris-price"><span class="pris-now">'+(nowP!=null?prisNum(nowP,2):'—')+'</span><span class="pris-u">kr/kWh</span></p>'
+    +'<div class="pris-vrow">'
+    +(nowP!=null?'<span class="pris-pill t'+verdict+'"><i></i>'+PRIS_VERDICT[verdict]+'</span>':'')
+    +(sentence?'<p class="pris-sent">'+sentence+'</p>':'<p class="pris-sent">'+(today?'':'Priserne kunne ikke hentes lige nu.')+'</p>')
+    +'</div>'
+    +'<div class="pris-modebox">'+prisSwitch(view,'pris-seg-hero','Kun spotpris')
+    +'<p class="pris-cap">'+caption+'</p></div></section>';
+  var tabs='<div class="pris-period" role="tablist" aria-label="Periode">'
+    +'<button type="button" role="tab" aria-selected="'+(period===2)+'" data-pris-period="2">2 døgn</button>'
+    +'<button type="button" role="tab" aria-selected="'+(period===10)+'" data-pris-period="10">3–10 døgn</button></div>';
+  var legend='<div class="pris-legend"><span><i class="t0"></i>Billig</span><span><i class="t1"></i>Middel</span><span><i class="t2"></i>Dyr</span></div>';
+  var head=function(t){
+    return '<div class="pris-ch"><p class="pris-ct">'+t+'</p>'+legend+prisSwitch(view,'pris-seg-card','Spotpris')+'</div>'
+      +'<p class="pris-cap pris-cap-card">'+caption+'</p>';};
+  var two=all.slice(0,2),ten=all.slice(2,10);
+  var card2='<section class="pris-card pp2" aria-label="Næste 2 døgn">'+head('Næste 2 døgn')
+    +prisChart(two,2,{ref:td||[],nowSlot:today&&today.date===todayStr?nowHour:-1,tipDay:true,title:'Elpris time for time næste 2 døgn'})+'</section>';
+  var card10='<section class="pris-card pp10" aria-label="Døgn 3–10">'+head('Døgn 3–10')
+    +prisChart(ten,8,{nowSlot:-1,xDays:true,seps:true,title:'Elpris time for time døgn 3 til 10'})+'</section>';
+  return '<div class="pris" data-period="'+period+'" data-view="'+view+'" data-key="'+prisEsc(o.key||'')
+    +'" data-hour="'+nowHour+'" data-date="'+todayStr+'">'+hero
+    +'<div class="pris-right">'+tabs+card2+card10+prisTiles(all,nowHour)+'</div>'
+    +prisDayRows(all)+'</div>';
+}
+// ═══ /Pris-skærmen ═══
 
 // ═══ BUILD START ═══
 function buildStart(){
   if(!document.getElementById('dk1-zone'))return; // section stripped on subpages
-  loadStartHero();
   ['DK1','DK2'].forEach(area=>{
     document.getElementById(area.toLowerCase()+'-zone').innerHTML=ZONE_BTNS.map(b=>
       `<a href="${urlForRoute(area+'/'+b.mode)}" class="zone-btn ${b.cls}">${b.label}</a>`
@@ -4245,86 +4550,26 @@ function buildStart(){
       `<div class="net-row">
         <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">${n.name}</span>
         <div class="flex items-center gap-1.5">
-          <a href="${urlForRoute(area+'/net_inkl_alt/'+n.slug)}" class="net-chip">Inkl alt</a>
-          <a href="${urlForRoute(area+'/net_inkl_tarif/'+n.slug)}" class="net-chip">Inkl tarif</a>
+          <a href="${urlForRoute(area+'/net_inkl_alt/'+n.slug)}" class="net-chip">Se prisen</a>
         </div>
       </div>`
     ).join('');
   });
 }
 
-// ═══ HEADER + SELECTOR ═══
-function buildPriceSelector(){
-  const sel=document.getElementById('priceSelector');
-  if(!sel)return;
-  const opts=[];
-  // Generic zone options for both areas
-  ['DK1','DK2'].forEach(area=>{
-    const aLabel=area==='DK1'?'DK1 Vest':'DK2 Øst';
-    const grpLabel=area==='DK1'?'── DK1 Vest ──':'── DK2 Øst ──';
-    opts.push(`<optgroup label="${grpLabel}">`);
-    // One option per view the site can show. Elspot ex moms and inkl alt minus
-    // afgift are linked from the front page, and without an option of their own
-    // the dropdown went blank on them.
-    opts.push(`<option value="${area}/spot_inkl">Elspot inkl moms</option>`);
-    opts.push(`<option value="${area}/spot_ex">Elspot ex moms</option>`);
-    opts.push(`<option value="${area}/inkl_alt">Inkl alt (uden netselskab)</option>`);
-    opts.push(`<option value="${area}/inkl_alt_minus">Inkl alt minus afgift (uden netselskab)</option>`);
-    NETS[area].forEach(n=>{
-      opts.push(`<option value="${area}/net_inkl_alt/${n.slug}">${n.name} — Inkl alt</option>`);
-      opts.push(`<option value="${area}/net_inkl_tarif/${n.slug}">${n.name} — Inkl tarif</option>`);
-    });
-    opts.push(`</optgroup>`);
-  });
-  // The globe icon used to open a zone picker; the selector replaces it, so
-  // the other eleven bidding zones have to be reachable from here.
-  opts.push('<optgroup label="── Andre prisområder ──">');
-  Object.entries(ZONES).forEach(([k,z])=>{
-    if(k==='dk1'||k==='dk2')return;
-    opts.push(`<option value="zone:${k}">${z.name} ${z.city}</option>`);
-  });
-  opts.push('</optgroup>');
-  sel.innerHTML=opts.join('');
-  syncPriceSelector();
-}
-function syncPriceSelector(){
-  const sel=document.getElementById('priceSelector');
-  if(!sel||!sel.options.length)return;
-  // On a zone page the selector shows that zone, not a Danish default.
-  const zk=location.pathname.slice(1);
-  if(ZONES[zk]&&zk!=='dk1'&&zk!=='dk2'){sel.value='zone:'+zk;return;}
-  // Build the value that matches current state
-  let val=`${S.area}/${S.mode}`;
-  const net=S.gln?(NETS[S.area]||[]).find(n=>n.gln===S.gln):null;
-  if(net&&S.mode.startsWith('net_'))val=`${S.area}/${S.mode}/${net.slug}`;
-  sel.value=val;
-}
-function onPriceSelectorChange(){
-  const val=document.getElementById('priceSelector').value;
-  if(!val)return;
-  gtag('event','select_price_view',{value:val});
-  // A zone is its own page; a DK view is a hash on the price page.
-  if(val.startsWith('zone:')){location.href='/'+val.slice(5);return;}
-  // Another area or grid company is another page, with its own heading and
-  // prose — switching it by hash alone left N1's prices under "Elpriser DK1
-  // Vest" and DK1's text. Only a change of view within the same URL (spot,
-  // inkl alt, inkl tarif …) stays in-page, where the sentence is rewritten.
-  goRoute(val);
-}
+// ═══ HEADER ═══
 function updateHeader(){
   const al=S.area==='DK1'?'DK1 Vest':'DK2 Øst';
-  const region=S.area==='DK1'?'Jylland og Fyn':'Sjælland og Øer';
-  const ml={spot_inkl:'Elspot inkl moms',spot_ex:'Elspot ex moms',inkl_alt:'Inkl alt',inkl_alt_minus:'Inkl alt minus afgift',net_inkl_alt:`${S.netName} Inkl alt`,net_inkl_tarif:`${S.netName} Inkl tarif`};
+  const ml={spot_inkl:'Spotpris inkl moms',inkl_alt:'Inkl alt',net_inkl_alt:`${S.netName} Inkl alt`};
   // SEO-aligned titles for crawlable URLs (/dk1, /dk2, /dk1/<slug>, /dk2/<slug>)
-  if(S.netName && (S.mode==='net_inkl_alt'||S.mode==='net_inkl_tarif')){
+  if(S.netName && S.mode==='net_inkl_alt'){
     document.title=`Elpris ${S.netName} i dag (${S.area}) — time for time inkl. nettarif`;
   } else if(S.mode==='inkl_alt'){
     // Must equal SEO_PAGES' title for /dk1 and /dk2, the view those URLs open in.
     document.title=`Elpris ${S.area==='DK1'?'Vest':'Øst'} (${S.area}) i dag — spotpris inkl. alt, time for time`;
   } else {
-    document.title=`Elpriser ${al} — ${ml[S.mode]||'Elspot'}`;
+    document.title=`Elpriser ${al} — ${ml[S.mode]||'Spotpris'}`;
   }
-  syncPriceSelector();
 }
 
 // ═══ DATA ═══
@@ -4506,27 +4751,6 @@ async function loadPriceData(loadId){
   }
 }
 
-/** Today and the next two days in fcChartHTML's input shape, converted with
- *  cvt() exactly like the table: settled prices where they exist, otherwise
- *  the forecast the table already fetched. */
-function pricesChartDays(){
-  const t=new Date();t.setHours(12,0,0,0);const out=[];
-  for(let i=0;i<3;i++){
-    const d=new Date(t);d.setDate(t.getDate()+i);const ds=fmt(d);
-    const src=priceData[ds]||fcDays[ds];
-    if(!src)break;
-    out.push({date:ds,type:priceData[ds]?'actual':'forecast',
-      prices:Array.from({length:24},(_,h)=>({hour:h,price:src[h]!=null?cvt(src[h],h,ds):null}))});
-  }
-  return out;
-}
-function renderPricesForecast(){
-  const el=document.getElementById('pricesForecast'),wrap=document.getElementById('pricesForecastWrap');
-  if(!el||!wrap)return;
-  const html=fcChartHTML(pricesChartDays(),fmt(new Date()),new Date().getHours());
-  if(!html){wrap.style.display='none';return;}
-  el.innerHTML=html;wrap.style.display='';
-}
 /** The eight dates the table shows for the current S.weekOffset. */
 function tableWindow(){
   const s=new Date();s.setHours(12,0,0,0);s.setDate(s.getDate()-4+S.weekOffset*8);
@@ -4597,10 +4821,9 @@ function renderTable(){
   }
   tbl.innerHTML=h;document.getElementById('loadingIndicator').style.display='none';document.getElementById('tableWrapper').style.display='block';
   const note=document.getElementById('fcTableNote');if(note)note.style.display=anyFc?'':'none';
-  if(S.weekOffset===0)renderPricesForecast();
   const tt=document.getElementById('tableTitle');
   if(tt)tt.textContent=S.weekOffset===0?'Time for time · 4 dage tilbage, 3 døgn frem':'Time for time · tidligere priser';
-  updatePricesAnswer();
+  updatePriceSentence();
 }
 
 // ═══ Pris lige nu, i ord ═══
@@ -4619,7 +4842,7 @@ function priceNowText(mode, hh, price, area, net){
   var p=price.toFixed(2);if(/^-0\.?0*$/.test(p))p=p.slice(1);p=p.replace('.',',');
   var at='Lige nu (kl. '+hh+':00) er ';
   var where='i '+area+', '+R[area]+', ';
-  var local=' Nettariffen fra dit lokale netselskab kommer oveni — vælg netselskab i menuen ovenfor for den fulde pris.';
+  var local=' Nettariffen fra dit lokale netselskab kommer oveni — vælg netselskab øverst på siden for den fulde pris.';
   switch(mode){
     case 'spot_ex': return at+'spotprisen '+where+p+' kr/kWh ekskl. moms. Moms, nettarif, systemtarif, transmissionstarif og elafgift kommer oveni.';
     case 'spot_inkl': return at+'spotprisen '+where+p+' kr/kWh inkl. moms. Nettarif, systemtarif, transmissionstarif og elafgift kommer oveni.';
@@ -4631,52 +4854,17 @@ function priceNowText(mode, hh, price, area, net){
   return '';
 }
 
-// Answer block above the table — same hierarchy as the front page hero:
-// current price for the selected area/net/mode, verdict + CO₂ pills.
-async function updatePricesAnswer(){
-  const box=document.getElementById('pricesAnswer');
-  if(!box)return;
-  const today=fmt(new Date());
-  if(S.weekOffset!==0||!priceData[today]){box.style.display='none';return;}
-  const nowH=new Date().getHours();
-  const todays=Array.from({length:24},(_,h)=>{const raw=priceData[today]?.[h];return raw===undefined?null:cvt(raw,h,today);});
-  const nowP=todays[nowH];
-  if(nowP==null){box.style.display='none';return;}
-  const valid=todays.filter(p=>p!=null);
-  const fmt2=v=>num(v,2);
-  const al=S.area==='DK1'?'Vestdanmark · DK1':'Østdanmark · DK2';
-  document.getElementById('pricesAnswerLoc').textContent=`${al}${S.netName?' · '+S.netName:''} · lige nu`;
-  document.getElementById('pricesAnswerPrice').textContent=fmt2(nowP);
-  // The intro sentence is server-written for the URL's own view; rewrite it for
-  // whatever view is showing now, so it never contradicts the number below it.
+// The intro sentence is server-written for the URL's own view; rewrite it for
+// whatever view is showing now — Din pris or Spotpris — so it never contradicts
+// the number on the Pris screen or in the table below it.
+function updatePriceSentence(){
   const pnt=document.getElementById('priceNowText');
-  if(pnt)pnt.textContent=priceNowText(S.mode,String(nowH).padStart(2,'0'),nowP,S.area,S.netName);
-  // "tarif" alone read as the local nettarif, which the no-company views do not include.
-  const unitMap={spot_ex:'kr/kWh spot ekskl. moms',spot_inkl:'kr/kWh spot inkl. moms',inkl_alt:'kr/kWh inkl. Energinets tariffer, elafgift og moms',inkl_alt_minus:'kr/kWh inkl. Energinets tariffer og moms (uden elafgift)',net_inkl_alt:'kr/kWh inkl. nettarif, afgift og moms',net_inkl_tarif:'kr/kWh inkl. nettarif og moms (uden elafgift)'};
-  document.getElementById('pricesAnswerUnit').textContent=unitMap[S.mode]||'kr/kWh';
-  const cheaper=valid.filter(p=>p<nowP).length,pct=Math.round(cheaper/valid.length*100);
-  const cls=pct<=33?'billig':pct<=66?'normal':'dyr';
-  const lbl=pct<=33?'Billig lige nu':pct<=66?'Middel lige nu':'Dyr lige nu';
-  let pills=`<span class="apill ${cls}">${lbl}</span>`;
-  box.style.display='';
-  document.getElementById('pricesAnswerPills').innerHTML=pills;
-  // One impression per selection+hour: verdict seen on the price pages
-  const ansKey=`${S.area}|${S.mode}|${S.gln||''}|${nowH}`;
-  if(window._ansImpKey!==ansKey){
-    window._ansImpKey=ansKey;
-    track('price_answer_impression',{area:S.area,mode:S.mode,net:S.netName||undefined,verdict:cls,price:+nowP.toFixed(4)});
-  }
-  try{
-    const cj=await dedupedFetch(`/api/raw/co2?area=${S.area}`);
-    const rec=cj.records.find(r=>r.date===today&&r.hour===nowH);
-    if(rec&&S.weekOffset===0){
-      pills+=`<span class="apill co2">${rec.co2} g CO₂/kWh</span>`;
-      document.getElementById('pricesAnswerPills').innerHTML=pills;
-    }
-  }catch(_){/* CO₂ pill is optional */}
+  const today=fmt(new Date());
+  if(!pnt||S.weekOffset!==0||!priceData[today])return;
+  const nowH=new Date().getHours(),raw=priceData[today][nowH];
+  if(raw==null)return;
+  pnt.textContent=priceNowText(S.mode,String(nowH).padStart(2,'0'),cvt(raw,nowH,today),S.area,S.netName);
 }
-
-
 
 // ═══ TARIFF PAGE ═══
 function renderEnerginetRates(en){
@@ -6015,7 +6203,7 @@ async function renderShellyTariffTable(){
 }
 
 // ═══ INIT ═══
-buildStart();buildPriceSelector();initBehaviorTracking();route();
+buildStart();buildNetDialog();initBehaviorTracking();route();
 </script>
 <!-- ═══════ GLOBUS: lokations-/sprogvælger (Tesla-stil) ═══════ -->
 <div id="globeOverlay" class="globe-overlay" hidden onclick="if(event.target===this)closeGlobe()">

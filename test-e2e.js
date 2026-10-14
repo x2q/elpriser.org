@@ -3,10 +3,10 @@
  * End-to-end interaction tests for elpriser.org
  * Run: npm run test:e2e
  *
- * Exercises every interactive element on the site — navigation, zone buttons,
- * net chips, FAQ accordions, dropdowns on prices/automation/forecast/shelly
- * pages, week navigation, export tabs — and asserts the UI responds as
- * expected.
+ * Exercises every interactive element on the site — navigation, the net chip
+ * and its dialog, the Din pris / Spotpris switch and the period pill on the
+ * Pris screen, FAQ accordions, dropdowns on automation/forecast/shelly pages,
+ * week navigation, export tabs — and asserts the UI responds as expected.
  *
  * Auto-starts server.js on :8080 for the duration of the run.
  */
@@ -81,8 +81,32 @@ async function startServer() {
     }
     return route.continue();
   });
+  // server.js has no /api/forecast, which the Pris screen is drawn from. Answer it
+  // with a deterministic ten days so the tests are about the UI, not the feed.
+  // The mode and the gln are echoed in the price so each view can be told apart.
+  const forecastRequests = [];
+  const cph = { timeZone: 'Europe/Copenhagen' };
+  const todayDk = () => new Intl.DateTimeFormat('en-CA', cph).format(new Date());
+  const hourDk = () => +new Intl.DateTimeFormat('en-GB', { ...cph, hour: '2-digit', hourCycle: 'h23' }).format(new Date());
+  const fixturePrice = (mode, gln, h) => {
+    const k = mode === 'spot_inkl' ? 0.4 : gln ? 1.3 : 1;
+    return +((1.5 + Math.sin(h / 24 * 6.28) * 0.8 + (h >= 17 && h <= 20 ? 1 : 0)) * k).toFixed(4);
+  };
+  await ctx.route('**/api/forecast*', route => {
+    const u = new URL(route.request().url());
+    const mode = u.searchParams.get('mode'), gln = u.searchParams.get('gln'), area = u.searchParams.get('area');
+    forecastRequests.push(`${area}|${mode}|${gln || ''}`);
+    const base = Date.parse(todayDk() + 'T12:00:00Z');
+    const days = Array.from({ length: 10 }, (_, i) => ({
+      date: new Date(base + i * 86400000).toISOString().slice(0, 10),
+      type: i < 2 ? 'actual' : 'forecast',
+      prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, price: fixturePrice(mode, gln, h) })),
+    }));
+    route.fulfill({ json: { area, mode, ...(gln ? { gln } : {}), days } });
+  });
   const page = await ctx.newPage();
   page.setDefaultTimeout(5000);
+  const pris = n => String(n.toFixed(2)).replace('.', ',');
 
   // ── 1. Clean-URL routing (mirrors functions/[[path]].js + server.js) ───────
 
@@ -183,20 +207,19 @@ async function startServer() {
     await page.evaluate(() => localStorage.clear());
   });
 
-  await test('start: both DK1 and DK2 zone cards render 4 mode anchors each', async () => {
-    const dk1 = await page.locator('#dk1-zone a').count();
-    const dk2 = await page.locator('#dk2-zone a').count();
-    assert.equal(dk1, 4, `DK1 should have 4 mode buttons, got ${dk1}`);
-    assert.equal(dk2, 4, `DK2 should have 4 mode buttons, got ${dk2}`);
+  await test('start: both DK1 and DK2 zone cards offer the two views, Din pris and Spotpris', async () => {
+    // The six price modes are no longer a choice; the area cards say so too.
+    for (const z of ['#dk1-zone', '#dk2-zone']) {
+      const labels = await page.locator(`${z} a`).allTextContents();
+      assert.deepEqual(labels.map(t => t.trim()), ['Din pris — inkl. alt', 'Kun spotpris'], `${z}: ${labels.join(' | ')}`);
+    }
   });
 
   for (const [selector, expectedUrl] of [
-    ['#dk1-zone a:has-text("Inkl alt")',               '/dk1'],
-    ['#dk1-zone a:has-text("Elspot inkl moms")',       '/dk1?pris=spot'],
-    ['#dk1-zone a:has-text("Elspot ex moms")',         '/dk1?pris=spot-ex'],
-    ['#dk1-zone a:has-text("Inkl alt minus afgift")',  '/dk1?pris=alt-uden-afgift'],
-    ['#dk2-zone a:has-text("Inkl alt")',               '/dk2'],
-    ['#dk2-zone a:has-text("Elspot ex moms")',         '/dk2?pris=spot-ex'],
+    ['#dk1-zone a:has-text("Din pris")',     '/dk1'],
+    ['#dk1-zone a:has-text("Kun spotpris")', '/dk1?pris=spot'],
+    ['#dk2-zone a:has-text("Din pris")',     '/dk2'],
+    ['#dk2-zone a:has-text("Kun spotpris")', '/dk2?pris=spot'],
   ]) {
     await test(`zone: clicking "${selector.split('"')[1]}" navigates to ${expectedUrl}`, async () => {
       await page.goto(BASE + '/');
@@ -207,15 +230,14 @@ async function startServer() {
     });
   }
 
-  await test('start: net chips — every net has "Inkl alt" + "Inkl tarif" chips', async () => {
+  await test('start: net chips — every net has one link, to its own page', async () => {
     await page.goto(BASE + '/');
     await page.waitForSelector('#dk1-nets .net-row');
     const rows = await page.locator('#dk1-nets .net-row').count();
     assert.ok(rows >= 10, `DK1 has ${rows} nets, expected ≥10`);
-    // Each row has exactly 2 chips
     for (let i = 0; i < rows; i++) {
       const chips = await page.locator('#dk1-nets .net-row').nth(i).locator('.net-chip').count();
-      assert.equal(chips, 2, `DK1 row ${i} has ${chips} chips, expected 2`);
+      assert.equal(chips, 1, `DK1 row ${i} has ${chips} chips, expected 1`);
     }
   });
 
@@ -229,7 +251,7 @@ async function startServer() {
   for (const [label, dataPage] of [
     ['Prognose',             'prognose'],
     ['Tariffer',             'tariffer'],
-    ['Automation',           'automation'],
+    ['Smart hjem',           'automation'],
     ['Shelly Live Tariff',   'shelly-tariff'],
   ]) {
     await test(`nav pill: "${label}" activates data-page="${dataPage}"`, async () => {
@@ -255,49 +277,181 @@ async function startServer() {
     }
   });
 
-  // ── 3. Prices page — priceSelector dropdown, week nav ──────────────────────
+  // ── 3. Prices page — the Pris screen (Din pris / Spotpris, period pill, tooltip), week nav ──
 
-  await test('prices: #priceSelector renders options for every area/mode/net', async () => {
-    await page.goto(BASE + '/#DK1/inkl_alt');
-    await page.waitForSelector('#priceSelector');
-    await page.waitForFunction(() =>
-      document.querySelectorAll('#priceSelector option').length >= 20);
-    const opts = await page.locator('#priceSelector option').count();
-    assert.ok(opts >= 20, `#priceSelector has ${opts} options, expected ≥20`);
+  await test('prices: the Pris screen is drawn from /api/forecast for the page\'s own view', async () => {
+    forecastRequests.length = 0;
+    await page.goto(BASE + '/dk1');
+    await page.waitForSelector('main[data-page="prices"].active .pris .pris-now');
+    const shown = (await page.locator('.pris-now').textContent()).trim();
+    assert.equal(shown, pris(fixturePrice('inkl_alt', null, hourDk())), 'the big number is the area\'s Din pris');
+    assert.ok(forecastRequests.includes('DK1|inkl_alt|'), `asked for ${forecastRequests.join(', ')}`);
+    assert.match(await page.locator('.pris-label').first().textContent(), /^Elpris lige nu · \S+ kl\. \d\d$/);
+    assert.equal((await page.locator('.pris-cap').first().textContent()).trim(), 'Inkl. Energinets tariffer, afgifter og moms');
   });
 
-  await test('prices: changing #priceSelector moves to the clean URL of that view (no hash)', async () => {
-    await page.goto(BASE + '/dk1');
-    await page.waitForSelector('#priceSelector');
-    await page.waitForFunction(() =>
-      document.querySelectorAll('#priceSelector option').length >= 20);
-    await page.selectOption('#priceSelector', 'DK2/inkl_alt');
-    await page.waitForURL(u => u.pathname === '/dk2' && u.hash === '' && u.search === '');
+  await test('prices: on a net page Din pris is that net\'s all-in price, and the chip says so', async () => {
+    forecastRequests.length = 0;
+    await page.goto(BASE + '/dk1/n1');
+    await page.waitForSelector('.pris .pris-now');
+    assert.ok(forecastRequests.includes('DK1|net_inkl_alt|5790001089030'), `asked for ${forecastRequests.join(', ')}`);
+    assert.equal((await page.locator('.pris-now').textContent()).trim(), pris(fixturePrice('net_inkl_alt', '5790001089030', hourDk())));
+    assert.equal((await page.locator('.pris-cap').first().textContent()).trim(), 'Inkl. nettarif, afgifter og moms');
+    assert.equal((await page.locator('#netChipLong').textContent()).trim(), 'N1 · Vestdanmark');
+    assert.equal((await page.locator('#netChipShort').textContent()).trim(), 'N1 · Vest');
   });
 
-  await test('prices: another view of the same page is a query, not a hash — and back returns', async () => {
+  await test('prices: the switch has exactly Din pris and Spotpris, and no dropdown of six modes', async () => {
     await page.goto(BASE + '/dk1');
-    await page.waitForFunction(() => document.querySelectorAll('#priceSelector option').length >= 20);
-    await page.selectOption('#priceSelector', 'DK1/spot_inkl');
+    await page.waitForSelector('.pris-seg-hero');
+    const labels = await page.locator('.pris-seg-hero button').allTextContents();
+    assert.deepEqual(labels, ['Din pris', 'Kun spotpris']);
+    assert.equal(await page.locator('#priceSelector').count(), 0, 'the six-mode dropdown is back');
+  });
+
+  await test('prices: Spotpris is a query on the same page — and back returns', async () => {
+    await page.goto(BASE + '/dk1');
+    await page.waitForSelector('.pris-seg-hero');
+    await page.locator('.pris-seg-hero [data-pris-view="spot"]').click();
     await page.waitForURL(u => u.pathname === '/dk1' && u.search === '?pris=spot' && u.hash === '');
-    assert.equal(await page.locator('#priceSelector').inputValue(), 'DK1/spot_inkl');
+    await page.waitForFunction(() => document.querySelector('.pris')?.dataset.view === 'spot');
+    assert.equal(await page.locator('.pris-seg-hero [data-pris-view="spot"]').getAttribute('aria-pressed'), 'true');
+    assert.equal((await page.locator('.pris-cap').first().textContent()).trim(), 'Spotpris inkl. moms');
+    assert.equal((await page.locator('.pris-now').textContent()).trim(), pris(fixturePrice('spot_inkl', null, hourDk())));
     await page.goBack();
     await page.waitForURL(u => u.pathname === '/dk1' && u.search === '' && u.hash === '');
-    assert.equal(await page.locator('#priceSelector').inputValue(), 'DK1/inkl_alt');
+    await page.waitForFunction(() => document.querySelector('.pris')?.dataset.view === 'din');
+    assert.equal(await page.locator('.pris-seg-hero [data-pris-view="din"]').getAttribute('aria-pressed'), 'true');
   });
 
-  await test('prices: ?pris= on a net page selects the tariff view and keeps the net', async () => {
-    await page.goto(BASE + '/dk1/trefor?pris=tarif');
-    await page.waitForFunction(() => document.querySelectorAll('#priceSelector option').length >= 20);
-    assert.equal(await page.locator('#priceSelector').inputValue(), 'DK1/net_inkl_tarif/trefor');
-    assert.equal(await page.evaluate(() => location.pathname + location.search), '/dk1/trefor?pris=tarif');
+  await test('prices: Spotpris on a net page keeps the net', async () => {
+    await page.goto(BASE + '/dk1/trefor');
+    await page.waitForSelector('.pris-seg-hero');
+    await page.locator('.pris-seg-hero [data-pris-view="spot"]').click();
+    await page.waitForURL(u => u.pathname === '/dk1/trefor' && u.search === '?pris=spot');
+    await page.waitForFunction(() => document.querySelector('.pris')?.dataset.key === 'DK1|spot|trefor');
+    assert.equal((await page.locator('#netChipLong').textContent()).trim(), 'Trefor · Vestdanmark');
+  });
+
+  for (const [from, to, view] of [
+    ['/dk1/trefor?pris=tarif', '/dk1/trefor', 'din'],
+    ['/dk1?pris=alt-uden-afgift', '/dk1', 'din'],
+    ['/dk1?pris=spot-ex', '/dk1?pris=spot', 'spot'],
+    ['/dk2?pris=spot', '/dk2?pris=spot', 'spot'],
+  ]) {
+    await test(`prices: an old ${from} lands on the nearest of the two views (${to})`, async () => {
+      await page.goto(BASE + from);
+      await page.waitForURL(u => u.pathname + u.search === to && u.hash === '');
+      await page.waitForFunction(v => document.querySelector('.pris')?.dataset.view === v, view);
+    });
+  }
+
+  await test('prices: the period pill is a tablist that switches the chart between 2 døgn and 3–10 døgn', async () => {
+    await page.goto(BASE + '/dk1');
+    await page.waitForSelector('.pris .pp2 .pris-plot');
+    assert.equal(await page.locator('.pris-period').getAttribute('role'), 'tablist');
+    assert.equal(await page.locator('.pp2').isVisible(), true);
+    assert.equal(await page.locator('.pp10').isVisible(), false);
+    assert.equal((await page.locator('.pp2 .pris-ct').textContent()).trim(), 'Næste 2 døgn');
+    await page.locator('.pris-period [data-pris-period="10"]').click();
+    assert.equal(await page.locator('.pp10').isVisible(), true);
+    assert.equal(await page.locator('.pp2').isVisible(), false);
+    assert.equal((await page.locator('.pp10 .pris-ct').textContent()).trim(), 'Døgn 3–10');
+    assert.equal(await page.locator('.pris-period [data-pris-period="10"]').getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('.pp10 .pc').count(), 192);
+  });
+
+  await test('prices: hovering a bar shows its exact price, highlights it, and the tooltip stays inside the card', async () => {
+    await page.goto(BASE + '/dk1');
+    await page.waitForSelector('.pp2 .pris-plot');
+    const box = await page.locator('.pp2 .pris-plot').boundingBox();
+    for (const [fx, hour, day] of [[0.005, 0, 'I dag'], [0.995, 23, 'I morgen']]) {
+      await page.mouse.move(box.x + box.width * fx, box.y + box.height * 0.7);
+      const tip = page.locator('.pp2 .pris-tip');
+      await tip.waitFor({ state: 'visible' });
+      const want = `${day} kl. ${String(hour).padStart(2, '0')} · ${pris(fixturePrice('inkl_alt', null, hour))} kr/kWh`;
+      assert.equal((await tip.textContent()).trim(), want);
+      const inside = await page.evaluate(() => {
+        const t = document.querySelector('.pp2 .pris-tip').getBoundingClientRect(), c = document.querySelector('.pp2').getBoundingClientRect();
+        return t.left >= c.left && t.right <= c.right && t.top >= c.top;
+      });
+      assert.equal(inside, true, 'the tooltip overflows the card');
+      assert.equal(await page.locator('.pp2 .pc.on').count(), 1, 'the hovered bar is not highlighted');
+    }
+    await page.mouse.move(5, 5);
+    assert.equal(await page.locator('.pp2 .pris-tip').isVisible(), false, 'the tooltip stays after the pointer left');
+  });
+
+  await test('prices: the axis is zero-based with kr/kWh above it, and the verdict pill is one of Billig / Middel / Dyr', async () => {
+    await page.goto(BASE + '/dk1');
+    await page.waitForSelector('.pp2 .pris-yl span');
+    const ticks = await page.locator('.pp2 .pris-yl span').allTextContents();
+    assert.equal(ticks[0], '0');
+    assert.ok(ticks.every((t, i) => i === 0 || +t.replace(',', '.') > +ticks[i - 1].replace(',', '.')), ticks.join(' '));
+    assert.equal((await page.locator('.pp2 .pris-unit').textContent()).trim(), 'kr/kWh');
+    assert.match(await page.locator('.pris-pill').textContent(), /^(Billig|Middel|Dyr) lige nu$/);
+  });
+
+  await test('phone: at 390 px the screen is one column, the switch moves into the chart card, no horizontal scroll', async () => {
+    const p = await ctx.newPage();
+    await p.setViewportSize({ width: 390, height: 844 });
+    await p.goto(BASE + '/');
+    await p.waitForSelector('.pris .pris-now');
+    assert.equal(await p.locator('.pris-seg-hero').isVisible(), false);
+    assert.equal(await p.locator('.pp2 .pris-seg-card').isVisible(), true);
+    assert.equal(await p.locator('#tabBar').isVisible(), true);
+    assert.deepEqual((await p.locator('#tabBar a').allTextContents()).map(t => t.trim()), ['Pris', 'Smart hjem']);
+    const sw = await p.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+    assert.equal(sw[0], sw[1], `horizontal scroll: ${sw.join(' vs ')}`);
+    await p.close();
+  });
+
+  await test('header: Pris · Smart hjem · Om, with the net chip and "Hent appen"', async () => {
+    await page.goto(BASE + '/');
+    // A net visited earlier in the run is remembered, and the chip would say so.
+    await page.evaluate(() => localStorage.clear());
+    await page.goto(BASE + '/');
+    const links = (await page.locator('header.site-nav .site-links a').allTextContents()).map(t => t.trim());
+    assert.deepEqual(links, ['Pris', 'Smart hjem', 'Om']);
+    assert.equal((await page.locator('#netChipLong').textContent()).trim(), 'DK1 · Vestdanmark');
+    assert.equal(await page.locator('header.site-nav .app-btn').textContent(), 'Hent appen');
+    await page.locator('header.site-nav .site-links a:has-text("Smart hjem")').click();
+    await page.waitForSelector('main[data-page="automation"].active');
+    assert.equal((await page.locator('main[data-page="automation"] .page-title').textContent()).trim(), 'Smart hjem');
+  });
+
+  await test('start: a remembered net company is the one the Pris screen and the chip describe', async () => {
+    await page.goto(BASE + '/');
+    await page.evaluate(() => localStorage.setItem('dk_net_pick', 'DK1/net_inkl_alt/n1'));
+    forecastRequests.length = 0;
+    await page.goto(BASE + '/');
+    await page.waitForFunction(() => document.querySelector('.pris')?.dataset.key === 'DK1|din|n1');
+    assert.ok(forecastRequests.includes('DK1|net_inkl_alt|5790001089030'), forecastRequests.join(', '));
+    assert.equal((await page.locator('#netChipLong').textContent()).trim(), 'N1 · Vestdanmark');
+    assert.equal(await page.evaluate(() => location.pathname), '/', 'the address stays the front page');
+    await page.evaluate(() => localStorage.clear());
+  });
+
+  await test('net chip: opens "Netselskab og indstillinger", and a net chosen there opens its page', async () => {
+    await page.goto(BASE + '/');
+    await page.evaluate(() => localStorage.clear());
+    await page.locator('#netChip').click();
+    await page.waitForSelector('#netDialog[open]');
+    assert.equal((await page.locator('#netDialogTitle').textContent()).trim(), 'Netselskab og indstillinger');
+    assert.equal(await page.locator('#netDialog #gpsBtn').count(), 1, 'the position lookup lives in the dialog');
+    await page.locator('#netDlgDK2 a:has-text("Radius")').click();
+    await page.waitForURL(u => u.pathname === '/dk2/radius');
+    await page.waitForSelector('.pris .pris-now');
+    assert.equal((await page.locator('#netChipLong').textContent()).trim(), 'Radius · Østdanmark');
+    await page.evaluate(() => localStorage.clear());
   });
 
   for (const [legacy, clean] of [
     ['/#tariffer', '/tariffer'],
     ['/#DK1/net_inkl_alt/n1', '/dk1/n1'],
     ['/dk1#DK1/spot_inkl', '/dk1?pris=spot'],
-    ['/dk1/trefor#DK1/net_inkl_tarif/trefor', '/dk1/trefor?pris=tarif'],
+    ['/dk1/trefor#DK1/net_inkl_tarif/trefor', '/dk1/trefor'],
+    ['/dk1#DK1/spot_ex', '/dk1?pris=spot'],
     ['/tariffer#tariffer', '/tariffer'],
   ]) {
     await test(`legacy link ${legacy} is rewritten to ${clean}`, async () => {
