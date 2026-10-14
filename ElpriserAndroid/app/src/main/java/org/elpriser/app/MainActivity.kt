@@ -30,12 +30,10 @@ import org.elpriser.app.ui.AutomationScreen
 import org.elpriser.app.ui.BottomNav
 import org.elpriser.app.ui.ElpriserTheme
 import org.elpriser.app.ui.FlowHost
-import org.elpriser.app.ui.NuScreen
-import org.elpriser.app.ui.PrognoseScreen
+import org.elpriser.app.ui.PriceScreen
 import org.elpriser.app.ui.SettingsScreen
 import org.elpriser.app.ui.SideRail
 import org.elpriser.app.ui.T
-import org.elpriser.app.ui.TimeScreen
 
 class MainActivity : ComponentActivity() {
     private val vm: AppViewModel by viewModels()
@@ -71,18 +69,14 @@ private fun AppRoot(vm: AppViewModel) {
         owner.lifecycle.addObserver(obs)
         onDispose { owner.lifecycle.removeObserver(obs) }
     }
-    BackHandler(enabled = vm.step == null && vm.tab != Tab.Nu) {
-        vm.tab = if (vm.tab == Tab.Time) Tab.Prognose else Tab.Nu
-    }
+    BackHandler(enabled = vm.step == null && vm.tab != Tab.Pris) { vm.tab = Tab.Pris }
 
     Box(Modifier.fillMaxSize().background(t.bg)) {
         val content: @Composable () -> Unit = {
             Box(Modifier.fillMaxSize()) {
                 when (vm.tab) {
-                    Tab.Nu -> NuScreen(vm, wide)
-                    Tab.Prognose -> PrognoseScreen(vm, wide)
-                    Tab.Time -> TimeScreen(vm, wide)
-                    Tab.Automation -> AutomationScreen(vm, wide)
+                    Tab.Pris -> PriceScreen(vm, wide)
+                    Tab.Smart -> AutomationScreen(vm, wide)
                     Tab.Settings -> SettingsScreen(vm, wide)
                 }
             }

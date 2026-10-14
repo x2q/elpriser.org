@@ -15,21 +15,31 @@ extension UIColor {
 
 /// Samme farver som i Android-appen og designet.
 enum T {
-    static let bg = Color(light: 0xf4f7fc, dark: 0x0b1220)
+    static let bg = Color(light: 0xf4f6fb, dark: 0x0b1220)
     static let surface = Color(light: 0xffffff, dark: 0x131b29)
-    static let surface2 = Color(light: 0xeaf0fa, dark: 0x1b2535)
-    static let outline = Color(light: 0xdbe3f0, dark: 0x26324a)
-    static let text = Color(light: 0x0e1421, dark: 0xe8edf5)
-    static let text2 = Color(light: 0x4d596b, dark: 0xa9b5c9)
+    static let surface2 = Color(light: 0xeef1f8, dark: 0x1b2535)
+    static let outline = Color(light: 0xe3e7f2, dark: 0x26324a)
+    static let hairline = Color(light: 0xe9ecf4, dark: 0x222d42)
+    static let text = Color(light: 0x0e1530, dark: 0xe8edf5)
+    static let text2 = Color(light: 0x5b6480, dark: 0xa9b5c9)
+    static let text3 = Color(light: 0x2b3354, dark: 0xc9d2e2)
+    /// Aktiv periode og andre mørkeblå flader (hvid tekst oven på).
+    static let navy = Color(light: 0x14308f, dark: 0x2f54d6)
+    /// Værktøjstippet på grafen: mørk pille med hvid tekst.
+    static let tooltip = Color(light: 0x0e1530, dark: 0x2b3654)
     static let brand = Color(light: 0x1747d6, dark: 0x7ea2ff)
     static let brandSoft = Color(light: 0xe2eaff, dark: 0x1c2b55)
     static let brandSolid = Color(light: 0x1b57f5, dark: 0x5b8bff)
-    static let good = Color(light: 0x157a3c, dark: 0x4cd964)
-    static let goodSoft = Color(light: 0xddf4e4, dark: 0x133222)
-    static let mid = Color(light: 0x8a5a00, dark: 0xffd24a)
-    static let midSoft = Color(light: 0xfff1d1, dark: 0x3a3112)
-    static let bad = Color(light: 0xb4231b, dark: 0xff7a70)
-    static let badSoft = Color(light: 0xfde3e0, dark: 0x3d1d1b)
+    static let good = Color(light: 0x137a43, dark: 0x4cd964)
+    static let goodSoft = Color(light: 0xe4f6ec, dark: 0x133222)
+    static let mid = Color(light: 0x9a6700, dark: 0xffd24a)
+    static let midSoft = Color(light: 0xfef3d7, dark: 0x3a3112)
+    static let bad = Color(light: 0xb42318, dark: 0xff7a70)
+    static let badSoft = Color(light: 0xfdecec, dark: 0x3d1d1b)
+    /// Søjlernes og prikkernes niveaufarver (samme i lys og mørk).
+    static let tierLow = Color(hex: 0x1e9e5a)
+    static let tierMid = Color(hex: 0xf0a30a)
+    static let tierHigh = Color(hex: 0xe5484d)
     static let co2 = Color(light: 0x0b756a, dark: 0x2fd4bf)
     static let co2Soft = Color(light: 0xd9f2ee, dark: 0x10332f)
     static let nav = Color(light: 0xe9eef8, dark: 0x161f30)
@@ -111,10 +121,8 @@ func dayShort(_ d: Day) -> String { weekdaysShort[parts(d).wd] }
 func dayNum(_ d: Day) -> Int { parts(d).day }
 func dayMonth(_ d: Day) -> String { let p = parts(d); return "\(p.day). \(months[p.month])" }
 func dayLong(_ d: Day) -> String { let p = parts(d); return "\(cap(weekdays[p.wd])) \(p.day). \(months[p.month])" }
-func todayLong() -> String {
-    let d = Day(date: Clock.today(), actual: true, price: [], lo: nil, hi: nil)
-    return dayLong(d)
-}
+/// Ugedagen med småt ("onsdag").
+func weekdayName(_ d: Day) -> String { weekdays[parts(d).wd] }
 
 extension Font {
     /// Manrope — samme skrift som Android-appen og designet. Fast størrelse, som `.system(size:)`, den afløser,

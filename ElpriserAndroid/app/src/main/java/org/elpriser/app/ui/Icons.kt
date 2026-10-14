@@ -33,6 +33,7 @@ object Ic {
     const val Heat = "M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"
     const val Car = "M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0zM12 17v5"
     const val Drop = "M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z"
+    const val Sliders = "M4 7h10M18 7h2M4 17h2M10 17h10M14 7a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M6 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"
     const val Grid = "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"
 }
 

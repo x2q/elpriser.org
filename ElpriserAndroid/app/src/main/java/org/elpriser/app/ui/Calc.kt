@@ -36,16 +36,6 @@ private val MON = listOf("jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug",
 
 private fun LocalDate.dow() = dayOfWeek.value % 7
 
-fun dayLabel(d: Day): String {
-    val today = LocalDate.parse(Clock.today())
-    val ld = d.localDate
-    return when (ld) {
-        today -> "I dag"
-        today.plusDays(1) -> "I morgen"
-        else -> WD[ld.dow()].replaceFirstChar { it.uppercase() }
-    }
-}
-
 fun dayShort(d: Day) = WS[d.localDate.dow()]
 fun dayMonth(d: Day) = "${d.localDate.dayOfMonth}. ${MON[d.localDate.monthValue - 1]}"
 fun dayLong(d: Day) = "${WD[d.localDate.dow()].replaceFirstChar { it.uppercase() }} ${d.localDate.dayOfMonth}. ${MON[d.localDate.monthValue - 1]}"
@@ -53,3 +43,6 @@ fun todayLong(): String {
     val ld = LocalDate.parse(Clock.today())
     return "${WD[ld.dow()].replaceFirstChar { it.uppercase() }} ${ld.dayOfMonth}. ${MON[ld.monthValue - 1]}"
 }
+
+/** Ugedagens navn med småt ("onsdag") til sætninger som "Elpris lige nu · onsdag kl. 21". */
+fun todayWeekday(): String = WD[LocalDate.parse(Clock.today()).dow()]

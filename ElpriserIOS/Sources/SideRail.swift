@@ -10,10 +10,8 @@ struct SideRail: View {
         var id: AppTab { tab }
     }
     private let items = [
-        Item(tab: .nu, title: "Nu", symbol: "bolt", key: "1"),
-        Item(tab: .prognose, title: "Prognose", symbol: "chart.line.uptrend.xyaxis", key: "2"),
-        Item(tab: .automation, title: "Automation", symbol: "clock", key: "3"),
-        Item(tab: .settings, title: "Mere", symbol: "line.3.horizontal", key: "4"),
+        Item(tab: .pris, title: "Pris", symbol: "bolt", key: "1"),
+        Item(tab: .smartHjem, title: "Smart hjem", symbol: "slider.horizontal.3", key: "2"),
     ]
 
     var body: some View {

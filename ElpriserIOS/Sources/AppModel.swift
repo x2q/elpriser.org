@@ -1,7 +1,8 @@
 import Foundation
 import Observation
 
-enum AppTab: Hashable { case nu, prognose, automation, settings }
+/// De to hovedpunkter: Pris og Smart hjem. Indstillinger åbnes fra netselskabsknappen på Pris.
+enum AppTab: Hashable { case pris, smartHjem }
 
 /// Første-start- og netselskabsflowet, der ligger oven på appen.
 enum Step: Equatable {
@@ -17,9 +18,9 @@ final class AppModel {
     let settings = Settings()
     private let finder = PositionFinder()
 
-    var tab: AppTab = .nu
-    /// Valgt døgn (0 = i dag) i Prognose og Time for time.
-    var selDay = 0
+    var tab: AppTab = .pris
+    /// Periode på Pris: 2 døgn eller døgn 3–10.
+    var period: PricePeriod = .two
     var step: Step?
 
     private(set) var loading = false
@@ -33,13 +34,13 @@ final class AppModel {
     init() {
         step = settings.onboarded ? nil : .welcome
         #if DEBUG
-        // Kun til skærmbilleder: -debugTab nu|prognose|automation|settings
+        // Kun til skærmbilleder: -debugTab 0|1 (0 = Pris, 1 = Smart hjem; "automation"/"smart" duer også),
+        // -debugPeriod 2|10 (periodevælgeren på Pris). "settings" åbnes i RootView.
         switch UserDefaults.standard.string(forKey: "debugTab") {
-        case "prognose": tab = .prognose
-        case "automation": tab = .automation
-        case "settings": tab = .settings
+        case "1", "automation", "smart", "smarthjem": tab = .smartHjem
         default: break
         }
+        if UserDefaults.standard.string(forKey: "debugPeriod") == "10" { period = .long }
         #endif
     }
 

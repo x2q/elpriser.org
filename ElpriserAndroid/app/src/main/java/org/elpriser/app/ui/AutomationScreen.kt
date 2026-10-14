@@ -52,7 +52,7 @@ fun AutomationScreen(vm: AppViewModel, wide: Boolean) {
     val s = vm.settings
     val today = vm.days().firstOrNull { it.date == Clock.today() }
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Automation", "Kør efter de billigste timer i dag")
+        ScreenHeader("Smart hjem", "Kør efter de billigste timer i dag")
         if (today == null) {
             Column(Modifier.padding(16.dp)) { if (vm.loading) Loading() else ErrorCard(vm.error ?: "Ingen priser for i dag endnu.", { vm.refresh(true) }) }
             return

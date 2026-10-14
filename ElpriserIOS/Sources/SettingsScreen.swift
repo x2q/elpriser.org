@@ -8,7 +8,6 @@ struct SettingsScreen: View {
         let s = vm.settings
         Adaptive { wide in
             VStack(spacing: 0) {
-                ScreenHeader(title: "Indstillinger", subtitle: "Netselskab, prisvisning og udseende")
                 if wide {
                     HStack(alignment: .top, spacing: 20) {
                         ScrollView { VStack(spacing: 12) { netCard(s); aboutCard() }.padding(.bottom, 20) }.frame(width: 520)
@@ -21,6 +20,10 @@ struct SettingsScreen: View {
             }
         }
         .background(T.bg)
+        // Åbnes fra netselskabsknappen på Pris, så den har en almindelig navigationslinje med tilbage-knap.
+        .navigationTitle("Netselskab og indstillinger")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
     }
 
     private func netCard(_ s: Settings) -> some View {

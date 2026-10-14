@@ -67,7 +67,7 @@ private struct WelcomeView: View {
                             ForEach([
                                 "Vi spørger kun, når du trykker på knappen — aldrig i baggrunden.",
                                 "Positionen bruges én gang. Vi gemmer netselskabet, ikke koordinaterne.",
-                                "Du kan altid skifte eller glemme netselskabet under Indstillinger.",
+                                "Du kan altid skifte eller glemme netselskabet med knappen øverst på Pris.",
                             ], id: \.self) { t in
                                 HStack(alignment: .top, spacing: 12) {
                                     Image(systemName: "checkmark").font(.app(14, .bold)).foregroundStyle(T.brand)

@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.elpriser.app.AppViewModel
 import org.elpriser.app.BuildConfig
+import org.elpriser.app.Tab
 
 @Composable
 fun SettingsScreen(vm: AppViewModel, wide: Boolean) {
@@ -116,7 +117,16 @@ fun SettingsScreen(vm: AppViewModel, wide: Boolean) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Indstillinger", "Netselskab, prisvisning og udseende")
+        Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(start = 8.dp, end = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = "Tilbage til Pris") { vm.tab = Tab.Pris },
+                contentAlignment = Alignment.Center,
+            ) { Icon(Ic.Back, t.text, 24.dp, stroke = 2.2f) }
+            Column(Modifier.weight(1f).padding(start = 4.dp)) {
+                Text("Netselskab og indstillinger", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.4).sp, lineHeight = 26.sp)
+                Text("Netselskab, prisvisning og udseende", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = t.text2)
+            }
+        }
         if (wide) {
             Row(Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 Column(Modifier.width(520.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { netCard(); aboutCard() }

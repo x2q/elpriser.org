@@ -26,6 +26,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -55,12 +57,6 @@ fun AppCard(modifier: Modifier = Modifier, padding: PaddingValues = PaddingValue
 @Composable
 fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(text.uppercase(), modifier, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = T.text2)
-}
-
-@Composable
-fun Pill(text: String, bg: Color, fg: Color, modifier: Modifier = Modifier) {
-    Text(text, modifier.clip(RoundedCornerShape(18.dp)).background(bg).padding(horizontal = 14.dp, vertical = 7.dp),
-        fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = fg)
 }
 
 @Composable
@@ -101,18 +97,6 @@ fun Segmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, mod
                     .clickable { onSelect(i) },
                 contentAlignment = Alignment.Center,
             ) { Text(o, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = if (on) Color.White else t.text2) }
-        }
-    }
-}
-
-@Composable
-fun StatTile(label: String, value: String, sub: String, color: Color, modifier: Modifier = Modifier) {
-    val t = T
-    Column(modifier.clip(RoundedCornerShape(16.dp)).background(t.surface2).padding(horizontal = 12.dp, vertical = 9.dp)) {
-        Text(label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp, color = t.text2)
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = color)
-            Text(" $sub", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = t.text2, modifier = Modifier.padding(bottom = 2.dp))
         }
     }
 }
@@ -171,16 +155,20 @@ fun NavItem(label: String, path: String, active: Boolean, onClick: () -> Unit, m
 }
 
 private val navItems = listOf(
-    Triple(Tab.Nu, "Nu", Ic.Bolt), Triple(Tab.Prognose, "Prognose", Ic.Trend),
-    Triple(Tab.Automation, "Automation", Ic.Clock), Triple(Tab.Settings, "Mere", Ic.Menu),
+    Triple(Tab.Pris, "Pris", Ic.Bolt), Triple(Tab.Smart, "Smart hjem", Ic.Sliders),
 )
 
-private fun activeTab(t: Tab) = if (t == Tab.Time) Tab.Prognose else t
+/** Indstillinger åbnes fra Pris-skærmen, så Pris står som aktiv, mens de er åbne. */
+private fun activeTab(t: Tab) = if (t == Tab.Settings) Tab.Pris else t
 
 @Composable
 fun BottomNav(tab: Tab, onTab: (Tab) -> Unit) {
     val t = T
-    Row(Modifier.fillMaxWidth().background(t.nav).padding(top = 12.dp, bottom = 12.dp), horizontalArrangement = Arrangement.SpaceAround) {
+    Row(
+        Modifier.fillMaxWidth().background(t.nav).drawBehind { drawLine(t.outline, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 1.dp.toPx()) }
+            .padding(top = 12.dp, bottom = 12.dp),
+        horizontalArrangement = Arrangement.SpaceAround,
+    ) {
         navItems.forEach { (tb, label, icon) -> NavItem(label, icon, activeTab(tab) == tb, { onTab(tb) }, Modifier.weight(1f)) }
     }
 }

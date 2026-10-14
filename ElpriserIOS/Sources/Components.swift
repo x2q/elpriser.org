@@ -20,17 +20,6 @@ struct SectionLabel: View {
     }
 }
 
-struct Pill: View {
-    let text: String, bg: Color, fg: Color
-    var body: some View {
-        Text(text)
-            .font(.app(13.5, .bold))
-            .foregroundStyle(fg)
-            .padding(.horizontal, 14).padding(.vertical, 7)
-            .background(bg, in: Capsule())
-    }
-}
-
 struct PrimaryButton: View {
     let title: String
     var enabled = true
@@ -102,22 +91,6 @@ struct Segmented: View {
     }
 }
 
-struct StatTile: View {
-    let label: String, value: String, sub: String, color: Color
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(label.uppercased()).font(.app(11, .bold)).tracking(0.6).foregroundStyle(T.text2)
-            HStack(alignment: .lastTextBaseline, spacing: 4) {
-                Text(value).font(.app(19, .heavy)).foregroundStyle(color)
-                Text(sub).font(.app(12, .semibold)).foregroundStyle(T.text2)
-            }
-        }
-        .padding(.horizontal, 12).padding(.vertical, 9)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(T.surface2, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-}
-
 struct ScreenHeader<Trailing: View>: View {
     let title: String
     let subtitle: String
@@ -166,32 +139,5 @@ struct RadioMark: View {
             Circle().stroke(selected ? T.brandSolid : T.text2, lineWidth: 2).frame(width: 24, height: 24)
             if selected { Circle().fill(T.brandSolid).frame(width: 11, height: 11) }
         }
-    }
-}
-
-/// Dag-rækkens spændbjælke: laveste til højeste pris, farvet efter niveau.
-struct RangeBar: View {
-    let min: Double, max: Double, lo: Double, hi: Double
-    var body: some View {
-        GeometryReader { g in
-            let span = (hi - lo) > 0 ? (hi - lo) : 1
-            let a = (min - lo) / span, b = (max - lo) / span
-            let w = Swift.max((b - a) * g.size.width, 10)
-            let x = Swift.min(a * g.size.width, g.size.width - w)
-            ZStack(alignment: .leading) {
-                Capsule().fill(T.surface2)
-                Capsule().fill(LinearGradient(colors: [ramp(a), ramp(b)], startPoint: .leading, endPoint: .trailing))
-                    .frame(width: w).offset(x: x)
-            }
-        }
-        .frame(height: 10)
-    }
-}
-
-/// Tilbage-knap til skærme uden for fanerne.
-struct HourTag: View {
-    let text: String, color: Color
-    var body: some View {
-        Text(text).font(.app(11, .bold)).foregroundStyle(color).frame(height: 15)
     }
 }

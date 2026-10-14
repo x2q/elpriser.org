@@ -3,7 +3,6 @@ package org.elpriser.app
 import android.app.Application
 import android.content.Context
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
@@ -20,7 +19,8 @@ import org.elpriser.app.data.Nets
 import org.elpriser.app.data.Position
 import org.elpriser.app.data.Settings
 
-enum class Tab { Nu, Prognose, Time, Automation, Settings }
+/** Pris og Smart hjem er de to faner; Indstillinger åbnes fra net-chippen og er ikke en fane. */
+enum class Tab { Pris, Smart, Settings }
 
 /** Første-start- og netselskabsflowet, der ligger oven på appen. */
 sealed interface Step {
@@ -33,9 +33,7 @@ sealed interface Step {
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     val settings = Settings(app)
 
-    var tab by mutableStateOf(Tab.Nu)
-    /** Valgt døgn (0 = i dag) i Prognose og Time for time. */
-    var selDay by mutableIntStateOf(0)
+    var tab by mutableStateOf(Tab.Pris)
     var step by mutableStateOf<Step?>(if (settings.onboarded) null else Step.Welcome)
         private set
 

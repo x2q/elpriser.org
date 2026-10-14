@@ -49,6 +49,11 @@ final class Settings {
         }
     }
 
+    /// Visningen på Pris-skærmen: kun "Din pris" (samlet pris med netselskab, ellers uden) eller spotpris inkl. moms.
+    /// De to andre visninger kan stadig gemmes (fra Indstillinger), men vises ikke under "Din pris".
+    var prisIsSpot: Bool { view == 2 }
+    var prisMode: String { prisIsSpot ? "spot_inkl" : (net != nil ? "net_inkl_alt" : "inkl_alt") }
+
     func saveNet(_ n: Net, how: String) {
         netGln = n.gln; netHow = how; onboarded = true
         d.set(n.gln, forKey: "netGln"); d.set(how, forKey: "netHow"); d.set(true, forKey: "onboarded")

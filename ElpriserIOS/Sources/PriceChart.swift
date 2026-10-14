@@ -1,120 +1,189 @@
 import SwiftUI
 
-func niceTicks(_ lo: Double, _ hi: Double) -> [Double] {
-    let raw = (hi - lo) / 3
-    let step = [0.1, 0.2, 0.25, 0.5, 1.0, 2.0, 5.0].first { $0 >= raw } ?? 5.0
-    var out: [Double] = []
-    var v = (lo / step - 1e-9).rounded(.up) * step
-    while v <= hi + 1e-9 { out.append(v); v += step }
-    return out
+extension PriceTier {
+    var color: Color {
+        switch self { case .low: T.tierLow; case .mid: T.tierMid; case .high: T.tierHigh }
+    }
+    var soft: Color {
+        switch self { case .low: T.goodSoft; case .mid: T.midSoft; case .high: T.badSoft }
+    }
+    var ink: Color {
+        switch self { case .low: T.good; case .mid: T.mid; case .high: T.bad }
+    }
 }
 
-/// Prisgrafen: linjen farves efter prisen (grøn nederst, rød øverst), de faktiske timer er fuldt optrukne,
-/// prognosen er stiplet med P10–P90-bånd, og et punkt viser, hvor vi er nu.
-struct PriceChart: View {
-    let vals: [Double]
-    var nSolid: Int
-    var nowIndex: Int?
-    var lo: [Double]?
-    var hi: [Double]?
-    var bandFrom = 0
-    var days = 1
-    var dayNames: [String] = []
-    var height: CGFloat = 170
-    /// Vokser med den plads, kortet får (op til `maxHeight`) — iPad-layoutet bruger den til at fylde skærmen.
+/// Prisgrafen på Pris: én søjle pr. time, farvet efter niveau, med en nulbaseret y-akse. Timer der er gået er
+/// dæmpet, et punkt viser den nuværende time, og et tryk eller træk viser den præcise pris i et mørkt tip
+/// (som aldrig går ud over kortet). `flexible` lader grafen vokse med den højde, kortet får.
+struct PriceBarChart: View {
+    let spec: PrisChartSpec
+    @Binding var selected: Int?
+    /// Højden på selve søjleområdet; grafen er mindst så høj.
+    var plotHeight: CGFloat = 160
     var flexible = false
-    var maxHeight: CGFloat = 360
+    /// Større skrift og luft på tablets.
+    var large = false
+
+    @State private var startSelection: Int?
+    @State private var active = false
+    @State private var scrolling = false
+
+    private var gutter: CGFloat { large ? 36 : 26 }
+    private let topRow: CGFloat = 20
+    private var bottomRow: CGFloat { large ? 24 : 20 }
 
     var body: some View {
-        VStack(spacing: 2) {
+        GeometryReader { g in
             Canvas { ctx, size in draw(&ctx, size) }
-                .frame(minHeight: height, maxHeight: flexible ? maxHeight : height)
-                .accessibilityElement()
-                .accessibilityLabel("Prisgraf time for time")
-            if !dayNames.isEmpty {
-                HStack(spacing: 0) {
-                    ForEach(dayNames.indices, id: \.self) { i in
-                        Text(dayNames[i]).font(.app(11, .bold)).foregroundStyle(T.text2).frame(maxWidth: .infinity)
-                    }
-                }
-            }
+                .contentShape(Rectangle())
+                // Samtidig med rullen, så en lodret bevægelse stadig ruller siden; vandrette bevægelser scrubber.
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { v in drag(v, width: g.size.width) }
+                        .onEnded { v in dragEnded(v, width: g.size.width) })
+        }
+        .frame(minHeight: plotHeight + topRow + bottomRow, maxHeight: flexible ? .infinity : plotHeight + topRow + bottomRow)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spec.summary)
+        .accessibilityValue(selected.flatMap { spec.bars.indices.contains($0) ? spec.bars[$0].tip : nil } ?? "")
+        .accessibilityAdjustableAction { dir in
+            let n = spec.bars.count
+            guard n > 0 else { return }
+            let cur = selected ?? spec.nowIndex ?? 0
+            selected = Swift.min(Swift.max(cur + (dir == .increment ? 1 : -1), 0), n - 1)
         }
     }
 
-    private func draw(_ ctx: inout GraphicsContext, _ size: CGSize) {
-        let n = vals.count
-        guard n > 1 else { return }
-        let padT: CGFloat = 8, labelH: CGFloat = 18
-        let top = padT, bottom = size.height - labelH
-        var minV = vals.min()!, maxV = vals.max()!
-        if let lo { minV = Swift.min(minV, lo.min()!) }
-        if let hi { maxV = Swift.max(maxV, hi.max()!) }
-        let span = (maxV - minV) > 0 ? (maxV - minV) : 1
-        func x(_ i: Int) -> CGFloat { CGFloat(i) / CGFloat(n - 1) * size.width }
-        func y(_ v: Double) -> CGFloat { top + CGFloat(1 - (v - minV) / span) * (bottom - top) }
+    // MARK: berøring
 
-        let tickFont = Font.app(10, .semibold)
-        let ticks = niceTicks(minV, maxV)
-        for v in ticks {
-            var p = Path(); p.move(to: CGPoint(x: 0, y: y(v))); p.addLine(to: CGPoint(x: size.width, y: y(v)))
-            ctx.stroke(p, with: .color(T.outline), lineWidth: 1)
+    private func index(at x: CGFloat, width: CGFloat) -> Int {
+        let n = spec.bars.count
+        let w = Swift.max(width - gutter, 1)
+        return Swift.min(Swift.max(Int(((x - gutter) / w * CGFloat(n)).rounded(.down)), 0), n - 1)
+    }
+
+    private func drag(_ v: DragGesture.Value, width: CGFloat) {
+        guard !spec.bars.isEmpty else { return }
+        if !active { active = true; scrolling = false; startSelection = selected }
+        if scrolling { return }
+        // Tydeligt lodret: brugeren ruller siden. Slip tippet, som det var, og lad rullen arbejde.
+        if abs(v.translation.height) > 12 && abs(v.translation.height) > abs(v.translation.width) {
+            scrolling = true
+            selected = startSelection
+            return
         }
-        for d in 1..<Swift.max(days, 1) {
-            var p = Path(); p.move(to: CGPoint(x: x(d * 24), y: top)); p.addLine(to: CGPoint(x: x(d * 24), y: bottom))
-            ctx.stroke(p, with: .color(T.outline), lineWidth: 1)
+        selected = index(at: v.location.x, width: width)
+    }
+
+    private func dragEnded(_ v: DragGesture.Value, width: CGFloat) {
+        defer { active = false; scrolling = false; startSelection = nil }
+        guard !scrolling, !spec.bars.isEmpty else { return }
+        let moved = hypot(v.translation.width, v.translation.height) > 6
+        // Et tryk på den allerede valgte søjle slukker tippet igen; ellers bliver det stående.
+        if !moved, let s = startSelection, s == index(at: v.location.x, width: width) { selected = nil }
+    }
+
+    // MARK: tegning
+
+    private func draw(_ ctx: inout GraphicsContext, _ size: CGSize) {
+        let n = spec.bars.count
+        guard n > 0, size.width > gutter + 10, size.height > topRow + bottomRow + 10 else { return }
+        let plot = CGRect(x: gutter, y: topRow, width: size.width - gutter, height: size.height - topRow - bottomRow)
+        let axis = spec.axis
+        let span = Swift.max(axis.max - axis.min, 0.0001)
+        func y(_ v: Double) -> CGFloat { plot.minY + CGFloat((axis.max - v) / span) * plot.height }
+        let slot = plot.width / CGFloat(n)
+        func cx(_ i: Double) -> CGFloat { plot.minX + CGFloat(i) * slot }
+        let labelFont = Font.app(large ? 12 : 11, .bold)
+        let small = Font.app(10, .bold)
+
+        // vandrette hjælpelinjer og prisskalaen
+        for v in axis.ticks {
+            var p = Path(); p.move(to: CGPoint(x: plot.minX, y: y(v))); p.addLine(to: CGPoint(x: plot.maxX, y: y(v)))
+            ctx.stroke(p, with: .color(T.hairline), lineWidth: 1)
+            let r = ctx.resolve(Text(axis.label(v)).font(labelFont).foregroundStyle(T.text2))
+            ctx.draw(r, at: CGPoint(x: plot.minX - 6, y: y(v)), anchor: .trailing)
         }
-        for d in 0..<days {
-            for h in [0, 6, 12, 18] where d * 24 + h < n {
-                let t = Text(pad(h)).font(tickFont).foregroundStyle(T.text2)
-                let r = ctx.resolve(t)
-                let tx = Swift.min(Swift.max(x(d * 24 + h) - r.measure(in: size).width / 2, 0), size.width - r.measure(in: size).width)
-                ctx.draw(r, at: CGPoint(x: tx, y: bottom + 4), anchor: .topLeading)
+        ctx.draw(ctx.resolve(Text("kr/kWh").font(small).foregroundStyle(T.text2)),
+                 at: CGPoint(x: 0, y: topRow - 8), anchor: .bottomLeading)
+
+        // døgnskel i 3–10-visningen
+        if spec.period == .long {
+            for d in 1..<Swift.max(spec.days, 1) where d * 24 < n {
+                var p = Path(); p.move(to: CGPoint(x: cx(Double(d * 24)), y: plot.minY)); p.addLine(to: CGPoint(x: cx(Double(d * 24)), y: plot.maxY))
+                ctx.stroke(p, with: .color(T.hairline), lineWidth: 1)
             }
         }
-        // P10–P90-bånd
-        if let lo, let hi, bandFrom < n {
-            var band = Path()
-            for i in bandFrom..<n { i == bandFrom ? band.move(to: CGPoint(x: x(i), y: y(hi[i]))) : band.addLine(to: CGPoint(x: x(i), y: y(hi[i]))) }
-            for i in stride(from: n - 1, through: bandFrom, by: -1) { band.addLine(to: CGPoint(x: x(i), y: y(lo[i]))) }
-            band.closeSubpath()
-            ctx.fill(band, with: .color(T.brandSolid.opacity(0.16)))
+
+        // prognosen: tynd skillelinje med navn
+        if let f = spec.forecastFrom {
+            let label = ctx.resolve(Text("Prognose").font(small).foregroundStyle(T.text2))
+            if f > 0 && f < n {
+                var p = Path(); p.move(to: CGPoint(x: cx(Double(f)), y: plot.minY)); p.addLine(to: CGPoint(x: cx(Double(f)), y: plot.maxY))
+                ctx.stroke(p, with: .color(T.text2.opacity(0.55)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                ctx.draw(label, at: CGPoint(x: cx(Double(f)) + 4, y: topRow - 8), anchor: .bottomLeading)
+            } else {
+                ctx.draw(label, at: CGPoint(x: plot.maxX, y: topRow - 8), anchor: .bottomTrailing)
+            }
         }
-        let shade = GraphicsContext.Shading.linearGradient(
-            Gradient(stops: [
-                .init(color: Color(red: 255 / 255, green: 59 / 255, blue: 48 / 255), location: 0),
-                .init(color: Color(red: 255 / 255, green: 149 / 255, blue: 0), location: 0.15),
-                .init(color: Color(red: 255 / 255, green: 204 / 255, blue: 0), location: 0.40),
-                .init(color: Color(red: 168 / 255, green: 216 / 255, blue: 74 / 255), location: 0.65),
-                .init(color: Color(red: 52 / 255, green: 199 / 255, blue: 89 / 255), location: 1),
-            ]),
-            startPoint: CGPoint(x: 0, y: top), endPoint: CGPoint(x: 0, y: bottom))
-        let ns = Swift.min(Swift.max(nSolid, 0), n)
-        if ns > 1 {
-            var p = Path()
-            for i in 0..<ns { i == 0 ? p.move(to: CGPoint(x: x(i), y: y(vals[i]))) : p.addLine(to: CGPoint(x: x(i), y: y(vals[i]))) }
-            ctx.stroke(p, with: shade, style: StrokeStyle(lineWidth: 3.2, lineCap: .round, lineJoin: .round))
+
+        // søjler
+        let gap: CGFloat = n <= 60 ? (large ? 3 : 2) : (n <= 100 ? 1 : 0.5)
+        let base = y(0)
+        var selTop: CGFloat?
+        for (i, b) in spec.bars.enumerated() {
+            let w = Swift.max(slot - gap, 0.8)
+            let x0 = cx(Double(i)) + (slot - w) / 2
+            let yv = y(b.value)
+            let top = Swift.min(yv, base), h = Swift.max(abs(base - yv), 1.5)
+            let isSel = selected == i
+            let r = Swift.min(large ? 3 : 2, w / 2)
+            let rect = CGRect(x: x0, y: top, width: w, height: h)
+            let shape = UnevenRoundedRectangle(topLeadingRadius: r, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: r)
+            if isSel {
+                ctx.fill(Path(roundedRect: CGRect(x: cx(Double(i)), y: plot.minY, width: slot, height: plot.height), cornerRadius: 3),
+                         with: .color(T.brandSolid.opacity(0.10)))
+                selTop = top
+            }
+            ctx.fill(shape.path(in: rect), with: .color(b.tier.color.opacity(b.past && !isSel ? 0.35 : 1)))
+            if isSel { ctx.fill(shape.path(in: rect), with: .color(.black.opacity(0.18))) }
         }
-        if ns < n {
-            var p = Path()
-            let from = Swift.max(ns - 1, 0)
-            for i in from..<n { i == from ? p.move(to: CGPoint(x: x(i), y: y(vals[i]))) : p.addLine(to: CGPoint(x: x(i), y: y(vals[i]))) }
-            ctx.stroke(p, with: shade, style: StrokeStyle(lineWidth: 3.2, lineCap: .round, lineJoin: .round, dash: [9, 7]))
+
+        // prik over den nuværende time
+        if let now = spec.nowIndex, spec.bars.indices.contains(now) {
+            let b = spec.bars[now]
+            let top = Swift.min(y(b.value), base)
+            let r: CGFloat = large ? 3.2 : 2.6
+            let c = CGPoint(x: cx(Double(now)) + slot / 2, y: top - 4 - r)
+            ctx.fill(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2)), with: .color(T.text))
         }
-        if let nowIndex, (0..<n).contains(nowIndex) {
-            let xx = x(nowIndex)
-            var p = Path(); p.move(to: CGPoint(x: xx, y: top)); p.addLine(to: CGPoint(x: xx, y: bottom))
-            ctx.stroke(p, with: .color(T.text2.opacity(0.5)), style: StrokeStyle(lineWidth: 1.5, dash: [4, 4]))
-            let c = CGPoint(x: xx, y: y(vals[nowIndex]))
-            ctx.fill(Path(ellipseIn: CGRect(x: c.x - 8, y: c.y - 8, width: 16, height: 16)), with: .color(T.surface))
-            ctx.fill(Path(ellipseIn: CGRect(x: c.x - 5.5, y: c.y - 5.5, width: 11, height: 11)), with: .color(T.brandSolid))
+
+        // x-aksen
+        let step = plot.width >= 480 ? 6 : 12
+        let lblFont = spec.period == .long && plot.width / CGFloat(Swift.max(spec.days, 1)) < 44 ? small : labelFont
+        for l in spec.xLabels(step: step) {
+            let r = ctx.resolve(Text(l.text).font(lblFont).foregroundStyle(T.text2))
+            let w = r.measure(in: size).width
+            var x = cx(l.at) - w / 2
+            if l.at == 0 { x = plot.minX }
+            x = Swift.min(Swift.max(x, plot.minX), size.width - w)
+            ctx.draw(r, at: CGPoint(x: x, y: plot.maxY + 5), anchor: .topLeading)
         }
-        // prisskalaens tal tegnes til sidst, oven på linjen
-        for v in ticks {
-            let r = ctx.resolve(Text(fmt(v, 2)).font(tickFont).foregroundStyle(T.text2))
-            let sz = r.measure(in: size)
-            let ty = y(v) - sz.height - 1
-            ctx.fill(Path(roundedRect: CGRect(x: 0, y: ty, width: sz.width + 6, height: sz.height), cornerRadius: 4), with: .color(T.surface.opacity(0.9)))
-            ctx.draw(r, at: CGPoint(x: 3, y: ty), anchor: .topLeading)
+
+        // værktøjstippet tegnes sidst, oven på alt, og holdes inden for kortets kanter
+        if let s = selected, spec.bars.indices.contains(s) {
+            let r = ctx.resolve(Text(spec.bars[s].tip).font(Font.app(large ? 13 : 12, .bold)).foregroundStyle(Color.white))
+            let t = r.measure(in: size)
+            let padX: CGFloat = large ? 11 : 10, padY: CGFloat = large ? 7 : 6
+            let w = t.width + padX * 2, h = t.height + padY * 2
+            let mid = cx(Double(s)) + slot / 2
+            let x = Swift.min(Swift.max(mid - w / 2, 0), size.width - w)
+            let barTop = selTop ?? y(spec.bars[s].value)
+            let yy = Swift.max(barTop - 14 - h, 0)
+            let box = CGRect(x: x, y: yy, width: w, height: h)
+            ctx.fill(Path(roundedRect: box.offsetBy(dx: 0, dy: 2), cornerRadius: 9), with: .color(.black.opacity(0.18)))
+            ctx.fill(Path(roundedRect: box, cornerRadius: 9), with: .color(T.tooltip))
+            ctx.draw(r, at: CGPoint(x: box.midX, y: box.midY), anchor: .center)
         }
     }
 }

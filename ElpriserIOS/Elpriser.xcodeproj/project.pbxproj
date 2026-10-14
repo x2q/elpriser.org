@@ -23,10 +23,11 @@
 		5AB5295F7DBD5E92AD374D8A /* ElpriserApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C1B68BF4CE26810998F12 /* ElpriserApp.swift */; };
 		5FF1C34B530F233B527A4F09 /* PositionFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16DDB4C03F208F45BBD9C78F /* PositionFinder.swift */; };
 		6DA635596A73DDAFBA0397D0 /* FlowViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3480C4E02FF1E6233316CA51 /* FlowViews.swift */; };
+		7EC09C6617FEC7DF3E00DBF2 /* PrisScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9090C1529CA47655796ACC /* PrisScreen.swift */; };
 		80B6169C935ABEFDA126D60B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 9D3EF2BA24B75A83BB44F18B /* PrivacyInfo.xcprivacy */; };
 		867993E3EA0F0E0748A78BF1 /* SideRail.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8769A2AAA47103E3A24B1F6 /* SideRail.swift */; };
 		899D5A3608836379BD041D61 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769138C3213A541E2B3C043C /* AppModel.swift */; };
-		A7865E389888B63613F97A6A /* TimeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380F6F85BFE48B203A4F3B6E /* TimeScreen.swift */; };
+		AC66A3FB193ADBEE3BBD4078 /* PrisLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6BBFE10F3618BD65438A3A1 /* PrisLogic.swift */; };
 		B28B090D1276231CAA19C0AE /* Manrope-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EE806A861F959B78C5209974 /* Manrope-SemiBold.ttf */; };
 		B9A71EFB6188DA40EB28FC76 /* Manrope-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CF6308EF906FA984651F9D8D /* Manrope-Medium.ttf */; };
 		F20459218D6C20BE212A65E9 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BA379703921B8B52E7A017 /* Models.swift */; };
@@ -49,7 +50,6 @@
 		26EDF56625B0D18A58DBBBFB /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		2FF88DD5797EF12AB34969DA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		3480C4E02FF1E6233316CA51 /* FlowViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowViews.swift; sourceTree = "<group>"; };
-		380F6F85BFE48B203A4F3B6E /* TimeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeScreen.swift; sourceTree = "<group>"; };
 		3D6E5BFC81A4F27463032FB8 /* Manrope-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Bold.ttf"; sourceTree = "<group>"; };
 		4953B2B40682C6BBCE0E47DE /* Manrope-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-ExtraBold.ttf"; sourceTree = "<group>"; };
 		55BA379703921B8B52E7A017 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -61,6 +61,8 @@
 		9D3EF2BA24B75A83BB44F18B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A81FE4CF78994273B13EC4E0 /* AutomationScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationScreen.swift; sourceTree = "<group>"; };
 		C445F043FFD3C41CF8EB07D4 /* Api.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Api.swift; sourceTree = "<group>"; };
+		C6BBFE10F3618BD65438A3A1 /* PrisLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrisLogic.swift; sourceTree = "<group>"; };
+		CE9090C1529CA47655796ACC /* PrisScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrisScreen.swift; sourceTree = "<group>"; };
 		CF2895F3B64B67D56DD28B8E /* ElpriserTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ElpriserTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF6308EF906FA984651F9D8D /* Manrope-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Medium.ttf"; sourceTree = "<group>"; };
 		E1FA340C8E3EBF989BC55FC1 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
@@ -93,12 +95,13 @@
 				55BA379703921B8B52E7A017 /* Models.swift */,
 				16DDB4C03F208F45BBD9C78F /* PositionFinder.swift */,
 				FC66EA68E8E258BE36DD7CAC /* PriceChart.swift */,
+				C6BBFE10F3618BD65438A3A1 /* PrisLogic.swift */,
+				CE9090C1529CA47655796ACC /* PrisScreen.swift */,
 				204D1733B1B18A449F11A1F1 /* RootView.swift */,
 				E1FA340C8E3EBF989BC55FC1 /* Settings.swift */,
 				85C2F7685A6040B8334198A8 /* SettingsScreen.swift */,
 				E8769A2AAA47103E3A24B1F6 /* SideRail.swift */,
 				2FF88DD5797EF12AB34969DA /* Theme.swift */,
-				380F6F85BFE48B203A4F3B6E /* TimeScreen.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -253,12 +256,13 @@
 				F20459218D6C20BE212A65E9 /* Models.swift in Sources */,
 				5FF1C34B530F233B527A4F09 /* PositionFinder.swift in Sources */,
 				28C5E936F9A4022ED4AE170E /* PriceChart.swift in Sources */,
+				AC66A3FB193ADBEE3BBD4078 /* PrisLogic.swift in Sources */,
+				7EC09C6617FEC7DF3E00DBF2 /* PrisScreen.swift in Sources */,
 				3B8A80D572D489A0E7E6CC56 /* RootView.swift in Sources */,
 				37766E2CD2C2EBCF5D323B2A /* Settings.swift in Sources */,
 				075D0A017923CB44963697ED /* SettingsScreen.swift in Sources */,
 				867993E3EA0F0E0748A78BF1 /* SideRail.swift in Sources */,
 				28BAC5942EC23DEE59C5712D /* Theme.swift in Sources */,
-				A7865E389888B63613F97A6A /* TimeScreen.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

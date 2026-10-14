@@ -22,7 +22,7 @@ struct AutomationScreen: View {
         let today = vm.days().first { $0.date == Clock.today() }
         Adaptive { wide in
             VStack(spacing: 0) {
-                ScreenHeader(title: "Automation", subtitle: "Kør efter de billigste timer i dag")
+                ScreenHeader(title: "Smart hjem", subtitle: "Kør efter de billigste timer i dag")
                 if let today {
                     let prices = today.price
                     let dayAvg = prices.reduce(0, +) / 24

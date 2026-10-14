@@ -32,10 +32,10 @@ class Tokens(
 private fun c(hex: Long) = Color(0xFF000000 or hex)
 
 val LightTokens = Tokens(
-    false, c(0xf4f7fc), c(0xffffff), c(0xeaf0fa), c(0xdbe3f0), c(0x0e1421), c(0x4d596b),
+    false, c(0xf4f6fb), c(0xffffff), c(0xeef1f8), c(0xe3e7f2), c(0x0e1530), c(0x5b6480),
     c(0x1747d6), c(0xe2eaff), c(0x1b57f5),
     c(0x157a3c), c(0xddf4e4), c(0x8a5a00), c(0xfff1d1), c(0xb4231b), c(0xfde3e0),
-    c(0x0b756a), c(0xd9f2ee), c(0xe9eef8), Color(0x730e1421),
+    c(0x0b756a), c(0xd9f2ee), c(0xffffff), Color(0x730e1530),
 )
 
 val DarkTokens = Tokens(
@@ -100,4 +100,3 @@ fun fmt(v: Double?, d: Int = 2): String {
 }
 
 fun pad(h: Int) = h.toString().padStart(2, '0')
-fun hh(h: Int) = "${pad(h)}–${pad((h + 1) % 24)}"
