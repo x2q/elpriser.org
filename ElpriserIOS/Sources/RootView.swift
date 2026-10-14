@@ -42,6 +42,16 @@ struct RootView: View {
             FlowHost().environment(model).preferredColorScheme(scheme)
         }
         .task { model.refresh() }
+        #if DEBUG
+        // Kun til skærmbilleder: -debugLandscape YES tvinger liggende format.
+        .task {
+            guard UserDefaults.standard.bool(forKey: "debugLandscape") else { return }
+            try? await Task.sleep(for: .seconds(1))
+            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscape)) { print("geometry error", $0) }
+            }
+        }
+        #endif
         .onChange(of: phase) { _, p in if p == .active { model.refresh() } }
         .onChange(of: model.settings.mode) { _, _ in model.refresh() }
         .onChange(of: model.settings.netGln) { _, _ in model.refresh() }

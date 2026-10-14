@@ -12,7 +12,10 @@ struct PrisScreen: View {
         // Timen opdateres uden at vente på nye data: fx når appen har ligget i baggrunden hen over et timeskift.
         TimelineView(.periodic(from: .now, by: 30)) { _ in
             GeometryReader { g in
-                let shape: Shape = g.size.width >= 880 ? .columns : (g.size.width >= 600 ? .stacked : .phone)
+                // To kolonner kræver både bredde og et liggende format; en iPad på højkant får kortene stablet, med grafen
+                // fyldende resten af højden.
+                let shape: Shape = g.size.width >= 760 && g.size.width >= g.size.height * 1.2 ? .columns
+                    : (g.size.width >= 600 && g.size.height >= g.size.width * 0.9 ? .stacked : .phone)
                 content(shape, g.size)
             }
         }
@@ -37,14 +40,14 @@ struct PrisScreen: View {
             if let summary {
                 switch shape {
                 case .columns:
-                    let leftW = min(440, max(380, size.width * 0.36))
+                    let leftW = min(440, max(340, size.width * 0.36))
                     let h = max(size.height - 80, 560)
                     ScrollView {
                         VStack(spacing: 12) {
                             if let e = vm.error { ErrorCard(text: e, onRetry: { vm.refresh(force: true) }) }
                             HStack(alignment: .top, spacing: 24) {
                                 VStack(spacing: 16) {
-                                    HeroCard(summary: summary, weekday: weekdayToday(today))
+                                    HeroCard(summary: summary, weekday: weekdayToday(today), compact: leftW < 400)
                                     Tiles(summary: summary, tablet: true)
                                 }
                                 .frame(width: leftW)
@@ -63,11 +66,19 @@ struct PrisScreen: View {
                     ScrollView {
                         VStack(spacing: 20) {
                             if let e = vm.error { ErrorCard(text: e, onRetry: { vm.refresh(force: true) }) }
-                            HeroCard(summary: summary, weekday: weekdayToday(today))
+                            if size.width >= 760 {
+                                HStack(alignment: .top, spacing: 16) {
+                                    HeroCard(summary: summary, weekday: weekdayToday(today))
+                                    Tiles(summary: summary, tablet: true, vertical: true).frame(width: 260)
+                                }
+                            } else {
+                                HeroCard(summary: summary, weekday: weekdayToday(today))
+                            }
                             PeriodPill(wide: true)
-                            ChartCard(spec: chart, tablet: true, selected: $selected, fill: false)
-                            Tiles(summary: summary, tablet: true)
+                            ChartCard(spec: chart, tablet: true, selected: $selected, fill: true)
+                            if size.width < 760 { Tiles(summary: summary, tablet: true) }
                         }
+                        .frame(height: max(size.height - 80, 820))
                         .padding(.horizontal, pad).padding(.bottom, 20)
                     }
                     .refreshable { await vm.load(force: true) }
@@ -199,19 +210,21 @@ private struct HeroCard: View {
     @Environment(AppModel.self) private var vm
     let summary: PrisSummary
     let weekday: String
+    /// Smalt hero-kort (telefon på langs): mindre tal og luft.
+    var compact = false
 
     var body: some View {
         let s = vm.settings
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: compact ? 12 : 18) {
             Text("Elpris lige nu · \(weekday) kl. \(pad(summary.hour))").font(.app(14, .semibold)).foregroundStyle(T.text2)
             HStack(alignment: .lastTextBaseline, spacing: 10) {
-                Text(fmt(summary.price)).font(.app(104, .heavy)).tracking(-5).monospacedDigit()
+                Text(fmt(summary.price)).font(.app(compact ? 76 : 104, .heavy)).tracking(compact ? -3 : -5).monospacedDigit()
                     .lineLimit(1).minimumScaleFactor(0.5)
-                Text("kr/kWh").font(.app(22, .bold)).foregroundStyle(T.text2)
+                Text("kr/kWh").font(.app(compact ? 18 : 22, .bold)).foregroundStyle(T.text2)
             }
             .accessibilityElement(children: .combine)
             VerdictPill(tier: summary.tier, large: true)
-            heroSentenceText(summary, size: 18, color: T.text3).lineSpacing(5)
+            heroSentenceText(summary, size: compact ? 16 : 18, color: T.text3).lineSpacing(compact ? 3 : 5)
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: 8) {
                 ModeSwitch(large: true)
@@ -219,7 +232,7 @@ private struct HeroCard: View {
             }
             .padding(.top, 4)
         }
-        .padding(32)
+        .padding(compact ? 22 : 32)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(T.surface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).stroke(T.outline, lineWidth: 1))
@@ -309,14 +322,26 @@ private struct ChartCard: View {
     var body: some View {
         let title = vm.period == .two ? "Næste 2 døgn" : "Døgn 3–10"
         VStack(alignment: .leading, spacing: tablet ? 14 : 10) {
-            HStack(spacing: 12) {
-                Text(title).font(.app(tablet ? 17 : 14, .heavy)).lineLimit(1)
-                Spacer(minLength: 8)
-                if tablet { Legend() } else { ModeSwitch() }
+            if tablet {
+                // Forklaringen udgår, hvis kortet er for smalt til både titel og den.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) {
+                        Text(title).font(.app(17, .heavy)).lineLimit(1).fixedSize()
+                        Spacer(minLength: 8)
+                        Legend().fixedSize()
+                    }
+                    Text(title).font(.app(17, .heavy)).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else {
+                HStack(spacing: 12) {
+                    Text(title).font(.app(14, .heavy)).lineLimit(1)
+                    Spacer(minLength: 8)
+                    ModeSwitch()
+                }
             }
             if let spec {
                 PriceBarChart(spec: spec, selected: $selected,
-                              plotHeight: tablet ? (fill ? 240 : 280) : 160, flexible: fill, large: tablet)
+                              plotHeight: tablet ? 240 : 160, flexible: fill, large: tablet)
             } else {
                 Text("Prognosen for døgn 3–10 er ikke hentet endnu.")
                     .font(.app(14, .semibold)).foregroundStyle(T.text2)
@@ -353,12 +378,14 @@ private struct Legend: View {
 private struct Tiles: View {
     let summary: PrisSummary
     let tablet: Bool
+    var vertical = false
 
     var body: some View {
-        HStack(spacing: 12) {
+        let items = Group {
             tile(summary.cheapest)
             tile(summary.dearest)
         }
+        if vertical { VStack(spacing: 12) { items } } else { HStack(spacing: 12) { items } }
     }
 
     private func tile(_ e: PrisExtreme) -> some View {
