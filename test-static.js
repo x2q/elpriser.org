@@ -267,39 +267,66 @@ test('server: every top-level piece the renderer calls still exists', () => {
   }
 });
 
-test('price table: 4 days back, today, 3 ahead — and paging neither skips nor repeats', () => {
-  // Lifted out of index.html and run as-is, so what is tested is what ships.
-  const vm = require('vm');
-  const fmtSrc = INDEX.match(/const fmt=d=>[^\n]+/)[0];
-  const winSrc = INDEX.slice(INDEX.indexOf('function tableWindow(){'),
-                             INDEX.indexOf('function renderTable(){'));
-  assert.ok(winSrc.length > 50, 'tableWindow not found');
-  const ctx = { S: { weekOffset: 0 } };
-  vm.createContext(ctx);
-  vm.runInContext(fmtSrc + '\n' + winSrc + '\nglobalThis.tw = tableWindow; globalThis.f = fmt;', ctx);
-  const at = k => { ctx.S.weekOffset = k; return [...ctx.tw()]; };
-  const day = (s, n) => { const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() + n); return ctx.f(d); };
-  const w0 = at(0), today = ctx.f(new Date());
-  assert.equal(w0.length, 8, 'the window is not eight days');
-  assert.equal(w0[4], today, `today is not the fifth column: ${w0.join(' ')}`);
-  assert.equal(w0[0], day(today, -4), 'the window does not start four days back');
-  assert.equal(w0[7], day(today, 3), 'the window does not end three days ahead');
-  for (let k = 0; k > -5; k--) {
-    const cur = at(k), prev = at(k - 1);
-    cur.forEach((d, i) => { if (i) assert.equal(d, day(cur[i - 1], 1), `gap inside window ${k}: ${cur.join(' ')}`); });
-    assert.equal(prev[7], day(cur[0], -1), `paging from ${k} to ${k - 1} skips or repeats a day`);
-  }
-  // The automation page reuses priceData and plans over its last seven days,
-  // so the current window's fetch must still reach seven days back.
-  const loader = INDEX.slice(INDEX.indexOf('async function loadPriceData('), INDEX.indexOf('function tableWindow(){'));
-  assert.ok(/if\(S\.weekOffset===0\)\{[^\n]*s\.setDate\(s\.getDate\(\)-7\)/.test(loader),
-    'the current window no longer fetches seven days back');
+test('price pages: the day-by-hour grid is gone — the data it shared with other features is not', () => {
+  // The "Time for time · 4 dage tilbage, 3 døgn frem" grid (days as columns,
+  // hours as rows, PROGNOSE columns, Forrige/Næste paging) was removed on the
+  // owner's decision; the Pris screen replaced it. Nothing of it may come back
+  // by accident: markup, the code that drew and paged it, or its state.
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  for (const id of ['priceTable', 'tableWrapper', 'tableView', 'tableTitle', 'loadingIndicator', 'fcTableNote', 'weekLabel', 'nextWeekBtn'])
+    assert.ok(!INDEX.includes(`id="${id}"`), `#${id} (the price grid) is back in index.html`);
+  for (const fn of ['renderTable', 'tableWindow', 'changeWeek', 'updateWeekNav', 'reloadPrices', 'showPriceDetail'])
+    assert.ok(!new RegExp(`\\b${fn}\\b`).test(INDEX), `${fn} (the price grid) is back in index.html`);
+  assert.ok(!/weekOffset|fcDays|fcTableNote|change_week/.test(INDEX), 'state or tracking of the price grid is back');
+  assert.ok(!/id="priceDetail"/.test(INDEX), 'the grid cell popup is back');
+  assert.ok(!/4 dage tilbage|Forrige<|Næste →/.test(INDEX + SRV), 'copy promising the grid or its paging is back');
   assert.ok(!/fcTomorrow|showFc/.test(INDEX), 'leftovers of the single forecast column');
-  // PROGNOSE once across the forecast columns — repeated under each weekday it
-  // was wider than any price and stretched those columns.
-  const render = INDEX.slice(INDEX.indexOf('function renderTable(){'), INDEX.indexOf('// Answer block above the table'));
-  assert.equal((render.match(/>PROGNOSE</g) || []).length, 1, 'PROGNOSE is written more than once per table');
-  assert.ok(/colspan="\$\{j-i\}"[^>]*>PROGNOSE</.test(render), 'PROGNOSE does not span the forecast columns');
+
+  // What stays: loadPriceData() still fills priceData, because the Smart hjem
+  // page plans over its last seven days, updatePriceSentence() rewrites the
+  // intro sentence from it and cvt() prices it. Lifted out of index.html and
+  // run with synchronous stubs (this file's runner is synchronous, so `async`
+  // and `await` are stripped from the lifted text and nothing else changes).
+  const vm = require('vm');
+  const a = INDEX.indexOf('async function loadPriceData('), b = INDEX.indexOf('// ═══ Pris lige nu, i ord ═══');
+  assert.ok(a > 0 && b > a, 'loadPriceData not found');
+  const calls = { urls: [], sentence: 0, enCharges: 0, tariff: [] };
+  const ctx = {
+    S: { area: 'DK2', mode: 'net_inkl_alt', gln: '123', _loadId: 7 },
+    priceData: {}, console,
+    fmt: eval(INDEX.match(/const fmt=(d=>[^\n]+)/)[1].replace(/;$/, '')),
+    fetchEnCharges: () => { calls.enCharges++; },
+    loadNetTariff: g => { calls.tariff.push(g); },
+    fetchPricesWithRetry: u => { calls.urls.push(u); return { records: [{ TimeDK: '2026-01-01T10:00:00', DayAheadPriceDKK: 500 }] }; },
+    processRecords: r => ({ '2026-01-01': { 10: r[0].DayAheadPriceDKK } }),
+    updatePriceSentence: () => { calls.sentence++; },
+  };
+  vm.createContext(ctx);
+  const loader = INDEX.slice(a, b).replace(/^async function/, 'function').replace(/\bawait\s+/g, '');
+  vm.runInContext(loader + '\nglobalThis.load = loadPriceData;', ctx);
+  {
+    ctx.load(7);
+    assert.equal(calls.urls.length, 1, 'one price request per load');
+    const m = calls.urls[0].match(/^\/api\/raw\/prices\?area=DK2&start=(\d{4}-\d\d-\d\d)&end=(\d{4}-\d\d-\d\d)$/);
+    assert.ok(m, `unexpected price request ${calls.urls[0]}`);
+    const day = n => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + n); return ctx.fmt(d); };
+    assert.equal(m[1], day(-7), 'the load no longer reaches seven days back (the automation page plans over them)');
+    assert.equal(m[2], day(2), 'the load no longer reaches two days ahead');
+    assert.deepEqual(Object.keys(ctx.priceData), ['2026-01-01'], 'priceData is not filled');
+    assert.equal(calls.sentence, 1, 'the intro sentence is not rewritten from the loaded prices');
+    assert.equal(calls.enCharges, 1, 'the Energinet charges are not loaded for a net_ mode');
+    assert.deepEqual(calls.tariff, ['123'], 'the net tariff is not loaded for a net_ mode');
+    // A load that has been superseded by a newer one must not overwrite anything.
+    ctx.S._loadId = 8; ctx.priceData = {};
+    ctx.load(7);
+    assert.deepEqual(ctx.priceData, {}, 'a stale load overwrote priceData');
+    // A failed request is not fatal: no grid to show an error in, and Smart hjem
+    // fetches for itself when priceData is empty.
+    ctx.fetchPricesWithRetry = () => { throw new Error('offline'); };
+    ctx.console = { warn() {}, error() {}, log() {} };
+    ctx.load(8);
+    assert.deepEqual(ctx.priceData, {}, 'a failed load left priceData in a bad state');
+  }
 });
 
 test('price pages: switch, sentence and unit describe the same price in every view', () => {
@@ -641,8 +668,8 @@ test('homepage: the Pris screen is server-rendered, not JS-only', () => {
   assert.ok(/class="pris-week"/.test(fn) && /Børspris/.test(fn) && /Prognose/.test(fn), 'the day list is not text');
   assert.ok(/data-tip="/.test(ROUTES_SRC), 'the hourly figures are gone');
   // The homepage render is cached; a changed markup needs a new key.
-  assert.ok(/homepage-ssr-v(\d+)/.test(ROUTES_SRC) && +ROUTES_SRC.match(/homepage-ssr-v(\d+)/)[1] >= 60,
-    'the homepage cache key was not bumped for the Pris markup');
+  assert.ok(/homepage-ssr-v(\d+)/.test(ROUTES_SRC) && +ROUTES_SRC.match(/homepage-ssr-v(\d+)/)[1] >= 61,
+    'the homepage cache key was not bumped for the price-grid removal');
 });
 
 test('homepage: the forecast numbers stay as text, not just path data', () => {

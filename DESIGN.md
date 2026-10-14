@@ -257,15 +257,15 @@ The exception is the chevron in the custom strategy dropdown, which uses
 
 ---
 
-## 12. Heatmap & price detail
+## 12. Heatmap
 
-- **Cells**: heat-mapped background, tabular numerals, click → modal.
+- **Cells**: heat-mapped background, tabular numerals. Used by the /prognose
+  table and the zone tables; the price pages (/dk1, /dk2, /dk1/<net>) no longer
+  have a day-by-hour grid — the Pris screen replaced it, and with it the cell
+  popup (`#priceDetail`) and the Forrige/Næste week paging.
 - **Current hour**: ring-inset 2 px, `gray-800/40` light / `white/50` dark —
   *not* a color change so it stays legible regardless of the heatmap stop
   it lands on.
-- **Click → `<dialog id="priceDetail">`**: stacked breakdown of the
-  components (spot + sys + trans + afgift + tarif), each with the same
-  3 %-opacity brand wash row treatment as the FAQ summaries.
 
 ---
 

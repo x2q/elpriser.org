@@ -744,7 +744,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       "name": "Kan jeg se elpriser live og time for time?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Ja. Elpriser.org viser elpriser live, opdateret time for time med data fra Energi Data Service. Du kan se priserne for hele dagens 24 timer som tabel eller graf, sammenligne med morgendagens priser (tilgængelige efter kl. 13), og se historiske priser uge for uge."
+        "text": "Ja. Elpriser.org viser elpriser live, opdateret time for time med data fra Energi Data Service. Du kan se priserne for hele dagens 24 timer, sammenligne med morgendagens priser (tilgængelige efter kl. 13) og se prognosen for de næste døgn."
       }
     },
     {
@@ -1000,7 +1000,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
           </summary>
           <div class="px-5 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            <div>Ja. Elpriser.org viser elpriser live, opdateret time for time med data fra Energi Data Service. Du kan se priserne for hele dagens 24 timer som tabel eller graf, sammenligne med morgendagens priser (tilgængelige efter kl. 13), og se historiske priser uge for uge. Vælg dit prisområde — <a href="/dk1" class="text-brand-500 underline">DK1 Vest</a> eller <a href="/dk2" class="text-brand-500 underline">DK2 Øst</a> — for at se live elpriser.</div>
+            <div>Ja. Elpriser.org viser elpriser live, opdateret time for time med data fra Energi Data Service. Du kan se priserne for hele dagens 24 timer, sammenligne med morgendagens priser (tilgængelige efter kl. 13) og se prognosen for de næste døgn. Vælg dit prisområde — <a href="/dk1" class="text-brand-500 underline">DK1 Vest</a> eller <a href="/dk2" class="text-brand-500 underline">DK2 Øst</a> — for at se live elpriser.</div>
           </div>
         </details>
       </div>
@@ -1124,24 +1124,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   <!-- SSR: unique per-URL intro (H1 + live-price sentence + net coverage +
        tariff rates + PriceSpecification JSON-LD), injected by functions/[[path]].js -->
   <!--SSR_PRICES_INTRO-->
-  <div class="subcard mt-4">
-    <div class="chd2"><span id="tableTitle">Time for time · 4 dage tilbage, 3 døgn frem</span><span>DKK/kWh</span></div>
-    <div id="tableView">
-      <div class="text-center py-12 text-gray-400 dark:text-gray-500" id="loadingIndicator">
-        <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div>
-        Henter priser&hellip;
-      </div>
-      <div class="overflow-x-auto -mx-2 sm:mx-0" id="tableWrapper" style="display:none">
-        <table class="mx-auto text-xs sm:text-sm tabular" id="priceTable"></table>
-      </div>
-    </div>
-    <p id="fcTableNote" class="text-center text-xs mt-2" style="color:#0e9888;display:none">Kolonner mærket PROGNOSE er modellens forventning, ikke faktiske børspriser. Morgendagens priser offentliggøres ca. kl. 13.</p>
-    <div class="flex items-center justify-center gap-2 mt-4">
-      <button onclick="changeWeek(-1)" class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs">← Forrige</button>
-      <span id="weekLabel" class="text-xs text-gray-500 dark:text-gray-400 w-28 text-center">Nu</span>
-      <button id="nextWeekBtn" onclick="changeWeek(1)" disabled class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs disabled:opacity-30 disabled:cursor-not-allowed">Næste →</button>
-    </div>
-  </div>
   <p class="text-center text-xs text-gray-400 dark:text-gray-600 mt-6">Tip: Bogmærk denne side</p>
   </div>
 </main>
@@ -1554,18 +1536,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     Se også: <a href="/automation" class="text-brand-500 underline">Smart hjem</a> — styr enheder automatisk efter de billigste timer
   </div>
 </main>
-
-<!-- ═══════ PRICE DETAIL POPUP ═══════ -->
-<dialog id="priceDetail" class="rounded-2xl shadow-2xl p-0 max-w-xs w-[88vw] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 backdrop:bg-black/40 dark:backdrop:bg-black/60">
-  <div class="flex items-center justify-between px-5 pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
-    <div>
-      <p class="text-xs text-gray-400 dark:text-gray-500" id="pdLabel"></p>
-      <p class="text-lg font-bold text-gray-900 dark:text-white" id="pdTotal"></p>
-    </div>
-    <button onclick="this.closest('dialog').close()" class="text-2xl leading-none text-gray-400 hover:text-gray-800 dark:hover:text-white ml-4">&times;</button>
-  </div>
-  <div class="px-5 py-3 space-y-0" id="pdRows"></div>
-</dialog>
 
 <!-- ═══════ INFO DIALOG ═══════ -->
 <dialog id="infoModal" class="rounded-2xl shadow-2xl p-6 max-w-md w-[90vw] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 backdrop:bg-black/40 dark:backdrop:bg-black/60">
@@ -3382,7 +3352,6 @@ const NETS={DK1:[
 function netBySlug(area,slug){return(NETS[area]||[]).find(n=>n.slug===slug)||null;}
 const ENERGINET_GLN='5790000432752';
 const DAY=['sø','ma','ti','on','to','fr','lø'];
-const MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 const MON_FULL=['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
 // The area cards on the front page: Din pris (inkl. alt) and Spotpris. The four
 // other price modes are no longer a view the site offers; old links to them
@@ -3393,11 +3362,11 @@ const ZONE_BTNS=[
 ];
 const isDark=()=>document.documentElement.classList.contains('dark');
 
-let S={area:'DK1',mode:'spot_inkl',gln:null,netName:'',view:'table',_loadId:0,weekOffset:0};
+let S={area:'DK1',mode:'spot_inkl',gln:null,netName:'',_loadId:0};
 // The Pris screen's own state: which area and net it describes, Din pris or
 // Spotpris, and the period pill (2 = næste 2 døgn, 10 = døgn 3-10).
 const PV={area:'DK1',slug:null,view:'din',period:2,days:null,key:'',_load:0};
-let priceData={},tariffCache={},allTariffsLoaded=false,enCharges=null,fcDays={};
+let priceData={},tariffCache={},allTariffsLoaded=false,enCharges=null;
 
 
 // ═══ GPS — auto-navigate on detection ═══
@@ -3908,7 +3877,7 @@ function route(){
   if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elpriser prognose 7 dage — time for time, op til 10 døgn frem';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){goRoute('');return;}
-  S.area=area;S.mode=mode;S.weekOffset=0;
+  S.area=area;S.mode=mode;
   const slugOrGln=p[2]||null;
   const net=slugOrGln?netBySlug(area,slugOrGln):null;
   S.gln=net?net.gln:(slugOrGln||null);
@@ -3917,7 +3886,7 @@ function route(){
   const pTitle=S.area+(S.netName?' '+S.netName:'')+' — '+mode;
   document.title=pTitle+' — elpriser.org';
   pv(pTitle,'/'+(S.area==='DK1'?'dk1':'dk2'));
-  updateHeader();updateWeekNav();S._loadId++;loadPriceData(S._loadId);loadPris();
+  updateHeader();S._loadId++;loadPriceData(S._loadId);loadPris();
 }
 window.addEventListener('hashchange',route);   // an old #link typed or followed by hand
 window.addEventListener('popstate',route);     // back / forward between views of the same page
@@ -4591,7 +4560,7 @@ function dedupedFetch(url,init){
   _inflight.set(k,p);return p;
 }
 
-// Per-net tariff for the table view — only fetches the one net the user
+// Per-net tariff for the price views — only fetches the one net the user
 // picked (~1 KB), not all 17 (~48 KB). Cached in tariffCache by GLN.
 async function loadNetTariff(gln){
   if(tariffCache[gln])return;
@@ -4701,136 +4670,39 @@ async function fetchPricesWithRetry(url,tries=2){
   }
   throw lastErr;
 }
-// Re-trigger a price load (used by the "Prøv igen" button on the error state).
-function reloadPrices(){loadPriceData(++S._loadId);}
+// priceData: the last seven days plus today and two days ahead, for the chosen
+// area, as raw DKK/MWh by [date][hour]. Nothing here draws a grid any more; the
+// data is shared by other features: the Smart hjem page plans over these days
+// (so the fetch must keep reaching seven days back), updatePriceSentence()
+// rewrites the intro sentence from it, and cvt() prices it for either of them.
 async function loadPriceData(loadId){
-  const li=document.getElementById('loadingIndicator'),tw=document.getElementById('tableWrapper');
-  li.style.display='block';li.innerHTML='Henter priser…';tw.style.display='none';
   const needs=['inkl_alt','inkl_alt_minus','net_inkl_alt','net_inkl_tarif'];
   const proms=[];
   if(needs.includes(S.mode))proms.push(fetchEnCharges());
   if(S.mode.startsWith('net_')&&S.gln)proms.push(loadNetTariff(S.gln));
   if(proms.length)await Promise.all(proms);
   if(loadId!==S._loadId)return;
-  // The table shows eight consecutive days: four back, today and three ahead,
-  // and each step of Forrige/Næste moves the whole window by eight so no day
-  // is skipped or repeated. On the current window the fetch still starts seven
-  // days back, because the automation page reuses priceData and plans over the
-  // last seven days — narrowing this fetch would quietly shorten that.
-  const win=tableWindow();
-  const s=new Date(win[0]+'T12:00:00'),e=new Date(win[7]+'T12:00:00');
-  if(S.weekOffset===0){const t=new Date();t.setHours(12,0,0,0);s.setTime(t.getTime());s.setDate(s.getDate()-7);e.setTime(t.getTime());e.setDate(e.getDate()+2);}
-  else e.setDate(e.getDate()+1);
+  const s=new Date(),e=new Date();
+  s.setHours(12,0,0,0);e.setHours(12,0,0,0);
+  s.setDate(s.getDate()-7);e.setDate(e.getDate()+2);
   try{
     const j=await fetchPricesWithRetry(`/api/raw/prices?area=${S.area}&start=${fmt(s)}&end=${fmt(e)}`);
     if(loadId!==S._loadId)return;
     priceData=processRecords(j.records||[]);
     if(!Object.keys(priceData).length)throw new Error('no parseable records');
-    // Days ahead of today: actual børspriser where published (tomorrow, from
-    // ~13:00, already in priceData) — otherwise the ML forecast, fetched as raw
-    // spot so cvt() applies the exact same tariff/afgift pipeline as the rest
-    // of the table (works for net_ modes too).
-    fcDays={};
-    const ahead=win.filter(d=>d>fmt(new Date())&&!priceData[d]);
-    if(S.weekOffset===0&&ahead.length){
-      try{
-        const fj=await dedupedFetch(`/api/forecast?area=${S.area}&mode=spot_ex`);
-        (fj?.days||[]).forEach(day=>{
-          if(!ahead.includes(day.date))return;
-          const hours={};let n=0;
-          day.prices.forEach(p=>{if(p.price!=null){hours[p.hour]=p.price*1000;n++;}});
-          if(n)fcDays[day.date]=hours;
-        });
-      }catch(_){/* prognosekolonnerne er valgfrie */}
-      if(loadId!==S._loadId)return;
-    }
-    renderTable();
+    updatePriceSentence();
   }catch(err){
-    console.error('Price load failed',err);
-    if(loadId===S._loadId)li.innerHTML='<div class="text-sm text-gray-600 dark:text-gray-400 mb-3">Kunne ikke hente elpriser lige nu.</div><button onclick="reloadPrices()" class="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-full bg-brand-600 hover:bg-brand-700 text-white transition">Prøv igen</button>';
+    // Not fatal here: the Pris screen draws from /api/forecast and the Smart
+    // hjem page fetches for itself when priceData is empty.
+    console.warn('Price load failed',err);
   }
-}
-
-/** The eight dates the table shows for the current S.weekOffset. */
-function tableWindow(){
-  const s=new Date();s.setHours(12,0,0,0);s.setDate(s.getDate()-4+S.weekOffset*8);
-  return Array.from({length:8},(_,i)=>{const d=new Date(s);d.setDate(s.getDate()+i);return fmt(d);});
-}
-function renderTable(){
-  // A day is a column when it has settled prices or, ahead of today, a
-  // forecast. Trailing days with neither are dropped rather than drawn empty.
-  const cols=tableWindow().map(d=>priceData[d]?{d,fc:false}:fcDays[d]?{d,fc:true}:{d,fc:false,empty:true});
-  while(cols.length&&cols[cols.length-1].empty)cols.pop();
-  if(!cols.some(c=>!c.empty)){document.getElementById('loadingIndicator').textContent='Ingen data';return;}
-  const src=c=>c.fc?fcDays[c.d]:priceData[c.d];
-  const anyFc=cols.some(c=>c.fc);
-  const today=fmt(new Date()),tbl=document.getElementById('priceTable');
-  const dk=isDark();
-  // Compute dynamic color range from all visible prices (incl. forecast)
-  const allPrices=[];
-  cols.forEach(c=>{const m=src(c);if(m)for(let hr=0;hr<24;hr++){const raw=m[hr];if(raw!=null)allPrices.push(cvt(raw,hr,c.d));}});
-  setColorRange(allPrices);
-  // Adaptive text classes
-  const thSub=dk?'text-gray-500':'text-gray-400';
-  const thDay=dk?'text-gray-300':'text-gray-700';
-  const thDayToday=dk?'text-brand-400':'text-brand-600';
-  const tdHour=dk?'text-gray-500':'text-gray-500';
-  const emptyBg=dk?'bg-gray-800':'bg-gray-100';
-
-  let h='';
-  const f0=new Date(cols[0].d),f1=new Date(cols[cols.length-1].d);
-  const monthLbl=f0.getMonth()===f1.getMonth()?`${MON_FULL[f0.getMonth()]} ${f0.getFullYear()}`
-    :f0.getFullYear()===f1.getFullYear()?`${MON_FULL[f0.getMonth()]} – ${MON_FULL[f1.getMonth()]} ${f1.getFullYear()}`
-    :`${MON_FULL[f0.getMonth()]} ${f0.getFullYear()} – ${MON_FULL[f1.getMonth()]} ${f1.getFullYear()}`;
-  // "PROGNOSE" is said once, across the forecast columns, not under each
-  // weekday: the word is wider than any price, so repeating it made those
-  // columns half as wide again as the rest. Runs rather than a single split,
-  // in case a forecast day is ever missing between two present ones.
-  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal"></th>`;
-  let monthDone=false;
-  for(let i=0;i<cols.length;){
-    let j=i;while(j<cols.length&&cols[j].fc===cols[i].fc)j++;
-    if(cols[i].fc)h+=`<th colspan="${j-i}" class="text-xs" style="color:#0e9888;font-size:.6rem;font-weight:600;letter-spacing:.06em">PROGNOSE</th>`;
-    else{h+=`<th colspan="${j-i}" class="text-xs ${thSub} font-normal">${monthDone?'':monthLbl}</th>`;monthDone=true;}
-    i=j;
-  }
-  h+='</tr>';
-  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Dag</th>`;
-  cols.forEach(c=>{h+=`<th class="px-0.5 sm:px-1.5 ${thDay}"${c.fc?' style="color:#0e9888"':''}>${new Date(c.d).getDate()}</th>`;});
-  h+=`</tr><tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">Time</th>`;
-  cols.forEach(c=>{
-    const dow=DAY[new Date(c.d).getDay()];
-    if(c.fc)h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal" style="color:#0e9888">${dow}</th>`;
-    else h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${c.d===today?thDay:thSub}">${c.d===today?'I dag':dow}</th>`;
-  });
-  h+='</tr>';
-  const curHour=new Date().getHours();
-  const isMobile=window.innerWidth<640;
-  for(let hr=0;hr<24;hr++){
-    const lb=isMobile?String(hr):String(hr).padStart(2,'0')+'-'+String(hr+1===24?0:hr+1).padStart(2,'0');
-    h+=`<tr><td class="pr-1 sm:pr-3 text-right text-xs ${tdHour} py-0.5">${lb}</td>`;
-    cols.forEach(c=>{
-      const raw=src(c)?.[hr];
-      if(raw==null){h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;return;}
-      const p=cvt(raw,hr,c.d),b2=bg(p),f2=fg(p),v=num(p,2);
-      if(c.fc){h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center" style="background:${b2};color:${f2};opacity:.72" title="Prognose — ikke en faktisk børspris">${v}</td>`;return;}
-      const isCurCell=hr===curHour&&c.d===today;
-      h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center cursor-pointer hover:ring-2 hover:ring-inset hover:ring-white/60 active:opacity-80 transition-opacity${isCurCell?' ring-2 ring-inset ring-gray-800/40 dark:ring-white/50':''}" style="background:${b2};color:${f2}" data-d="${c.d}" data-hr="${hr}" onclick="showPriceDetail(this)">${v}</td>`;
-    });
-    h+='</tr>';
-  }
-  tbl.innerHTML=h;document.getElementById('loadingIndicator').style.display='none';document.getElementById('tableWrapper').style.display='block';
-  const note=document.getElementById('fcTableNote');if(note)note.style.display=anyFc?'':'none';
-  const tt=document.getElementById('tableTitle');
-  if(tt)tt.textContent=S.weekOffset===0?'Time for time · 4 dage tilbage, 3 døgn frem':'Time for time · tidligere priser';
-  updatePriceSentence();
 }
 
 // ═══ Pris lige nu, i ord ═══
 // CANONICAL, like fcChartHTML: verbatim in index.html and functions/[[path]].js.
 // The server writes this sentence for the URL's own view so a crawler reads
 // it; the browser rewrites it whenever the view changes, so the sentence, the
-// dropdown, the big number and the table always describe the same price.
+// dropdown, the big number and the chart always describe the same price.
 // test-static.js diffs the two copies.
 //
 // Each sentence names exactly what the figure includes. "Inkl alt" without a
@@ -4856,11 +4728,11 @@ function priceNowText(mode, hh, price, area, net){
 
 // The intro sentence is server-written for the URL's own view; rewrite it for
 // whatever view is showing now — Din pris or Spotpris — so it never contradicts
-// the number on the Pris screen or in the table below it.
+// the number on the Pris screen.
 function updatePriceSentence(){
   const pnt=document.getElementById('priceNowText');
   const today=fmt(new Date());
-  if(!pnt||S.weekOffset!==0||!priceData[today])return;
+  if(!pnt||!priceData[today])return;
   const nowH=new Date().getHours(),raw=priceData[today][nowH];
   if(raw==null)return;
   pnt.textContent=priceNowText(S.mode,String(nowH).padStart(2,'0'),cvt(raw,nowH,today),S.area,S.netName);
@@ -4892,26 +4764,6 @@ async function loadTariffPage(){
   h+=`<tr><td class="py-1 ${hd}">Transmissions nettarif</td><td colspan="3" class="text-center ${bd}">${en.trans.toFixed(4).replace('.',',')} DKK/kWh</td></tr>`;
   h+=`<tr><td class="py-1 ${hd}">Elafgift</td><td colspan="3" class="text-center ${bd}">${en.afg.toFixed(4).replace('.',',')} DKK/kWh</td></tr></tfoot>`;
   document.getElementById('tariffTable').innerHTML=h;document.getElementById('tariffLoading').style.display='none';document.getElementById('tariffTable').style.display='table';
-}
-
-// ═══ WEEK NAVIGATION ═══
-function changeWeek(delta){
-  const next=S.weekOffset+delta;
-  if(next>0)return;
-  S.weekOffset=next;
-  gtag('event','change_week',{direction:delta>0?'next':'previous',offset:next});
-  updateWeekNav();
-  S._loadId++;loadPriceData(S._loadId);
-}
-function updateWeekNav(){
-  const lbl=document.getElementById('weekLabel');
-  const btn=document.getElementById('nextWeekBtn');
-  if(lbl){
-    const w=tableWindow(),a=new Date(w[0]),b=new Date(w[7]);
-    lbl.textContent=a.getMonth()===b.getMonth()?`${a.getDate()}.–${b.getDate()}. ${MON[b.getMonth()]}`
-      :`${a.getDate()}. ${MON[a.getMonth()]} – ${b.getDate()}. ${MON[b.getMonth()]}`;
-  }
-  if(btn)btn.disabled=S.weekOffset>=0;
 }
 
 // ═══ AUTOMATION ═══
@@ -5683,7 +5535,7 @@ function renderForecastTable(data){
   days.forEach(d=>d.prices.forEach(p=>{if(p.price!=null)allP.push(p.price);}));
   setColorRange(allP);
   const today=fmt(new Date());
-  // Use exact same classes as renderTable
+  // Adaptive text classes
   const thSub=dk?'text-gray-500':'text-gray-400';
   const thDay=dk?'text-gray-300':'text-gray-700';
   const thDayToday=dk?'text-brand-400':'text-brand-600';
@@ -5691,7 +5543,7 @@ function renderForecastTable(data){
   const emptyBg=dk?'bg-gray-800':'bg-gray-100';
 
   let h='';
-  // Month+year header — same as renderTable
+  // Month+year header
   const fd=new Date(days[0].date);
   h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal"></th><th colspan="${days.length}" class="text-xs ${thSub} font-normal">${MON_FULL[fd.getMonth()]} ${fd.getFullYear()}</th></tr>`;
   // Day number row
@@ -5715,7 +5567,7 @@ function renderForecastTable(data){
     h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${isFc?thSub:(dk?'text-emerald-400':'text-emerald-600')}" style="font-size:0.6rem">${isFc?'prognose':'faktisk'}</th>`;
   });
   h+='</tr>';
-  // Hourly rows — matches renderTable cell pattern exactly
+  // Hourly rows
   const curHour=new Date().getHours();
   const isMobile=window.innerWidth<640;
   for(let hr=0;hr<24;hr++){
@@ -6022,76 +5874,6 @@ function closeGlobe(){
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&!document.getElementById('globeOverlay')?.hidden)closeGlobe();
 });
-
-// ═══ PRICE DETAIL POPUP ═══
-function showPriceDetail(cell){
-  const d=cell.dataset.d,hr=+cell.dataset.hr;
-  const raw=priceData[d]?.[hr];
-  if(raw===undefined)return;
-  gtag('event','view_price_detail',{date:d,hour:hr,area:S.area,mode:S.mode});
-  const en=enCharges||{sys:0.072,trans:0.043,afg:0.008};
-  const tariffH=S.mode.startsWith('net_')?getTariff(S.gln,d):null;
-  // All component values ex moms (DKK/kWh)
-  const spotEx=raw/1000;
-  const netEx=tariffH?tariffH[hr]:0;
-  const enEx=(['inkl_alt','inkl_alt_minus','net_inkl_alt','net_inkl_tarif'].includes(S.mode))?(en.sys+en.trans):0;
-  const afgEx=(['inkl_alt','net_inkl_alt'].includes(S.mode))?en.afg:0;
-  // VAT multiplier — spot_ex shows no VAT
-  const vat=S.mode==='spot_ex'?1:1.25;
-  // All displayed values are inkl moms (matching reference site format)
-  const f3=v=>(v*vat).toFixed(3).replace('.',',');
-  const total=cvt(raw,hr,d); // use same formula as the table cell
-
-  const lb=String(hr).padStart(2,'0')+'-'+String(hr+1===24?0:hr+1).padStart(2,'0');
-  const dt=new Date(d);
-  const dayLabel=`${DAY[dt.getDay()]} ${dt.getDate()}/${dt.getMonth()+1} · ${lb}`;
-
-  const dk=isDark();
-  const sep='border-t border-gray-100 dark:border-gray-800 mt-1 pt-1';
-  const lc='text-gray-500 dark:text-gray-400 text-sm';
-  const vc='text-right text-sm tabular font-medium text-gray-800 dark:text-gray-200 pl-6';
-
-  // Determine nettarif period label
-  const netPeriod=hr>=17&&hr<21?'spids':hr>=6&&hr<17?'højlast':'lavlast';
-
-  let html='';
-  // Elspot
-  html+=`<div class="flex items-baseline justify-between py-1.5">
-    <span class="${lc}">Elspot<span class="text-xs text-gray-400 dark:text-gray-500 ml-1">${raw.toFixed(0)} DKK/MWh · ex moms ${(spotEx).toFixed(4).replace('.',',')}</span></span>
-    <span class="${vc}">${f3(spotEx)}</span>
-  </div>`;
-  // Nettarif (only for net_ modes)
-  if(S.mode.startsWith('net_')&&tariffH){
-    html+=`<div class="flex items-baseline justify-between py-1.5">
-      <span class="${lc}">${S.netName||'Nettarif'}<span class="text-xs text-gray-400 dark:text-gray-500 ml-1">${netPeriod}</span></span>
-      <span class="${vc}">${f3(netEx)}</span>
-    </div>`;
-  }
-  // Energinet (sys + trans combined, like reference)
-  if(enEx>0){
-    html+=`<div class="flex items-baseline justify-between py-1.5">
-      <span class="${lc}">Energinet<span class="text-xs text-gray-400 dark:text-gray-500 ml-1">sys + transmission</span></span>
-      <span class="${vc}">${f3(enEx)}</span>
-    </div>`;
-  }
-  // Elafgift
-  if(afgEx>0){
-    html+=`<div class="flex items-baseline justify-between py-1.5">
-      <span class="${lc}">Elafgift</span>
-      <span class="${vc}">${f3(afgEx)}</span>
-    </div>`;
-  }
-  // Total — reuse cvt() result to guarantee it matches the table cell
-  html+=`<div class="flex items-baseline justify-between py-2 ${sep}">
-    <span class="font-semibold text-gray-700 dark:text-gray-200 text-sm">I alt ${vat>1?'inkl. moms':'ex moms'}</span>
-    <span class="font-bold text-base tabular text-gray-900 dark:text-white">${total.toFixed(3).replace('.',',')} <span class="text-xs font-normal text-gray-400">kr/kWh</span></span>
-  </div>`;
-
-  document.getElementById('pdLabel').textContent=dayLabel;
-  document.getElementById('pdTotal').textContent=num(total,2)+' kr/kWh';
-  document.getElementById('pdRows').innerHTML=html;
-  document.getElementById('priceDetail').showModal();
-}
 
 // ═══ SHELLY LIVE TARIFF PAGE ═══
 let _shellyVal='DK1';

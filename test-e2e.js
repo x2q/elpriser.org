@@ -460,15 +460,65 @@ async function startServer() {
     });
   }
 
-  await test('prices: "Forrige" button changes week and enables "Næste"', async () => {
-    await page.goto(BASE + '/#DK1/inkl_alt');
-    await page.waitForSelector('button:has-text("Forrige")');
-    const labelBefore = await page.locator('#weekLabel').textContent();
-    await page.locator('button:has-text("Forrige")').click();
-    // waitForFunction until label changes or next button becomes enabled
-    await page.waitForFunction(prev => document.getElementById('weekLabel').textContent !== prev, labelBefore);
-    const nextDisabled = await page.locator('#nextWeekBtn').isDisabled();
-    assert.equal(nextDisabled, false, 'Next button should be enabled after going back a week');
+  await test('prices: the day-by-hour grid and its week paging are gone, the Pris screen is there', async () => {
+    // The "Time for time · 4 dage tilbage, 3 døgn frem" grid with Forrige/Næste
+    // paging was removed; the Pris screen replaced it.
+    for (const url of ['/dk1', '/dk1/n1', '/#DK1/inkl_alt']) {
+      await page.goto(BASE + url);
+      await page.waitForSelector('main[data-page="prices"].active .pris .pris-now');
+      for (const sel of ['#priceTable', '#tableWrapper', '#weekLabel', '#nextWeekBtn', '#loadingIndicator', '#priceDetail', 'button:has-text("Forrige")', 'button:has-text("Næste")'])
+        assert.equal(await page.locator(sel).count(), 0, `${url}: ${sel} is back`);
+      assert.equal(await page.evaluate(() => typeof changeWeek + typeof renderTable + typeof tableWindow), 'undefinedundefinedundefined');
+      const text = await page.locator('main[data-page="prices"]').innerText();
+      assert.ok(!/4 dage tilbage|Forrige/.test(text), `${url}: copy about the grid is back`);
+      assert.ok(await page.locator('main[data-page="prices"] .pris-week').count() >= 1, `${url}: the "Dag for dag" list is gone`);
+    }
+  });
+
+  await test('prices: the price data the grid used to load still reaches Smart hjem (seven days back, fetched once)', async () => {
+    // The automation page plans over the last seven days of priceData; the price
+    // pages fill it. Answered with eight deterministic days (today-7 .. today+2)
+    // so the test is about the wiring, not the upstream feed.
+    const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const requests = [];
+    const handler = route => {
+      const u = new URL(route.request().url());
+      requests.push({ start: u.searchParams.get('start'), end: u.searchParams.get('end'), area: u.searchParams.get('area') });
+      const records = [];
+      for (let back = 7; back >= -2; back--) {
+        const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - back);
+        for (let h = 0; h < 24; h++)
+          records.push({ TimeDK: `${ymd(d)}T${String(h).padStart(2, '0')}:00:00`, DayAheadPriceDKK: 400 + h * 10 });
+      }
+      route.fulfill({ json: { records } });
+    };
+    await page.route('**/api/raw/prices*', handler);
+    try {
+      await page.goto(BASE + '/dk1');
+      await page.waitForSelector('main[data-page="prices"].active .pris .pris-now');
+      await page.waitForFunction(() => Object.keys(priceData).length >= 8);
+      const day = n => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + n); return ymd(d); };
+      assert.equal(requests.length, 1, `price requests from the price page: ${JSON.stringify(requests)}`);
+      assert.deepEqual(requests[0], { start: day(-7), end: day(2), area: 'DK1' });
+      // On to Smart hjem inside the same document (a hash route — a link is a
+      // full page load and would start from nothing): it reuses priceData.
+      await page.evaluate(() => { location.hash = '#automation'; });
+      await page.waitForSelector('main[data-page="automation"].active #autoTableWrapper table');
+      assert.equal(requests.length, 1, 'Smart hjem fetched again although priceData was already loaded');
+      // Seven day columns plus the hour column, every cell a price from the feed.
+      assert.equal(await page.locator('#autoTableWrapper tr').first().locator('th').count(), 8);
+      assert.equal(await page.locator('#autoTableWrapper tr').count(), 25);
+      const cell = (await page.locator('#autoTableWrapper tr').nth(1).locator('td').nth(1).textContent()).trim();
+      assert.match(cell, /^\d+,\d\d$/, `Smart hjem cell is not a price: "${cell}"`);
+      // And opened cold, Smart hjem fetches for itself.
+      requests.length = 0;
+      await page.goto(BASE + '/automation');
+      await page.waitForSelector('main[data-page="automation"].active #autoTableWrapper table');
+      assert.equal(requests.length, 1, `cold Smart hjem price requests: ${JSON.stringify(requests)}`);
+      assert.equal(await page.locator('#autoTableWrapper tr').count(), 25);
+    } finally {
+      await page.unroute('**/api/raw/prices*', handler);
+    }
   });
 
   // ── 4. Automation page — every dropdown + input + button ───────────────────

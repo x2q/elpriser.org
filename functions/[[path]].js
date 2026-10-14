@@ -298,7 +298,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 ## Sider
 
 - [Forside](https://elpriser.org/): Overblik over dagens elpriser for DK1 og DK2 med aktuel pris og netselskaber.
-- [Elpriser DK1 Vest](https://elpriser.org/dk1): Elpris time for time for Vestdanmark (Jylland og Fyn) — åbner på "inkl alt" (spot + Energinets tariffer + elafgift + moms); ren spotpris og netselskaber vælges i menuen. 4 dage tilbage, i dag og 3 døgn frem.
+- [Elpriser DK1 Vest](https://elpriser.org/dk1): Elpris time for time for Vestdanmark (Jylland og Fyn) — åbner på "inkl alt" (spot + Energinets tariffer + elafgift + moms); ren spotpris og netselskaber vælges i menuen. Viser i dag og i morgen time for time og prognosen op til 10 døgn frem.
 - [Elpriser DK2 Øst](https://elpriser.org/dk2): Samme for Østdanmark (Sjælland, Lolland-Falster, Bornholm).
 - Per-netselskab priser: \`/dk1/<slug>\` eller \`/dk2/<slug>\` viser dagens pris inkl. nettarif for det valgte netselskab (fx https://elpriser.org/dk1/n1, https://elpriser.org/dk2/radius).
 - [Nettariffer](https://elpriser.org/tariffer): Sammenligning af nettariffer for alle danske netselskaber.
@@ -489,7 +489,7 @@ Spotprisen opdateres time for time og varierer mellem DK1 (Vest) og DK2 (Øst). 
 Nettariffen varierer efter netselskab og tidspunkt (lav-, mellem- og spidslast). Største netselskaber: N1 og Trefor (DK1/Vest), Radius og Cerius (DK2/Øst). Mindre selskaber: RAH Net, Konstant, Nord Energi, Vores Elnet m.fl.
 
 **Kan jeg se elpriser live og time for time?**
-Ja. Elpriser.org viser elpriser opdateret time for time fra Energi Data Service. Se priserne for dagens 24 timer, sammenlign med morgendagens priser (efter kl. 13), og se historik uge for uge.
+Ja. Elpriser.org viser elpriser opdateret time for time fra Energi Data Service. Se priserne for dagens 24 timer, sammenlign med morgendagens priser (efter kl. 13) og se prognosen for de næste døgn.
 
 ## API-eksempler
 
@@ -540,7 +540,7 @@ Spotprisen på el opdateres time for time og varierer mellem DK1 (Vest) og DK2 (
 Nettariffen varierer efter dit netselskab og tidspunkt på dagen (lav-, mellem- og spidslast). De største netselskaber i Danmark er N1 og Trefor (DK1/Vest) samt Radius og Cerius (DK2/Øst). Mindre selskaber som RAH Net, Konstant, Nord Energi og Vores Elnet har egne tariffer. Se og sammenlign alle tariffer på [nettarif-siden](https://elpriser.org/tariffer), eller vælg dit netselskab på prissiden for at se din reelle elpris inkl. nettarif.
 
 **Kan jeg se elpriser live og time for time?**
-Ja. Elpriser.org viser elpriser live, opdateret time for time med data fra Energi Data Service. Du kan se priserne for hele dagens 24 timer som tabel eller graf, sammenligne med morgendagens priser (tilgængelige efter kl. 13), og se historiske priser uge for uge. Vælg dit prisområde — [DK1 Vest](https://elpriser.org/dk1) eller [DK2 Øst](https://elpriser.org/dk2) — for at se live elpriser.
+Ja. Elpriser.org viser elpriser live, opdateret time for time med data fra Energi Data Service. Du kan se priserne for hele dagens 24 timer, sammenligne med morgendagens priser (tilgængelige efter kl. 13) og se prognosen for de næste døgn. Vælg dit prisområde — [DK1 Vest](https://elpriser.org/dk1) eller [DK2 Øst](https://elpriser.org/dk2) — for at se live elpriser.
 
 ## CO₂-udledning pr. kWh
 
@@ -1478,7 +1478,7 @@ function daDateLabel() {
 // CANONICAL, like fcChartHTML: verbatim in index.html and functions/[[path]].js.
 // The server writes this sentence for the URL's own view so a crawler reads
 // it; the browser rewrites it whenever the view changes, so the sentence, the
-// dropdown, the big number and the table always describe the same price.
+// dropdown, the big number and the chart always describe the same price.
 // test-static.js diffs the two copies.
 //
 // Each sentence names exactly what the figure includes. "Inkl alt" without a
@@ -1533,7 +1533,7 @@ async function buildPricesIntro(context, area, net) {
     ? priceNowText(mode, String(now.hour).padStart(2, '0'), now.price, area, net && net.name)
     : ''];
   if (net) {
-    ps.push(`${NET_COVERAGE[net.slug] || `${net.name} er et dansk netselskab i ${region}.`} Bor du i området, betaler du ${net.name}s nettarif oven i spotprisen — tabellen nedenfor viser den samlede pris time for time.`);
+    ps.push(`${NET_COVERAGE[net.slug] || `${net.name} er et dansk netselskab i ${region}.`} Bor du i området, betaler du ${net.name}s nettarif oven i spotprisen — grafen ovenfor viser den samlede pris time for time.`);
     const rec = tariff?.records?.[0];
     if (rec) {
       const t = (i) => (rec['Price' + i] ?? 0).toFixed(2).replace('.', ',');
@@ -1604,7 +1604,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v60');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v61');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
