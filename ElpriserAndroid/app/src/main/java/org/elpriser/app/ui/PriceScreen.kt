@@ -92,7 +92,9 @@ private fun barOf(kind: Int) = when (kind) { 0 -> BarLow; 1 -> BarMid; else -> B
 @Composable
 fun PriceScreen(vm: AppViewModel, wide: Boolean) {
     val s = vm.settings
-    var period by rememberSaveable { mutableIntStateOf(0) }
+    // Det gemte heltal (også en ældre værdi fra før 5 døgn) tvinges til en gyldig periode.
+    var storedPeriod by rememberSaveable { mutableIntStateOf(PERIOD_TWO) }
+    val period = coercePeriod(storedPeriod)
     val days = vm.days()
     val today = days.firstOrNull()?.takeIf { it.date == Clock.today() }
 
@@ -105,25 +107,24 @@ fun PriceScreen(vm: AppViewModel, wide: Boolean) {
             return@Column
         }
 
-        val two = days.take(2)
+        val two = visibleDays(days, PERIOD_TWO)
         val twoVals = two.flatMap { it.price }
         val now = Clock.hour()
         val price = twoVals[now]
         val kind = verdict(price, twoVals).kind
         val verdictLabel = verdict(price, twoVals).label
         val sentence = cheaperSentence(twoVals, now)
-        val cheapest = cheapestTile(twoVals, now)
-        val priciest = priciestTile(twoVals, now)
 
-        // 3–10 døgn: døgn 3 til 10 fra i dag. Mangler de, falder vi tilbage til det, der er.
-        val later = days.drop(2).take(8)
-        val showLater = period == 1 && later.isNotEmpty()
-        val shownDays = if (showLater) later else two
-        val shownVals = if (showLater) later.flatMap { it.price } else twoVals
-        val shownPeriod = if (showLater) 1 else 0
-        val tiers = remember(shownVals) { IntArray(shownVals.size) { verdict(shownVals[it], shownVals).kind } }
+        // 5 døgn: i dag fra kl. 00 + de næste fire døgn (120 timer). Mangler døgn, vises dem, der er.
+        val shownPeriod = effectivePeriod(days.size, period)
+        val shownDays = visibleDays(days, period)
+        val shownVals = if (shownPeriod == PERIOD_FIVE) shownDays.flatMap { it.price } else twoVals
+        // Nøgletal: dyreste/billigste time fra nu og til slutningen af det viste vindue.
+        val cheapest = cheapestTile(shownVals, now, shownDays)
+        val priciest = priciestTile(shownVals, now, shownDays)
+        val tiers = remember(shownVals) { tiersFor(shownVals) }
         val axis = remember(shownVals) { axisFor(shownVals) }
-        val nowIndex = if (shownPeriod == 0) now else null
+        val nowIndex = now
 
         val modeIdx = if (s.view >= 2) 1 else 0
         val onMode: (Int) -> Unit = { s.updateView(if (it == 0) 0 else 2) }
@@ -159,14 +160,14 @@ fun PriceScreen(vm: AppViewModel, wide: Boolean) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                         hero(Modifier.width(420.dp))
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                            PeriodPill(shownPeriod, { period = it }, wide = true)
+                            PeriodPill(shownPeriod, { storedPeriod = it }, wide = true)
                             chart()
                             tiles()
                         }
                     }
                 } else {
                     if (wide) hero(Modifier.fillMaxWidth()) else hero(Modifier)
-                    PeriodPill(shownPeriod, { period = it }, wide = wide)
+                    PeriodPill(shownPeriod, { storedPeriod = it }, wide = wide)
                     chart()
                     tiles()
                 }
@@ -300,7 +301,7 @@ private fun ModeSwitch(selected: Int, onSelect: (Int) -> Unit, large: Boolean = 
     }
 }
 
-/** 2 døgn | 3–10 døgn. */
+/** 2 døgn | 5 døgn. */
 @Composable
 private fun PeriodPill(selected: Int, onSelect: (Int) -> Unit, wide: Boolean) {
     val t = T
@@ -314,7 +315,7 @@ private fun PeriodPill(selected: Int, onSelect: (Int) -> Unit, wide: Boolean) {
             .then(if (t.dark) Modifier.border(BorderStroke(1.dp, t.outline), shape) else Modifier)
             .padding(4.dp).semantics { contentDescription = "Periode" },
     ) {
-        listOf("2 døgn", "3–10 døgn").forEachIndexed { i, label ->
+        PERIOD_LABELS.forEachIndexed { i, label ->
             val on = i == selected
             Box(
                 (if (wide) Modifier else Modifier.weight(1f)).height(48.dp)
@@ -340,7 +341,7 @@ private fun PriceChartCard(
     val radius = if (wide) 28.dp else 22.dp
     // Valget ryddes, når serien skifter (periode, visning eller nye priser).
     var sel by remember(period, vals.size, vals.firstOrNull(), vals.lastOrNull()) { mutableIntStateOf(-1) }
-    val tip = if (sel in vals.indices) tooltipText(period, days, vals, sel) else null
+    val tip = if (sel in vals.indices) tooltipText(days, vals, sel) else null
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(radius)).background(t.surface)
             .border(BorderStroke(1.dp, t.outline), RoundedCornerShape(radius))
@@ -393,14 +394,14 @@ private fun PriceBars(
     val tickStyle = TextStyle(fontFamily = Manrope, fontSize = axisSize, fontWeight = FontWeight.Bold, color = t.text2, fontFeatureSettings = FigureFeatures)
     val unitStyle = TextStyle(fontFamily = Manrope, fontSize = if (wide) 11.sp else 10.sp, fontWeight = FontWeight.Bold, color = t.text2)
     val xStyle = TextStyle(
-        fontFamily = Manrope, fontSize = if (period == 1 && !wide) 10.sp else axisSize, fontWeight = FontWeight.Bold, color = t.text2,
+        fontFamily = Manrope, fontSize = axisSize, fontWeight = FontWeight.Bold, color = t.text2,
     )
     val tipBg = if (t.dark) Color(0xFFE8EDF5) else Ink
     val tipStyle = TextStyle(
         fontFamily = Manrope, fontSize = if (wide) 13.sp else 12.sp, fontWeight = FontWeight.Bold,
         color = if (t.dark) Color(0xFF0B1220) else Color.White, fontFeatureSettings = FigureFeatures,
     )
-    val firstForecast = remember(days, n) { (0 until n).firstOrNull { !days[it / 24].actual } }
+    val firstForecast = remember(days) { forecastStart(days) }
     val currentSelected by rememberUpdatedState(selected)
     val gutterPx = with(density) { gutter.toPx() }
 
@@ -454,8 +455,8 @@ private fun PriceBars(
             drawText(tl, topLeft = Offset(plotL - 6.dp.toPx() - tl.size.width, yy - tl.size.height / 2f))
         }
 
-        // døgnskel (3–10 døgn)
-        if (period == 1) for (d in 1 until n / 24) {
+        // døgnskel ved hver midnat (5 døgn)
+        if (period == PERIOD_FIVE) for (d in 1 until n / 24) {
             val xx = plotL + d * 24 * slot
             drawLine(t.outline.copy(alpha = 0.6f), Offset(xx, plotT), Offset(xx, plotB), strokeWidth = 1.dp.toPx())
         }
@@ -476,7 +477,8 @@ private fun PriceBars(
         }
 
         // søjler
-        val gap = (if (wide) 4.dp else 2.dp).toPx().coerceAtMost(slot * 0.35f)
+        // 5 døgn: 120 tynde søjler med et hårfint mellemrum; 2 døgn: lidt luft mellem 48 søjler.
+        val gap = (if (period == PERIOD_FIVE) (if (wide) 2.dp else 1.dp) else if (wide) 4.dp else 2.dp).toPx().coerceAtMost(slot * 0.35f)
         val barW = (slot - gap).coerceAtLeast(1f)
         val corner = CornerRadius(minOf(2.dp.toPx(), barW / 2))
         for (i in 0 until n) {
@@ -499,11 +501,11 @@ private fun PriceBars(
         }
 
         // aksens tekster
-        val labels = if (period == 0) hourLabels(n, if (plotW / density.density >= 460f) 6 else 12) else dayLabels(days)
+        val labels = if (period == PERIOD_TWO) hourLabels(n, if (plotW / density.density >= 460f) 6 else 12) else dayLabels(days)
         for (l in labels) {
             val tl = measurer.measure(l.text, xStyle)
             val cx = plotL + l.frac * plotW
-            val left = if (period == 0) (if (l.frac == 0f) plotL else cx - tl.size.width / 2f) else cx - tl.size.width / 2f
+            val left = if (period == PERIOD_TWO) (if (l.frac == 0f) plotL else cx - tl.size.width / 2f) else cx - tl.size.width / 2f
             drawText(tl, topLeft = Offset(left.coerceIn(0f, w - tl.size.width), plotB + 6.dp.toPx()))
         }
 

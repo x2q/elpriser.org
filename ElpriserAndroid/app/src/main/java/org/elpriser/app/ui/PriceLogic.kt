@@ -12,7 +12,59 @@ import kotlin.math.floor
 /** Pris afrundet til øre, som den vises. Bruges, så vi aldrig skriver "billigere" om to ens viste priser. */
 private fun cents(v: Double) = Math.round(v * 100)
 
-private fun dayWord(index: Int) = if (index / 24 == 0) "i dag" else "i morgen"
+/* ── Periode ─────────────────────────────────────────────────────────────────────────────
+ * To valg: 0 = "2 døgn" (i dag + i morgen), 1 = "5 døgn" (i dag fra kl. 00 + de næste fire døgn = 120 timer).
+ * Heltallet er det, der gemmes (rememberSaveable); en ældre gemt værdi for den tidligere senere-døgn-visning var også 1 og vises nu som 5 døgn.
+ */
+const val PERIOD_TWO = 0
+const val PERIOD_FIVE = 1
+const val DAYS_TWO = 2
+const val DAYS_FIVE = 5
+
+/** Etiketterne i periode-pillen, i samme rækkefølge som PERIOD_TWO / PERIOD_FIVE. */
+val PERIOD_LABELS = listOf("2 døgn", "5 døgn")
+
+/** Gemt heltal -> gyldig periode. Ukendte værdier falder tilbage til 2 døgn og må aldrig kaste. */
+fun coercePeriod(raw: Int): Int = if (raw == PERIOD_FIVE) PERIOD_FIVE else PERIOD_TWO
+
+/**
+ * Tekstværdi (gemt indstilling, startargument) -> periode. De gamle værdier for senere-døgn-visningen (og deres varianter) er nu 5 døgn;
+ * alt ukendt eller tomt bliver 2 døgn.
+ */
+fun parsePeriod(raw: String?): Int {
+    val v = raw?.trim()?.lowercase()?.replace('–', '-')?.replace('—', '-') ?: return PERIOD_TWO
+    return when {
+        v.isEmpty() -> PERIOD_TWO
+        v.startsWith("5") || v.startsWith("3-10") -> PERIOD_FIVE
+        v == "1" || v == "week" || v == "later" || v == "10" -> PERIOD_FIVE
+        else -> PERIOD_TWO
+    }
+}
+
+/** Den periode, der faktisk kan vises: 5 døgn kræver mere end de to første døgn, ellers vises 2 døgn. */
+fun effectivePeriod(availableDays: Int, period: Int): Int =
+    if (coercePeriod(period) == PERIOD_FIVE && availableDays > DAYS_TWO) PERIOD_FIVE else PERIOD_TWO
+
+/** Det synlige vindue: i dag fra kl. 00 og frem (2 eller 5 døgn). Mangler døgn, vises dem, der er. */
+fun visibleDays(all: List<Day>, period: Int): List<Day> =
+    all.take(if (effectivePeriod(all.size, period) == PERIOD_FIVE) DAYS_FIVE else DAYS_TWO)
+
+/** Indeks (i timeserien) for første prognosedøgn, eller null hvis alle viste døgn er offentliggjorte børspriser. */
+fun forecastStart(days: List<Day>): Int? = days.indexOfFirst { !it.actual }.takeIf { it >= 0 }?.times(24)
+
+/** Tier (0 billig, 1 middel, 2 dyr) for hver time, målt mod hele det viste vindue (terciler). */
+fun tiersFor(vals: List<Double>): IntArray = IntArray(vals.size) { verdict(vals[it], vals).kind }
+
+/** "i dag" / "i morgen" / "søn 17." for timen med det givne indeks. Uden dage at slå op i: "senere". */
+fun dayWord(index: Int, days: List<Day>? = null): String {
+    val d = index / 24
+    return when {
+        d == 0 -> "i dag"
+        d == 1 -> "i morgen"
+        days != null && d in days.indices -> "${dayShort(days[d])} ${days[d].localDate.dayOfMonth}."
+        else -> "senere"
+    }
+}
 
 /** Sætningen under prisen: den billigste time de næste 24 timer, hvis den er billigere end nu. */
 fun cheaperSentence(vals: List<Double>, now: Int): String {
@@ -27,20 +79,20 @@ fun cheaperSentence(vals: List<Double>, now: Int): String {
 /** En af de to nøgletal-felter: etiket, pris og klokkeslæt. */
 class Extreme(val label: String, val price: Double, val hour: Int)
 
-/** Billigste time fra nu og frem. Etiketten er "Billigst i dag" eller "Billigst i morgen". */
-fun cheapestTile(vals: List<Double>, now: Int): Extreme? {
+/** Billigste time fra nu og frem i det viste vindue. Etiketten er "Billigst i dag", "Billigst i morgen" eller "Billigst søn 17.". */
+fun cheapestTile(vals: List<Double>, now: Int, days: List<Day>? = null): Extreme? {
     if (now !in vals.indices) return null
     var best = now
     for (i in now + 1 until vals.size) if (vals[i] < vals[best]) best = i
-    return Extreme("Billigst ${dayWord(best)}", vals[best], best % 24)
+    return Extreme("Billigst ${dayWord(best, days)}", vals[best], best % 24)
 }
 
 /** Dyreste time fra nu og frem. "i aften" bruges kun for i dag fra kl. 17. */
-fun priciestTile(vals: List<Double>, now: Int): Extreme? {
+fun priciestTile(vals: List<Double>, now: Int, days: List<Day>? = null): Extreme? {
     if (now !in vals.indices) return null
     var worst = now
     for (i in now + 1 until vals.size) if (vals[i] > vals[worst]) worst = i
-    val word = if (worst / 24 == 0 && worst % 24 >= 17) "i aften" else dayWord(worst)
+    val word = if (worst / 24 == 0 && worst % 24 >= 17) "i aften" else dayWord(worst, days)
     return Extreme("Dyrest $word", vals[worst], worst % 24)
 }
 
@@ -61,10 +113,10 @@ fun axisFor(vals: List<Double>): Axis {
     return Axis(min, max, ticks)
 }
 
-/** Teksten i boblen. 2 døgn: "I dag kl. 19 · 3,90 kr/kWh". 3–10 døgn: "lør 16. okt kl. 13 · 1,57 kr/kWh". */
-fun tooltipText(period: Int, days: List<Day>, vals: List<Double>, i: Int): String {
+/** Teksten i boblen: "I dag kl. 19 · 3,90 kr/kWh", "I morgen kl. 13 · …", og fra døgn 3 "søn 17. okt kl. 13 · 0,51 kr/kWh". */
+fun tooltipText(days: List<Day>, vals: List<Double>, i: Int): String {
     val d = days[i / 24]
-    val whenText = if (period == 0) (if (i / 24 == 0) "I dag" else "I morgen") else "${dayShort(d)} ${dayMonth(d)}"
+    val whenText = when (i / 24) { 0 -> "I dag"; 1 -> "I morgen"; else -> "${dayShort(d)} ${dayMonth(d)}" }
     return "$whenText kl. ${pad(i % 24)} · ${fmt(vals[i])} kr/kWh"
 }
 
@@ -77,11 +129,11 @@ fun hourLabels(n: Int, step: Int): List<XLabel> =
         XLabel(h.toFloat() / n, if (h % 24 == 0) (if (h == 0) "I dag 00" else "I morgen 00") else pad(h % 24))
     }
 
-/** 3–10 døgn: ét navn pr. døgn, midt under døgnets søjler ("lør 16"). */
+/** 5 døgn: ét navn pr. døgn, midt under døgnets 24 søjler ("fre 15"). */
 fun dayLabels(days: List<Day>): List<XLabel> =
     days.mapIndexed { k, d -> XLabel((k + 0.5f) / days.size, "${dayShort(d)} ${d.localDate.dayOfMonth}") }
 
-fun periodTitle(period: Int) = if (period == 0) "Næste 2 døgn" else "Døgn 3–10"
+fun periodTitle(period: Int) = if (period == PERIOD_FIVE) "Næste 5 døgn" else "Næste 2 døgn"
 
 fun priceCaption(mode: String) = when (mode) {
     "net_inkl_alt" -> "Inkl. nettarif, afgifter og moms"
