@@ -300,9 +300,11 @@ const span = (n, los, his, types = []) => ({
   ok(/Inkl\. nettarif, afgifter og moms/.test(h), 'billedtekst med net');
   ok(/data-pris-view="din" aria-pressed="true" class="on">Din pris/.test(h) && /data-pris-view="spot" aria-pressed="false">Kun spotpris/.test(h) && />Spotpris<\/button>/.test(h),
      'omskifteren har præcis Din pris og Spotpris (Kun spotpris på bred)');
-  ok(/<section class="pris-card pp2" aria-label="Næste 2 døgn">/.test(h) && /<p class="pris-ct">Næste 2 døgn<\/p>/.test(h) && /<p class="pris-ct">Døgn 3–10<\/p>/.test(h), 'korttitlerne er Næste 2 døgn og Døgn 3–10');
-  ok(/role="tablist" aria-label="Periode"/.test(h) && (h.match(/role="tab"/g) || []).length === 2 && />2 døgn</.test(h) && />3–10 døgn</.test(h), 'periodepillen er en tablist med 2 døgn og 3–10 døgn');
-  const two = h.slice(h.indexOf('pris-card pp2'), h.indexOf('pris-card pp10'));
+  ok(/<section class="pris-card pp2" aria-label="Næste 2 døgn">/.test(h) && /<p class="pris-ct">Næste 2 døgn<\/p>/.test(h) && /<section class="pris-card pp5" aria-label="Næste 5 døgn">/.test(h) && /<p class="pris-ct">Næste 5 døgn<\/p>/.test(h), 'korttitlerne er Næste 2 døgn og Næste 5 døgn');
+  ok(!/3–10|Døgn 3/.test(h), 'skærmen nævner ikke længere 3–10 døgn');
+  ok(/role="tablist" aria-label="Periode"/.test(h) && (h.match(/role="tab"/g) || []).length === 2 && />2 døgn</.test(h) && />5 døgn</.test(h), 'periodepillen er en tablist med 2 døgn og 5 døgn');
+  ok([...h.matchAll(/<button type="button" role="tab"[^>]*>([^<]*)</g)].map(m => m[1]).join('|') === '2 døgn|5 døgn', 'pillernes tekst er præcis 2 døgn og 5 døgn');
+  const two = h.slice(h.indexOf('pris-card pp2'), h.indexOf('pris-card pp5'));
   ok((two.match(/<span class="pc[ "]/g) || []).length === 48, 'to døgn er 48 søjler');
   ok((two.match(/class="pc past"/g) || []).length === 21, 'de 21 timer der er gået er dæmpet');
   ok((two.match(/<b class="pd"/g) || []).length === 1, 'én prik over den nuværende time');
@@ -315,14 +317,55 @@ const span = (n, los, his, types = []) => ({
   // Tiers by the same verdict the apps use: the current bar is the pill's colour.
   const nowCol = two.match(/<span class="pc"[^>]*><i class="pb t(\d)"[^>]*><\/i><b class="pd"/);
   ok(nowCol && nowCol[1] === '2', 'den nuværende søjle har pillens farve', nowCol && nowCol[1]);
-  const ten = h.slice(h.indexOf('pris-card pp10'));
-  ok((ten.match(/<span class="pc[ "]/g) || []).length === 192, 'døgn 3–10 er otte døgn, 192 søjler');
-  ok(/data-tip="fre 16\. okt kl\. 13 · \d,\d\d kr\/kWh"/.test(ten), 'tip for døgn 3–10 har ugedag og dato');
-  ok(/<span class="xd"[^>]*>fre 16<\/span>/.test(ten) && /<span class="xd"[^>]*>fre 23<\/span>/.test(ten), 'x-aksen har dagetiketter');
-  ok(/<span class="pris-fc"[^>]*><i><\/i>Prognose<\/span>/.test(ten), 'prognosedage er mærket');
-  // The day list: text, one row per day, settled or forecast.
-  ok((h.match(/<tr class="r\d+"><th scope="row">/g) || []).length === 10, 'ti dage i dagslisten');
+  // 5 døgn: today from 00:00 plus four more calendar days, 120 bars (14.-18. okt in this feed).
+  const five = h.slice(h.indexOf('pris-card pp5'), h.indexOf('pris-tiles pp2'));
+  ok((five.match(/<span class="pc[ "]/g) || []).length === 120, '5 døgn er fem døgn, 120 søjler');
+  ok((five.match(/class="pc past"/g) || []).length === 21 && (five.match(/<b class="pd"/g) || []).length === 1, 'de 21 timer der er gået er dæmpet, og der er én prik');
+  ok(/data-tip="I dag kl\. 19 · 3,90 kr\/kWh"/.test(five) && /data-tip="I morgen kl\. 13 · 1,38 kr\/kWh"/.test(five), 'tip for i dag og i morgen i 5 døgn');
+  ok(/data-tip="fre 16\. okt kl\. 13 · \d,\d\d kr\/kWh"/.test(five) && /data-tip="søn 18\. okt kl\. 04 · /.test(five), 'tip for senere dage har ugedag og dato');
+  ok(!/data-tip="fre 23\. okt/.test(five) && !/data-tip="[^"]*(man|tir) 19\. okt/.test(five), 'dag seks og frem er ikke med i 5 døgn');
+  const xd = [...five.matchAll(/<span class="xd" style="left:([\d.]+)%">([^<]+)<\/span>/g)];
+  ok(xd.map(m => m[2]).join('|') === 'ons 14|tor 15|fre 16|lør 17|søn 18', 'x-aksen har ét dagsmærke pr. døgn', xd.map(m => m[2]).join('|'));
+  ok(xd.map(m => m[1]).join('|') === '10.00|30.00|50.00|70.00|90.00', 'dagsmærkerne står midt under hvert døgns 24 søjler', xd.map(m => m[1]).join('|'));
+  ok((five.match(/class="pris-sep"/g) || []).length === 4, 'en skillelinje ved hver midnat');
+  // The feed has two settled days (14. and 15.), so the forecast starts at bar 48 = 40 %.
+  ok(/<span class="pris-fc mid" style="left:40\.00%"><i><\/i>Prognose<\/span>/.test(five), 'Prognose-skillelinjen står hvor prognosen begynder (40 %)');
+  const feedLate = feed.map((d, i) => i === 1 ? { ...d, type: 'forecast' } : d);
+  ok(/<span class="pris-fc mid" style="left:20\.00%">/.test(pris(feedLate, D0, 21, o)), 'er i morgen prognose, flytter skillelinjen til 20 %');
+  ok(/<span class="pris-fc mid" style="left:60\.00%">/.test(pris(feed.map((d, i) => i === 2 ? { ...d, type: 'actual' } : d), D0, 21, o)), 'er dagen efter i morgen børspris, flytter den til 60 %');
+  ok(/<div class="pris-xl days">/.test(five), 'x-aksen er dagsaksen');
+  // The y-axis of the 5 døgn card follows the highest visible price (3,90 -> 4,5): 0 1 2 3 4.
+  ok(/<div class="pris-yl"><span style="top:[\d.]+%">0<\/span>(<span[^>]*>\d<\/span>){4}<\/div>/.test(five), 'y-aksen i 5 døgn er 0 1 2 3 4');
+  // Tiers are terciles of the 120 visible values: roughly a third of the bars in each.
+  const tiers = [0, 1, 2].map(t => (five.match(new RegExp(`class="pb t${t}"`, 'g')) || []).length);
+  ok(tiers.every(n => n >= 120 * 0.2 && n <= 120 * 0.5), 'tertilerne fordeler de 120 søjler nogenlunde lige', tiers.join('/'));
+  // The tiles of each period: 2 døgn ends tomorrow; 5 døgn reaches later days and names them.
+  ok(/<div class="pris-tiles pp2">/.test(h) && /<div class="pris-tiles pp5">/.test(h), 'to sæt felter, ét pr. periode');
+  const tiles5 = h.slice(h.indexOf('pris-tiles pp5'));
+  ok(/<div class="k">Billigst i morgen<\/div><div class="v">1,38 <small>kr · kl\. 13/.test(tiles5) && /<div class="k">Dyrest søn 18\.<\/div><div class="v">3,36 <small>kr · kl\. 19/.test(tiles5), 'felter i 5 døgn: billigst i morgen, dyrest søn 18. (ugedag og dato for senere dage)');
+  // The cheapest of the later days wins in 5 døgn when it undercuts today/tomorrow.
+  const cheapLate = feed.map((d, i) => i === 3 ? dayOf(d.date, M.map((v, hh) => hh === 13 ? 0.51 : v), 'forecast') : d);
+  const cl = pris(cheapLate, D0, 21, o), cl5 = cl.slice(cl.indexOf('pris-tiles pp5'));
+  ok(/<div class="k">Billigst lør 17\.<\/div><div class="v">0,51 <small>kr · kl\. 13<\/small>/.test(cl5), 'Billigst lør 17. 0,51 kr · kl. 13');
+  const cl2 = cl.slice(cl.indexOf('pris-tiles pp2'), cl.indexOf('pris-tiles pp5'));
+  ok(/<div class="k">Billigst i morgen<\/div>/.test(cl2) && !/lør 17/.test(cl2), 'felterne i 2 døgn ser ikke ud over i morgen');
+  const dearLate = feed.map((d, i) => i === 4 ? dayOf(d.date, M.map((v, hh) => hh === 19 ? 5.5 : v), 'forecast') : d);
+  const dl = pris(dearLate, D0, 21, o);
+  ok(/<div class="k">Dyrest søn 18\.<\/div><div class="v">5,50 <small>kr · kl\. 19<\/small>/.test(dl.slice(dl.indexOf('pris-tiles pp5'))), 'Dyrest søn 18. 5,50 kr · kl. 19');
+  // The day list: text, one row per day, settled or forecast. Rows 6-10 stay as hidden text for crawlers.
+  const trs = h.match(/<tr class="r\d+"><th scope="row">/g) || [];
+  ok(trs.length === 10, 'ti dage i dagslisten', String(trs.length));
+  ok((h.match(/<tr class="r2">/g) || []).length === 2 && (h.match(/<tr class="r5">/g) || []).length === 3 && (h.match(/<tr class="r10">/g) || []).length === 5,
+     'rækkerne: 2 i begge perioder, 3 kun i 5 døgn, 5 kun som tekst');
+  ok(/<tr class="r5"><th scope="row">Fredag<small>16\. okt<\/small>/.test(h), 'tredje række hedder ugedagen og datoen');
   ok(/<tr class="r2"><th scope="row">I dag<small>14\. okt<\/small><\/th><td>1,30–3,90<\/td><td>kl\. 04–05<\/td><td class="real">Børspris/.test(h), 'dagens spænd og billigste time står som tekst');
+  ok(/<tr class="r5"><th scope="row">Fredag[^]*?<td class="fc">Prognose/.test(h), 'prognosedage er mærket Prognose');
+  // The old value 10 ("3–10 døgn") and every spelling of it resolves to 5 døgn; unknown values to 2.
+  ok(pctx.prisPeriod(10) === 5 && pctx.prisPeriod('10') === 5 && pctx.prisPeriod('3–10') === 5 && pctx.prisPeriod('3-10') === 5 && pctx.prisPeriod(5) === 5 && pctx.prisPeriod('5') === 5,
+     'prisPeriod: 10, "10", "3–10" og 5 giver 5');
+  ok(pctx.prisPeriod(2) === 2 && pctx.prisPeriod('2') === 2 && pctx.prisPeriod(undefined) === 2 && pctx.prisPeriod(null) === 2 && pctx.prisPeriod('') === 2 && pctx.prisPeriod('x') === 2 && pctx.prisPeriod(1) === 2 && pctx.prisPeriod(25) === 2,
+     'prisPeriod: 2 og ukendte værdier giver 2');
+  ok(/data-period="5"/.test(pris(feed, D0, 21, { ...o, period: 10 })) && /aria-selected="true" data-pris-period="5">5 døgn</.test(pris(feed, D0, 21, { ...o, period: 10 })), 'det gamle periode 10 tegnes som 5 døgn');
 
   // It is the cheapest hour of the next 24: say so.
   const night = pris(feed, D0, 4, o);
@@ -334,12 +377,12 @@ const span = (n, los, his, types = []) => ({
   ok(/Billigere i dag kl\. /.test(eve) === false && /Billigste time de næste 24|Billigere i dag/.test(eve), 'uden i morgen findes sætningen stadig, med i dag');
   // Tomorrow missing: one day, no crash, no "i morgen".
   const one = pris(feed.slice(0, 1), D0, 21, o);
-  ok((one.slice(one.indexOf('pris-card pp2'), one.indexOf('pris-card pp10')).match(/data-tip=/g) || []).length === 24 && !/i morgen/.test(one.replace(/Næste 2 døgn/g, '')),
+  ok((one.slice(one.indexOf('pris-card pp2'), one.indexOf('pris-card pp5')).match(/data-tip=/g) || []).length === 24 && !/i morgen/.test(one.replace(/Næste 2 døgn/g, '')),
      'uden i morgen tegnes kun i dag');
   // Spotpris and no net: the captions.
   ok(/Spotpris inkl\. moms/.test(pris(feed, D0, 21, { ...o, view: 'spot' })), 'billedtekst for spotpris');
   ok(/Inkl\. Energinets tariffer, afgifter og moms/.test(pris(feed, D0, 21, { ...o, net: null })), 'billedtekst uden net');
-  ok(/data-period="10"/.test(pris(feed, D0, 21, { ...o, period: 10 })) && /aria-selected="true" data-pris-period="10"/.test(pris(feed, D0, 21, { ...o, period: 10 })), 'perioden kan være 3–10 døgn');
+  ok(/data-period="5"/.test(pris(feed, D0, 21, { ...o, period: 5 })) && /aria-selected="true" data-pris-period="5">5 døgn</.test(pris(feed, D0, 21, { ...o, period: 5 })), 'perioden kan være 5 døgn');
   // No data at all: a screen with a dash, not a crash.
   const none = pris([], D0, 21, {});
   ok(/class="pris-now">—</.test(none) && !/NaN|undefined|Infinity/.test(none) && !/pris-pill/.test(none), 'uden data: tankestreg og ingen pille');

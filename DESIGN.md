@@ -336,7 +336,7 @@ will fail CI.
 The front page and the area/net pages (`/dk1`, `/dk2`, `/dk1/<net>`) share one
 screen, drawn by `prisHTML()` (canonical, verbatim in `index.html` and
 `functions/[[path]].js`): hero (label, price, verdict, one sentence, Din pris /
-Spotpris), period pill (2 døgn | 3–10 døgn), bar chart with a zero-based axis and
+Spotpris), period pill (2 døgn | 5 døgn: today plus four days, 120 bars), bar chart with a zero-based axis and
 an exact-price tooltip, two stat tiles, and a day list as text. Tokens are the
 `--p-*` custom properties (ground `#f4f6fb`, card `#fff`, ink `#0e1530`, tiers
 `#1e9e5a` / `#f0a30a` / `#e5484d`), remapped under `.dark`. Font: Manrope,

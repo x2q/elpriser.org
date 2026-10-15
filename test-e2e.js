@@ -346,19 +346,107 @@ async function startServer() {
     });
   }
 
-  await test('prices: the period pill is a tablist that switches the chart between 2 døgn and 3–10 døgn', async () => {
+  // The day `n` days after today in Danish short form, the way the screen writes it.
+  const WD = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag'];
+  const WS = ['søn', 'man', 'tir', 'ons', 'tor', 'fre', 'lør'], MON = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+  const dayAfter = n => { const d = new Date(Date.parse(todayDk() + 'T12:00:00Z') + n * 86400000); return { wd: WD[d.getUTCDay()], ws: WS[d.getUTCDay()], d: d.getUTCDate(), m: MON[d.getUTCMonth()] }; };
+
+  await test('prices: the period pill is a tablist that switches the chart between 2 døgn and 5 døgn', async () => {
     await page.goto(BASE + '/dk1');
     await page.waitForSelector('.pris .pp2 .pris-plot');
     assert.equal(await page.locator('.pris-period').getAttribute('role'), 'tablist');
-    assert.equal(await page.locator('.pp2').isVisible(), true);
-    assert.equal(await page.locator('.pp10').isVisible(), false);
+    assert.deepEqual((await page.locator('.pris-period [role="tab"]').allTextContents()).map(t => t.trim()), ['2 døgn', '5 døgn']);
+    assert.equal(await page.locator('.pris-card.pp2').isVisible(), true);
+    assert.equal(await page.locator('.pris-card.pp5').isVisible(), false);
     assert.equal((await page.locator('.pp2 .pris-ct').textContent()).trim(), 'Næste 2 døgn');
-    await page.locator('.pris-period [data-pris-period="10"]').click();
-    assert.equal(await page.locator('.pp10').isVisible(), true);
-    assert.equal(await page.locator('.pp2').isVisible(), false);
-    assert.equal((await page.locator('.pp10 .pris-ct').textContent()).trim(), 'Døgn 3–10');
-    assert.equal(await page.locator('.pris-period [data-pris-period="10"]').getAttribute('aria-selected'), 'true');
-    assert.equal(await page.locator('.pp10 .pc').count(), 192);
+    await page.locator('.pris-period [data-pris-period="5"]').click();
+    assert.equal(await page.locator('.pris-card.pp5').isVisible(), true);
+    assert.equal(await page.locator('.pris-card.pp2').isVisible(), false);
+    assert.equal((await page.locator('.pp5 .pris-ct').textContent()).trim(), 'Næste 5 døgn');
+    assert.equal(await page.locator('.pris-period [data-pris-period="5"]').getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('.pris-period [data-pris-period="2"]').getAttribute('aria-selected'), 'false');
+    assert.equal(await page.locator('.pp5 .pc').count(), 120, 'five days of hourly bars');
+    assert.equal(await page.locator('.pris').getAttribute('data-period'), '5');
+  });
+
+  await test('prices: 5 døgn labels every day under its 24 bars, with the Prognose divider where the forecast begins', async () => {
+    await page.goto(BASE + '/dk1');
+    await page.waitForSelector('.pp2 .pris-plot');
+    await page.locator('.pris-period [data-pris-period="5"]').click();
+    const labels = await page.locator('.pp5 .pris-xl .xd').allTextContents();
+    assert.deepEqual(labels, [0, 1, 2, 3, 4].map(n => { const x = dayAfter(n); return `${x.ws} ${x.d}`; }));
+    const lefts = await page.locator('.pp5 .pris-xl .xd').evaluateAll(els => els.map(e => parseFloat(e.style.left)));
+    lefts.forEach((l, i) => assert.ok(Math.abs(l - (i * 24 + 12) / 120 * 100) < 0.01, `label ${i} at ${l}%`));
+    assert.equal(await page.locator('.pp5 .pris-sep').count(), 4, 'a divider at every midnight');
+    // Days 0 and 1 are børspriser in the fixture, day 2 is the first forecast day.
+    const fc = page.locator('.pp5 .pris-fc');
+    assert.equal((await fc.textContent()).trim(), 'Prognose');
+    assert.ok(Math.abs(parseFloat(await fc.evaluate(e => e.style.left)) - 48 / 120 * 100) < 0.01, 'Prognose sits at the start of day 3');
+    // Today is dimmed up to the current hour, with one dot on it.
+    assert.equal(await page.locator('.pp5 .pc.past').count(), hourDk());
+    assert.equal(await page.locator('.pp5 .pd').count(), 1);
+  });
+
+  await test('prices: 5 døgn tooltip names later days by weekday and date, and stays inside the card at both ends', async () => {
+    await page.goto(BASE + '/dk1');
+    await page.waitForSelector('.pp2 .pris-plot');
+    await page.locator('.pris-period [data-pris-period="5"]').click();
+    const box = await page.locator('.pp5 .pris-plot').boundingBox();
+    const hit = async i => {
+      await page.mouse.move(box.x + box.width * (i + 0.5) / 120, box.y + box.height * 0.7);
+      const tip = page.locator('.pp5 .pris-tip');
+      await tip.waitFor({ state: 'visible' });
+      return (await tip.textContent()).trim();
+    };
+    const x = dayAfter(3);
+    assert.equal(await hit(3 * 24 + 13), `${x.ws} ${x.d}. ${x.m} kl. 13 · ${pris(fixturePrice('inkl_alt', null, 13))} kr/kWh`);
+    assert.equal(await hit(24 + 13), `I morgen kl. 13 · ${pris(fixturePrice('inkl_alt', null, 13))} kr/kWh`);
+    assert.equal(await hit(19), `I dag kl. 19 · ${pris(fixturePrice('inkl_alt', null, 19))} kr/kWh`);
+    for (const i of [0, 119]) {
+      await hit(i);
+      const inside = await page.evaluate(() => {
+        const t = document.querySelector('.pp5 .pris-tip').getBoundingClientRect(), c = document.querySelector('.pp5').getBoundingClientRect();
+        return t.left >= c.left && t.right <= c.right;
+      });
+      assert.equal(inside, true, `the tooltip overflows the card at bar ${i}`);
+    }
+  });
+
+  await test('prices: the stat tiles and the Dag for dag list follow the period (2 or 5 rows, day wording)', async () => {
+    await page.goto(BASE + '/dk1');
+    await page.waitForSelector('.pp2 .pris-plot');
+    const rows = () => page.locator('.pris-week tbody tr:visible').count();
+    assert.equal(await rows(), 2);
+    assert.equal(await page.locator('.pris-tiles.pp2').isVisible(), true);
+    assert.equal(await page.locator('.pris-tiles.pp5').isVisible(), false);
+    await page.locator('.pris-period [data-pris-period="5"]').click();
+    assert.equal(await rows(), 5);
+    const names = (await page.locator('.pris-week tbody tr:visible th').allTextContents()).map(t => t.trim());
+    assert.deepEqual(names.slice(0, 2).map(t => t.replace(/\d.*$/, '')), ['I dag', 'I morgen']);
+    const d2 = dayAfter(2);
+    assert.ok(names[2].startsWith(d2.wd), names[2]);
+    assert.ok(names[2].includes(`${d2.d}. ${d2.m}`), names[2]);
+    assert.deepEqual((await page.locator('.pris-week tbody tr:visible td:last-child').allTextContents()).map(t => t.trim()),
+      ['Børspris', 'Børspris', 'Prognose', 'Prognose', 'Prognose']);
+    // Same price every day in the fixture, so the cheapest/dearest hour is today (now or later) —
+    // the tile wording must be i dag / i aften / i morgen, never a date, in these cases.
+    const keys = (await page.locator('.pris-tiles.pp5 .k').allTextContents()).map(t => t.trim());
+    assert.equal(keys.length, 2);
+    assert.match(keys[0], /^Billigst (i dag|i morgen|[a-zæøå]{3} \d+\.)$/);
+    assert.match(keys[1], /^Dyrest (i dag|i aften|i morgen|[a-zæøå]{3} \d+\.)$/);
+  });
+
+  await test('prices: a legacy period value (10, "3–10") resolves to the 5 døgn view', async () => {
+    await page.goto(BASE + '/dk1');
+    await page.waitForSelector('.pp2 .pris-plot');
+    for (const legacy of [10, '10', '3–10', '3-10']) {
+      await page.evaluate(() => setPrisPeriod(2));
+      await page.evaluate(v => setPrisPeriod(v), legacy);
+      assert.equal(await page.locator('.pris').getAttribute('data-period'), '5', `legacy ${legacy}`);
+      assert.equal(await page.locator('.pris-card.pp5').isVisible(), true);
+    }
+    await page.evaluate(() => setPrisPeriod(undefined));
+    assert.equal(await page.locator('.pris').getAttribute('data-period'), '2', 'an unknown value falls back to 2 døgn');
   });
 
   await test('prices: hovering a bar shows its exact price, highlights it, and the tooltip stays inside the card', async () => {

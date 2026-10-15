@@ -225,8 +225,8 @@ async function main() {
   // bars' numbers, the sentence and the day list are text in the HTML.
   check(/<div class="pris" data-period="2" data-view="din"/.test(home.body), 'forside: Pris-skærmen står i HTML\'en');
   check(!home.body.includes('<!--SSR_PRIS--></div>'), 'forside: placeholder er erstattet');
-  check(/<p class="pris-ct">Næste 2 døgn<\/p>/.test(home.body) && /<p class="pris-ct">Døgn 3–10<\/p>/.test(home.body), 'forside: begge korttitler');
-  check((home.body.match(/data-tip="[^"]+ kl\. \d\d · -?\d+,\d\d kr\/kWh"/g) || []).length >= 48 + 100, 'forside: hver times pris står i HTML\'en');
+  check(/<p class="pris-ct">Næste 2 døgn<\/p>/.test(home.body) && /<p class="pris-ct">Næste 5 døgn<\/p>/.test(home.body), 'forside: begge korttitler');
+  check((home.body.match(/data-tip="[^"]+ kl\. \d\d · -?\d+,\d\d kr\/kWh"/g) || []).length >= 48 + 120, 'forside: hver times pris står i HTML\'en');
   check(/class="pris-now">-?\d+,\d\d</.test(home.body), 'forside: prisen lige nu står som tekst');
   check(/class="pris-pill t[012]"/.test(home.body), 'forside: dommen billig / middel / dyr');
   const dayRows = (home.body.match(/<tr class="r\d+"><th scope="row">/g) || []).length;

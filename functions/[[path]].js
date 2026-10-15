@@ -1219,6 +1219,14 @@ function prisDate(date){
   return {wd:PRIS_WD[dt.getUTCDay()],ws:PRIS_WS[dt.getUTCDay()],d:dt.getUTCDate(),m:PRIS_MON[dt.getUTCMonth()]};
 }
 
+/** The period pill: 2 (næste 2 døgn) or 5 (næste 5 døgn). The pill used to read
+ *  "3–10 døgn" and its value was 10, so 10, "10" and "3–10" — anything an old
+ *  link, a stored setting or a test still carries — resolve to the 5 døgn view. */
+function prisPeriod(p){
+  var s=String(p==null?'':p);
+  return /(^|[^0-9])(5|10)([^0-9]|$)/.test(s)?5:2;
+}
+
 /** The forecast feed as up to ten consecutive days from today, 24 slots each.
  *  Same contiguity rule as fcChartHTML: it starts on today and stops at the first
  *  missing day, so a hole never closes up and shifts "I morgen" onto the wrong
@@ -1283,7 +1291,13 @@ function prisExtremes(slots){
   }
   return {lo:lo,hi:hi};
 }
-function prisWhen(s){return s.d===0?'i dag':'i morgen';}
+/** The day an hour falls on, in words: i dag, i morgen, then "søn 17." */
+function prisWhen(s,all){
+  if(s.d===0)return 'i dag';
+  if(s.d===1)return 'i morgen';
+  var dt=prisDate(all[s.d].date);
+  return dt.ws+' '+dt.d+'.';
+}
 
 /** The one sentence under the verdict: the cheapest hour of the next 24 if it is
  *  cheaper than now, otherwise that now is it. */
@@ -1296,22 +1310,23 @@ function prisSentence(all,nowHour,nowP){
   }
   var best=prisExtremes(win).lo;
   if(best&&best.p<nowP)
-    return 'Billigere '+prisWhen(best)+' kl. '+prisHH(best.h)+' — <b>'+prisNum(best.p,2)+' kr</b>';
+    return 'Billigere '+prisWhen(best,all)+' kl. '+prisHH(best.h)+' — <b>'+prisNum(best.p,2)+' kr</b>';
   return 'Billigste time de næste 24 timer';
 }
 
-/** Two tiles: cheapest and dearest of the hours still to come (this one on). */
-function prisTiles(all,nowHour){
+/** Two tiles: cheapest and dearest of the hours still to come (this one on)
+ *  within the first `nDays` days — the window the period pill shows. */
+function prisTiles(all,nowHour,nDays,cls){
   var up=[];
-  for(var d=0;d<all.length&&d<2;d++)
+  for(var d=0;d<all.length&&d<nDays;d++)
     for(var h=0;h<24;h++)if(d>0||h>=nowHour)up.push({d:d,h:h,p:all[d].ps[h]});
   var ex=prisExtremes(up),out='';
   var tile=function(k,s){
     return '<div class="pris-tile"><div class="k">'+k+'</div><div class="v">'+prisNum(s.p,2)
       +' <small>kr · kl. '+prisHH(s.h)+'</small></div></div>';};
-  if(ex.lo)out+=tile('Billigst '+prisWhen(ex.lo),ex.lo);
-  if(ex.hi)out+=tile('Dyrest '+(ex.hi.d===0?(ex.hi.h>=17?'i aften':'i dag'):'i morgen'),ex.hi);
-  return out?'<div class="pris-tiles">'+out+'</div>':'';
+  if(ex.lo)out+=tile('Billigst '+prisWhen(ex.lo,all),ex.lo);
+  if(ex.hi)out+=tile('Dyrest '+(ex.hi.d===0&&ex.hi.h>=17?'i aften':prisWhen(ex.hi,all)),ex.hi);
+  return out?'<div class="pris-tiles '+cls+'">'+out+'</div>':'';
 }
 
 /** The caption under the Din pris / Spotpris switch. */
@@ -1328,7 +1343,8 @@ function prisSwitch(view,cls,spotLabel){
 
 /** One chart card: bars coloured by tier, the hours already gone dimmed, a dot
  *  over the current hour, a zero-based axis with gridlines, and the exact price
- *  of every hour in data-tip for the browser's hover/tap tooltip. */
+ *  of every hour in data-tip for the browser's hover/tap tooltip. The first two
+ *  days read "I dag" / "I morgen", later ones "søn 17. okt". */
 function prisChart(rows,nDays,o){
   var n=nDays*24,vals=[],i;
   for(i=0;i<rows.length;i++)for(var h0=0;h0<24;h0++)if(rows[i].ps[h0]!=null)vals.push(rows[i].ps[h0]);
@@ -1348,7 +1364,8 @@ function prisChart(rows,nDays,o){
     if(s%24===0&&s>0&&o.seps)seps+='<span class="pris-sep" style="left:'+(s/n*100).toFixed(2)+'%"></span>';
     if(p==null){cols+='<span class="pc"></span>';continue;}
     var base=y(Math.min(p,0)),ht=Math.abs(p)/span*100,dt=prisDate(r.date);
-    var tip=(o.tipDay?(Math.floor(s/24)===0?'I dag':'I morgen'):dt.ws+' '+dt.d+'. '+dt.m)
+    var dn=Math.floor(s/24);
+    var tip=(dn===0?'I dag':dn===1?'I morgen':dt.ws+' '+dt.d+'. '+dt.m)
       +' kl. '+prisHH(h)+' · '+prisNum(p,2)+' kr/kWh';
     cols+='<span class="pc'+(s<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
       +'" style="bottom:'+base.toFixed(1)+'%;height:'+ht.toFixed(1)+'%"></i>'
@@ -1396,7 +1413,9 @@ function prisDayRows(all){
     if(lo==null)continue;
     var dt=prisDate(d.date);
     var name=i===0?'I dag':i===1?'I morgen':dt.wd.charAt(0).toUpperCase()+dt.wd.slice(1);
-    rows+='<tr class="'+(i<2?'r2':'r10')+'"><th scope="row">'+name+'<small>'+dt.d+'. '+dt.m+'</small></th>'
+    // r2: shown in both periods, r5: only in 5 døgn, r10: days 6-10, kept in the
+    // markup as text for crawlers and never shown on this screen.
+    rows+='<tr class="'+(i<2?'r2':i<5?'r5':'r10')+'"><th scope="row">'+name+'<small>'+dt.d+'. '+dt.m+'</small></th>'
       +'<td>'+prisNum(lo,2)+'–'+prisNum(hi,2)+'</td>'
       +'<td>kl. '+prisHH(loH)+'–'+prisHH((loH+1)%24)+'</td>'
       +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?'Børspris':'Prognose')+'</td></tr>';
@@ -1407,10 +1426,10 @@ function prisDayRows(all){
     +'<th scope="col">Billigst</th><th scope="col">Type</th></tr></thead><tbody>'+rows+'</tbody></table></section>';
 }
 
-/** The whole screen. `o`: {view:'din'|'spot', period:2|10, net:name|null, where:'DK1 Vest', key}. */
+/** The whole screen. `o`: {view:'din'|'spot', period:2|5 (legacy 10 reads as 5), net:name|null, where:'DK1 Vest', key}. */
 function prisHTML(days,todayStr,nowHour,o){
   o=o||{};
-  var view=o.view==='spot'?'spot':'din',period=o.period===10?10:2;
+  var view=o.view==='spot'?'spot':'din',period=prisPeriod(o.period);
   var all=prisDays(days||[],todayStr);
   var today=all.length?all[0]:null;
   var nowP=today?today.ps[nowHour]:null;
@@ -1431,19 +1450,20 @@ function prisHTML(days,todayStr,nowHour,o){
     +'<p class="pris-cap">'+caption+'</p></div></section>';
   var tabs='<div class="pris-period" role="tablist" aria-label="Periode">'
     +'<button type="button" role="tab" aria-selected="'+(period===2)+'" data-pris-period="2">2 døgn</button>'
-    +'<button type="button" role="tab" aria-selected="'+(period===10)+'" data-pris-period="10">3–10 døgn</button></div>';
+    +'<button type="button" role="tab" aria-selected="'+(period===5)+'" data-pris-period="5">5 døgn</button></div>';
   var legend='<div class="pris-legend"><span><i class="t0"></i>Billig</span><span><i class="t1"></i>Middel</span><span><i class="t2"></i>Dyr</span></div>';
   var head=function(t){
     return '<div class="pris-ch"><p class="pris-ct">'+t+'</p>'+legend+prisSwitch(view,'pris-seg-card','Spotpris')+'</div>'
       +'<p class="pris-cap pris-cap-card">'+caption+'</p>';};
-  var two=all.slice(0,2),ten=all.slice(2,10);
+  var two=all.slice(0,2),nFive=all.length?Math.min(5,all.length):5,five=all.slice(0,nFive);
+  var nowSlot=today&&today.date===todayStr?nowHour:-1;
   var card2='<section class="pris-card pp2" aria-label="Næste 2 døgn">'+head('Næste 2 døgn')
-    +prisChart(two,2,{ref:td||[],nowSlot:today&&today.date===todayStr?nowHour:-1,tipDay:true,title:'Elpris time for time næste 2 døgn'})+'</section>';
-  var card10='<section class="pris-card pp10" aria-label="Døgn 3–10">'+head('Døgn 3–10')
-    +prisChart(ten,8,{nowSlot:-1,xDays:true,seps:true,title:'Elpris time for time døgn 3 til 10'})+'</section>';
+    +prisChart(two,2,{ref:td||[],nowSlot:nowSlot,title:'Elpris time for time næste 2 døgn'})+'</section>';
+  var card5='<section class="pris-card pp5" aria-label="Næste 5 døgn">'+head('Næste 5 døgn')
+    +prisChart(five,nFive,{nowSlot:nowSlot,xDays:true,seps:true,title:'Elpris time for time næste 5 døgn'})+'</section>';
   return '<div class="pris" data-period="'+period+'" data-view="'+view+'" data-key="'+prisEsc(o.key||'')
     +'" data-hour="'+nowHour+'" data-date="'+todayStr+'">'+hero
-    +'<div class="pris-right">'+tabs+card2+card10+prisTiles(all,nowHour)+'</div>'
+    +'<div class="pris-right">'+tabs+card2+card5+prisTiles(all,nowHour,2,'pp2')+prisTiles(all,nowHour,5,'pp5')+'</div>'
     +prisDayRows(all)+'</div>';
 }
 // ═══ /Pris-skærmen ═══
@@ -1604,7 +1624,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v61');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v62');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
