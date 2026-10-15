@@ -19,7 +19,7 @@ final class AppModel {
     private let finder = PositionFinder()
 
     var tab: AppTab = .pris
-    /// Periode på Pris: 2 døgn eller døgn 3–10.
+    /// Periode på Pris: 2 døgn eller 5 døgn.
     var period: PricePeriod = .two
     var step: Step?
 
@@ -35,12 +35,12 @@ final class AppModel {
         step = settings.onboarded ? nil : .welcome
         #if DEBUG
         // Kun til skærmbilleder: -debugTab 0|1 (0 = Pris, 1 = Smart hjem; "automation"/"smart" duer også),
-        // -debugPeriod 2|10 (periodevælgeren på Pris). "settings" åbnes i RootView.
+        // -debugPeriod 2|5 (10 er et gammelt navn for 5 døgn) (periodevælgeren på Pris). "settings" åbnes i RootView.
         switch UserDefaults.standard.string(forKey: "debugTab") {
         case "1", "automation", "smart", "smarthjem": tab = .smartHjem
         default: break
         }
-        if UserDefaults.standard.string(forKey: "debugPeriod") == "10" { period = .long }
+        if let p = PricePeriod(stored: UserDefaults.standard.string(forKey: "debugPeriod")) { period = p }
         #endif
     }
 

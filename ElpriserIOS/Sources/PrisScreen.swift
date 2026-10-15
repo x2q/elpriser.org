@@ -30,7 +30,7 @@ struct PrisScreen: View {
         let s = vm.settings
         let days = vm.days(s.prisMode)
         let today = Clock.today(), now = Clock.hour()
-        let summary = prisSummary(days: days, today: today, now: now)
+        let summary = prisSummary(days: days, today: today, now: now, period: vm.period)
         let chart = prisChart(period: vm.period, days: days, today: today, now: now)
         let tablet = shape != .phone
         let pad: CGFloat = shape == .phone ? 20 : 28
@@ -277,15 +277,15 @@ private struct ModeSwitch: View {
     }
 }
 
-/// 2 døgn | 3–10 døgn, som en fanebjælke med den aktive i mørkeblåt.
+/// 2 døgn | 5 døgn, som en fanebjælke med den aktive i mørkeblåt.
 private struct PeriodPill: View {
     @Environment(AppModel.self) private var vm
     let wide: Bool
 
     var body: some View {
         HStack(spacing: 0) {
-            tab("2 døgn", .two)
-            tab("3–10 døgn", .long)
+            tab(.two)
+            tab(.five)
         }
         .padding(4)
         .background(T.surface, in: Capsule())
@@ -295,10 +295,10 @@ private struct PeriodPill: View {
         .accessibilityLabel("Periode")
     }
 
-    private func tab(_ title: String, _ p: PricePeriod) -> some View {
+    private func tab(_ p: PricePeriod) -> some View {
         let on = vm.period == p
         return Button { vm.period = p } label: {
-            Text(title).font(.app(15, .heavy))
+            Text(p.pillTitle).font(.app(15, .heavy))
                 .foregroundStyle(on ? Color.white : Color(light: 0x14308f, dark: 0xa9c0ff))
                 .padding(.horizontal, wide ? 26 : 0)
                 .frame(maxWidth: wide ? nil : .infinity, minHeight: 44)
@@ -306,6 +306,8 @@ private struct PeriodPill: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(p.pillTitle)
+        .accessibilityHint("Viser priserne for \(p.title.lowercased())")
         .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
     }
 }
@@ -320,7 +322,7 @@ private struct ChartCard: View {
     @Environment(AppModel.self) private var vm
 
     var body: some View {
-        let title = vm.period == .two ? "Næste 2 døgn" : "Døgn 3–10"
+        let title = vm.period.title
         VStack(alignment: .leading, spacing: tablet ? 14 : 10) {
             if tablet {
                 // Forklaringen udgår, hvis kortet er for smalt til både titel og den.
@@ -343,7 +345,7 @@ private struct ChartCard: View {
                 PriceBarChart(spec: spec, selected: $selected,
                               plotHeight: tablet ? 240 : 160, flexible: fill, large: tablet)
             } else {
-                Text("Prognosen for døgn 3–10 er ikke hentet endnu.")
+                Text("Priserne for perioden er ikke hentet endnu.")
                     .font(.app(14, .semibold)).foregroundStyle(T.text2)
                     .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)
                     .frame(maxHeight: fill ? .infinity : nil)

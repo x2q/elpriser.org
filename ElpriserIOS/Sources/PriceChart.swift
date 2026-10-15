@@ -47,10 +47,7 @@ struct PriceBarChart: View {
         .accessibilityLabel(spec.summary)
         .accessibilityValue(selected.flatMap { spec.bars.indices.contains($0) ? spec.bars[$0].tip : nil } ?? "")
         .accessibilityAdjustableAction { dir in
-            let n = spec.bars.count
-            guard n > 0 else { return }
-            let cur = selected ?? spec.nowIndex ?? 0
-            selected = Swift.min(Swift.max(cur + (dir == .increment ? 1 : -1), 0), n - 1)
+            selected = stepSelection(current: selected, nowIndex: spec.nowIndex, count: spec.bars.count, forward: dir == .increment)
         }
     }
 
@@ -107,11 +104,11 @@ struct PriceBarChart: View {
         ctx.draw(ctx.resolve(Text("kr/kWh").font(small).foregroundStyle(T.text2)),
                  at: CGPoint(x: 0, y: topRow - 8), anchor: .bottomLeading)
 
-        // døgnskel i 3–10-visningen
-        if spec.period == .long {
-            for d in 1..<Swift.max(spec.days, 1) where d * 24 < n {
-                var p = Path(); p.move(to: CGPoint(x: cx(Double(d * 24)), y: plot.minY)); p.addLine(to: CGPoint(x: cx(Double(d * 24)), y: plot.maxY))
-                ctx.stroke(p, with: .color(T.hairline), lineWidth: 1)
+        // tynd skillelinje ved hver midnat i 5-døgnsvisningen
+        if spec.period == .five {
+            for m in spec.midnights {
+                var p = Path(); p.move(to: CGPoint(x: cx(Double(m)), y: plot.minY)); p.addLine(to: CGPoint(x: cx(Double(m)), y: plot.maxY))
+                ctx.stroke(p, with: .color(T.text2.opacity(0.28)), lineWidth: 1)
             }
         }
 
@@ -128,7 +125,8 @@ struct PriceBarChart: View {
         }
 
         // søjler
-        let gap: CGFloat = n <= 60 ? (large ? 3 : 2) : (n <= 100 ? 1 : 0.5)
+        // 120 søjler på en telefon er ~2,4 pt pr. plads: næsten ingen luft, så søjlerne stadig er søjler.
+        let gap: CGFloat = n <= 60 ? (large ? 3 : 2) : (n <= 100 ? 1 : (slot >= 4.5 ? 1 : 0.5))
         let base = y(0)
         var selTop: CGFloat?
         for (i, b) in spec.bars.enumerated() {
@@ -137,7 +135,7 @@ struct PriceBarChart: View {
             let yv = y(b.value)
             let top = Swift.min(yv, base), h = Swift.max(abs(base - yv), 1.5)
             let isSel = selected == i
-            let r = Swift.min(large ? 3 : 2, w / 2)
+            let r = Swift.min(n > 100 ? 1 : (large ? 3 : 2), w / 2)
             let rect = CGRect(x: x0, y: top, width: w, height: h)
             let shape = UnevenRoundedRectangle(topLeadingRadius: r, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: r)
             if isSel {
@@ -153,14 +151,14 @@ struct PriceBarChart: View {
         if let now = spec.nowIndex, spec.bars.indices.contains(now) {
             let b = spec.bars[now]
             let top = Swift.min(y(b.value), base)
-            let r: CGFloat = large ? 3.2 : 2.6
+            let r: CGFloat = n > 100 ? (large ? 2.6 : 2) : (large ? 3.2 : 2.6)
             let c = CGPoint(x: cx(Double(now)) + slot / 2, y: top - 4 - r)
             ctx.fill(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2)), with: .color(T.text))
         }
 
         // x-aksen
         let step = plot.width >= 480 ? 6 : 12
-        let lblFont = spec.period == .long && plot.width / CGFloat(Swift.max(spec.days, 1)) < 44 ? small : labelFont
+        let lblFont = spec.period == .five && plot.width / CGFloat(Swift.max(spec.days, 1)) < 44 ? small : labelFont
         for l in spec.xLabels(step: step) {
             let r = ctx.resolve(Text(l.text).font(lblFont).foregroundStyle(T.text2))
             let w = r.measure(in: size).width

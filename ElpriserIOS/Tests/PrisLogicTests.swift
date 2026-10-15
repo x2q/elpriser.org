@@ -144,27 +144,173 @@ final class PrisLogicTests: XCTestCase {
         XCTAssertEqual(c.bars[21].tier, s.tier)
     }
 
-    func testLongChartIsDaysThreeToTenWithWeekdayTooltips() throws {
-        let c = try XCTUnwrap(prisChart(period: .long, days: ten(), today: today, now: 21))
-        XCTAssertEqual(c.title, "Døgn 3–10")
-        XCTAssertEqual(c.bars.count, 8 * 24)
-        XCTAssertNil(c.nowIndex)
-        XCTAssertFalse(c.bars.contains { $0.past })
-        XCTAssertEqual(c.dayNames.first, "fre 16")
-        XCTAssertEqual(c.dayNames.last, "fre 23")
-        XCTAssertEqual(c.bars[13].tip, "fre 16. okt kl. 13 · 1,38 kr/kWh")
-        XCTAssertEqual(c.forecastFrom, 0)
-        XCTAssertEqual(c.xLabels(step: 12).count, 8)
+    func testFiveDayChartIsTodayPlusFourDays() throws {
+        let c = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 21))
+        XCTAssertEqual(c.title, "Næste 5 døgn")
+        XCTAssertEqual(c.bars.count, 120)
+        XCTAssertEqual(c.days, 5)
+        XCTAssertEqual(c.dayNames, ["ons 14", "tor 15", "fre 16", "lør 17", "søn 18"])
+        XCTAssertEqual(c.dayStarts, [0, 24, 48, 72, 96])
+        XCTAssertEqual(c.midnights, [24, 48, 72, 96])
+        // i dag fra kl. 00: timer der er gået dæmpes, prikken står på den nuværende time
+        XCTAssertEqual(c.nowIndex, 21)
+        XCTAssertEqual(c.bars.filter(\.past).count, 21)
+        XCTAssertFalse(c.bars[21].past)
+        XCTAssertFalse(c.bars[24 + 3].past)
+        // én etiket pr. døgn, midt under døgnets 24 søjler
+        XCTAssertEqual(c.xLabels(step: 12).map(\.text), c.dayNames)
+        XCTAssertEqual(c.xLabels(step: 6).map(\.at), [12, 36, 60, 84, 108])
+    }
+
+    func testFiveDayTooltipsUseIDagIMorgenThenWeekdayAndDate() throws {
+        let c = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 21))
+        XCTAssertEqual(c.bars[19].tip, "I dag kl. 19 · 3,90 kr/kWh")
+        XCTAssertEqual(c.bars[24 + 13].tip, "I morgen kl. 13 · 1,38 kr/kWh")
+        XCTAssertEqual(c.bars[48 + 13].tip, "fre 16. okt kl. 13 · 1,38 kr/kWh")
+        XCTAssertEqual(c.bars[96 + 13].tip, "søn 18. okt kl. 13 · 1,40 kr/kWh")
+    }
+
+    func testFiveDayPrognoseMarkerIsTheFirstForecastDay() throws {
+        // i morgen er endnu ikke offentliggjort: prognosen begynder ved i morgen kl. 00
+        let early = [day(today, t), day("2026-10-15", m, actual: false), day("2026-10-16", m, actual: false),
+                     day("2026-10-17", m, actual: false), day("2026-10-18", m, actual: false)]
+        XCTAssertEqual(try XCTUnwrap(prisChart(period: .five, days: early, today: today, now: 9)).forecastFrom, 24)
+        // i morgen er offentliggjort: først dagen efter er prognose
+        let c = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 21))
+        XCTAssertEqual(c.forecastFrom, 48)
+        XCTAssertTrue(c.bars[47].actual)
+        XCTAssertTrue(c.bars[24].actual)
+        XCTAssertFalse(c.bars[48].actual)
+    }
+
+    func testFiveDayTiersAreTercilesOfTheVisibleWindow() throws {
+        let c = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 9))
+        let n = Double(c.bars.count)
+        let low = Double(c.bars.filter { $0.tier == .low }.count) / n
+        let high = Double(c.bars.filter { $0.tier == .high }.count) / n
+        XCTAssertEqual(low, 1.0 / 3, accuracy: 0.12)
+        XCTAssertEqual(high, 1.0 / 3, accuracy: 0.12)
+        // niveauet måles mod de 120 synlige timer, ikke mod de 48 i 2-døgnsvisningen
+        let all = c.bars.map(\.value)
+        for b in c.bars { XCTAssertEqual(b.tier, priceTier(b.value, in: all)) }
+    }
+
+    func testFiveDayAxisFollowsTheHighestVisiblePrice() throws {
+        var days = ten()
+        days[4] = day("2026-10-18", m.map { $0 + 6 }, actual: false)  // søn 18.: 3,34 + 6 = 9,34
+        let c = try XCTUnwrap(prisChart(period: .five, days: days, today: today, now: 9))
+        XCTAssertEqual(c.axis.max, 10.5)  // 9,34 × 1,12 = 10,46 → 10,5
+        // et døgn uden for vinduet (døgn 6) rykker ikke aksen
+        days[7] = day("2026-10-21", m.map { $0 + 50 }, actual: false)
+        XCTAssertEqual(try XCTUnwrap(prisChart(period: .five, days: days, today: today, now: 9)).axis.max, 10.5)
+    }
+
+    func testFiveDaySummaryNamesTheExtremeHourAndDay() throws {
+        let c = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 21))
+        XCTAssertTrue(c.summary.hasPrefix("Næste 5 døgn. Billigst 1,30 kr/kWh "), c.summary)
+        XCTAssertTrue(c.summary.contains("kl. "), c.summary)
+    }
+
+    func testFiveDayChartShowsWhatExistsWhenForecastIsMissing() throws {
+        let c = try XCTUnwrap(prisChart(period: .five, days: [day(today, t), day("2026-10-15", m)], today: today, now: 9))
+        XCTAssertEqual(c.bars.count, 48)
+        XCTAssertEqual(c.title, "Næste 5 døgn")
+        XCTAssertEqual(c.dayNames, ["ons 14", "tor 15"])
+    }
+
+    func testFiveDayChartMatchesTheDaysByDateNotPosition() throws {
+        // et hul i data (lør 17. mangler) flytter ikke de andre døgn
+        let days = [day(today, t), day("2026-10-15", m), day("2026-10-16", m, actual: false), day("2026-10-18", m, actual: false)]
+        let c = try XCTUnwrap(prisChart(period: .five, days: days, today: today, now: 9))
+        XCTAssertEqual(c.bars.count, 96)
+        XCTAssertEqual(c.dayNames, ["ons 14", "tor 15", "fre 16", "søn 18"])
+    }
+
+    func testLongPastTheFiveDayWindowIsNotShown() throws {
+        let only = [day("2026-10-20", m, actual: false), day("2026-10-21", m, actual: false)]
+        XCTAssertNil(prisChart(period: .five, days: only, today: today, now: 9))
+    }
+
+    func testStepSelectionStepsOneHourAndStaysInside() {
+        XCTAssertEqual(stepSelection(current: nil, nowIndex: 21, count: 120, forward: true), 22)
+        XCTAssertEqual(stepSelection(current: nil, nowIndex: nil, count: 120, forward: true), 1)
+        XCTAssertEqual(stepSelection(current: 119, nowIndex: 21, count: 120, forward: true), 119)
+        XCTAssertEqual(stepSelection(current: 0, nowIndex: 21, count: 120, forward: false), 0)
+        XCTAssertEqual(stepSelection(current: 60, nowIndex: 21, count: 120, forward: false), 59)
+        XCTAssertNil(stepSelection(current: nil, nowIndex: nil, count: 0, forward: true))
+    }
+
+    // MARK: periode
+
+    func testPeriodWindowAndLabels() {
+        XCTAssertEqual(PricePeriod.two.offsets, 0...1)
+        XCTAssertEqual(PricePeriod.five.offsets, 0...4)
+        XCTAssertEqual(PricePeriod.five.offsets.count * 24, 120)
+        XCTAssertEqual(PricePeriod.two.pillTitle, "2 døgn")
+        XCTAssertEqual(PricePeriod.five.pillTitle, "5 døgn")
+        XCTAssertEqual(PricePeriod.two.title, "Næste 2 døgn")
+        XCTAssertEqual(PricePeriod.five.title, "Næste 5 døgn")
+    }
+
+    func testLegacyThreeToTenValuesResolveToFiveDays() {
+        for v in ["10", "long", "3-10", "3–10", "3–10 døgn", "5", "five"] {
+            XCTAssertEqual(PricePeriod(stored: v), .five, v)
+        }
+        for v in ["2", "two", "2 døgn"] { XCTAssertEqual(PricePeriod(stored: v), .two, v) }
+        // ukendt eller tomt: ingen værdi (kalderen beholder standarden) — aldrig et nedbrud
+        for v in [nil, "", "banan", "7", "-1"] { XCTAssertNil(PricePeriod(stored: v), v ?? "nil") }
+    }
+
+    func testStatTilesFollowTheVisibleWindowAndNameLaterDays() throws {
+        // døgn 4 (søn 18.) får både billigste og dyreste time i vinduet
+        var days = ten()
+        days[4] = day("2026-10-18", m.enumerated().map { $0.offset == 13 ? 0.51 : ($0.offset == 19 ? 9.99 : $0.element) }, actual: false)
+        let s = try XCTUnwrap(prisSummary(days: days, today: today, now: 9, period: .five))
+        XCTAssertEqual(s.cheapest, PrisExtreme(label: "Billigst søn 18.", price: 0.51, hour: 13))
+        XCTAssertEqual(s.dearest, PrisExtreme(label: "Dyrest søn 18.", price: 9.99, hour: 19))
+        // hero er uændret: niveau og sætning hører til de næste 48 timer, uanset periode
+        let two = try XCTUnwrap(prisSummary(days: days, today: today, now: 9, period: .two))
+        XCTAssertEqual(s.tier, two.tier)
+        XCTAssertEqual(s.sentence, two.sentence)
+        XCTAssertEqual(s.price, two.price)
+        XCTAssertEqual(two.cheapest.label, "Billigst i morgen")  // 1,38 i morgen kl. 13 slår 1,39 i dag
+        XCTAssertEqual(two.dearest.label, "Dyrest i aften")
+    }
+
+    func testExtremeWordingPerDay() throws {
+        let names = ["ons 14.", "tor 15.", "fre 16.", "lør 17.", "søn 18."]
+        var p = [Double](repeating: 1.5, count: 120)
+        p[48 + 13] = 0.51
+        p[96 + 19] = 2.49
+        var e = try XCTUnwrap(prisExtremes(prices: p, now: 9, laterDays: names))
+        XCTAssertEqual(e.cheapest.label, "Billigst fre 16.")
+        XCTAssertEqual(e.dearest.label, "Dyrest søn 18.")
+        XCTAssertEqual(e.cheapest.hour, 13)
+        p[24 + 8] = 3.0  // i morgen kl. 08
+        e = try XCTUnwrap(prisExtremes(prices: p, now: 9, laterDays: names))
+        XCTAssertEqual(e.dearest.label, "Dyrest i morgen")
+        p[9 + 4] = 0.2  // i dag kl. 13
+        p[17] = 9  // i dag kl. 17 -> i aften
+        e = try XCTUnwrap(prisExtremes(prices: p, now: 9, laterDays: names))
+        XCTAssertEqual(e.cheapest.label, "Billigst i dag")
+        XCTAssertEqual(e.dearest.label, "Dyrest i aften")
+        // uden navne (kun to døgn kendt, eller et hul) aldrig et nedbrud
+        XCTAssertEqual(try XCTUnwrap(prisExtremes(prices: p, now: 9)).cheapest.label, "Billigst i dag")
+    }
+
+    func testSummaryStopsAtAGapSoNoHourGetsTheWrongDay() throws {
+        // lør 17. mangler: fre 16. er sidste sammenhængende døgn, søn 18. må ikke regnes som døgn 3
+        var d2 = m
+        d2[5] = 0.01
+        let days = [day(today, t), day("2026-10-15", m), day("2026-10-16", m, actual: false), day("2026-10-18", d2, actual: false)]
+        let s = try XCTUnwrap(prisSummary(days: days, today: today, now: 9, period: .five))
+        XCTAssertNotEqual(s.cheapest.price, 0.01)
     }
 
     func testForecastDividerFallsWhereTomorrowStopsBeingPublished() throws {
         let days = [day(today, t), day("2026-10-15", m, actual: false)]
         let c = try XCTUnwrap(prisChart(period: .two, days: days, today: today, now: 9))
         XCTAssertEqual(c.forecastFrom, 24)
-    }
-
-    func testLongChartWithoutData() {
-        XCTAssertNil(prisChart(period: .long, days: [day(today, t), day("2026-10-15", m)], today: today, now: 9))
     }
 
     // MARK: tekster

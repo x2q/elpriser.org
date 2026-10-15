@@ -3,12 +3,29 @@ import Foundation
 // Ren logik til Pris-skærmen (Design A): niveau, akse, sætningen under prisen, statistikfelter og
 // søjlerne. Intet her rører ved visning, netværk eller tid — "nu" og "i dag" gives udefra, så alt kan testes.
 
-/// Periode-vælgeren: de næste 2 døgn eller døgn 3–10 (prognosen).
+/// Periode-vælgeren: de næste 2 døgn eller de næste 5 døgn (i dag fra kl. 00 plus fire døgn frem = 120 timer).
 enum PricePeriod: Int {
-    case two = 2, long = 10
+    case two = 2, five = 5
 
     /// Døgn regnet fra i dag (0 = i dag), som perioden dækker.
-    var offsets: ClosedRange<Int> { self == .two ? 0...1 : 2...9 }
+    var offsets: ClosedRange<Int> { self == .two ? 0...1 : 0...4 }
+
+    /// Knappen i periodevælgeren.
+    var pillTitle: String { self == .two ? "2 døgn" : "5 døgn" }
+    /// Titlen på grafkortet.
+    var title: String { self == .two ? "Næste 2 døgn" : "Næste 5 døgn" }
+
+    /// Gemte værdier og startargumenter. Den gamle "3–10 døgn"-visning (10, "long", "3-10" …) er nu 5 døgn;
+    /// alt ukendt giver nil, så kalderen beholder standarden i stedet for at fejle.
+    init?(stored value: String?) {
+        let v = (value ?? "").trimmingCharacters(in: .whitespaces).lowercased()
+        switch v {
+        case "2", "two", "2d", "2 døgn": self = .two
+        case "5", "five", "5d", "5 døgn",
+             "10", "long", "3-10", "3–10", "3_10", "3-10 døgn", "3–10 døgn": self = .five
+        default: return nil
+        }
+    }
 }
 
 enum PriceTier: Int { case low = 0, mid, high }
@@ -66,10 +83,10 @@ struct PrisBar: Equatable {
     /// Døgn regnet fra i dag (0 = i dag).
     let dayOffset: Int
     let hour: Int
-    /// Timen er allerede gået (kun i dag, kun i 2-døgnsvisningen).
+    /// Timen er allerede gået (kun i dag).
     let past: Bool
     let actual: Bool
-    /// Teksten i værktøjstippet: "I dag kl. 19 · 3,90 kr/kWh".
+    /// Teksten i værktøjstippet: "I dag kl. 19 · 3,90 kr/kWh", "søn 17. okt kl. 13 · 0,51 kr/kWh".
     let tip: String
 }
 
@@ -83,19 +100,28 @@ struct PrisChartSpec: Equatable {
     let period: PricePeriod
     let bars: [PrisBar]
     let axis: PriceAxis
-    /// Ét navn pr. døgn i vinduet: "I dag", "I morgen" eller "lør 16".
+    /// Ét navn pr. døgn i vinduet: "I dag", "I morgen" (2 døgn) eller "fre 15" (5 døgn).
     let dayNames: [String]
+    /// Indeks på døgnets første søjle, ét pr. døgn (normalt 0, 24, 48 …; skæve døgn ved sommertidsskifte holder).
+    let dayStarts: [Int]
     let nowIndex: Int?
     /// Første søjle, der er prognose — nil når alt i vinduet er offentliggjort.
     let forecastFrom: Int?
 
-    var title: String { period == .two ? "Næste 2 døgn" : "Døgn 3–10" }
+    var title: String { period.title }
     var days: Int { dayNames.count }
 
-    /// 2 døgn: "I dag 00", så hver `step`. time, og "I morgen 00". 3–10 døgn: ét navn pr. døgn midt under dets søjler.
+    /// Søjleindeks hvor et nyt døgn begynder (ikke det første): her tegnes midnatsskillelinjerne.
+    var midnights: [Int] { dayStarts.dropFirst().filter { $0 > 0 && $0 < bars.count } }
+
+    /// 2 døgn: "I dag 00", så hver `step`. time, og "I morgen 00". 5 døgn: ét navn pr. døgn midt under dets søjler.
     func xLabels(step: Int) -> [AxisLabel] {
-        if period == .long {
-            return dayNames.indices.map { AxisLabel(at: Double($0 * 24 + 12), text: dayNames[$0]) }
+        if period == .five {
+            return dayNames.indices.map { k in
+                let start = k < dayStarts.count ? dayStarts[k] : k * 24
+                let end = k + 1 < dayStarts.count ? dayStarts[k + 1] : bars.count
+                return AxisLabel(at: Double(start) + Double(Swift.max(end - start, 1)) / 2, text: dayNames[k])
+            }
         }
         return stride(from: 0, to: bars.count, by: Swift.max(step, 1)).map { i in
             let b = bars[i]
@@ -106,7 +132,9 @@ struct PrisChartSpec: Equatable {
     /// Kort tekst til skærmlæsere.
     var summary: String {
         guard let lo = bars.min(by: { $0.value < $1.value }), let hi = bars.max(by: { $0.value < $1.value }) else { return title }
-        return "\(title). Billigst \(fmt(lo.value)) kr/kWh, dyrest \(fmt(hi.value)) kr/kWh. Træk fingeren hen over grafen for at høre prisen time for time."
+        // Tippets dag og time ("søn 17. okt kl. 13"), så skærmlæseren også siger hvornår, ikke kun hvad.
+        func when(_ b: PrisBar) -> String { b.tip.components(separatedBy: " · ").first ?? "" }
+        return "\(title). Billigst \(fmt(lo.value)) kr/kWh \(when(lo)), dyrest \(fmt(hi.value)) kr/kWh \(when(hi)). Træk fingeren hen over grafen for at høre prisen time for time."
     }
 }
 
@@ -125,30 +153,36 @@ func daysIn(_ period: PricePeriod, days: [Day], today: String) -> [(offset: Int,
 func prisChart(period: PricePeriod, days: [Day], today: String, now: Int) -> PrisChartSpec? {
     let window = daysIn(period, days: days, today: today)
     guard !window.isEmpty else { return nil }
+    // Niveauet er tertiler af det, der er synligt (2 døgn: 48 timer, 5 døgn: 120 timer).
     let all = window.flatMap { $0.day.price }
     guard !all.isEmpty else { return nil }
 
     var bars: [PrisBar] = []
+    var starts: [Int] = []
     var forecastFrom: Int?
     for (k, item) in window.enumerated() {
         let d = item.day
+        starts.append(bars.count)
+        // I dag og i morgen går på ord; senere døgn på ugedag og dato.
+        let when = item.offset == 0 ? "I dag" : (item.offset == 1 ? "I morgen" : "\(dayShort(d)) \(dayMonth(d))")
         for (h, v) in d.price.enumerated() {
-            let when = period == .two
-                ? "\(dayLabel(d))"
-                : "\(dayShort(d)) \(dayMonth(d))"
             if !d.actual && forecastFrom == nil { forecastFrom = bars.count }
             bars.append(PrisBar(
                 value: v, tier: priceTier(v, in: all), dayOffset: k, hour: h,
-                past: period == .two && item.offset == 0 && h < now, actual: d.actual,
+                past: item.offset == 0 && h < now, actual: d.actual,
                 tip: "\(when) kl. \(pad(h)) · \(fmt(v)) kr/kWh"))
         }
     }
-    let names = window.map { period == .two ? dayLabel($0.day) : "\(dayShort($0.day)) \(dayNum($0.day))" }
-    let nowIdx = period == .two ? window.firstIndex { $0.offset == 0 }.map { $0 * 24 + now } : nil
+    // Navnene følger døgnets plads fra `today` (ikke urets dato), så logikken er den samme i test og i drift.
+    func twoDayName(_ item: (offset: Int, day: Day)) -> String {
+        item.offset == 0 ? "I dag" : (item.offset == 1 ? "I morgen" : cap(weekdayName(item.day)))
+    }
+    let names = window.map { period == .two ? twoDayName($0) : "\(dayShort($0.day)) \(dayNum($0.day))" }
+    let nowIdx = window.firstIndex { $0.offset == 0 }.map { starts[$0] + now }
     return PrisChartSpec(
         period: period, bars: bars,
         axis: priceAxis(lo: Swift.min(all.min() ?? 0, 0), hi: all.max() ?? 0),
-        dayNames: names,
+        dayNames: names, dayStarts: starts,
         nowIndex: nowIdx.flatMap { (0..<bars.count).contains($0) ? $0 : nil },
         forecastFrom: forecastFrom)
 }
@@ -184,31 +218,48 @@ func heroSentence(prices: [Double], now: Int) -> (text: String, emphasis: String
     return ("Billigere \(best < 24 ? "i dag" : "i morgen") kl. \(pad(best % 24)) — \(amount)", amount)
 }
 
-/// "Billigst i morgen" / "Dyrest i aften" for den time blandt de kommende, der holder ekstremet.
-func prisExtremes(prices: [Double], now: Int) -> (cheapest: PrisExtreme, dearest: PrisExtreme)? {
+/// "Billigst i morgen" / "Dyrest i aften" / "Billigst søn 17." for den time blandt de kommende, der holder ekstremet.
+/// `laterDays[k]` er navnet på døgn k i vinduet ("søn 17.") og bruges fra og med døgn 2; uden navn: "senere".
+func prisExtremes(prices: [Double], now: Int, laterDays: [String] = []) -> (cheapest: PrisExtreme, dearest: PrisExtreme)? {
     guard now >= 0, now < prices.count else { return nil }
     var lo = now, hi = now
     for i in now..<prices.count {
         if prices[i] < prices[lo] { lo = i }
         if prices[i] > prices[hi] { hi = i }
     }
-    let loWhen = lo < 24 ? "i dag" : "i morgen"
-    let hiWhen = hi >= 24 ? "i morgen" : (hi % 24 >= 17 ? "i aften" : "i dag")
+    func later(_ i: Int) -> String { let d = i / 24; return d < laterDays.count ? laterDays[d] : "senere" }
+    let loWhen = lo < 24 ? "i dag" : (lo < 48 ? "i morgen" : later(lo))
+    let hiWhen = hi >= 48 ? later(hi) : (hi >= 24 ? "i morgen" : (hi % 24 >= 17 ? "i aften" : "i dag"))
     return (PrisExtreme(label: "Billigst \(loWhen)", price: prices[lo], hour: lo % 24),
             PrisExtreme(label: "Dyrest \(hiWhen)", price: prices[hi], hour: hi % 24))
 }
 
 /// Alt hero og felter skal bruge. nil når i dag mangler (så viser skærmen indlæsning eller fejl).
-func prisSummary(days: [Day], today: String, now: Int) -> PrisSummary? {
-    let window = daysIn(.two, days: days, today: today)
+/// Hero (niveau og sætning) hører altid til de næste 48 timer; felterne følger periodens synlige vindue.
+func prisSummary(days: [Day], today: String, now: Int, period: PricePeriod = .two) -> PrisSummary? {
+    let window = daysIn(period, days: days, today: today)
     guard let first = window.first, first.offset == 0, now >= 0, now < first.day.price.count else { return nil }
-    // Dagen i dag og i morgen hænger sammen; et manglende i morgen giver bare et kortere vindue.
-    let prices = first.day.price + (window.count > 1 && window[1].offset == 1 ? window[1].day.price : [])
-    guard let ext = prisExtremes(prices: prices, now: now) else { return nil }
-    let s = heroSentence(prices: prices, now: now)
+    // Døgnene hænger sammen fra i dag; et hul afslutter vinduet (så en time aldrig får forkert dag).
+    var run: [(offset: Int, day: Day)] = []
+    for item in window {
+        guard item.offset == run.count else { break }
+        run.append(item)
+    }
+    let prices = run.flatMap { $0.day.price }
+    let twoDays = run.prefix(2).flatMap { $0.day.price }
+    let names = run.map { "\(dayShort($0.day)) \(dayNum($0.day))." }
+    guard let ext = prisExtremes(prices: prices, now: now, laterDays: names) else { return nil }
+    let s = heroSentence(prices: twoDays, now: now)
     return PrisSummary(
-        hour: now, price: prices[now], tier: priceTier(prices[now], in: prices),
+        hour: now, price: prices[now], tier: priceTier(prices[now], in: twoDays),
         sentence: s.text, emphasis: s.emphasis, cheapest: ext.cheapest, dearest: ext.dearest)
+}
+
+/// Næste valgte time, når skærmlæserens justering skubber: en time ad gangen, fra den nuværende time, aldrig udenfor.
+func stepSelection(current: Int?, nowIndex: Int?, count: Int, forward: Bool) -> Int? {
+    guard count > 0 else { return nil }
+    let cur = current ?? nowIndex ?? 0
+    return Swift.min(Swift.max(cur + (forward ? 1 : -1), 0), count - 1)
 }
 
 // MARK: - tekster
