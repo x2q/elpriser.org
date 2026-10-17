@@ -173,7 +173,7 @@ async function main() {
 
   console.log('\n5. NORMALISERING — dubletter må ikke svare 200');
   const redirects = [
-    ['/dk1/', '/dk1'], ['/norge/', '/norge'], ['/tariffer/', '/tariffer'],
+    ['/dk1/', '/dk1'], ['/no/strompris/', '/no/strompris'], ['/tariffer/', '/tariffer'],
     ['/dk1/n1/', '/dk1/n1'], ['/DK1', '/dk1'], ['/blog/', '/blog'],
   ];
   await pool(redirects, async ([from, to]) => {
@@ -199,11 +199,12 @@ async function main() {
     check(!sitemap.includes(from), `nedlagt ${from}: ikke i sitemap`);
     check(!extra.includes(from), `nedlagt ${from}: ingen side linker til den`);
   }
-  // The eleven foreign zone pages became /norge, /sverige, /finland and /norden (2026-10-17).
+  // The eleven foreign zone pages became /no/strompris, /sv/elpris, /fi/sahkon-hinta and /norden (2026-10-17).
   const zoneRetired = [
-    ['/no1', '/norge#no1'], ['/no2', '/norge#no2'], ['/no3', '/norge#no3'], ['/no4', '/norge#no4'], ['/no5', '/norge#no5'],
-    ['/se1', '/sverige#se1'], ['/se2', '/sverige#se2'], ['/se3', '/sverige#se3'], ['/se4', '/sverige#se4'],
-    ['/fi', '/finland'], ['/nl', '/norden#nl'],
+    ['/no1', '/no/strompris#no1'], ['/no2', '/no/strompris#no2'], ['/no3', '/no/strompris#no3'], ['/no4', '/no/strompris#no4'], ['/no5', '/no/strompris#no5'],
+    ['/se1', '/sv/elpris#se1'], ['/se2', '/sv/elpris#se2'], ['/se3', '/sv/elpris#se3'], ['/se4', '/sv/elpris#se4'],
+    ['/fi', '/fi/sahkon-hinta'], ['/nl', '/norden#nl'],
+    ['/norge', '/no/strompris'], ['/sverige', '/sv/elpris'], ['/finland', '/fi/sahkon-hinta'],   // the first spelling of the three pages
   ];
   for (const [from, to] of zoneRetired) {
     const r = await get(from);
@@ -237,7 +238,7 @@ async function main() {
   }
 
   console.log('\n6. UKENDTE STIER SKAL 404');
-  const gone = ['/no6', '/findes-ikke', '/dk1/ukendt-net', '/blog/ukendt-indlaeg'];
+  const gone = ['/no6', '/no', '/sv', '/findes-ikke', '/dk1/ukendt-net', '/blog/ukendt-indlaeg'];
   await pool(gone, async p => {
     const r = await get(p);
     check(r.status === 404, `404 ${p}`, `status ${r.status}`);
@@ -316,12 +317,12 @@ async function main() {
   check(!prog.body.includes('<div id="prognoseForecast"><!--SSR_PROGNOSE_CHART-->'), '/prognose: placeholder er erstattet');
   check(/<div class="v">\d,\d\d–\d,\d\d<\/div>/.test(prog.body), '/prognose: døgnenes spænd står som tekst');
 
-  const se3 = await get('/sverige');
-  check(!/hreflang=/.test(se3.body.replace(/<!--[\s\S]*?-->/g, '')), '/sverige: ingen hreflang-klynge');
-  check(/<html lang="sv"/.test(se3.body), '/sverige: html lang="sv"');
+  const se3 = await get('/sv/elpris');
+  check(!/hreflang=/.test(se3.body.replace(/<!--[\s\S]*?-->/g, '')), '/sv/elpris: ingen hreflang-klynge');
+  check(/<html lang="sv"/.test(se3.body), '/sv/elpris: html lang="sv"');
   // The four foreign-area pages: own language, the canonical Pris screen drawn into the HTML, and only 2 and 5 døgn.
-  for (const [p, lang, unit] of [['/norge', 'nb', 'øre'], ['/sverige', 'sv', 'öre'], ['/finland', 'fi', 'snt'], ['/norden', 'da', null]]) {
-    const r = p === '/sverige' ? se3 : await get(p);
+  for (const [p, lang, unit] of [['/no/strompris', 'nb', 'øre'], ['/sv/elpris', 'sv', 'öre'], ['/fi/sahkon-hinta', 'fi', 'snt'], ['/norden', 'da', null]]) {
+    const r = p === '/sv/elpris' ? se3 : await get(p);
     const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<dialog[\s\S]*?<\/dialog>/g, '');
     const title = one(r.body, /<title>([^<]*)<\/title>/), desc = one(r.body, /<meta name="description" content="([^"]*)"/);
     check(r.status === 200 && title.length <= 62 && desc.length <= 155, `${p}: 200, titel ≤ 62 og beskrivelse ≤ 155 tegn`, `${r.status} ${title.length}/${desc.length}`);
@@ -339,7 +340,7 @@ async function main() {
   check(/<title>Elafgift 2028: Elafgiften stiger igen/.test((await get('/blog/elafgift-2028')).body), 'elafgift-indlægget: titlen svarer ja');
   check(/<title>Elpris Vest \(DK1\) i dag/.test((await get('/dk1')).body), '/dk1: titlen starter med "Elpris Vest"');
   const llms = await get('/llms.txt');
-  check(!/7 dage|7-day/.test(llms.body) && /elpriser\.org\/sverige\)/.test(llms.body) && /elpriser\.org\/norden\)/.test(llms.body), 'llms.txt: 10 døgn og de fire nordiske sider');
+  check(!/7 dage|7-day/.test(llms.body) && /elpriser\.org\/sv/elpris\)/.test(llms.body) && /elpriser\.org\/norden\)/.test(llms.body), 'llms.txt: 10 døgn og de fire nordiske sider');
   const home2 = await get('/');
   check(!/name="description" content="[^"]*inkl\. nettariffer/.test(home2.body), 'forside: beskrivelsen påstår ikke nettarif');
 
@@ -347,8 +348,8 @@ async function main() {
     .map(m => { try { return JSON.parse(m[1]); } catch { return { '@type': 'INVALID' }; } });
   const types = body => ldOf(body).flatMap(j => j['@graph'] ? j['@graph'].map(x => x['@type']) : [j['@type']]);
   const se3t = types(se3.body);
-  check(!se3t.some(t => ['FAQPage', 'Article', 'BlogPosting', 'Dataset', 'INVALID'].includes(t)), '/sverige: ingen fremmed struktureret data', se3t.join(','));
-  check(ldOf(se3.body).some(j => j['@type'] === 'WebPage' && j.inLanguage === 'sv'), '/sverige: WebPage med inLanguage sv');
+  check(!se3t.some(t => ['FAQPage', 'Article', 'BlogPosting', 'Dataset', 'INVALID'].includes(t)), '/sv/elpris: ingen fremmed struktureret data', se3t.join(','));
+  check(ldOf(se3.body).some(j => j['@type'] === 'WebPage' && j.inLanguage === 'sv'), '/sv/elpris: WebPage med inLanguage sv');
   const post = await get('/blog/elafgift-2028');
   const bp = ldOf(post.body).filter(j => j['@type'] === 'BlogPosting');
   check(bp.length === 1 && bp[0].url.endsWith('/blog/elafgift-2028'), 'blogindlæg: præcis sit eget BlogPosting');

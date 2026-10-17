@@ -48,26 +48,26 @@ const SEO_PAGES = {
   // Four pages for the foreign price areas, each on the same Pris screen as the Danish pages
   // and in its country's language (lang → <html lang>, JSON-LD inLanguage); /norden is the
   // Danish hub that compares them. Only 2 and 5 døgn are ever shown on them.
-  '/norge': {
+  '/no/strompris': {
     title: 'Strømpris prognose Norge: NO1–NO5, i dag og 5 dager frem',
     description: 'Strømpris nå og prognose for de neste 5 døgnene, time for time: NO1 Oslo, NO2 Kristiansand, NO3 Trondheim, NO4 Tromsø og NO5 Bergen. Spotpris uten mva.',
-    hash: '#norge',
+    hash: '#no/strompris',
     lang: 'nb',
-    zonePage: 'norge',
+    zonePage: 'no/strompris',
   },
-  '/sverige': {
+  '/sv/elpris': {
     title: 'Elpris prognos Sverige: SE1–SE4, idag och 5 dygn framåt',
     description: 'Elpris just nu och prognos för de närmaste 5 dygnen, timme för timme: SE1 Luleå, SE2 Sundsvall, SE3 Stockholm och SE4 Malmö. Spotpris utan moms.',
-    hash: '#sverige',
+    hash: '#sv/elpris',
     lang: 'sv',
-    zonePage: 'sverige',
+    zonePage: 'sv/elpris',
   },
-  '/finland': {
+  '/fi/sahkon-hinta': {
     title: 'Sähkön hinta ennuste Suomi: tänään ja 5 vrk eteenpäin',
     description: 'Sähkön hinta juuri nyt ja ennuste seuraaville 5 vuorokaudelle tunneittain, koko Suomi. Pörssihinta ilman arvonlisäveroa, veroja ja siirtomaksua.',
-    hash: '#finland',
+    hash: '#fi/sahkon-hinta',
     lang: 'fi',
-    zonePage: 'finland',
+    zonePage: 'fi/sahkon-hinta',
   },
   '/norden': {
     title: 'Elpriser i Norden: sammenlign Norge, Sverige og Finland',
@@ -174,7 +174,7 @@ for (const area of ['DK1', 'DK2']) {
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff',
   '/blog',
-  '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/norden', '/norge', '/sverige', '/finland', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
+  '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
   ...NET_URLS,
 ];
 
@@ -189,7 +189,7 @@ const CONTENT_LASTMOD = {
   '/shelly-tariff': '2026-07-24',
   '/blog/elafgift-2028': '2026-07-24',
   '/blog/elafgift-og-spotpris': '2026-10-17',
-  // /norge, /sverige, /finland and /norden are deliberately NOT listed here: they are
+  // /no/strompris, /sv/elpris, /fi/sahkon-hinta and /norden are deliberately NOT listed here: they are
   // drawn with today's prices, so they change every day and fall through to
   // lastmod=today / changefreq=daily like /dk1 and /dk2.
   '/blog/hvornaar-er-stroemmen-billigst': '2026-07-28',
@@ -201,7 +201,7 @@ function buildSitemap() {
   const today = new Date().toISOString().split('T')[0];
   // Crawl budget follows priority. The four foreign-area pages stay below the
   // per-net pages: this is a Danish site, and those are the pages searched for by name.
-  const ZONE_ONLY = /^\/(norge|sverige|finland|norden)$/;
+  const ZONE_ONLY = /^\/(no\/strompris|sv\/elpris|fi\/sahkon-hinta|norden)$/;
   const priorityFor = p => {
     if (p === '/') return '1.0';
     if (ZONE_ONLY.test(p)) return '0.5';                    // foreign-market pages
@@ -236,7 +236,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - Per-netselskab priser: \`/dk1/<slug>\` eller \`/dk2/<slug>\` viser dagens pris inkl. nettarif for det valgte netselskab (fx https://elpriser.org/dk1/n1, https://elpriser.org/dk2/radius).
 - [Nettariffer](https://elpriser.org/tariffer): Sammenligning af nettariffer for alle danske netselskaber.
 - [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser for DK1 og DK2 time for time de næste 10 døgn. Laves dagligt af en maskinlæringsmodel ud fra vejrprognoser (vind og sol) og prisen samme ugedag de seneste fire uger; skifter til faktiske børspriser, når de offentliggøres ca. kl. 13.
-- [Elpriser i Norden](https://elpriser.org/norden): Alle prisområder i Norge, Sverige, Finland og Holland side om side i kr/kWh uden moms, så de kan sammenlignes. Landesiderne er på landets eget sprog og viser spotpris time for time for i dag og i morgen og prognose for de næste 2 og 5 døgn: [Norge](https://elpriser.org/norge) (NO1 Oslo, NO2 Kristiansand, NO3 Trondheim, NO4 Tromsø, NO5 Bergen), [Sverige](https://elpriser.org/sverige) (SE1 Luleå, SE2 Sundsvall, SE3 Stockholm, SE4 Malmö) og [Finland](https://elpriser.org/finland). Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder ([model på Hugging Face](https://huggingface.co/Elpriser/nordic-price-forecast)); omregnet til lokal valuta med Den Europæiske Centralbanks daglige referencekurs, uden moms, afgifter og nettariffer.
+- [Elpriser i Norden](https://elpriser.org/norden): Alle prisområder i Norge, Sverige, Finland og Holland side om side i kr/kWh uden moms, så de kan sammenlignes. Landesiderne er på landets eget sprog og viser spotpris time for time for i dag og i morgen og prognose for de næste 2 og 5 døgn: [Norge](https://elpriser.org/no/strompris) (NO1 Oslo, NO2 Kristiansand, NO3 Trondheim, NO4 Tromsø, NO5 Bergen), [Sverige](https://elpriser.org/sv/elpris) (SE1 Luleå, SE2 Sundsvall, SE3 Stockholm, SE4 Malmö) og [Finland](https://elpriser.org/fi/sahkon-hinta). Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder ([model på Hugging Face](https://huggingface.co/Elpriser/nordic-price-forecast)); omregnet til lokal valuta med Den Europæiske Centralbanks daglige referencekurs, uden moms, afgifter og nettariffer.
 - [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home. Guides: [Shelly](https://elpriser.org/automation#shelly) (script, der henter døgnets plan én gang) og [Home Assistant](https://elpriser.org/automation#home-assistant) (REST-sensor og automation).
 - [Forstå din elpris](https://elpriser.org/om-elpriser): Hvad elprisen består af (spotpris, nettarif, systemtarif og transmissionstarif, elafgift, moms), DK1 og DK2, hvornår strømmen er billigst, negative priser, sparetips og datakilder.
 - [Hvornår er strømmen billigst](https://elpriser.org/blog/hvornaar-er-stroemmen-billigst): Analyse af 48.594 timers data — døgnets billigste time ligger nu midt på dagen på 68 % af dagene mod 23 % om natten; danske husholdninger flytter forbrug efter et forældet natte-mønster.
@@ -532,19 +532,23 @@ const LEGACY_REDIRECTS = {
   '/blog/shelly-elpris-automation': '/automation#shelly',
   '/blog/home-assistant-elpriser': '/automation#home-assistant',
   '/blog/forsta-din-elpris': '/om-elpriser',
-  // The eleven foreign zone pages became four: /norge and /sverige carry the zone as a hash
-  // (their tabs), /finland has one zone, and NL — which has no page of its own — is a row of /norden.
-  '/no1': '/norge#no1',
-  '/no2': '/norge#no2',
-  '/no3': '/norge#no3',
-  '/no4': '/norge#no4',
-  '/no5': '/norge#no5',
-  '/se1': '/sverige#se1',
-  '/se2': '/sverige#se2',
-  '/se3': '/sverige#se3',
-  '/se4': '/sverige#se4',
-  '/fi': '/finland',
+  // The eleven foreign zone pages became four: /no/strompris and /sv/elpris carry the zone as a hash
+  // (their tabs), /fi/sahkon-hinta has one zone, and NL — which has no page of its own — is a row of /norden.
+  '/no1': '/no/strompris#no1',
+  '/no2': '/no/strompris#no2',
+  '/no3': '/no/strompris#no3',
+  '/no4': '/no/strompris#no4',
+  '/no5': '/no/strompris#no5',
+  '/se1': '/sv/elpris#se1',
+  '/se2': '/sv/elpris#se2',
+  '/se3': '/sv/elpris#se3',
+  '/se4': '/sv/elpris#se4',
+  '/fi': '/fi/sahkon-hinta',
   '/nl': '/norden#nl',
+  // The first spelling of the three country pages, live for a day.
+  '/norge': '/no/strompris',
+  '/sverige': '/sv/elpris',
+  '/finland': '/fi/sahkon-hinta',
 };
 
 const INDEXNOW_KEY = 'ede0d7c16ca973f60282b7079da12804';
@@ -1067,7 +1071,7 @@ ${JSON.stringify({
 // and test-forecast-chart.mjs runs both over the same fixtures.
 //
 // ONE screen for every price area. The Danish pages call prisHTML with a net and a
-// view; /norge, /sverige and /finland call it with `zone` (a key of ZONES) and get
+// view; /no/strompris, /sv/elpris and /fi/sahkon-hinta call it with `zone` (a key of ZONES) and get
 // the same markup in that zone's language (PRIS_I18N), in its sub-unit (øre, öre,
 // snt), spot price only. zoneToPrisDays turns an /api/nordic response into the
 // days[] the screen draws and keeps the first five days, so nothing on those
@@ -1139,9 +1143,9 @@ var ZONES={
 };
 /** The three country pages: their language, their zones left to right, and the one shown first. */
 var PRIS_COUNTRIES={
-  norge:{lang:'nb',zones:['no1','no2','no3','no4','no5'],def:'no1'},
-  sverige:{lang:'sv',zones:['se1','se2','se3','se4'],def:'se3'},
-  finland:{lang:'fi',zones:['fi'],def:'fi'}
+  'no/strompris':{lang:'nb',zones:['no1','no2','no3','no4','no5'],def:'no1'},
+  'sv/elpris':{lang:'sv',zones:['se1','se2','se3','se4'],def:'se3'},
+  'fi/sahkon-hinta':{lang:'fi',zones:['fi'],def:'fi'}
 };
 
 /** A price with d decimals and a Danish comma; never "-0,00". */
@@ -1524,7 +1528,7 @@ function prisAvg(ps){
   for(var h=0;h<ps.length;h++)if(ps[h]!=null){s+=ps[h];n++;}
   return n?s/n:null;
 }
-/** Where a zone's own page is: /norge#no2, /finland, /dk1; NL has none. */
+/** Where a zone's own page is: /no/strompris#no2, /fi/sahkon-hinta, /dk1; NL has none. */
 function prisHref(k){
   for(var p in PRIS_COUNTRIES)if(PRIS_COUNTRIES[p].zones.indexOf(k)>=0)return '/'+p+(PRIS_COUNTRIES[p].zones.length>1?'#'+k:'');
   return /^dk/.test(k)?'/'+k:'';
@@ -1736,7 +1740,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v66');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v67');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1781,11 +1785,11 @@ async function renderHomepage(context) {
   return res;
 }
 
-/** /norge, /sverige, /finland and /norden, cached at the edge for five minutes like the
+/** /no/strompris, /sv/elpris, /fi/sahkon-hinta and /norden, cached at the edge for five minutes like the
  *  homepage, under a key of their own. Bump the version when index.html's markup for them
  *  changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v1';
+const ZONE_SSR_VERSION = 'zone-ssr-v2';
 async function renderZonePage(context, pathname, meta, opts) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${ZONE_SSR_VERSION}${pathname}`);
@@ -1813,9 +1817,9 @@ const HASH_TO_DATA_PAGE = {
   'prognose': 'prognose',
   'blog/elafgift-2028': 'blog-elafgift-2028',
   'blog/elafgift-og-spotpris': 'blog-elafgift-og-spotpris',
-  'norge': 'zone',
-  'sverige': 'zone',
-  'finland': 'zone',
+  'no/strompris': 'zone',
+  'sv/elpris': 'zone',
+  'fi/sahkon-hinta': 'zone',
   'norden': 'norden',
   'blog/hvornaar-er-stroemmen-billigst': 'blog-hvornaar-er-stroemmen-billigst',
   'blog/groennest-og-dyrest': 'blog-groennest-og-dyrest',
@@ -1980,8 +1984,8 @@ async function renderSPA(context, pathname, meta, opts = {}) {
     html = html.replace(/<html lang="[^"]*"/, `<html lang="${meta.lang}"`);
     html = html.replace(/(<meta property="og:locale" content=")[^"]*"/, `$1${{ nb: 'nb_NO', sv: 'sv_SE', fi: 'fi_FI' }[meta.lang]}"`);
     // No hreflang here: the pages are not translations of one another — NO1 and SE3 are
-    // different markets with different prices — so a cluster would make /norge "the
-    // Norwegian version" of /sverige. The base template's hreflang="da" is removed too:
+    // different markets with different prices — so a cluster would make /no/strompris "the
+    // Norwegian version" of /sv/elpris. The base template's hreflang="da" is removed too:
     // it would otherwise be rewritten to point at the page itself. The html lang
     // attribute above is what states the page's language.
     html = html.replace(/\s*<link rel="alternate" hreflang="[^"]*" href="[^"]*">/g, '');

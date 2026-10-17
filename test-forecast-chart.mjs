@@ -518,11 +518,11 @@ const span = (n, los, his, types = []) => ({
   // The Danish screen is untouched by all of this: the same call with no zone is the Danish output, byte for byte.
   ok(pris(feed, D0, 21, o) === pris(feed, D0, 21, { ...o, zone: undefined }) && /Din pris/.test(pris(feed, D0, 21, o)), 'uden zone er skærmen den danske');
   // The country pages' pieces.
-  const tabs = pctx.prisZoneTabs('norge', 'no2');
+  const tabs = pctx.prisZoneTabs('no/strompris', 'no2');
   ok((tabs.match(/role="tab"/g) || []).length === 5 && /href="#no2" data-zone="no2" aria-selected="true" tabindex="0">NO2<small>Kristiansand<\/small>/.test(tabs) && (tabs.match(/tabindex="-1"/g) || []).length === 4 && /role="tablist" aria-label="Prisområde"/.test(tabs), 'zone-fanerne: tablist, valgt fane har tabindex 0 og by');
-  ok(pctx.prisZoneTabs('finland', 'fi') === '' && /aria-label="Elområde"/.test(pctx.prisZoneTabs('sverige', 'se3')), 'Finland har ingen faner; Sverige siger Elområde');
-  ok(pctx.prisHref('no5') === '/norge#no5' && pctx.prisHref('fi') === '/finland' && pctx.prisHref('dk2') === '/dk2' && pctx.prisHref('nl') === '', 'prisHref: landesidens anker, Finland uden, DK, NL ingen');
-  ok(pctx.PRIS_COUNTRIES.norge.def === 'no1' && pctx.PRIS_COUNTRIES.sverige.def === 'se3' && pctx.PRIS_COUNTRIES.norge.zones.every(k => pctx.ZONES[k].lang === 'nb'), 'landenes startzone og sprog');
+  ok(pctx.prisZoneTabs('fi/sahkon-hinta', 'fi') === '' && /aria-label="Elområde"/.test(pctx.prisZoneTabs('sv/elpris', 'se3')), 'Finland har ingen faner; Sverige siger Elområde');
+  ok(pctx.prisHref('no5') === '/no/strompris#no5' && pctx.prisHref('fi') === '/fi/sahkon-hinta' && pctx.prisHref('dk2') === '/dk2' && pctx.prisHref('nl') === '', 'prisHref: landesidens anker, Finland uden, DK, NL ingen');
+  ok(pctx.PRIS_COUNTRIES['no/strompris'].def === 'no1' && pctx.PRIS_COUNTRIES['sv/elpris'].def === 'se3' && pctx.PRIS_COUNTRIES['no/strompris'].zones.every(k => pctx.ZONES[k].lang === 'nb'), 'landenes startzone og sprog');
   ok(Object.values(pctx.ZONES).every(z => z.name && z.city && z.cur && z.rate > 0 && z.sub) && Object.keys(pctx.ZONES).length === 13, 'ZONES: 13 områder med navn, by, valuta, kurs og enhed');
 }
 

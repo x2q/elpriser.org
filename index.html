@@ -635,7 +635,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     .pris-xl.days span{font-size:12px}
   }
 
-  /* The country pages (/norge, /sverige, /finland) and /norden around the same Pris screen:
+  /* The country pages (/no/strompris, /sv/elpris, /fi/sahkon-hinta) and /norden around the same Pris screen:
      the zone tabs, the text block with every zone, and the comparison table. */
   .zt{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
   .zt::-webkit-scrollbar{display:none}
@@ -1928,7 +1928,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
   </div>
 </main>
 
-<!-- ═══════ PRISOMRÅDER: /norge, /sverige, /finland — the same Pris screen as the Danish pages ═══════
+<!-- ═══════ PRISOMRÅDER: /no/strompris, /sv/elpris, /fi/sahkon-hinta — the same Pris screen as the Danish pages ═══════
      The server draws the country's first zone into the three placeholders (tabs, screen, text block);
      the script below only swaps the screen when a tab is picked. Text is in the page's own language. -->
 <main style="display:none" data-page="zone">
@@ -2419,7 +2419,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
       <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Læs også:</p>
       <div class="flex flex-wrap gap-2">
         <a href="/blog/hvornaar-er-stroemmen-billigst" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Hvornår er strømmen billigst? →</a>
-        <a href="/norge" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Priser i Norge →</a>
+        <a href="/no/strompris" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Priser i Norge →</a>
         <a href="/om-elpriser" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Forstå din elpris →</a>
       </div>
     </div>
@@ -2644,9 +2644,9 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
           <p class="sf-h">Andre prisområder</p>
           <ul class="sf-chips">
             <li><a href="/norden">Norden</a></li>
-            <li><a href="/norge">Norge</a></li>
-            <li><a href="/sverige">Sverige</a></li>
-            <li><a href="/finland">Finland</a></li>
+            <li><a href="/no/strompris">Norge</a></li>
+            <li><a href="/sv/elpris">Sverige</a></li>
+            <li><a href="/fi/sahkon-hinta">Finland</a></li>
           </ul>
         </div>
       </nav>
@@ -2675,7 +2675,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
     </div>
     <div><p class="pd-gt">Vestdanmark · DK1</p><div class="pd-links" id="netDlgDK1"></div></div>
     <div><p class="pd-gt">Østdanmark · DK2</p><div class="pd-links" id="netDlgDK2"></div></div>
-    <div><p class="pd-gt">Andre prisområder</p><div class="pd-links"><a href="/norden">Norden</a><a href="/norge">Norge</a><a href="/sverige">Sverige</a><a href="/finland">Finland</a></div></div>
+    <div><p class="pd-gt">Andre prisområder</p><div class="pd-links"><a href="/norden">Norden</a><a href="/no/strompris">Norge</a><a href="/sv/elpris">Sverige</a><a href="/fi/sahkon-hinta">Finland</a></div></div>
     <p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p>
   </div>
 </dialog>
@@ -3036,7 +3036,7 @@ const PATH_ROUTES={
   '/dk1':'DK1/inkl_alt','/dk2':'DK2/inkl_alt',
   '/tariffer':'tariffer','/automation':'automation','/api':'api','/shelly-tariff':'shelly-tariff',
   '/om-elpriser':'om-elpriser','/prognose':'prognose',
-  '/norge':'norge','/sverige':'sverige','/finland':'finland','/norden':'norden',
+  '/no/strompris':'no/strompris','/sv/elpris':'sv/elpris','/fi/sahkon-hinta':'fi/sahkon-hinta','/norden':'norden',
   '/blog':'blog',
   '/blog/elafgift-2028':'blog/elafgift-2028',
   '/blog/elafgift-og-spotpris':'blog/elafgift-og-spotpris',
@@ -3053,14 +3053,16 @@ const LEGACY_HASH={
   'blog/v2g-v2h-bidirektional-opladning':'/blog',
   'blog/biler-ladere-v2h-v2g':'/blog',
   // The eleven foreign zone pages (/no1 … /nl) became four: the zone is now the hash of its country page.
-  'no1':'/norge#no1','no2':'/norge#no2','no3':'/norge#no3','no4':'/norge#no4','no5':'/norge#no5',
-  'se1':'/sverige#se1','se2':'/sverige#se2','se3':'/sverige#se3','se4':'/sverige#se4',
-  'fi':'/finland','nl':'/norden#nl',
+  'no1':'/no/strompris#no1','no2':'/no/strompris#no2','no3':'/no/strompris#no3','no4':'/no/strompris#no4','no5':'/no/strompris#no5',
+  'se1':'/sv/elpris#se1','se2':'/sv/elpris#se2','se3':'/sv/elpris#se3','se4':'/sv/elpris#se4',
+  'fi':'/fi/sahkon-hinta','nl':'/norden#nl',
+  // The first spelling of the three country pages, live for a day.
+  'norge':'/no/strompris','sverige':'/sv/elpris','finland':'/fi/sahkon-hinta',
 };
 // In-page anchors on /automation. They sit in the hash, but they are places in
 // the page, not routes: they must neither pick the page nor be rewritten away.
 const PAGE_ANCHORS=new Set(['shelly','home-assistant']);
-const isAnchor=a=>PAGE_ANCHORS.has(a)||ZONES.hasOwnProperty(a);   // a zone tab of /norge and /sverige is a place in the page too
+const isAnchor=a=>PAGE_ANCHORS.has(a)||ZONES.hasOwnProperty(a);   // a zone tab of /no/strompris and /sv/elpris is a place in the page too
 function hashText(){try{return decodeURIComponent(location.hash.slice(1));}catch(_){return location.hash.slice(1);}}
 function scrollToAnchor(){
   const a=hashText();
@@ -3172,7 +3174,7 @@ function goRoute(h){
 function dataPageFor(h){
   if(!h)return 'start';
   if(/^DK[12]\//.test(h))return 'prices';
-  if(PRIS_COUNTRIES[h])return 'zone';   // /norge, /sverige, /finland share one section
+  if(PRIS_COUNTRIES[h])return 'zone';   // /no/strompris, /sv/elpris, /fi/sahkon-hinta share one section
   return h.replace(/\//g,'-'); // blog/x -> blog-x; others map 1:1
 }
 function markTab(){
@@ -3255,9 +3257,9 @@ function route(){
   if(h==='blog/groennest-og-dyrest'){document.querySelector('[data-page="blog-groennest-og-dyrest"]').classList.add('active');document.title='Hvorfor er strømmen grønnest netop i den dyreste time?';pv('Blog: Grønnest og dyrest','/blog/groennest-og-dyrest');return;}
   if(h==='blog/elafgift-og-spotpris'){document.querySelector('[data-page="blog-elafgift-og-spotpris"]').classList.add('active');document.title='Elafgift og spotpris: sådan er elprisen ændret siden 2019';pv('Blog: Elafgift og spotpris','/blog/elafgift-og-spotpris');return;}
   if(h==='blog/elafgift-2028'){document.querySelector('[data-page="blog-elafgift-2028"]').classList.add('active');document.title='Elafgift 2028: Elafgiften stiger igen, fra 0,8 til 60+ øre/kWh';pv('Blog: Elafgift 2028','/blog/elafgift-2028');return;}
-  if(h==='norge'){openZonePage(h);document.title='Strømpris prognose Norge: NO1–NO5, i dag og 5 dager frem';pv('Norge','/norge');return;}
-  if(h==='sverige'){openZonePage(h);document.title='Elpris prognos Sverige: SE1–SE4, idag och 5 dygn framåt';pv('Sverige','/sverige');return;}
-  if(h==='finland'){openZonePage(h);document.title='Sähkön hinta ennuste Suomi: tänään ja 5 vrk eteenpäin';pv('Finland','/finland');return;}
+  if(h==='no/strompris'){openZonePage(h);document.title='Strømpris prognose Norge: NO1–NO5, i dag og 5 dager frem';pv('Norge','/no/strompris');return;}
+  if(h==='sv/elpris'){openZonePage(h);document.title='Elpris prognos Sverige: SE1–SE4, idag och 5 dygn framåt';pv('Sverige','/sv/elpris');return;}
+  if(h==='fi/sahkon-hinta'){openZonePage(h);document.title='Sähkön hinta ennuste Suomi: tänään ja 5 vrk eteenpäin';pv('Finland','/fi/sahkon-hinta');return;}
   if(h==='norden'){document.title='Elpriser i Norden: sammenlign Norge, Sverige og Finland';pv('Norden','/norden');openNorden();return;}
   if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elpriser prognose 7 dage — time for time, op til 10 døgn frem';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
@@ -3706,7 +3708,7 @@ function fcChartHTML(days, todayStr, nowHour){
 // and test-forecast-chart.mjs runs both over the same fixtures.
 //
 // ONE screen for every price area. The Danish pages call prisHTML with a net and a
-// view; /norge, /sverige and /finland call it with `zone` (a key of ZONES) and get
+// view; /no/strompris, /sv/elpris and /fi/sahkon-hinta call it with `zone` (a key of ZONES) and get
 // the same markup in that zone's language (PRIS_I18N), in its sub-unit (øre, öre,
 // snt), spot price only. zoneToPrisDays turns an /api/nordic response into the
 // days[] the screen draws and keeps the first five days, so nothing on those
@@ -3778,9 +3780,9 @@ var ZONES={
 };
 /** The three country pages: their language, their zones left to right, and the one shown first. */
 var PRIS_COUNTRIES={
-  norge:{lang:'nb',zones:['no1','no2','no3','no4','no5'],def:'no1'},
-  sverige:{lang:'sv',zones:['se1','se2','se3','se4'],def:'se3'},
-  finland:{lang:'fi',zones:['fi'],def:'fi'}
+  'no/strompris':{lang:'nb',zones:['no1','no2','no3','no4','no5'],def:'no1'},
+  'sv/elpris':{lang:'sv',zones:['se1','se2','se3','se4'],def:'se3'},
+  'fi/sahkon-hinta':{lang:'fi',zones:['fi'],def:'fi'}
 };
 
 /** A price with d decimals and a Danish comma; never "-0,00". */
@@ -4163,7 +4165,7 @@ function prisAvg(ps){
   for(var h=0;h<ps.length;h++)if(ps[h]!=null){s+=ps[h];n++;}
   return n?s/n:null;
 }
-/** Where a zone's own page is: /norge#no2, /finland, /dk1; NL has none. */
+/** Where a zone's own page is: /no/strompris#no2, /fi/sahkon-hinta, /dk1; NL has none. */
 function prisHref(k){
   for(var p in PRIS_COUNTRIES)if(PRIS_COUNTRIES[p].zones.indexOf(k)>=0)return '/'+p+(PRIS_COUNTRIES[p].zones.length>1?'#'+k:'');
   return /^dk/.test(k)?'/'+k:'';
@@ -5290,7 +5292,7 @@ function renderForecastTable(data){
   document.getElementById('fcLoading').style.display='none';
   document.getElementById('fcTableWrapper').style.display='block';
 }
-// ═══ PRISOMRÅDER: /norge, /sverige, /finland and /norden ═══
+// ═══ PRISOMRÅDER: /no/strompris, /sv/elpris, /fi/sahkon-hinta and /norden ═══
 // The country pages draw the very Pris screen of the Danish pages (prisHTML with `zone`), from
 // /api/nordic through zoneToPrisDays. The server draws the country's first zone, the tabs and the
 // text block into the HTML; this swaps the screen when a tab is picked and draws it all when the

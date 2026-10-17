@@ -21,7 +21,7 @@ const ROUTES = fs.readFileSync(path.join(ROOT, 'functions', '[[path]].js'), 'utf
 const SERVER = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
 
 // The pages folded into others and where they now go: five blog posts (2026-10-17 cleanup) and the
-// eleven foreign zone pages that became /norge, /sverige, /finland and /norden. This is the ONE copy
+// eleven foreign zone pages that became /no/strompris, /sv/elpris, /fi/sahkon-hinta and /norden. This is the ONE copy
 // of the expectation: functions/[[path]].js and server.js must agree with it, and nothing else in the
 // site may mention the retired paths.
 const LEGACY = {
@@ -30,9 +30,11 @@ const LEGACY = {
   '/blog/shelly-elpris-automation': '/automation#shelly',
   '/blog/home-assistant-elpriser': '/automation#home-assistant',
   '/blog/forsta-din-elpris': '/om-elpriser',
-  '/no1': '/norge#no1', '/no2': '/norge#no2', '/no3': '/norge#no3', '/no4': '/norge#no4', '/no5': '/norge#no5',
-  '/se1': '/sverige#se1', '/se2': '/sverige#se2', '/se3': '/sverige#se3', '/se4': '/sverige#se4',
-  '/fi': '/finland', '/nl': '/norden#nl',
+  '/no1': '/no/strompris#no1', '/no2': '/no/strompris#no2', '/no3': '/no/strompris#no3', '/no4': '/no/strompris#no4', '/no5': '/no/strompris#no5',
+  '/se1': '/sv/elpris#se1', '/se2': '/sv/elpris#se2', '/se3': '/sv/elpris#se3', '/se4': '/sv/elpris#se4',
+  '/fi': '/fi/sahkon-hinta', '/nl': '/norden#nl',
+  // the first spelling of the three country pages, live for a day: straight to the final URL, no chain
+  '/norge': '/no/strompris', '/sverige': '/sv/elpris', '/finland': '/fi/sahkon-hinta',
 };
 const LEGACY_SLUGS = Object.keys(LEGACY).filter(k => k.startsWith('/blog/')).map(k => k.replace('/blog/', ''));
 const LEGACY_ZONES = Object.keys(LEGACY).filter(k => !k.startsWith('/blog/'));
@@ -546,7 +548,7 @@ test('seo/llm: nothing claims what the page does not show', () => {
   assert.ok(!/mode=inkl_alt\\` — Current total price right now \(DKK\/kWh, incl\. all tariffs/.test(SRV), 'llms.txt says inkl_alt includes all tariffs');
   // llms.txt lists the four foreign-area pages — and none of the eleven retired ones.
   const llms = SRV.slice(SRV.indexOf('const LLMS_TXT = `'), SRV.indexOf('const LLMS_FULL_TXT'));
-  for (const z of ['norden', 'norge', 'sverige', 'finland'])
+  for (const z of ['norden', 'no/strompris', 'sv/elpris', 'fi/sahkon-hinta'])
     assert.ok(llms.includes(`https://elpriser.org/${z})`), `llms.txt does not list /${z}`);
   for (const z of LEGACY_ZONES) assert.ok(!llms.includes(`https://elpriser.org${z})`), `llms.txt still lists ${z}`);
   assert.ok(/\/api\/nordic\?zone=/.test(llms), 'llms.txt does not list /api/nordic');
@@ -578,7 +580,7 @@ test('foreign-area pages: four SEO entries in the page\'s own language, with tit
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const entry = k => SRV.slice(SRV.indexOf(`'${k}': {`), SRV.indexOf('\n  },', SRV.indexOf(`'${k}': {`)));
   const field = (k, f) => (entry(k).match(new RegExp(`${f}: '([^']*)'`)) || [])[1] || '';
-  for (const [k, lang, lead] of [['/norge', 'nb', /^Strømpris prognose Norge/], ['/sverige', 'sv', /^Elpris prognos Sverige/], ['/finland', 'fi', /^Sähkön hinta ennuste/], ['/norden', '', /^Elpriser i Norden/]]) {
+  for (const [k, lang, lead] of [['/no/strompris', 'nb', /^Strømpris prognose Norge/], ['/sv/elpris', 'sv', /^Elpris prognos Sverige/], ['/fi/sahkon-hinta', 'fi', /^Sähkön hinta ennuste/], ['/norden', '', /^Elpriser i Norden/]]) {
     assert.ok(lead.test(field(k, 'title')), `${k} title`);
     assert.ok(field(k, 'title').length <= 62, `${k} title is ${field(k, 'title').length} characters`);
     assert.ok(field(k, 'description').length >= 80 && field(k, 'description').length <= 155, `${k} description is ${field(k, 'description').length} characters`);
@@ -590,9 +592,36 @@ test('foreign-area pages: four SEO entries in the page\'s own language, with tit
   }
 });
 
+test('foreign-area pages: ONE path table; the first spelling (/norge, /sverige, /finland) is in no link, sitemap entry or route map', () => {
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const table = Object.fromEntries([...INDEX.slice(INDEX.indexOf('var PRIS_COUNTRIES={'), INDEX.indexOf('};', INDEX.indexOf('var PRIS_COUNTRIES={')))
+    .matchAll(/'([a-z]{2}\/[a-z-]+)':\{lang:'(\w+)'/g)].map(m => [m[1], m[2]]));
+  assert.deepEqual(table, { 'no/strompris': 'nb', 'sv/elpris': 'sv', 'fi/sahkon-hinta': 'fi' }, 'PRIS_COUNTRIES is the table of paths and languages');
+  const OLD = ['/norge', '/sverige', '/finland'];
+  for (const [p, lang] of Object.entries(table)) {
+    // every place that needs the path spells it as the table does
+    assert.ok(new RegExp(`'/${p}': \\{\\s*title:[^}]*hash: '#${p}',\\s*lang: '${lang}',\\s*zonePage: '${p}'`).test(SRV), `SEO_PAGES entry for /${p}`);
+    assert.ok(SRV.includes(`'${p}': 'zone'`), `HASH_TO_DATA_PAGE for ${p}`);
+    assert.ok(INDEX.includes(`'/${p}':'${p}'`), `PATH_ROUTES for /${p}`);
+    assert.ok(SERVER.includes(`'/${p}': '#${p}'`), `server.js SPA_ROUTES for /${p}`);
+    assert.ok(new RegExp(`SITEMAP_URLS = \\[[^\\]]*'/${p}'`).test(SRV), `sitemap lists /${p}`);
+    assert.ok(INDEX.includes(`h==='${p}'`), `the client router has /${p}`);
+  }
+  const urls = SRV.match(/SITEMAP_URLS\s*=\s*\[([\s\S]*?)\n\];/)[1];
+  for (const o of OLD) {
+    assert.ok(!urls.includes(`'${o}'`), `${o} is in the sitemap`);
+    assert.ok(!new RegExp(`href="${o}["#?]`).test(INDEX), `index.html links ${o}`);
+    assert.ok(!INDEX.includes(`'${o}':`), `PATH_ROUTES or a route table in index.html still has ${o}`);
+    assert.ok(!SRV.replace(/const LEGACY_REDIRECTS = \{[\s\S]*?\};/, '').includes(o), `functions/[[path]].js still mentions ${o} outside the redirect table`);
+    assert.ok(!SERVER.replace(/const LEGACY_REDIRECTS = \{[\s\S]*?\};/, '').includes(o), `server.js still mentions ${o} outside the redirect table`);
+  }
+  // Redirects go straight to the final URL: no target is itself a redirect source.
+  for (const [from, to] of Object.entries(LEGACY)) assert.ok(!(to.split('#')[0] in LEGACY), `${from} → ${to} is a chain`);
+});
+
 test('seo: the foreign-area pages carry no hreflang cluster', () => {
   // They are different markets, not translations of one page. Linking them as
-  // alternates made five pages "the Norwegian version" and /se3 its own Danish one (and would make /norge that of /sverige).
+  // alternates made five pages "the Norwegian version" and /se3 its own Danish one (and would make /no/strompris that of /sv/elpris).
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const branch = SRV.slice(SRV.indexOf('if (meta.lang) {'), SRV.indexOf('html = html.replace(\n    /<title>'));
   assert.ok(!/hreflang="\$\{m\.lang\}"/.test(branch) && !/x-default/.test(branch), 'the zone-page hreflang cluster is back');
@@ -1381,13 +1410,13 @@ test('footer: all 14 net companies and the four foreign-area pages sit inside ON
   for (const [area, slugs] of Object.entries(NET_SLUGS)) {
     for (const s of slugs) assert.ok(inside.includes(`/${area}/${s}`), `/${area}/${s} is inside the details`);
   }
-  assert.deepEqual(inside.slice(14), ['/norden', '/norge', '/sverige', '/finland'], 'Andre prisområder: Norden, Norge, Sverige, Finland — in that order, after the 14 nets');
+  assert.deepEqual(inside.slice(14), ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta'], 'Andre prisområder: Norden, Norge, Sverige, Finland — in that order, after the 14 nets');
   assert.equal(inside.length, 18, 'nothing else in there');
   assert.equal(new Set(inside).size, inside.length, 'no duplicate href in the details');
   for (const h of ['Vestdanmark (DK1)', 'Østdanmark (DK2)', 'Andre prisområder']) assert.ok(m[1].includes(h), `heading ${h}`);
   // Nothing outside the details links a net page: the visible footer stays short.
   const outside = footerHrefs(FOOTER.replace(m[0], ''));
-  assert.deepEqual(outside.filter(h => /^\/(dk[12]\/|norden|norge|sverige|finland)/.test(h)), [], 'net pages and foreign-area pages only behind the disclosure');
+  assert.deepEqual(outside.filter(h => /^\/(dk[12]\/|norden|no\/strompris|sv\/elpris|fi\/sahkon-hinta)/.test(h)), [], 'net pages and foreign-area pages only behind the disclosure');
 });
 
 test('footer: both app stores are linked, rel=noopener, with the Danish button wording', () => {
@@ -1440,7 +1469,8 @@ test('crawl hygiene: no templated href literal anywhere a crawler can read it', 
 });
 
 test('footer: the homepage render cache key was bumped with the shared markup', () => {
-  assert.ok(/homepage-ssr-v66/.test(ROUTES), 'homepage-ssr-v66');
+  // v67: the footer's Andre prisområder links moved to the localised paths (/no/strompris, /sv/elpris, /fi/sahkon-hinta).
+  assert.ok(/homepage-ssr-v67/.test(ROUTES), 'homepage-ssr-v67');
 });
 
 
@@ -1487,7 +1517,7 @@ test('legacy redirects: the retired paths are mentioned nowhere else — sitemap
     for (const slug of LEGACY_SLUGS) assert.ok(!src.includes(slug), `${name} still mentions ${slug}`);
   }
   for (const slug of LEGACY_SLUGS) assert.ok(!INDEX.includes(`data-page="blog-${slug}"`), `a <main> for ${slug} is still in index.html`);
-  // The eleven zone paths, as quoted strings or hrefs (not as prefixes of /norge or /finland).
+  // The eleven zone paths, as quoted strings or hrefs (not as prefixes of /no/strompris or /fi/sahkon-hinta).
   for (const [name, src] of Object.entries(rest)) {
     for (const z of LEGACY_ZONES) assert.ok(!new RegExp(`['"\`]${z}(['"\`#?]|$)`).test(src.replace(/\/\/[^\n]*/g, '')), `${name} still mentions ${z}`);
   }
@@ -1509,7 +1539,7 @@ test('legacy redirects: the client maps the old #blog/… hashes to the same tar
     'route() does not redirect the old hashes');
   // The anchors are places in the page: they must not be taken for routes or rewritten away.
   assert.ok(/PAGE_ANCHORS=new Set\(\['shelly','home-assistant'\]\)/.test(INDEX), 'PAGE_ANCHORS');
-  // The zone tabs of /norge and /sverige (#no2, #se3) are places in the page too, not routes.
+  // The zone tabs of /no/strompris and /sv/elpris (#no2, #se3) are places in the page too, not routes.
   assert.ok(/const isAnchor=a=>PAGE_ANCHORS\.has\(a\)\|\|ZONES\.hasOwnProperty\(a\);/.test(INDEX), 'isAnchor');
   assert.ok(/if\(hash&&!isAnchor\(hash\)\)return hash;/.test(INDEX), 'rawRouteFromLocation lets an anchor pick the page');
   assert.ok(!/PAGE_ANCHORS\.has\(hash/.test(INDEX.slice(INDEX.indexOf('function rawRouteFromLocation'), INDEX.indexOf('function urlForRoute'))), 'a raw PAGE_ANCHORS check is back in the router');

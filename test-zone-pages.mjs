@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The four foreign-area pages: /norge, /sverige, /finland and /norden.
+ * The four foreign-area pages: /no/strompris, /sv/elpris, /fi/sahkon-hinta and /norden.
  * Run: npm run test:zone   (hermetic: the real Pages Function, index.html, a fake /api/nordic)
  *
  * They replaced eleven thin zone pages (/no1 … /nl). What this guards:
@@ -59,9 +59,9 @@ const get = async p => {
 
 // ── The four pages ──────────────────────────────────────────────────────────
 const PAGES = {
-  '/norge': { lang: 'nb', title: /^Strømpris prognose Norge/, tabs: 5, zones: ['Oslo', 'Kristiansand', 'Trondheim', 'Tromsø', 'Bergen'], unit: 'øre', now: 'Strømpris akkurat nå', p5: '5 døgn', first: 'no1' },
-  '/sverige': { lang: 'sv', title: /^Elpris prognos Sverige/, tabs: 4, zones: ['Luleå', 'Sundsvall', 'Stockholm', 'Malmö'], unit: 'öre', now: 'Elpris just nu', p5: '5 dygn', first: 'se3' },
-  '/finland': { lang: 'fi', title: /^Sähkön hinta ennuste/, tabs: 0, zones: ['Suomi'], unit: 'snt', now: 'Sähkön hinta juuri nyt', p5: '5 vrk', first: 'fi' },
+  '/no/strompris': { lang: 'nb', title: /^Strømpris prognose Norge/, tabs: 5, zones: ['Oslo', 'Kristiansand', 'Trondheim', 'Tromsø', 'Bergen'], unit: 'øre', now: 'Strømpris akkurat nå', p5: '5 døgn', first: 'no1' },
+  '/sv/elpris': { lang: 'sv', title: /^Elpris prognos Sverige/, tabs: 4, zones: ['Luleå', 'Sundsvall', 'Stockholm', 'Malmö'], unit: 'öre', now: 'Elpris just nu', p5: '5 dygn', first: 'se3' },
+  '/fi/sahkon-hinta': { lang: 'fi', title: /^Sähkön hinta ennuste/, tabs: 0, zones: ['Suomi'], unit: 'snt', now: 'Sähkön hinta juuri nyt', p5: '5 vrk', first: 'fi' },
 };
 const TEN = /10 (døgn|dager|dage|dygn|vrk|vuorokautta|days)|10-day|tio dygn|kymmenen/i;
 for (const [p, w] of Object.entries(PAGES)) {
@@ -106,7 +106,7 @@ for (const [p, w] of Object.entries(PAGES)) {
 // Norway: prices are the fixture's, converted at the response's rate (÷10 × rate): NO1 hour 0 → 80 EUR/MWh + the day's swing.
 {
   store.clear();
-  const h = (await get('/norge')).page, d0 = nordic('no1').days[1].prices;
+  const h = (await get('/no/strompris')).page, d0 = nordic('no1').days[1].prices;
   const nowH = +new Intl.DateTimeFormat('en-GB', { ...cph, hour: 'numeric', hourCycle: 'h23' }).format(new Date());
   const expect = Math.round(d0[nowH].eur_mwh * 10 / 10);
   ok(new RegExp(`class="pris-now">${expect}<`).test(h), 'NO1: prisen nu er EUR/MWh × kurs ÷ 10 i øre (kurs 10 fra svaret)', `${expect} vs ${(h.match(/class="pris-now">([^<]*)</) || [])[1]}`);
@@ -115,12 +115,12 @@ for (const [p, w] of Object.entries(PAGES)) {
 // A missing zone: the page still renders (the others show) but is NOT remembered.
 {
   store.clear(); missing = new Set(['no3']);
-  const r = await get('/norge');
-  ok(r.status === 200 && r.page.includes('<div class="pris"') && !r.page.includes('<b>Trondheim</b>: '), 'norge uden NO3: siden kommer stadig, uden NO3-priser');
+  const r = await get('/no/strompris');
+  ok(r.status === 200 && r.page.includes('<div class="pris"') && !r.page.includes('<b>Trondheim</b>: '), 'Norge uden NO3: siden kommer stadig, uden NO3-priser');
   ok(store.size === 0, 'en ufuldstændig side huskes ikke i cachen');
   missing = new Set(['no1']);
   store.clear();
-  const r2 = await get('/norge');
+  const r2 = await get('/no/strompris');
   ok(r2.status === 200 && !r2.page.includes('<div class="pris"') && /role="tablist"/.test(r2.page) && store.size === 0, 'uden NO1 (førstevalget) ingen skærm, men fanerne og teksten er der, og intet huskes');
   missing = new Set();
 }
@@ -137,7 +137,7 @@ for (const [p, w] of Object.entries(PAGES)) {
   ok(rows.length === 13, '/norden: tabellen har 13 rækker (11 udenlandske + DK1 og DK2 til sammenligning)', String(rows.length));
   ok(rows.map(m => m[1]).join(',') === 'no1,no2,no3,no4,no5,se1,se2,se3,se4,fi,nl,dk1,dk2', '/norden: rækkefølgen er NO, SE, FI, NL, DK');
   const href = Object.fromEntries(rows.map(m => [m[1], m[2]]));
-  ok(href.no2 === '/norge#no2' && href.se4 === '/sverige#se4' && href.fi === '/finland' && href.dk1 === '/dk1' && href.dk2 === '/dk2', '/norden: rækkerne linker til landesidens anker', JSON.stringify(href));
+  ok(href.no2 === '/no/strompris#no2' && href.se4 === '/sv/elpris#se4' && href.fi === '/fi/sahkon-hinta' && href.dk1 === '/dk1' && href.dk2 === '/dk2', '/norden: rækkerne linker til landesidens anker', JSON.stringify(href));
   ok(href.nl === undefined, '/norden: NL har ingen side og er en almindelig række');
   // DKK/kWh = EUR/MWh ÷ 1000 × 7,5 (kursen i DK1-svaret): NO2 hour h of today.
   const nowH = +new Intl.DateTimeFormat('en-GB', { ...cph, hour: 'numeric', hourCycle: 'h23' }).format(new Date());
@@ -156,8 +156,10 @@ for (const [p, w] of Object.entries(PAGES)) {
 }
 
 // ── The old URLs, the sitemap, the language of the rest of the site ───────────────
-const OLD = { '/no1': '/norge#no1', '/no2': '/norge#no2', '/no3': '/norge#no3', '/no4': '/norge#no4', '/no5': '/norge#no5',
-  '/se1': '/sverige#se1', '/se2': '/sverige#se2', '/se3': '/sverige#se3', '/se4': '/sverige#se4', '/fi': '/finland', '/nl': '/norden#nl' };
+const OLD = { '/no1': '/no/strompris#no1', '/no2': '/no/strompris#no2', '/no3': '/no/strompris#no3', '/no4': '/no/strompris#no4', '/no5': '/no/strompris#no5',
+  '/se1': '/sv/elpris#se1', '/se2': '/sv/elpris#se2', '/se3': '/sv/elpris#se3', '/se4': '/sv/elpris#se4', '/fi': '/fi/sahkon-hinta', '/nl': '/norden#nl',
+  // the first spelling of the country pages (live for a day) goes straight to the final URL too
+  '/norge': '/no/strompris', '/sverige': '/sv/elpris', '/finland': '/fi/sahkon-hinta' };
 for (const [from, to] of Object.entries(OLD)) {
   const r = await get(from + '?utm_source=x');
   ok(r.status === 301 && r.headers.get('location') === 'https://elpriser.org' + to.replace(/(#.*)?$/, m => '?utm_source=x' + m), `${from} → 301 ${to}`, `${r.status} ${r.headers.get('location')}`);
@@ -165,14 +167,15 @@ for (const [from, to] of Object.entries(OLD)) {
 {
   const sm = (await get('/sitemap.xml')).body;
   const locs = [...sm.matchAll(/<loc>https:\/\/elpriser\.org([^<]*)<\/loc>/g)].map(m => m[1]);
-  ok(['/norge', '/sverige', '/finland', '/norden'].every(p => locs.includes(p)), 'sitemap: de fire nye sider');
-  ok(Object.keys(OLD).every(p => !locs.includes(p)), 'sitemap: ingen af de 11 gamle zone-adresser');
+  ok(['/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/norden'].every(p => locs.includes(p)), 'sitemap: de fire nye sider');
+  ok(Object.keys(OLD).every(p => !locs.includes(p)), 'sitemap: ingen af de 11 gamle zone-adresser eller de tre første sidenavne');
   const prio = p => +sm.match(new RegExp(`<loc>https://elpriser\\.org${p}</loc>[\\s\\S]*?<priority>([\\d.]+)`))[1];
-  ok(['/norge', '/sverige', '/finland', '/norden'].every(p => prio(p) < prio('/dk1') && prio(p) < prio('/dk1/n1') + 0.01), 'sitemap: de fire ligger under de danske sider i prioritet');
+  ok(['/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/norden'].every(p => prio(p) < prio('/dk1') && prio(p) < prio('/dk1/n1') + 0.01), 'sitemap: de fire ligger under de danske sider i prioritet');
   const llms = (await get('/llms.txt')).body;
-  ok(['/norden', '/norge', '/sverige', '/finland'].every(p => llms.includes(`https://elpriser.org${p})`)) && Object.keys(OLD).every(p => !llms.includes(`elpriser.org${p})`)) && !/10 døgn[^.]*(Norge|Sverige|Finland|prisområder)/.test(llms.slice(llms.indexOf('[Elpriser i Norden]'), llms.indexOf('[Automation]'))),
+  ok(['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta'].every(p => llms.includes(`https://elpriser.org${p})`)) && Object.keys(OLD).every(p => !llms.includes(`elpriser.org${p})`)) && !/10 døgn[^.]*(Norge|Sverige|Finland|prisområder)/.test(llms.slice(llms.indexOf('[Elpriser i Norden]'), llms.indexOf('[Automation]'))),
     'llms.txt: de fire sider, ingen gamle adresser og ingen 10 døgn om dem');
   ok((await get('/no6')).status === 404, 'et ukendt zone-nummer er stadig 404');
+  ok((await get('/no')).status === 404 && (await get('/sv')).status === 404 && (await get('/no/strompris/')).status === 301 && (await get('/no/ukendt')).status === 404, 'sprogmapperne alene er 404, en skråstreg efter siden er 301, en ukendt side under mappen er 404');
 }
 
 console.log(`${pass} beståede, ${fails.length} fejl`);
