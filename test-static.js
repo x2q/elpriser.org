@@ -20,6 +20,18 @@ const STYLE  = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
 const ROUTES = fs.readFileSync(path.join(ROOT, 'functions', '[[path]].js'), 'utf8');
 const SERVER = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
 
+// The five pages folded into others (2026-10-17 cleanup) and where they now go. This is the
+// ONE copy of the expectation: functions/[[path]].js and server.js must agree with it, and
+// nothing else in the site may mention the retired paths.
+const LEGACY = {
+  '/blog/v2g-v2h-bidirektional-opladning': '/blog',
+  '/blog/biler-ladere-v2h-v2g': '/blog',
+  '/blog/shelly-elpris-automation': '/automation#shelly',
+  '/blog/home-assistant-elpriser': '/automation#home-assistant',
+  '/blog/forsta-din-elpris': '/om-elpriser',
+};
+const LEGACY_SLUGS = Object.keys(LEGACY).map(k => k.replace('/blog/', ''));
+
 let _passed = 0, _failed = 0;
 const results = [];
 
@@ -350,7 +362,11 @@ test('price pages: switch, sentence and unit describe the same price in every vi
   // Design A: the UI offers two views, Din pris and Spotpris — no dropdown of six
   // modes. Old links to the other four still open, on the nearest of the two.
   assert.ok(!/id="priceSelector"/.test(INDEX) && !/onPriceSelectorChange/.test(INDEX), 'the six-mode dropdown is back');
-  assert.equal((INDEX.match(/const ZONE_BTNS=\[([\s\S]*?)\];/)[1].match(/mode:'/g) || []).length, 2, 'the front page offers more than two views');
+  // The two views live in the Pris screen's switch (the front-page area cards that used to
+  // repeat them are gone), and that switch has exactly two buttons.
+  const sw = INDEX.slice(INDEX.indexOf('function prisSwitch('), INDEX.indexOf('/** One chart card'));
+  assert.equal((sw.match(/b\('/g) || []).length, 2, 'the Pris switch offers more than two views');
+  assert.ok(!INDEX.includes('ZONE_BTNS') && !INDEX.includes('id="dk1-zone"'), 'the front-page area cards are back');
   const nr = INDEX.slice(INDEX.indexOf('function normaliseRoute(h){'), INDEX.indexOf('/** The route key for the page as it is right now. */'));
   assert.ok(nr.length > 100, 'normaliseRoute not found');
   const rctx = {}; vm.createContext(rctx);
@@ -574,13 +590,15 @@ test('structured data: each block is served only on the page it describes', () =
   assert.ok(blocksIn('start').some(j => j['@type'] === 'FAQPage'), 'the homepage FAQ markup is gone');
   const api = blocksIn('api').find(j => j['@type'] === 'Dataset');
   assert.ok(api && api.url === 'https://elpriser.org/api', 'the dataset is not on /api with its own URL');
-  for (const slug of ['forsta-din-elpris', 'shelly-elpris-automation', 'home-assistant-elpriser', 'v2g-v2h-bidirektional-opladning',
-                      'biler-ladere-v2h-v2g', 'elafgift-2028', 'hvornaar-er-stroemmen-billigst', 'groennest-og-dyrest', 'elafgift-og-spotpris']) {
+  for (const slug of ['elafgift-2028', 'hvornaar-er-stroemmen-billigst', 'groennest-og-dyrest', 'elafgift-og-spotpris']) {
     const posts = blocksIn('blog-' + slug).filter(j => j['@type'] === 'BlogPosting');
     assert.equal(posts.length, 1, `blog-${slug} has ${posts.length} BlogPosting blocks`);
     assert.equal(posts[0].url, `https://elpriser.org/blog/${slug}`, `blog-${slug} describes another post`);
   }
-  assert.equal(blocksIn('blog').find(j => j['@type'] === 'Blog')?.blogPost?.length, 9, '/blog does not list its nine posts');
+  const listed = blocksIn('blog').find(j => j['@type'] === 'Blog')?.blogPost || [];
+  assert.equal(listed.length, 4, '/blog does not list its four posts');
+  assert.deepEqual(listed.map(j => j.url.replace('https://elpriser.org/blog/', '')).sort(),
+    ['elafgift-2028', 'elafgift-og-spotpris', 'groennest-og-dyrest', 'hvornaar-er-stroemmen-billigst'], '/blog lists a post that is gone');
   // Every block must parse; a stray quote silently voids the whole block.
   for (const m of INDEX.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) JSON.parse(m[1]);
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
@@ -668,8 +686,8 @@ test('homepage: the Pris screen is server-rendered, not JS-only', () => {
   assert.ok(/class="pris-week"/.test(fn) && /Børspris/.test(fn) && /Prognose/.test(fn), 'the day list is not text');
   assert.ok(/data-tip="/.test(ROUTES_SRC), 'the hourly figures are gone');
   // The homepage render is cached; a changed markup needs a new key.
-  assert.ok(/homepage-ssr-v(\d+)/.test(ROUTES_SRC) && +ROUTES_SRC.match(/homepage-ssr-v(\d+)/)[1] >= 64,
-    'the homepage cache key was not bumped for the price breakdown (the caption became a <details>)');
+  assert.ok(/homepage-ssr-v(\d+)/.test(ROUTES_SRC) && +ROUTES_SRC.match(/homepage-ssr-v(\d+)/)[1] >= 66,
+    'the homepage cache key was not bumped for the cleaned-up start page (nøgletal, area cards and four FAQ items gone)');
 });
 
 test('header: the wordmark next to the bolt reads "Elpriser" with a capital E; the domain stays lowercase', () => {
@@ -1014,13 +1032,10 @@ test('css: .hero has padding-top (regression: pt-14 class did not exist in compi
     '.hero must set padding-top explicitly (do not rely on Tailwind utility classes)');
 });
 
-test('css: heading-binding rule — .stats-section and .prose-article gap ≥ 2rem', () => {
+test('css: heading-binding rule — .prose-article section gap ≥ 2rem', () => {
   // Headings inside these containers need visibly more space ABOVE than BELOW
   // so they bind with the following content. If this rule disappears, section
   // headings look orphaned.
-  const stats = INDEX.match(/\.stats-section\s*>\s*div\s*\+\s*div\{margin-top:\s*([0-9.]+)rem/);
-  assert.ok(stats, '.stats-section sibling gap rule missing');
-  assert.ok(parseFloat(stats[1]) >= 2, `stats-section gap is ${stats[1]}rem, should be ≥ 2rem`);
   const article = INDEX.match(/\.prose-article\s*>\s*section\s*\+\s*section\{margin-top:\s*([0-9.]+)rem/);
   assert.ok(article, '.prose-article sibling gap rule missing');
   assert.ok(parseFloat(article[1]) >= 2, `prose-article gap is ${article[1]}rem, should be ≥ 2rem`);
@@ -1047,11 +1062,10 @@ test('design: GPS button is a single <button> (not a bar + separate button)', ()
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Design system — zone button classes
+// Design system — classes the markup relies on
 // ─────────────────────────────────────────────────────────────────────────────
 
-['zone-btn', 'zone-btn-primary', 'zone-btn-soft', 'zone-btn-ghost',
- 'net-row', 'net-chip', 'nav-pill', 'card', 'faq']
+['net-chip', 'nav-pill', 'card', 'faq', 'area-row', 'area-links', 'anchor-sec']
   .forEach(cls => {
     test(`css: .${cls} (design system) is defined`, () => {
       assert.ok(classDefined(cls), `.${cls} used but not defined`);
@@ -1230,7 +1244,7 @@ test('urls: the address bar never carries a route hash — views are paths and ?
   // look broken; navigation goes through goRoute(), which writes a clean URL.
   assert.ok(!/location\.hash\s*=[^=]/.test(INDEX), 'something assigns location.hash');
   assert.ok(!/href="#(DK[12]|\$\{)/.test(INDEX) && !/href=`#/.test(INDEX), 'a link still points at a route hash');
-  assert.ok(/function syncUrl\(h\)/.test(INDEX) && /history\.replaceState\(null,'',next\)/.test(INDEX), 'old hash links are rewritten');
+  assert.ok(/function syncUrl\(h\)/.test(INDEX) && /history\.replaceState\(null,'',next(\+keep)?\)/.test(INDEX), 'old hash links are rewritten');
   assert.ok(/addEventListener\('popstate',route\)/.test(INDEX), 'back/forward works between views');
   assert.ok(/syncUrl\(h\);/.test(INDEX.slice(INDEX.indexOf('function route()'))), 'route() syncs the address');
 });
@@ -1307,29 +1321,31 @@ test('footer: four labelled groups, each a nav with a visible heading', () => {
   assert.deepEqual(footerHrefs(col('sfPriser')), ['/', '/dk1', '/dk2', '/prognose', '/tariffer']);
   assert.deepEqual(footerHrefs(col('sfHjem')), ['/automation', '/shelly-tariff', '/api']);
   const viden = footerHrefs(col('sfViden'));
-  assert.deepEqual(viden.slice(0, 6), ['/blog/forsta-din-elpris', '/blog/elafgift-2028', '/blog/elafgift-og-spotpris',
+  assert.deepEqual(viden, ['/om-elpriser', '/blog/elafgift-2028', '/blog/elafgift-og-spotpris',
     '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest', '/blog']);
-  assert.ok(footerHrefs(col('sfOm')).slice(0, 2).join() === '/om-elpriser,/privatliv', 'Om Elpriser and Privatliv');
+  assert.ok(footerHrefs(col('sfOm'))[0] === '/privatliv', 'Privatliv leads the Elpriser group (the explainer moved to Viden)');
 });
 
-test('footer: the older guides stay reachable as plain links behind a collapsed "Flere guides"', () => {
-  const m = FOOTER.match(/<details class="sf-more">\s*<summary>[^]*?Flere guides[^]*?<\/summary>([^]*?)<\/details>/);
-  assert.ok(m, 'details "Flere guides" in the Viden group');
-  assert.ok(!/<details[^>]*\bopen\b/.test(m[0]), 'collapsed by default');
-  assert.deepEqual(footerHrefs(m[1]), ['/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
-    '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g']);
-  // Every blog post the footer ever linked is still a plain <a href> somewhere in it.
-  for (const slug of ['forsta-din-elpris', 'shelly-elpris-automation', 'home-assistant-elpriser', 'v2g-v2h-bidirektional-opladning',
-    'biler-ladere-v2h-v2g', 'hvornaar-er-stroemmen-billigst', 'groennest-og-dyrest', 'elafgift-2028', 'elafgift-og-spotpris']) {
+test('footer: ONE link to the explainer, labelled "Forstå din elpris" in Viden — no second "Om Elpriser", no "Flere guides"', () => {
+  const links = [...FOOTER.matchAll(/<a\b[^>]*\bhref="\/om-elpriser"[^>]*>([^<]*)<\/a>/g)].map(m => m[1].trim());
+  assert.deepEqual(links, ['Forstå din elpris'], 'exactly one /om-elpriser link, with that label');
+  const col = (id) => { const i = FOOTER.indexOf(`id="${id}"`); return FOOTER.slice(i, FOOTER.indexOf('</nav>', i)); };
+  assert.ok(footerHrefs(col('sfViden')).includes('/om-elpriser'), 'it sits in the Viden group');
+  assert.ok(!footerHrefs(col('sfOm')).includes('/om-elpriser'), 'and not in the Elpriser group');
+  assert.ok(!/Om Elpriser/i.test(FOOTER), 'the old "Om Elpriser" label is gone');
+  assert.ok(!/Flere guides/.test(FOOTER) && !/class="sf-more"/.test(FOOTER), 'the emptied "Flere guides" disclosure is gone');
+  // Every remaining post is a plain link; the five retired URLs are not linked.
+  for (const slug of ['hvornaar-er-stroemmen-billigst', 'groennest-og-dyrest', 'elafgift-2028', 'elafgift-og-spotpris']) {
     assert.ok(FOOTER.includes(`href="/blog/${slug}"`), `footer links /blog/${slug}`);
   }
+  for (const gone of Object.keys(LEGACY)) assert.ok(!FOOTER.includes(`href="${gone}"`), `footer still links ${gone}`);
 });
 
 test('footer: all 14 net companies and the two foreign zones sit inside ONE collapsed details, as real links', () => {
   const m = FOOTER.match(/<details class="sf-all">\s*<summary>[^]*?Alle netselskaber og prisområder[^]*?<\/summary>([^]*?)<\/details>/);
   assert.ok(m, 'details "Alle netselskaber og prisområder"');
   assert.ok(!/<details[^>]*\bopen\b/.test(m[0]), 'collapsed by default');
-  assert.equal((FOOTER.match(/<details\b/g) || []).length, 2, 'two disclosures in the footer: Flere guides and the net list');
+  assert.equal((FOOTER.match(/<details\b/g) || []).length, 1, 'one disclosure in the footer: the net list');
   assert.ok(/aria-label="Netselskaber"/.test(m[1]), 'the net list is a labelled nav');
   const inside = footerHrefs(m[1]);
   for (const [area, slugs] of Object.entries(NET_SLUGS)) {
@@ -1393,7 +1409,173 @@ test('crawl hygiene: no templated href literal anywhere a crawler can read it', 
 });
 
 test('footer: the homepage render cache key was bumped with the shared markup', () => {
-  assert.ok(/homepage-ssr-v65/.test(ROUTES), 'homepage-ssr-v65');
+  assert.ok(/homepage-ssr-v66/.test(ROUTES), 'homepage-ssr-v66');
+});
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2026-10-17 cleanup: five pages merged away, start page slimmed
+// ─────────────────────────────────────────────────────────────────────────────
+
+const mainOf = (page) => {
+  const a = INDEX.search(new RegExp(`<main[^>]*data-page="${page}"`));
+  assert.ok(a >= 0, `<main data-page="${page}"> not found`);
+  return INDEX.slice(a, INDEX.indexOf('</main>', a));
+};
+const textOf = (html) => html
+  .replace(/<script[\s\S]*?<\/script>/g, ' ').replace(/<svg[\s\S]*?<\/svg>/g, ' ').replace(/<!--[\s\S]*?-->/g, ' ')
+  .replace(/<\/?(?:a|strong|em|span|code|b|i)\b[^>]*>/g, '')   // inline tags leave no gap before punctuation
+  .replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&[a-z]+;/g, ' ').replace(/\s+/g, ' ').trim();
+const words = (html) => textOf(html).split(' ').filter(Boolean).length;
+const tableOf = (src, name, re) => {
+  const m = src.match(re);
+  assert.ok(m, `${name}: LEGACY_REDIRECTS not found`);
+  return Object.fromEntries([...m[1].matchAll(/'([^']+)':\s*'([^']+)'/g)].map(x => [x[1], x[2]]));
+};
+
+test('legacy redirects: functions/[[path]].js and server.js carry the same table, and it is the expected one', () => {
+  const prod = tableOf(ROUTES, 'functions/[[path]].js', /const LEGACY_REDIRECTS = \{([\s\S]*?)\};/);
+  const dev = tableOf(SERVER, 'server.js', /const LEGACY_REDIRECTS = \{([\s\S]*?)\};/);
+  assert.deepEqual(prod, LEGACY, 'production table differs from the expected five redirects');
+  assert.deepEqual(dev, prod, 'server.js (local dev) differs from production');
+  // The handler answers 301 with a one-hour cache header, before any rendering.
+  const i = ROUTES.indexOf('const legacyTo = LEGACY_REDIRECTS[url.pathname]');
+  assert.ok(i > 0, 'handler does not consult LEGACY_REDIRECTS');
+  assert.ok(i < ROUTES.indexOf('const staticRoute = STATIC_ROUTES') && i < ROUTES.indexOf('SEO_PAGES[url.pathname]'), 'redirects must run before page rendering');
+  const branch = ROUTES.slice(i, i + 500);
+  assert.ok(/status: 301/.test(branch) && /'Cache-Control': 'public, max-age=3600'/.test(branch), '301 + max-age=3600');
+});
+
+test('legacy redirects: the five paths are mentioned nowhere else — sitemap, SEO_PAGES, route maps, mains, links, llms text', () => {
+  const rest = {
+    'functions/[[path]].js': ROUTES.replace(/const LEGACY_REDIRECTS = \{[\s\S]*?\};/, ''),
+    'server.js': SERVER.replace(/const LEGACY_REDIRECTS = \{[\s\S]*?\};/, ''),
+    'index.html': INDEX.replace(/const LEGACY_HASH=\{[\s\S]*?\};/, ''),
+  };
+  for (const [name, src] of Object.entries(rest)) {
+    for (const slug of LEGACY_SLUGS) assert.ok(!src.includes(slug), `${name} still mentions ${slug}`);
+  }
+  for (const slug of LEGACY_SLUGS) assert.ok(!INDEX.includes(`data-page="blog-${slug}"`), `a <main> for ${slug} is still in index.html`);
+  // And the sitemap that is actually served.
+  const urls = ROUTES.match(/SITEMAP_URLS\s*=\s*\[([\s\S]*?)\n\];/)[1];
+  for (const k of Object.keys(LEGACY)) assert.ok(!urls.includes(`'${k}'`), `${k} is in the sitemap`);
+  // No internal link points at a redirected URL (with or without a fragment).
+  for (const m of INDEX.matchAll(/href="(\/[^"#?]*)/g)) assert.ok(!(m[1] in LEGACY), `index.html links ${m[1]}, which redirects`);
+});
+
+test('legacy redirects: the client maps the old #blog/… hashes to the same targets', () => {
+  const m = INDEX.match(/const LEGACY_HASH=\{([\s\S]*?)\};/);
+  assert.ok(m, 'LEGACY_HASH not found in index.html');
+  const hashes = Object.fromEntries([...m[1].matchAll(/'([^']+)':'([^']+)'/g)].map(x => ['/' + x[1], x[2]]));
+  assert.deepEqual(hashes, LEGACY, 'LEGACY_HASH differs from the server-side table');
+  const route = INDEX.slice(INDEX.indexOf('function route(){'), INDEX.indexOf('function route(){') + 700);
+  assert.ok(/LEGACY_HASH\[hashText\(\)\]/.test(route) && /location\.replace\(legacy\)/.test(route) && /history\.replaceState\(null,'',legacy\)/.test(route),
+    'route() does not redirect the old hashes');
+  // The anchors are places in the page: they must not be taken for routes or rewritten away.
+  assert.ok(/PAGE_ANCHORS=new Set\(\['shelly','home-assistant'\]\)/.test(INDEX), 'PAGE_ANCHORS');
+  assert.ok(/if\(hash&&!PAGE_ANCHORS\.has\(hash\)\)return hash;/.test(INDEX), 'rawRouteFromLocation lets an anchor pick the page');
+});
+
+test('blog index lists only the four remaining posts, as cards and in the Blog markup', () => {
+  const blog = mainOf('blog');
+  const cards = [...blog.matchAll(/<a href="(\/blog\/[^"]+)" class="card/g)].map(m => m[1]).sort();
+  assert.deepEqual(cards, ['/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/blog/groennest-og-dyrest', '/blog/hvornaar-er-stroemmen-billigst']);
+  const blogHrefs = [...blog.matchAll(/href="(\/blog\/[^"]+)"/g)].map(m => m[1]);
+  assert.deepEqual([...new Set(blogHrefs)].sort(), cards, 'the page links a blog URL that is not a card');
+  // Each remaining post still exists as a section.
+  for (const slug of ['elafgift-2028', 'elafgift-og-spotpris', 'groennest-og-dyrest', 'hvornaar-er-stroemmen-billigst'])
+    assert.ok(INDEX.includes(`data-page="blog-${slug}"`), `blog-${slug} section`);
+});
+
+test('/automation: #shelly and #home-assistant sections with their own headings, below the generator, essentials only', () => {
+  const m = mainOf('automation');
+  const gen = m.indexOf('id="exportShellyCode"');
+  for (const [id, h2, must] of [
+    ['shelly', /Shelly/, [/Scripts → Create Script/, /Run on startup/, /\/api\/schedule/, /én gang/, /5\. minut/]],
+    ['home-assistant', /Home Assistant/, [/configuration\.yaml/, /\/api\/schedule/, /scan_interval/, /300 sekunder/, /5\. minut/]],
+  ]) {
+    const a = m.indexOf(`<section id="${id}"`);
+    assert.ok(a > gen && gen > 0, `#${id} must exist and sit below the generator and its exports`);
+    const sec = m.slice(a, m.indexOf('</section>', a));
+    const head = sec.match(/<h2[^>]*>([^<]+)<\/h2>/);
+    assert.ok(head && h2.test(head[1]), `#${id} has no h2 naming it`);
+    const w = words(sec);
+    assert.ok(w >= 250 && w <= 450, `#${id} is ${w} words, aimed at 250-450`);
+    for (const re of must) assert.ok(re.test(sec), `#${id} lacks ${re}`);
+    assert.ok(/class="[^"]*anchor-sec/.test(sec.slice(0, 120)), `#${id} has no scroll margin for the sticky header`);
+  }
+  assert.equal((m.match(/ id="shelly"/g) || []).length, 1, 'id="shelly" must be unique');
+  assert.equal((m.match(/ id="home-assistant"/g) || []).length, 1, 'id="home-assistant" must be unique');
+  // SEO title and description were tuned for search: unchanged.
+  assert.ok(ROUTES.includes("title: 'Elpriser API til Home Assistant og Shelly — gratis, med kode'"), '/automation title changed');
+  assert.ok(ROUTES.includes("description: 'Gratis elpriser-API (JSON, ingen nøgle) og færdig kode til Home Assistant og Shelly. Styr varmepumpe, elbil og vandvarmer efter de billigste timer.'"), '/automation description changed');
+  // No BlogPosting block can be left behind for the removed posts.
+  assert.ok(!/BlogPosting/.test(m), '/automation carries blog markup');
+});
+
+test('/om-elpriser is the single explainer: "Forstå din elpris", the merged topics, SEO title and URL kept', () => {
+  const m = mainOf('om-elpriser');
+  assert.equal(m.match(/<h2 class="page-title">([^<]+)<\/h2>/)[1], 'Forstå din elpris', 'visible H1');
+  const body = textOf(m);
+  for (const [topic, re] of [
+    ['spotpris', /Spotprisen/], ['nettarif', /Nettarif/], ['systemtarif og transmission', /Systemtarif og transmissionstarif/],
+    ['elafgift', /Elafgift/], ['moms', /Moms/], ['DK1 vs DK2', /DK1 og DK2/], ['negative priser', /Negative elpriser/],
+    ['sådan sparer du', /Sådan sparer du/], ['hvornår billigst', /Hvornår er strømmen billigst/],
+    ['netselskab', /Find dit netselskab/], ['datakilder', /Datakilder/],
+  ]) assert.ok(re.test(body), `/om-elpriser lost "${topic}"`);
+  assert.ok(ROUTES.includes("title: 'Om elpriser i Danmark — Spotpris, tariffer og afgifter'"), 'SEO title changed');
+  assert.ok(ROUTES.includes("description: 'Forstå din elpris: spotpris, nettarif, systemtarif, elafgift og moms. Sådan fungerer prisområderne DK1 og DK2, og sådan finder du dit netselskab.'"), 'SEO description changed');
+  assert.ok(SERVER.includes("'/om-elpriser': '#om-elpriser'"), 'dev route');
+  // The retired guide's stale claims must not come back with the merge: the elafgift is not 76 øre in
+  // 2026, and the cheapest hours are not "kl. 00-06" any more.
+  assert.ok(!/76,1 øre/.test(m) && !/Billigst[^.]{0,40}Kl\. 00-06/.test(body), 'a stale figure from the retired guide came back');
+  assert.ok(/0,8 øre/.test(body) && /68 %/.test(body), 'the current elafgift and the 68 % midday figure are stated');
+  const w = words(m);
+  assert.ok(w >= 450 && w <= 800, `/om-elpriser is ${w} words`);
+});
+
+test('start page: no nøgletal block, no 14-button area cards — one compact row opens the net dialog', () => {
+  const start = mainOf('start');
+  const body = textOf(start);
+  assert.ok(!/nøgletal/i.test(start) && !/stats-section/.test(start), 'the nøgletal block is back');
+  for (const h of ['Hvad koster el i Danmark', 'Prisrekorder', 'Prisfordeling', 'Billigste og dyreste netselskab', 'Hvornår er elpriser billigst og dyrest', 'Spar penge på elpriser'])
+    assert.ok(!body.includes(h), `"${h}" is back on the start page`);
+  assert.ok(!/id="dk[12]-(zone|nets)"/.test(start) && !/net-row|net-list|zone-stack/.test(start), 'the DK1/DK2 area cards are back');
+  const row = start.match(/<div class="area-row" data-area-row>([\s\S]*?)<\/p>\s*<\/div>/);
+  assert.ok(row, 'the compact area row is missing');
+  assert.ok(/<button type="button" class="gps-light" onclick="openNetDialog\(\)"[^>]*>Find dit netselskab<\/button>/.test(row[1]), 'the button must open the net dialog');
+  assert.deepEqual([...row[1].matchAll(/<a href="([^"]+)">([^<]+)<\/a>/g)].map(m => [m[1], m[2]]), [['/dk1', 'DK1 Vest'], ['/dk2', 'DK2 Øst']]);
+  assert.ok(/<\/a> · <a/.test(row[1]), 'the two links read "DK1 Vest · DK2 Øst"');
+  assert.equal((start.match(/<a href="\/(dk[12])\/[a-z0-9-]+"/g) || []).length, 0, 'net pages are linked from the footer and the dialog, not from the start page body');
+  // The dialog the button opens keeps every net page reachable (built by buildNetDialog; the footer holds the static list).
+  assert.ok(/id="netDlgDK1"/.test(INDEX) && /id="netDlgDK2"/.test(INDEX) && /function openNetDialog\(\)/.test(INDEX) && /function buildNetDialog\(\)/.test(INDEX), 'the net dialog');
+  // What the page points at instead of the removed block:
+  for (const href of ['/tariffer', '/om-elpriser', '/blog/hvornaar-er-stroemmen-billigst'])
+    assert.ok(start.includes(`href="${href}"`), `start page lost its pointer to ${href}`);
+  // Kept as the owner asked: the overview, the intro paragraph and the Pris placeholder.
+  assert.ok(start.includes('Dagens overblik') && start.includes('<!--SSR_PRIS-->') && start.includes('id="readerLive"'));
+  assert.ok(/Elpriser — også kaldet energipriser/.test(start), 'intro paragraph');
+});
+
+test('start page: exactly 5 FAQ items, and the FAQPage markup mirrors them word for word', () => {
+  const start = mainOf('start');
+  const items = [...start.matchAll(/<details class="group faq">\s*<summary[^>]*>([\s\S]*?)<svg[\s\S]*?<\/summary>\s*<div[^>]*>\s*<div>([\s\S]*?)<\/div>\s*<\/div>\s*<\/details>/g)]
+    .map(m => ({ q: textOf(m[1]), a: textOf(m[2]) }));
+  assert.equal((start.match(/<details\b/g) || []).length, 5, 'the start page must have exactly 5 <details>');
+  assert.equal(items.length, 5, 'could not read 5 FAQ items');
+  const ld = JSON.parse(start.match(/<script type="application\/ld\+json">(\{\s*"@context": "https:\/\/schema\.org",\s*"@type": "FAQPage"[\s\S]*?)<\/script>/)[1]);
+  assert.equal(ld.mainEntity.length, 5, 'FAQPage lists a different number of questions');
+  ld.mainEntity.forEach((e, i) => {
+    assert.equal(e.name, items[i].q, `FAQ question ${i + 1}: markup differs from the visible question`);
+    assert.equal(e.acceptedAnswer.text.replace(/\s+/g, ' ').trim(), items[i].a, `FAQ answer ${i + 1}: markup differs from the visible answer`);
+  });
+  const names = ld.mainEntity.map(e => e.name);
+  for (const q of ['Hvad er elprisen i dag?', 'Hvornår er strømmen billigst?', 'Hvad indgår i den samlede elpris?', 'Hvad er forskellen på DK1 og DK2?'])
+    assert.ok(names.includes(q), `FAQ lost "${q}"`);
+  assert.ok(!names.includes('Hvad koster strøm lige nu?'), 'the duplicate "Hvad koster strøm lige nu?" is back');
+  // "Hvornår er strømmen billigst?" must agree with the post it links to (midday, not night).
+  const cheap = items.find(i => i.q === 'Hvornår er strømmen billigst?').a;
+  assert.ok(/68 %/.test(cheap) && !/typisk billigst om natten/.test(cheap), 'the cheapest-hour answer contradicts the blog analysis');
 });
 
 

@@ -6,6 +6,8 @@
 // had nothing to do with the code. Each test names the bug it guards.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { pathToFileURL } from 'node:url';
+import path from 'node:path';
 import { createApi, makeKv, priceArchiveYear, tariffArchive } from './tests/upstream.mjs';
 
 const day = offset => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
@@ -338,4 +340,68 @@ test('KV: the forecast model key is read once however many forecasts are served'
   for (let i = 0; i < 10; i++) await api.get('/api/forecast?area=DK1&mode=inkl_alt');
   const n = kv.ops.get.filter(k => k === 'forecast-v3-DK1').length;
   assert.ok(n <= 1, `forecast-v3-DK1 was read ${n} times`);
+});
+
+// ── Pages Function (functions/[[path]].js): the five retired pages ──────────
+// The posts folded into /automation, /om-elpriser and /blog (2026-10-17 cleanup). Each old URL
+// must answer 301 to its replacement — not 404, not 200 with the homepage's canonical — and a
+// retired URL must never be offered to a crawler again.
+
+const pages = await import(pathToFileURL(path.resolve(import.meta.dirname, 'functions/[[path]].js')));
+const callPages = (pathAndQuery, host = 'https://elpriser.org') =>
+  pages.onRequest({ request: new Request(host + pathAndQuery), env: {}, next: () => new Response('asset') });
+
+const RETIRED = {
+  '/blog/v2g-v2h-bidirektional-opladning': 'https://elpriser.org/blog',
+  '/blog/biler-ladere-v2h-v2g': 'https://elpriser.org/blog',
+  '/blog/shelly-elpris-automation': 'https://elpriser.org/automation#shelly',
+  '/blog/home-assistant-elpriser': 'https://elpriser.org/automation#home-assistant',
+  '/blog/forsta-din-elpris': 'https://elpriser.org/om-elpriser',
+};
+
+for (const [from, to] of Object.entries(RETIRED)) {
+  test(`${from} answers 301 to ${to.replace('https://elpriser.org', '')}, cacheable for an hour`, async () => {
+    const r = await callPages(from);
+    assert.equal(r.status, 301);
+    assert.equal(r.headers.get('location'), to);
+    assert.equal(r.headers.get('cache-control'), 'public, max-age=3600');
+    assert.equal(await r.text(), '', 'a redirect carries no body');
+  });
+}
+
+test('a retired URL keeps its query string through the redirect (utm_* from old shares)', async () => {
+  const r = await callPages('/blog/shelly-elpris-automation?utm_source=nyhedsbrev');
+  assert.equal(r.status, 301);
+  assert.equal(r.headers.get('location'), 'https://elpriser.org/automation?utm_source=nyhedsbrev#shelly');
+});
+
+test('retired URLs written with a trailing slash or capitals still end on the replacement', async () => {
+  for (const [from, to] of [['/blog/forsta-din-elpris/', '/blog/forsta-din-elpris'], ['/Blog/Forsta-Din-Elpris', '/blog/forsta-din-elpris']]) {
+    const hop1 = await callPages(from);
+    assert.equal(hop1.status, 301, `${from} first hop`);
+    assert.equal(new URL(hop1.headers.get('location')).pathname, to);
+    const hop2 = await callPages(to);
+    assert.equal(hop2.headers.get('location'), 'https://elpriser.org/om-elpriser');
+  }
+});
+
+test('the live posts and pages are not caught by the redirect table', async () => {
+  for (const ok of ['/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/blog/groennest-og-dyrest', '/blog/hvornaar-er-stroemmen-billigst', '/blog', '/automation', '/om-elpriser']) {
+    // These render the SPA, which needs the asset binding this harness does not have; the point
+    // is only that they are not answered with a redirect.
+    const r = await callPages(ok).catch(() => null);
+    assert.ok(!r || r.status !== 301, `${ok} must not be redirected away`);
+  }
+});
+
+test('the served sitemap and llms.txt name none of the retired URLs and keep the replacements (llms-full.txt shares the text; test-static.js checks its source)', async () => {
+  const sitemap = await (await callPages('/sitemap.xml')).text();
+  const llms = await (await callPages('/llms.txt')).text();
+  for (const from of Object.keys(RETIRED)) {
+    for (const [name, text] of [['sitemap', sitemap], ['llms.txt', llms]])
+      assert.ok(!text.includes(from), `${name} still names ${from}`);
+  }
+  for (const keep of ['/automation', '/om-elpriser', '/blog', '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/blog/groennest-og-dyrest', '/blog/hvornaar-er-stroemmen-billigst'])
+    assert.ok(sitemap.includes(`<loc>https://elpriser.org${keep}</loc>`), `sitemap lost ${keep}`);
+  assert.ok(llms.includes('https://elpriser.org/automation#shelly') && llms.includes('https://elpriser.org/om-elpriser'), 'llms.txt points at the replacements');
 });

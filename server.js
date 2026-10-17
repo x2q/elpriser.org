@@ -408,15 +408,20 @@ const SPA_ROUTES = {
   '/api': '#api',
   '/shelly-tariff': '#shelly-tariff',
   '/blog': '#blog',
-  '/blog/forsta-din-elpris': '#blog/forsta-din-elpris',
-  '/blog/shelly-elpris-automation': '#blog/shelly-elpris-automation',
-  '/blog/home-assistant-elpriser': '#blog/home-assistant-elpriser',
-  '/blog/v2g-v2h-bidirektional-opladning': '#blog/v2g-v2h-bidirektional-opladning',
-  '/blog/biler-ladere-v2h-v2g': '#blog/biler-ladere-v2h-v2g',
   '/blog/hvornaar-er-stroemmen-billigst': '#blog/hvornaar-er-stroemmen-billigst',
   '/blog/groennest-og-dyrest': '#blog/groennest-og-dyrest',
   '/blog/elafgift-2028': '#blog/elafgift-2028',
   '/blog/elafgift-og-spotpris': '#blog/elafgift-og-spotpris',
+};
+
+// Retired pages → their replacement (301). Mirrors LEGACY_REDIRECTS in
+// functions/[[path]].js; test-static.js keeps the two equal.
+const LEGACY_REDIRECTS = {
+  '/blog/v2g-v2h-bidirektional-opladning': '/blog',
+  '/blog/biler-ladere-v2h-v2g': '/blog',
+  '/blog/shelly-elpris-automation': '/automation#shelly',
+  '/blog/home-assistant-elpriser': '/automation#home-assistant',
+  '/blog/forsta-din-elpris': '/om-elpriser',
 };
 
 // Mirrors NETS in index.html and functions/[[path]].js. Used to map
@@ -446,6 +451,17 @@ function serveSPA(res, _hash) {
 
 function serveStatic(req, res) {
   const pathname = req.url.split('?')[0];
+
+  // Retired pages: permanent redirect, as in production
+  if (LEGACY_REDIRECTS[pathname]) {
+    const query = req.url.includes('?') ? '?' + req.url.split('?').slice(1).join('?') : '';
+    const [target, fragment] = LEGACY_REDIRECTS[pathname].split('#');
+    res.writeHead(301, {
+      'Location': target + query + (fragment ? '#' + fragment : ''),
+      'Cache-Control': 'public, max-age=3600',
+    });
+    return res.end();
+  }
 
   // Clean-URL SPA routes — inject hash redirect (same as production functions)
   if (SPA_ROUTES[pathname]) return serveSPA(res, SPA_ROUTES[pathname]);

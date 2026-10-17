@@ -40,7 +40,7 @@ async function get(path, redirect = 'manual') {
   const type = res.headers.get('content-type') || '';
   const body = type.includes('text') || type.includes('json') || type.includes('xml')
     ? await res.text() : '';
-  return { status: res.status, location: res.headers.get('location'), type, body, url };
+  return { status: res.status, location: res.headers.get('location'), cache: res.headers.get('cache-control'), type, body, url };
 }
 
 /** Run `fn` over `items` with a small pool, so a 60-URL sweep is not 60 round trips. */
@@ -182,6 +182,34 @@ async function main() {
           `status ${r.status} -> ${r.location}`);
   });
 
+  console.log('\n5a. NEDLAGTE SIDER — 301 til siden, der afløste dem (2026-10-17)');
+  // Five pages were folded into others. They must redirect permanently, stay out of the sitemap, and
+  // no page may still link to them. The Shelly/Home Assistant guides live on as anchors on /automation.
+  const retired = [
+    ['/blog/v2g-v2h-bidirektional-opladning', '/blog'],
+    ['/blog/biler-ladere-v2h-v2g', '/blog'],
+    ['/blog/shelly-elpris-automation', '/automation#shelly'],
+    ['/blog/home-assistant-elpriser', '/automation#home-assistant'],
+    ['/blog/forsta-din-elpris', '/om-elpriser'],
+  ];
+  for (const [from, to] of retired) {
+    const r = await get(from);
+    check(r.status === 301 && r.location === CANONICAL_ORIGIN + to, `nedlagt ${from}`, `status ${r.status} -> ${r.location}`);
+    check(r.cache === 'public, max-age=3600', `nedlagt ${from}: cache-control`, String(r.cache));
+    check(!sitemap.includes(from), `nedlagt ${from}: ikke i sitemap`);
+    check(!extra.includes(from), `nedlagt ${from}: ingen side linker til den`);
+  }
+  const autoPage = await get('/automation');
+  check(/<section id="shelly"/.test(autoPage.body) && /<section id="home-assistant"/.test(autoPage.body), '/automation: sektionerne #shelly og #home-assistant står i HTML\'en');
+  check(/<h1 class="page-title">Forstå din elpris<\/h1>/.test((await get('/om-elpriser')).body), '/om-elpriser: h1 er "Forstå din elpris"');
+  const blogIdx = await get('/blog');
+  check(JSON.stringify(all(blogIdx.body, /<a href="(\/blog\/[^"]+)" class="card/g).sort()) ===
+        JSON.stringify(['/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/blog/groennest-og-dyrest', '/blog/hvornaar-er-stroemmen-billigst']), '/blog: kun de fire tilbageværende indlæg');
+  const homeLd = [...(await get('/')).body.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => { try { return JSON.parse(m[1]); } catch { return {}; } }).find(j => j['@type'] === 'FAQPage');
+  check(homeLd && homeLd.mainEntity.length === 5, 'forside: FAQ-markup med præcis 5 spørgsmål', homeLd && String(homeLd.mainEntity.length));
+  const homeHtml = (await get('/')).body.replace(/<script[\s\S]*?<\/script>/g, '');
+  check((homeHtml.match(/<details class="group faq"/g) || []).length === 5 && !/nøgletal/i.test(homeHtml) && !/id="dk1-nets"/.test(homeHtml), 'forside: 5 synlige FAQ, ingen nøgletal, ingen områdekort');
+
   console.log('\n5b. PRISVISNINGER (?pris=) ER EN VARIANT AF SIDEN, IKKE EN NY SIDE');
   // A view of the same page — spot price, tariff view — is addressed with ?pris=.
   // It must answer 200 and name the plain page as its canonical, or Google sees
@@ -296,9 +324,9 @@ async function main() {
   const types = body => ldOf(body).flatMap(j => j['@graph'] ? j['@graph'].map(x => x['@type']) : [j['@type']]);
   const se3t = types(se3.body);
   check(!se3t.some(t => ['FAQPage', 'Article', 'BlogPosting', 'Dataset', 'INVALID'].includes(t)), '/se3: ingen fremmed struktureret data', se3t.join(','));
-  const post = await get('/blog/forsta-din-elpris');
+  const post = await get('/blog/elafgift-2028');
   const bp = ldOf(post.body).filter(j => j['@type'] === 'BlogPosting');
-  check(bp.length === 1 && bp[0].url.endsWith('/blog/forsta-din-elpris'), 'blogindlæg: præcis sit eget BlogPosting');
+  check(bp.length === 1 && bp[0].url.endsWith('/blog/elafgift-2028'), 'blogindlæg: præcis sit eget BlogPosting');
   const n1 = await get('/dk1/n1');
   check(!n1.body.includes('href="$') && !n1.body.includes("href='$"), '/dk1/n1: ingen href="$… i den serverede HTML');
   check((footerOf(n1.body).match(/<a href="\/dk[12]\/[a-z0-9-]+"/g) || []).length === 14, '/dk1/n1: sidefoden linker alle 14 netselskaber');

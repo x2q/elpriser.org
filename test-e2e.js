@@ -125,11 +125,11 @@ async function startServer() {
     ['/om-elpriser',                   'om-elpriser'],
     ['/dk1',                           'prices'],
     ['/dk2',                           'prices'],
-    ['/blog/forsta-din-elpris',                  'blog-forsta-din-elpris'],
-    ['/blog/shelly-elpris-automation',           'blog-shelly-elpris-automation'],
-    ['/blog/home-assistant-elpriser',            'blog-home-assistant-elpriser'],
-    ['/blog/v2g-v2h-bidirektional-opladning',    'blog-v2g-v2h-bidirektional-opladning'],
-    ['/blog/biler-ladere-v2h-v2g',               'blog-biler-ladere-v2h-v2g'],
+    ['/blog',                                    'blog'],
+    ['/blog/elafgift-2028',                      'blog-elafgift-2028'],
+    ['/blog/elafgift-og-spotpris',               'blog-elafgift-og-spotpris'],
+    ['/blog/hvornaar-er-stroemmen-billigst',     'blog-hvornaar-er-stroemmen-billigst'],
+    ['/blog/groennest-og-dyrest',                'blog-groennest-og-dyrest'],
   ]) {
     await test(`nav: ${url} → data-page="${dataPage}" is active`, async () => {
       await page.goto(BASE + url);
@@ -165,10 +165,10 @@ async function startServer() {
   }
 
   // Clean-URL SEO pages must stay clean (regression: hash-redirect previously
-  // clobbered /blog/shelly-elpris-automation → /#blog/shelly-elpris-automation)
-  for (const url of ['/blog/shelly-elpris-automation', '/blog/forsta-din-elpris',
-                     '/blog/home-assistant-elpriser', '/blog/v2g-v2h-bidirektional-opladning',
-                     '/blog/biler-ladere-v2h-v2g', '/tariffer', '/automation', '/api',
+  // clobbered /blog/elafgift-2028 → /#blog/elafgift-2028)
+  for (const url of ['/blog/elafgift-2028', '/blog/hvornaar-er-stroemmen-billigst',
+                     '/blog/groennest-og-dyrest', '/blog/elafgift-og-spotpris', '/blog',
+                     '/tariffer', '/automation', '/api',
                      '/om-elpriser', '/prognose', '/dk1', '/dk2']) {
     await test(`clean-URL: ${url} does NOT redirect to /#hash`, async () => {
       await page.goto(BASE + url);
@@ -213,44 +213,37 @@ async function startServer() {
     await page.evaluate(() => localStorage.clear());
   });
 
-  await test('start: both DK1 and DK2 zone cards offer the two views, Din pris and Spotpris', async () => {
-    // The six price modes are no longer a choice; the area cards say so too.
-    for (const z of ['#dk1-zone', '#dk2-zone']) {
-      const labels = await page.locator(`${z} a`).allTextContents();
-      assert.deepEqual(labels.map(t => t.trim()), ['Din pris — inkl. alt', 'Kun spotpris'], `${z}: ${labels.join(' | ')}`);
-    }
+  await test('start: no area cards and no 14-button net list — one compact row instead', async () => {
+    await page.goto(BASE + '/');
+    await page.waitForSelector('main[data-page="start"].active [data-area-row]');
+    for (const sel of ['#dk1-zone', '#dk2-zone', '#dk1-nets', '#dk2-nets', '.net-row', '.zone-btn'])
+      assert.equal(await page.locator(`main[data-page="start"] ${sel}`).count(), 0, `${sel} is back on the start page`);
+    assert.equal((await page.locator('main[data-page="start"] [data-area-row] .gps-light').textContent()).trim(), 'Find dit netselskab');
+    assert.deepEqual(await page.locator('main[data-page="start"] [data-area-row] a').allTextContents(), ['DK1 Vest', 'DK2 Øst']);
+    assert.equal(await page.locator('main[data-page="start"] a[href^="/dk1/"], main[data-page="start"] a[href^="/dk2/"]').count(), 0,
+      'net pages are reached through the dialog and the footer, not the start page body');
   });
 
-  for (const [selector, expectedUrl] of [
-    ['#dk1-zone a:has-text("Din pris")',     '/dk1'],
-    ['#dk1-zone a:has-text("Kun spotpris")', '/dk1?pris=spot'],
-    ['#dk2-zone a:has-text("Din pris")',     '/dk2'],
-    ['#dk2-zone a:has-text("Kun spotpris")', '/dk2?pris=spot'],
-  ]) {
-    await test(`zone: clicking "${selector.split('"')[1]}" navigates to ${expectedUrl}`, async () => {
+  for (const [text, expectedUrl] of [['DK1 Vest', '/dk1'], ['DK2 Øst', '/dk2']]) {
+    await test(`start: the "${text}" link in the compact row navigates to ${expectedUrl}`, async () => {
       await page.goto(BASE + '/');
-      await page.locator(selector).first().click();
-      // A clean address: the path (and ?pris= for a non-default price), never a #hash.
+      await page.locator(`main[data-page="start"] [data-area-row] a:has-text("${text}")`).click();
       await page.waitForURL(u => u.pathname + u.search === expectedUrl && u.hash === '');
       await page.waitForSelector('main[data-page="prices"].active');
     });
   }
 
-  await test('start: net chips — every net has one link, to its own page', async () => {
+  await test('start: "Find dit netselskab" opens the net dialog, which lists all 14 nets; choosing one opens its page', async () => {
     await page.goto(BASE + '/');
-    await page.waitForSelector('#dk1-nets .net-row');
-    const rows = await page.locator('#dk1-nets .net-row').count();
-    assert.ok(rows >= 10, `DK1 has ${rows} nets, expected ≥10`);
-    for (let i = 0; i < rows; i++) {
-      const chips = await page.locator('#dk1-nets .net-row').nth(i).locator('.net-chip').count();
-      assert.equal(chips, 1, `DK1 row ${i} has ${chips} chips, expected 1`);
-    }
-  });
-
-  await test('start: clicking a net chip navigates to net_inkl_alt path', async () => {
-    await page.goto(BASE + '/');
-    await page.locator('#dk1-nets .net-row').first().locator('.net-chip').first().click();
-    await page.waitForURL(u => /^\/dk1\/[a-z0-9-]+$/.test(u.pathname) && u.hash === '' && u.search === '');
+    await page.evaluate(() => localStorage.clear());
+    await page.locator('main[data-page="start"] [data-area-row] button').click();
+    await page.waitForSelector('#netDialog[open]');
+    assert.equal((await page.locator('#netDialogTitle').textContent()).trim(), 'Netselskab og indstillinger');
+    // 14 nets plus one "Uden netselskab" per area.
+    assert.equal(await page.locator('#netDialog .pd-links a[data-net]:not([data-net=""])').count(), 14, 'the dialog lists every net');
+    await page.locator('#netDlgDK1 a:has-text("Trefor")').first().click();
+    await page.waitForURL(u => u.pathname === '/dk1/trefor');
+    await page.evaluate(() => localStorage.clear());
   });
 
   // Nav pills
@@ -274,7 +267,7 @@ async function startServer() {
     // a user can only open the ones on the page that is showing.
     const faqs = page.locator('main.active details.faq');
     const count = await faqs.count();
-    assert.ok(count >= 5, `expected ≥5 FAQ items on the start page, got ${count}`);
+    assert.equal(count, 5, `expected exactly 5 FAQ items on the start page, got ${count}`);
     for (let i = 0; i < count; i++) {
       const d = faqs.nth(i);
       assert.equal(await d.evaluate(el => el.open), false, `faq #${i} starts closed`);
@@ -983,7 +976,7 @@ async function startServer() {
   // clicking `#` on /blog/... didn't fire hashchange, and even if it had,
   // the pathname-fallback in route() mapped it right back to the same page.
   // Home icon must navigate to /.
-  for (const url of ['/automation', '/blog/shelly-elpris-automation', '/dk1/n1']) {
+  for (const url of ['/automation', '/blog/elafgift-2028', '/dk1/n1']) {
     await test(`routing: home-icon on ${url} returns to start page`, async () => {
       await page.goto(BASE + url);
       const dp = await page.evaluate(() =>
@@ -1010,7 +1003,7 @@ async function startServer() {
 
   // ── 8. Footer: four groups, the net companies behind a disclosure ──────────
 
-  await test('footer: collapsed by default, both disclosures closed, net links present but hidden', async () => {
+  await test('footer: collapsed by default, the net-list disclosure closed, net links present but hidden', async () => {
     await page.goto(BASE + '/dk1/n1');
     await page.waitForSelector('footer.sf');
     assert.equal(await page.locator('footer details[open]').count(), 0, 'no disclosure open');
@@ -1035,10 +1028,6 @@ async function startServer() {
     await page.locator('footer details.sf-all a[href="/dk1/trefor"]').click();
     await page.waitForFunction(() => location.pathname === '/dk1/trefor');
     await page.waitForSelector('main[data-page="prices"].active');
-    const more = page.locator('footer details.sf-more > summary');
-    await more.scrollIntoViewIfNeeded();
-    await more.click();
-    assert.equal(await page.locator('footer details.sf-more a[href="/blog/biler-ladere-v2h-v2g"]').isVisible(), true, 'older guides show');
   });
 
   await test('footer: four columns at 1280 px, two at 390 px, no horizontal scroll at 360 px, 44 px targets on phones', async () => {
@@ -1069,6 +1058,95 @@ async function startServer() {
     };
     assert.equal(await ring('footer .sf-l a'), 'solid 2px', 'link ring');
     assert.equal(await ring('footer details.sf-all > summary'), 'solid 2px', 'summary ring');
+  });
+
+  // ── 9. Retired pages: 301 on the dev server, old #blog/… hashes, the new anchors ──
+
+  const head = (pathAndQuery) => new Promise((ok, no) => {
+    http.get(BASE + pathAndQuery, res => { res.resume(); ok({ status: res.statusCode, headers: res.headers }); }).on('error', no);
+  });
+  const RETIRED = [
+    ['/blog/v2g-v2h-bidirektional-opladning', '/blog', '/blog'],
+    ['/blog/biler-ladere-v2h-v2g',            '/blog', '/blog'],
+    ['/blog/shelly-elpris-automation',        '/automation#shelly', '/automation'],
+    ['/blog/home-assistant-elpriser',         '/automation#home-assistant', '/automation'],
+    ['/blog/forsta-din-elpris',               '/om-elpriser', '/om-elpriser'],
+  ];
+  for (const [from, to] of RETIRED) {
+    await test(`retired page ${from}: 301 to ${to} (dev server, as in production)`, async () => {
+      const r = await head(from);
+      assert.equal(r.status, 301);
+      assert.equal(r.headers.location, to);
+      assert.equal(r.headers['cache-control'], 'public, max-age=3600');
+      const q = await head(from + '?utm_source=x');
+      assert.equal(q.headers.location, to.replace(/(#.*)?$/, m => '?utm_source=x' + m), 'the query string survives');
+    });
+  }
+
+  for (const [from, to, path] of RETIRED) {
+    await test(`old shared link /#${from.slice(1)} lands on ${to}`, async () => {
+      await page.goto(BASE + '/#' + from.slice(1), { waitUntil: 'commit' });
+      // The page replaces itself while it loads; watch the address rather than a load event.
+      const want = BASE + to;
+      for (let i = 0; i < 50 && page.url() !== want; i++) await new Promise(r => setTimeout(r, 100));
+      assert.equal(page.url(), want, 'the old hash must end on the page that replaced it');
+      await page.waitForSelector(`main[data-page="${path === '/om-elpriser' ? 'om-elpriser' : path.slice(1)}"].active`);
+    });
+  }
+
+  await test('old hash on the page that replaced it is rewritten in place: /automation#blog/shelly-elpris-automation → #shelly', async () => {
+    await page.goto(BASE + '/automation#blog/shelly-elpris-automation');
+    await page.waitForFunction(() => location.hash === '#shelly');
+    assert.equal(await page.evaluate(() => location.pathname), '/automation');
+    await page.waitForSelector('main[data-page="automation"].active');
+  });
+
+  for (const id of ['shelly', 'home-assistant']) {
+    await test(`/automation#${id}: the page stays /automation, keeps its anchor, and scrolls to the section`, async () => {
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await page.goto(BASE + '/automation#' + id);
+      await page.waitForSelector('main[data-page="automation"].active');
+      await page.waitForFunction(i => { const r = document.getElementById(i).getBoundingClientRect(); return r.top >= 0 && r.top < 400; }, id);
+      const st = await page.evaluate(() => ({ p: location.pathname, h: location.hash }));
+      assert.deepEqual(st, { p: '/automation', h: '#' + id }, 'the anchor must survive route()');
+      const h2 = (await page.locator(`#${id} h2`).textContent()).trim();
+      assert.ok(h2.length > 5, 'heading present');
+    });
+  }
+
+  await test('the generator above the guides still works with an anchor in the URL', async () => {
+    await page.goto(BASE + '/automation#home-assistant');
+    await page.waitForSelector('main[data-page="automation"].active #autoTableWrapper table');
+    await page.selectOption('#autoArea', 'DK2');
+    assert.equal(await page.locator('#autoArea').inputValue(), 'DK2');
+    assert.equal(await page.evaluate(() => location.hash), '#home-assistant');
+  });
+
+  await test('/om-elpriser reads "Forstå din elpris", and is the footer\'s only explainer link', async () => {
+    await page.goto(BASE + '/om-elpriser');
+    await page.waitForSelector('main[data-page="om-elpriser"].active');
+    assert.equal((await page.locator('main[data-page="om-elpriser"] .page-title').textContent()).trim(), 'Forstå din elpris');
+    assert.deepEqual(await page.locator('footer a[href="/om-elpriser"]').allTextContents(), ['Forstå din elpris']);
+    assert.equal(await page.locator('footer .sf-more').count(), 0, 'no "Flere guides" disclosure');
+  });
+
+  await test('/blog lists the four remaining posts and nothing else', async () => {
+    await page.goto(BASE + '/blog');
+    await page.waitForSelector('main[data-page="blog"].active');
+    assert.deepEqual(await page.locator('main[data-page="blog"] a.card').evaluateAll(a => a.map(x => x.getAttribute('href')).sort()),
+      ['/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/blog/groennest-og-dyrest', '/blog/hvornaar-er-stroemmen-billigst']);
+  });
+
+  await test('no page links to a retired URL (start, automation, om-elpriser, blog, posts, tariffer, api)', async () => {
+    for (const url of ['/', '/automation', '/om-elpriser', '/blog', '/blog/elafgift-2028', '/blog/elafgift-og-spotpris',
+                       '/blog/groennest-og-dyrest', '/blog/hvornaar-er-stroemmen-billigst', '/tariffer', '/api']) {
+      await page.goto(BASE + url);
+      await page.waitForSelector('main.active');
+      const bad = await page.evaluate(() => [...document.querySelectorAll('a[href]')]
+        .map(a => a.getAttribute('href').split('#')[0].split('?')[0])
+        .filter(h => /^\/blog\/(v2g-v2h-bidirektional-opladning|biler-ladere-v2h-v2g|shelly-elpris-automation|home-assistant-elpriser|forsta-din-elpris)$/.test(h)));
+      assert.deepEqual(bad, [], `${url} links ${bad.join(', ')}`);
+    }
   });
 
   // ── report & cleanup ────────────────────────────────────────────────────────

@@ -16,10 +16,11 @@ components, and the patterns used across pages.
 | `functions/[[path]].js` | Pages Function for SEO meta tags + clean-URL handling |
 | `functions/api/[[catchall]].js` | All `/api/*` endpoints with two-layer cache (in-memory + Cloudflare Cache API) |
 
-**SPA but crawlable**: routes like `/dk1/n1`, `/blog/forsta-din-elpris`,
+**SPA but crawlable**: routes like `/dk1/n1`, `/blog/elafgift-2028`,
 `/tariffer` are real URLs, not `#hash` fragments. The Pages Function rewrites
 SEO `<title>`/`<meta>` per route; the client derives state from
-`location.pathname` on load.
+`location.pathname` on load. Retired URLs are listed in `LEGACY_REDIRECTS`
+(functions/[[path]].js, mirrored in server.js) and answer 301 to the page that replaced them.
 
 ---
 

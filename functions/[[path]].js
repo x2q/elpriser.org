@@ -136,33 +136,8 @@ const SEO_PAGES = {
   },
   '/blog': {
     title: 'Blog — Guides og analyser om elpriser',
-    description: 'Baggrund og analyser om danske elpriser: hvordan prisen bliver til, hvornår strømmen er billigst og grønnest, elafgiften frem mod 2028, og hvordan du automatiserer forbruget med Home Assistant, Shelly og V2G.',
+    description: 'Analyser af danske elpriser: hvornår strømmen er billigst og grønnest, hvad elafgiften gør ved regningen, og hvordan spotprisen har rykket sig siden 2019.',
     hash: '#blog',
-  },
-  '/blog/forsta-din-elpris': {
-    title: 'Forstå din elpris — Guide til spotpris og tariffer',
-    description: 'Komplet guide til elpriser i Danmark: spotpris, nettarif, elafgift, DK1 vs DK2, hvornår strømmen er billigst, negative elpriser og sådan sparer du penge.',
-    hash: '#blog/forsta-din-elpris',
-  },
-  '/blog/shelly-elpris-automation': {
-    title: 'Shelly & elpriser — Automatisér forbrug efter spotpris',
-    description: 'Styr Shelly Plus, Pro og Plug efter elprisen med gratis API. Script- og tidsbaseret automation af elbil, varmepumpe og vandvarmer efter billig strøm.',
-    hash: '#blog/shelly-elpris-automation',
-  },
-  '/blog/home-assistant-elpriser': {
-    title: 'Home Assistant & elpriser — Smart elforbrug i Danmark',
-    description: 'Opsæt Home Assistant med danske elpriser: REST-sensorer, schedule-automations og dashboards — spar automatisk penge på strøm efter de billigste timer.',
-    hash: '#blog/home-assistant-elpriser',
-  },
-  '/blog/v2g-v2h-bidirektional-opladning': {
-    title: 'V2G, V2H og V2L — Bidirektional elbilopladning forklaret',
-    description: 'Forstå Vehicle-to-Grid (V2G), Vehicle-to-Home (V2H) og Vehicle-to-Load (V2L). Sådan kan din elbil sælge strøm til nettet eller forsyne dit hus, og hvordan det fungerer med spotpriser i Danmark.',
-    hash: '#blog/v2g-v2h-bidirektional-opladning',
-  },
-  '/blog/biler-ladere-v2h-v2g': {
-    title: 'Elbiler og ladere med V2H/V2G — Komplet liste 2026',
-    description: 'Opdateret liste over elbiler og bidirektionale ladere der understøtter V2L, V2H og V2G. Inkluderer Hyundai Ioniq 5, Kia EV9, Nissan Leaf, Wallbox Quasar 2, Sigenergy og flere.',
-    hash: '#blog/biler-ladere-v2h-v2g',
   },
   '/blog/hvornaar-er-stroemmen-billigst': {
     title: 'Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret',
@@ -235,8 +210,7 @@ for (const area of ['DK1', 'DK2']) {
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff',
   '/blog',
-  '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
-  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/no1', '/no2', '/no3', '/no4', '/no5', '/se1', '/se2', '/se3', '/se4', '/fi', '/nl', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
+  '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/no1', '/no2', '/no3', '/no4', '/no5', '/se1', '/se2', '/se3', '/se4', '/fi', '/nl', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
   ...NET_URLS,
 ];
 
@@ -245,15 +219,10 @@ const SITEMAP_URLS = [
 // Update these when a page's content actually changes — an always-today
 // lastmod for everything teaches Google to ignore the field.
 const CONTENT_LASTMOD = {
-  '/automation': '2026-07-24',
+  '/automation': '2026-10-17',  // gained the Shelly and Home Assistant guides
   '/api': '2026-07-24',
-  '/om-elpriser': '2026-07-24',
+  '/om-elpriser': '2026-10-17',  // absorbed the Forstå din elpris guide
   '/shelly-tariff': '2026-07-24',
-  '/blog/forsta-din-elpris': '2026-07-24',
-  '/blog/shelly-elpris-automation': '2026-07-24',
-  '/blog/home-assistant-elpriser': '2026-07-24',
-  '/blog/v2g-v2h-bidirektional-opladning': '2026-07-24',
-  '/blog/biler-ladere-v2h-v2g': '2026-07-24',
   '/blog/elafgift-2028': '2026-07-24',
   '/blog/elafgift-og-spotpris': '2026-10-17',
   // The zone pages are deliberately NOT listed here: buildZoneIntro renders
@@ -263,7 +232,7 @@ const CONTENT_LASTMOD = {
   // claiming daily freshness for markup that never moved would have been a lie.
   '/blog/hvornaar-er-stroemmen-billigst': '2026-07-28',
   '/blog/groennest-og-dyrest': '2026-08-01',
-  '/blog': '2026-08-01',   // the newest post it lists
+  '/blog': '2026-10-17',   // the newest post it lists
 };
 
 function buildSitemap() {
@@ -310,13 +279,8 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Nettariffer](https://elpriser.org/tariffer): Sammenligning af nettariffer for alle danske netselskaber.
 - [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser for DK1 og DK2 time for time de næste 10 døgn. Laves dagligt af en maskinlæringsmodel ud fra vejrprognoser (vind og sol) og prisen samme ugedag de seneste fire uger; skifter til faktiske børspriser, når de offentliggøres ca. kl. 13.
 - Norden og Holland — én side pr. budområde på lokalt sprog: [NO1 Oslo](https://elpriser.org/no1), [NO2 Kristiansand](https://elpriser.org/no2), [NO3 Trondheim](https://elpriser.org/no3), [NO4 Tromsø](https://elpriser.org/no4), [NO5 Bergen](https://elpriser.org/no5), [SE1 Luleå](https://elpriser.org/se1), [SE2 Sundsvall](https://elpriser.org/se2), [SE3 Stockholm](https://elpriser.org/se3), [SE4 Malmö](https://elpriser.org/se4), [FI Suomi](https://elpriser.org/fi), [NL Nederland](https://elpriser.org/nl). Spotpris time for time for i dag og i morgen og prognose 10 døgn frem fra én åben maskinlæringsmodel for alle 13 prisområder ([model på Hugging Face](https://huggingface.co/Elpriser/nordic-price-forecast)). Omregnet til lokal valuta med Den Europæiske Centralbanks daglige referencekurs; for Norge og Sverige kan nettarif og afgifter lægges til (kilder: NVE og Energimarknadsinspektionen).
-- [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home.
-- [Om elpriser](https://elpriser.org/om-elpriser): Forklaring af priskomponenter, prisområder og datakilder.
-- [Forstå din elpris](https://elpriser.org/blog/forsta-din-elpris): Guide til hvad der bestemmer elprisen, spotpriser, tariffer, afgifter og sparetips.
-- [Shelly automation](https://elpriser.org/blog/shelly-elpris-automation): Guide til Shelly-styring efter elprisen med gratis API.
-- [Home Assistant guide](https://elpriser.org/blog/home-assistant-elpriser): Komplet opsætning af Home Assistant med elpriser, sensorer og automations.
-- [V2G & V2H](https://elpriser.org/blog/v2g-v2h-bidirektional-opladning): Forklaring af bidirektional elbilopladning (V2G/V2H/V2L) og hvordan det udnytter spotpriser.
-- [Biler & ladere med V2H/V2G](https://elpriser.org/blog/biler-ladere-v2h-v2g): Opdateret liste over elbiler og bidirektionale ladere der understøtter V2H/V2G i Danmark.
+- [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home. Guides: [Shelly](https://elpriser.org/automation#shelly) (script, der henter døgnets plan én gang) og [Home Assistant](https://elpriser.org/automation#home-assistant) (REST-sensor og automation).
+- [Forstå din elpris](https://elpriser.org/om-elpriser): Hvad elprisen består af (spotpris, nettarif, systemtarif og transmissionstarif, elafgift, moms), DK1 og DK2, hvornår strømmen er billigst, negative priser, sparetips og datakilder.
 - [Hvornår er strømmen billigst](https://elpriser.org/blog/hvornaar-er-stroemmen-billigst): Analyse af 48.594 timers data — døgnets billigste time ligger nu midt på dagen på 68 % af dagene mod 23 % om natten; danske husholdninger flytter forbrug efter et forældet natte-mønster.
 - [Grønnest og dyrest på samme tid](https://elpriser.org/blog/groennest-og-dyrest): Hvorfor døgnets dyreste time ofte er den grønneste — pris sættes marginalt på et europæisk marked, CO₂ er et gennemsnit der følger hvem Danmark importerer fra (norsk vandkraft om aftenen, tysk strøm midt på dagen).
 - [Elafgift 2028](https://elpriser.org/blog/elafgift-2028): Elafgiften er sænket til 0,8 øre/kWh i 2026-2027 men stiger igen fra 2028 — satser, tidslinje og betydning for din elregning og dine solceller.
@@ -449,7 +413,7 @@ GPS-funktionen finder automatisk dit netselskab ud fra din position via OpenStre
 
 ## Hvornår er strømmen billigst?
 
-Strømmen er typisk billigst om natten mellem kl. 00 og 06, og dyrest i spidstimerne kl. 17-21. Den faktiske pris afhænger af vejr, vind og forbrug og varierer fra dag til dag.
+I 2026 ligger døgnets billigste time midt på dagen (kl. 10-16) på 68 % af dagene og om natten (kl. 00-06) på 23 %; dyrest er typisk aftenspidsen kl. 17-21. Den faktiske pris afhænger af vejr, vind og forbrug og varierer fra dag til dag.
 
 ## Nøgletal og statistik for elpriser i Danmark
 
@@ -600,6 +564,18 @@ Slug bruges i URL-mønsteret \`https://elpriser.org/dk1/<slug>\` eller \`https:/
 - **JS/TS-klient** — [github.com/x2q/elpriser-client](https://github.com/x2q/elpriser-client): en letvægts JavaScript/TypeScript-klient til elpriser.org's API, til brug i Node.js, browser eller edge-funktioner.
 `;
 
+// Pages that were folded into others. They answer 301, not 404: the posts had inbound
+// links and shares, and each target holds the content that replaced it. Nothing on
+// the site links to these paths any more, and they are not in the sitemap. server.js
+// mirrors this table for local development; test-static.js keeps the two equal.
+const LEGACY_REDIRECTS = {
+  '/blog/v2g-v2h-bidirektional-opladning': '/blog',
+  '/blog/biler-ladere-v2h-v2g': '/blog',
+  '/blog/shelly-elpris-automation': '/automation#shelly',
+  '/blog/home-assistant-elpriser': '/automation#home-assistant',
+  '/blog/forsta-din-elpris': '/om-elpriser',
+};
+
 const INDEXNOW_KEY = 'ede0d7c16ca973f60282b7079da12804';
 
 const STATIC_ROUTES = {
@@ -743,6 +719,17 @@ export async function onRequest(context) {
     }
   }
 
+  // Retired pages → the page that replaced them (permanent, before any rendering).
+  const legacyTo = LEGACY_REDIRECTS[url.pathname];
+  if (legacyTo) {
+    const to = new URL(legacyTo, url);
+    to.search = url.search;   // keep utm_* and friends; the fragment comes from the table
+    return new Response(null, {
+      status: 301,
+      headers: { 'Location': to.toString(), 'Cache-Control': 'public, max-age=3600' },
+    });
+  }
+
   // Static routes (sitemap, robots, og-image)
   const staticRoute = STATIC_ROUTES[url.pathname];
   if (staticRoute) {
@@ -812,7 +799,7 @@ const STATIC_ASSETS = new Set([
 
 /** Paths that resolve to a page, for the case-normalising redirect. */
 function isKnownPath(path) {
-  if (path === '/' || SEO_PAGES[path] || STATIC_ROUTES[path]) return true;
+  if (path === '/' || SEO_PAGES[path] || STATIC_ROUTES[path] || LEGACY_REDIRECTS[path]) return true;
   const m = path.match(/^\/(dk[12])\/([a-z0-9-]+)$/);
   return !!(m && NETS[m[1].toUpperCase()].some(n => n.slug === m[2]));
 }
@@ -1711,7 +1698,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v65');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v66');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1770,11 +1757,6 @@ const HASH_TO_DATA_PAGE = {
   'shelly-tariff': 'shelly-tariff',
   'om-elpriser': 'om-elpriser',
   'prognose': 'prognose',
-  'blog/forsta-din-elpris': 'blog-forsta-din-elpris',
-  'blog/shelly-elpris-automation': 'blog-shelly-elpris-automation',
-  'blog/home-assistant-elpriser': 'blog-home-assistant-elpriser',
-  'blog/v2g-v2h-bidirektional-opladning': 'blog-v2g-v2h-bidirektional-opladning',
-  'blog/biler-ladere-v2h-v2g': 'blog-biler-ladere-v2h-v2g',
   'blog/elafgift-2028': 'blog-elafgift-2028',
   'blog/elafgift-og-spotpris': 'blog-elafgift-og-spotpris',
   'no1': 'zone',
