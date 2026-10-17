@@ -340,7 +340,7 @@ async function main() {
   check(/<title>Elafgift 2028: Elafgiften stiger igen/.test((await get('/blog/elafgift-2028')).body), 'elafgift-indlægget: titlen svarer ja');
   check(/<title>Elpris Vest \(DK1\) i dag/.test((await get('/dk1')).body), '/dk1: titlen starter med "Elpris Vest"');
   const llms = await get('/llms.txt');
-  check(!/7 dage|7-day/.test(llms.body) && /elpriser\.org\/sv/elpris\)/.test(llms.body) && /elpriser\.org\/norden\)/.test(llms.body), 'llms.txt: 10 døgn og de fire nordiske sider');
+  check(!/7 dage|7-day/.test(llms.body) && /elpriser\.org\/sv\/elpris\)/.test(llms.body) && /elpriser\.org\/norden\)/.test(llms.body), 'llms.txt: 10 døgn og de fire nordiske sider');
   const home2 = await get('/');
   check(!/name="description" content="[^"]*inkl\. nettariffer/.test(home2.body), 'forside: beskrivelsen påstår ikke nettarif');
 
