@@ -276,7 +276,7 @@ const span = (n, los, his, types = []) => ({
   ok(ps.length > 5000, 'Pris-blokken blev faktisk hentet ud', `${ps.length} tegn`);
   const pctx = { console, Date, Math };
   vm.createContext(pctx);
-  vm.runInContext(ps + '\nglobalThis.pris = prisHTML;', pctx);
+  vm.runInContext(ps + '\nglobalThis.pris = prisHTML; globalThis.parts = prisParts; globalThis.panel = prisPanel; globalThis.days = prisDays;', pctx);
   const pris = pctx.pris;
 
   // The numbers of the A-Desktop mock (N1, 14 Oct, 21:00).
@@ -392,6 +392,94 @@ const span = (n, los, his, types = []) => ({
   ok(!/-0,00/.test(pris([dayOf(D0, T.map(() => -0.004), 'actual')], D0, 5, o)), 'et beløb der runder til nul vises uden minus');
   ok(/aria-label="Elpris lige nu — DK1 Vest · N1"/.test(h) && /role="img" tabindex="0" aria-label="Elpris time for time næste 2 døgn: billigst 1,30 kr\/kWh kl\. 04, dyrest 3,90 kr\/kWh kl\. 19\./.test(h), 'grafen har en tekstlig beskrivelse');
   ok(!/<h[1-6]/.test(h), 'skærmen indeholder ingen overskriftstags — sidens h1 står andetsteds');
+
+  // ── What the price is made of (the folded-out caption) ──────────────────────
+  // Hand-calculated: spot 0.85 + system 0.07 + transmission 0.054 + net tariff 0.33 + duty 0.008
+  // = 1.312 ex. VAT; × 1.25 = 1.64 kr/kWh, of which VAT 0.328.
+  const CH = { sys: 0.07, trans: 0.054, afg: 0.008, vat: 0.25 };
+  const GT = Array.from({ length: 24 }, () => 0.33);
+  const dayG = (date, price, type, gt) => ({ date, type, ...(gt ? { grid_tariff: gt } : {}),
+    prices: Array.from({ length: 24 }, (_, hour) => ({ hour, price })) });
+  const first = html => html.slice(html.indexOf('<div class="pris-bdhd">'), html.indexOf('</ul>', html.indexOf('<div class="pris-bdhd">')) + 5);
+  const lines = html => [...first(html).matchAll(/<li><i class="bd-dot bd-(\w+)"><\/i><span class="l">([^<]*)<\/span><b>([^<]*)<\/b><\/li>/g)].map(m => [m[2], m[3]]);
+  const tot = html => (first(html).match(/<li class="tot"><span class="l">I alt<\/span><b>([^<]*)<\/b>/) || [])[1];
+  const sumOf = html => lines(html).reduce((a, [, v]) => a + Math.round(parseFloat(v.replace(',', '.')) * 10), 0);
+  const bd = (feedX, hour, oo) => pris(feedX, D0, hour, { ...o, charges: CH, ...oo });
+
+  // Din pris with a net: six rows in order, the last one the total, and they add up exactly.
+  const netFeed = [dayG(D0, 1.64, 'actual', GT), dayG(nextDate(1), 1.64, 'forecast', GT)];
+  const nb = bd(netFeed, 21);
+  const rowsNet = lines(nb);
+  ok(JSON.stringify(rowsNet) === JSON.stringify([
+    ['Spotpris (Nord Pool)', '85,0 øre'], ['Systemtarif (Energinet)', '7,0 øre'], ['Transmissionstarif (Energinet)', '5,4 øre'],
+    ['Nettarif (N1, kl. 21)', '33,0 øre'], ['Elafgift', '0,8 øre'], ['Moms (25 %)', '32,8 øre']]),
+    'Din pris med net: spot, system, transmission, nettarif, elafgift og moms i den rækkefølge', JSON.stringify(rowsNet));
+  ok(tot(nb) === '1,64 kr/kWh', 'summen er det samme tal som i det store felt og i tooltippen', tot(nb));
+  ok(sumOf(nb) === 1640, 'rækkerne summer til 164,0 øre på øret', String(sumOf(nb)));
+  ok(/<p class="pris-bdh">Sådan er prisen kl\. 21 sammensat<\/p>/.test(nb) && !/data-pris-back/.test(nb), 'overskriften for nu har ingen dag og ingen tilbage-knap');
+  ok(/<div class="pris-bdbar" aria-hidden="true">(<i class="bd-\w+" style="width:[\d.]+%"><\/i>){6}<\/div>/.test(nb), 'den tynde stak har ét segment pr. række');
+
+  // Din pris without a net: no Nettarif row; the same totals logic.
+  const area = [dayG(D0, 1.23, 'actual'), dayG(nextDate(1), 1.23, 'forecast')];
+  const ab = bd(area, 21, { net: null });
+  const rowsArea = lines(ab);
+  ok(JSON.stringify(rowsArea.map(r => r[0])) === JSON.stringify(['Spotpris (Nord Pool)', 'Systemtarif (Energinet)', 'Transmissionstarif (Energinet)', 'Elafgift', 'Moms (25 %)']),
+     'uden net er der ingen Nettarif-række', JSON.stringify(rowsArea));
+  ok(JSON.stringify(rowsArea.map(r => r[1])) === JSON.stringify(['85,2 øre', '7,0 øre', '5,4 øre', '0,8 øre', '24,6 øre']) && tot(ab) === '1,23 kr/kWh' && sumOf(ab) === 1230,
+     'uden net: 1,23 = 85,2 + 7,0 + 5,4 + 0,8 + 24,6', JSON.stringify(rowsArea));
+
+  // Spotpris: spot and VAT only.
+  const sp = bd([dayG(D0, 1.06, 'actual'), dayG(nextDate(1), 1.06, 'actual')], 21, { view: 'spot', net: null });
+  ok(JSON.stringify(lines(sp)) === JSON.stringify([['Spotpris (Nord Pool)', '84,8 øre'], ['Moms (25 %)', '21,2 øre']]) && tot(sp) === '1,06 kr/kWh',
+     'Spotpris: spot og moms, og I alt', JSON.stringify(lines(sp)));
+  ok(/<summary class="pris-cap">Spotpris inkl\. moms<i class="pris-chev"/.test(sp), 'billedteksten er stadig den samme tekst, nu som summary');
+
+  // A model-forecast day is labelled as such, and a picked bar names its day like the tooltip.
+  const allN = pctx.days(netFeed.concat(Array.from({ length: 3 }, (_, i) => dayG(nextDate(i + 2), 1.64, 'forecast', GT))), D0);
+  const oN = { ...o, charges: CH };
+  const pTom = pctx.panel(allN, 1, 13, true, oN), pNow = pctx.panel(allN, 0, 8, false, oN);
+  ok(/Spotpris \(prognose\)/.test(pTom) && !/Nord Pool/.test(pTom), 'en prognosedag hedder Spotpris (prognose)');
+  ok(/Sådan er prisen i morgen kl\. 13 sammensat/.test(pTom) && /data-pris-back>Tilbage til nu<\/button>/.test(pTom), 'valgt bar i morgen: overskrift med dagen og Tilbage til nu');
+  ok(/Sådan er prisen søn 18\. okt kl\. 13 sammensat/.test(pctx.panel(allN, 4, 13, true, oN)), 'senere dage nævnes som ugedag, dato og måned, som i tooltippen');
+  ok(/Sådan er prisen i dag kl\. 09 sammensat/.test(pctx.panel(allN, 0, 9, true, oN)) && /Spotpris \(Nord Pool\)/.test(pNow) && /Nettarif \(N1, kl\. 08\)/.test(pNow),
+     'en valgt bar i dag siger i dag; nettarifrækken bærer den valgte time');
+  ok(!/Spotpris \(prognose\)/.test(pNow), 'en børsprisdag er ikke en prognose');
+
+  // The sum closes exactly for any price, tariff and charge: the spot row absorbs the rounding.
+  let sweep = 0, bad = '';
+  for (let i = 0; i < 4000 && !bad; i++) {
+    const price = (Math.sin(i * 12.9898) * 43758.5453 % 1) * 5, tariff = Math.abs(Math.sin(i * 78.233) * 0.7);
+    const ch = { sys: 0.04 + (i % 7) * 0.013, trans: 0.0537, afg: (i % 3) * 0.0079, vat: 0.25 };
+    for (const [view, wn] of [['din', true], ['din', false], ['spot', false]]) {
+      const r = pctx.parts(price, view, ch, tariff, wn);
+      if (!r) { bad = `no parts for ${price}`; break; }
+      const sum = r.rows.reduce((a, x) => a + x.v, 0);
+      if (sum !== r.total || r.total !== Math.round(price * 1000) || r.rows.some(x => !Number.isInteger(x.v) || Object.is(x.v, -0))) { bad = `${view} ${wn} ${price}: ${sum} vs ${r.total}`; break; }
+      sweep++;
+    }
+  }
+  ok(!bad && sweep === 12000, 'summen af rækkerne lukker præcis til prisen afrundet til 0,1 øre (12000 tilfælde)', bad);
+  ok(!/-0,0 øre/.test(bd([dayG(D0, -0.0002, 'actual'), dayG(nextDate(1), 1, 'actual')], 21, { view: 'spot', net: null })), 'minus nul vises aldrig');
+  const negSpot = lines(bd([dayG(D0, 0.1, 'actual', GT), dayG(nextDate(1), 1, 'actual', GT)], 21));
+  ok(/^-\d/.test(negSpot[0][1]) && !/NaN/.test(JSON.stringify(negSpot)), 'er spotprisen negativ, vises den med minus og stakken tegnes stadig');
+
+  // Closed by default, native <details>, one per place the caption shows (hero + each card); same text in all.
+  ok((nb.match(/<details class="pris-bd[ "]/g) || []).length === 3 && !/<details[^>]* open/.test(nb), 'tre details (hero og to kort), alle lukkede i den tegnede HTML');
+  ok(/<summary class="pris-cap">Inkl\. nettarif, afgifter og moms<i class="pris-chev" aria-hidden="true"><\/i><\/summary>/.test(nb), 'summary er billedteksten med en chevron');
+  ok((nb.match(/Sådan er prisen kl\. 21 sammensat/g) || []).length === 3, 'panelteksten for den aktuelle time står som tekst i HTML\'en (crawlbar)');
+  ok((bd(netFeed, 21, { open: true }).match(/<details class="pris-bd[^>]* open>/g) || []).length === 3, 'open:true tegner dem åbne (klienten bevarer åbent ved gentegning)');
+  ok(/class="pris-bd pris-bd-card"/.test(nb) && /<details class="pris-bd"><summary/.test(nb), 'kortenes udgave bærer pris-bd-card (skjules på bred skærm)');
+
+  // Missing data never shows a broken panel: the caption stays a plain line.
+  const plain = (html, what) => ok(!/<details|pris-bdp/.test(html) && /<p class="pris-cap">Inkl\. nettarif, afgifter og moms<\/p>/.test(html) && /<p class="pris-cap pris-cap-card">/.test(html) && !/NaN|undefined|Infinity/.test(html), what);
+  plain(pris(netFeed, D0, 21, o), 'uden charges: ren billedtekst uden chevron og uden NaN');
+  plain(bd([dayG(D0, 1.64, 'actual'), dayG(nextDate(1), 1.64, 'actual')], 21), 'net uden grid_tariff på dagen: ren billedtekst');
+  plain(bd(netFeed, 21, { charges: { sys: 0.07, trans: 0.054, vat: 0.25 } }), 'charges uden afg: ren billedtekst');
+  plain(bd(netFeed, 21, { charges: { sys: 'x', trans: null, afg: NaN, vat: 0.25 } }), 'charges med ikke-tal: ren billedtekst');
+  plain(bd([dayG(D0, 1.64, 'actual', GT.map((v, i) => i === 21 ? null : v)), dayG(nextDate(1), 1.64, 'actual', GT)], 21), 'en ødelagt tarifværdi: ren billedtekst');
+  const gap = netFeed[0].prices.map(x => ({ ...x })); gap[21].price = null;
+  plain(bd([{ ...netFeed[0], prices: gap }, netFeed[1]], 21), 'en time uden pris: ren billedtekst');
+  ok(/<p class="pris-cap">Spotpris inkl\. moms<\/p>/.test(pris(netFeed, D0, 21, { ...o, view: 'spot' })), 'spotpris uden charges: ren billedtekst');
 }
 
 console.log(`${pass} beståede, ${fails.length} fejl`);

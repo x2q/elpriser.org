@@ -92,6 +92,8 @@ async function startServer() {
     const k = mode === 'spot_inkl' ? 0.4 : gln ? 1.3 : 1;
     return +((1.5 + Math.sin(h / 24 * 6.28) * 0.8 + (h >= 17 && h <= 20 ? 1 : 0)) * k).toFixed(4);
   };
+  const fixtureTariff = h => +(0.2 + (h >= 17 && h <= 20 ? 0.3 : 0)).toFixed(4);
+  let fixtureCharges = true;
   await ctx.route('**/api/forecast*', route => {
     const u = new URL(route.request().url());
     const mode = u.searchParams.get('mode'), gln = u.searchParams.get('gln'), area = u.searchParams.get('area');
@@ -100,9 +102,13 @@ async function startServer() {
     const days = Array.from({ length: 10 }, (_, i) => ({
       date: new Date(base + i * 86400000).toISOString().slice(0, 10),
       type: i < 2 ? 'actual' : 'forecast',
+      // The nettarif per hour rides on the net modes only, like the real response.
+      ...(gln ? { grid_tariff: Array.from({ length: 24 }, (_, h) => fixtureTariff(h)) } : {}),
       prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, price: fixturePrice(mode, gln, h) })),
     }));
-    route.fulfill({ json: { area, mode, ...(gln ? { gln } : {}), days } });
+    // `charges` is what lets the caption fold out into the parts of the price; a test can
+    // switch it off to see an older response (no charges) degrade to a plain caption.
+    route.fulfill({ json: { area, mode, ...(gln ? { gln } : {}), ...(fixtureCharges ? { charges: { sys: 0.07, trans: 0.054, afg: 0.008, vat: 0.25 } } : {}), days } });
   });
   const page = await ctx.newPage();
   page.setDefaultTimeout(5000);
@@ -350,6 +356,148 @@ async function startServer() {
   const WD = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag'];
   const WS = ['søn', 'man', 'tir', 'ons', 'tor', 'fre', 'lør'], MON = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
   const dayAfter = n => { const d = new Date(Date.parse(todayDk() + 'T12:00:00Z') + n * 86400000); return { wd: WD[d.getUTCDay()], ws: WS[d.getUTCDay()], d: d.getUTCDate(), m: MON[d.getUTCMonth()] }; };
+
+  // ── What the price is made of: the caption folds out ──
+  const ore = t => Math.round(parseFloat(t.replace(/[^\d,-]/g, '').replace(',', '.')) * 10);   // "85,3 øre" -> 853
+  const panelRows = async (scope = '') => {
+    const lis = page.locator(`${scope} .pris-bdp:visible .pris-bdrows li`);
+    const out = [];
+    for (let i = 0; i < await lis.count(); i++) out.push([(await lis.nth(i).locator('.l').textContent()).trim(), (await lis.nth(i).locator('b').textContent()).trim()]);
+    return out;
+  };
+
+  await test('breakdown: the wordmark is Elpriser with a capital E', async () => {
+    await page.goto(BASE + '/dk1');
+    assert.equal((await page.locator('header.site-nav a.site-logo').textContent()).trim(), 'Elpriser');
+  });
+
+  await test('breakdown: the caption is a closed <details>; opening it shows the six parts of the net price and a total equal to the hero', async () => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto(BASE + '/dk1/n1');
+    await page.waitForSelector('.pris .pris-now');
+    const d = page.locator('.pris-modebox details.pris-bd');
+    assert.equal(await d.evaluate(el => el.open), false, 'closed by default');
+    assert.equal((await d.locator('summary').textContent()).trim(), 'Inkl. nettarif, afgifter og moms');
+    await d.locator('summary').click();
+    assert.equal(await d.evaluate(el => el.open), true);
+    const h = String(hourDk()).padStart(2, '0');
+    assert.equal((await d.locator('.pris-bdh').textContent()).trim(), `Sådan er prisen kl. ${h} sammensat`);
+    const rows = await panelRows('.pris-modebox');
+    assert.deepEqual(rows.map(r => r[0]), ['Spotpris (Nord Pool)', 'Systemtarif (Energinet)', 'Transmissionstarif (Energinet)', `Nettarif (N1, kl. ${h})`, 'Elafgift', 'Moms (25 %)', 'I alt']);
+    assert.ok(rows.slice(0, -1).every(r => /^-?\d+,\d øre$/.test(r[1])), `one decimal and øre: ${JSON.stringify(rows)}`);
+    const hero = (await page.locator('.pris-now').textContent()).trim();
+    assert.equal(rows[rows.length - 1][1], `${hero} kr/kWh`, 'the total is the hero\'s number');
+    const sum = rows.slice(0, -1).reduce((a, [, v]) => a + ore(v), 0);
+    assert.equal(sum, Math.round(fixturePrice('net_inkl_alt', '5790001089030', hourDk()) * 1000), 'the rows add up exactly to the price (to 0,1 øre)');
+    assert.equal(rows[3][1], `${(fixtureTariff(hourDk()) * 100).toFixed(1).replace('.', ',')} øre`, 'the nettarif row is the hour\'s tariff');
+    assert.ok(await page.locator('.pris-modebox .pris-bdbar i').count() >= 5, 'a stacked bar with a segment per row');
+    assert.equal(await d.locator('.pris-bdback').count(), 0, 'no way back while it shows now');
+    await d.locator('summary').click();
+    assert.equal(await d.evaluate(el => el.open), false, 'tap again folds it in');
+  });
+
+  await test('breakdown: summary is a 44 px target, keyboard operable, with a visible focus ring', async () => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto(BASE + '/dk1/n1');
+    await page.waitForSelector('.pris .pris-now');
+    const sum = page.locator('.pris-modebox details.pris-bd > summary');
+    assert.ok((await sum.boundingBox()).height >= 44, 'summary is shorter than 44 px');
+    await sum.focus();
+    await page.keyboard.press('Tab'); await page.keyboard.press('Shift+Tab');   // a keyboard focus, so :focus-visible applies
+    const ring = await sum.evaluate(el => { const c = getComputedStyle(el); return c.outlineStyle !== 'none' && parseFloat(c.outlineWidth) >= 2; });
+    assert.equal(ring, true, 'no visible focus ring');
+    await page.keyboard.press('Enter');
+    assert.equal(await page.locator('.pris-modebox details.pris-bd').evaluate(el => el.open), true, 'Enter opens it');
+    await page.keyboard.press('Space');
+    assert.equal(await page.locator('.pris-modebox details.pris-bd').evaluate(el => el.open), false, 'Space closes it');
+  });
+
+  await test('breakdown: clicking a bar switches the panel to that hour; the hero stays; Tilbage til nu returns', async () => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto(BASE + '/dk1/n1');
+    await page.waitForSelector('.pp2 .pris-plot');
+    await page.locator('.pris-modebox details.pris-bd > summary').click();
+    const hero = (await page.locator('.pris-now').textContent()).trim();
+    const label = (await page.locator('.pris-label').first().textContent()).trim();
+    const nowHeading = (await page.locator('.pris-modebox .pris-bdh').textContent()).trim();
+    const nowRows = await panelRows('.pris-modebox');
+    const box = await page.locator('.pp2 .pris-plot').boundingBox();
+    await page.mouse.click(box.x + box.width * (24 + 13.5) / 48, box.y + box.height * 0.7);
+    assert.equal((await page.locator('.pris-modebox .pris-bdh').textContent()).trim(), 'Sådan er prisen i morgen kl. 13 sammensat');
+    const rows = await panelRows('.pris-modebox');
+    assert.equal(rows[3][0], 'Nettarif (N1, kl. 13)');
+    assert.equal(rows[rows.length - 1][1], `${pris(fixturePrice('net_inkl_alt', '5790001089030', 13))} kr/kWh`, 'the total is that bar\'s price, as the tooltip says');
+    assert.equal(rows.slice(0, -1).reduce((a, [, v]) => a + ore(v), 0), Math.round(fixturePrice('net_inkl_alt', '5790001089030', 13) * 1000));
+    assert.equal(await page.locator('.pp2 .pc.sel').count(), 1, 'the picked bar is highlighted');
+    assert.equal((await page.locator('.pris-now').textContent()).trim(), hero, 'the hero price does not change');
+    assert.equal((await page.locator('.pris-label').first().textContent()).trim(), label, 'nor does its label');
+    await page.locator('.pris-modebox .pris-bdback').click();
+    assert.equal((await page.locator('.pris-modebox .pris-bdh').textContent()).trim(), nowHeading);
+    assert.deepEqual(await panelRows('.pris-modebox'), nowRows);
+    assert.equal(await page.locator('.pris-bdback').count(), 0, 'Tilbage til nu is gone');
+    assert.equal(await page.locator('.pc.sel').count(), 0, 'and so is the highlight');
+  });
+
+  await test('breakdown: a later day in 5 døgn is named like the tooltip and its spot price is a prognose; changing the period resets', async () => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto(BASE + '/dk1/n1');
+    await page.waitForSelector('.pp2 .pris-plot');
+    await page.locator('.pris-period [data-pris-period="5"]').click();
+    await page.locator('.pris-modebox details.pris-bd > summary').click();
+    const box = await page.locator('.pp5 .pris-plot').boundingBox();
+    await page.mouse.click(box.x + box.width * (3 * 24 + 13.5) / 120, box.y + box.height * 0.7);
+    const x = dayAfter(3);
+    assert.equal((await page.locator('.pris-modebox .pris-bdh').textContent()).trim(), `Sådan er prisen ${x.ws} ${x.d}. ${x.m} kl. 13 sammensat`);
+    assert.equal((await panelRows('.pris-modebox'))[0][0], 'Spotpris (prognose)');
+    await page.locator('.pris-period [data-pris-period="2"]').click();
+    assert.equal(await page.locator('.pris-bdback').count(), 0, 'the period change resets the panel');
+    assert.match((await page.locator('.pris-modebox .pris-bdh').textContent()).trim(), /^Sådan er prisen kl\. \d\d sammensat$/);
+  });
+
+  await test('breakdown: without a net there is no Nettarif row; Spotpris has spot and moms only', async () => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto(BASE + '/dk1');
+    await page.waitForSelector('.pris .pris-now');
+    await page.locator('.pris-modebox details.pris-bd > summary').click();
+    const rows = await panelRows('.pris-modebox');
+    assert.deepEqual(rows.map(r => r[0]), ['Spotpris (Nord Pool)', 'Systemtarif (Energinet)', 'Transmissionstarif (Energinet)', 'Elafgift', 'Moms (25 %)', 'I alt']);
+    assert.equal(rows.slice(0, -1).reduce((a, [, v]) => a + ore(v), 0), Math.round(fixturePrice('inkl_alt', null, hourDk()) * 1000));
+    await page.locator('.pris-seg-hero [data-pris-view="spot"]').click();
+    await page.waitForFunction(() => document.querySelector('.pris')?.dataset.view === 'spot');
+    assert.equal(await page.locator('.pris-modebox details.pris-bd').evaluate(el => el.open), true, 'an open breakdown stays open when the view changes');
+    const sp = await panelRows('.pris-modebox');
+    assert.deepEqual(sp.map(r => r[0]), ['Spotpris (Nord Pool)', 'Moms (25 %)', 'I alt']);
+    assert.equal(sp[2][1], `${(await page.locator('.pris-now').textContent()).trim()} kr/kWh`);
+  });
+
+  await test('breakdown: on a phone the card captions carry it, and the three disclosures open together', async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    try {
+    await page.goto(BASE + '/dk1/n1');
+    await page.waitForSelector('.pp2 .pris-plot');
+    assert.equal(await page.locator('.pp2 details.pris-bd').isVisible(), true);
+    assert.equal(await page.locator('.pris-modebox details.pris-bd').isVisible(), false);
+    await page.locator('.pp2 details.pris-bd > summary').click();
+    // `toggle` is delivered a task later, so wait for the siblings to follow.
+    await page.waitForFunction(() => [...document.querySelectorAll('.pris details.pris-bd')].every(d => d.open));
+    await page.locator('.pris-period [data-pris-period="5"]').click();
+    assert.equal(await page.locator('.pp5 details.pris-bd').evaluate(el => el.open), true, 'the other card is open too');
+    assert.equal((await page.locator('.pp5 .pris-bdp:visible .pris-bdh').textContent()).trim().startsWith('Sådan er prisen kl.'), true);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'no sideways scroll');
+    } finally { await page.setViewportSize({ width: 1280, height: 720 }); }
+  });
+
+  await test('breakdown: an older response without charges leaves a plain caption — no chevron, no NaN', async () => {
+    fixtureCharges = false;
+    try {
+      await page.goto(BASE + '/dk1/n1');
+      await page.waitForSelector('.pris .pris-now');
+      assert.equal(await page.locator('.pris details').count(), 0);
+      assert.equal(await page.locator('.pris .pris-chev').count(), 0);
+      assert.equal((await page.locator('.pris-cap').first().textContent()).trim(), 'Inkl. nettarif, afgifter og moms');
+      assert.doesNotMatch(await page.locator('.pris').textContent(), /NaN|undefined/);
+    } finally { fixtureCharges = true; }
+  });
 
   await test('prices: the period pill is a tablist that switches the chart between 2 døgn and 5 døgn', async () => {
     await page.goto(BASE + '/dk1');

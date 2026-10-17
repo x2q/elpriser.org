@@ -1126,6 +1126,12 @@ const OPENAPI_SPEC = {
           'every published tariff has `null` prices rather than a silent zero. The forecast is the untariffed sum plus the',
           'tariff × 1.25 — so it equals `/api/prices` on a published day.',
           '',
+          '**What a price is made of.** The response also carries `charges` — `sys`, `trans` and `afg` (system tariff,',
+          'transmission tariff and electricity duty, DKK/kWh excl. VAT) and `vat` (0.25) — and, on the `net_` modes, `days[].grid_tariff`:',
+          'the nettarif for each hour, DKK/kWh excl. VAT. For the all-in modes the spot price is then',
+          '`price / (1 + vat) - sys - trans - afg - grid_tariff[hour]`, the VAT is `price - price / (1 + vat)`, and the parts add up',
+          'to `price`. `inkl_alt_minus` and `net_inkl_tarif` have no duty; `spot_inkl` is spot plus VAT only.',
+          '',
           '**`model`** names the run behind the model days: `name`, `generated` (the run\'s date), `generatedAt` (UTC',
           'timestamp) and `shapeBlend`. All forecast days come from the same run. It is `null` on a heuristic-only response.',
         ].join('\n'),
@@ -2305,6 +2311,9 @@ function applyGridTariff(days, records) {
     return {
       ...day,
       tariff: basis,
+      // The tariff itself, DKK/kWh excl. VAT, one value per hour — so a client can show
+      // what the all-in price is made of without repeating this lookup.
+      grid_tariff: Array.from({ length: 24 }, (_, h) => +(t.hourly[h] ?? 0).toFixed(5)),
       prices: day.prices.map(p => {
         const out = { ...p, price: add(p.price, p.hour) };
         if (p.min != null) out.min = add(p.min, p.hour);
@@ -2416,6 +2425,11 @@ async function handleForecast(area, mode, gln, request, env) {
     mode,
     ...(net ? { gln } : {}),
     generated: fmtUTC(dkNow),
+    // The flat charges the prices above were built with, DKK/kWh excl. VAT, plus the VAT
+    // rate. With `days[].grid_tariff` (net_ modes) this is everything needed to split an
+    // hour's price into its parts: spot = price / (1 + vat) - sys - trans - afg - tariff.
+    charges: { sys: +enCharges.sys.toFixed(5), trans: +enCharges.trans.toFixed(5),
+               afg: +enCharges.afg.toFixed(5), vat: 0.25 },
     // null when no model run was fresh and every forecast day is the
     // weekday-average fallback (source: "heuristic" on those days).
     model: modelMeta,

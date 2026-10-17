@@ -236,6 +236,27 @@ async function main() {
     check(!/\bNaN\b|\bundefined\b|\[object /.test(visible), `${p}: ingen NaN/undefined i den synlige HTML`);
     if (p !== '/prognose') check(/data-hour="(?:\d|1\d|2[0-3])" data-date="\d{4}-\d{2}-\d{2}"/.test(r.body), `${p}: data-hour er en rigtig time`);
   }
+  // The caption folds out into what the price is made of. On a net page: six parts and a total that
+  // adds up, in the HTML and closed; on the front page (no net): five parts, no Nettarif.
+  const bdN1 = await get('/dk1/n1');
+  const panel1 = (bdN1.body.match(/<details class="pris-bd">[\s\S]*?<\/details>/) || [''])[0];
+  check(/^<details class="pris-bd"><summary class="pris-cap">Inkl\. nettarif, afgifter og moms</.test(panel1), '/dk1/n1: billedteksten er en lukket <details>');
+  check(!/<details[^>]* open/.test(bdN1.body), '/dk1/n1: åbnes først af besøgende');
+  for (const label of ['Spotpris \\(Nord Pool\\)', 'Systemtarif \\(Energinet\\)', 'Transmissionstarif \\(Energinet\\)', 'Nettarif \\(N1, kl\\. \\d\\d\\)', 'Elafgift', 'Moms \\(25 %\\)', 'I alt'])
+    check(new RegExp(`<span class="l">${label}</span><b>-?\\d+,\\d`).test(panel1), `/dk1/n1: rækken ${label.replace(/\\/g, '')} står i HTML'en`);
+  check(/Sådan er prisen kl\. \d\d sammensat/.test(panel1) && !/NaN|undefined|Infinity/.test(panel1), '/dk1/n1: overskriften for nu, ingen NaN');
+  {
+    const vals = [...panel1.matchAll(/<span class="l">(?!I alt)[^<]*<\/span><b>(-?\d+,\d) øre<\/b>/g)].map(m => Math.round(parseFloat(m[1].replace(',', '.')) * 10));
+    const total = (panel1.match(/<span class="l">I alt<\/span><b>(-?\d+,\d\d) kr\/kWh<\/b>/) || [])[1];
+    const hero = (bdN1.body.match(/class="pris-now">(-?\d+,\d\d)</) || [])[1];
+    check(vals.length === 6 && total && total === hero, '/dk1/n1: seks led, og I alt er det store tal', `${vals.length} led, ${total} vs ${hero}`);
+    // The rows sum to the price rounded to 0,1 øre, so to within 0,5 øre of the 2-decimal total.
+    check(vals.length === 6 && Math.abs(vals.reduce((a, b) => a + b, 0) - Math.round(parseFloat(total.replace(',', '.')) * 1000)) <= 5, '/dk1/n1: leddene summer til prisen', vals.join('+'));
+  }
+  const panelHome = (home.body.match(/<details class="pris-bd">[\s\S]*?<\/details>/) || [''])[0];
+  check(/^<details class="pris-bd"><summary class="pris-cap">Inkl\. Energinets tariffer, afgifter og moms</.test(panelHome) && !/Nettarif \(/.test(panelHome)
+    && (panelHome.match(/<span class="l">/g) || []).length === 6, 'forside: uden net, fem led plus I alt og ingen Nettarif-række');
+
   const dayRows = (home.body.match(/<tr class="r\d+"><th scope="row">/g) || []).length;
   check(dayRows >= 8, 'forside: dagslisten står som tekst', `fandt ${dayRows} rækker`);
   check(/class="(real|fc)">(Børspris|Prognose)</.test(home.body), 'forside: døgnene er mærket børspris eller prognose');

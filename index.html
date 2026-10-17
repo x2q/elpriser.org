@@ -466,6 +466,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     --p-lo:#1e9e5a; --p-lo-bg:#e4f6ec; --p-lo-ink:#137a43;
     --p-mi:#f0a30a; --p-mi-bg:#fef3d7; --p-mi-ink:#9a6700;
     --p-hi:#e5484d; --p-hi-bg:#fdecec; --p-hi-ink:#b42318;
+    --p-c-spot:#5B8DF7; --p-c-en:#B9CCFA; --p-c-net:#14308F; --p-c-afg:#F0A30A; --p-c-vat:#C7CCD9;
   }
   .dark{
     /* The same roles on the site's existing dark ramp (page #0d1221, card #161d30). */
@@ -476,6 +477,9 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     --p-lo:#2fbf71; --p-lo-bg:rgba(47,191,113,.16); --p-lo-ink:#5fe0a0;
     --p-mi:#f5b13a; --p-mi-bg:rgba(245,177,58,.16); --p-mi-ink:#f7c667;
     --p-hi:#ff6b70; --p-hi-bg:rgba(255,107,112,.16); --p-hi-ink:#ff9a9e;
+    /* The breakdown's roles on the dark ramp: same order of weight, lightness flipped so the
+       dark nettarif of the light theme becomes the bright one here. */
+    --p-c-spot:#6d9aff; --p-c-en:#3d4d7a; --p-c-net:#c9d6ff; --p-c-afg:#f5b13a; --p-c-vat:#56627c;
   }
   /* body carries Tailwind's font-sans and bg-gray-50, which would win over html,body. */
   body.min-h-screen{background-color:var(--p-ground);font-family:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}
@@ -502,6 +506,33 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .pris-sent b{font-weight:800}
   .pris-modebox{display:none}
   .pris-cap{font-size:12px;font-weight:600;color:var(--p-muted)}
+
+  /* The caption as a disclosure: a native <details>, so it folds out without JS. The summary is the
+     caption itself and a real 44 px target; the negative margin keeps the layout as tight as the
+     plain line was. */
+  .pris-bd{display:block;width:100%}
+  .pris-bd>summary{list-style:none;display:flex;align-items:center;gap:6px;min-height:44px;margin:-14px 0;cursor:pointer;border-radius:8px;-webkit-tap-highlight-color:transparent}
+  .pris-bd>summary::-webkit-details-marker{display:none}
+  .pris-bd>summary:focus-visible{outline:2px solid var(--p-brand);outline-offset:2px}
+  .pris-chev{flex:none;width:7px;height:7px;margin:-3px 2px 0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .15s}
+  .pris-bd[open]>summary .pris-chev{margin:3px 2px 0;transform:rotate(-135deg)}
+  @media (prefers-reduced-motion:reduce){.pris-chev{transition:none}}
+  .pris-bdp{margin-top:8px;padding:12px 14px 4px;background:var(--p-seg);border-radius:14px;color:var(--p-ink)}
+  .pris-bdhd{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 12px}
+  .pris-bdh{font-size:13px;font-weight:700}
+  .pris-bdback{position:relative;border:0;background:none;padding:0;font-size:12px;font-weight:700;color:var(--p-brand);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+  .pris-bdback::after{content:"";position:absolute;inset:-16px -8px}
+  .pris-bdback:focus-visible{outline:2px solid var(--p-brand);outline-offset:3px;border-radius:4px}
+  .pris-bdbar{display:flex;gap:1px;height:8px;margin:10px 0 4px;border-radius:4px;overflow:hidden;background:var(--p-hair)}
+  .pris-bdbar i{display:block;height:100%}
+  .pris-bdrows{list-style:none;margin:0;padding:0;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+  .pris-bdrows li{display:flex;align-items:center;gap:8px;padding:7px 0}
+  .pris-bdrows .l{flex:1;min-width:0}
+  .pris-bdrows b{font-weight:700;white-space:nowrap}
+  .pris-bdrows .tot{margin-top:2px;border-top:1px solid var(--p-line);font-weight:800}
+  .pris-bdrows .tot b{font-weight:800}
+  .bd-dot{flex:none;width:10px;height:10px;border-radius:3px}
+  .bd-spot{background:var(--p-c-spot)}.bd-en{background:var(--p-c-en)}.bd-net{background:var(--p-c-net)}.bd-afg{background:var(--p-c-afg)}.bd-vat{background:var(--p-c-vat)}
 
   /* The two-way switch. Buttons stay small to the eye; the ::after gives each a 44 px target. */
   .pris-seg{display:inline-flex;gap:3px;background:var(--p-seg);border-radius:12px;padding:3px}
@@ -541,8 +572,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .pc.past .pb{opacity:.35}
   .pc.on{background:rgba(27,87,245,.07)}
   .dark .pc.on{background:rgba(109,154,255,.14)}
-  .pc.on .pb{filter:brightness(.8)}
-  .dark .pc.on .pb{filter:brightness(1.25)}
+  .pc.on .pb,.pc.sel .pb{filter:brightness(.8)}
+  .dark .pc.on .pb,.dark .pc.sel .pb{filter:brightness(1.25)}
+  .pc.sel{background:rgba(27,87,245,.07);box-shadow:inset 0 -2px 0 var(--p-brand)}
+  .dark .pc.sel{background:rgba(109,154,255,.14)}
   .pd{position:absolute;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--p-ink)}
   .pris-fc{position:absolute;top:0;bottom:0;padding:2px 0 0 5px;font-size:10px;font-weight:700;color:var(--p-muted);pointer-events:none}
   .pris-fc i{display:none}
@@ -596,7 +629,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     .pris-modebox{display:flex;flex-direction:column;gap:8px;margin-top:4px;align-items:flex-start}
     .pris-seg-hero{border-radius:14px;padding:4px}
     .pris-seg-hero button{padding:8px 16px;border-radius:11px;font-size:14px}
-    .pris-seg-card,.pris-cap-card{display:none}
+    .pris-seg-card,.pris-cap-card,.pris-bd-card{display:none}
     .pris-period{display:inline-flex;align-self:flex-start;padding:5px;border-radius:30px;box-shadow:0 2px 14px rgba(14,21,48,.08)}
     .pris-period button{flex:none;padding:12px 26px;border-radius:26px}
     .pris-card{border-radius:28px;padding:24px 28px 20px;gap:14px}
@@ -646,7 +679,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
      Tariffer, API, the guides and the zone pages are in the footer. ═══════ -->
 <header class="site-nav">
   <div class="site-nav-inner">
-    <a href="/" class="site-logo" aria-label="elpriser.org forside"><span class="mark"><svg width="16" height="16" viewBox="0 0 512 512" aria-hidden="true"><polygon points="294,60 150,290 232,290 206,452 374,206 278,206 304,100" fill="#fff"/></svg></span>elpriser</a>
+    <a href="/" class="site-logo" aria-label="elpriser.org forside"><span class="mark"><svg width="16" height="16" viewBox="0 0 512 512" aria-hidden="true"><polygon points="294,60 150,290 232,290 206,452 374,206 278,206 304,100" fill="#fff"/></svg></span>Elpriser</a>
     <nav class="site-links" aria-label="Hovedmenu">
       <a href="/" data-nav="pris">Pris</a>
       <a href="/automation" data-nav="automation">Smart hjem</a>
@@ -3367,7 +3400,7 @@ const isDark=()=>document.documentElement.classList.contains('dark');
 let S={area:'DK1',mode:'spot_inkl',gln:null,netName:'',_loadId:0};
 // The Pris screen's own state: which area and net it describes, Din pris or
 // Spotpris, and the period pill (2 = næste 2 døgn, 5 = næste 5 døgn).
-const PV={area:'DK1',slug:null,view:'din',period:2,days:null,key:'',_load:0};
+const PV={area:'DK1',slug:null,view:'din',period:2,days:null,charges:null,sel:null,bdOpen:false,key:'',_load:0};
 let priceData={},tariffCache={},allTariffsLoaded=false,enCharges=null;
 
 
@@ -3940,7 +3973,8 @@ function prisOpts(){
   const net=prisNet();
   return {view:PV.view,period:PV.period,net:net?net.name:null,
     where:(PV.area==='DK2'?'DK2 Øst':'DK1 Vest')+(net?' · '+net.name:''),
-    key:`${PV.area}|${PV.view}|${PV.slug||''}`};
+    key:`${PV.area}|${PV.view}|${PV.slug||''}`,
+    charges:PV.charges,open:PV.bdOpen};
 }
 async function loadPris(){
   const mount=prisMount();
@@ -3956,6 +3990,7 @@ async function loadPris(){
   }
   if(id!==PV._load||!j||!j.days)return;
   PV.days=j.days;
+  PV.charges=j.charges||null;
   drawPris(mount);
   updateReaderDay();
 }
@@ -3964,7 +3999,7 @@ function drawPris(mount){
   const cur=mount.querySelector('.pris');
   // The server drew exactly this view for this hour: nothing to redraw.
   const fresh=cur&&cur.dataset.key===o.key&&cur.dataset.hour===String(hour)&&cur.dataset.date===today;
-  if(!fresh)mount.innerHTML=prisHTML(PV.days,today,hour,o);
+  if(!fresh){PV.sel=null;mount.innerHTML=prisHTML(PV.days,today,hour,o);}
   if(PV._focus){const f=mount.querySelector(PV._focus);PV._focus=null;if(f)f.focus();}
   const k=o.key+'|'+hour;
   if(window._prisImpKey!==k){
@@ -3979,6 +4014,7 @@ function setPrisPeriod(n){
   const root=prisMount()?.querySelector('.pris');
   if(!root)return;
   root.dataset.period=String(PV.period);
+  prisSelect(null);   // the picked bar may be on a day this period no longer shows
   root.querySelectorAll('[data-pris-period]').forEach(b=>b.setAttribute('aria-selected',String(prisPeriod(b.dataset.prisPeriod)===PV.period)));
   prisHideTips();
   track('pris_period',{period:PV.period});
@@ -3994,6 +4030,31 @@ function setPrisView(v,seg){
     goRoute(`${PV.area}/${m}${PV.slug?'/'+PV.slug:''}`);
   }else{PV.view=v;loadPris();}
 }
+
+// ── What the price is made of: the folded-out caption, for now or for the bar picked ──
+/** Show the breakdown of slot `i` (day*24 + hour) in every panel, or of the current hour when
+ *  `i` is null. The hero, the price and the tiles never change — only this panel and the
+ *  highlight on the bar. Picking the current hour is the same as going back to now. */
+function prisSelect(i){
+  const root=prisMount()?.querySelector('.pris'),hour=cphHour();
+  if(i===hour)i=null;
+  if(!root||!PV.days){PV.sel=i;return;}
+  const all=prisDays(PV.days,cphDate()),o=prisOpts();
+  const html=i==null?prisPanel(all,0,hour,false,o):prisPanel(all,Math.floor(i/24),i%24,true,o);
+  if(i!=null&&!html)return;   // an hour with no price cannot be picked
+  PV.sel=i;
+  if(html)root.querySelectorAll('.pris-bdp').forEach(el=>{el.innerHTML=html;});
+  root.querySelectorAll('.pc.sel').forEach(c=>c.classList.remove('sel'));
+  if(i!=null)root.querySelectorAll('.pris-cols').forEach(cols=>{const c=cols.children[i];if(c)c.classList.add('sel');});
+}
+// The details elements (one by the hero, one under each card's title) open and close together.
+// `toggle` does not bubble, hence the capture.
+document.addEventListener('toggle',e=>{
+  const d=e.target;
+  if(!d||!d.classList||!d.classList.contains('pris-bd'))return;
+  PV.bdOpen=d.open;
+  document.querySelectorAll('.pris-bd').forEach(x=>{if(x.open!==d.open)x.open=d.open;});
+},true);
 
 // ── The exact price of an hour: on hover, on tap and drag, and from the keyboard ──
 function prisHideTips(){
@@ -4017,10 +4078,11 @@ function prisShowIdx(plot,i){
   const bar=col.querySelector('.pb'),top=bar?bar.getBoundingClientRect().top:pr.bottom;
   tip.style.bottom=(pr.bottom-top+(innerWidth>=900?22:18))+'px';
 }
-function prisShowAt(plot,x){
+function prisIdxAt(plot,x){
   const r=plot.getBoundingClientRect(),n=+plot.dataset.n;
-  prisShowIdx(plot,Math.max(0,Math.min(n-1,Math.floor((x-r.left)/r.width*n))));
+  return Math.max(0,Math.min(n-1,Math.floor((x-r.left)/r.width*n)));
 }
+function prisShowAt(plot,x){prisShowIdx(plot,prisIdxAt(plot,x));}
 document.addEventListener('pointermove',e=>{
   const plot=e.target.closest?e.target.closest('.pris-plot'):null;
   if(plot)prisShowAt(plot,e.clientX);else if(document.querySelector('.pris-tip:not([hidden])'))prisHideTips();
@@ -4028,6 +4090,15 @@ document.addEventListener('pointermove',e=>{
 document.addEventListener('pointerdown',e=>{
   const plot=e.target.closest?e.target.closest('.pris-plot'):null;
   if(plot)prisShowAt(plot,e.clientX);else prisHideTips();
+},{passive:true});
+// A press that starts and ends on a plot picks the bar under the pointer (click, tap, or the
+// end of a drag): the breakdown panel then shows that hour. Hovering only shows the tooltip.
+let prisDownPlot=null;
+document.addEventListener('pointerdown',e=>{prisDownPlot=e.target.closest?e.target.closest('.pris-plot'):null;},{passive:true});
+document.addEventListener('pointerup',e=>{
+  const plot=e.target.closest?e.target.closest('.pris-plot'):null;
+  if(plot&&plot===prisDownPlot)prisSelect(prisIdxAt(plot,e.clientX));
+  prisDownPlot=null;
 },{passive:true});
 document.documentElement.addEventListener('mouseleave',prisHideTips);
 document.addEventListener('focusin',e=>{
@@ -4045,6 +4116,7 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='Home')i=0;
     else if(e.key==='End')i=n-1;
     else if(e.key==='Escape'){prisHideTips();return;}
+    else if(e.key==='Enter'||e.key===' '){e.preventDefault();prisSelect(i);return;}
     else return;
     e.preventDefault();
     prisShowIdx(plot,i);
@@ -4063,7 +4135,8 @@ document.addEventListener('click',e=>{
   const v=e.target.closest?e.target.closest('[data-pris-view]'):null;
   if(v){setPrisView(v.dataset.prisView,v.closest('.pris-seg').classList.contains('pris-seg-hero')?'pris-seg-hero':'pris-seg-card');return;}
   const p=e.target.closest?e.target.closest('[data-pris-period]'):null;
-  if(p)setPrisPeriod(p.dataset.prisPeriod);
+  if(p){setPrisPeriod(p.dataset.prisPeriod);return;}
+  if(e.target.closest&&e.target.closest('[data-pris-back]'))prisSelect(null);
 });
 
 /** "Dagens overblik" for Safari Reader and crawlers: today's cheapest and dearest
@@ -4339,7 +4412,17 @@ function prisDays(days,todayStr){
       var hr=p.hour!=null?p.hour:j;
       if(hr>=0&&hr<24)ps[hr]=p.price;
     }
-    out.push({date:d.date,real:d.type==='actual',ps:ps});
+    // The nettarif per hour (net modes only), kept only when all 24 are real numbers.
+    var gt=null;
+    if(d.grid_tariff&&d.grid_tariff.length===24){
+      gt=[];
+      for(var g=0;g<24;g++){
+        var gv=d.grid_tariff[g];
+        if(typeof gv!=='number'||!isFinite(gv)){gt=null;break;}
+        gt.push(gv);
+      }
+    }
+    out.push({date:d.date,real:d.type==='actual',ps:ps,gt:gt});
   }
   return out;
 }
@@ -4423,6 +4506,74 @@ function prisTiles(all,nowHour,nDays,cls){
 function prisCaption(view,net){
   if(view==='spot')return 'Spotpris inkl. moms';
   return net?'Inkl. nettarif, afgifter og moms':'Inkl. Energinets tariffer, afgifter og moms';
+}
+
+/** What one hour's price is made of, as integers in tenths of an øre so nothing
+ *  drifts. `price` is kr/kWh incl. VAT in the active view; `ch` is the response's
+ *  `charges` {sys,trans,afg,vat} (DKK/kWh excl. VAT); `tariff` the hour's nettarif
+ *  (DKK/kWh excl. VAT) and `withNet` whether a net company is chosen.
+ *  Din pris:  vat = price - price/(1+vat); spot = price/(1+vat) - sys - trans - afg - tariff.
+ *  Spotpris:  spot = price/(1+vat); vat = price - spot.
+ *  Every part but the spot is rounded to 0.1 øre; the spot row takes what is left, so the
+ *  rows sum EXACTLY to `total` (the price rounded to 0.1 øre). Null when anything needed is
+ *  missing — the caption then stays plain text. */
+function prisParts(price,view,ch,tariff,withNet){
+  var num=function(x){return typeof x==='number'&&isFinite(x);};
+  if(!num(price)||!ch||!num(ch.vat)||ch.vat<0)return null;
+  var t10=function(x){var n=Math.round(x*1000);return n===0?0:n;};
+  var total=t10(price),vat=t10(price-price/(1+ch.vat)),rows=[],rest=total-vat,n;
+  if(view!=='spot'){
+    if(!num(ch.sys)||!num(ch.trans)||!num(ch.afg)||(withNet&&!num(tariff)))return null;
+    var sys=t10(ch.sys),trans=t10(ch.trans),afg=t10(ch.afg),net=withNet?t10(tariff):0;
+    rest=total-vat-sys-trans-afg-net;
+    rows=[{k:'spot',v:rest},{k:'sys',v:sys},{k:'trans',v:trans}];
+    if(withNet)rows.push({k:'net',v:net});
+    rows.push({k:'afg',v:afg},{k:'vat',v:vat});
+  }else rows=[{k:'spot',v:rest},{k:'vat',v:vat}];
+  for(n=0;n<rows.length;n++)if(rows[n].v===0)rows[n].v=0;
+  return {total:total,vat:ch.vat,rows:rows};
+}
+
+/** The folded-out panel for one hour: heading, a thin stacked bar, the rows and the total.
+ *  `all` from prisDays, `di` day index, `h` hour; `sel` true when it is a bar the visitor picked
+ *  (the heading then names the day, like the tooltip, and there is a way back to now).
+ *  Returns '' when the hour cannot be split. */
+function prisPanel(all,di,h,sel,o){
+  o=o||{};
+  var d=all[di],p=d?d.ps[h]:null;
+  if(p==null)return '';
+  var view=o.view==='spot'?'spot':'din';
+  var pt=prisParts(p,view,o.charges,d.gt?d.gt[h]:null,!!o.net);
+  if(!pt)return '';
+  var when='';
+  if(sel){
+    var dt=prisDate(d.date);
+    when=(di===0?'i dag':di===1?'i morgen':dt.ws+' '+dt.d+'. '+dt.m)+' ';
+  }
+  var names={spot:d.real?'Spotpris (Nord Pool)':'Spotpris (prognose)',sys:'Systemtarif (Energinet)',
+    trans:'Transmissionstarif (Energinet)',net:'Nettarif ('+prisEsc(o.net||'')+', kl. '+prisHH(h)+')',
+    afg:'Elafgift',vat:'Moms ('+Math.round(pt.vat*100)+' %)'};
+  var cls={spot:'spot',sys:'en',trans:'en',net:'net',afg:'afg',vat:'vat'};
+  var pos=0,i;
+  for(i=0;i<pt.rows.length;i++)if(pt.rows[i].v>0)pos+=pt.rows[i].v;
+  var bar='',list='';
+  for(i=0;i<pt.rows.length;i++){
+    var r=pt.rows[i];
+    if(pos>0&&r.v>0)bar+='<i class="bd-'+cls[r.k]+'" style="width:'+(r.v/pos*100).toFixed(2)+'%"></i>';
+    list+='<li><i class="bd-dot bd-'+cls[r.k]+'"></i><span class="l">'+names[r.k]+'</span><b>'+prisNum(r.v/10,1)+' øre</b></li>';
+  }
+  return '<div class="pris-bdhd"><p class="pris-bdh">Sådan er prisen '+when+'kl. '+prisHH(h)+' sammensat</p>'
+    +(sel?'<button type="button" class="pris-bdback" data-pris-back>Tilbage til nu</button>':'')+'</div>'
+    +(bar?'<div class="pris-bdbar" aria-hidden="true">'+bar+'</div>':'')
+    +'<ul class="pris-bdrows">'+list+'<li class="tot"><span class="l">I alt</span><b>'+prisNum(p,2)+' kr/kWh</b></li></ul>';
+}
+
+/** The caption: plain text when there is no panel, otherwise a native <details> whose
+ *  <summary> is the caption itself (works without JS, and the text is crawlable). */
+function prisCapHTML(card,caption,panel,open){
+  if(!panel)return '<p class="pris-cap'+(card?' pris-cap-card':'')+'">'+caption+'</p>';
+  return '<details class="pris-bd'+(card?' pris-bd-card':'')+'"'+(open?' open':'')+'><summary class="pris-cap">'+caption
+    +'<i class="pris-chev" aria-hidden="true"></i></summary><div class="pris-bdp">'+panel+'</div></details>';
 }
 
 function prisSwitch(view,cls,spotLabel){
@@ -4516,7 +4667,8 @@ function prisDayRows(all){
     +'<th scope="col">Billigst</th><th scope="col">Type</th></tr></thead><tbody>'+rows+'</tbody></table></section>';
 }
 
-/** The whole screen. `o`: {view:'din'|'spot', period:2|5 (legacy 10 reads as 5), net:name|null, where:'DK1 Vest', key}. */
+/** The whole screen. `o`: {view:'din'|'spot', period:2|5 (legacy 10 reads as 5), net:name|null, where:'DK1 Vest', key,
+ *  charges:{sys,trans,afg,vat} from the same response (without it the caption stays plain), open:true to draw the breakdown unfolded}. */
 function prisHTML(days,todayStr,nowHour,o){
   o=o||{};
   var view=o.view==='spot'?'spot':'din',period=prisPeriod(o.period);
@@ -4528,6 +4680,7 @@ function prisHTML(days,todayStr,nowHour,o){
   var verdict=nowP!=null?prisTier(nowP,td):1;
   var sentence=prisSentence(all,nowHour,nowP);
   var caption=prisCaption(view,o.net);
+  var panel=today?prisPanel(all,0,nowHour,false,o):'';
   var wd=today?prisDate(todayStr).wd:'';
   var hero='<section class="pris-hero" aria-label="Elpris lige nu'+(o.where?' — '+prisEsc(o.where):'')+'">'
     +'<p class="pris-label">Elpris lige nu · '+(wd?'<span class="pris-wd">'+wd+' </span>':'')+'kl. '+prisHH(nowHour)+'</p>'
@@ -4537,14 +4690,14 @@ function prisHTML(days,todayStr,nowHour,o){
     +(sentence?'<p class="pris-sent">'+sentence+'</p>':'<p class="pris-sent">'+(today?'':'Priserne kunne ikke hentes lige nu.')+'</p>')
     +'</div>'
     +'<div class="pris-modebox">'+prisSwitch(view,'pris-seg-hero','Kun spotpris')
-    +'<p class="pris-cap">'+caption+'</p></div></section>';
+    +prisCapHTML(false,caption,panel,o.open)+'</div></section>';
   var tabs='<div class="pris-period" role="tablist" aria-label="Periode">'
     +'<button type="button" role="tab" aria-selected="'+(period===2)+'" data-pris-period="2">2 døgn</button>'
     +'<button type="button" role="tab" aria-selected="'+(period===5)+'" data-pris-period="5">5 døgn</button></div>';
   var legend='<div class="pris-legend"><span><i class="t0"></i>Billig</span><span><i class="t1"></i>Middel</span><span><i class="t2"></i>Dyr</span></div>';
   var head=function(t){
     return '<div class="pris-ch"><p class="pris-ct">'+t+'</p>'+legend+prisSwitch(view,'pris-seg-card','Spotpris')+'</div>'
-      +'<p class="pris-cap pris-cap-card">'+caption+'</p>';};
+      +prisCapHTML(true,caption,panel,o.open);};
   var two=all.slice(0,2),nFive=all.length?Math.min(5,all.length):5,five=all.slice(0,nFive);
   var nowSlot=today&&today.date===todayStr?nowHour:-1;
   var card2='<section class="pris-card pp2" aria-label="Næste 2 døgn">'+head('Næste 2 døgn')

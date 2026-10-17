@@ -668,8 +668,42 @@ test('homepage: the Pris screen is server-rendered, not JS-only', () => {
   assert.ok(/class="pris-week"/.test(fn) && /Børspris/.test(fn) && /Prognose/.test(fn), 'the day list is not text');
   assert.ok(/data-tip="/.test(ROUTES_SRC), 'the hourly figures are gone');
   // The homepage render is cached; a changed markup needs a new key.
-  assert.ok(/homepage-ssr-v(\d+)/.test(ROUTES_SRC) && +ROUTES_SRC.match(/homepage-ssr-v(\d+)/)[1] >= 61,
-    'the homepage cache key was not bumped for the price-grid removal');
+  assert.ok(/homepage-ssr-v(\d+)/.test(ROUTES_SRC) && +ROUTES_SRC.match(/homepage-ssr-v(\d+)/)[1] >= 64,
+    'the homepage cache key was not bumped for the price breakdown (the caption became a <details>)');
+});
+
+test('header: the wordmark next to the bolt reads "Elpriser" with a capital E; the domain stays lowercase', () => {
+  const logo = INDEX.match(/<a href="\/" class="site-logo"[^>]*>([\s\S]*?)<\/a>/);
+  assert.ok(logo, 'the header logo link is gone');
+  const label = logo[0].match(/aria-label="([^"]*)"/);
+  assert.equal(logo[1].replace(/<[^>]*>/g, '').trim(), 'Elpriser', 'the visible wordmark is not "Elpriser"');
+  assert.equal(label && label[1], 'elpriser.org forside', 'the accessible name should keep the domain in lowercase');
+  assert.ok(/og:site_name" content="elpriser\.org"/.test(INDEX) || !/og:site_name/.test(INDEX), 'og:site_name must stay the lowercase domain');
+});
+
+test('breakdown: the caption is a native <details> drawn by the canonical prisHTML, fed with the same response\'s charges', () => {
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  // Both draw sites pass the response's own charges (the grid tariff rides in fc.days).
+  assert.equal((SRV.match(/charges: fc\.charges/g) || []).length, 2, 'the homepage and the price pages must both hand prisHTML the forecast\'s charges');
+  // Markup: the summary IS the caption; chevron decorative; closed unless the client says otherwise.
+  const blk = INDEX.slice(INDEX.indexOf('function prisCapHTML('), INDEX.indexOf('function prisSwitch('));
+  assert.ok(/<details class="pris-bd/.test(blk) && /<summary class="pris-cap">/.test(blk) && /aria-hidden="true"/.test(blk), 'the caption is not a details/summary');
+  assert.ok(/\(open\?' open':''\)/.test(blk), 'the open state is not driven by the option (closed by default)');
+  // CSS: a 44 px target, no UA marker, a visible focus ring, the dark ramp for the segments.
+  assert.ok(/\.pris-bd>summary\{[^}]*min-height:44px/.test(INDEX), 'the summary is not a 44 px target');
+  assert.ok(/\.pris-bd>summary:focus-visible\{outline:2px solid/.test(INDEX), 'the summary has no visible focus');
+  assert.ok(/summary::-webkit-details-marker\{display:none\}/.test(INDEX) && /list-style:none/.test(INDEX), 'the browser\'s own triangle would show next to the chevron');
+  assert.ok(/\.pris-bdback::after\{[^}]*inset:-1\d?px/.test(INDEX), 'Tilbage til nu is not a 44 px target');
+  const dark = INDEX.slice(INDEX.indexOf('\n  .dark{'), INDEX.indexOf('/* body carries Tailwind'));
+  for (const t of ['--p-c-spot', '--p-c-en', '--p-c-net', '--p-c-afg', '--p-c-vat'])
+    assert.ok(dark.includes(t + ':'), `${t} has no colour on the dark ramp`);
+  assert.ok(/\.pris-bd-card\{display:none\}|\.pris-bd-card,/.test(INDEX) || /\.pris-cap-card,\.pris-bd-card\{display:none\}/.test(INDEX), 'the card captions are not hidden on wide screens');
+  // Wiring: a picked bar rewrites the panel and the highlight; a period change resets; Back resets;
+  // the three disclosures open together; the data comes from the same response.
+  assert.ok(/function prisSelect\(/.test(INDEX) && /pointerup/.test(INDEX) && /\[data-pris-back\]/.test(INDEX), 'bar selection / Tilbage til nu is not wired');
+  assert.ok(/function setPrisPeriod\([\s\S]*?prisSelect\(null\)/.test(INDEX), 'a period change does not reset the picked bar');
+  assert.ok(/PV\.charges=j\.charges/.test(INDEX) && /charges:PV\.charges/.test(INDEX), 'the client does not read charges from the forecast response');
+  assert.ok(/addEventListener\('toggle'/.test(INDEX), 'the disclosures are not kept in step');
 });
 
 test('clock: the Copenhagen hour and date never turn into NaN, whatever the engine\'s Intl returns', () => {

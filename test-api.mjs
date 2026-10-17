@@ -301,6 +301,37 @@ test('KV: /api/raw/prices does not read the rolling backup on every request', as
   assert.ok(reads <= 1, `rolling backup was read ${reads} times in 15 requests`);
 });
 
+test('/api/forecast carries the charges and the grid tariff, so an hour\'s price can be split into its parts', async () => {
+  // The Pris screen shows what "Inkl. nettarif, afgifter og moms" is made of. It derives the
+  // spot part from the price, so the fields it needs must be there and must add up.
+  const api = await createApi();
+  const net = await api.get(`/api/forecast?area=DK1&mode=net_inkl_alt&gln=${GLN_N1}`);
+  const area = await api.get('/api/forecast?area=DK1&mode=inkl_alt');
+  const spot = await api.get('/api/forecast?area=DK1&mode=spot_ex');
+  for (const r of [net, area, spot]) assert.equal(r.status, 200);
+  const c = net.body.charges;
+  assert.ok(c && c.sys > 0 && c.trans > 0 && c.afg >= 0 && c.vat === 0.25, `charges: ${JSON.stringify(c)}`);
+  assert.deepEqual(area.body.charges, c, 'the charges differ between the area and the net response');
+  let checked = 0;
+  net.body.days.forEach((day, i) => {
+    assert.ok(Array.isArray(day.grid_tariff) && day.grid_tariff.length === 24 && day.grid_tariff.every(Number.isFinite),
+      `day ${day.date} has no 24-value grid_tariff`);
+    const sd = spot.body.days[i], ad = area.body.days[i];
+    assert.equal(sd.date, day.date);
+    assert.ok(!('grid_tariff' in ad), 'the area response (no net) should not carry a grid tariff');
+    day.prices.forEach((p, h) => {
+      if (p.price == null || sd.prices[h].price == null) return;
+      // all-in = (spot + sys + trans + afg + net tariff) * (1 + vat)
+      const rebuilt = (sd.prices[h].price + c.sys + c.trans + c.afg + day.grid_tariff[h]) * (1 + c.vat);
+      assert.ok(Math.abs(rebuilt - p.price) < 0.003, `${day.date} h${h}: parts give ${rebuilt.toFixed(4)}, price is ${p.price}`);
+      const rebuiltArea = (sd.prices[h].price + c.sys + c.trans + c.afg) * (1 + c.vat);
+      assert.ok(Math.abs(rebuiltArea - ad.prices[h].price) < 0.003, `${day.date} h${h}: area parts give ${rebuiltArea.toFixed(4)}, price is ${ad.prices[h].price}`);
+      checked++;
+    });
+  });
+  assert.ok(checked >= 48, `only ${checked} hours were checked`);
+});
+
 test('KV: the forecast model key is read once however many forecasts are served', async () => {
   const kv = seededKv();
   const api = await createApi({ kv });

@@ -1249,7 +1249,17 @@ function prisDays(days,todayStr){
       var hr=p.hour!=null?p.hour:j;
       if(hr>=0&&hr<24)ps[hr]=p.price;
     }
-    out.push({date:d.date,real:d.type==='actual',ps:ps});
+    // The nettarif per hour (net modes only), kept only when all 24 are real numbers.
+    var gt=null;
+    if(d.grid_tariff&&d.grid_tariff.length===24){
+      gt=[];
+      for(var g=0;g<24;g++){
+        var gv=d.grid_tariff[g];
+        if(typeof gv!=='number'||!isFinite(gv)){gt=null;break;}
+        gt.push(gv);
+      }
+    }
+    out.push({date:d.date,real:d.type==='actual',ps:ps,gt:gt});
   }
   return out;
 }
@@ -1333,6 +1343,74 @@ function prisTiles(all,nowHour,nDays,cls){
 function prisCaption(view,net){
   if(view==='spot')return 'Spotpris inkl. moms';
   return net?'Inkl. nettarif, afgifter og moms':'Inkl. Energinets tariffer, afgifter og moms';
+}
+
+/** What one hour's price is made of, as integers in tenths of an øre so nothing
+ *  drifts. `price` is kr/kWh incl. VAT in the active view; `ch` is the response's
+ *  `charges` {sys,trans,afg,vat} (DKK/kWh excl. VAT); `tariff` the hour's nettarif
+ *  (DKK/kWh excl. VAT) and `withNet` whether a net company is chosen.
+ *  Din pris:  vat = price - price/(1+vat); spot = price/(1+vat) - sys - trans - afg - tariff.
+ *  Spotpris:  spot = price/(1+vat); vat = price - spot.
+ *  Every part but the spot is rounded to 0.1 øre; the spot row takes what is left, so the
+ *  rows sum EXACTLY to `total` (the price rounded to 0.1 øre). Null when anything needed is
+ *  missing — the caption then stays plain text. */
+function prisParts(price,view,ch,tariff,withNet){
+  var num=function(x){return typeof x==='number'&&isFinite(x);};
+  if(!num(price)||!ch||!num(ch.vat)||ch.vat<0)return null;
+  var t10=function(x){var n=Math.round(x*1000);return n===0?0:n;};
+  var total=t10(price),vat=t10(price-price/(1+ch.vat)),rows=[],rest=total-vat,n;
+  if(view!=='spot'){
+    if(!num(ch.sys)||!num(ch.trans)||!num(ch.afg)||(withNet&&!num(tariff)))return null;
+    var sys=t10(ch.sys),trans=t10(ch.trans),afg=t10(ch.afg),net=withNet?t10(tariff):0;
+    rest=total-vat-sys-trans-afg-net;
+    rows=[{k:'spot',v:rest},{k:'sys',v:sys},{k:'trans',v:trans}];
+    if(withNet)rows.push({k:'net',v:net});
+    rows.push({k:'afg',v:afg},{k:'vat',v:vat});
+  }else rows=[{k:'spot',v:rest},{k:'vat',v:vat}];
+  for(n=0;n<rows.length;n++)if(rows[n].v===0)rows[n].v=0;
+  return {total:total,vat:ch.vat,rows:rows};
+}
+
+/** The folded-out panel for one hour: heading, a thin stacked bar, the rows and the total.
+ *  `all` from prisDays, `di` day index, `h` hour; `sel` true when it is a bar the visitor picked
+ *  (the heading then names the day, like the tooltip, and there is a way back to now).
+ *  Returns '' when the hour cannot be split. */
+function prisPanel(all,di,h,sel,o){
+  o=o||{};
+  var d=all[di],p=d?d.ps[h]:null;
+  if(p==null)return '';
+  var view=o.view==='spot'?'spot':'din';
+  var pt=prisParts(p,view,o.charges,d.gt?d.gt[h]:null,!!o.net);
+  if(!pt)return '';
+  var when='';
+  if(sel){
+    var dt=prisDate(d.date);
+    when=(di===0?'i dag':di===1?'i morgen':dt.ws+' '+dt.d+'. '+dt.m)+' ';
+  }
+  var names={spot:d.real?'Spotpris (Nord Pool)':'Spotpris (prognose)',sys:'Systemtarif (Energinet)',
+    trans:'Transmissionstarif (Energinet)',net:'Nettarif ('+prisEsc(o.net||'')+', kl. '+prisHH(h)+')',
+    afg:'Elafgift',vat:'Moms ('+Math.round(pt.vat*100)+' %)'};
+  var cls={spot:'spot',sys:'en',trans:'en',net:'net',afg:'afg',vat:'vat'};
+  var pos=0,i;
+  for(i=0;i<pt.rows.length;i++)if(pt.rows[i].v>0)pos+=pt.rows[i].v;
+  var bar='',list='';
+  for(i=0;i<pt.rows.length;i++){
+    var r=pt.rows[i];
+    if(pos>0&&r.v>0)bar+='<i class="bd-'+cls[r.k]+'" style="width:'+(r.v/pos*100).toFixed(2)+'%"></i>';
+    list+='<li><i class="bd-dot bd-'+cls[r.k]+'"></i><span class="l">'+names[r.k]+'</span><b>'+prisNum(r.v/10,1)+' øre</b></li>';
+  }
+  return '<div class="pris-bdhd"><p class="pris-bdh">Sådan er prisen '+when+'kl. '+prisHH(h)+' sammensat</p>'
+    +(sel?'<button type="button" class="pris-bdback" data-pris-back>Tilbage til nu</button>':'')+'</div>'
+    +(bar?'<div class="pris-bdbar" aria-hidden="true">'+bar+'</div>':'')
+    +'<ul class="pris-bdrows">'+list+'<li class="tot"><span class="l">I alt</span><b>'+prisNum(p,2)+' kr/kWh</b></li></ul>';
+}
+
+/** The caption: plain text when there is no panel, otherwise a native <details> whose
+ *  <summary> is the caption itself (works without JS, and the text is crawlable). */
+function prisCapHTML(card,caption,panel,open){
+  if(!panel)return '<p class="pris-cap'+(card?' pris-cap-card':'')+'">'+caption+'</p>';
+  return '<details class="pris-bd'+(card?' pris-bd-card':'')+'"'+(open?' open':'')+'><summary class="pris-cap">'+caption
+    +'<i class="pris-chev" aria-hidden="true"></i></summary><div class="pris-bdp">'+panel+'</div></details>';
 }
 
 function prisSwitch(view,cls,spotLabel){
@@ -1426,7 +1504,8 @@ function prisDayRows(all){
     +'<th scope="col">Billigst</th><th scope="col">Type</th></tr></thead><tbody>'+rows+'</tbody></table></section>';
 }
 
-/** The whole screen. `o`: {view:'din'|'spot', period:2|5 (legacy 10 reads as 5), net:name|null, where:'DK1 Vest', key}. */
+/** The whole screen. `o`: {view:'din'|'spot', period:2|5 (legacy 10 reads as 5), net:name|null, where:'DK1 Vest', key,
+ *  charges:{sys,trans,afg,vat} from the same response (without it the caption stays plain), open:true to draw the breakdown unfolded}. */
 function prisHTML(days,todayStr,nowHour,o){
   o=o||{};
   var view=o.view==='spot'?'spot':'din',period=prisPeriod(o.period);
@@ -1438,6 +1517,7 @@ function prisHTML(days,todayStr,nowHour,o){
   var verdict=nowP!=null?prisTier(nowP,td):1;
   var sentence=prisSentence(all,nowHour,nowP);
   var caption=prisCaption(view,o.net);
+  var panel=today?prisPanel(all,0,nowHour,false,o):'';
   var wd=today?prisDate(todayStr).wd:'';
   var hero='<section class="pris-hero" aria-label="Elpris lige nu'+(o.where?' — '+prisEsc(o.where):'')+'">'
     +'<p class="pris-label">Elpris lige nu · '+(wd?'<span class="pris-wd">'+wd+' </span>':'')+'kl. '+prisHH(nowHour)+'</p>'
@@ -1447,14 +1527,14 @@ function prisHTML(days,todayStr,nowHour,o){
     +(sentence?'<p class="pris-sent">'+sentence+'</p>':'<p class="pris-sent">'+(today?'':'Priserne kunne ikke hentes lige nu.')+'</p>')
     +'</div>'
     +'<div class="pris-modebox">'+prisSwitch(view,'pris-seg-hero','Kun spotpris')
-    +'<p class="pris-cap">'+caption+'</p></div></section>';
+    +prisCapHTML(false,caption,panel,o.open)+'</div></section>';
   var tabs='<div class="pris-period" role="tablist" aria-label="Periode">'
     +'<button type="button" role="tab" aria-selected="'+(period===2)+'" data-pris-period="2">2 døgn</button>'
     +'<button type="button" role="tab" aria-selected="'+(period===5)+'" data-pris-period="5">5 døgn</button></div>';
   var legend='<div class="pris-legend"><span><i class="t0"></i>Billig</span><span><i class="t1"></i>Middel</span><span><i class="t2"></i>Dyr</span></div>';
   var head=function(t){
     return '<div class="pris-ch"><p class="pris-ct">'+t+'</p>'+legend+prisSwitch(view,'pris-seg-card','Spotpris')+'</div>'
-      +'<p class="pris-cap pris-cap-card">'+caption+'</p>';};
+      +prisCapHTML(true,caption,panel,o.open);};
   var two=all.slice(0,2),nFive=all.length?Math.min(5,all.length):5,five=all.slice(0,nFive);
   var nowSlot=today&&today.date===todayStr?nowHour:-1;
   var card2='<section class="pris-card pp2" aria-label="Næste 2 døgn">'+head('Næste 2 døgn')
@@ -1624,7 +1704,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v63');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v64');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1652,7 +1732,7 @@ async function renderHomepage(context) {
     // the whole homepage down with a 500.
     const { todayDk, nowH } = danishClock();
     html = html.replace('<!--SSR_PRIS-->', prisHTML(fc.days || [], todayDk, nowH,
-      { view: 'din', period: 2, net: null, where: 'DK1 Vest', key: 'DK1|din|' }));
+      { view: 'din', period: 2, net: null, where: 'DK1 Vest', key: 'DK1|din|', charges: fc.charges }));
   }
   const res = new Response(html, {
     headers: {
@@ -1799,6 +1879,7 @@ async function renderSPA(context, pathname, meta, opts = {}) {
         view: 'din', period: 2, net: net ? net.name : null,
         where: AREA_LABEL[area] + (net ? ' · ' + net.name : ''),
         key: `${area}|din|${net ? net.slug : ''}`,
+        charges: fc.charges,
       }));
     }
     // The net chip in the header, for the page's own net.
