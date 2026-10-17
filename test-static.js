@@ -575,12 +575,12 @@ test('structured data: each block is served only on the page it describes', () =
   const api = blocksIn('api').find(j => j['@type'] === 'Dataset');
   assert.ok(api && api.url === 'https://elpriser.org/api', 'the dataset is not on /api with its own URL');
   for (const slug of ['forsta-din-elpris', 'shelly-elpris-automation', 'home-assistant-elpriser', 'v2g-v2h-bidirektional-opladning',
-                      'biler-ladere-v2h-v2g', 'elafgift-2028', 'hvornaar-er-stroemmen-billigst', 'groennest-og-dyrest']) {
+                      'biler-ladere-v2h-v2g', 'elafgift-2028', 'hvornaar-er-stroemmen-billigst', 'groennest-og-dyrest', 'elafgift-og-spotpris']) {
     const posts = blocksIn('blog-' + slug).filter(j => j['@type'] === 'BlogPosting');
     assert.equal(posts.length, 1, `blog-${slug} has ${posts.length} BlogPosting blocks`);
     assert.equal(posts[0].url, `https://elpriser.org/blog/${slug}`, `blog-${slug} describes another post`);
   }
-  assert.equal(blocksIn('blog').find(j => j['@type'] === 'Blog')?.blogPost?.length, 8, '/blog does not list its eight posts');
+  assert.equal(blocksIn('blog').find(j => j['@type'] === 'Blog')?.blogPost?.length, 9, '/blog does not list its nine posts');
   // Every block must parse; a stray quote silently voids the whole block.
   for (const m of INDEX.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) JSON.parse(m[1]);
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
@@ -704,6 +704,37 @@ test('breakdown: the caption is a native <details> drawn by the canonical prisHT
   assert.ok(/function setPrisPeriod\([\s\S]*?prisSelect\(null\)/.test(INDEX), 'a period change does not reset the picked bar');
   assert.ok(/PV\.charges=j\.charges/.test(INDEX) && /charges:PV\.charges/.test(INDEX), 'the client does not read charges from the forecast response');
   assert.ok(/addEventListener\('toggle'/.test(INDEX), 'the disclosures are not kept in step');
+});
+
+test('blog: the elafgift-og-spotpris headline numbers follow from the post\'s own tables', () => {
+  // The post argues from a few figures (+36 % vs 2025, +68 % vs 2024, evening/midday ratio, household
+  // cost). They are typed into prose, so a table edit could leave the prose telling another story.
+  const sec = INDEX.slice(INDEX.indexOf('data-page="blog-elafgift-og-spotpris"'));
+  const post = sec.slice(0, sec.indexOf('</main>'));
+  const num = t => +t.replace(/<[^>]+>/g, '').trim().replace(',', '.');
+  const rows = (html) => [...html.matchAll(/<th scope="row"[^>]*>([^<]+)<\/th>((?:<td[^>]*>[^<]*<\/td>)+)/g)]
+    .map(m => ({ k: m[1].trim(), c: [...m[2].matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map(x => x[1]) }));
+  const tables = [...post.matchAll(/<tbody>([\s\S]*?)<\/tbody>/g)].map(m => rows(m[1]));
+  assert.equal(tables.length, 2, 'expected the spot table and the shape table');
+  const spot = Object.fromEntries(tables[0].map(r => [r.k, r.c.map(num)]));      // øre: [DK1 ytd, DK2 ytd, DK1 year]
+  assert.deepEqual(Object.keys(spot), ['2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026']);
+  const pct = (a, b) => Math.round((a / b - 1) * 100);
+  const lead = post.slice(post.indexOf('<article'), post.indexOf('<section'));
+  assert.ok(lead.includes(`${pct(spot[2026][0], spot[2025][0])} % højere end i 2025`), 'the lead\'s +x % vs 2025 does not match the table');
+  assert.ok(lead.includes(`${pct(spot[2026][0], spot[2024][0])} % højere end i 2024`), 'the lead\'s +x % vs 2024 does not match the table');
+  const shape = Object.fromEntries(tables[1].map(r => [r.k, r.c.map(num)]));       // øre: [night, midday, evening, spread]
+  const ratio26 = (shape[2026][2] / shape[2026][1]).toFixed(1).replace('.', ',');
+  const ratio19 = (shape[2019][2] / shape[2019][1]).toFixed(1).replace('.', ',');
+  assert.ok(post.includes(`omkring ${ratio19} gange dyrere end middagen; i 2026 er den ${ratio26} gange dyrere`), 'the evening/midday ratios do not match the shape table');
+  assert.ok(post.includes(`${Math.round(shape[2026][2] - shape[2026][1])} øre/kWh</strong> højere end middagens`), 'the evening-minus-midday figure does not match the table');
+  assert.ok(post.includes(`fra ${Math.round(shape[2019][3])} øre i 2019 til ${Math.round(shape[2026][3])} øre i 2026`), 'the spread figures do not match the table');
+  // Household example: 4,000 kWh x 75 øre = 3,000 kr; x 0,8 øre = 32 kr; incl. VAT x 1.25.
+  assert.ok(/3\.000 kr ekskl\. moms<\/strong> \(3\.750 kr inkl\. moms\) — mod omkring 32 kr/.test(post), 'the household example changed');
+  // The description and the llms.txt line quote the same +36 %.
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  assert.ok(/'\/blog\/elafgift-og-spotpris': \{[\s\S]*?description: 'Spotprisen er 36 % højere i år end i 2025/.test(SRV), 'the SEO description no longer says +36 %');
+  // Every year of the chart's table of afgift appears with its source rate.
+  for (const r of ['88,4', '89,2', '90,0', '72,0', '76,1', '0,8 i 1. halvår, 69,7 i 2. halvår']) assert.ok(post.includes(r), `afgift rate ${r} missing`);
 });
 
 test('clock: the Copenhagen hour and date never turn into NaN, whatever the engine\'s Intl returns', () => {

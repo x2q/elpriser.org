@@ -174,6 +174,11 @@ const SEO_PAGES = {
     description: 'Den dyreste time på døgnet er ofte også den grønneste — mens den billigste er blandt de mest CO₂-tunge. Analyse af 22.504 timers data: prisen sættes marginalt på et europæisk marked, mens CO₂ er et gennemsnit, der afhænger af hvilke naboer Danmark handler med.',
     hash: '#blog/groennest-og-dyrest',
   },
+  '/blog/elafgift-og-spotpris': {
+    title: 'Elafgift og spotpris: sådan er elprisen ændret siden 2019',
+    description: 'Spotprisen er 36 % højere i år end i 2025, mens elafgiften er 0,8 øre. Tal siden 2019 for DK1 og DK2 og hvad der sker, når afgiften vender tilbage i 2028.',
+    hash: '#blog/elafgift-og-spotpris',
+  },
   '/blog/elafgift-2028': {
     // Questions like "kommer elafgiften tilbage" rank this post 1.7–3.6 yet
     // click at 1.6–2.4 %: the page answers in its first paragraph, the snippet
@@ -231,7 +236,7 @@ const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff',
   '/blog',
   '/blog/forsta-din-elpris', '/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
-  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028', '/no1', '/no2', '/no3', '/no4', '/no5', '/se1', '/se2', '/se3', '/se4', '/fi', '/nl', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
+  '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g', '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/no1', '/no2', '/no3', '/no4', '/no5', '/se1', '/se2', '/se3', '/se4', '/fi', '/nl', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
   ...NET_URLS,
 ];
 
@@ -250,6 +255,7 @@ const CONTENT_LASTMOD = {
   '/blog/v2g-v2h-bidirektional-opladning': '2026-07-24',
   '/blog/biler-ladere-v2h-v2g': '2026-07-24',
   '/blog/elafgift-2028': '2026-07-24',
+  '/blog/elafgift-og-spotpris': '2026-10-17',
   // The zone pages are deliberately NOT listed here: buildZoneIntro renders
   // today's prices into the served HTML, so they change every day and fall
   // through to lastmod=today / changefreq=daily like /dk1 and /dk2. They were
@@ -314,6 +320,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Hvornår er strømmen billigst](https://elpriser.org/blog/hvornaar-er-stroemmen-billigst): Analyse af 48.594 timers data — døgnets billigste time ligger nu midt på dagen på 68 % af dagene mod 23 % om natten; danske husholdninger flytter forbrug efter et forældet natte-mønster.
 - [Grønnest og dyrest på samme tid](https://elpriser.org/blog/groennest-og-dyrest): Hvorfor døgnets dyreste time ofte er den grønneste — pris sættes marginalt på et europæisk marked, CO₂ er et gennemsnit der følger hvem Danmark importerer fra (norsk vandkraft om aftenen, tysk strøm midt på dagen).
 - [Elafgift 2028](https://elpriser.org/blog/elafgift-2028): Elafgiften er sænket til 0,8 øre/kWh i 2026-2027 men stiger igen fra 2028 — satser, tidslinje og betydning for din elregning og dine solceller.
+- [Elafgift og spotpris](https://elpriser.org/blog/elafgift-og-spotpris): Spotprisen (DK1, 1. jan–15. okt) er 36 % højere i 2026 end i 2025 og 68 % højere end i 2024, mens elafgiften er 0,8 øre; døgnets form har ændret sig (aften 2,6 gange dyrere end middag) — tal 2019–2026 og hvad der sker, når afgiften vender tilbage i 2028.
 
 ## Live data API (for AI assistants and agents)
 
@@ -1769,6 +1776,7 @@ const HASH_TO_DATA_PAGE = {
   'blog/v2g-v2h-bidirektional-opladning': 'blog-v2g-v2h-bidirektional-opladning',
   'blog/biler-ladere-v2h-v2g': 'blog-biler-ladere-v2h-v2g',
   'blog/elafgift-2028': 'blog-elafgift-2028',
+  'blog/elafgift-og-spotpris': 'blog-elafgift-og-spotpris',
   'no1': 'zone',
   'no2': 'zone',
   'no3': 'zone',

@@ -416,6 +416,7 @@ const SPA_ROUTES = {
   '/blog/hvornaar-er-stroemmen-billigst': '#blog/hvornaar-er-stroemmen-billigst',
   '/blog/groennest-og-dyrest': '#blog/groennest-og-dyrest',
   '/blog/elafgift-2028': '#blog/elafgift-2028',
+  '/blog/elafgift-og-spotpris': '#blog/elafgift-og-spotpris',
 };
 
 // Mirrors NETS in index.html and functions/[[path]].js. Used to map
