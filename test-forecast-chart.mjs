@@ -207,31 +207,6 @@ const span = (n, los, his, types = []) => ({
      'time- og dagrækken rykker ind sammen med kurven, så de stadig flugter');
 }
 
-// ── Zone options: labels, dates, unit and decimals from the zone's locale ──
-{
-  const f = span(3, [40, 60, 30], [120, 180, 90], ['actual', 'actual']);
-  const h = chart(f.days, TODAY, 11, {
-    today: 'I dag', tomorrow: null, wd: dt => ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'][dt.getUTCDay()].replace('Mandag', 'Mandag'),
-    dm: dt => `${dt.getUTCDate()}. sep.`, actual: 'Faktisk', forecast: 'Prognose', unit: 'øre/kWh', dec: 0, aria: 'Neste 3 døgn · øre/kWh' });
-  ok(/>40–120</.test(h) && />60–180</.test(h), 'øre vises uden decimaler', h.slice(-500));
-  ok(/· øre\/kWh</.test(h) && !/kr\/kWh/.test(h), 'enheden følger zonen');
-  ok(/>I dag · Faktisk</.test(h), 'zonens ord for afregnet pris bruges');
-  ok(/>Mandag · Faktisk</.test(h) && !/I morgen/.test(h), 'dagen efter i dag navngives med ugedag, ikke et nyt ord');
-  ok(/<small>28\. sep\.<\/small>/.test(h), 'datoformatet kommer fra zonen');
-  ok(/aria-label="Neste 3 døgn · øre\/kWh"/.test(h), 'beskrivelsen er på zonens sprog');
-  const labs = [...h.match(/<div class="yax">([\s\S]*?)<\/div>/)[1].matchAll(/>([^<]+)</g)].map(m => m[1]);
-  ok(labs.every(x => /^-?\d+$/.test(x)), 'skalaen følger zonens decimaler', labs.join(' '));
-}
-
-// ── A price a fraction below zero is not printed as "-0" ──────────────────
-{
-  const f = span(3, [-0.3, 60, 30], [179, 180, 90], ['actual', 'actual']);
-  const h = chart(f.days, TODAY, 11, { dec: 0, unit: 'øre/kWh', tomorrow: null });
-  ok(/>0–179</.test(h) && !/-0[–<]/.test(h), 'et beløb der runder til nul vises uden minus', h.slice(-600));
-  const g = span(3, [-2.4, 60, 30], [179, 180, 90], ['actual', 'actual']);
-  ok(/>-2–179</.test(chart(g.days, TODAY, 11, { dec: 0 })), 'rigtige negative priser beholder fortegnet');
-}
-
 // ── The week as text (fcWeekHTML, /prognose) ──────────────────────────────
 {
   const f = span(9, [0.15, 1.40, 1.02, 0.71, 0.13, 0.42, 0.38, 0.5, 0.6], [1.86, 3.35, 2.48, 1.74, 0.86, 1.71, 1.66, 1.9, 2.0], ['actual', 'actual']);
@@ -480,6 +455,75 @@ const span = (n, los, his, types = []) => ({
   const gap = netFeed[0].prices.map(x => ({ ...x })); gap[21].price = null;
   plain(bd([{ ...netFeed[0], prices: gap }, netFeed[1]], 21), 'en time uden pris: ren billedtekst');
   ok(/<p class="pris-cap">Spotpris inkl\. moms<\/p>/.test(pris(netFeed, D0, 21, { ...o, view: 'spot' })), 'spotpris uden charges: ren billedtekst');
+
+// ── One screen for every price area: language table, adapter, zone rendering ─────────────
+  const L = pctx.PRIS_I18N, langs = ['da', 'nb', 'sv', 'fi'];
+  ok(Object.keys(L).join() === langs.join(), 'PRIS_I18N har præcis da, nb, sv og fi', Object.keys(L).join());
+  // Every key in every language, with the same shape and no empty text.
+  const shape = v => Array.isArray(v) ? `array${v.length}` : typeof v;
+  const keys = Object.keys(L.da);
+  for (const lang of langs) {
+    const have = Object.keys(L[lang]);
+    ok(have.length === keys.length && keys.every(k => k in L[lang]), `${lang}: samme nøgler som dansk`, keys.filter(k => !(k in L[lang])).concat(have.filter(k => !keys.includes(k))).join(','));
+    ok(keys.every(k => shape(L[lang][k]) === shape(L.da[k])), `${lang}: samme form på hver nøgle`, keys.filter(k => shape(L[lang][k]) !== shape(L.da[k])).join(','));
+    const flat = keys.flatMap(k => [].concat(L[lang][k]));
+    ok(flat.every(x => typeof x === 'string') && flat.filter(x => x === '').length === (lang === 'sv' ? 1 : 0), `${lang}: ingen tom tekst (kun svensk '' = ingen punktum efter dagstal)`);
+    ok(L[lang].wd.length === 7 && L[lang].ws.length === 7 && L[lang].mon.length === 12 && L[lang].verdict.length === 3 && L[lang].tier.length === 3, `${lang}: 7 ugedage, 12 måneder, 3 niveauer`);
+  }
+  ok(langs.every(l => !/\b10\b/.test(JSON.stringify(L[l]))), 'ingen sprog nævner 10 døgn');
+  ok(langs.slice(1).every(l => L[l].p2 !== L.da.p2 || l === 'nb'), 'sv og fi har egne ord for 2 døgn');
+
+  // The adapter: five days from today, at the response's ECB rate.
+  const raw = { zone: 'no2', zoneInfo: { rate: 10.6 }, days: Array.from({ length: 10 }, (_, i) => ({
+    date: nextDate(i - 1), type: i < 2 ? 'actual' : 'forecast',
+    prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: 100 + i, min_eur_mwh: 1, max_eur_mwh: 999 })) })) };
+  const out = pctx.zoneToPrisDays(raw, raw.zoneInfo, D0);
+  ok(out.length === 5 && out[0].date === D0 && out[4].date === nextDate(4), 'adapteren giver præcis fem døgn fra i dag (gårsdagen springes over)', out.map(d => d.date).join());
+  ok(pctx.zoneToPrisDays(raw, raw.zoneInfo).length === 5 && pctx.zoneToPrisDays(raw, raw.zoneInfo)[0].date === nextDate(-1), 'uden dato er det de første fem døgn i feedet');
+  ok(pctx.zoneToPrisDays({ days: raw.days }, null).length === 5 && pctx.zoneToPrisDays({ zone: 'no2', days: raw.days.slice(0, 3) }, {}, D0).length === 2, 'færre døgn end fem giver færre, ikke fejl');
+  ok(Math.abs(out[0].prices[0].price - 101 * 10.6 / 10) < 1e-9 && out[0].prices[0].hour === 0, '101 EUR/MWh ved kurs 10,6 er 106,06 øre/kWh', String(out[0].prices[0].price));
+  ok(Math.abs(pctx.zoneToPrisDays({ ...raw, zone: 'fi' }, { rate: 1 }, D0)[0].prices[3].price - 10.1) < 1e-9, 'EUR-zoner: 101 EUR/MWh er 10,1 cent/kWh');
+  ok(Math.abs(pctx.zoneToPrisDays({ ...raw, zone: 'se3' }, null, D0)[0].prices[0].price - 101 * 11.29 / 10) < 1e-9, 'uden kurs i svaret bruges ZONES\' reservekurs');
+  ok(Object.keys(out[0].prices[0]).join() === 'hour,price', 'min/max-båndet følger ikke med');
+  const hole = { zone: 'no2', days: [{ date: D0, type: 'actual', prices: [{ hour: 0, eur_mwh: null }, null, { hour: 2, eur_mwh: 50 }] }] };
+  ok(pctx.zoneToPrisDays(hole, { rate: 10 }, D0)[0].prices.filter(Boolean).length === 1 && !/NaN/.test(JSON.stringify(pctx.zoneToPrisDays(hole, { rate: 10 }, D0))), 'et hul i feedet bliver et hul, ikke NaN');
+  ok(pctx.zoneToPrisDays(null, null, D0).length === 0 && pctx.zoneToPrisDays({}, {}, D0).length === 0, 'tomt svar giver ingen døgn');
+
+  // The screen, in each language, from a ten-day feed through the adapter.
+  const feedFor = zone => pctx.zoneToPrisDays({ zone, zoneInfo: { rate: zone === 'fi' ? 1 : zone.startsWith('se') ? 11 : 10 },
+    days: Array.from({ length: 10 }, (_, i) => ({ date: nextDate(i), type: i < 2 ? 'actual' : 'forecast',
+      prices: M.map((v, h) => ({ hour: h, eur_mwh: Math.round((v * 50 + i * 3) * 10) / 10 })) })) }, D0);
+  for (const [zone, lang, w] of [['no3', 'nb', { now: 'Strømpris akkurat nå', u: 'øre', cheap: 'Billigst ', p: ['2 døgn', '5 døgn'], next: 'Neste 2 døgn', fc: 'Prognose', verdict: /Billig|Middels|Dyr/ }],
+                                  ['se2', 'sv', { now: 'Elpris just nu', u: 'öre', cheap: 'Billigast ', p: ['2 dygn', '5 dygn'], next: 'Kommande 2 dygn', fc: 'Prognos', verdict: /Billigt|Medel|Dyrt/ }],
+                                  ['fi', 'fi', { now: 'Sähkön hinta juuri nyt', u: 'snt', cheap: 'Halvin ', p: ['2 vrk', '5 vrk'], next: 'Seuraavat 2 vrk', fc: 'Ennuste', verdict: /Halpa|Keskihintainen|Kallis/ }]]) {
+    const z = pris(feedFor(zone), D0, 21, { zone, key: zone, period: 2, where: zone.toUpperCase() });
+    const e = z;
+    ok(e.includes(`<p class="pris-label">${w.now} · `) && e.includes(`>${w.u}/kWh</span>`) && !/kr\/kWh|>kr</.test(e), `${zone}: etiket og enhed på ${lang}`);
+    ok(!/data-pris-view|pris-seg|Din pris|Spotpris inkl/.test(e), `${zone}: ingen Din pris/Spotpris-kontakt`);
+    // Words that are Danish and nothing else in this language (Norwegian shares "I dag", Swedish "Elpris").
+    const dane = lang === 'nb' ? /Billig lige nu|Næste|Elpris |Spænd/ : lang === 'sv' ? /Billig lige nu|Børspris|Næste|I morgen|I dag|Dag for dag|Spænd/ : /Billig|Børspris|Næste|I morgen|I dag|Dag for dag|Elpris|Spænd/;
+    ok(!dane.test(e), `${zone}: ingen danske ord`, (e.match(dane) || [])[0]);
+    ok(w.verdict.test((e.match(/class="pris-pill t\d"><i><\/i>([^<]+)</) || [])[1] || '') && e.includes(`<div class="k">${w.cheap}`), `${zone}: dom og feltetiket på ${lang}`, w.cheap);
+    ok([...e.matchAll(/<button type="button" role="tab"[^>]*>([^<]*)</g)].map(m => m[1]).join('|') === w.p.join('|') && e.includes(`<section class="pris-card pp2" aria-label="${w.next}">`), `${zone}: periodepille og korttitel på ${lang}`);
+    ok(e.includes(`</i>${w.fc}</span>`) || !/pris-fc/.test(e), `${zone}: prognose-skillelinjen hedder ${w.fc}`);
+    ok((e.match(/<tr class="r\d+">/g) || []).length === 5 && !/class="r10"/.test(e) && !/\b10 /.test(e.replace(/data-tip="[^"]*"/g, '').replace(/style="[^"]*"/g, '').replace(/\d+ ?(snt|öre|øre)/g, '')), `${zone}: fem dagsrækker og ingen dag seks til ti`);
+    ok((e.match(/<span class="pc[ "]/g) || []).length === 48 + 120 && !/NaN|undefined|Infinity/.test(e), `${zone}: 48 + 120 søjler, ingen NaN`);
+    ok(/data-tip="[^"]*\d (öre|øre|snt)\/kWh"/.test(e) && !/data-tip="[^"]*,\d\d\d /.test(e), `${zone}: tooltip i zonens enhed`);
+  }
+  // Decimals and axis follow the unit: øre at 300 are whole numbers, snt at 5 keep two decimals; the axis grain scales.
+  const big = pris(pctx.zoneToPrisDays({ zone: 'no1', days: [dayOf(D0, T, 'actual'), dayOf(nextDate(1), M, 'actual')].map(d => ({ ...d, prices: d.prices.map(p => ({ hour: p.hour, eur_mwh: p.price * 100 })) })) }, { rate: 10 }, D0), D0, 21, { zone: 'no1', key: 'no1' });
+  ok(/class="pris-now">267</.test(big) && /<div class="pris-yl"><span style="top:[\d.]+%">0<\/span>(<span[^>]*>\d+<\/span>)+<\/div>/.test(big) && [...big.matchAll(/class="pris-yl">([\s\S]*?)<\/div>/g)][0][1].includes('>400<'), 'NO: 267 øre uden decimal, aksen i trin af 100 op til 400', text(/class="pris-yl">([\s\S]*?)<\/div>/));
+  const cheap = pris(pctx.zoneToPrisDays({ zone: 'fi', days: [dayOf(D0, T, 'actual'), dayOf(nextDate(1), M, 'actual')].map(d => ({ ...d, prices: d.prices.map(p => ({ hour: p.hour, eur_mwh: p.price * 3 })) })) }, { rate: 1 }, D0), D0, 21, { zone: 'fi', key: 'fi' });
+  ok(/class="pris-now">0,80</.test(cheap) && /class="pris-u">snt\/kWh</.test(cheap), 'FI: 8 EUR/MWh er 0,80 snt med to decimaler');
+  // The Danish screen is untouched by all of this: the same call with no zone is the Danish output, byte for byte.
+  ok(pris(feed, D0, 21, o) === pris(feed, D0, 21, { ...o, zone: undefined }) && /Din pris/.test(pris(feed, D0, 21, o)), 'uden zone er skærmen den danske');
+  // The country pages' pieces.
+  const tabs = pctx.prisZoneTabs('norge', 'no2');
+  ok((tabs.match(/role="tab"/g) || []).length === 5 && /href="#no2" data-zone="no2" aria-selected="true" tabindex="0">NO2<small>Kristiansand<\/small>/.test(tabs) && (tabs.match(/tabindex="-1"/g) || []).length === 4 && /role="tablist" aria-label="Prisområde"/.test(tabs), 'zone-fanerne: tablist, valgt fane har tabindex 0 og by');
+  ok(pctx.prisZoneTabs('finland', 'fi') === '' && /aria-label="Elområde"/.test(pctx.prisZoneTabs('sverige', 'se3')), 'Finland har ingen faner; Sverige siger Elområde');
+  ok(pctx.prisHref('no5') === '/norge#no5' && pctx.prisHref('fi') === '/finland' && pctx.prisHref('dk2') === '/dk2' && pctx.prisHref('nl') === '', 'prisHref: landesidens anker, Finland uden, DK, NL ingen');
+  ok(pctx.PRIS_COUNTRIES.norge.def === 'no1' && pctx.PRIS_COUNTRIES.sverige.def === 'se3' && pctx.PRIS_COUNTRIES.norge.zones.every(k => pctx.ZONES[k].lang === 'nb'), 'landenes startzone og sprog');
+  ok(Object.values(pctx.ZONES).every(z => z.name && z.city && z.cur && z.rate > 0 && z.sub) && Object.keys(pctx.ZONES).length === 13, 'ZONES: 13 områder med navn, by, valuta, kurs og enhed');
 }
 
 console.log(`${pass} beståede, ${fails.length} fejl`);

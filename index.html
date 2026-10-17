@@ -254,40 +254,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .prose-article > section + section{margin-top:2.5rem}
   .prose-article > p + section{margin-top:2rem}
 
-  /* Zone-tabellen har 10 kolonner og skal kunne rummes i max-w-3xl uden at
-     den sidste bliver klippet. Reglen står her frem for som Tailwind-klasse,
-     fordi det purgede build kun kender klasser der findes ved build-tid. */
-  #zWrap table td,#zWrap table th{padding-left:.15rem;padding-right:.15rem}
-  #zWrap table td:first-child,#zWrap table th:first-child{padding-right:.5rem}
-  /* ── Globus: lokationsvælger ─────────────────────────────────────────── */
-  .globe-btn{display:inline-flex;align-items:center;justify-content:center;padding:.35rem;border-radius:.5rem;
-    color:#6b7280;background:none;border:none;cursor:pointer;transition:color .15s,background .15s}
-  .globe-btn:hover{color:#111827;background:#f3f4f6}
-  .dark .globe-btn{color:#9ca3af}
-  .dark .globe-btn:hover{color:#fff;background:#1f2937}
-  .globe-overlay{position:fixed;inset:0;z-index:60;background:rgba(17,24,39,.45);
-    backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto}
-  .globe-overlay[hidden]{display:none}
-  .globe-panel{background:#fff;border-radius:1.1rem;max-width:52rem;width:100%;margin-top:3rem;
-    box-shadow:0 20px 50px rgba(0,0,0,.25);padding:1.25rem 1.5rem 1.75rem}
-  .dark .globe-panel{background:#111827;color:#e5e7eb}
-  .globe-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
-  .globe-head h2{font-size:1.05rem;font-weight:700;color:#111827}
-  .dark .globe-head h2{color:#fff}
-  .globe-x{padding:.35rem;border-radius:.5rem;color:#9ca3af;background:none;border:none;cursor:pointer}
-  .globe-x:hover{color:#111827;background:#f3f4f6}
-  .dark .globe-x:hover{color:#fff;background:#1f2937}
-  .globe-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1.5rem 1.75rem}
-  .globe-col h3{font-size:.95rem;font-weight:700;color:#111827;margin-bottom:.55rem}
-  .dark .globe-col h3{color:#fff}
-  .globe-col a{display:flex;flex-direction:column;padding:.4rem .55rem;margin:0 -.55rem;border-radius:.5rem;
-    text-decoration:none;transition:background .12s}
-  .globe-col a:hover{background:#f3f4f6}
-  .dark .globe-col a:hover{background:#1f2937}
-  .globe-col .gz{font-size:.85rem;font-weight:600;color:#1b57f5}
-  .dark .globe-col .gz{color:#7ba4ff}
-  .globe-col .gc{font-size:.75rem;color:#6b7280}
-  .dark .globe-col .gc{color:#9ca3af}
   .chartcard{background:#fff;border-radius:1.25rem;box-shadow:0 1px 2px rgba(14,20,33,.05),0 8px 24px rgba(14,20,33,.05);padding:1.1rem 1.2rem .9rem;display:flex;flex-direction:column}
   .dark .chartcard{background:#131b29;box-shadow:0 1px 2px rgba(0,0,0,.3)}
   .chartcard .chd{display:flex;justify-content:space-between;align-items:baseline;font-size:.7rem;font-weight:600;color:#5c6675;text-transform:uppercase;letter-spacing:.06em;padding:0 .25rem .45rem}
@@ -354,10 +320,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .dark .fc-head .fc-title{color:#e8edf5}
   /* Measured rendered heights: the three day cards wrap to two rows below
      ~440 px. Reserved so the page's h1 does not jump when the data lands. */
-  #zoneForecast,#prognoseForecast{min-height:322px}
+  #prognoseForecast{min-height:322px}
   @media (max-width:440px){#prognoseForecast{min-height:404px}}
-  /* Zone labels run longer ("Tänään · Toteutunut" wraps), measured 419 px. */
-  @media (max-width:440px){#zoneForecast{min-height:420px}}
   .fc-head a{font-size:.8rem;font-weight:600;color:#1b57f5;white-space:nowrap;text-decoration:underline}
   .dark .fc-head a{color:#6d9aff}
   .fc-b-short{display:none}
@@ -670,6 +634,38 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     .pris-xl .x6{display:block}
     .pris-xl.days span{font-size:12px}
   }
+
+  /* The country pages (/norge, /sverige, /finland) and /norden around the same Pris screen:
+     the zone tabs, the text block with every zone, and the comparison table. */
+  .zt{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+  .zt::-webkit-scrollbar{display:none}
+  .zt a{flex:none;display:flex;flex-direction:column;align-items:flex-start;min-width:84px;padding:8px 14px;border-radius:14px;background:var(--p-card);border:1px solid var(--p-line);color:var(--p-ink2);font-size:14px;font-weight:800;line-height:1.25;text-decoration:none;white-space:nowrap}
+  .zt a small{font-size:12px;font-weight:600;color:var(--p-muted)}
+  .zt a[aria-selected="true"]{background:var(--p-pill);border-color:var(--p-pill);color:#fff}
+  .zt a[aria-selected="true"] small{color:rgba(255,255,255,.82)}
+  .zt a:focus-visible{outline:2px solid var(--p-brand);outline-offset:2px}
+  .zp-busy [data-pris-mount]{opacity:.45;transition:opacity .15s}
+  .zl,.nt{background:var(--p-card);border:1px solid var(--p-line);border-radius:22px;padding:18px 18px 14px;color:var(--p-ink)}
+  .zl h2{font-size:16px;font-weight:800;margin:0 0 8px}
+  .zl ul{list-style:none;margin:0;padding:0;font-size:14px;font-weight:600;line-height:1.5}
+  .zl li{padding:7px 0;border-top:1px solid var(--p-hair);font-variant-numeric:tabular-nums}
+  .zl li:first-child{border-top:0}
+  .zl a{color:var(--p-brand);text-decoration:none}
+  .zl a b{font-weight:800}
+  .zl-n{margin:10px 0 0;font-size:12px;font-weight:600;line-height:1.5;color:var(--p-muted)}
+  .zl-n a{text-decoration:underline}
+  .nt{padding:6px 14px 14px}
+  .nt-s{overflow-x:auto}
+  .nt table{width:100%;border-collapse:collapse;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+  .nt-cap{margin:10px 0 0;font-size:12px;font-weight:600;line-height:1.5;color:var(--p-muted)}
+  .nt th,.nt td{padding:9px 6px;text-align:right;border-top:1px solid var(--p-hair);white-space:nowrap}
+  @media (max-width:420px){.nt{padding:4px 10px 12px}.nt table{font-size:13px}.nt th,.nt td{padding:9px 4px}}
+  .nt thead th{border-top:0;font-size:11px;font-weight:700;color:var(--p-muted)}
+  .nt th[scope=row],.nt thead th:first-child{text-align:left}
+  .nt th[scope=row]{font-weight:800}
+  .nt a{color:var(--p-brand);text-decoration:none}
+  .nt tr:target th,.nt tr:target td{background:var(--p-seg)}
+  @media (min-width:900px){.zl,.nt{border-radius:28px;padding:22px 28px 16px}.nt{padding:10px 28px 18px}}
 
   /* ═══ Light syntax highlighting (YAML / JS / URL) ═══ */
   .hl-attr{color:#0969da}     /* YAML keys, URL query params — blue */
@@ -1932,53 +1928,23 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
   </div>
 </main>
 
-<!-- ═══════ PRISZONE: én side pr. budområde, oversat UI ═══════ -->
-<main style="display:none" data-page="zone" class="max-w-3xl mx-auto px-2 sm:px-4 py-4">
-  <!-- The same curve as the Danish pages: today and two days ahead, in this
-       zone's language, currency and view. Drawn by renderZone from the very
-       numbers and conversion its table uses, so the two cannot disagree when
-       the currency or grid company changes. Reserved at full height so the
-       heading below does not jump when it lands. -->
-  <div class="fc-wrap fc-prices" id="zoneForecastWrap">
-    <div class="chartcard">
-      <div class="chd"><span id="zFcTitle">&nbsp;</span><span id="zFcUnit">&nbsp;</span></div>
-      <div id="zoneForecast"></div>
-    </div>
-  </div>
-  <div class="flex items-center justify-between mb-3">
-    <div>
-      <div class="page-eyebrow" id="zEyebrow">&nbsp;</div>
-      <h2 class="page-title" id="zTitle">&nbsp;</h2>
-    </div>
-    <a href="/" title="Home" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0">
-      <svg width="20" height="20" class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    </a>
-  </div>
-  <div class="flex flex-wrap gap-2 mb-4">
-    <button onclick="openGlobe()" class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex items-center gap-2 hover:border-gray-400 dark:hover:border-gray-500 transition">
-      <svg width="15" height="15" class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-      <span id="zZoneLabel">—</span>
-    </button>
-    <select id="zCur" onchange="renderZone()" class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-      <option value="local" id="zCurLocal">Local</option>
-      <option value="eur" id="zCurEur">EUR/MWh</option>
-      <option value="total" id="zCurTotal">Incl. grid + tax</option>
-    </select>
-    <select id="zNet" onchange="pickNet()" style="display:none"
-            class="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 max-w-[15rem]"></select>
-  </div>
-  <!--SSR_ZONE_INTRO-->
-  <div class="subcard">
-    <div class="chd2"><span id="zTableTitle">&nbsp;</span><span id="zUnit">&nbsp;</span></div>
-    <div id="zLoading" class="text-center py-12 text-gray-400 dark:text-gray-500">
-      <div class="inline-block w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full spinner mr-2 align-middle"></div><span id="zLoadingText">Loading…</span>
-    </div>
-    <div id="zWrap" class="overflow-x-auto -mx-2 sm:mx-0" style="display:none"></div>
-  </div>
-  <div class="mt-4 text-xs text-gray-400 dark:text-gray-600 space-y-1">
-    <p id="zNoteModel">&nbsp;</p>
-    <p id="zNoteRaw">&nbsp;</p>
-    <p id="zNoTariff" style="display:none"></p>
+<!-- ═══════ PRISOMRÅDER: /norge, /sverige, /finland — the same Pris screen as the Danish pages ═══════
+     The server draws the country's first zone into the three placeholders (tabs, screen, text block);
+     the script below only swaps the screen when a tab is picked. Text is in the page's own language. -->
+<main style="display:none" data-page="zone">
+  <h1 class="vh" id="zH1">&nbsp;</h1>
+  <div class="pris-page" id="zTabs"><!--SSR_ZONE_TABS--></div>
+  <div class="pris-page" data-pris-mount id="zPanel"><!--SSR_PRIS--></div>
+  <div class="pris-page" id="zList"><!--SSR_ZONE_LIST--></div>
+</main>
+
+<!-- ═══════ NORDEN: the price areas side by side, in DKK ═══════ -->
+<main style="display:none" data-page="norden">
+  <div class="pris-page">
+    <div class="page-eyebrow">Spotpris i DKK/kWh uden moms</div>
+    <h2 class="page-title">Elpriser i Norden: Norge, Sverige, Finland og Holland</h2>
+    <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mt-3 mb-3">Spotprisen lige nu og de næste døgn i alle prisområder, omregnet til kroner så de kan sammenlignes. Tryk på et område for time-for-time-priser og prognose på landets eget sprog.</p>
+    <div id="nordenTable"><!--SSR_NORDEN--></div>
   </div>
 </main>
 
@@ -2453,7 +2419,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
       <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">Læs også:</p>
       <div class="flex flex-wrap gap-2">
         <a href="/blog/hvornaar-er-stroemmen-billigst" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Hvornår er strømmen billigst? →</a>
-        <a href="/no1" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Priser i Norge →</a>
+        <a href="/norge" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Priser i Norge →</a>
         <a href="/om-elpriser" class="px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition">Forstå din elpris →</a>
       </div>
     </div>
@@ -2677,8 +2643,10 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
         <div>
           <p class="sf-h">Andre prisområder</p>
           <ul class="sf-chips">
-            <li><a href="/se3">Sverige (SE3)</a></li>
-            <li><a href="/no1">Norge (NO1)</a></li>
+            <li><a href="/norden">Norden</a></li>
+            <li><a href="/norge">Norge</a></li>
+            <li><a href="/sverige">Sverige</a></li>
+            <li><a href="/finland">Finland</a></li>
           </ul>
         </div>
       </nav>
@@ -2707,7 +2675,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
     </div>
     <div><p class="pd-gt">Vestdanmark · DK1</p><div class="pd-links" id="netDlgDK1"></div></div>
     <div><p class="pd-gt">Østdanmark · DK2</p><div class="pd-links" id="netDlgDK2"></div></div>
-    <div><p class="pd-gt">Andre prisområder</p><div class="pd-links"><button type="button" class="gps-light" onclick="closeNetDialog();openGlobe()">Norge, Sverige, Finland og Holland</button></div></div>
+    <div><p class="pd-gt">Andre prisområder</p><div class="pd-links"><a href="/norden">Norden</a><a href="/norge">Norge</a><a href="/sverige">Sverige</a><a href="/finland">Finland</a></div></div>
     <p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p>
   </div>
 </dialog>
@@ -3068,7 +3036,7 @@ const PATH_ROUTES={
   '/dk1':'DK1/inkl_alt','/dk2':'DK2/inkl_alt',
   '/tariffer':'tariffer','/automation':'automation','/api':'api','/shelly-tariff':'shelly-tariff',
   '/om-elpriser':'om-elpriser','/prognose':'prognose',
-  '/no1':'no1','/no2':'no2','/no3':'no3','/no4':'no4','/no5':'no5','/se1':'se1','/se2':'se2','/se3':'se3','/se4':'se4','/fi':'fi','/nl':'nl',
+  '/norge':'norge','/sverige':'sverige','/finland':'finland','/norden':'norden',
   '/blog':'blog',
   '/blog/elafgift-2028':'blog/elafgift-2028',
   '/blog/elafgift-og-spotpris':'blog/elafgift-og-spotpris',
@@ -3084,14 +3052,19 @@ const LEGACY_HASH={
   'blog/home-assistant-elpriser':'/automation#home-assistant',
   'blog/v2g-v2h-bidirektional-opladning':'/blog',
   'blog/biler-ladere-v2h-v2g':'/blog',
+  // The eleven foreign zone pages (/no1 … /nl) became four: the zone is now the hash of its country page.
+  'no1':'/norge#no1','no2':'/norge#no2','no3':'/norge#no3','no4':'/norge#no4','no5':'/norge#no5',
+  'se1':'/sverige#se1','se2':'/sverige#se2','se3':'/sverige#se3','se4':'/sverige#se4',
+  'fi':'/finland','nl':'/norden#nl',
 };
 // In-page anchors on /automation. They sit in the hash, but they are places in
 // the page, not routes: they must neither pick the page nor be rewritten away.
 const PAGE_ANCHORS=new Set(['shelly','home-assistant']);
+const isAnchor=a=>PAGE_ANCHORS.has(a)||ZONES.hasOwnProperty(a);   // a zone tab of /norge and /sverige is a place in the page too
 function hashText(){try{return decodeURIComponent(location.hash.slice(1));}catch(_){return location.hash.slice(1);}}
 function scrollToAnchor(){
   const a=hashText();
-  if(!PAGE_ANCHORS.has(a))return;
+  if(!isAnchor(a))return;
   const el=document.getElementById(a);
   if(el&&el.offsetParent!==null)el.scrollIntoView();
 }
@@ -3143,7 +3116,7 @@ function routeFromLocation(){
 }
 function rawRouteFromLocation(){
   const hash=hashText();
-  if(hash&&!PAGE_ANCHORS.has(hash))return hash;  // an old or hand-typed link: honoured, then rewritten
+  if(hash&&!isAnchor(hash))return hash;  // an old or hand-typed link: honoured, then rewritten
   const base=pathToHash(location.pathname);  // 'DK1/inkl_alt' | 'DK1/net_inkl_alt/n1' | 'tariffer' | ''
   const pris=new URLSearchParams(location.search).get('pris');
   const mode=pris&&PRIS_MODE[pris];
@@ -3178,7 +3151,7 @@ function syncUrl(h){
   // Anything else on the query (utm_*, gclid, …) belongs to the visitor, not to us.
   for(const [k,v] of new URLSearchParams(location.search))if(k!=='pris'&&!want.searchParams.has(k))want.searchParams.set(k,v);
   const next=want.pathname+want.search;
-  const keep=PAGE_ANCHORS.has(hashText())?location.hash:'';   // #shelly stays: it is a place in the page
+  const keep=isAnchor(hashText())?location.hash:'';   // #shelly stays: it is a place in the page
   if((location.hash&&!keep)||location.pathname+location.search!==next){
     try{history.replaceState(null,'',next+keep);}catch(_){}
   }
@@ -3199,9 +3172,7 @@ function goRoute(h){
 function dataPageFor(h){
   if(!h)return 'start';
   if(/^DK[12]\//.test(h))return 'prices';
-  // The 11 non-Danish bidding zones all share one generic section; DK1/DK2
-  // keep their own richer pages with tariffs and net companies.
-  if(ZONES[h]&&h!=='dk1'&&h!=='dk2')return 'zone';
+  if(PRIS_COUNTRIES[h])return 'zone';   // /norge, /sverige, /finland share one section
   return h.replace(/\//g,'-'); // blog/x -> blog-x; others map 1:1
 }
 function markTab(){
@@ -3284,7 +3255,10 @@ function route(){
   if(h==='blog/groennest-og-dyrest'){document.querySelector('[data-page="blog-groennest-og-dyrest"]').classList.add('active');document.title='Hvorfor er strømmen grønnest netop i den dyreste time?';pv('Blog: Grønnest og dyrest','/blog/groennest-og-dyrest');return;}
   if(h==='blog/elafgift-og-spotpris'){document.querySelector('[data-page="blog-elafgift-og-spotpris"]').classList.add('active');document.title='Elafgift og spotpris: sådan er elprisen ændret siden 2019';pv('Blog: Elafgift og spotpris','/blog/elafgift-og-spotpris');return;}
   if(h==='blog/elafgift-2028'){document.querySelector('[data-page="blog-elafgift-2028"]').classList.add('active');document.title='Elafgift 2028: Elafgiften stiger igen, fra 0,8 til 60+ øre/kWh';pv('Blog: Elafgift 2028','/blog/elafgift-2028');return;}
-  if(ZONES[h]&&h!=='dk1'&&h!=='dk2'){document.querySelector('[data-page="zone"]').classList.add('active');const z=ZONES[h];document.title=I18N[z.lang].title(z)+' — elpriser.org';pv('Zone '+z.name,'/'+h);loadZone(h);return;}
+  if(h==='norge'){openZonePage(h);document.title='Strømpris prognose Norge: NO1–NO5, i dag og 5 dager frem';pv('Norge','/norge');return;}
+  if(h==='sverige'){openZonePage(h);document.title='Elpris prognos Sverige: SE1–SE4, idag och 5 dygn framåt';pv('Sverige','/sverige');return;}
+  if(h==='finland'){openZonePage(h);document.title='Sähkön hinta ennuste Suomi: tänään ja 5 vrk eteenpäin';pv('Finland','/finland');return;}
+  if(h==='norden'){document.title='Elpriser i Norden: sammenlign Norge, Sverige og Finland';pv('Norden','/norden');openNorden();return;}
   if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elpriser prognose 7 dage — time for time, op til 10 døgn frem';pv('Prognose','/prognose');loadForecastPage();return;}
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){goRoute('');return;}
@@ -3542,7 +3516,7 @@ async function updateReaderDay(){
 // ═══ Forsidens kurve: nu og 2 døgn frem ═══
 // This function is CANONICAL and exists verbatim in two places: here and in
 // functions/[[path]].js. The server draws it so a crawler gets the numbers on
-// /prognose and the zone pages, the client redraws it from the table's data —
+// /prognose and the front page, the client redraws it from the table's data —
 // and neither runtime can import from the other. test-forecast-chart.mjs runs both copies
 // over the same fixtures and fails on the first differing byte, so the
 // duplication cannot rot quietly.
@@ -3565,10 +3539,9 @@ function fcTicks(lo, hi){
  *  be <text> inside it: the svg is stretched with preserveAspectRatio="none"
  *  and glyphs would be squashed on a phone. Each sits at the same fraction of
  *  the height the svg draws its gridline at. */
-function fcYaxis(ticks, Y, H, dec){
-  var d=dec==null?2:dec;
+function fcYaxis(ticks, Y, H){
   return ticks.map(function(v){
-    var s=v.toFixed(d);if(/^-0\.?0*$/.test(s))s=s.slice(1);
+    var s=v.toFixed(2);if(/^-0\.?0*$/.test(s))s=s.slice(1);
     return '<span style="top:'+(Y(v)/H*100).toFixed(2)+'%">'+s.replace('.',',')+'</span>';
   }).join('');
 }
@@ -3613,23 +3586,14 @@ function fcWeekHTML(days, todayStr, n){
     +'<th scope="col">Billigst</th><th scope="col">Type</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
-// `o` is optional and only the zone pages pass it: their labels, date format,
-// unit and decimals come from the zone's own locale and currency. Without it
-// the output is the Danish chart, byte for byte as before.
-function fcChartHTML(days, todayStr, nowHour, o){
-  o=o||{};
+function fcChartHTML(days, todayStr, nowHour){
   var WD=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
   var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
-  var dec=o.dec==null?2:o.dec;
   // A price that rounds to zero is printed without its minus: "-0" is not a
   // price anyone should have to read. Real negative prices keep their sign.
-  var f2=function(v){var s=v.toFixed(dec);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',',');};
-  var dm=o.dm||function(dt){return dt.getUTCDate()+'. '+MON[dt.getUTCMonth()];};
-  var dayName=function(n,dt){
-    if(n===0)return o.today||'I dag';
-    if(n===1&&o.tomorrow!==null)return o.tomorrow||'I morgen';
-    return o.wd?o.wd(dt):WD[dt.getUTCDay()];
-  };
+  var f2=function(v){var s=v.toFixed(2);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',',');};
+  var dm=function(dt){return dt.getUTCDate()+'. '+MON[dt.getUTCMonth()];};
+  var dayName=function(n,dt){return n===0?'I dag':n===1?'I morgen':WD[dt.getUTCDay()];};
   // The feed opens on yesterday, so the window is keyed off today's date, not
   // off row 0. A day is only taken when it is exactly the next one expected:
   // skipping a hole and carrying on would splice non-adjacent days into one
@@ -3721,12 +3685,12 @@ function fcChartHTML(days, todayStr, nowHour, o){
     var v=d.ps.filter(function(p){return p!=null;});
     var dt=new Date(d.date+'T12:00:00Z');
     return '<div class="mini'+(n===cheap?' best':'')+'">'
-      +'<div class="k">'+dayName(n,dt)+' · '+(d.real?(o.actual||'Børspris'):(o.forecast||'Prognose'))+'</div>'
+      +'<div class="k">'+dayName(n,dt)+' · '+(d.real?'Børspris':'Prognose')+'</div>'
       +'<div class="v">'+f2(Math.min.apply(null,v))+'–'+f2(Math.max.apply(null,v))+'</div>'
-      +'<div class="s">'+dm(dt)+' · '+(o.unit||'kr/kWh')+'</div></div>';
+      +'<div class="s">'+dm(dt)+' · '+'kr/kWh'+'</div></div>';
   }).join('');
-  return '<div class="yplot"><svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="'+(o.aria||('Elpris time for time i dag og '+(sel.length-1)+' døgn frem'))+'">'+svg+'</svg>'
-    +'<div class="yax">'+fcYaxis(ticks,Y,H,dec)+'</div></div>'
+  return '<div class="yplot"><svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="Elpris time for time i dag og '+(sel.length-1)+' døgn frem">'+svg+'</svg>'
+    +'<div class="yax">'+fcYaxis(ticks,Y,H)+'</div></div>'
     +'<div class="fc-hours ygut">'+hours+'</div>'
     +'<div class="fc-days ygut">'+labels+'</div>'
     +'<div class="minirow">'+cards+'</div>';
@@ -3741,21 +3705,93 @@ function fcChartHTML(days, todayStr, nowHour, o){
 // Neither runtime can import from the other; test-static.js diffs the two copies
 // and test-forecast-chart.mjs runs both over the same fixtures.
 //
-// Deterministic on purpose: weekday and month names come from the arrays below
+// ONE screen for every price area. The Danish pages call prisHTML with a net and a
+// view; /norge, /sverige and /finland call it with `zone` (a key of ZONES) and get
+// the same markup in that zone's language (PRIS_I18N), in its sub-unit (øre, öre,
+// snt), spot price only. zoneToPrisDays turns an /api/nordic response into the
+// days[] the screen draws and keeps the first five days, so nothing on those
+// pages can show the feed's longer horizon.
+//
+// Deterministic on purpose: weekday and month names come from the table below
 // rather than toLocaleDateString, whose output depends on the ICU build and would
 // differ between Workers and a browser.
-var PRIS_WD=['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
-var PRIS_WS=['søn','man','tir','ons','tor','fre','lør'];
-var PRIS_MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
-var PRIS_VERDICT=['Billig lige nu','Middel lige nu','Dyr lige nu'];
+
+/** Every word the screen shows, per language. Same keys in every language
+ *  (test-forecast-chart.mjs). The Din pris / Spotpris switch and the breakdown
+ *  panel are Danish-only features and keep their Danish text in their functions. */
+var PRIS_I18N={
+  da:{wd:['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'],ws:['søn','man','tir','ons','tor','fre','lør'],
+    mon:['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'],dot:'.',
+    now:'Elpris lige nu',hourly:'Elpris time for time',at:'kl.',today:'i dag',tomorrow:'i morgen',evening:'i aften',
+    verdict:['Billig lige nu','Middel lige nu','Dyr lige nu'],tier:['Billig','Middel','Dyr'],
+    cheaper:'Billigere',cheapest24:'Billigste time de næste 24 timer',lo:'billigst',hi:'dyrest',
+    next:'Næste',p2:'2 døgn',p5:'5 døgn',period:'Periode',fc:'Prognose',actual:'Børspris',
+    byDay:'Dag for dag',day:'Dag',range:'Spænd',type:'Type',none:'Priserne kunne ikke hentes lige nu.',
+    cap:'Spotpris uden moms, afgifter og nettarif',h1:'Elpriser i Danmark i dag',zoneTabs:'Prisområde',
+    zonesH:'Elpriser i Danmark',avg:'gns.',note:'Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder. Omregnet fra EUR med Den Europæiske Centralbanks dagskurs.',model:'Se modellen på Hugging Face'},
+  nb:{wd:['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'],ws:['søn','man','tir','ons','tor','fre','lør'],
+    mon:['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'],dot:'.',
+    now:'Strømpris akkurat nå',hourly:'Strømpris time for time',at:'kl.',today:'i dag',tomorrow:'i morgen',evening:'i kveld',
+    verdict:['Billig akkurat nå','Middels akkurat nå','Dyr akkurat nå'],tier:['Billig','Middels','Dyr'],
+    cheaper:'Billigere',cheapest24:'Billigste time de neste 24 timene',lo:'billigst',hi:'dyrest',
+    next:'Neste',p2:'2 døgn',p5:'5 døgn',period:'Periode',fc:'Prognose',actual:'Børspris',
+    byDay:'Dag for dag',day:'Dag',range:'Spenn',type:'Type',none:'Prisene kunne ikke hentes akkurat nå.',
+    cap:'Spotpris uten mva, avgifter og nettleie',h1:'Strømpris i Norge: i dag og prognose for de neste 5 døgnene',zoneTabs:'Prisområde',
+    zonesH:'Strømpriser i Norge etter by og prisområde',avg:'snitt',note:'Prognosen kommer fra én åpen maskinlæringsmodell for alle 13 prisområder. Omregnet fra EUR med Den europeiske sentralbankens daglige kurs.',model:'Se modellen på Hugging Face'},
+  sv:{wd:['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'],ws:['sön','mån','tis','ons','tors','fre','lör'],
+    mon:['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'],dot:'',
+    now:'Elpris just nu',hourly:'Elpris timme för timme',at:'kl.',today:'idag',tomorrow:'imorgon',evening:'ikväll',
+    verdict:['Billigt just nu','Medel just nu','Dyrt just nu'],tier:['Billigt','Medel','Dyrt'],
+    cheaper:'Billigare',cheapest24:'Billigaste timmen de närmaste 24 timmarna',lo:'billigast',hi:'dyrast',
+    next:'Kommande',p2:'2 dygn',p5:'5 dygn',period:'Period',fc:'Prognos',actual:'Börspris',
+    byDay:'Dag för dag',day:'Dag',range:'Spann',type:'Typ',none:'Priserna kunde inte hämtas just nu.',
+    cap:'Spotpris utan moms, skatter och nätavgift',h1:'Elpris i Sverige: idag och prognos för de närmaste 5 dygnen',zoneTabs:'Elområde',
+    zonesH:'Elpriser i Sverige per stad och elområde',avg:'snitt',note:'Prognosen kommer från en öppen maskininlärningsmodell för alla 13 elområden. Omräknat från EUR med Europeiska centralbankens dagliga kurs.',model:'Se modellen på Hugging Face'},
+  fi:{wd:['sunnuntai','maanantai','tiistai','keskiviikko','torstai','perjantai','lauantai'],ws:['su','ma','ti','ke','to','pe','la'],
+    mon:['tammik.','helmik.','maalisk.','huhtik.','toukok.','kesäk.','heinäk.','elok.','syysk.','lokak.','marrask.','jouluk.'],dot:'.',
+    now:'Sähkön hinta juuri nyt',hourly:'Sähkön hinta tunneittain',at:'klo',today:'tänään',tomorrow:'huomenna',evening:'illalla',
+    verdict:['Halpa juuri nyt','Keskihintainen juuri nyt','Kallis juuri nyt'],tier:['Halpa','Keskihintainen','Kallis'],
+    cheaper:'Halvempi',cheapest24:'Halvin tunti seuraavan 24 tunnin aikana',lo:'halvin',hi:'kallein',
+    next:'Seuraavat',p2:'2 vrk',p5:'5 vrk',period:'Jakso',fc:'Ennuste',actual:'Pörssihinta',
+    byDay:'Päivä päivältä',day:'Päivä',range:'Vaihteluväli',type:'Tyyppi',none:'Hintoja ei voitu hakea juuri nyt.',
+    cap:'Pörssihinta ilman arvonlisäveroa, veroja ja siirtomaksua',h1:'Sähkön hinta Suomessa: tänään ja ennuste seuraaville 5 vuorokaudelle',zoneTabs:'Hinta-alue',
+    zonesH:'Sähkön hinta Suomessa',avg:'keskihinta',note:'Ennuste tulee yhdestä avoimesta koneoppimismallista, joka kattaa kaikki 13 hinta-aluetta. Muunnettu euroista Euroopan keskuspankin päiväkurssilla.',model:'Katso malli Hugging Facessa'}
+};
+
+/** The price areas: the single source of names, cities, currency and sub-unit.
+ *  `rate` is the fallback for the ECB rate /api/nordic returns (zoneInfo.rate).
+ *  `lang` picks the PRIS_I18N table for a zone's own page; DK and NL have none. */
+var ZONES={
+  dk1:{name:'DK1',city:'Vestdanmark',lang:'da',cur:'DKK',rate:7.4755,sub:'øre'},
+  dk2:{name:'DK2',city:'Østdanmark',lang:'da',cur:'DKK',rate:7.4755,sub:'øre'},
+  no1:{name:'NO1',city:'Oslo',lang:'nb',cur:'NOK',rate:10.84,sub:'øre'},
+  no2:{name:'NO2',city:'Kristiansand',lang:'nb',cur:'NOK',rate:10.84,sub:'øre'},
+  no3:{name:'NO3',city:'Trondheim',lang:'nb',cur:'NOK',rate:10.84,sub:'øre'},
+  no4:{name:'NO4',city:'Tromsø',lang:'nb',cur:'NOK',rate:10.84,sub:'øre'},
+  no5:{name:'NO5',city:'Bergen',lang:'nb',cur:'NOK',rate:10.84,sub:'øre'},
+  se1:{name:'SE1',city:'Luleå',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
+  se2:{name:'SE2',city:'Sundsvall',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
+  se3:{name:'SE3',city:'Stockholm',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
+  se4:{name:'SE4',city:'Malmö',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
+  fi:{name:'FI',city:'Suomi',lang:'fi',cur:'EUR',rate:1,sub:'snt'},
+  nl:{name:'NL',city:'Nederland',lang:'da',cur:'EUR',rate:1,sub:'cent'}
+};
+/** The three country pages: their language, their zones left to right, and the one shown first. */
+var PRIS_COUNTRIES={
+  norge:{lang:'nb',zones:['no1','no2','no3','no4','no5'],def:'no1'},
+  sverige:{lang:'sv',zones:['se1','se2','se3','se4'],def:'se3'},
+  finland:{lang:'fi',zones:['fi'],def:'fi'}
+};
 
 /** A price with d decimals and a Danish comma; never "-0,00". */
 function prisNum(v,d){var s=v.toFixed(d);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',',');}
 function prisHH(h){return (h<10?'0':'')+h;}
 function prisEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function prisDate(date){
+function prisCap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function prisDate(date,L){
   var dt=new Date(date+'T12:00:00Z');
-  return {wd:PRIS_WD[dt.getUTCDay()],ws:PRIS_WS[dt.getUTCDay()],d:dt.getUTCDate(),m:PRIS_MON[dt.getUTCMonth()]};
+  L=L||PRIS_I18N.da;
+  return {wd:L.wd[dt.getUTCDay()],ws:L.ws[dt.getUTCDay()],d:dt.getUTCDate(),m:L.mon[dt.getUTCMonth()]};
 }
 
 /** The period pill: 2 (næste 2 døgn) or 5 (næste 5 døgn). The pill used to read
@@ -3764,6 +3800,23 @@ function prisDate(date){
 function prisPeriod(p){
   var s=String(p==null?'':p);
   return /(^|[^0-9])(5|10)([^0-9]|$)/.test(s)?5:2;
+}
+
+/** /api/nordic as the days[] this screen draws. Prices go from EUR/MWh to the
+ *  zone's sub-unit per kWh (÷ 10 × rate) at the ECB rate the response carries
+ *  (`info`, the response's zoneInfo), falling back to ZONES. Days before
+ *  `todayStr` are dropped — the feed opens on yesterday — and only the FIRST
+ *  FIVE days are kept: the feed carries ten, this site shows two and five. */
+function zoneToPrisDays(raw,info,todayStr){
+  var rate=(info&&info.rate>0&&info.rate)||(ZONES[raw&&raw.zone]||{}).rate||1;
+  var src=(raw&&raw.days)||[],out=[];
+  for(var k=0;k<src.length&&out.length<5;k++){
+    var d=src[k];
+    if(!d||!d.date||!d.prices||(todayStr&&d.date<todayStr))continue;
+    out.push({date:d.date,type:d.type,prices:d.prices.map(function(p){
+      return p&&p.eur_mwh!=null?{hour:p.hour,price:p.eur_mwh*rate/10}:null;})});
+  }
+  return out;
 }
 
 /** The forecast feed as up to ten consecutive days from today, 24 slots each.
@@ -3813,17 +3866,30 @@ function prisTier(p,ref){
   return pct<=33?0:pct<=66?1:2;
 }
 
+/** What differs between a Danish screen and a zone's: the language table, the unit,
+ *  the decimals (about three significant figures of the largest price, as øre and
+ *  snt run from 5 to 300) and the axis grain `sc` — a power of ten that scales the
+ *  axis rule below. Danish is kr/kWh with two decimals and grain 1. */
+function prisDec(mx){return mx>=100?0:mx>=10?1:2;}
+function prisCtx(o,all){
+  var z=o.zone?ZONES[o.zone]:null,mx=0,i,h,v;
+  if(z)for(i=0;i<all.length;i++)for(h=0;h<24;h++){v=all[i].ps[h];if(v!=null&&Math.abs(v)>mx)mx=Math.abs(v);}
+  return {z:!!z,L:PRIS_I18N[z?z.lang:'da'],u:z?z.sub:'kr',d:z?prisDec(mx):2,
+    sc:z&&mx>0?Math.pow(10,Math.floor(Math.log(mx)/Math.LN10)):1};
+}
+
 /** The axis: zero-based, top at the highest price + ~12 % rounded up to the next
- *  0.5 so the tallest bar never touches the frame. Whole-krone steps, halves
- *  only when the whole axis is two and a half kroner or less. A negative price
- *  extends it below zero by the same rule. */
-function prisAxis(vals){
-  var mx=0,mn=0;
+ *  half grain so the tallest bar never touches the frame. Whole-grain steps, halves
+ *  only when the whole axis is two and a half grains or less (the grain is 1 krone;
+ *  see prisCtx). A negative price extends it below zero by the same rule. */
+function prisAxis(vals,sc){
+  sc=sc||1;
+  var q=0.5*sc,mx=0,mn=0;
   for(var i=0;i<vals.length;i++){if(vals[i]>mx)mx=vals[i];if(vals[i]<mn)mn=vals[i];}
-  var hi=Math.ceil(mx*1.12/0.5-1e-9)*0.5;
-  if(hi<0.5)hi=0.5;
-  var lo=mn<0?-Math.ceil(-mn*1.12/0.5-1e-9)*0.5:0;
-  var span=hi-lo,step=span<=2.5?0.5:span<=10?1:span<=20?2:5;
+  var hi=Math.ceil(mx*1.12/q-1e-9)*q;
+  if(hi<q)hi=q;
+  var lo=mn<0?-Math.ceil(-mn*1.12/q-1e-9)*q:0;
+  var span=hi-lo,step=span<=2.5*sc?q:span<=10*sc?sc:span<=20*sc?2*sc:5*sc;
   var ticks=[];
   for(var t=Math.ceil(lo/step-1e-9)*step;t<=hi+1e-9;t+=step)ticks.push(+t.toFixed(6));
   return {lo:lo,hi:hi,step:step,ticks:ticks};
@@ -3841,16 +3907,16 @@ function prisExtremes(slots){
   return {lo:lo,hi:hi};
 }
 /** The day an hour falls on, in words: i dag, i morgen, then "søn 17." */
-function prisWhen(s,all){
-  if(s.d===0)return 'i dag';
-  if(s.d===1)return 'i morgen';
-  var dt=prisDate(all[s.d].date);
-  return dt.ws+' '+dt.d+'.';
+function prisWhen(s,all,C){
+  if(s.d===0)return C.L.today;
+  if(s.d===1)return C.L.tomorrow;
+  var dt=prisDate(all[s.d].date,C.L);
+  return dt.ws+' '+dt.d+C.L.dot;
 }
 
 /** The one sentence under the verdict: the cheapest hour of the next 24 if it is
  *  cheaper than now, otherwise that now is it. */
-function prisSentence(all,nowHour,nowP){
+function prisSentence(all,nowHour,nowP,C){
   if(nowP==null)return '';
   var win=[];
   for(var k=1;k<24;k++){
@@ -3859,22 +3925,22 @@ function prisSentence(all,nowHour,nowP){
   }
   var best=prisExtremes(win).lo;
   if(best&&best.p<nowP)
-    return 'Billigere '+prisWhen(best,all)+' kl. '+prisHH(best.h)+' — <b>'+prisNum(best.p,2)+' kr</b>';
-  return 'Billigste time de næste 24 timer';
+    return C.L.cheaper+' '+prisWhen(best,all,C)+' '+C.L.at+' '+prisHH(best.h)+' — <b>'+prisNum(best.p,C.d)+' '+C.u+'</b>';
+  return C.L.cheapest24;
 }
 
 /** Two tiles: cheapest and dearest of the hours still to come (this one on)
  *  within the first `nDays` days — the window the period pill shows. */
-function prisTiles(all,nowHour,nDays,cls){
+function prisTiles(all,nowHour,nDays,cls,C){
   var up=[];
   for(var d=0;d<all.length&&d<nDays;d++)
     for(var h=0;h<24;h++)if(d>0||h>=nowHour)up.push({d:d,h:h,p:all[d].ps[h]});
   var ex=prisExtremes(up),out='';
   var tile=function(k,s){
-    return '<div class="pris-tile"><div class="k">'+k+'</div><div class="v">'+prisNum(s.p,2)
-      +' <small>kr · kl. '+prisHH(s.h)+'</small></div></div>';};
-  if(ex.lo)out+=tile('Billigst '+prisWhen(ex.lo,all),ex.lo);
-  if(ex.hi)out+=tile('Dyrest '+(ex.hi.d===0&&ex.hi.h>=17?'i aften':prisWhen(ex.hi,all)),ex.hi);
+    return '<div class="pris-tile"><div class="k">'+k+'</div><div class="v">'+prisNum(s.p,C.d)
+      +' <small>'+C.u+' · '+C.L.at+' '+prisHH(s.h)+'</small></div></div>';};
+  if(ex.lo)out+=tile(prisCap(C.L.lo)+' '+prisWhen(ex.lo,all,C),ex.lo);
+  if(ex.hi)out+=tile(prisCap(C.L.hi)+' '+(ex.hi.d===0&&ex.hi.h>=17?C.L.evening:prisWhen(ex.hi,all,C)),ex.hi);
   return out?'<div class="pris-tiles '+cls+'">'+out+'</div>':'';
 }
 
@@ -3963,16 +4029,16 @@ function prisSwitch(view,cls,spotLabel){
  *  of every hour in data-tip for the browser's hover/tap tooltip. The first two
  *  days read "I dag" / "I morgen", later ones "søn 17. okt". */
 function prisChart(rows,nDays,o){
-  var n=nDays*24,vals=[],i;
+  var C=o.C,L=C.L,n=nDays*24,vals=[],i;
   for(i=0;i<rows.length;i++)for(var h0=0;h0<24;h0++)if(rows[i].ps[h0]!=null)vals.push(rows[i].ps[h0]);
-  var ax=prisAxis(vals),span=ax.hi-ax.lo;
+  var ax=prisAxis(vals,C.sc),span=ax.hi-ax.lo;
   var ref=o.ref||vals;
   var y=function(v){return (v-ax.lo)/span*100;};
   var grid='',yl='';
   for(i=0;i<ax.ticks.length;i++){
     var top=(100-y(ax.ticks[i])).toFixed(2);
     grid+='<span class="pris-gl" style="top:'+top+'%"></span>';
-    yl+='<span style="top:'+top+'%">'+(ax.step<1?prisNum(ax.ticks[i],1):prisNum(ax.ticks[i],0))+'</span>';
+    yl+='<span style="top:'+top+'%">'+prisNum(ax.ticks[i],ax.step%1?1:0)+'</span>';
   }
   var cols='',seps='',fcAt=-1;
   for(var s=0;s<n;s++){
@@ -3980,32 +4046,33 @@ function prisChart(rows,nDays,o){
     if(fcAt<0&&r&&!r.real)fcAt=s;
     if(s%24===0&&s>0&&o.seps)seps+='<span class="pris-sep" style="left:'+(s/n*100).toFixed(2)+'%"></span>';
     if(p==null){cols+='<span class="pc"></span>';continue;}
-    var base=y(Math.min(p,0)),ht=Math.abs(p)/span*100,dt=prisDate(r.date);
+    var base=y(Math.min(p,0)),ht=Math.abs(p)/span*100,dt=prisDate(r.date,L);
     var dn=Math.floor(s/24);
-    var tip=(dn===0?'I dag':dn===1?'I morgen':dt.ws+' '+dt.d+'. '+dt.m)
-      +' kl. '+prisHH(h)+' · '+prisNum(p,2)+' kr/kWh';
+    var tip=(dn===0?prisCap(L.today):dn===1?prisCap(L.tomorrow):dt.ws+' '+dt.d+L.dot+' '+dt.m)
+      +' '+L.at+' '+prisHH(h)+' · '+prisNum(p,C.d)+' '+C.u+'/kWh';
     cols+='<span class="pc'+(s<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
       +'" style="bottom:'+base.toFixed(1)+'%;height:'+ht.toFixed(1)+'%"></i>'
       +(s===o.nowSlot?'<b class="pd" style="bottom:calc('+(base+ht).toFixed(1)+'% + 3px)"></b>':'')+'</span>';
   }
   // "Prognose" where the settled prices end: a thin divider with its label.
-  var fc=fcAt>=0?'<span class="pris-fc'+(fcAt>0?' mid':'')+'" style="left:'+(fcAt/n*100).toFixed(2)+'%"><i></i>Prognose</span>':'';
+  var fc=fcAt>=0?'<span class="pris-fc'+(fcAt>0?' mid':'')+'" style="left:'+(fcAt/n*100).toFixed(2)+'%"><i></i>'+L.fc+'</span>':'';
   var xl='';
   if(o.xDays){
     for(i=0;i<nDays;i++){
-      var dd=rows[i]?prisDate(rows[i].date):null;
+      var dd=rows[i]?prisDate(rows[i].date,L):null;
       if(dd)xl+='<span class="xd" style="left:'+((i*24+12)/n*100).toFixed(2)+'%">'+dd.ws+' '+dd.d+'</span>';
     }
   }else{
     for(var hx=0;hx<n;hx+=6){
-      var lbl=hx===0?'I dag 00':hx===24?'I morgen 00':prisHH(hx%24);
+      var lbl=hx===0?prisCap(L.today)+' 00':hx===24?prisCap(L.tomorrow)+' 00':prisHH(hx%24);
       xl+='<span class="'+(hx%12?'x6':'x12')+(hx===0?' first':'')+'" style="left:'+(hx/n*100).toFixed(2)+'%">'+lbl+'</span>';
     }
   }
   var ex=prisExtremes(prisFlat(rows));
-  var aria=o.title+': '+(ex.lo?'billigst '+prisNum(ex.lo.p,2)+' kr/kWh kl. '+prisHH(ex.lo.h)+', ':'')
-    +(ex.hi?'dyrest '+prisNum(ex.hi.p,2)+' kr/kWh kl. '+prisHH(ex.hi.h)+'.':'');
-  return '<div class="pris-plotwrap"><span class="pris-unit">kr/kWh</span><div class="pris-yl">'+yl+'</div>'
+  var at=function(s){return ' '+C.u+'/kWh '+L.at+' '+prisHH(s.h);};
+  var aria=o.title+': '+(ex.lo?L.lo+' '+prisNum(ex.lo.p,C.d)+at(ex.lo)+', ':'')
+    +(ex.hi?L.hi+' '+prisNum(ex.hi.p,C.d)+at(ex.hi)+'.':'');
+  return '<div class="pris-plotwrap"><span class="pris-unit">'+C.u+'/kWh</span><div class="pris-yl">'+yl+'</div>'
     +'<div class="pris-plot" role="img" tabindex="0" aria-label="'+prisEsc(aria)+'" data-n="'+n+'">'
     +grid+seps+'<div class="pris-cols">'+cols+'</div>'+fc+'<div class="pris-tip" role="status" hidden></div></div>'
     +'<div class="pris-xl'+(o.xDays?' days':'')+'">'+xl+'</div></div>';
@@ -4017,8 +4084,8 @@ function prisFlat(rows){
 }
 
 /** Per-day range and cheapest hour, as text. */
-function prisDayRows(all){
-  var rows='';
+function prisDayRows(all,C){
+  var L=C.L,rows='';
   for(var i=0;i<all.length;i++){
     var d=all[i],lo=null,hi=null,loH=0;
     for(var h=0;h<24;h++){
@@ -4028,62 +4095,127 @@ function prisDayRows(all){
       if(hi==null||v>hi)hi=v;
     }
     if(lo==null)continue;
-    var dt=prisDate(d.date);
-    var name=i===0?'I dag':i===1?'I morgen':dt.wd.charAt(0).toUpperCase()+dt.wd.slice(1);
+    var dt=prisDate(d.date,L);
+    var name=i===0?prisCap(L.today):i===1?prisCap(L.tomorrow):prisCap(dt.wd);
     // r2: shown in both periods, r5: only in 5 døgn, r10: days 6-10, kept in the
     // markup as text for crawlers and never shown on this screen.
-    rows+='<tr class="'+(i<2?'r2':i<5?'r5':'r10')+'"><th scope="row">'+name+'<small>'+dt.d+'. '+dt.m+'</small></th>'
-      +'<td>'+prisNum(lo,2)+'–'+prisNum(hi,2)+'</td>'
-      +'<td>kl. '+prisHH(loH)+'–'+prisHH((loH+1)%24)+'</td>'
-      +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?'Børspris':'Prognose')+'</td></tr>';
+    rows+='<tr class="'+(i<2?'r2':i<5?'r5':'r10')+'"><th scope="row">'+name+'<small>'+dt.d+L.dot+' '+dt.m+'</small></th>'
+      +'<td>'+prisNum(lo,C.d)+'–'+prisNum(hi,C.d)+'</td>'
+      +'<td>'+L.at+' '+prisHH(loH)+'–'+prisHH((loH+1)%24)+'</td>'
+      +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?L.actual:L.fc)+'</td></tr>';
   }
   if(!rows)return '';
-  return '<section class="pris-days" aria-label="Dag for dag"><p class="pris-dt">Dag for dag</p>'
-    +'<table class="pris-week"><thead><tr><th scope="col">Dag</th><th scope="col">Spænd, kr/kWh</th>'
-    +'<th scope="col">Billigst</th><th scope="col">Type</th></tr></thead><tbody>'+rows+'</tbody></table></section>';
+  return '<section class="pris-days" aria-label="'+L.byDay+'"><p class="pris-dt">'+L.byDay+'</p>'
+    +'<table class="pris-week"><thead><tr><th scope="col">'+L.day+'</th><th scope="col">'+L.range+', '+C.u+'/kWh</th>'
+    +'<th scope="col">'+prisCap(L.lo)+'</th><th scope="col">'+L.type+'</th></tr></thead><tbody>'+rows+'</tbody></table></section>';
 }
 
 /** The whole screen. `o`: {view:'din'|'spot', period:2|5 (legacy 10 reads as 5), net:name|null, where:'DK1 Vest', key,
- *  charges:{sys,trans,afg,vat} from the same response (without it the caption stays plain), open:true to draw the breakdown unfolded}. */
+ *  charges:{sys,trans,afg,vat} from the same response (without it the caption stays plain), open:true to draw the breakdown unfolded,
+ *  zone:key of ZONES for a foreign area — its language, its unit, spot only, no switch}. */
 function prisHTML(days,todayStr,nowHour,o){
   o=o||{};
   var view=o.view==='spot'?'spot':'din',period=prisPeriod(o.period);
-  var all=prisDays(days||[],todayStr);
+  var all=prisDays(days||[],todayStr),C=prisCtx(o,all),L=C.L;
   var today=all.length?all[0]:null;
   var nowP=today?today.ps[nowHour]:null;
   var td=today?[]:null,i;
   if(today)for(i=0;i<24;i++)if(today.ps[i]!=null)td.push(today.ps[i]);
   var verdict=nowP!=null?prisTier(nowP,td):1;
-  var sentence=prisSentence(all,nowHour,nowP);
-  var caption=prisCaption(view,o.net);
+  var sentence=prisSentence(all,nowHour,nowP,C);
+  var caption=C.z?L.cap:prisCaption(view,o.net);
   var panel=today?prisPanel(all,0,nowHour,false,o):'';
-  var wd=today?prisDate(todayStr).wd:'';
-  var hero='<section class="pris-hero" aria-label="Elpris lige nu'+(o.where?' — '+prisEsc(o.where):'')+'">'
-    +'<p class="pris-label">Elpris lige nu · '+(wd?'<span class="pris-wd">'+wd+' </span>':'')+'kl. '+prisHH(nowHour)+'</p>'
-    +'<p class="pris-price"><span class="pris-now">'+(nowP!=null?prisNum(nowP,2):'—')+'</span><span class="pris-u">kr/kWh</span></p>'
+  var wd=today?prisDate(todayStr,L).wd:'';
+  var hero='<section class="pris-hero" aria-label="'+L.now+(o.where?' — '+prisEsc(o.where):'')+'">'
+    +'<p class="pris-label">'+L.now+' · '+(wd?'<span class="pris-wd">'+wd+' </span>':'')+L.at+' '+prisHH(nowHour)+'</p>'
+    +'<p class="pris-price"><span class="pris-now">'+(nowP!=null?prisNum(nowP,C.d):'—')+'</span><span class="pris-u">'+C.u+'/kWh</span></p>'
     +'<div class="pris-vrow">'
-    +(nowP!=null?'<span class="pris-pill t'+verdict+'"><i></i>'+PRIS_VERDICT[verdict]+'</span>':'')
-    +(sentence?'<p class="pris-sent">'+sentence+'</p>':'<p class="pris-sent">'+(today?'':'Priserne kunne ikke hentes lige nu.')+'</p>')
+    +(nowP!=null?'<span class="pris-pill t'+verdict+'"><i></i>'+L.verdict[verdict]+'</span>':'')
+    +(sentence?'<p class="pris-sent">'+sentence+'</p>':'<p class="pris-sent">'+(today?'':L.none)+'</p>')
     +'</div>'
-    +'<div class="pris-modebox">'+prisSwitch(view,'pris-seg-hero','Kun spotpris')
+    +'<div class="pris-modebox">'+(C.z?'':prisSwitch(view,'pris-seg-hero','Kun spotpris'))
     +prisCapHTML(false,caption,panel,o.open)+'</div></section>';
-  var tabs='<div class="pris-period" role="tablist" aria-label="Periode">'
-    +'<button type="button" role="tab" aria-selected="'+(period===2)+'" data-pris-period="2">2 døgn</button>'
-    +'<button type="button" role="tab" aria-selected="'+(period===5)+'" data-pris-period="5">5 døgn</button></div>';
-  var legend='<div class="pris-legend"><span><i class="t0"></i>Billig</span><span><i class="t1"></i>Middel</span><span><i class="t2"></i>Dyr</span></div>';
+  var tabs='<div class="pris-period" role="tablist" aria-label="'+L.period+'">'
+    +'<button type="button" role="tab" aria-selected="'+(period===2)+'" data-pris-period="2">'+L.p2+'</button>'
+    +'<button type="button" role="tab" aria-selected="'+(period===5)+'" data-pris-period="5">'+L.p5+'</button></div>';
+  var legend='<div class="pris-legend"><span><i class="t0"></i>'+L.tier[0]+'</span><span><i class="t1"></i>'+L.tier[1]+'</span><span><i class="t2"></i>'+L.tier[2]+'</span></div>';
   var head=function(t){
-    return '<div class="pris-ch"><p class="pris-ct">'+t+'</p>'+legend+prisSwitch(view,'pris-seg-card','Spotpris')+'</div>'
+    return '<div class="pris-ch"><p class="pris-ct">'+t+'</p>'+legend+(C.z?'':prisSwitch(view,'pris-seg-card','Spotpris'))+'</div>'
       +prisCapHTML(true,caption,panel,o.open);};
   var two=all.slice(0,2),nFive=all.length?Math.min(5,all.length):5,five=all.slice(0,nFive);
   var nowSlot=today&&today.date===todayStr?nowHour:-1;
-  var card2='<section class="pris-card pp2" aria-label="Næste 2 døgn">'+head('Næste 2 døgn')
-    +prisChart(two,2,{ref:td||[],nowSlot:nowSlot,title:'Elpris time for time næste 2 døgn'})+'</section>';
-  var card5='<section class="pris-card pp5" aria-label="Næste 5 døgn">'+head('Næste 5 døgn')
-    +prisChart(five,nFive,{nowSlot:nowSlot,xDays:true,seps:true,title:'Elpris time for time næste 5 døgn'})+'</section>';
+  var t2=L.next+' '+L.p2,t5=L.next+' '+L.p5,ttl=L.hourly+' '+L.next.toLowerCase()+' ';
+  var card2='<section class="pris-card pp2" aria-label="'+t2+'">'+head(t2)
+    +prisChart(two,2,{ref:td||[],nowSlot:nowSlot,title:ttl+L.p2,C:C})+'</section>';
+  var card5='<section class="pris-card pp5" aria-label="'+t5+'">'+head(t5)
+    +prisChart(five,nFive,{nowSlot:nowSlot,xDays:true,seps:true,title:ttl+L.p5,C:C})+'</section>';
   return '<div class="pris" data-period="'+period+'" data-view="'+view+'" data-key="'+prisEsc(o.key||'')
     +'" data-hour="'+nowHour+'" data-date="'+todayStr+'">'+hero
-    +'<div class="pris-right">'+tabs+card2+card5+prisTiles(all,nowHour,2,'pp2')+prisTiles(all,nowHour,5,'pp5')+'</div>'
-    +prisDayRows(all)+'</div>';
+    +'<div class="pris-right">'+tabs+card2+card5+prisTiles(all,nowHour,2,'pp2',C)+prisTiles(all,nowHour,5,'pp5',C)+'</div>'
+    +prisDayRows(all,C)+'</div>';
+}
+
+// ── The country pages and /norden: everything around the screen ──
+
+/** The mean of a day's available prices, or null. */
+function prisAvg(ps){
+  var s=0,n=0;
+  for(var h=0;h<ps.length;h++)if(ps[h]!=null){s+=ps[h];n++;}
+  return n?s/n:null;
+}
+/** Where a zone's own page is: /norge#no2, /finland, /dk1; NL has none. */
+function prisHref(k){
+  for(var p in PRIS_COUNTRIES)if(PRIS_COUNTRIES[p].zones.indexOf(k)>=0)return '/'+p+(PRIS_COUNTRIES[p].zones.length>1?'#'+k:'');
+  return /^dk/.test(k)?'/'+k:'';
+}
+
+/** The zone tabs of a country page (none for a single zone): real links with the
+ *  tablist roles; the page's script moves the selection. */
+function prisZoneTabs(pg,sel){
+  var C=PRIS_COUNTRIES[pg];
+  if(C.zones.length<2)return '';
+  return '<div class="zt" role="tablist" aria-label="'+PRIS_I18N[C.lang].zoneTabs+'">'+C.zones.map(function(k){
+    return '<a role="tab" id="zt-'+k+'" href="#'+k+'" data-zone="'+k+'" aria-selected="'+(k===sel)+'" tabindex="'+(k===sel?0:-1)+'">'
+      +ZONES[k].name+'<small>'+ZONES[k].city+'</small></a>';}).join('')+'</div>';
+}
+
+/** The country page's text block, for crawlers and for anyone who wants every zone at a glance:
+ *  each zone's city and name with today's and tomorrow's average, then the basis and the model. */
+function prisZoneList(pg,raws,todayStr){
+  var C=PRIS_COUNTRIES[pg],L=PRIS_I18N[C.lang],rows='';
+  C.zones.forEach(function(k){
+    var z=ZONES[k],raw=raws[k],all=raw?prisDays(zoneToPrisDays(raw,raw.zoneInfo,todayStr),todayStr):[];
+    var v=[0,1].map(function(i){return all[i]?prisAvg(all[i].ps):null;});
+    var mx=Math.max(Math.abs(v[0]||0),Math.abs(v[1]||0));
+    var part=function(w,x){return x==null?'':L.avg+' '+w+' '+prisNum(x,prisDec(mx))+' '+z.sub+'/kWh';};
+    rows+='<li><a href="'+prisHref(k)+'" data-zone="'+k+'"><b>'+z.city+'</b> ('+z.name+')</a>'
+      +(v[0]==null&&v[1]==null?'':': '+[part(L.today,v[0]),part(L.tomorrow,v[1])].filter(Boolean).join(', '))+'</li>';
+  });
+  return '<section class="zl" data-date="'+todayStr+'"><h2>'+L.zonesH+'</h2><ul>'+rows+'</ul>'
+    +'<p class="zl-n">'+L.cap+'. '+L.note+' <a href="https://huggingface.co/Elpriser/nordic-price-forecast" rel="noopener">'+L.model+'</a>.</p></section>';
+}
+
+/** /norden: one row per area in DKK/kWh excl. VAT and taxes — the price now, the average of
+ *  today and of tomorrow, and the lowest to highest of the five days — so the areas can be compared
+ *  across currencies. Danish only. `raws`: zone key → /api/nordic response. */
+function prisNordenHTML(raws,todayStr,nowHour){
+  var dkk=(raws.dk1&&raws.dk1.zoneInfo&&raws.dk1.zoneInfo.rate)||ZONES.dk1.rate;
+  var f=function(x){return x==null?'—':prisNum(x/100,2);};
+  var rows='';
+  ['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'].forEach(function(k){
+    var z=ZONES[k],raw=raws[k],all=raw?prisDays(zoneToPrisDays(raw,{rate:dkk},todayStr),todayStr):[];
+    var lo=null,hi=null,i,h,v;
+    for(i=0;i<all.length;i++)for(h=0;h<24;h++){v=all[i].ps[h];if(v==null)continue;if(lo==null||v<lo)lo=v;if(hi==null||v>hi)hi=v;}
+    var href=prisHref(k),name=z.name+' '+z.city;
+    rows+='<tr id="'+k+'"><th scope="row">'+(href?'<a href="'+href+'">'+name+'</a>':name)+'</th>'
+      +'<td>'+f(all[0]?all[0].ps[nowHour]:null)+'</td><td>'+f(all[0]?prisAvg(all[0].ps):null)+'</td>'
+      +'<td>'+f(all[1]?prisAvg(all[1].ps):null)+'</td><td>'+(lo==null?'—':f(lo)+'–'+f(hi))+'</td></tr>';
+  });
+  return '<div class="nt" data-hour="'+nowHour+'" data-date="'+todayStr+'"><div class="nt-s"><table>'
+    +'<thead><tr><th scope="col">Prisområde</th><th scope="col">Nu</th><th scope="col">I dag<br>gns.</th><th scope="col">I morgen<br>gns.</th>'
+    +'<th scope="col">5 døgn<br>laveste–højeste</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+    +'<p class="nt-cap">Spotpris i DKK/kWh uden moms, afgifter og nettariffer — omregnet fra EUR med Den Europæiske Centralbanks dagskurs ('
+    +prisNum(dkk,2)+' kr pr. euro). De danske sider viser prisen inkl. moms, så tallene her er lavere.</p></div>';
 }
 // ═══ /Pris-skærmen ═══
 
@@ -5158,282 +5290,85 @@ function renderForecastTable(data){
   document.getElementById('fcLoading').style.display='none';
   document.getElementById('fcTableWrapper').style.display='block';
 }
-// ═══ PRISZONER: 13 budområder, oversat UI ═══
-// One page per bidding zone (/no1, /se3, /fi …). Each zone carries its own
-// language, currency and conversion rate; the UI language follows the zone
-// rather than the browser, so a shared link always reads the same for everyone.
-const ZONES={
-  dk1:{name:'DK1',city:'Vestdanmark',country:'Danmark',cc:'DK',lang:'da',cur:'DKK',rate:7.4755,sub:'øre'},
-  dk2:{name:'DK2',city:'Østdanmark',country:'Danmark',cc:'DK',lang:'da',cur:'DKK',rate:7.4755,sub:'øre'},
-  no1:{name:'NO1',city:'Oslo',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:10.84,sub:'øre'},
-  no2:{name:'NO2',city:'Kristiansand',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:10.84,sub:'øre'},
-  no3:{name:'NO3',city:'Trondheim',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:10.84,sub:'øre'},
-  no4:{name:'NO4',city:'Tromsø',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:10.84,sub:'øre'},
-  no5:{name:'NO5',city:'Bergen',country:'Norge',cc:'NO',lang:'no',cur:'NOK',rate:10.84,sub:'øre'},
-  se1:{name:'SE1',city:'Luleå',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
-  se2:{name:'SE2',city:'Sundsvall',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
-  se3:{name:'SE3',city:'Stockholm',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
-  se4:{name:'SE4',city:'Malmö',country:'Sverige',cc:'SE',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
-  fi:{name:'FI',city:'Suomi',country:'Suomi',cc:'FI',lang:'fi',cur:'EUR',rate:1,sub:'snt'},
-  nl:{name:'NL',city:'Nederland',country:'Nederland',cc:'NL',lang:'nl',cur:'EUR',rate:1,sub:'cent'},
-};
-const LOCALE={da:'da-DK',no:'nb-NO',sv:'sv-SE',fi:'fi-FI',nl:'nl-NL',en:'en-GB'};
-const I18N={
-  da:{eyebrow:'Elprisprognose',title:z=>`Elpriser ${z.name} ${z.city}`,
-      table:n=>`Næste ${n} døgn, time for time`,loading:'Henter prognose…',
-      err:'Kunne ikke hente prognosen',day:'Dag',hour:'Time',today:'I dag',avg:'Gns.',
-      fc:'prognose',act:'faktisk',local:c=>`${c}/kWh`,
-      noteModel:'Prognosen laves af én samlet maskinlæringsmodel for alle 13 prisområder, trænet på 2,1 mio. timeobservationer med vejrprognoser som de så ud ved udgivelsen, magasinfyldning i vandkraftzonerne og priser fra ENTSO-E.',
-      noteRaw:'Priserne er rå spotpriser uden afgifter, tariffer og moms. Omregning til lokal valuta bruger Den Europæiske Centralbanks daglige referencekurs.',
-      pick:'Vælg dit prisområde',model:'Se modellen på Hugging Face',noTariff:cc=>cc==='FI'?'Finske nettariffer vises ikke: Energiavirastos register har ikke været opdateret siden juli 2024.':'Hollandske netomkostninger er et fast årligt gebyr efter tilslutningens størrelse, ikke pr. kWh — en kWh-pris ville være misvisende.',total:'Inkl. nettarif og afgifter',net:'Netselskab',netNote:t=>`Nettarif, afgifter og moms er lagt til: ${t} øre/kWh. Kilde: ${'NVE'}.`},
-  no:{eyebrow:'Strømprisprognose',title:z=>`Strømpriser ${z.name} ${z.city}`,
-      table:n=>`Neste ${n} døgn, time for time`,loading:'Henter prognose…',
-      err:'Kunne ikke hente prognosen',day:'Dag',hour:'Time',today:'I dag',avg:'Snitt',
-      fc:'prognose',act:'faktisk',local:c=>`${c}/kWh`,
-      noteModel:'Prognosen lages av én felles maskinlæringsmodell for alle 13 prisområder, trent på 2,1 mill. timeobservasjoner med værvarsler slik de var da de ble utgitt, magasinfylling i vannkraftsonene og priser fra ENTSO-E.',
-      noteRaw:'Prisene er rene spotpriser uten avgifter, nettleie og moms. Omregning til lokal valuta bruker Den europeiske sentralbankens daglige referansekurs.',
-      pick:'Velg prisområdet ditt',model:'Se modellen på Hugging Face',noTariff:cc=>cc==='FI'?'Finsk nettleie vises ikke: registeret er ikke oppdatert siden juli 2024.':'Nederlandske nettkostnader er et fast årsgebyr etter tilknytningens størrelse, ikke per kWh.',total:'Inkl. nettleie og avgifter',net:'Nettselskap',netNote:t=>`Nettleie, forbruksavgift og mva er lagt til: ${t} øre/kWh. Kilde: NVE (NLOD).`},
-  sv:{eyebrow:'Elprisprognos',title:z=>`Elpriser ${z.name} ${z.city}`,
-      table:n=>`Kommande ${n} dygn, timme för timme`,loading:'Hämtar prognos…',
-      err:'Kunde inte hämta prognosen',day:'Dag',hour:'Timme',today:'I dag',avg:'Snitt',
-      fc:'prognos',act:'faktisk',local:c=>`${c}/kWh`,
-      noteModel:'Prognosen görs av en gemensam maskininlärningsmodell för alla 13 elområden, tränad på 2,1 milj. timobservationer med väderprognoser som de såg ut vid publiceringen, magasinfyllnad i vattenkraftområdena och priser från ENTSO-E.',
-      noteRaw:'Priserna är rena spotpriser utan skatter, nätavgifter och moms. Omräkning till lokal valuta använder Europeiska centralbankens dagliga referenskurs.',
-      pick:'Välj ditt elområde',model:'Se modellen på Hugging Face',noTariff:cc=>cc==='FI'?'Finsk elnätsavgift visas inte: registret har inte uppdaterats sedan juli 2024.':'Nederländska nätkostnader är en fast årsavgift efter anslutningens storlek, inte per kWh.',total:'Inkl. elnätsavgift och skatt',net:'Elnätsföretag',netNote:t=>`Elnätsavgift, energiskatt och moms är tillagt: ${t} öre/kWh. Källa: Energimarknadsinspektionen.`},
-  fi:{eyebrow:'Sähkön hintaennuste',title:z=>`Sähkön hinta ${z.name} ${z.city}`,
-      table:n=>`Seuraavat ${n} vuorokautta, tunneittain`,loading:'Haetaan ennustetta…',
-      err:'Ennusteen haku epäonnistui',day:'Päivä',hour:'Tunti',today:'Tänään',avg:'Ka.',
-      fc:'ennuste',act:'toteutunut',local:c=>`${c}/kWh`,
-      noteModel:'Ennusteen tekee yksi yhteinen koneoppimismalli kaikille 13 hinta-alueelle. Se on koulutettu 2,1 miljoonalla tuntihavainnolla käyttäen sääennusteita sellaisina kuin ne julkaisuhetkellä olivat, vesivoima-alueiden varastotäyttöä ja ENTSO-E:n hintoja.',
-      noteRaw:'Hinnat ovat pörssihintoja ilman veroja, siirtomaksuja ja arvonlisäveroa. Valuuttamuunnos käyttää Euroopan keskuspankin päivittäistä viitekurssia.',
-      pick:'Valitse hinta-alueesi',model:'Katso malli Hugging Facessa',noTariff:cc=>'Siirtomaksuja ei näytetä: Energiaviraston rekisteriä ei ole päivitetty heinäkuun 2024 jälkeen.',total:'Sis. siirto ja verot',net:'Verkkoyhtiö',netNote:t=>`+${t}`},
-  nl:{eyebrow:'Stroomprijsverwachting',title:z=>`Stroomprijzen ${z.name} ${z.city}`,
-      table:n=>`Komende ${n} dagen, per uur`,loading:'Verwachting laden…',
-      err:'Kon de verwachting niet laden',day:'Dag',hour:'Uur',today:'Vandaag',avg:'Gem.',
-      fc:'verwachting',act:'werkelijk',local:c=>`${c}/kWh`,
-      noteModel:'De verwachting komt van één gezamenlijk machine-learningmodel voor alle 13 prijsgebieden, getraind op 2,1 mln. uurwaarnemingen met weersverwachtingen zoals ze bij publicatie luidden, stuwmeerstanden in de waterkrachtgebieden en prijzen van ENTSO-E.',
-      noteRaw:'Dit zijn kale spotprijzen zonder belastingen, nettarieven en btw. Omrekening naar lokale valuta gebruikt de dagelijkse referentiekoers van de Europese Centrale Bank.',
-      pick:'Kies je prijsgebied',model:'Bekijk het model op Hugging Face',noTariff:cc=>'Netkosten zijn een vast jaartarief op basis van uw aansluitcapaciteit, niet per kWh — een prijs per kWh zou misleidend zijn.',total:'Incl. netkosten en belasting',net:'Netbeheerder',netNote:t=>`+${t}`},
-  en:{eyebrow:'Electricity price forecast',title:z=>`Electricity prices ${z.name} ${z.city}`,
-      table:n=>`Next ${n} days, hour by hour`,loading:'Loading forecast…',
-      err:'Could not load the forecast',day:'Day',hour:'Hour',today:'Today',avg:'Avg.',
-      fc:'forecast',act:'actual',local:c=>`${c}/kWh`,
-      noteModel:'The forecast comes from a single machine-learning model covering all 13 bidding zones, trained on 2.1M hourly observations using weather forecasts as they stood when issued, hydro reservoir levels and ENTSO-E prices.',
-      noteRaw:'These are raw spot prices before taxes, grid tariffs and VAT. Currency conversion uses the European Central Bank\'s daily reference rate.',
-      pick:'Choose your price area',model:'See the model on Hugging Face',noTariff:cc=>cc==='FI'?'Finnish grid tariffs are not shown: the national register has not been updated since July 2024.':'Dutch grid cost is a fixed annual charge based on connection size, not per kWh — a per-kWh figure would mislead.',total:'Incl. grid tariff and tax',net:'Grid company',netNote:t=>`Grid tariff, tax and VAT added: ${t} per kWh.`},
-};
-let _zData=null,_zLoad=0,_zZone='dk1';
-
-function zoneLang(z){return (ZONES[z]||ZONES.dk1).lang;}
-function T(z){return I18N[zoneLang(z)]||I18N.en;}
-
-async function loadZone(zone){
-  _zZone=zone; const id=++_zLoad, z=ZONES[zone], t=T(zone);
-  document.documentElement.lang=z.lang;
-  document.getElementById('zEyebrow').textContent=t.eyebrow;
-  document.getElementById('zTitle').textContent=t.title(z);
-  document.getElementById('zZoneLabel').textContent=`${z.name} · ${z.country}`;
-  document.getElementById('zLoadingText').textContent=t.loading;
-  document.getElementById('zCurLocal').textContent=t.local(z.sub);
-  document.getElementById('zNoteModel').innerHTML=t.noteModel+
-    ` <a href="https://huggingface.co/Elpriser/nordic-price-forecast" target="_blank" rel="noopener" class="text-brand-500 underline">${t.model}</a>.`;
-  document.getElementById('zNoteRaw').textContent=t.noteRaw;
-  document.getElementById('zLoading').style.display='';
-  document.getElementById('zWrap').style.display='none';
-  loadTariffs(zone);
+// ═══ PRISOMRÅDER: /norge, /sverige, /finland and /norden ═══
+// The country pages draw the very Pris screen of the Danish pages (prisHTML with `zone`), from
+// /api/nordic through zoneToPrisDays. The server draws the country's first zone, the tabs and the
+// text block into the HTML; this swaps the screen when a tab is picked and draws it all when the
+// server did not (local development, or a render from an earlier hour). Everything it draws is
+// made by the functions of the Pris block above.
+const ZP={raw:{},page:null,sel:null,load:0};
+function zoneRaw(k){
+  return ZP.raw[k]||(ZP.raw[k]=dedupedFetch('/api/nordic?zone='+k).catch(e=>{delete ZP.raw[k];throw e;}));
+}
+async function zoneRaws(keys){
+  const res=await Promise.allSettled(keys.map(zoneRaw)),out={};
+  keys.forEach((k,i)=>{if(res[i].status==='fulfilled')out[k]=res[i].value;});
+  return out;
+}
+function openZonePage(pg){
+  document.querySelector('[data-page="zone"]').classList.add('active');
+  const C=PRIS_COUNTRIES[pg],h=hashText();
+  ZP.page=pg;
+  document.documentElement.lang=C.lang;
+  document.getElementById('zH1').textContent=PRIS_I18N[C.lang].h1;
+  showZone(C.zones.includes(h)?h:C.def);
+  const list=document.getElementById('zList'),today=cphDate();
+  if(!(list.firstElementChild&&list.firstElementChild.dataset.date===today))
+    zoneRaws(C.zones).then(r=>{if(ZP.page===pg)list.innerHTML=prisZoneList(pg,r,today);});
+}
+/** Select zone `k`: the tab, then the screen (kept as the server drew it when it is this zone and this hour). */
+async function showZone(k){
+  const id=++ZP.load,mount=prisMount(),box=document.getElementById('zTabs'),panel=document.getElementById('zPanel');
+  ZP.sel=k;
+  if(!box.firstElementChild)box.innerHTML=prisZoneTabs(ZP.page,k);
+  box.querySelectorAll('[role="tab"]').forEach(a=>{const on=a.dataset.zone===k;a.setAttribute('aria-selected',String(on));a.tabIndex=on?0:-1;});
+  const cur0=box.querySelector('[aria-selected="true"]');if(cur0)setTimeout(()=>cur0.scrollIntoView({block:'nearest',inline:'nearest'}));   // the row scrolls sideways on a phone; after route() has shown the page
+  if(box.firstElementChild){panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby','zt-'+k);}
+  const today=cphDate(),hour=cphHour(),cur=mount.querySelector('.pris');
+  if(cur&&cur.dataset.key===k&&cur.dataset.hour===String(hour)&&cur.dataset.date===today)return;
+  panel.classList.add('zp-busy');
   try{
-    const r=await fetch(`/api/nordic?zone=${zone}`);
-    if(id!==_zLoad)return;
-    const j=await r.json();
-    if(j.error){document.getElementById('zLoading').innerHTML=`<span class="text-red-500">${t.err}</span>`;return;}
-    _zData=j; renderZone(); track('zone_view',{zone});
+    const raw=await zoneRaw(k);
+    if(id!==ZP.load)return;
+    PV.sel=null;
+    mount.innerHTML=prisHTML(zoneToPrisDays(raw,raw.zoneInfo,today),today,hour,
+      {zone:k,period:PV.period,key:k,where:ZONES[k].name+' '+ZONES[k].city});
+    track('zone_view',{zone:k});
   }catch(e){
-    if(id===_zLoad)document.getElementById('zLoading').innerHTML=`<span class="text-red-500">${t.err}</span>`;
+    if(id===ZP.load)mount.innerHTML='<p class="pris-err">'+PRIS_I18N[ZONES[k].lang].none+'</p>';
   }
+  if(id===ZP.load)panel.classList.remove('zp-busy');
 }
-
-/** The zone's curve: today and two days ahead through renderZone's own cvt(),
- *  so it follows the currency dropdown and grid company exactly as the table
- *  does. Labels come from the zone's locale — weekday and date via Intl, the
- *  settled/forecast words from the reviewed I18N set — and the day after today
- *  is named by weekday, as in the table, rather than by a new word for
- *  "tomorrow" in five languages. */
-function renderZoneForecast(j,z,t,loc,cvt,dec,local){
-  const el=document.getElementById('zoneForecast'),wrap=document.getElementById('zoneForecastWrap');
-  if(!el||!wrap)return;
-  // the feed's hours are Copenhagen hours
-  const today=cphDateOf(new Date());
-  const nowH=cphHourOf(new Date());
-  const days=j.days.map(d=>({date:d.date,type:d.type,prices:d.prices.map(p=>({hour:p.hour,price:cvt(p.eur_mwh)}))}));
-  const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
-  const wdF=new Intl.DateTimeFormat(loc,{weekday:'long',timeZone:'UTC'});
-  const dmF=new Intl.DateTimeFormat(loc,{day:'numeric',month:'short',timeZone:'UTC'});
-  const unit=local?`${z.sub}/kWh`:'EUR/MWh';
-  const html=fcChartHTML(days,today,nowH,{today:t.today,tomorrow:null,wd:dt=>cap(wdF.format(dt)),
-    dm:dt=>dmF.format(dt),actual:cap(t.act),forecast:cap(t.fc),unit,dec,aria:`${t.table(3)} · ${unit}`});
-  if(!html){wrap.style.display='none';return;}
-  const n=(html.match(/<div class="mini[ "]/g)||[]).length;
-  document.getElementById('zFcTitle').textContent=t.table(n);
-  document.getElementById('zFcUnit').textContent=unit;
-  el.innerHTML=html;wrap.style.display='';
+/** A tab (or a zone in the text block) was picked: select it in place and keep the address in step. */
+function pickZone(k){
+  if(PRIS_COUNTRIES[ZP.page].zones.length>1){try{history.replaceState(null,'',location.pathname+location.search+'#'+k);}catch(_){}}
+  showZone(k);
 }
-function renderZone(){
-  const j=_zData; if(!j)return;
-  const z=ZONES[_zZone], t=T(_zZone), loc=LOCALE[z.lang]||'en-GB';
-  const mode=document.getElementById('zCur').value;
-  const local=mode!=='eur';
-  const tar=mode==='total'?currentTariff():null;
-  document.getElementById('zNet').style.display=mode==='total'&&_tariffs?'':'none';
-  // EUR/MWh -> the zone's sub-unit per kWh (øre/öre/snt/cent): /1000 for kWh,
-  // x rate for currency, x100 for the sub-unit. Sub-units matter here: NL
-  // prices in EUR/kWh span only 0.00-0.17, so two decimals collapse genuinely
-  // different hours onto the same "0,00".
-  //
-  // In "total" mode the grid tariff is added on top. The spot price gets VAT
-  // first where it applies — northern Norway is VAT-exempt on electricity, and
-  // the tariff data carries that per company rather than per bidding zone,
-  // because the exemption boundary does not follow the zone boundary.
-  // The ECB rate the API returns; the constant in ZONES is only its fallback.
-  const rate=(j.zoneInfo&&j.zoneInfo.rate)||z.rate;
-  const vat=tar?(tar.has_vat===false?1:1+(_tariffs.vat_pct||0)/100):1;
-  const cvt=v=>{
-    if(v==null)return null;
-    if(!local)return v;
-    const base=v/1000*rate*100;
-    return tar? base*vat + tar.total_ore_kwh : base;
-  };
-  const mx=Math.max(...j.days.flatMap(d=>d.prices.map(p=>Math.abs(cvt(p.eur_mwh)??0))));
-  // Aim for ~3 significant figures whatever the zone's price level.
-  const dec=!local?0:(mx>=100?0:mx>=10?1:2);
-  document.getElementById('zUnit').textContent=local?`${z.sub}/kWh`:'EUR/MWh';
-  const noteEl=document.getElementById('zNoteRaw');
-  if(tar&&t.netNote){noteEl.textContent=t.netNote(tar.total_ore_kwh.toFixed(1));}
-  else if(mode==='total'&&_tariffs){noteEl.textContent=t.net+'…';}
-  else{noteEl.textContent=t.noteRaw;}
-  document.getElementById('zTableTitle').textContent=t.table(j.days.length);
-  const all=[];j.days.forEach(d=>d.prices.forEach(p=>{const v=cvt(p.eur_mwh);if(v!=null)all.push(v);}));
-  setColorRange(all);
-  const dk=isDark(),today=fmt(new Date());
-  const thSub=dk?'text-gray-500':'text-gray-400',thDay=dk?'text-gray-300':'text-gray-700';
-  const thT=dk?'text-brand-400':'text-brand-600',tdH=dk?'text-gray-500':'text-gray-500';
-  const emptyBg=dk?'bg-gray-800':'bg-gray-100';
-  // Dates render through Intl, so weekday and month names follow the zone's
-  // language automatically instead of needing a table per locale.
-  const wdF=new Intl.DateTimeFormat(loc,{weekday:'short'});
-  const moF=new Intl.DateTimeFormat(loc,{month:'long',year:'numeric'});
-  const days=j.days, d0=new Date(days[0].date);
-  let h=`<tr><th class="pr-1 sm:pr-3"></th><th colspan="${days.length}" class="text-xs ${thSub} font-normal">${moF.format(d0)}</th></tr>`;
-  h+=`<tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">${t.day}</th>`;
-  days.forEach(d=>{h+=`<th class="px-0.5 sm:px-1.5 ${d.date===today?thT:thDay}">${new Date(d.date).getDate()}</th>`;});
-  h+=`</tr><tr><th class="pr-1 sm:pr-3 text-right text-xs ${thSub} font-normal">${t.hour}</th>`;
-  days.forEach(d=>{const isT=d.date===today;
-    h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${isT?thT:thSub}">${isT?t.today:wdF.format(new Date(d.date))}</th>`;});
-  h+='</tr><tr><th class="pr-1 sm:pr-3"></th>';
-  days.forEach(d=>{const f=d.type==='forecast';
-    h+=`<th class="px-0.5 sm:px-1.5 text-xs font-normal ${f?thSub:(dk?'text-emerald-400':'text-emerald-600')}" style="font-size:0.6rem">${f?t.fc:t.act}</th>`;});
-  h+='</tr>';
-  const isMobile=window.innerWidth<640;
-  for(let hr=0;hr<24;hr++){
-    const lb=isMobile?String(hr):String(hr).padStart(2,'0')+'-'+String(hr+1===24?0:hr+1).padStart(2,'0');
-    h+=`<tr><td class="pr-1 sm:pr-3 text-right text-xs ${tdH} py-0.5" style="white-space:nowrap">${lb}</td>`;
-    days.forEach(d=>{
-      const p=d.prices.find(x=>x.hour===hr),v=p?cvt(p.eur_mwh):null;
-      if(v==null){h+=`<td class="px-0.5 py-0.5 ${emptyBg}"></td>`;return;}
-      h+=`<td class="px-0.5 sm:px-1.5 py-0.5 text-center${d.type==='forecast'?' opacity-80':''}" style="background:${bg(v)};color:${fg(v)}">${num(v,dec)}</td>`;
-    });
-    h+='</tr>';
-  }
-  h+=`<tr class="border-t border-gray-300 dark:border-gray-600"><td class="pr-1 sm:pr-3 text-right text-xs font-bold pt-1 ${thSub}">${t.avg}</td>`;
-  days.forEach(d=>{
-    const vals=d.prices.map(p=>cvt(p.eur_mwh)).filter(v=>v!=null);
-    if(!vals.length){h+='<td></td>';return;}
-    h+=`<td class="px-0.5 sm:px-1.5 pt-1 text-center text-xs font-bold ${d.date===today?thT:thDay}">${num(vals.reduce((a,b)=>a+b,0)/vals.length,dec)}</td>`;
-  });
-  h+='</tr>';
-  document.getElementById('zWrap').innerHTML='<table class="mx-auto text-xs sm:text-sm tabular">'+h+'</table>';
-  renderZoneForecast(j,z,t,loc,cvt,dec,local);
-  document.getElementById('zLoading').style.display='none';
-  document.getElementById('zWrap').style.display='block';
-}
-
-// ─── Nettarif: NO og SE har brugbare registre; DK har sine egne sider,
-//     FI og NL mangler kilder der kan bære en pris pr. kWh (se blogindlæg).
-let _tariffs=null,_netPick=null;
-function tariffCountry(zone){const c=(ZONES[zone]||{}).cc;return c==='NO'?'no':c==='SE'?'se':null;}
-async function loadTariffs(zone){
-  const c=tariffCountry(zone);
-  const sel=document.getElementById('zNet'), opt=document.getElementById('zCurTotal');
-  if(!c){
-    // Finland's central register stalled after July 2024; Dutch grid cost is a
-    // fixed capacity charge by connection size, so a per-kWh figure would
-    // mislead rather than inform. Say so instead of silently offering less.
-    _tariffs=null; sel.style.display='none'; opt.style.display='none';
-    const n=document.getElementById('zNoTariff'), f=T(zone).noTariff;
-    if(n&&f){n.textContent=f((ZONES[zone]||{}).cc);n.style.display='';}
-    return;
-  }
-  const n0=document.getElementById('zNoTariff'); if(n0)n0.style.display='none';
-  opt.style.display=''; opt.textContent=T(zone).total;
-  try{
-    const r=await fetch(`/api/tariffs?country=${c}`);
-    const j=await r.json();
-    if(j.error){_tariffs=null;opt.style.display='none';return;}
-    _tariffs=j;
-    // Norway ships a region per company, Sweden does not — so Norwegian
-    // companies are grouped by county and Swedish ones listed flat.
-    const byR={};
-    j.companies.forEach(co=>{(byR[co.region||'']=byR[co.region||'']||[]).push(co);});
-    const saved=localStorage.getItem('net_'+c);
-    sel.innerHTML=`<option value="">${T(zone).net}…</option>`+
-      Object.entries(byR).map(([r,list])=>{
-        const opts=list.map(co=>`<option value="${co.id}">${co.name} — ${co.total_ore_kwh.toFixed(0)}</option>`).join('');
-        return r?`<optgroup label="${r}">${opts}</optgroup>`:opts;
-      }).join('');
-    if(saved&&j.companies.some(co=>co.id===saved)){sel.value=saved;_netPick=saved;}
-  }catch(e){_tariffs=null;opt.style.display='none';}
-}
-function pickNet(){
-  const c=tariffCountry(_zZone); _netPick=document.getElementById('zNet').value;
-  if(c&&_netPick)localStorage.setItem('net_'+c,_netPick);
-  track('tariff_pick',{zone:_zZone,net:_netPick});
-  renderZone();
-}
-function currentTariff(){
-  if(!_tariffs||!_netPick)return null;
-  return _tariffs.companies.find(co=>co.id===_netPick)||null;
-}
-
-// ═══ GLOBUS: lokationsvælger ═══
-function buildGlobe(){
-  const grid=document.getElementById('globeGrid'); if(grid.dataset.built)return;
-  const byCountry={};
-  Object.entries(ZONES).forEach(([k,z])=>{(byCountry[z.country]=byCountry[z.country]||[]).push([k,z]);});
-  // The href is attached afterwards, not written into the template. Written
-  // inline, the unevaluated expression ships as literal text in the served
-  // HTML, and Google crawls it: that URL collected 55 impressions and a click
-  // before the routing fix started returning 404 for it.
-  grid.innerHTML=Object.entries(byCountry).map(([c,list])=>
-    `<div class="globe-col"><h3>${c}</h3>`+
-    list.map(([k,z])=>`<a data-zone="${k}" onclick="closeGlobe()"><span class="gz">${z.name}</span><span class="gc">${z.city}</span></a>`).join('')+
-    '</div>').join('');
-  grid.querySelectorAll('a[data-zone]').forEach(a=>{a.href='/'+a.dataset.zone;});
-  grid.dataset.built='1';
-}
-function openGlobe(){
-  buildGlobe();
-  const t=T(_zZone);
-  document.getElementById('globeHeading').textContent=t.pick;
-  const o=document.getElementById('globeOverlay');
-  o.hidden=false; document.body.style.overflow='hidden';
-  track('globe_open',{from:_zZone});
-}
-function closeGlobe(){
-  document.getElementById('globeOverlay').hidden=true;
-  document.body.style.overflow='';
-}
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&!document.getElementById('globeOverlay')?.hidden)closeGlobe();
+document.addEventListener('click',e=>{
+  const a=e.target.closest?e.target.closest('#zTabs [data-zone],#zList [data-zone]'):null;
+  if(!a)return;
+  e.preventDefault();
+  pickZone(a.dataset.zone);
+  if(a.closest('#zList'))document.getElementById('zTabs').scrollIntoView({block:'start'});
 });
+document.addEventListener('keydown',e=>{
+  const tab=e.target.closest?e.target.closest('#zTabs [role="tab"]'):null;
+  if(!tab)return;
+  const tabs=[...tab.parentElement.children],i=tabs.indexOf(tab);
+  const j=e.key==='ArrowRight'?(i+1)%tabs.length:e.key==='ArrowLeft'?(i+tabs.length-1)%tabs.length:e.key==='Home'?0:e.key==='End'?tabs.length-1:-1;
+  if(j<0)return;
+  e.preventDefault();
+  tabs[j].focus();
+  pickZone(tabs[j].dataset.zone);
+});
+/** /norden: every area in one table, in DKK. */
+async function openNorden(){
+  document.querySelector('[data-page="norden"]').classList.add('active');
+  const el=document.getElementById('nordenTable'),today=cphDate(),hour=cphHour(),cur=el.querySelector('.nt');
+  if(cur&&cur.dataset.date===today&&cur.dataset.hour===String(hour))return;
+  const raws=await zoneRaws(Object.keys(ZONES));
+  el.innerHTML=prisNordenHTML(raws,today,hour);
+}
 
 // ═══ SHELLY LIVE TARIFF PAGE ═══
 let _shellyVal='DK1';
@@ -5547,17 +5482,5 @@ async function renderShellyTariffTable(){
 // ═══ INIT ═══
 buildNetDialog();initBehaviorTracking();route();
 </script>
-<!-- ═══════ GLOBUS: lokations-/sprogvælger (Tesla-stil) ═══════ -->
-<div id="globeOverlay" class="globe-overlay" hidden onclick="if(event.target===this)closeGlobe()">
-  <div class="globe-panel" role="dialog" aria-modal="true" aria-labelledby="globeHeading">
-    <div class="globe-head">
-      <h2 id="globeHeading">Choose your price area</h2>
-      <button onclick="closeGlobe()" aria-label="Close" class="globe-x">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div class="globe-grid" id="globeGrid"></div>
-  </div>
-</div>
 </body>
 </html>

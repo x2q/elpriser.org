@@ -20,17 +20,22 @@ const STYLE  = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
 const ROUTES = fs.readFileSync(path.join(ROOT, 'functions', '[[path]].js'), 'utf8');
 const SERVER = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
 
-// The five pages folded into others (2026-10-17 cleanup) and where they now go. This is the
-// ONE copy of the expectation: functions/[[path]].js and server.js must agree with it, and
-// nothing else in the site may mention the retired paths.
+// The pages folded into others and where they now go: five blog posts (2026-10-17 cleanup) and the
+// eleven foreign zone pages that became /norge, /sverige, /finland and /norden. This is the ONE copy
+// of the expectation: functions/[[path]].js and server.js must agree with it, and nothing else in the
+// site may mention the retired paths.
 const LEGACY = {
   '/blog/v2g-v2h-bidirektional-opladning': '/blog',
   '/blog/biler-ladere-v2h-v2g': '/blog',
   '/blog/shelly-elpris-automation': '/automation#shelly',
   '/blog/home-assistant-elpriser': '/automation#home-assistant',
   '/blog/forsta-din-elpris': '/om-elpriser',
+  '/no1': '/norge#no1', '/no2': '/norge#no2', '/no3': '/norge#no3', '/no4': '/norge#no4', '/no5': '/norge#no5',
+  '/se1': '/sverige#se1', '/se2': '/sverige#se2', '/se3': '/sverige#se3', '/se4': '/sverige#se4',
+  '/fi': '/finland', '/nl': '/norden#nl',
 };
-const LEGACY_SLUGS = Object.keys(LEGACY).map(k => k.replace('/blog/', ''));
+const LEGACY_SLUGS = Object.keys(LEGACY).filter(k => k.startsWith('/blog/')).map(k => k.replace('/blog/', ''));
+const LEGACY_ZONES = Object.keys(LEGACY).filter(k => !k.startsWith('/blog/'));
 
 let _passed = 0, _failed = 0;
 const results = [];
@@ -262,8 +267,8 @@ test('server: every top-level piece the renderer calls still exists', () => {
   // so the presence of each one is asserted directly.
   const SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const required = [
-    'const SSR_ZONES', 'const ZONE_T', 'const ZONE_CUR_RE',
-    'function buildZoneCurrency(', 'function buildZoneIntro(',
+    'var ZONES', 'var PRIS_I18N', 'var PRIS_COUNTRIES', 'const ZONE_SSR_VERSION', 'function renderZonePage(',
+    'function zoneToPrisDays(', 'function prisZoneTabs(', 'function prisZoneList(', 'function prisNordenHTML(',
     'function fcChartHTML(', 'function buildSitemap(',
     'const CONTENT_LASTMOD', 'const SITEMAP_URLS',
   ];
@@ -271,7 +276,7 @@ test('server: every top-level piece the renderer calls still exists', () => {
   assert.deepEqual(missing, [], `functions/[[path]].js is missing: ${missing.join(', ')}`);
 
   // And nothing may be referenced that is no longer defined.
-  for (const name of ['buildZoneIntro', 'buildZoneCurrency', 'fcChartHTML']) {
+  for (const name of ['zoneToPrisDays', 'prisZoneTabs', 'prisZoneList', 'prisNordenHTML', 'renderZonePage', 'fcChartHTML']) {
     const called = new RegExp(`[^a-zA-Z.]${name}\\s*\\(`).test(
       SRC.slice(SRC.indexOf('async function renderHomepage')));
     const defined = SRC.includes(`function ${name}(`);
@@ -442,37 +447,41 @@ test('seo: no heading tag written inside an HTML comment', () => {
   assert.deepEqual(bad, [], `heading tag inside a comment: ${bad.join(' | ')}`);
 });
 
-test('zone pages: curve above the heading, from the table\'s own conversion', () => {
-  const main = INDEX.slice(INDEX.indexOf('data-page="zone"'), INDEX.indexOf('<!-- ═══════ BLOG: Elafgift 2028'));
-  assert.ok(main.indexOf('id="zoneForecastWrap"') > 0 && main.indexOf('id="zoneForecastWrap"') < main.indexOf('id="zTitle"'),
-    'the zone chart is not above the zone heading');
-  const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
-  assert.ok(/#zoneForecast\{min-height:\d+px\}|,#zoneForecast\{min-height:\d+px\}/.test(style), 'no reserved height for the zone chart');
-  // Drawn with renderZone's own cvt, so it follows currency and grid company.
-  assert.ok(/renderZoneForecast\(j,z,t,loc,cvt,dec,local\);/.test(INDEX), 'renderZone does not hand its conversion to the chart');
-  const fn = INDEX.slice(INDEX.indexOf('function renderZoneForecast('), INDEX.indexOf('function renderZone(){'));
-  assert.ok(/price:cvt\(p\.eur_mwh\)/.test(fn) && !/fetch\(/.test(fn), 'the zone chart does not use the table\'s numbers');
+test('foreign-area pages: one section with tabs, the Pris screen and a text block — and none of the old zone page is left', () => {
+  const main = INDEX.slice(INDEX.indexOf('<main style="display:none" data-page="zone"'), INDEX.indexOf('<!-- ═══════ NORDEN'));
+  assert.ok(main.length > 100, 'the zone section is gone');
+  const at = x => main.indexOf(x);
+  assert.ok(at('<h1 class="vh" id="zH1">') > 0 && at('<!--SSR_ZONE_TABS-->') > at('id="zH1"') && at('<!--SSR_PRIS-->') > at('<!--SSR_ZONE_TABS-->') && at('<!--SSR_ZONE_LIST-->') > at('<!--SSR_PRIS-->'),
+    'the section is not h1, tabs, Pris screen, text block in that order');
+  assert.ok(/<div class="pris-page" data-pris-mount id="zPanel"><!--SSR_PRIS--><\/div>/.test(main), 'the screen is not the canonical Pris mount');
+  assert.equal((main.match(/<h[1-6]/g) || []).length, 1, 'the zone section carries a heading of its own besides the h1');
+  // NO second renderer and no per-language copies: the old page's code, markup and strings are gone.
+  for (const gone of ['function loadZone(', 'function renderZone(', 'function renderZoneForecast(', 'const I18N=', 'function zoneLang(', 'function loadTariffs(', 'function pickNet(',
+    'function openGlobe(', 'function buildGlobe(', 'globeOverlay', 'globe-grid', 'zoneForecast', 'id="zCur"', 'id="zNet"', 'id="zWrap"', 'zNoteModel', 'const LOCALE=', 'const ZONES='])
+    assert.ok(!INDEX.includes(gone), `${gone} is still in index.html`);
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  for (const gone of ['SSR_ZONES', 'ZONE_T ', 'ZONE_CUR_RE', 'buildZoneCurrency', 'buildZoneIntro', 'SSR_ZONE_INTRO', 'opts.zone '])
+    assert.ok(!SRV.includes(gone) && !INDEX.includes(gone), `${gone} is still in the code`);
+  for (const [i, why] of [['id="zEyebrow"', 'the old eyebrow'], ['id="zTitle"', 'the old title']]) assert.ok(!INDEX.includes(i), why);
+  // The page draws the canonical screen, spot only, from the adapter — and the server does the same.
+  assert.ok(/prisHTML\(zoneToPrisDays\(raw,raw\.zoneInfo,today\),today,hour,\s*\{zone:k,/.test(INDEX), 'the client does not draw the zone through prisHTML + the adapter');
+  assert.ok(/prisHTML\(zoneToPrisDays\(raw, raw\.zoneInfo, todayDk\), todayDk, nowH,\s*\{ zone: C\.def/.test(SRV), 'the server does not draw the zone through prisHTML + the adapter');
+  // The 10-day horizon never gets this far: the adapter keeps five days.
+  assert.ok(/out\.length<5/.test(INDEX.slice(INDEX.indexOf('function zoneToPrisDays('), INDEX.indexOf('function prisDays('))), 'the adapter does not stop at five days');
 });
 
-test('zone pages: EUR is converted at the ECB rate, not a stale constant', () => {
-  // NOK sat at a fixed 11.7 while the ECB rate was 10.84: every Norwegian
-  // price in øre was ~8 % too high. The API now returns the ECB rate, and both
-  // the server page and the browser must use it rather than their constants.
+test('foreign-area pages: EUR is converted at the ECB rate the API returns; the fallbacks agree with the API', () => {
+  // NOK sat at a fixed 11.7 while the ECB rate was 10.84: every Norwegian price in øre was ~8 % too high.
+  // The API returns the ECB rate; the adapter uses it, and the ZONES constants are only its fallback.
   const API = fs.readFileSync(path.join(ROOT, 'functions/api/[[catchall]].js'), 'utf8');
-  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   assert.ok(/eurofxref-daily\.xml/.test(API) && /rate: fx\.rates\[info\.currency\]/.test(API), '/api/nordic does not return the ECB rate');
-  assert.ok(/const rate=\(j\.zoneInfo&&j\.zoneInfo\.rate\)\|\|z\.rate;/.test(INDEX) && /base=v\/1000\*rate\*100/.test(INDEX),
-    'the browser converts with its constant instead of the API rate');
-  assert.ok(/data\.zoneInfo && data\.zoneInfo\.rate\) \|\| z\.rate/.test(SRV), 'the server page converts with its constant instead of the API rate');
-  // The fallbacks must agree across the three files, or a failed ECB fetch
-  // would show different numbers on the page and in its first paint.
+  const ad = INDEX.slice(INDEX.indexOf('function zoneToPrisDays('), INDEX.indexOf('function prisDays('));
+  assert.ok(/info&&info\.rate>0&&info\.rate/.test(ad) && /p\.eur_mwh\*rate\/10/.test(ad), 'the adapter does not convert with the response\'s rate');
   const fb = API.match(/const FX_FALLBACK = \{ EUR: 1, DKK: ([\d.]+), NOK: ([\d.]+), SEK: ([\d.]+)/);
   assert.ok(fb, 'FX_FALLBACK not found');
-  for (const [cur, v] of [['NOK', fb[2]], ['SEK', fb[3]]]) {
-    assert.ok(INDEX.includes(`cur:'${cur}',rate:${v},`), `index.html ZONES ${cur} fallback is not ${v}`);
-    assert.ok(new RegExp(`rate: ${v.replace('.', '\\.')}, sub:`).test(SRV), `SSR_ZONES ${cur} fallback is not ${v}`);
-  }
-  // And the pages must no longer say the rate is fixed.
+  for (const [cur, v] of [['DKK', fb[1]], ['NOK', fb[2]], ['SEK', fb[3]]])
+    assert.ok(INDEX.includes(`cur:'${cur}',rate:${v},`), `ZONES ${cur} fallback is not ${v}`);
+  // ZONES lives in the canonical block, so the server and the browser cannot disagree (parity is tested).
   assert.ok(!/fast kurs|fixed rate|kiinteää kurssia|vaste koers/.test(INDEX), 'a note still says the conversion uses a fixed rate');
 });
 
@@ -535,10 +544,11 @@ test('seo/llm: nothing claims what the page does not show', () => {
     'the homepage description claims the price includes nettariffer');
   assert.ok(!/id="heroContext">[^<]*inkl\. nettariffer/.test(INDEX), 'the sentence under the homepage price claims nettariffer');
   assert.ok(!/mode=inkl_alt\\` — Current total price right now \(DKK\/kWh, incl\. all tariffs/.test(SRV), 'llms.txt says inkl_alt includes all tariffs');
-  // llms.txt lists every zone page.
+  // llms.txt lists the four foreign-area pages — and none of the eleven retired ones.
   const llms = SRV.slice(SRV.indexOf('const LLMS_TXT = `'), SRV.indexOf('const LLMS_FULL_TXT'));
-  for (const z of ['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl'])
+  for (const z of ['norden', 'norge', 'sverige', 'finland'])
     assert.ok(llms.includes(`https://elpriser.org/${z})`), `llms.txt does not list /${z}`);
+  for (const z of LEGACY_ZONES) assert.ok(!llms.includes(`https://elpriser.org${z})`), `llms.txt still lists ${z}`);
   assert.ok(/\/api\/nordic\?zone=/.test(llms), 'llms.txt does not list /api/nordic');
 });
 
@@ -564,9 +574,25 @@ test('seo: the pages keep the words Search Console shows people typing', () => {
     assert.ok(field(k, 'title').length <= 62, `${k} title is ${field(k, 'title').length} characters; results cut it near 60`);
 });
 
-test('seo: zone pages carry no hreflang cluster', () => {
+test('foreign-area pages: four SEO entries in the page\'s own language, with titles and descriptions that fit a result', () => {
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const entry = k => SRV.slice(SRV.indexOf(`'${k}': {`), SRV.indexOf('\n  },', SRV.indexOf(`'${k}': {`)));
+  const field = (k, f) => (entry(k).match(new RegExp(`${f}: '([^']*)'`)) || [])[1] || '';
+  for (const [k, lang, lead] of [['/norge', 'nb', /^Strømpris prognose Norge/], ['/sverige', 'sv', /^Elpris prognos Sverige/], ['/finland', 'fi', /^Sähkön hinta ennuste/], ['/norden', '', /^Elpriser i Norden/]]) {
+    assert.ok(lead.test(field(k, 'title')), `${k} title`);
+    assert.ok(field(k, 'title').length <= 62, `${k} title is ${field(k, 'title').length} characters`);
+    assert.ok(field(k, 'description').length >= 80 && field(k, 'description').length <= 155, `${k} description is ${field(k, 'description').length} characters`);
+    assert.equal(field(k, 'lang'), lang, `${k} lang`);
+    assert.ok(new RegExp(`'${k.slice(1)}': '(zone|norden)'`).test(SRV), `${k} has no data-page`);
+    assert.ok(INDEX.includes(`'${k}':'${k.slice(1)}'`), `PATH_ROUTES lacks ${k}`);
+    // 2 and 5 døgn only: none of the pages names the feed's longer horizon.
+    assert.ok(!/\b10 (døgn|dager|dygn|vrk|vuorokautta)/i.test(entry(k)), `${k} names a 10-day horizon`);
+  }
+});
+
+test('seo: the foreign-area pages carry no hreflang cluster', () => {
   // They are different markets, not translations of one page. Linking them as
-  // alternates made five pages "the Norwegian version" and /se3 its own Danish one.
+  // alternates made five pages "the Norwegian version" and /se3 its own Danish one (and would make /norge that of /sverige).
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const branch = SRV.slice(SRV.indexOf('if (meta.lang) {'), SRV.indexOf('html = html.replace(\n    /<title>'));
   assert.ok(!/hreflang="\$\{m\.lang\}"/.test(branch) && !/x-default/.test(branch), 'the zone-page hreflang cluster is back');
@@ -636,8 +662,8 @@ test('security: no credential is written into tracked code', () => {
   // history, so the only real control is not to commit it in the first place.
   // Tokens come from the environment (~/.config/elpriser.env, Pages secrets).
   const { execSync } = require('child_process');
-  const files = execSync('git ls-files', { cwd: ROOT, encoding: 'utf8' }).split('\n')
-    .filter(f => /\.(py|js|mjs|sh|json|md|html|toml|yml|yaml)$/.test(f) && !/^(node_modules|dist)\//.test(f) && f !== 'test-static.js');
+  const files = execSync('git ls-files --cached --others --exclude-standard', { cwd: ROOT, encoding: 'utf8' }).split('\n')
+    .filter(f => fs.existsSync(path.join(ROOT, f)) && /\.(py|js|mjs|sh|json|md|html|toml|yml|yaml)$/.test(f) && !/^(node_modules|dist)\//.test(f) && f !== 'test-static.js');
   const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
   const rules = [
     [new RegExp(`(token|secret|api[_-]?key|password|bearer)[^\\n]{0,60}["']${uuid}["']`, 'i'), 'a UUID assigned to something token-like'],
@@ -657,7 +683,7 @@ test('homepage: the bar chart has a zero-based price scale, a unit label and gri
   assert.ok(src.length > 200, 'prisAxis not found');
   const vm = require('vm'); const ctx = {}; vm.createContext(ctx);
   vm.runInContext(src + '\nglobalThis.ax = prisAxis;', ctx);
-  const ax = v => JSON.parse(JSON.stringify(ctx.ax(v)));
+  const ax = (v, sc) => JSON.parse(JSON.stringify(ctx.ax(v, sc)));
   // The mock: highest 3,90 → 4,37 → 4,5; whole-krone steps from zero.
   assert.deepEqual(ax([1.2, 3.9, 2]).ticks, [0, 1, 2, 3, 4]);
   assert.equal(ax([1.2, 3.9, 2]).hi, 4.5);
@@ -669,7 +695,11 @@ test('homepage: the bar chart has a zero-based price scale, a unit label and gri
   // A negative price extends the axis below zero instead of being clipped.
   assert.ok(ax([-0.7, 1.2]).lo < 0 && ax([-0.7, 1.2]).ticks.includes(0));
   const html = INDEX.slice(INDEX.indexOf('function prisChart('), INDEX.indexOf('function prisFlat('));
-  assert.ok(/class="pris-unit">kr\/kWh</.test(html) && /class="pris-gl"/.test(html) && /pris-yl/.test(html), 'unit label, gridlines or axis labels are gone');
+  assert.ok(/class="pris-unit">'\+C\.u\+'\/kWh</.test(html) && /class="pris-gl"/.test(html) && /pris-yl/.test(html), 'unit label, gridlines or axis labels are gone');
+  // A zone's axis follows its unit: the same rule with a grain of 10/100 (øre, öre, snt run from 5 to 300).
+  assert.deepEqual(ax([180], 100).ticks, [0, 50, 100, 150, 200, 250]);
+  assert.deepEqual(ax([24], 10).ticks, [0, 10, 20, 30]);
+  assert.deepEqual(ax([1.2, 3.9, 2], 1).ticks, [0, 1, 2, 3, 4], 'grain 1 is the Danish axis');
 });
 
 test('homepage: the Pris screen is server-rendered, not JS-only', () => {
@@ -683,7 +713,7 @@ test('homepage: the Pris screen is server-rendered, not JS-only', () => {
   assert.ok(!INDEX.includes('<!--SSR_FORECAST_CHART-->') && !ROUTES_SRC.includes('SSR_FORECAST_CHART'), 'the old forecast placeholder is back');
   // prisHTML must put the day list and the per-hour numbers in text.
   const fn = ROUTES_SRC.slice(ROUTES_SRC.indexOf('function prisDayRows('), ROUTES_SRC.indexOf('// ═══ /Pris-skærmen ═══'));
-  assert.ok(/class="pris-week"/.test(fn) && /Børspris/.test(fn) && /Prognose/.test(fn), 'the day list is not text');
+  assert.ok(/class="pris-week"/.test(fn) && /L\.actual/.test(fn) && /L\.fc/.test(fn) && /actual:'Børspris'/.test(ROUTES_SRC) && /fc:'Prognose'/.test(ROUTES_SRC), 'the day list is not text');
   assert.ok(/data-tip="/.test(ROUTES_SRC), 'the hourly figures are gone');
   // The homepage render is cached; a changed markup needs a new key.
   assert.ok(/homepage-ssr-v(\d+)/.test(ROUTES_SRC) && +ROUTES_SRC.match(/homepage-ssr-v(\d+)/)[1] >= 66,
@@ -1341,7 +1371,7 @@ test('footer: ONE link to the explainer, labelled "Forstå din elpris" in Viden 
   for (const gone of Object.keys(LEGACY)) assert.ok(!FOOTER.includes(`href="${gone}"`), `footer still links ${gone}`);
 });
 
-test('footer: all 14 net companies and the two foreign zones sit inside ONE collapsed details, as real links', () => {
+test('footer: all 14 net companies and the four foreign-area pages sit inside ONE collapsed details, as real links', () => {
   const m = FOOTER.match(/<details class="sf-all">\s*<summary>[^]*?Alle netselskaber og prisområder[^]*?<\/summary>([^]*?)<\/details>/);
   assert.ok(m, 'details "Alle netselskaber og prisområder"');
   assert.ok(!/<details[^>]*\bopen\b/.test(m[0]), 'collapsed by default');
@@ -1351,12 +1381,13 @@ test('footer: all 14 net companies and the two foreign zones sit inside ONE coll
   for (const [area, slugs] of Object.entries(NET_SLUGS)) {
     for (const s of slugs) assert.ok(inside.includes(`/${area}/${s}`), `/${area}/${s} is inside the details`);
   }
-  assert.ok(inside.includes('/se3') && inside.includes('/no1'), 'Sverige and Norge are inside the details');
-  assert.equal(inside.length, 16, 'nothing else in there');
+  assert.deepEqual(inside.slice(14), ['/norden', '/norge', '/sverige', '/finland'], 'Andre prisområder: Norden, Norge, Sverige, Finland — in that order, after the 14 nets');
+  assert.equal(inside.length, 18, 'nothing else in there');
+  assert.equal(new Set(inside).size, inside.length, 'no duplicate href in the details');
   for (const h of ['Vestdanmark (DK1)', 'Østdanmark (DK2)', 'Andre prisområder']) assert.ok(m[1].includes(h), `heading ${h}`);
   // Nothing outside the details links a net page: the visible footer stays short.
   const outside = footerHrefs(FOOTER.replace(m[0], ''));
-  assert.deepEqual(outside.filter(h => /^\/(dk[12]\/|se3|no1)/.test(h)), [], 'net pages only behind the disclosure');
+  assert.deepEqual(outside.filter(h => /^\/(dk[12]\/|norden|norge|sverige|finland)/.test(h)), [], 'net pages and foreign-area pages only behind the disclosure');
 });
 
 test('footer: both app stores are linked, rel=noopener, with the Danish button wording', () => {
@@ -1377,7 +1408,7 @@ test('footer: no link list is repeated, and the credits line keeps both external
   const hrefs = footerHrefs(FOOTER);
   const dup = hrefs.filter((h, i) => hrefs.indexOf(h) !== i);
   assert.deepEqual(dup, [], 'a link appears twice in the footer');
-  assert.ok(hrefs.length <= 45, `footer has ${hrefs.length} links`);
+  assert.equal(hrefs.length, 37, `footer has ${hrefs.length} links: 17 in the groups and the apps, 14 nets, Norden/Norge/Sverige/Finland, and the two credits`);
   const legal = FOOTER.match(/<p class="sf-legal">([^]*?)<\/p>/);
   assert.ok(legal, 'credits line');
   assert.ok(/&copy; Elpriser\.org &mdash; Data fra <a href="https:\/\/www\.energidataservice\.dk"[^>]*rel="noopener">Energi Data Service<\/a> \(Energinet\)\. Åbne datasæt på <a href="https:\/\/huggingface\.co\/Elpriser"[^>]*rel="noopener">Hugging Face<\/a>\./.test(legal[1]), 'credits wording and links');
@@ -1436,7 +1467,7 @@ const tableOf = (src, name, re) => {
 test('legacy redirects: functions/[[path]].js and server.js carry the same table, and it is the expected one', () => {
   const prod = tableOf(ROUTES, 'functions/[[path]].js', /const LEGACY_REDIRECTS = \{([\s\S]*?)\};/);
   const dev = tableOf(SERVER, 'server.js', /const LEGACY_REDIRECTS = \{([\s\S]*?)\};/);
-  assert.deepEqual(prod, LEGACY, 'production table differs from the expected five redirects');
+  assert.deepEqual(prod, LEGACY, 'production table differs from the expected redirects (5 posts + 11 zone pages)');
   assert.deepEqual(dev, prod, 'server.js (local dev) differs from production');
   // The handler answers 301 with a one-hour cache header, before any rendering.
   const i = ROUTES.indexOf('const legacyTo = LEGACY_REDIRECTS[url.pathname]');
@@ -1446,7 +1477,7 @@ test('legacy redirects: functions/[[path]].js and server.js carry the same table
   assert.ok(/status: 301/.test(branch) && /'Cache-Control': 'public, max-age=3600'/.test(branch), '301 + max-age=3600');
 });
 
-test('legacy redirects: the five paths are mentioned nowhere else — sitemap, SEO_PAGES, route maps, mains, links, llms text', () => {
+test('legacy redirects: the retired paths are mentioned nowhere else — sitemap, SEO_PAGES, route maps, mains, links, llms text', () => {
   const rest = {
     'functions/[[path]].js': ROUTES.replace(/const LEGACY_REDIRECTS = \{[\s\S]*?\};/, ''),
     'server.js': SERVER.replace(/const LEGACY_REDIRECTS = \{[\s\S]*?\};/, ''),
@@ -1456,6 +1487,11 @@ test('legacy redirects: the five paths are mentioned nowhere else — sitemap, S
     for (const slug of LEGACY_SLUGS) assert.ok(!src.includes(slug), `${name} still mentions ${slug}`);
   }
   for (const slug of LEGACY_SLUGS) assert.ok(!INDEX.includes(`data-page="blog-${slug}"`), `a <main> for ${slug} is still in index.html`);
+  // The eleven zone paths, as quoted strings or hrefs (not as prefixes of /norge or /finland).
+  for (const [name, src] of Object.entries(rest)) {
+    for (const z of LEGACY_ZONES) assert.ok(!new RegExp(`['"\`]${z}(['"\`#?]|$)`).test(src.replace(/\/\/[^\n]*/g, '')), `${name} still mentions ${z}`);
+  }
+  assert.ok(!/HASH_TO_DATA_PAGE[^}]*'(no[1-5]|se[1-4]|fi|nl)':/.test(ROUTES), 'HASH_TO_DATA_PAGE still maps a retired zone');
   // And the sitemap that is actually served.
   const urls = ROUTES.match(/SITEMAP_URLS\s*=\s*\[([\s\S]*?)\n\];/)[1];
   for (const k of Object.keys(LEGACY)) assert.ok(!urls.includes(`'${k}'`), `${k} is in the sitemap`);
@@ -1473,7 +1509,10 @@ test('legacy redirects: the client maps the old #blog/… hashes to the same tar
     'route() does not redirect the old hashes');
   // The anchors are places in the page: they must not be taken for routes or rewritten away.
   assert.ok(/PAGE_ANCHORS=new Set\(\['shelly','home-assistant'\]\)/.test(INDEX), 'PAGE_ANCHORS');
-  assert.ok(/if\(hash&&!PAGE_ANCHORS\.has\(hash\)\)return hash;/.test(INDEX), 'rawRouteFromLocation lets an anchor pick the page');
+  // The zone tabs of /norge and /sverige (#no2, #se3) are places in the page too, not routes.
+  assert.ok(/const isAnchor=a=>PAGE_ANCHORS\.has\(a\)\|\|ZONES\.hasOwnProperty\(a\);/.test(INDEX), 'isAnchor');
+  assert.ok(/if\(hash&&!isAnchor\(hash\)\)return hash;/.test(INDEX), 'rawRouteFromLocation lets an anchor pick the page');
+  assert.ok(!/PAGE_ANCHORS\.has\(hash/.test(INDEX.slice(INDEX.indexOf('function rawRouteFromLocation'), INDEX.indexOf('function urlForRoute'))), 'a raw PAGE_ANCHORS check is back in the router');
 });
 
 test('blog index lists only the four remaining posts, as cards and in the Blog markup', () => {

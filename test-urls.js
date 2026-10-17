@@ -173,7 +173,7 @@ async function main() {
 
   console.log('\n5. NORMALISERING — dubletter må ikke svare 200');
   const redirects = [
-    ['/dk1/', '/dk1'], ['/se1/', '/se1'], ['/tariffer/', '/tariffer'],
+    ['/dk1/', '/dk1'], ['/norge/', '/norge'], ['/tariffer/', '/tariffer'],
     ['/dk1/n1/', '/dk1/n1'], ['/DK1', '/dk1'], ['/blog/', '/blog'],
   ];
   await pool(redirects, async ([from, to]) => {
@@ -196,6 +196,18 @@ async function main() {
     const r = await get(from);
     check(r.status === 301 && r.location === CANONICAL_ORIGIN + to, `nedlagt ${from}`, `status ${r.status} -> ${r.location}`);
     check(r.cache === 'public, max-age=3600', `nedlagt ${from}: cache-control`, String(r.cache));
+    check(!sitemap.includes(from), `nedlagt ${from}: ikke i sitemap`);
+    check(!extra.includes(from), `nedlagt ${from}: ingen side linker til den`);
+  }
+  // The eleven foreign zone pages became /norge, /sverige, /finland and /norden (2026-10-17).
+  const zoneRetired = [
+    ['/no1', '/norge#no1'], ['/no2', '/norge#no2'], ['/no3', '/norge#no3'], ['/no4', '/norge#no4'], ['/no5', '/norge#no5'],
+    ['/se1', '/sverige#se1'], ['/se2', '/sverige#se2'], ['/se3', '/sverige#se3'], ['/se4', '/sverige#se4'],
+    ['/fi', '/finland'], ['/nl', '/norden#nl'],
+  ];
+  for (const [from, to] of zoneRetired) {
+    const r = await get(from);
+    check(r.status === 301 && r.location === CANONICAL_ORIGIN + to, `nedlagt ${from}`, `status ${r.status} -> ${r.location}`);
     check(!sitemap.includes(from), `nedlagt ${from}: ikke i sitemap`);
     check(!extra.includes(from), `nedlagt ${from}: ingen side linker til den`);
   }
@@ -225,7 +237,7 @@ async function main() {
   }
 
   console.log('\n6. UKENDTE STIER SKAL 404');
-  const gone = ['/norden', '/findes-ikke', '/dk1/ukendt-net', '/blog/ukendt-indlaeg'];
+  const gone = ['/no6', '/findes-ikke', '/dk1/ukendt-net', '/blog/ukendt-indlaeg'];
   await pool(gone, async p => {
     const r = await get(p);
     check(r.status === 404, `404 ${p}`, `status ${r.status}`);
@@ -304,9 +316,21 @@ async function main() {
   check(!prog.body.includes('<div id="prognoseForecast"><!--SSR_PROGNOSE_CHART-->'), '/prognose: placeholder er erstattet');
   check(/<div class="v">\d,\d\d–\d,\d\d<\/div>/.test(prog.body), '/prognose: døgnenes spænd står som tekst');
 
-  const se3 = await get('/se3');
-  check(!/hreflang=/.test(se3.body.replace(/<!--[\s\S]*?-->/g, '')), '/se3: ingen hreflang-klynge');
-  check(/<html lang="sv"/.test(se3.body), '/se3: html lang="sv"');
+  const se3 = await get('/sverige');
+  check(!/hreflang=/.test(se3.body.replace(/<!--[\s\S]*?-->/g, '')), '/sverige: ingen hreflang-klynge');
+  check(/<html lang="sv"/.test(se3.body), '/sverige: html lang="sv"');
+  // The four foreign-area pages: own language, the canonical Pris screen drawn into the HTML, and only 2 and 5 døgn.
+  for (const [p, lang, unit] of [['/norge', 'nb', 'øre'], ['/sverige', 'sv', 'öre'], ['/finland', 'fi', 'snt'], ['/norden', 'da', null]]) {
+    const r = p === '/sverige' ? se3 : await get(p);
+    const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<dialog[\s\S]*?<\/dialog>/g, '');
+    const title = one(r.body, /<title>([^<]*)<\/title>/), desc = one(r.body, /<meta name="description" content="([^"]*)"/);
+    check(r.status === 200 && title.length <= 62 && desc.length <= 155, `${p}: 200, titel ≤ 62 og beskrivelse ≤ 155 tegn`, `${r.status} ${title.length}/${desc.length}`);
+    check(new RegExp(`<html lang="${lang}"`).test(r.body), `${p}: html lang="${lang}"`);
+    check((page.match(/<h1[ >]/g) || []).length === 1, `${p}: præcis én h1`);
+    check(unit ? (/<div class="pris" data-period="2"/.test(page) && page.includes(`>${unit}/kWh</span>`) && !/kr\/kWh/.test(page.slice(page.indexOf('<main')))) : (page.match(/<tr id="/g) || []).length === 13, `${p}: ${unit ? 'Pris-skærmen er tegnet i HTML\'en' : 'tabellen har 13 områder'}`);
+    check(!/\b10 (døgn|dager|dage|dygn|vrk)/i.test(page), `${p}: ingen tekst om 10 døgn`);
+    check(sitemap.includes(p), `${p}: i sitemap`);
+  }
   check(/<title>Elpriser prognose 7 dage — time for time, op til 10 døgn frem<\/title>/.test(prog.body), '/prognose: titel har "7 dage" og de sande 10 døgn');
   // Count inside the week container: the page's own script carries the same
   // markup as a string literal, which is not a row anyone can read.
@@ -315,7 +339,7 @@ async function main() {
   check(/<title>Elafgift 2028: Elafgiften stiger igen/.test((await get('/blog/elafgift-2028')).body), 'elafgift-indlægget: titlen svarer ja');
   check(/<title>Elpris Vest \(DK1\) i dag/.test((await get('/dk1')).body), '/dk1: titlen starter med "Elpris Vest"');
   const llms = await get('/llms.txt');
-  check(!/7 dage|7-day/.test(llms.body) && /elpriser\.org\/se3\)/.test(llms.body), 'llms.txt: 10 døgn og zone-siderne');
+  check(!/7 dage|7-day/.test(llms.body) && /elpriser\.org\/sverige\)/.test(llms.body) && /elpriser\.org\/norden\)/.test(llms.body), 'llms.txt: 10 døgn og de fire nordiske sider');
   const home2 = await get('/');
   check(!/name="description" content="[^"]*inkl\. nettariffer/.test(home2.body), 'forside: beskrivelsen påstår ikke nettarif');
 
@@ -323,7 +347,8 @@ async function main() {
     .map(m => { try { return JSON.parse(m[1]); } catch { return { '@type': 'INVALID' }; } });
   const types = body => ldOf(body).flatMap(j => j['@graph'] ? j['@graph'].map(x => x['@type']) : [j['@type']]);
   const se3t = types(se3.body);
-  check(!se3t.some(t => ['FAQPage', 'Article', 'BlogPosting', 'Dataset', 'INVALID'].includes(t)), '/se3: ingen fremmed struktureret data', se3t.join(','));
+  check(!se3t.some(t => ['FAQPage', 'Article', 'BlogPosting', 'Dataset', 'INVALID'].includes(t)), '/sverige: ingen fremmed struktureret data', se3t.join(','));
+  check(ldOf(se3.body).some(j => j['@type'] === 'WebPage' && j.inLanguage === 'sv'), '/sverige: WebPage med inLanguage sv');
   const post = await get('/blog/elafgift-2028');
   const bp = ldOf(post.body).filter(j => j['@type'] === 'BlogPosting');
   check(bp.length === 1 && bp[0].url.endsWith('/blog/elafgift-2028'), 'blogindlæg: præcis sit eget BlogPosting');

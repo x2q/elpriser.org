@@ -110,6 +110,23 @@ async function startServer() {
     // switch it off to see an older response (no charges) degrade to a plain caption.
     route.fulfill({ json: { area, mode, ...(gln ? { gln } : {}), ...(fixtureCharges ? { charges: { sys: 0.07, trans: 0.054, afg: 0.008, vat: 0.25 } } : {}), days } });
   });
+
+  // server.js has no /api/nordic either. The foreign-area pages draw from it, so answer it for all thirteen
+  // zones with ten days from yesterday (like the live feed). The price encodes the zone, so a tab switch is visible:
+  // EUR/MWh = 10 × (zone number) + the day's swing, at rate 10 → øre/kWh = EUR/MWh.
+  const ZN = ['dk1', 'dk2', 'no1', 'no2', 'no3', 'no4', 'no5', 'se1', 'se2', 'se3', 'se4', 'fi', 'nl'];
+  const nordicRequests = [];
+  await ctx.route('**/api/nordic*', route => {
+    const zone = new URL(route.request().url()).searchParams.get('zone');
+    nordicRequests.push(zone);
+    const k = ZN.indexOf(zone);
+    if (k < 0) return route.fulfill({ status: 400, json: { error: 'zone' } });
+    const base = Date.parse(todayDk() + 'T12:00:00Z');
+    route.fulfill({ json: { zone, unit: 'EUR/MWh', zoneInfo: { rate: 10, currency: 'X' },
+      days: Array.from({ length: 10 }, (_, i) => ({
+        date: new Date(base + (i - 1) * 86400000).toISOString().slice(0, 10), type: i < 3 ? 'actual' : 'forecast',
+        prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: +(60 + k * 10 + Math.sin(h / 24 * 6.28) * 25 + i).toFixed(2) })) })) } });
+  });
   const page = await ctx.newPage();
   page.setDefaultTimeout(5000);
   const pris = n => String(n.toFixed(2)).replace('.', ',');
@@ -125,6 +142,10 @@ async function startServer() {
     ['/om-elpriser',                   'om-elpriser'],
     ['/dk1',                           'prices'],
     ['/dk2',                           'prices'],
+    ['/norge',                         'zone'],
+    ['/sverige',                       'zone'],
+    ['/finland',                       'zone'],
+    ['/norden',                        'norden'],
     ['/blog',                                    'blog'],
     ['/blog/elafgift-2028',                      'blog-elafgift-2028'],
     ['/blog/elafgift-og-spotpris',               'blog-elafgift-og-spotpris'],
@@ -169,7 +190,7 @@ async function startServer() {
   for (const url of ['/blog/elafgift-2028', '/blog/hvornaar-er-stroemmen-billigst',
                      '/blog/groennest-og-dyrest', '/blog/elafgift-og-spotpris', '/blog',
                      '/tariffer', '/automation', '/api',
-                     '/om-elpriser', '/prognose', '/dk1', '/dk2']) {
+                     '/om-elpriser', '/prognose', '/dk1', '/dk2', '/norge', '/sverige', '/finland', '/norden']) {
     await test(`clean-URL: ${url} does NOT redirect to /#hash`, async () => {
       await page.goto(BASE + url);
       const state = await page.evaluate(() => ({
@@ -1147,6 +1168,183 @@ async function startServer() {
         .filter(h => /^\/blog\/(v2g-v2h-bidirektional-opladning|biler-ladere-v2h-v2g|shelly-elpris-automation|home-assistant-elpriser|forsta-din-elpris)$/.test(h)));
       assert.deepEqual(bad, [], `${url} links ${bad.join(', ')}`);
     }
+  });
+
+
+  // ── 9. The foreign price areas: /norge, /sverige, /finland on the Pris screen, and /norden ──
+
+  const zoneNow = () => page.evaluate(() => ({
+    key: document.querySelector('[data-page="zone"] .pris')?.dataset.key,
+    price: document.querySelector('[data-page="zone"] .pris-now')?.textContent,
+    sel: [...document.querySelectorAll('#zTabs [aria-selected="true"]')].map(a => a.dataset.zone),
+    hash: location.hash, lang: document.documentElement.lang, hist: history.length,
+  }));
+
+  await test('/norge: the Pris screen in Norwegian øre, five zone tabs, NO1 first, <html lang="nb">', async () => {
+    await page.goto(BASE + '/norge');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    const z = await zoneNow();
+    assert.deepEqual(z.sel, ['no1']); assert.equal(z.key, 'no1'); assert.equal(z.lang, 'nb');
+    assert.equal(await page.locator('#zTabs [role="tab"]').count(), 5);
+    assert.deepEqual(await page.locator('#zTabs [role="tab"]').evaluateAll(a => a.map(x => x.textContent)), ['NO1Oslo', 'NO2Kristiansand', 'NO3Trondheim', 'NO4Tromsø', 'NO5Bergen']);
+    assert.equal(await page.locator('main[data-page="zone"] .pris-u').textContent(), 'øre/kWh');
+    assert.match(await page.locator('main[data-page="zone"] .pris-label').textContent(), /^Strømpris akkurat nå/);
+    assert.equal(await page.locator('[data-pris-view]').count(), 0, 'no Din pris / Spotpris switch on a foreign zone');
+    assert.deepEqual(await page.locator('main[data-page="zone"] .pris-period button').allTextContents(), ['2 døgn', '5 døgn']);
+    assert.equal(await page.locator('main[data-page="zone"] h1').count(), 1);
+    // The text block lists every zone with its city; the page is drawn without NaN.
+    const list = await page.locator('#zList').textContent();
+    for (const c of ['Oslo', 'Kristiansand', 'Trondheim', 'Tromsø', 'Bergen']) assert.ok(list.includes(c), c);
+    assert.ok(!/NaN|undefined/.test(await page.locator('main[data-page="zone"]').textContent()));
+  });
+
+  await test('/norge#no4 opens on NO4; a tab switches the screen in place (no reload, address follows, Back leaves the page)', async () => {
+    await page.goto(BASE + '/norge#no4');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no4');
+    const a = await zoneNow();
+    assert.deepEqual(a.sel, ['no4']); assert.equal(a.hash, '#no4');
+    await page.locator('#zt-no2').click();
+    await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no2');
+    const b = await zoneNow();
+    assert.deepEqual(b.sel, ['no2']); assert.equal(b.hash, '#no2'); assert.notEqual(b.price, a.price, 'the price is the new zone\'s');
+    assert.equal(b.hist, a.hist, 'a tab is not a new history entry');
+    assert.equal(await page.locator('#zt-no2').getAttribute('tabindex'), '0');
+    assert.equal(await page.locator('#zt-no4').getAttribute('tabindex'), '-1');
+    assert.equal(await page.locator('#zPanel').getAttribute('aria-labelledby'), 'zt-no2');
+  });
+
+  await test('/norge tabs are keyboard operable: arrows, Home and End move and select', async () => {
+    await page.goto(BASE + '/norge');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    await page.locator('#zt-no1').focus();
+    await page.keyboard.press('ArrowRight');
+    await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no2');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'zt-no2');
+    await page.keyboard.press('End');
+    await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no5');
+    await page.keyboard.press('ArrowRight');
+    await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no1');
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no5');
+    await page.keyboard.press('Home');
+    await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no1');
+  });
+
+  await test('a zone in the text block selects that zone too, and the period choice survives a tab switch', async () => {
+    await page.goto(BASE + '/norge');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    await page.locator('main[data-page="zone"] [data-pris-period="5"]').click();
+    assert.equal(await page.locator('main[data-page="zone"] .pris').getAttribute('data-period'), '5');
+    await page.locator('#zList a[data-zone="no3"]').click();
+    await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no3');
+    assert.equal(await page.locator('main[data-page="zone"] .pris').getAttribute('data-period'), '5', '5 døgn stays');
+    assert.deepEqual((await zoneNow()).sel, ['no3']);
+  });
+
+  await test('/sverige opens on SE3 in Swedish; /finland has no tabs, snt and Finnish words', async () => {
+    await page.goto(BASE + '/sverige');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    const s = await zoneNow();
+    assert.deepEqual(s.sel, ['se3']); assert.equal(s.lang, 'sv');
+    assert.equal(await page.locator('#zTabs [role="tab"]').count(), 4);
+    assert.equal(await page.locator('main[data-page="zone"] .pris-u').textContent(), 'öre/kWh');
+    assert.deepEqual(await page.locator('main[data-page="zone"] .pris-period button').allTextContents(), ['2 dygn', '5 dygn']);
+    await page.goto(BASE + '/finland');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    assert.equal((await zoneNow()).lang, 'fi');
+    assert.equal(await page.locator('#zTabs [role="tab"]').count(), 0);
+    assert.equal(await page.locator('main[data-page="zone"] .pris-u').textContent(), 'snt/kWh');
+    assert.deepEqual(await page.locator('main[data-page="zone"] .pris-period button').allTextContents(), ['2 vrk', '5 vrk']);
+  });
+
+  await test('the foreign pages offer only 2 and 5 døgn: no 10-day wording, five day rows, 120 bars', async () => {
+    for (const [url, five] of [['/norge', '5 døgn'], ['/sverige', '5 dygn'], ['/finland', '5 vrk']]) {
+      await page.goto(BASE + url);
+      await page.waitForSelector('main[data-page="zone"] .pris');
+      await page.locator('main[data-page="zone"] [data-pris-period="5"]').click();
+      const t = await page.evaluate(() => document.querySelector('main[data-page="zone"]').innerText);
+      assert.ok(!/\b10 (døgn|dager|dygn|vrk)/i.test(t), `${url} mentions 10 days`);
+      assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pc[data-tip]').count(), 120);
+      assert.equal(await page.locator('main[data-page="zone"] .pris-week tbody tr').count(), 5);
+      assert.ok((await page.locator('main[data-page="zone"] .pris-card.pp5 .pris-ct').textContent()).endsWith(five));
+    }
+  });
+
+  await test('a hover on a zone bar shows the tooltip in the zone\'s unit, and the 5-day axis is in øre', async () => {
+    await page.goto(BASE + '/norge');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    const plot = page.locator('main[data-page="zone"] .pris-card.pp2 .pris-plot');
+    const box = await plot.boundingBox();
+    await page.mouse.move(box.x + box.width * 0.7, box.y + box.height / 2);
+    assert.match(await page.locator('main[data-page="zone"] .pris-card.pp2 .pris-tip').textContent(), /^I morgen kl\. \d\d · \d+ øre\/kWh$/);
+    const ticks = await page.locator('main[data-page="zone"] .pris-card.pp2 .pris-yl span').allTextContents();
+    assert.ok(ticks.length >= 3 && ticks.every(x => /^\d+$/.test(x)), ticks.join(' '));
+  });
+
+  await test('/norden: one table of all 13 areas in DKK with the basis stated; rows link to the country pages', async () => {
+    await page.goto(BASE + '/norden');
+    await page.waitForSelector('main[data-page="norden"] .nt tbody tr');
+    assert.equal(await page.locator('main[data-page="norden"] .nt tbody tr').count(), 13);
+    assert.match(await page.locator('.nt-cap').textContent(), /DKK\/kWh uden moms, afgifter og nettariffer/);
+    const hrefs = await page.locator('main[data-page="norden"] .nt tbody a').evaluateAll(a => a.map(x => x.getAttribute('href')));
+    assert.deepEqual(hrefs, ['/norge#no1', '/norge#no2', '/norge#no3', '/norge#no4', '/norge#no5', '/sverige#se1', '/sverige#se2', '/sverige#se3', '/sverige#se4', '/finland', '/dk1', '/dk2']);
+    const no1 = await page.locator('#no1 td').allTextContents();
+    assert.ok(no1.every(x => /^-?\d+,\d\d(–-?\d+,\d\d)?$/.test(x)), no1.join(' '));
+    // EUR/MWh 70 + swing; rate 10 on the zone, DKK rate 10 on dk1 in this stub → kr = EUR/MWh / 100.
+    assert.ok(parseFloat(no1[1].replace(',', '.')) > 0.2 && parseFloat(no1[1].replace(',', '.')) < 1.5);
+    assert.equal(await page.locator('#nl th a').count(), 0, 'NL has no page');
+    assert.equal(await page.locator('html').getAttribute('lang'), 'da');
+  });
+
+  await test('the old zone addresses redirect (server.js mirrors production): /no2 → /norge#no2 with NO2 selected, /nl → /norden#nl', async () => {
+    await page.goto(BASE + '/no2');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    assert.equal(new URL(page.url()).pathname, '/norge'); assert.equal(new URL(page.url()).hash, '#no2');
+    await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no2');
+    await page.goto(BASE + '/se4');
+    await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'se4');
+    assert.equal(new URL(page.url()).pathname, '/sverige');
+    await page.goto(BASE + '/fi');
+    assert.equal(new URL(page.url()).pathname, '/finland');
+    await page.goto(BASE + '/nl');
+    await page.waitForSelector('main[data-page="norden"] .nt tbody tr');
+    assert.equal(new URL(page.url()).pathname + new URL(page.url()).hash, '/norden#nl');
+  });
+
+  await test('an old #hash link (/#no3, /#nl) is sent to the new page', async () => {
+    await page.goto(BASE + '/#no3');
+    await page.waitForFunction(() => location.pathname === '/norge');
+    await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no3');
+    assert.equal(new URL(page.url()).hash, '#no3');
+    await page.goto(BASE + '/#nl');
+    await page.waitForFunction(() => location.pathname === '/norden');
+  });
+
+  await test('footer and the net dialog link Norden, Norge, Sverige and Finland — and nothing links an old zone URL', async () => {
+    await page.goto(BASE + '/');
+    await page.waitForSelector('main[data-page="start"].active');
+    const foot = await page.locator('footer .sf-all .sf-nets > div:last-child a').evaluateAll(a => a.map(x => x.getAttribute('href')));
+    assert.deepEqual(foot, ['/norden', '/norge', '/sverige', '/finland']);
+    for (const url of ['/', '/dk1', '/automation', '/om-elpriser', '/blog', '/blog/groennest-og-dyrest', '/tariffer', '/api', '/norge', '/norden']) {
+      await page.goto(BASE + url);
+      await page.waitForSelector('main.active');
+      const bad = await page.evaluate(() => [...document.querySelectorAll('a[href]')].map(a => a.getAttribute('href').split('#')[0].split('?')[0]).filter(h => /^\/(no[1-5]|se[1-4]|fi|nl)$/.test(h)));
+      assert.deepEqual(bad, [], `${url} links ${bad.join(', ')}`);
+    }
+  });
+
+  await test('phone: /norge at 390 px has no horizontal page scroll; the tab row scrolls on its own and shows the selected tab', async () => {
+    const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, bypassCSP: true });
+    await ctx2.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
+    await ctx2.route('**/api/nordic*', r => r.fulfill({ json: { zone: 'no5', zoneInfo: { rate: 10 }, days: Array.from({ length: 10 }, (_, i) => ({ date: new Date(Date.parse(todayDk() + 'T12:00:00Z') + (i - 1) * 86400000).toISOString().slice(0, 10), type: i < 3 ? 'actual' : 'forecast', prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: 80 + h })) })) } }));
+    const p2 = await ctx2.newPage();
+    await p2.goto(BASE + '/norge#no5');
+    await p2.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no5');
+    assert.equal(await p2.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'the page scrolls sideways');
+    const vis = await p2.evaluate(() => { const r = document.getElementById('zt-no5').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1; });
+    assert.ok(vis, 'the selected tab is scrolled into view');
+    await ctx2.close();
   });
 
   // ── report & cleanup ────────────────────────────────────────────────────────
