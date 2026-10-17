@@ -56,10 +56,34 @@ object Api {
                 }
             }
             if (price.any { it.isNaN() }) continue
-            out.add(Day(d.getString("date"), d.getString("type") == "actual", price, if (band) lo else null, if (band) hi else null))
+            out.add(Day(d.getString("date"), d.getString("type") == "actual", price, if (band) lo else null, if (band) hi else null, parseGridTariff(d)))
         }
         val model = j.optJSONObject("model")
-        return Forecast(area, mode, out, model?.optString("name"), j.optString("generated"))
+        return Forecast(area, mode, out, model?.optString("name"), j.optString("generated"), parseCharges(j))
+    }
+
+    /** `charges` øverst i svaret. Mangler feltet (ældre svar) eller er et tal ugyldigt, er der ingen opdeling at vise. */
+    fun parseCharges(j: JSONObject): Charges? {
+        val c = j.optJSONObject("charges") ?: return null
+        val sys = c.optDouble("sys", Double.NaN)
+        val trans = c.optDouble("trans", Double.NaN)
+        val afg = c.optDouble("afg", Double.NaN)
+        val vat = c.optDouble("vat", Double.NaN)
+        if (listOf(sys, trans, afg, vat).any { it.isNaN() || it.isInfinite() } || vat < 0) return null
+        return Charges(sys, trans, afg, vat)
+    }
+
+    /** `grid_tariff` pr. døgn: kun en liste med 24 tal tæller (på andre visninger er det fraværende eller en tekst). */
+    private fun parseGridTariff(d: JSONObject): List<Double>? {
+        val a = d.optJSONArray("grid_tariff") ?: return null
+        if (a.length() != 24) return null
+        val out = ArrayList<Double>(24)
+        for (i in 0 until 24) {
+            val v = a.optDouble(i, Double.NaN)
+            if (v.isNaN() || v.isInfinite()) return null
+            out.add(v)
+        }
+        return out
     }
 
     /** CO₂ i g/kWh pr. time, pr. dato. */

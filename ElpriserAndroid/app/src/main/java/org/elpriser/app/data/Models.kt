@@ -39,18 +39,25 @@ object Nets {
     }
 }
 
-/** Ét døgn med 24 timepriser i kr/kWh. `lo`/`hi` er P10/P90 på prognosedage. */
+/** Ét døgn med 24 timepriser i kr/kWh. `lo`/`hi` er P10/P90 på prognosedage. `gridTariff` er nettariffen pr. time (kr/kWh ekskl. moms), kun på net-visninger. */
 class Day(
     val date: String,
     val actual: Boolean,
     val price: List<Double>,
     val lo: List<Double>?,
     val hi: List<Double>?,
+    val gridTariff: List<Double>? = null,
 ) {
     val localDate: LocalDate get() = LocalDate.parse(date)
 }
 
-class Forecast(val area: String, val mode: String, val days: List<Day>, val model: String?, val generated: String?)
+/** De faste afgifter bag en pris, kr/kWh ekskl. moms (`vat` er momssatsen, 0,25). */
+class Charges(val sys: Double, val trans: Double, val afg: Double, val vat: Double)
+
+class Forecast(
+    val area: String, val mode: String, val days: List<Day>, val model: String?, val generated: String?,
+    val charges: Charges? = null,
+)
 
 class Lookup(val name: String?, val error: String?)
 

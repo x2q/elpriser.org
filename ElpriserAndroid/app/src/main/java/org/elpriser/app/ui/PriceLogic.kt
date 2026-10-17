@@ -1,6 +1,8 @@
 package org.elpriser.app.ui
 
+import org.elpriser.app.data.Charges
 import org.elpriser.app.data.Day
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -147,3 +149,105 @@ fun areaShort(area: String) = if (area == "DK1") "Vest" else "Øst"
 /** Hero-etiketten: "Elpris lige nu · kl. 21" (telefon) eller "Elpris lige nu · onsdag kl. 21" (bred). */
 fun heroLabel(hour: Int, weekday: String?) =
     "Elpris lige nu · " + (if (weekday != null) "$weekday " else "") + "kl. ${pad(hour)}"
+
+/* ── Prisopbygning ───────────────────────────────────────────────────────────────────────
+ * Opdelingen af en times pris i dens dele (spot, tariffer, afgift, moms), i øre/kWh med én decimal.
+ * Alle regnestykker laves i hele tiendedele øre (Long), så delene summer PRÆCIS til totalen uden flydende-tal-støj.
+ */
+
+/** Rollen styrer farven på søjlestykket og prikken; selve betydningen bæres altid af etiketten. */
+enum class PartRole { Spot, Energinet, Grid, Duty, Vat }
+
+/** En række i opdelingen. `tenths` er øre/kWh × 10 (afrundet), `text` er f.eks. "85,3 øre". */
+class BreakdownRow(val role: PartRole, val label: String, val tenths: Long) {
+    val text: String get() = tenthsText(tenths) + " øre"
+}
+
+/** Hele opdelingen: rækker, total og overskrift. Rækkerne summer præcis til totalen (`totalTenths`). */
+class Breakdown(val rows: List<BreakdownRow>, val totalTenths: Long, val totalText: String, val heading: String) {
+    /** Søjlens bredder: positive dele i forhold til deres sum (en negativ spotpris giver ikke et stykke). */
+    fun barWeights(): List<Float> = barWeights(rows)
+}
+
+/** 853 -> "85,3", -3 -> "-0,3", 0 -> "0,0". Aldrig "-0,0". */
+fun tenthsText(t: Long): String {
+    val sign = if (t < 0) "-" else ""
+    val a = abs(t)
+    return "$sign${a / 10},${a % 10}"
+}
+
+fun barWeights(rows: List<BreakdownRow>): List<Float> {
+    val pos = rows.map { maxOf(it.tenths, 0L) }
+    val sum = pos.sum()
+    return if (sum <= 0L) rows.map { 0f } else pos.map { it.toFloat() / sum }
+}
+
+private fun tenthsOf(kr: Double): Long = Math.round(kr * 1000.0)
+
+/**
+ * Prisen for én time delt op, ud fra den pris, der vises (kr/kWh inkl. moms, i den aktive visning) og samme svars `charges`.
+ *  - net_inkl_alt: spot, system, transmission, nettarif (time `hour`), elafgift, moms
+ *  - inkl_alt:     som ovenfor uden nettarif
+ *  - spot_inkl:    spot og moms
+ * Hver række afrundes til 0,1 øre, og Spotpris-rækken tager afrundingsforskellen, så rækkerne summer præcis til totalen
+ * (prisen × 100 afrundet til 0,1 øre). Returnerer null, når opdelingen ikke kan vises: `charges` mangler (ældre svar), timen har ingen pris,
+ * en net-visning mangler nettariffen for timen, eller visningen er en anden (fx spot ekskl. moms).
+ * [headingWhen] er "" for denne time og ellers dagsordene fra [breakdownWhen] ("i morgen", "søn 18. okt").
+ */
+fun breakdownOf(
+    mode: String, price: Double, hour: Int, forecastDay: Boolean, charges: Charges?, gridTariff: Double?,
+    netName: String?, headingWhen: String = "",
+): Breakdown? {
+    if (charges == null || !price.isFinite() || hour !in 0..23) return null
+    val net = mode == "net_inkl_alt"
+    val sys: Long; val trans: Long; val afg: Long
+    when (mode) {
+        "net_inkl_alt", "inkl_alt" -> { sys = tenthsOf(charges.sys); trans = tenthsOf(charges.trans); afg = tenthsOf(charges.afg) }
+        "spot_inkl" -> { sys = 0; trans = 0; afg = 0 }
+        else -> return null
+    }
+    var grid = 0L
+    if (net) {
+        if (gridTariff == null || !gridTariff.isFinite()) return null
+        grid = tenthsOf(gridTariff)
+    }
+    val total = tenthsOf(price)
+    // Moms = pris − pris/(1+sats); rundet for sig. Spotprisen er resten, så summen går op.
+    val vat = tenthsOf(price - price / (1 + charges.vat))
+    val spot = total - sys - trans - grid - afg - vat
+    val spotLabel = if (forecastDay) "Spotpris (prognose)" else "Spotpris (Nord Pool)"
+    val vatLabel = "Moms (${Math.round(charges.vat * 100)} %)"
+    val rows = ArrayList<BreakdownRow>()
+    rows.add(BreakdownRow(PartRole.Spot, spotLabel, spot))
+    if (mode != "spot_inkl") {
+        rows.add(BreakdownRow(PartRole.Energinet, "Systemtarif (Energinet)", sys))
+        rows.add(BreakdownRow(PartRole.Energinet, "Transmissionstarif (Energinet)", trans))
+        if (net) rows.add(BreakdownRow(PartRole.Grid, "Nettarif (${if (netName.isNullOrBlank()) "" else "$netName, "}kl. ${pad(hour)})", grid))
+        rows.add(BreakdownRow(PartRole.Duty, "Elafgift", afg))
+    }
+    rows.add(BreakdownRow(PartRole.Vat, vatLabel, vat))
+    val heading = "Sådan er prisen ${if (headingWhen.isEmpty()) "" else "$headingWhen "}kl. ${pad(hour)} sammensat"
+    return Breakdown(rows, total, "${fmt(price)} kr/kWh", heading)
+}
+
+/** Dagsordene i overskriften for en valgt time: samme ord som boblen, men med småt ("i dag", "i morgen", "søn 18. okt"). */
+fun breakdownWhen(days: List<Day>, index: Int): String {
+    val d = days.getOrNull(index / 24) ?: return ""
+    return when (index / 24) { 0 -> "i dag"; 1 -> "i morgen"; else -> "${dayShort(d)} ${dayMonth(d)}" }
+}
+
+/**
+ * Opdelingen for timen med indeks [index] i [vals] (priserne i den aktive visning, døgn efter døgn fra i dag kl. 00).
+ * [selected] er true, når timen er valgt på grafen (overskriften nævner så dagen); false for "lige nu".
+ */
+fun breakdownAt(
+    mode: String, days: List<Day>, vals: List<Double>, index: Int, selected: Boolean, charges: Charges?, netName: String?,
+): Breakdown? {
+    if (index !in vals.indices) return null
+    val day = days.getOrNull(index / 24) ?: return null
+    val hour = index % 24
+    return breakdownOf(
+        mode, vals[index], hour, !day.actual, charges, day.gridTariff?.getOrNull(hour), netName,
+        if (selected) breakdownWhen(days, index) else "",
+    )
+}

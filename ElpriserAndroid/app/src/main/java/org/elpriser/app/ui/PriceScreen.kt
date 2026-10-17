@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -53,6 +54,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.elpriser.app.AppViewModel
@@ -130,6 +132,17 @@ fun PriceScreen(vm: AppViewModel, wide: Boolean) {
         val onMode: (Int) -> Unit = { s.updateView(if (it == 0) 0 else 2) }
         val caption = priceCaption(s.mode)
 
+        // Det valgte søjleindeks deles af grafen og prisopbygningen (ryddes, når serien skifter: periode, visning eller nye priser).
+        var sel by remember(shownPeriod, shownVals.size, shownVals.firstOrNull(), shownVals.lastOrNull()) { mutableIntStateOf(-1) }
+        var breakdownOpen by rememberSaveable { mutableStateOf(false) }
+        val picked = sel in shownVals.indices
+        val breakdown = breakdownAt(
+            s.mode, shownDays, shownVals, if (picked) sel else now, picked, vm.series[s.mode]?.charges, s.net?.name,
+        )
+        val captionSlot: @Composable (Modifier, TextUnit) -> Unit = { m, size ->
+            PriceCaption(caption, breakdown, breakdownOpen, { breakdownOpen = !breakdownOpen }, picked, { sel = -1 }, size, m)
+        }
+
         val summary = buildString {
             append(periodTitle(shownPeriod)).append(". ")
             cheapest?.let { append("${it.label}: ${fmt(it.price)} kr kl. ${pad(it.hour)}. ") }
@@ -138,12 +151,13 @@ fun PriceScreen(vm: AppViewModel, wide: Boolean) {
         }
 
         val hero: @Composable (Modifier) -> Unit = { m ->
-            HeroCard(m, wide, now, price, kind, verdictLabel, sentence, caption, modeIdx, onMode)
+            HeroCard(m, wide, now, price, kind, verdictLabel, sentence, captionSlot, modeIdx, onMode)
         }
         val chart: @Composable () -> Unit = {
             PriceChartCard(
                 wide = wide, period = shownPeriod, days = shownDays, vals = shownVals, tiers = tiers, axis = axis,
-                nowIndex = nowIndex, summary = summary, caption = caption, modeIdx = modeIdx, onMode = onMode,
+                nowIndex = nowIndex, summary = summary, captionSlot = captionSlot, modeIdx = modeIdx, onMode = onMode,
+                sel = sel, onSel = { sel = it },
             )
         }
         val tiles: @Composable () -> Unit = { StatTiles(cheapest, priciest, wide) }
@@ -197,7 +211,7 @@ private fun PriceHeader(vm: AppViewModel, wide: Boolean) {
                 Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(t.brandSolid), contentAlignment = Alignment.Center) {
                     Icon(Ic.Bolt, Color.White, 16.dp, fill = true)
                 }
-                Text("elpriser", fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.2).sp)
+                Text("Elpriser", fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.2).sp)
             }
         }
         // Selve chippen er 36 dp høj; trykfladen er 44 dp.
@@ -223,7 +237,7 @@ private fun PriceHeader(vm: AppViewModel, wide: Boolean) {
 @Composable
 private fun HeroCard(
     modifier: Modifier, wide: Boolean, now: Int, price: Double, kind: Int, verdictLabel: String,
-    sentence: String, caption: String, modeIdx: Int, onMode: (Int) -> Unit,
+    sentence: String, captionSlot: @Composable (Modifier, TextUnit) -> Unit, modeIdx: Int, onMode: (Int) -> Unit,
 ) {
     val t = T
     val tier = tierColors(kind)
@@ -233,7 +247,7 @@ private fun HeroCard(
             Text(heroLabel(now, if (wide) todayWeekday() else null), fontSize = if (wide) 14.sp else 13.sp, fontWeight = FontWeight.SemiBold, color = t.text2)
             Row {
                 Text(
-                    fmt(price), Modifier.alignByBaseline(), style = figures,
+                    fmt(price), Modifier.alignByBaseline(), style = figures, color = t.text,
                     fontSize = if (wide) 96.sp else 76.sp, fontWeight = FontWeight.ExtraBold,
                     letterSpacing = if (wide) (-4.5).sp else (-3).sp, lineHeight = if (wide) 100.sp else 78.sp,
                 )
@@ -251,9 +265,9 @@ private fun HeroCard(
             }
             if (wide) {
                 Text(sentence, fontSize = 18.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold, color = t.text.copy(alpha = 0.85f), style = figures)
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.padding(top = 4.dp)) {
                     ModeSwitch(modeIdx, onMode, large = true)
-                    Text(caption, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = t.text2)
+                    captionSlot(Modifier, 12.sp)
                 }
             }
         }
@@ -335,12 +349,11 @@ private fun PeriodPill(selected: Int, onSelect: (Int) -> Unit, wide: Boolean) {
 @Composable
 private fun PriceChartCard(
     wide: Boolean, period: Int, days: List<Day>, vals: List<Double>, tiers: IntArray, axis: Axis,
-    nowIndex: Int?, summary: String, caption: String, modeIdx: Int, onMode: (Int) -> Unit,
+    nowIndex: Int?, summary: String, captionSlot: @Composable (Modifier, TextUnit) -> Unit, modeIdx: Int, onMode: (Int) -> Unit,
+    sel: Int, onSel: (Int) -> Unit,
 ) {
     val t = T
     val radius = if (wide) 28.dp else 22.dp
-    // Valget ryddes, når serien skifter (periode, visning eller nye priser).
-    var sel by remember(period, vals.size, vals.firstOrNull(), vals.lastOrNull()) { mutableIntStateOf(-1) }
     val tip = if (sel in vals.indices) tooltipText(days, vals, sel) else null
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(radius)).background(t.surface)
@@ -352,10 +365,10 @@ private fun PriceChartCard(
             Text(periodTitle(period), fontSize = if (wide) 17.sp else 14.sp, fontWeight = FontWeight.ExtraBold)
             if (wide) Legend() else ModeSwitch(modeIdx, onMode)
         }
-        if (!wide) Text(caption, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = t.text2)
+        if (!wide) captionSlot(Modifier, 11.5.sp)
         PriceBars(
             vals = vals, days = days, tiers = tiers, axis = axis, nowIndex = nowIndex, period = period, wide = wide,
-            selected = sel, onSelect = { sel = it }, summary = summary + (tip?.let { " Valgt: $it." } ?: ""), tip = tip,
+            selected = sel, onSelect = onSel, summary = summary + (tip?.let { " Valgt: $it." } ?: ""), tip = tip,
         )
     }
 }
@@ -543,7 +556,7 @@ private fun StatCard(e: Extreme, wide: Boolean, modifier: Modifier) {
     ) {
         Text(e.label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = t.text2)
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(fmt(e.price), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, style = TextStyle(fontFeatureSettings = FigureFeatures))
+            Text(fmt(e.price), color = t.text, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, style = TextStyle(fontFeatureSettings = FigureFeatures))
             Text(" kr · kl. ${pad(e.hour)}", Modifier.padding(bottom = 2.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = t.text2)
         }
     }

@@ -81,7 +81,7 @@ private fun Brand() {
     val t = T
     Row(Modifier.padding(horizontal = 20.dp).height(64.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(t.brandSolid), contentAlignment = Alignment.Center) { Icon(Ic.Bolt, Color.White, 16.dp, fill = true) }
-        Text("elpriser", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
+        Text("Elpriser", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
     }
 }
 
