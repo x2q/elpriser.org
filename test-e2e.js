@@ -1008,6 +1008,69 @@ async function startServer() {
       'going home should land on /, not redirect');
   });
 
+  // ── 8. Footer: four groups, the net companies behind a disclosure ──────────
+
+  await test('footer: collapsed by default, both disclosures closed, net links present but hidden', async () => {
+    await page.goto(BASE + '/dk1/n1');
+    await page.waitForSelector('footer.sf');
+    assert.equal(await page.locator('footer details[open]').count(), 0, 'no disclosure open');
+    assert.equal(await page.locator('footer details.sf-all a[href^="/dk"]').count(), 14, '14 net links in the DOM');
+    assert.equal(await page.locator('footer details.sf-all a[href="/dk1/trefor"]').isVisible(), false, 'hidden while closed');
+    assert.deepEqual(await page.locator('footer .sf-h').allTextContents().then(a => a.slice(0, 4)), ['Priser', 'Smart hjem', 'Viden', 'Elpriser']);
+  });
+
+  await test('footer: the summaries open with a click and the keyboard, and a net link navigates', async () => {
+    await page.goto(BASE + '/');
+    await page.waitForSelector('footer.sf');
+    const sum = page.locator('footer details.sf-all > summary');
+    await sum.scrollIntoViewIfNeeded();
+    await sum.click();
+    assert.equal(await page.locator('footer details.sf-all').evaluate(d => d.open), true, 'opens on click');
+    assert.equal(await page.locator('footer details.sf-all a[href="/dk2/radius"]').isVisible(), true, 'links visible once open');
+    await sum.focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await page.locator('footer details.sf-all').evaluate(d => d.open), false, 'closes with Enter');
+    await page.keyboard.press('Space');
+    assert.equal(await page.locator('footer details.sf-all').evaluate(d => d.open), true, 'opens with Space');
+    await page.locator('footer details.sf-all a[href="/dk1/trefor"]').click();
+    await page.waitForFunction(() => location.pathname === '/dk1/trefor');
+    await page.waitForSelector('main[data-page="prices"].active');
+    const more = page.locator('footer details.sf-more > summary');
+    await more.scrollIntoViewIfNeeded();
+    await more.click();
+    assert.equal(await page.locator('footer details.sf-more a[href="/blog/biler-ladere-v2h-v2g"]').isVisible(), true, 'older guides show');
+  });
+
+  await test('footer: four columns at 1280 px, two at 390 px, no horizontal scroll at 360 px, 44 px targets on phones', async () => {
+    const cols = () => page.locator('footer .sf-cols').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(BASE + '/blog');
+    await page.waitForSelector('footer.sf');
+    assert.equal(await cols(), 4, 'four columns on desktop');
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.equal(await cols(), 2, 'two columns on a phone');
+    await page.setViewportSize({ width: 360, height: 780 });
+    await page.locator('footer details').evaluateAll(ds => ds.forEach(d => { d.open = true; }));
+    const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    assert.ok(over <= 0, `page scrolls horizontally by ${over}px with every disclosure open`);
+    const small = await page.evaluate(() => [...document.querySelectorAll('footer summary, footer .sf-l a, footer .sf-chips a, footer .sf-apps a')]
+      .map(a => [a.textContent.trim(), a.getBoundingClientRect().height]).filter(([, h]) => h < 43.5));
+    assert.deepEqual(small, [], 'footer targets under 44 px');
+    await page.setViewportSize({ width: 1280, height: 720 });
+  });
+
+  await test('footer: keyboard focus shows a ring on footer links and summaries', async () => {
+    await page.goto(BASE + '/');
+    await page.waitForSelector('footer.sf');
+    const ring = async sel => {
+      await page.keyboard.press('Tab'); // keyboard modality, so :focus-visible applies
+      await page.locator(sel).first().focus();
+      return page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle + ' ' + getComputedStyle(document.activeElement).outlineWidth);
+    };
+    assert.equal(await ring('footer .sf-l a'), 'solid 2px', 'link ring');
+    assert.equal(await ring('footer details.sf-all > summary'), 'solid 2px', 'summary ring');
+  });
+
   // ── report & cleanup ────────────────────────────────────────────────────────
 
   await browser.close();

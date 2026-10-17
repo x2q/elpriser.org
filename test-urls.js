@@ -263,6 +263,13 @@ async function main() {
   check(/class="(real|fc)">(Børspris|Prognose)</.test(home.body), 'forside: døgnene er mærket børspris eller prognose');
   check(/<td>\d,\d\d–\d,\d\d<\/td>/.test(home.body), 'forside: døgnenes spænd står som tekst');
   check(!home.body.includes('href="/${k}"'), 'forside: intet skabelon-link i HTML');
+  check(!home.body.includes('href="$') && !home.body.includes("href='$"), 'forside: ingen href="$… i den serverede HTML (skabelon-literal læses som relativt link)');
+  const footerOf = body => (body.match(/<footer[\s\S]*?<\/footer>/) || [''])[0];
+  const homeFooter = footerOf(home.body);
+  const netLinks = [...homeFooter.matchAll(/<a href="\/dk[12]\/[a-z0-9-]+"/g)].length;
+  check(netLinks === 14, 'forside: sidefoden linker alle 14 netselskaber som rigtige links', `fandt ${netLinks}`);
+  check(/<details class="sf-all">/.test(homeFooter) && !/<details[^>]*\bopen\b/.test(homeFooter), 'forside: netselskaberne ligger i en lukket details');
+  check(/apps\.apple\.com\/dk\/app\/id6820474476/.test(homeFooter) && /play\.google\.com\/store\/apps\/details\?id=org\.elpriser\.app/.test(homeFooter), 'forside: sidefoden linker begge app-butikker');
 
   const prog = await get('/prognose');
   check(/<svg id="fcCurve"/.test(prog.body), '/prognose: kurven står i HTML\'en');
@@ -293,6 +300,8 @@ async function main() {
   const bp = ldOf(post.body).filter(j => j['@type'] === 'BlogPosting');
   check(bp.length === 1 && bp[0].url.endsWith('/blog/forsta-din-elpris'), 'blogindlæg: præcis sit eget BlogPosting');
   const n1 = await get('/dk1/n1');
+  check(!n1.body.includes('href="$') && !n1.body.includes("href='$"), '/dk1/n1: ingen href="$… i den serverede HTML');
+  check((footerOf(n1.body).match(/<a href="\/dk[12]\/[a-z0-9-]+"/g) || []).length === 14, '/dk1/n1: sidefoden linker alle 14 netselskaber');
   const bc = ldOf(n1.body).find(j => j['@type'] === 'BreadcrumbList');
   check(bc && bc.itemListElement.map(i => i.name).join(' › ') === 'Elpriser › DK1 Vest › N1', '/dk1/n1: brødkrummer', bc && JSON.stringify(bc.itemListElement.map(i => i.name)));
   check(types(home2.body).includes('FAQPage'), 'forside: FAQ-markup');

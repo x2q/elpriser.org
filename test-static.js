@@ -1184,11 +1184,6 @@ test('supplierlookup: reverse-geocodes with Nominatim, not the retired DAWA', ()
   assert.ok(/outside_denmark/.test(api), 'positions outside Denmark are reported, not looked up at GPD');
 });
 
-console.log('\n⚡ Static integrity tests\n' + '─'.repeat(50));
-for (const r of results) {
-  console.log(`${r.ok ? '✅' : '❌'} ${r.name}${r.ok ? '' : '\n   └─ ' + r.msg}`);
-}
-console.log('─'.repeat(50));
 test('app: the front page carries the iOS smart app banner and an App Store link', () => {
   const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
   assert.ok(/<meta name="apple-itunes-app" content="app-id=6820474476">/.test(html), 'smart app banner meta tag');
@@ -1290,6 +1285,123 @@ test('api etiquette: generated snippets poll rarely — Shelly fetches the day p
   assert.ok(num('FALLBACK_POLL_MS') >= 15 * 60 * 1000, 'the no-clock fallback polls too eagerly');
   assert.ok(!/Shelly\.call\("HTTP\.GET"[\s\S]{0,120}\}\s*\n\s*Timer\.set\(\w+, true, check\)/.test(INDEX), 'a periodic HTTP check came back');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Footer: four short groups, the net companies behind one disclosure
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FOOTER = INDEX.slice(INDEX.indexOf('<footer'), INDEX.indexOf('</footer>') + 9);
+const footerHrefs = (html) => [...html.matchAll(/<a\b[^>]*\bhref="([^"]+)"/g)].map(m => m[1]);
+const NET_SLUGS = {
+  dk1: ['n1', 'trefor', 'konstant', 'vores-elnet', 'rah-net', 'elvaerk', 'nord-energi', 'noe-net', 'elnet-midt', 'flow-elnet', 'lnet'],
+  dk2: ['cerius', 'trefor-ost', 'radius'],
+};
+
+test('footer: four labelled groups, each a nav with a visible heading', () => {
+  assert.ok(FOOTER.startsWith('<footer'), 'footer found');
+  assert.equal((INDEX.match(/<footer\b/g) || []).length, 1, 'exactly one footer');
+  const heads = [...FOOTER.matchAll(/<nav class="sf-col" aria-labelledby="(\w+)">\s*<p class="sf-h" id="\1">([^<]+)<\/p>/g)].map(m => m[2]);
+  assert.deepEqual(heads, ['Priser', 'Smart hjem', 'Viden', 'Elpriser']);
+  // The grouped columns, in the owner's order and with the owner's links.
+  const col = (id) => { const i = FOOTER.indexOf(`id="${id}"`); return FOOTER.slice(i, FOOTER.indexOf('</nav>', i)); };
+  assert.deepEqual(footerHrefs(col('sfPriser')), ['/', '/dk1', '/dk2', '/prognose', '/tariffer']);
+  assert.deepEqual(footerHrefs(col('sfHjem')), ['/automation', '/shelly-tariff', '/api']);
+  const viden = footerHrefs(col('sfViden'));
+  assert.deepEqual(viden.slice(0, 6), ['/blog/forsta-din-elpris', '/blog/elafgift-2028', '/blog/elafgift-og-spotpris',
+    '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest', '/blog']);
+  assert.ok(footerHrefs(col('sfOm')).slice(0, 2).join() === '/om-elpriser,/privatliv', 'Om Elpriser and Privatliv');
+});
+
+test('footer: the older guides stay reachable as plain links behind a collapsed "Flere guides"', () => {
+  const m = FOOTER.match(/<details class="sf-more">\s*<summary>[^]*?Flere guides[^]*?<\/summary>([^]*?)<\/details>/);
+  assert.ok(m, 'details "Flere guides" in the Viden group');
+  assert.ok(!/<details[^>]*\bopen\b/.test(m[0]), 'collapsed by default');
+  assert.deepEqual(footerHrefs(m[1]), ['/blog/shelly-elpris-automation', '/blog/home-assistant-elpriser',
+    '/blog/v2g-v2h-bidirektional-opladning', '/blog/biler-ladere-v2h-v2g']);
+  // Every blog post the footer ever linked is still a plain <a href> somewhere in it.
+  for (const slug of ['forsta-din-elpris', 'shelly-elpris-automation', 'home-assistant-elpriser', 'v2g-v2h-bidirektional-opladning',
+    'biler-ladere-v2h-v2g', 'hvornaar-er-stroemmen-billigst', 'groennest-og-dyrest', 'elafgift-2028', 'elafgift-og-spotpris']) {
+    assert.ok(FOOTER.includes(`href="/blog/${slug}"`), `footer links /blog/${slug}`);
+  }
+});
+
+test('footer: all 14 net companies and the two foreign zones sit inside ONE collapsed details, as real links', () => {
+  const m = FOOTER.match(/<details class="sf-all">\s*<summary>[^]*?Alle netselskaber og prisområder[^]*?<\/summary>([^]*?)<\/details>/);
+  assert.ok(m, 'details "Alle netselskaber og prisområder"');
+  assert.ok(!/<details[^>]*\bopen\b/.test(m[0]), 'collapsed by default');
+  assert.equal((FOOTER.match(/<details\b/g) || []).length, 2, 'two disclosures in the footer: Flere guides and the net list');
+  assert.ok(/aria-label="Netselskaber"/.test(m[1]), 'the net list is a labelled nav');
+  const inside = footerHrefs(m[1]);
+  for (const [area, slugs] of Object.entries(NET_SLUGS)) {
+    for (const s of slugs) assert.ok(inside.includes(`/${area}/${s}`), `/${area}/${s} is inside the details`);
+  }
+  assert.ok(inside.includes('/se3') && inside.includes('/no1'), 'Sverige and Norge are inside the details');
+  assert.equal(inside.length, 16, 'nothing else in there');
+  for (const h of ['Vestdanmark (DK1)', 'Østdanmark (DK2)', 'Andre prisområder']) assert.ok(m[1].includes(h), `heading ${h}`);
+  // Nothing outside the details links a net page: the visible footer stays short.
+  const outside = footerHrefs(FOOTER.replace(m[0], ''));
+  assert.deepEqual(outside.filter(h => /^\/(dk[12]\/|se3|no1)/.test(h)), [], 'net pages only behind the disclosure');
+});
+
+test('footer: both app stores are linked, rel=noopener, with the Danish button wording', () => {
+  for (const [url, text] of [
+    ['https://apps.apple.com/dk/app/id6820474476', 'Hent til iPhone og iPad'],
+    ['https://play.google.com/store/apps/details?id=org.elpriser.app', 'Hent til Android'],
+  ]) {
+    const a = FOOTER.match(new RegExp(`<a href="${url.replace(/[.?]/g, '\\$&')}"([^>]*)>([^]*?)</a>`));
+    assert.ok(a, `footer links ${url}`);
+    assert.ok(/rel="noopener"/.test(a[1]), `${url} has rel=noopener`);
+    assert.ok(a[2].startsWith(text), `${url} reads "${text}"`);
+  }
+  assert.equal((FOOTER.match(/apps\.apple\.com/g) || []).length, 1, 'App Store linked once');
+  assert.equal((FOOTER.match(/play\.google\.com/g) || []).length, 1, 'Google Play linked once');
+});
+
+test('footer: no link list is repeated, and the credits line keeps both external links', () => {
+  const hrefs = footerHrefs(FOOTER);
+  const dup = hrefs.filter((h, i) => hrefs.indexOf(h) !== i);
+  assert.deepEqual(dup, [], 'a link appears twice in the footer');
+  assert.ok(hrefs.length <= 45, `footer has ${hrefs.length} links`);
+  const legal = FOOTER.match(/<p class="sf-legal">([^]*?)<\/p>/);
+  assert.ok(legal, 'credits line');
+  assert.ok(/&copy; Elpriser\.org &mdash; Data fra <a href="https:\/\/www\.energidataservice\.dk"[^>]*rel="noopener">Energi Data Service<\/a> \(Energinet\)\. Åbne datasæt på <a href="https:\/\/huggingface\.co\/Elpriser"[^>]*rel="noopener">Hugging Face<\/a>\./.test(legal[1]), 'credits wording and links');
+  // Brand wordmark: capital E in visible text.
+  assert.ok(!/>\s*elpriser[ <]/.test(FOOTER) && !/Om elpriser/.test(FOOTER), 'visible brand text is "Elpriser"');
+});
+
+test('footer: summaries are 44 px targets, links 44 px on phones, focus rings, no horizontal overflow, no emoji', () => {
+  assert.ok(/\.sf details>summary\{[^}]*min-height:44px/.test(INDEX), 'summary min-height 44px');
+  assert.ok(/\.sf-l a\{[^}]*min-height:44px/.test(INDEX) && /\.sf-chips a\{[^}]*min-height:44px/.test(INDEX) && /\.sf-apps a\{[^}]*min-height:44px/.test(INDEX), 'link targets 44px');
+  assert.ok(/\.sf a:focus-visible,\.sf summary:focus-visible\{outline:2px solid var\(--p-brand\)/.test(INDEX), 'visible focus ring');
+  assert.ok(/\.sf-cols\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/.test(INDEX) && /@media \(min-width:900px\)\{\.sf-cols\{grid-template-columns:repeat\(4,/.test(INDEX), '2 columns on phones, 4 from 900 px');
+  assert.ok(/\.sf-h\{[^}]*font-size:12px[^}]*text-transform:uppercase/.test(INDEX), '12 px uppercase headings');
+  assert.ok(!/\.sf[\w-]*\{[^}]*#[0-9a-f]{3,6}/i.test(INDEX.slice(INDEX.indexOf('.sf{'), INDEX.indexOf('.sf-legal a:hover') + 60)), 'footer colours come from the --p-* roles (light and dark)');
+  assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(FOOTER), 'no emoji in the footer');
+});
+
+test('crawl hygiene: no templated href literal anywhere a crawler can read it', () => {
+  // Google once crawled https://elpriser.org/${k}: an unevaluated template
+  // string in an href attribute ships as literal text in the served HTML and is
+  // read as a relative link. Build such hrefs by concatenation or set el.href.
+  const bad = /href=\\?["'](?:\/)?\$\{/;
+  for (const [name, src] of [['index.html', INDEX], ['functions/[[path]].js', ROUTES]]) {
+    const lines = src.split('\n');
+    lines.forEach((l, i) => assert.ok(!bad.test(l), `${name}:${i + 1} has a templated href: ${l.trim().slice(0, 100)}`));
+  }
+  assert.ok(!INDEX.includes('href="${') && !INDEX.includes("href='${") && !INDEX.includes('href=\\"/${'), 'index.html literal');
+  assert.ok(!ROUTES.includes('href="${') && !ROUTES.includes("href='${") && !ROUTES.includes('href=\\"/${'), 'functions literal');
+});
+
+test('footer: the homepage render cache key was bumped with the shared markup', () => {
+  assert.ok(/homepage-ssr-v65/.test(ROUTES), 'homepage-ssr-v65');
+});
+
+
+console.log('\n⚡ Static integrity tests\n' + '─'.repeat(50));
+for (const r of results) {
+  console.log(`${r.ok ? '✅' : '❌'} ${r.name}${r.ok ? '' : '\n   └─ ' + r.msg}`);
+}
+console.log('─'.repeat(50));
 
 console.log(`\n${_passed} passed, ${_failed} failed\n`);
 process.exit(_failed > 0 ? 1 : 0);
