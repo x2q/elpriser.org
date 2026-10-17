@@ -241,7 +241,8 @@ async function main() {
   const bdN1 = await get('/dk1/n1');
   const panel1 = (bdN1.body.match(/<details class="pris-bd">[\s\S]*?<\/details>/) || [''])[0];
   check(/^<details class="pris-bd"><summary class="pris-cap">Inkl\. nettarif, afgifter og moms</.test(panel1), '/dk1/n1: billedteksten er en lukket <details>');
-  check(!/<details[^>]* open/.test(bdN1.body), '/dk1/n1: åbnes først af besøgende');
+  // Only the markup counts: the page's own script contains the template '(open?\' open\':\'\')'.
+  check(!/<details[^>]* open/.test(bdN1.body.replace(/<script[\s\S]*?<\/script>/g, '')), '/dk1/n1: åbnes først af besøgende');
   for (const label of ['Spotpris \\(Nord Pool\\)', 'Systemtarif \\(Energinet\\)', 'Transmissionstarif \\(Energinet\\)', 'Nettarif \\(N1, kl\\. \\d\\d\\)', 'Elafgift', 'Moms \\(25 %\\)', 'I alt'])
     check(new RegExp(`<span class="l">${label}</span><b>-?\\d+,\\d`).test(panel1), `/dk1/n1: rækken ${label.replace(/\\/g, '')} står i HTML'en`);
   check(/Sådan er prisen kl\. \d\d sammensat/.test(panel1) && !/NaN|undefined|Infinity/.test(panel1), '/dk1/n1: overskriften for nu, ingen NaN');
