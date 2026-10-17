@@ -2,7 +2,12 @@ import Foundation
 
 /// Klient til elpriser.org's åbne API (samme endpoints som Android-appen).
 enum Api {
+    #if DEBUG
+    /// Kun til skærmbilleder: -debugApiBase http://127.0.0.1:8787/api peger på en lokal kopi af API'et.
+    private static let base = UserDefaults.standard.string(forKey: "debugApiBase") ?? "https://elpriser.org/api"
+    #else
     private static let base = "https://elpriser.org/api"
+    #endif
     private static let session: URLSession = {
         let c = URLSessionConfiguration.default
         c.timeoutIntervalForRequest = 25
@@ -45,10 +50,27 @@ enum Api {
                 }
             }
             if price.contains(where: { $0.isNaN }) { continue }
-            out.append(Day(date: date, actual: type == "actual", price: price, lo: band ? lo : nil, hi: band ? hi : nil))
+            out.append(Day(date: date, actual: type == "actual", price: price, lo: band ? lo : nil, hi: band ? hi : nil,
+                           gridTariff: parseGridTariff(d["grid_tariff"])))
         }
         let model = (j["model"] as? [String: Any])?["name"] as? String
-        return Forecast(area: area, mode: mode, days: out, model: model)
+        return Forecast(area: area, mode: mode, days: out, model: model, charges: parseCharges(j["charges"]))
+    }
+
+    /// `charges {sys, trans, afg, vat}` øverst i svaret. Mangler et af tallene (eller er svaret ældre), er der ingen afgifter.
+    static func parseCharges(_ v: Any?) -> Charges? {
+        guard let o = v as? [String: Any],
+              let sys = (o["sys"] as? NSNumber)?.doubleValue, let trans = (o["trans"] as? NSNumber)?.doubleValue,
+              let afg = (o["afg"] as? NSNumber)?.doubleValue, let vat = (o["vat"] as? NSNumber)?.doubleValue,
+              [sys, trans, afg, vat].allSatisfy({ $0.isFinite }), vat >= 0 else { return nil }
+        return Charges(sys: sys, trans: trans, afg: afg, vat: vat)
+    }
+
+    /// `days[].grid_tariff`: præcis 24 tal, ellers ingen.
+    static func parseGridTariff(_ v: Any?) -> [Double]? {
+        guard let a = v as? [Any], a.count == 24 else { return nil }
+        let nums = a.compactMap { ($0 as? NSNumber)?.doubleValue }
+        return nums.count == 24 && nums.allSatisfy({ $0.isFinite }) ? nums : nil
     }
 
     /// CO₂ i g/kWh pr. time, pr. dato.

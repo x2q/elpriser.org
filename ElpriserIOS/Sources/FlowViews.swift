@@ -24,7 +24,7 @@ private struct Brand: View {
         HStack(spacing: 8) {
             Image(systemName: "bolt.fill").font(.app(15, .bold)).foregroundStyle(.white)
                 .frame(width: 28, height: 28).background(T.brandSolid, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            Text("elpriser").font(.app(15, .heavy))
+            Text("Elpriser").font(.app(15, .heavy))
         }
     }
 }

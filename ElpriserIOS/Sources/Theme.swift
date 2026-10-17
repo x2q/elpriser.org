@@ -43,6 +43,12 @@ enum T {
     static let co2 = Color(light: 0x0b756a, dark: 0x2fd4bf)
     static let co2Soft = Color(light: 0xd9f2ee, dark: 0x10332f)
     static let nav = Color(light: 0xe9eef8, dark: 0x161f30)
+    /// Prisopbygningen (søjle og prikker). Farven er kun en hjælp; rækkernes tekst bærer betydningen.
+    static let partSpot = Color(light: 0x5b8df7, dark: 0x6c9bff)
+    static let partEnerginet = Color(light: 0xb9ccfa, dark: 0x3c5aa6)
+    static let partGrid = Color(light: 0x14308f, dark: 0xb9ccfa)
+    static let partDuty = Color(light: 0xf0a30a, dark: 0xf0a30a)
+    static let partVat = Color(light: 0xc7ccd9, dark: 0x5a6479)
 }
 
 /// Samme farveskala som elpriser.org: grøn (billig) → lime → gul → orange → rød (dyr).

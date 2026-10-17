@@ -51,6 +51,8 @@ struct Day: Identifiable {
     let price: [Double]
     let lo: [Double]?
     let hi: [Double]?
+    /// Nettariffen pr. time, kr/kWh ekskl. moms (kun på net-visninger; nil ellers, og når API'et ikke sender den).
+    var gridTariff: [Double]? = nil
     var id: String { date }
 
     var localDate: Date { Clock.parse(date) }
@@ -61,6 +63,16 @@ struct Forecast {
     let mode: String
     let days: [Day]
     let model: String?
+    /// Afgifterne, priserne er bygget med (nil hvis API'et ikke sender dem, fx i et ældre svar).
+    var charges: Charges? = nil
+}
+
+/// Systemtarif, transmissionstarif og elafgift i kr/kWh ekskl. moms, samt momssatsen (0,25).
+struct Charges: Equatable {
+    let sys: Double
+    let trans: Double
+    let afg: Double
+    let vat: Double
 }
 
 struct LookupResult {

@@ -50,6 +50,9 @@ final class AppModel {
         return (series[mode ?? settings.mode]?.days ?? []).filter { $0.date >= today }
     }
 
+    /// Afgifterne i svaret for en visning (nil i et ældre svar uden `charges`).
+    func charges(_ mode: String? = nil) -> Charges? { series[mode ?? settings.mode]?.charges }
+
     var modelName: String? { series[settings.mode]?.model }
 
     /// Henter alt, appen skal bruge: den valgte visning plus de tre, prisopbygningen regnes af.

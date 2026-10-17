@@ -86,6 +86,10 @@ struct PrisBar: Equatable {
     /// Timen er allerede gået (kun i dag).
     let past: Bool
     let actual: Bool
+    /// Døgnets dato ("2026-10-15"), så prisopbygningen kan finde døgnet — og dets nettarif — igen.
+    let date: String
+    /// Dagsordene i tippet: "I dag", "I morgen", "søn 17. okt".
+    let when: String
     /// Teksten i værktøjstippet: "I dag kl. 19 · 3,90 kr/kWh", "søn 17. okt kl. 13 · 0,51 kr/kWh".
     let tip: String
 }
@@ -169,7 +173,7 @@ func prisChart(period: PricePeriod, days: [Day], today: String, now: Int) -> Pri
             if !d.actual && forecastFrom == nil { forecastFrom = bars.count }
             bars.append(PrisBar(
                 value: v, tier: priceTier(v, in: all), dayOffset: k, hour: h,
-                past: item.offset == 0 && h < now, actual: d.actual,
+                past: item.offset == 0 && h < now, actual: d.actual, date: d.date, when: when,
                 tip: "\(when) kl. \(pad(h)) · \(fmt(v)) kr/kWh"))
         }
     }
@@ -273,4 +277,116 @@ func priceCaption(spot: Bool, hasNet: Bool) -> String {
 func netChipLabel(net: Net?, area: String) -> String {
     let side = (net?.area ?? area) == "DK1" ? "Vest" : "Øst"
     return "\(net?.name ?? (net?.area ?? area)) · \(side)"
+}
+
+// MARK: - prisopbygning
+
+/// Delene en times pris er bygget af. Farven følger rollen; betydningen bæres altid af rækkens tekst.
+enum BreakdownPart: Equatable { case spot, system, transmission, grid, duty, vat }
+
+/// En række i opdelingen. `tenths` er øre/kWh × 10 (hele tal), så delene kan summe præcist.
+struct BreakdownRow: Equatable, Identifiable {
+    let part: BreakdownPart
+    let label: String
+    let tenths: Int
+    var id: String { label }
+    /// "85,3 øre", aldrig "-0,0 øre".
+    var text: String { tenthsText(tenths) + " øre" }
+    /// Skærmlæserens linje: etiket og værdi.
+    var spoken: String { "\(label), \(text)" }
+}
+
+struct PriceBreakdown: Equatable {
+    let heading: String
+    let rows: [BreakdownRow]
+    /// Prisen × 100 afrundet til 0,1 øre. Rækkerne summer præcis hertil.
+    let totalTenths: Int
+    /// "2,06 kr/kWh" — samme tal som i hero og tip.
+    let totalText: String
+    /// Timen er valgt på grafen (så der vises "Tilbage til nu").
+    let isSelected: Bool
+
+    /// Søjlens bredder: de positive dele i forhold til deres sum (en negativ spotpris giver ikke et stykke). Tom sum → nuller.
+    var barWeights: [Double] {
+        let pos = rows.map { Double(Swift.max($0.tenths, 0)) }
+        let sum = pos.reduce(0, +)
+        return sum <= 0 ? rows.map { _ in 0 } : pos.map { $0 / sum }
+    }
+}
+
+/// 853 → "85,3", -3 → "-0,3", 0 → "0,0".
+func tenthsText(_ t: Int) -> String {
+    let a = abs(t)
+    return "\(t < 0 ? "-" : "")\(a / 10),\(a % 10)"
+}
+
+/// kr → tiendedele øre, afrundet som Math.round (halve op), så alle tre platforme runder ens.
+private func tenthsOf(_ kr: Double) -> Int {
+    let v = (kr * 1000 + 0.5).rounded(.down)
+    return v.isFinite && abs(v) < 1e12 ? Int(v) : 0
+}
+
+/// Prisen for én time delt op, ud fra den pris der vises (kr/kWh inkl. moms i den aktive visning) og samme svars `charges`.
+///  - `net_inkl_alt`: spot, system, transmission, nettarif (timen), elafgift, moms
+///  - `inkl_alt`: som ovenfor uden nettarif
+///  - `spot_inkl`: spot og moms
+/// Hver række afrundes til 0,1 øre, og Spotpris-rækken tager afrundingsforskellen, så rækkerne summer præcis til totalen.
+/// nil når opdelingen ikke kan vises: `charges` mangler, timen har ingen pris, en net-visning mangler timens nettarif,
+/// eller visningen er en anden. `headingWhen` er "" for denne time og ellers "i morgen" / "søn 18. okt".
+func breakdownOf(
+    mode: String, price: Double, hour: Int, forecastDay: Bool, charges: Charges?, gridTariff: Double?,
+    netName: String?, headingWhen: String = ""
+) -> PriceBreakdown? {
+    guard let charges, price.isFinite, (0..<24).contains(hour) else { return nil }
+    let net = mode == "net_inkl_alt"
+    let sys: Int, trans: Int, afg: Int
+    switch mode {
+    case "net_inkl_alt", "inkl_alt": (sys, trans, afg) = (tenthsOf(charges.sys), tenthsOf(charges.trans), tenthsOf(charges.afg))
+    case "spot_inkl": (sys, trans, afg) = (0, 0, 0)
+    default: return nil
+    }
+    var grid = 0
+    if net {
+        guard let t = gridTariff, t.isFinite else { return nil }
+        grid = tenthsOf(t)
+    }
+    let total = tenthsOf(price)
+    // Moms = pris − pris/(1+sats), rundet for sig. Spotprisen er resten, så summen går op.
+    let vat = tenthsOf(price - price / (1 + charges.vat))
+    let spot = total - sys - trans - grid - afg - vat
+    var rows = [BreakdownRow(part: .spot, label: forecastDay ? "Spotpris (prognose)" : "Spotpris (Nord Pool)", tenths: spot)]
+    if mode != "spot_inkl" {
+        rows.append(BreakdownRow(part: .system, label: "Systemtarif (Energinet)", tenths: sys))
+        rows.append(BreakdownRow(part: .transmission, label: "Transmissionstarif (Energinet)", tenths: trans))
+        if net {
+            let who = (netName ?? "").isEmpty ? "" : "\(netName!), "
+            rows.append(BreakdownRow(part: .grid, label: "Nettarif (\(who)kl. \(pad(hour)))", tenths: grid))
+        }
+        rows.append(BreakdownRow(part: .duty, label: "Elafgift", tenths: afg))
+    }
+    rows.append(BreakdownRow(part: .vat, label: "Moms (\(Int((charges.vat * 100).rounded())) %)", tenths: vat))
+    return PriceBreakdown(
+        heading: "Sådan er prisen \(headingWhen.isEmpty ? "" : headingWhen + " ")kl. \(pad(hour)) sammensat",
+        rows: rows, totalTenths: total, totalText: "\(fmt(price)) kr/kWh", isSelected: !headingWhen.isEmpty)
+}
+
+/// Dagsordene i overskriften for en valgt søjle: tippets ord med småt ("i dag", "i morgen", "søn 18. okt").
+func breakdownWhen(_ bar: PrisBar) -> String {
+    bar.when.prefix(1).lowercased() + bar.when.dropFirst()
+}
+
+/// Opdelingen for den valgte søjle (`selected`: indeks i `spec.bars`), ellers for timen nu. nil når den ikke kan vises.
+func priceBreakdown(
+    mode: String, days: [Day], today: String, now: Int, spec: PrisChartSpec?, selected: Int?,
+    charges: Charges?, netName: String?
+) -> PriceBreakdown? {
+    if let selected, let spec, spec.bars.indices.contains(selected) {
+        let bar = spec.bars[selected]
+        let tariff = days.first { $0.date == bar.date }?.gridTariff?[bar.hour]
+        return breakdownOf(mode: mode, price: bar.value, hour: bar.hour, forecastDay: !bar.actual,
+                           charges: charges, gridTariff: tariff, netName: netName, headingWhen: breakdownWhen(bar))
+    }
+    guard (0..<24).contains(now), let day = days.first(where: { $0.date == today }), day.price.indices.contains(now) else { return nil }
+    return breakdownOf(mode: mode, price: day.price[now], hour: now, forecastDay: !day.actual,
+                       charges: charges, gridTariff: day.gridTariff?[now], netName: netName)
 }

@@ -5,6 +5,17 @@ import SwiftUI
 struct PrisScreen: View {
     @Environment(AppModel.self) private var vm
     @State private var selected: Int?
+    /// Prisopbygningen under teksten er foldet ud.
+    @State private var breakdownOpen = false
+
+    init() {
+        #if DEBUG
+        // Kun til skærmbilleder: -debugBreakdown YES folder opdelingen ud, -debugSelect <indeks> vælger en søjle på forhånd.
+        let d = UserDefaults.standard
+        _breakdownOpen = State(initialValue: d.bool(forKey: "debugBreakdown"))
+        _selected = State(initialValue: d.object(forKey: "debugSelect") != nil ? d.integer(forKey: "debugSelect") : nil)
+        #endif
+    }
 
     private enum Shape { case phone, stacked, columns }
 
@@ -34,6 +45,13 @@ struct PrisScreen: View {
         let chart = prisChart(period: vm.period, days: days, today: today, now: now)
         let tablet = shape != .phone
         let pad: CGFloat = shape == .phone ? 20 : 28
+        let caption = CaptionModel(
+            text: priceCaption(spot: s.prisIsSpot, hasNet: s.net != nil),
+            breakdown: priceBreakdown(mode: s.prisMode, days: days, today: today, now: now, spec: chart, selected: selected,
+                                      charges: vm.charges(s.prisMode), netName: s.net?.name),
+            open: $breakdownOpen, onBack: { selected = nil })
+        // Opdelingen gør hero-kortet højere; den højde lægges til, så prisen ikke skrumper og grafen ikke trykkes sammen.
+        let extra: CGFloat = breakdownOpen && caption.breakdown != nil ? (selected != nil ? 380 : 330) : 0
 
         VStack(spacing: 0) {
             PrisHeader(tablet: tablet).padding(.horizontal, pad).padding(.top, 8).padding(.bottom, 12)
@@ -41,19 +59,19 @@ struct PrisScreen: View {
                 switch shape {
                 case .columns:
                     let leftW = min(440, max(340, size.width * 0.36))
-                    let h = max(size.height - 80, 560)
+                    let h = max(size.height - 80, 560) + extra
                     ScrollView {
                         VStack(spacing: 12) {
                             if let e = vm.error { ErrorCard(text: e, onRetry: { vm.refresh(force: true) }) }
                             HStack(alignment: .top, spacing: 24) {
                                 VStack(spacing: 16) {
-                                    HeroCard(summary: summary, weekday: weekdayToday(today), compact: leftW < 400)
+                                    HeroCard(summary: summary, weekday: weekdayToday(today), caption: caption, compact: leftW < 400)
                                     Tiles(summary: summary, tablet: true)
                                 }
                                 .frame(width: leftW)
                                 VStack(spacing: 20) {
                                     PeriodPill(wide: true)
-                                    ChartCard(spec: chart, tablet: true, selected: $selected, fill: true)
+                                    ChartCard(spec: chart, tablet: true, selected: $selected, fill: true, caption: caption)
                                 }
                                 .frame(maxWidth: .infinity)
                             }
@@ -68,17 +86,17 @@ struct PrisScreen: View {
                             if let e = vm.error { ErrorCard(text: e, onRetry: { vm.refresh(force: true) }) }
                             if size.width >= 760 {
                                 HStack(alignment: .top, spacing: 16) {
-                                    HeroCard(summary: summary, weekday: weekdayToday(today))
+                                    HeroCard(summary: summary, weekday: weekdayToday(today), caption: caption)
                                     Tiles(summary: summary, tablet: true, vertical: true).frame(width: 260)
                                 }
                             } else {
-                                HeroCard(summary: summary, weekday: weekdayToday(today))
+                                HeroCard(summary: summary, weekday: weekdayToday(today), caption: caption)
                             }
                             PeriodPill(wide: true)
-                            ChartCard(spec: chart, tablet: true, selected: $selected, fill: true)
+                            ChartCard(spec: chart, tablet: true, selected: $selected, fill: true, caption: caption)
                             if size.width < 760 { Tiles(summary: summary, tablet: true) }
                         }
-                        .frame(height: max(size.height - 80, 820))
+                        .frame(height: max(size.height - 80, 820) + extra)
                         .padding(.horizontal, pad).padding(.bottom, 20)
                     }
                     .refreshable { await vm.load(force: true) }
@@ -88,7 +106,7 @@ struct PrisScreen: View {
                             if let e = vm.error { ErrorCard(text: e, onRetry: { vm.refresh(force: true) }) }
                             HeroPlain(summary: summary)
                             PeriodPill(wide: false)
-                            ChartCard(spec: chart, tablet: false, selected: $selected, fill: false)
+                            ChartCard(spec: chart, tablet: false, selected: $selected, fill: false, caption: caption)
                             Tiles(summary: summary, tablet: false)
                         }
                         .padding(.horizontal, pad).padding(.bottom, 16)
@@ -131,7 +149,7 @@ private struct PrisHeader: View {
                         .frame(width: 30, height: 30).background(T.brandSolid, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                         .accessibilityHidden(true)
                 }
-                Text("elpriser").font(.app(tablet ? 20 : 17, .heavy)).tracking(-0.3)
+                Text("Elpriser").font(.app(tablet ? 20 : 17, .heavy)).tracking(-0.3)
             }
             Spacer(minLength: 8)
             NavigationLink(value: Route.settings) {
@@ -176,11 +194,9 @@ private func heroSentenceText(_ s: PrisSummary, size: CGFloat, color: Color) -> 
 
 /// Telefonens hero: ligger direkte på baggrunden, som i designet.
 private struct HeroPlain: View {
-    @Environment(AppModel.self) private var vm
     let summary: PrisSummary
 
     var body: some View {
-        let s = vm.settings
         VStack(alignment: .leading, spacing: 10) {
             Text("Elpris lige nu · kl. \(pad(summary.hour))").font(.app(13, .semibold)).foregroundStyle(T.text2)
             HStack(alignment: .lastTextBaseline, spacing: 8) {
@@ -189,7 +205,6 @@ private struct HeroPlain: View {
                 Text("kr/kWh").font(.app(18, .bold)).foregroundStyle(T.text2)
             }
             .accessibilityElement(children: .combine)
-            Text(priceCaption(spot: s.prisIsSpot, hasNet: s.net != nil)).font(.app(12, .semibold)).foregroundStyle(T.text2)
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 10) {
                     VerdictPill(tier: summary.tier)
@@ -207,14 +222,13 @@ private struct HeroPlain: View {
 
 /// Tabletternes hero-kort, med prisvalget og dets forklaring i kortet.
 private struct HeroCard: View {
-    @Environment(AppModel.self) private var vm
     let summary: PrisSummary
     let weekday: String
+    let caption: CaptionModel
     /// Smalt hero-kort (telefon på langs): mindre tal og luft.
     var compact = false
 
     var body: some View {
-        let s = vm.settings
         VStack(alignment: .leading, spacing: compact ? 12 : 18) {
             Text("Elpris lige nu · \(weekday) kl. \(pad(summary.hour))").font(.app(14, .semibold)).foregroundStyle(T.text2)
             HStack(alignment: .lastTextBaseline, spacing: 10) {
@@ -228,7 +242,7 @@ private struct HeroCard: View {
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: 8) {
                 ModeSwitch(large: true)
-                Text(priceCaption(spot: s.prisIsSpot, hasNet: s.net != nil)).font(.app(12, .semibold)).foregroundStyle(T.text2)
+                caption.view
             }
             .padding(.top, 4)
         }
@@ -319,6 +333,7 @@ private struct ChartCard: View {
     let tablet: Bool
     @Binding var selected: Int?
     let fill: Bool
+    let caption: CaptionModel
     @Environment(AppModel.self) private var vm
 
     var body: some View {
@@ -340,6 +355,7 @@ private struct ChartCard: View {
                     Spacer(minLength: 8)
                     ModeSwitch()
                 }
+                caption.view
             }
             if let spec {
                 PriceBarChart(spec: spec, selected: $selected,
@@ -405,4 +421,14 @@ private struct Tiles: View {
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(T.outline, lineWidth: 1))
         .accessibilityElement(children: .combine)
     }
+}
+
+/// Det, teksten under Din pris | Spotpris skal bruge: selve teksten, opdelingen (nil uden `charges`) og om den er foldet ud.
+struct CaptionModel {
+    let text: String
+    let breakdown: PriceBreakdown?
+    let open: Binding<Bool>
+    let onBack: () -> Void
+
+    var view: some View { CaptionDisclosure(caption: text, breakdown: breakdown, open: open, onBack: onBack) }
 }
