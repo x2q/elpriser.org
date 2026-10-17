@@ -672,6 +672,61 @@ test('homepage: the Pris screen is server-rendered, not JS-only', () => {
     'the homepage cache key was not bumped for the price-grid removal');
 });
 
+test('clock: the Copenhagen hour and date never turn into NaN, whatever the engine\'s Intl returns', () => {
+  // A phone showed "Elpris lige nu · lørdag kl. NaN" with no price and every bar counted as
+  // future: the hour had been read with +new Intl.DateTimeFormat(...).format(), and an engine
+  // that adds anything to the digits turns that into NaN. The helpers read formatToParts and
+  // then the digits of a plain format, and always end in a number.
+  const vm = require('vm');
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  for (const [name, src] of [['index.html', INDEX], ['functions/[[path]].js', SRV]])
+    assert.ok(!/\+\s*new Intl\.DateTimeFormat\(/.test(src),
+      `${name} coerces an Intl-formatted string with a unary plus — read the hour with cphHourOf()`);
+  const clientSrc = INDEX.slice(INDEX.indexOf('// ═══ Copenhagen clock ═══'), INDEX.indexOf('// ═══ /Copenhagen clock ═══'));
+  assert.ok(clientSrc.includes('function cphHourOf') && clientSrc.includes('function cphDateOf'), 'the clock block is gone from index.html');
+  const serverSrc = SRV.slice(SRV.indexOf('function cphHourOf(d)'), SRV.indexOf('async function renderSPA('));
+  assert.ok(serverSrc.includes('formatToParts'), 'the server has no cphHourOf');
+  const load = (impl) => {
+    const ctx = { Intl: impl, Date, String, Number, RegExp };
+    vm.createContext(ctx);
+    vm.runInContext(clientSrc + '\n' + serverSrc.replace('function cphHourOf(d)', 'function cphHourOfSrv(d)')
+      + '\nglobalThis.H = cphHourOf; globalThis.D = cphDateOf; globalThis.HS = cphHourOfSrv;', ctx);
+    return ctx;
+  };
+  // Real Intl, across winter, summer and both DST changes.
+  const real = load(Intl);
+  for (const [iso, hour, date] of [
+    ['2026-10-17T05:37:00Z', 7, '2026-10-17'], ['2026-01-15T23:30:00Z', 0, '2026-01-16'],
+    ['2026-07-01T21:59:00Z', 23, '2026-07-01'], ['2026-03-29T00:59:00Z', 1, '2026-03-29'],
+    ['2026-03-29T01:00:00Z', 3, '2026-03-29'], ['2026-10-25T00:30:00Z', 2, '2026-10-25'],
+    ['2026-10-25T01:30:00Z', 2, '2026-10-25'],
+  ]) {
+    const d = new Date(iso);
+    assert.equal(real.H(d), hour, `cphHourOf(${iso})`);
+    assert.equal(real.HS(d), hour, `server cphHourOf(${iso})`);
+    assert.equal(real.D(d), date, `cphDateOf(${iso})`);
+  }
+  // Hostile engines: every one must still give a whole hour 0-23.
+  const d = new Date('2026-10-17T05:37:00Z');
+  const fake = (fmt, parts) => ({ DateTimeFormat: function (l, o) { return { format: x => fmt(x, o), formatToParts: parts }; } });
+  const cases = {
+    'suffix after the digits, no formatToParts': [fake(() => '07 h', undefined), 7],
+    'direction mark before the digits': [fake(() => '‎07:37', x => [{ type: 'hour', value: '‎07' }]), 7],
+    'midnight as 24': [fake(() => '24', x => [{ type: 'hour', value: '24' }]), 0],
+    'parts without an hour': [fake(() => '07:37', () => [{ type: 'minute', value: '37' }]), 7],
+    'non-Latin digits': [fake(() => '٠٧', () => [{ type: 'hour', value: '٠٧' }]), null],
+    'throws': [{ DateTimeFormat: function () { throw new Error('no Intl'); } }, null],
+  };
+  for (const [name, [impl, want]] of Object.entries(cases)) {
+    const c = load(impl);
+    const h = c.H(d), hs = c.HS(d);
+    assert.ok(Number.isInteger(h) && h >= 0 && h <= 23, `${name}: client hour is ${h}`);
+    assert.ok(Number.isInteger(hs) && hs >= 0 && hs <= 23, `${name}: server hour is ${hs}`);
+    if (want != null) { assert.equal(h, want, `${name}: client`); assert.equal(hs, want, `${name}: server`); }
+    assert.match(c.D(d), /^\d{4}-\d{2}-\d{2}$/, `${name}: date is ${c.D(d)}`);
+  }
+});
+
 test('homepage: the forecast numbers stay as text, not just path data', () => {
   // A polyline is unreadable to a crawler and to a screen reader. The whole
   // point of server-rendering this section is the numbers, so the per-day

@@ -1612,7 +1612,7 @@ function danishClock() {
   const cph = { timeZone: 'Europe/Copenhagen' };
   return {
     todayDk: new Intl.DateTimeFormat('en-CA', cph).format(new Date()),
-    nowH: +new Intl.DateTimeFormat('en-GB', { ...cph, hour: '2-digit', hourCycle: 'h23' }).format(new Date()),
+    nowH: cphHourOf(new Date()),
   };
 }
 
@@ -1624,7 +1624,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v62');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v63');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1755,6 +1755,20 @@ function tidyDescription(d) {
   return cut.slice(0, cut.lastIndexOf(' ')).replace(/[\s,;:—-]+$/, '') + '…';
 }
 
+// Hour (0–23) in Copenhagen, read from formatToParts() with digit-only fallbacks — never by
+// coercing format()'s whole string (+"07 h" is NaN). Same idea as cphHourOf in index.html.
+function cphHourOf(d) {
+  const tz = { timeZone: 'Europe/Copenhagen' };
+  const tries = [
+    () => { const p = new Intl.DateTimeFormat('en-GB', { ...tz, hour: 'numeric', hourCycle: 'h23' }).formatToParts(d).find(x => x.type === 'hour'); return p && p.value; },
+    () => new Intl.DateTimeFormat('en-GB', { ...tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d),
+  ];
+  for (const t of tries) {
+    try { const m = /\d{1,2}/.exec(String(t())); if (m) { const h = +m[0]; if (h >= 0 && h <= 24) return h % 24; } } catch (_) { /* next */ }
+  }
+  return (d.getUTCHours() + 2) % 24;  // last resort: CEST; the page is still better than 'NaN'
+}
+
 async function renderSPA(context, pathname, meta, opts = {}) {
   meta = { ...meta, description: tidyDescription(meta.description) };
   const pageUrl = `https://elpriser.org${pathname}`;
@@ -1827,7 +1841,7 @@ async function renderSPA(context, pathname, meta, opts = {}) {
     if (fc) {
       const cph = { timeZone: 'Europe/Copenhagen' };
       const todayDk = new Intl.DateTimeFormat('en-CA', cph).format(new Date());
-      const nowH = +new Intl.DateTimeFormat('en-GB', { ...cph, hour: '2-digit', hour12: false }).format(new Date());
+      const nowH = cphHourOf(new Date());
       html = html.replace('<!--SSR_PROGNOSE_CHART-->', fcChartHTML(fc.days || [], todayDk, nowH));
       // The next seven days as text — what "elpriser prognose 7 dage" asks for,
       // and the part of the page's ten-day forecast a crawler can otherwise not read.

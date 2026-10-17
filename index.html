@@ -3897,8 +3897,36 @@ window.addEventListener('popstate',route);     // back / forward between views o
 // prisHTML() further down is the drawing; this is what feeds it and reacts to it.
 // One request — /api/forecast, which carries today, tomorrow and the days after —
 // serves both periods; Din pris / Spotpris is the only thing that asks again.
-const cphDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Copenhagen'}).format(new Date());
-const cphHour=()=>+new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Copenhagen',hour:'2-digit',hourCycle:'h23'}).format(new Date());
+// ═══ Copenhagen clock ═══
+// Hour (0–23) and date (YYYY-MM-DD) in Copenhagen, read from formatToParts() and then from
+// the digits of a plain format() — never by coercing format()'s whole string with a unary
+// plus. An engine may add a suffix ("07 h"), a direction mark or a different order, and
+// +"07 h" is NaN: the hero then read "kl. NaN" with no price, and every bar counted as
+// future. Each fallback ends in a number. test-static.js runs this block against hostile
+// Intl implementations.
+function cphHourOf(d){
+  const tz={timeZone:'Europe/Copenhagen'};
+  const tries=[
+    ()=>{const p=new Intl.DateTimeFormat('en-GB',{...tz,hour:'numeric',hourCycle:'h23'}).formatToParts(d).find(x=>x.type==='hour');return p&&p.value;},
+    ()=>new Intl.DateTimeFormat('en-GB',{...tz,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(d)
+  ];
+  for(const t of tries){
+    try{const m=/\d{1,2}/.exec(String(t()));if(m){const h=+m[0];if(h>=0&&h<=24)return h%24;}}catch(_){}
+  }
+  return d.getHours();
+}
+function cphDateOf(d){
+  try{
+    const ps=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Copenhagen',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+    const g=t=>{const p=ps.find(x=>x.type===t);return p?String(p.value).replace(/\D/g,''):'';};
+    const s=g('year')+'-'+g('month').padStart(2,'0')+'-'+g('day').padStart(2,'0');
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  }catch(_){}
+  return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+}
+// ═══ /Copenhagen clock ═══
+const cphDate=()=>cphDateOf(new Date());
+const cphHour=()=>cphHourOf(new Date());
 function prisMount(){return document.querySelector('[data-page].active [data-pris-mount]');}
 function prisNet(){return PV.slug?netBySlug(PV.area,PV.slug):null;}
 /** Din pris is the net's all-in price when a net is chosen, otherwise the area's;
@@ -5512,9 +5540,8 @@ let _fcLoadId=0;
 function renderPrognoseForecast(days){
   const el=document.getElementById('prognoseForecast'),wrap=document.getElementById('prognoseForecastWrap');
   if(!el||!wrap)return;
-  const cph={timeZone:'Europe/Copenhagen'};
-  const today=new Intl.DateTimeFormat('en-CA',cph).format(new Date());
-  const nowH=+new Intl.DateTimeFormat('en-GB',{...cph,hour:'2-digit',hour12:false}).format(new Date());
+  const today=cphDateOf(new Date());
+  const nowH=cphHourOf(new Date());
   const html=fcChartHTML(days,today,nowH);
   if(!html){wrap.style.display='none';return;}
   el.innerHTML=html;wrap.style.display='';
@@ -5523,7 +5550,7 @@ function renderPrognoseForecast(days){
 function renderPrognoseWeek(days){
   const el=document.getElementById('prognoseWeek'),wrap=document.getElementById('prognoseWeekWrap');
   if(!el||!wrap)return;
-  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Copenhagen'}).format(new Date());
+  const today=cphDateOf(new Date());
   const html=fcWeekHTML(days,today,7);
   if(!html){wrap.style.display='none';return;}
   el.innerHTML=html;wrap.style.display='';
@@ -5723,9 +5750,9 @@ async function loadZone(zone){
 function renderZoneForecast(j,z,t,loc,cvt,dec,local){
   const el=document.getElementById('zoneForecast'),wrap=document.getElementById('zoneForecastWrap');
   if(!el||!wrap)return;
-  const tz={timeZone:'Europe/Copenhagen'};  // the feed's hours are Copenhagen hours
-  const today=new Intl.DateTimeFormat('en-CA',tz).format(new Date());
-  const nowH=+new Intl.DateTimeFormat('en-GB',{...tz,hour:'2-digit',hour12:false}).format(new Date());
+  // the feed's hours are Copenhagen hours
+  const today=cphDateOf(new Date());
+  const nowH=cphHourOf(new Date());
   const days=j.days.map(d=>({date:d.date,type:d.type,prices:d.prices.map(p=>({hour:p.hour,price:cvt(p.eur_mwh)}))}));
   const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
   const wdF=new Intl.DateTimeFormat(loc,{weekday:'long',timeZone:'UTC'});

@@ -229,6 +229,13 @@ async function main() {
   check((home.body.match(/data-tip="[^"]+ kl\. \d\d · -?\d+,\d\d kr\/kWh"/g) || []).length >= 48 + 120, 'forside: hver times pris står i HTML\'en');
   check(/class="pris-now">-?\d+,\d\d</.test(home.body), 'forside: prisen lige nu står som tekst');
   check(/class="pris-pill t[012]"/.test(home.body), 'forside: dommen billig / middel / dyr');
+  // The hero must never print NaN/undefined and must carry a real hour (a phone once showed "kl. NaN").
+  for (const p of ['/', '/dk1', '/dk2', '/dk1/n1', '/prognose']) {
+    const r = await get(p);
+    const visible = r.body.replace(/<script[\s\S]*?<\/script>/g, '');
+    check(!/\bNaN\b|\bundefined\b|\[object /.test(visible), `${p}: ingen NaN/undefined i den synlige HTML`);
+    if (p !== '/prognose') check(/data-hour="(?:\d|1\d|2[0-3])" data-date="\d{4}-\d{2}-\d{2}"/.test(r.body), `${p}: data-hour er en rigtig time`);
+  }
   const dayRows = (home.body.match(/<tr class="r\d+"><th scope="row">/g) || []).length;
   check(dayRows >= 8, 'forside: dagslisten står som tekst', `fandt ${dayRows} rækker`);
   check(/class="(real|fc)">(Børspris|Prognose)</.test(home.body), 'forside: døgnene er mærket børspris eller prognose');

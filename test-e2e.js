@@ -449,6 +449,34 @@ async function startServer() {
     assert.equal(await page.locator('.pris').getAttribute('data-period'), '2', 'an unknown value falls back to 2 døgn');
   });
 
+  await test('clock: with a remembered net and an Intl that decorates the hour, the hero still shows a real hour and price (never NaN)', async () => {
+    // Regression: an iPad showed "kl. NaN" and no price after the remembered net swapped in.
+    for (const variant of ['suffix', 'suffix-no-parts']) {
+      const hp = await ctx.newPage();
+      await hp.addInitScript((v) => {
+        try { localStorage.setItem('dk_net_pick', 'DK1/net_inkl_alt/n1'); } catch (_) {}
+        // DateTimeFormat.prototype.format is a getter that returns a bound function, so it has to be
+        // replaced with defineProperty — a plain assignment is silently ignored.
+        const F = Intl.DateTimeFormat, desc = Object.getOwnPropertyDescriptor(F.prototype, 'format');
+        Object.defineProperty(F.prototype, 'format', { configurable: true, get() {
+          const f = desc.get.call(this), o = this.resolvedOptions();
+          return (d) => { const s = f(d); return o.hour && !o.year && !o.weekday ? '‎' + s + ' h' : s; };
+        } });
+        if (v === 'suffix-no-parts') F.prototype.formatToParts = function () { throw new Error('formatToParts unavailable'); };
+      }, variant);
+      await hp.goto(BASE + '/');
+      await hp.waitForFunction(() => /N1/.test((document.getElementById('netChipLong') || {}).textContent || ''), null, { timeout: 8000 });
+      await hp.waitForFunction(() => { const n = document.querySelector('.pris-now'); return n && /\d,\d\d/.test(n.textContent); }, null, { timeout: 8000 });
+      const label = (await hp.locator('.pris-label').first().textContent()).trim();
+      const body = await hp.evaluate(() => document.body.innerText);
+      assert.match(label, /kl\. \d\d$/, `${variant}: hero label is "${label}"`);
+      assert.ok(!/NaN|undefined/.test(body), `${variant}: the page shows NaN/undefined`);
+      assert.equal(+label.slice(-2), hourDk(), `${variant}: the hero hour is the Copenhagen hour`);
+      assert.ok(await hp.locator('.pris-now').textContent().then(t => /\d,\d\d/.test(t)), `${variant}: no price`);
+      await hp.close();
+    }
+  });
+
   await test('prices: hovering a bar shows its exact price, highlights it, and the tooltip stays inside the card', async () => {
     await page.goto(BASE + '/dk1');
     await page.waitForSelector('.pp2 .pris-plot');
