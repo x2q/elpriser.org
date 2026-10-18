@@ -27,6 +27,7 @@
     "test:zone": "node test-zone-pages.mjs",
     "indexnow": "node scripts/indexnow.mjs",
     "kv:usage": "node scripts/kv-usage.mjs",
+    "traffic": "node scripts/traffic.mjs",
     "test:forecast-tariff": "node test-forecast-tariff.mjs",
     "test:refresh": "python3 scripts/data_backup/test_refresh_merge.py"
   },
