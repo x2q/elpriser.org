@@ -7,6 +7,7 @@
 //   npm run traffic            last 60 minutes
 //   node scripts/traffic.mjs 15   last 15 minutes
 //   node scripts/traffic.mjs 1440 last 24 hours (data is sampled; counts are estimates)
+//   npm run traffic -- apps [days]   use of the Android and iOS apps (default 7 days)
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -23,8 +24,54 @@ if (!token) { console.error('CLOUDFLARE_ANALYTICS_TOKEN is needed (Zone > Analyt
 
 const minutes = Math.max(1, Math.min(+process.argv[2] || 60, 1440));
 const since = new Date(Date.now() - minutes * 60_000).toISOString();
+const bump = (m, k, n) => m.set(k, (m.get(k) || 0) + n);
+const num = n => n.toLocaleString('da-DK');
 const H = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 const api = 'https://api.cloudflare.com/client/v4';
+
+if (process.argv[2] === 'apps') await appsReport(Math.max(1, Math.min(+process.argv[3] || 7, 30)));
+
+// The apps send a fixed User-Agent and only call /api/forecast, so their use can be read straight
+// from the edge (Cloudflare's plan hides the query string, so area/mode/net are not visible): no SDK, no consent banner, nothing stored on the device. What it can
+// and cannot say is printed at the end.
+async function appsReport(days) {
+  const zones = await (await fetch(`${api}/zones?name=elpriser.org`, { headers: H })).json();
+  const zone = zones.result?.[0]?.id;
+  if (!zone) { console.error('zone elpriser.org not visible to this token'); process.exit(1); }
+  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  const APPS = { 'ElpriserAndroid/': 'Android', 'ElpriserIOS/': 'iOS' };
+  const q = (dims, limit) => `{viewer{zones(filter:{zoneTag:"${zone}"}){httpRequestsAdaptiveGroups(limit:${limit},filter:{datetime_geq:"${since}",requestSource:"eyeball",OR:[${Object.keys(APPS).map(u => `{userAgent_like:"${u}%"}`).join(',')}]},orderBy:[count_DESC]){count dimensions{${dims}}}}}}`;
+  const run = async (dims, limit = 10000) => {
+    const r = await (await fetch(`${api}/graphql`, { method: 'POST', headers: H, body: JSON.stringify({ query: q(dims, limit) }) })).json();
+    if (r.errors) { console.error(JSON.stringify(r.errors)); process.exit(1); }
+    return r.data.viewer.zones[0].httpRequestsAdaptiveGroups.map(g => ({ n: g.count, ...g.dimensions }));
+  };
+  const app = ua => APPS[Object.keys(APPS).find(k => ua.startsWith(k))] || ua;
+  const [perDay, perIp, perCountry] = await Promise.all([
+    run('date userAgent'),
+    run('date userAgent clientIP'),                 // only counted, never printed
+    run('userAgent clientCountryName', 200),
+  ]);
+  const dates = [...new Set(perDay.map(r => r.date))].sort();
+  const get = (rows, d, a) => rows.filter(r => r.date === d && app(r.userAgent) === a);
+  console.log(`Android- og iOS-appen — sidste ${days} dage (siden ${since.slice(0, 10)}), fra Cloudflares kant\n`);
+  console.log('dato        Android: kald  enheder*    iOS: kald  enheder*');
+  for (const d of dates) {
+    const cell = a => { const n = get(perDay, d, a).reduce((s, r) => s + r.n, 0); const ips = new Set(get(perIp, d, a).map(r => r.clientIP)).size; return `${String(num(n)).padStart(8)} ${String(ips).padStart(8)}`; };
+    console.log(`${d}  ${cell('Android')}   ${cell('iOS')}`);
+  }
+  for (const a of Object.values(APPS)) {
+    const calls = perDay.filter(r => app(r.userAgent) === a).reduce((s, r) => s + r.n, 0);
+    const ips = new Set(perIp.filter(r => app(r.userAgent) === a).map(r => r.clientIP)).size;
+    const lands = new Map(); for (const r of perCountry) if (app(r.userAgent) === a) bump(lands, r.clientCountryName, r.n);
+    console.log(`\n${a}: ${num(calls)} kald, ${ips} forskellige IP-adresser i perioden`);
+    console.log(`  lande: ${[...lands].sort((x, y) => y[1] - x[1]).slice(0, 5).map(([k, n]) => `${k} ${(n / calls * 100).toFixed(0)} %`).join(' · ')}`);
+  }
+  console.log(`\n* enheder = forskellige IP-adresser pr. dag. Det er et groft tal: hjemmenet deler adresse (flere telefoner tæller som én),
+  mobildata skifter adresse (én telefon kan tælle flere gange). Brug det som trend, ikke som præcist antal brugere.
+  Kun kald ses: skærme, knaptryk, område, valgt net og installationer ses ikke, og versionen står ikke i User-Agent (den er fast "1.0").`);
+  process.exit(0);
+}
 
 const zones = await (await fetch(`${api}/zones?name=elpriser.org`, { headers: H })).json();
 const zone = zones.result?.[0]?.id;
@@ -55,10 +102,8 @@ function pageClass(p) {
   if (/\.(?:js|css|png|jpg|jpeg|svg|webp|woff2?|ico|json|txt|xml)$/.test(p)) return 'statisk';
   return 'side (html)';
 }
-const bump = (m, k, n) => m.set(k, (m.get(k) || 0) + n);
 const top = (m, k = 8) => [...m].sort((a, b) => b[1] - a[1]).slice(0, k);
 const pad = (s, n) => String(s).padEnd(n);
-const num = n => n.toLocaleString('da-DK');
 const bar = (n, max) => '█'.repeat(Math.max(n ? 1 : 0, Math.round(n / max * 30)));
 
 const [perMin, byUa, byPath, byCountry, byStatus, byCache] = await Promise.all([
