@@ -94,10 +94,8 @@ async function startServer() {
   };
   const fixtureTariff = h => +(0.2 + (h >= 17 && h <= 20 ? 0.3 : 0)).toFixed(4);
   let fixtureCharges = true;
-  await ctx.route('**/api/forecast*', route => {
-    const u = new URL(route.request().url());
-    const mode = u.searchParams.get('mode'), gln = u.searchParams.get('gln'), area = u.searchParams.get('area');
-    forecastRequests.push(`${area}|${mode}|${gln || ''}`);
+  // The response body for one request; the city pages' server render (below) is fed the very same days.
+  const forecastBody = (area, mode, gln) => {
     const base = Date.parse(todayDk() + 'T12:00:00Z');
     const days = Array.from({ length: 10 }, (_, i) => ({
       date: new Date(base + i * 86400000).toISOString().slice(0, 10),
@@ -108,8 +106,45 @@ async function startServer() {
     }));
     // `charges` is what lets the caption fold out into the parts of the price; a test can
     // switch it off to see an older response (no charges) degrade to a plain caption.
-    route.fulfill({ json: { area, mode, ...(gln ? { gln } : {}), ...(fixtureCharges ? { charges: { sys: 0.07, trans: 0.054, afg: 0.008, vat: 0.25 } } : {}), days } });
-  });
+    return { area, mode, ...(gln ? { gln } : {}), ...(fixtureCharges ? { charges: { sys: 0.07, trans: 0.054, afg: 0.008, vat: 0.25 } } : {}), days };
+  };
+  const forecastRoute = route => {
+    const u = new URL(route.request().url());
+    const mode = u.searchParams.get('mode'), gln = u.searchParams.get('gln'), area = u.searchParams.get('area');
+    forecastRequests.push(`${area}|${mode}|${gln || ''}`);
+    route.fulfill({ json: forecastBody(area, mode, gln) });
+  };
+  await ctx.route('**/api/forecast*', forecastRoute);
+
+  // The ten city pages (/elpris/<by>) are written by the Pages Function, which server.js does not run. So the
+  // browser is handed what the REAL function renders for the address — index.html, the table in functions/_cities.js
+  // and the fixture above standing in for /api/forecast — and everything after that (the scripts, the router, the
+  // net dialog, the Pris screen's own requests) is the site's own code against server.js.
+  const { pathToFileURL } = require('node:url');
+  const INDEX_HTML = require('node:fs').readFileSync(require('node:path').join(__dirname, 'index.html'), 'utf8');
+  const { CITIES } = await import(pathToFileURL(require('node:path').join(__dirname, 'functions/_cities.js')).href);
+  const cityFn = (await import(pathToFileURL(require('node:path').join(__dirname, 'functions/[[path]].js')).href)).onRequest;
+  const ssrCity = async pathname => {
+    const real = { fetch: globalThis.fetch, caches: globalThis.caches };
+    globalThis.caches = { default: { match: async () => undefined, put: async () => {} } };
+    globalThis.fetch = async u => {
+      const url = new URL(String(u));
+      return url.pathname === '/api/forecast'
+        ? new Response(JSON.stringify(forecastBody(url.searchParams.get('area'), url.searchParams.get('mode'), url.searchParams.get('gln'))), { headers: { 'content-type': 'application/json' } })
+        : new Response('{}', { status: 404 });
+    };
+    try {
+      const res = await cityFn({ request: new Request(BASE + pathname), env: { ASSETS: { fetch: async () => new Response(INDEX_HTML, { headers: { 'content-type': 'text/html' } }) } } });
+      return { status: res.status, body: await res.text() };
+    } finally { globalThis.fetch = real.fetch; globalThis.caches = real.caches; }
+  };
+  const cityRoute = async route => {
+    const u = new URL(route.request().url());
+    if (route.request().resourceType() !== 'document' || !/^\/elpris\/[a-z]+$/.test(u.pathname)) return route.fallback();
+    const r = await ssrCity(u.pathname);
+    route.fulfill({ status: r.status, contentType: 'text/html; charset=utf-8', body: r.body });
+  };
+  await ctx.route('**/elpris/*', cityRoute);
 
   // server.js has no /api/nordic either. The foreign-area pages draw from it, so answer it for all thirteen
   // zones with ten days from yesterday (like the live feed). The price encodes the zone, so a tab switch is visible:
@@ -1468,6 +1503,120 @@ async function startServer() {
     assert.equal(boxes[0][0], boxes[1][0], 'stacked, left-aligned');
     assert.ok(boxes[1][1] > boxes[0][1], 'one under the other');
     assert.ok(boxes.every(b => b[3] >= 44 && b[2] + b[0] <= 390), JSON.stringify(boxes));
+    await c.close();
+  });
+
+
+  // ── City pages: /elpris/<by> ─────────────────────────────────────────────────
+
+  /** A browser context of its own (colour scheme, viewport) that sees the same fixture and the same city render. */
+  const cityCtx = async opts => {
+    const c = await browser.newContext({ bypassCSP: true, ...opts });
+    await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
+    await c.route('**/api/forecast*', forecastRoute);
+    await c.route('**/elpris/*', cityRoute);
+    return c;
+  };
+  const byName = n => CITIES.find(c => c.name === n);
+  const multi = CITIES.find(c => c.nets[0].share < 0.75) || CITIES[0];
+
+  for (const c of [byName('Silkeborg'), byName('København'), multi]) {
+    const main = c.nets[0];
+    await test(`city: /elpris/${c.slug} is its own page — heading, the Pris screen for ${main.name}, the chip, the text`, async () => {
+      forecastRequests.length = 0;
+      await page.goto(BASE + '/dk1/lnet');   // a visitor who has picked LNet (a net page remembers its net) ...
+      await page.waitForSelector('main[data-page="prices"].active .pris-now');
+      await page.goto(BASE + '/elpris/' + c.slug);
+      await page.waitForSelector('main[data-page="city"].active .pris .pris-now');
+      assert.equal(await page.locator('main[data-page]').count(), 1, 'only the city section is in the page');
+      assert.equal((await page.locator('h1').allTextContents()).join('|'), `Elpris i ${c.name} i dag — time for time`);
+      assert.equal((await page.locator('.pris-now').textContent()).trim(), pris(fixturePrice('net_inkl_alt', main.gln, hourDk())), 'the big number is the main net\'s all-in price');
+      assert.ok(forecastRequests.includes(`${c.area}|net_inkl_alt|${main.gln}`), `asked for ${forecastRequests.join(', ')}`);
+      assert.equal((await page.locator('.pris-cap').first().textContent()).trim(), 'Inkl. nettarif, afgifter og moms');
+      assert.equal((await page.locator('#netChipLong').textContent()).trim(), `${main.name} · ${c.area === 'DK2' ? 'Østdanmark' : 'Vestdanmark'}`);
+      assert.equal(await page.evaluate(() => location.pathname), '/elpris/' + c.slug, 'the address stays');
+      assert.equal(await page.title(), `Elpris i ${c.name} i dag — time for time inkl. nettarif`, 'the router leaves the server\'s title alone');
+      assert.equal(await page.evaluate(() => localStorage.getItem('dk_net_pick')), 'DK1/net_inkl_alt/lnet', '... and looking at a city neither replaces that pick nor makes the city\'s net the visitor\'s own');
+      const text = await page.locator('main[data-page="city"]').innerText();
+      assert.ok(text.includes(`Hos ${main.name} er nettariffen i dag lavest kl. 00–17 og 21–24 (0,20 kr/kWh) og højest kl. 17–21 (0,50 kr/kWh)`), text.slice(0, 600));
+      assert.equal(await page.locator('.pris-period [data-pris-period]').count(), 2, 'only 2 og 5 døgn');
+    });
+  }
+
+  await test('city: "Er dit netselskab et andet? Skift" opens the net chooser, the city\'s net is marked, and another net opens its own page', async () => {
+    await page.goto(BASE + '/elpris/silkeborg');
+    await page.waitForSelector('main[data-page="city"].active .pris-now');
+    const dlg = page.locator('#netDialog');
+    assert.equal(await dlg.evaluate(d => d.open), false);
+    await page.getByRole('button', { name: 'Er dit netselskab et andet? Skift' }).click();
+    assert.equal(await dlg.evaluate(d => d.open), true, 'the existing dialog opens');
+    assert.deepEqual(await page.locator('#netDialog .pd-links a.on').allTextContents(), ['N1'], 'the city\'s main net is the marked one');
+    await page.locator('#netDlgDK1 a', { hasText: /^Trefor$/ }).click();
+    await page.waitForSelector('main[data-page="prices"].active');
+    assert.equal(await page.evaluate(() => location.pathname), '/dk1/trefor');
+    assert.equal((await page.locator('#netChipLong').textContent()).trim(), 'Trefor · Vestdanmark');
+  });
+
+  await test('city: Kun spotpris is a view of the same page, and 5 døgn shows five days', async () => {
+    forecastRequests.length = 0;
+    await page.goto(BASE + '/elpris/silkeborg');
+    await page.waitForSelector('main[data-page="city"].active .pris-now');
+    await page.locator('.pris-seg-hero button', { hasText: 'Kun spotpris' }).click();
+    await page.waitForFunction(() => document.querySelector('.pris-cap')?.textContent.trim() === 'Spotpris inkl. moms');
+    assert.equal(await page.evaluate(() => location.pathname), '/elpris/silkeborg', 'still the city page');
+    assert.ok(forecastRequests.includes('DK1|spot_inkl|'), forecastRequests.join(', '));
+    await page.locator('.pris-period [data-pris-period="5"]').click();
+    assert.equal(await page.locator('.pris-period [aria-selected="true"]').getAttribute('data-pris-period'), '5');
+    assert.equal(await page.locator('.pris-period [data-pris-period]').count(), 2, 'no ten-day pill');
+  });
+
+  await test('city: a link in the footer\'s Byer list opens the page, and the net page links back to the city', async () => {
+    await page.goto(BASE + '/');
+    await page.locator('footer details.sf-all > summary').click();
+    await page.locator('footer a[href="/elpris/koebenhavn"]').click();
+    await page.waitForSelector('main[data-page="city"].active');
+    assert.equal(await page.evaluate(() => location.pathname), '/elpris/koebenhavn');
+    assert.match(await page.locator('h1').textContent(), /Elpris i København/);
+  });
+
+  await test('city: at 390 px nothing scrolls sideways, the text wraps, and the chooser button is a 44 px target', async () => {
+    const c = await cityCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const p = await c.newPage();
+    for (const city of [byName('Silkeborg'), multi]) {
+      await p.goto(BASE + '/elpris/' + city.slug);
+      await p.waitForSelector('main[data-page="city"].active .pris-now');
+      const m = await p.evaluate(() => {
+        const b = document.querySelector('main[data-page="city"] button.gps-light').getBoundingClientRect();
+        const t = document.querySelector('main[data-page="city"] .text-sm').getBoundingClientRect();
+        return { sw: [document.documentElement.scrollWidth, innerWidth], h: b.height, w: b.width, tr: t.right, tl: t.left };
+      });
+      assert.equal(m.sw[0], m.sw[1], `${city.slug}: horizontal scroll ${m.sw.join(' vs ')}`);
+      assert.ok(m.h >= 44, `${city.slug}: button height ${m.h}`);
+      assert.ok(m.w <= 390 && m.tr <= 390 && m.tl >= 0, `${city.slug}: inside the viewport ${JSON.stringify(m)}`);
+    }
+    await c.close();
+  });
+
+  await test('city: dark mode — the heading, the text and the page follow the dark ramp', async () => {
+    const c = await cityCtx({ colorScheme: 'dark', viewport: { width: 1280, height: 800 } });
+    const p = await c.newPage();
+    await p.goto(BASE + '/elpris/silkeborg');
+    await p.waitForSelector('main[data-page="city"].active .pris-now');
+    assert.equal(await p.evaluate(() => document.documentElement.classList.contains('dark')), true);
+    const look = await p.evaluate(() => {
+      const rgb = e => getComputedStyle(e).color;
+      return {
+        body: getComputedStyle(document.body).backgroundColor,
+        title: rgb(document.querySelector('main[data-page="city"] h1')),
+        text: rgb(document.querySelector('main[data-page="city"] .text-sm p')),
+        link: rgb(document.querySelector('main[data-page="city"] .text-sm a')),
+        btn: getComputedStyle(document.querySelector('main[data-page="city"] button.gps-light')).color,
+      };
+    });
+    assert.equal(look.body, 'rgb(13, 18, 33)', 'the dark page ground');
+    assert.equal(look.title, 'rgb(232, 237, 245)', 'light heading on dark');
+    const lum = c => { const [r, g, b] = c.match(/\d+/g).map(Number); return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255; };
+    assert.ok(lum(look.text) > 0.5 && lum(look.link) > 0.4 && lum(look.btn) > 0.4, `readable on dark: ${JSON.stringify(look)}`);
     await c.close();
   });
 

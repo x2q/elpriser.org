@@ -982,6 +982,15 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   </div>
 </main>
 
+<!-- ═══════ CITY PAGES: /elpris/<by> — one section for all of them ═══════
+     The same Pris screen as a net page, drawn for the city's main net company; the server writes
+     the heading, the text block and (as data-area / data-net on this section) which net that is. -->
+<main style="display:none" data-page="city" class="py-4">
+  <div class="pris-page"><!--SSR_CITY_HEAD--></div>
+  <div class="pris-page" data-pris-mount><!--SSR_PRIS--></div>
+  <div class="max-w-3xl mx-auto px-2 sm:px-4 pt-6"><!--SSR_CITY--></div>
+</main>
+
 <!-- ═══════ TARIFF PAGE ═══════ -->
 <main style="display:none" data-page="tariffer" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-4">
@@ -2681,6 +2690,21 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
           </ul>
         </div>
         <div>
+          <p class="sf-h">Byer</p>
+          <ul class="sf-chips">
+            <li><a href="/elpris/silkeborg">Silkeborg</a></li>
+            <li><a href="/elpris/svendborg">Svendborg</a></li>
+            <li><a href="/elpris/viborg">Viborg</a></li>
+            <li><a href="/elpris/aarhus">Aarhus</a></li>
+            <li><a href="/elpris/odense">Odense</a></li>
+            <li><a href="/elpris/aalborg">Aalborg</a></li>
+            <li><a href="/elpris/esbjerg">Esbjerg</a></li>
+            <li><a href="/elpris/kolding">Kolding</a></li>
+            <li><a href="/elpris/koebenhavn">København</a></li>
+            <li><a href="/elpris/roskilde">Roskilde</a></li>
+          </ul>
+        </div>
+        <div>
           <p class="sf-h">Andre prisområder</p>
           <ul class="sf-chips">
             <li><a href="/norden">Norden</a></li>
@@ -3070,6 +3094,7 @@ const PATH_ROUTES={
   '/blog/groennest-og-dyrest':'blog/groennest-og-dyrest',
   '/blog/hvornaar-er-stroemmen-billigst':'blog/hvornaar-er-stroemmen-billigst',
 };
+// /elpris/<by> (ten city pages) is not listed: pathToHash reads the pattern, and the route key is 'elpris/<by>'.
 // Posts that were merged into other pages. The server answers their paths with a
 // 301 (LEGACY_REDIRECTS in functions/[[path]].js); this table does the same for the
 // old #blog/… hash links that were shared before the clean URLs existed.
@@ -3099,6 +3124,7 @@ function scrollToAnchor(){
 }
 function pathToHash(p){
   if(PATH_ROUTES[p])return PATH_ROUTES[p];
+  if(/^\/elpris\/[a-z0-9-]+$/.test(p))return p.slice(1);   // a city page: 'elpris/silkeborg'
   const m=p.match(/^\/(dk[12])\/([a-z0-9-]+)$/);
   return m?m[1].toUpperCase()+'/net_inkl_alt/'+m[2]:'';
 }
@@ -3202,6 +3228,7 @@ function dataPageFor(h){
   if(!h)return 'start';
   if(/^DK[12]\//.test(h))return 'prices';
   if(PRIS_COUNTRIES[h])return 'zone';   // /no/strompris, /sv/elpris, /fi/sahkon-hinta share one section
+  if(/^elpris\//.test(h))return 'city';   // the ten city pages share one section
   return h.replace(/\//g,'-'); // blog/x -> blog-x; others map 1:1
 }
 function markTab(){
@@ -3218,7 +3245,13 @@ function markTab(){
 function syncNetState(h){
   const m=/^(DK[12])\/([a-z_]+)(?:\/([a-z0-9-]+))?/.exec(h||'');
   let area='DK1',slug=null;
-  if(m){
+  // A city page describes the city's main net, which the server wrote on the section (not the visitor's own pick).
+  const city=/^elpris\//.test(h||'')?document.querySelector('[data-page="city"]'):null;
+  if(city){
+    if(/^DK[12]$/.test(city.dataset.area||''))area=city.dataset.area;
+    slug=netBySlug(area,city.dataset.net||'')?city.dataset.net:null;
+    PV.view='din';
+  }else if(m){
     area=m[1];
     const n=m[3]?netBySlug(area,m[3])||(NETS[area]||[]).find(x=>x.gln===m[3]):null;
     slug=n?n.slug:null;
@@ -3256,7 +3289,7 @@ function route(){
     // hash used to be turned straight into a URL — that is where
     // /net_inkl_alt/ came from, and Google crawled and indexed it.
     const path=hashToPath(h);
-    const known=path==='/'||!!PATH_ROUTES[path]||/^\/(dk[12])\/[a-z0-9-]+$/.test(path);
+    const known=path==='/'||!!PATH_ROUTES[path]||/^\/(dk[12]|elpris)\/[a-z0-9-]+$/.test(path);
     const target=known?urlForRoute(h):'/';
     if(location.pathname+location.search+location.hash!==target)location.href=target;
     return;
@@ -3290,6 +3323,10 @@ function route(){
   if(h==='fi/sahkon-hinta'){openZonePage(h);document.title='Sähkön hinta ennuste Suomi: tänään ja 5 vrk eteenpäin';pv('Finland','/fi/sahkon-hinta');return;}
   if(h==='norden'){document.title='Elpriser i Norden: sammenlign Norge, Sverige og Finland';pv('Norden','/norden');openNorden();return;}
   if(h==='prognose'){document.querySelector('[data-page="prognose"]').classList.add('active');document.title='Elpriser prognose 7 dage — time for time, op til 10 døgn frem';pv('Prognose','/prognose');loadForecastPage();return;}
+  if(/^elpris\//.test(h)){   // title and description are the server's; the Pris screen was drawn for the city's net
+    document.querySelector('[data-page="city"]').classList.add('active');
+    pv(document.title,'/'+h);loadPris();return;
+  }
   const p=h.split('/'),area=p[0],mode=p[1];
   if(!['DK1','DK2'].includes(area)){goRoute('');return;}
   S.area=area;S.mode=mode;

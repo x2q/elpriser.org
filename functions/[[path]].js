@@ -1,4 +1,5 @@
 import { activateDataPage, stripInactiveMains, promoteSectionTitle } from './_spa.js';
+import { CITIES } from './_cities.js';
 
 const OG_IMAGE = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
@@ -135,6 +136,20 @@ const SEO_PAGES = {
   },
 };
 
+// The ten pilot city pages, /elpris/<by>: one entry each, generated from the table in _cities.js. They share
+// one section (data-page="city"), one generator (cityHTML) and one template for title and description;
+// what differs between them is data: the name, the price area, the main net company and how sure we are of it.
+const CITY_PATH = /^\/elpris\/([a-z0-9-]+)$/;
+function cityMeta(c) {
+  return {
+    title: `Elpris i ${c.name} i dag — time for time inkl. nettarif`,
+    description: `Elpris i ${c.name} nu og i morgen, time for time — spotpris plus nettarif fra ${c.nets[0].name} (${c.area}), afgifter og moms. Tjek netselskabet for din adresse.`,
+    hash: `#elpris/${c.slug}`,
+  };
+}
+for (const c of CITIES) SEO_PAGES['/elpris/' + c.slug] = { ...cityMeta(c), city: c };
+const CITY_URLS = CITIES.map(c => '/elpris/' + c.slug);
+
 // Mirrors NETS in index.html. Used to (a) mint per-net clean URLs
 // /dk1/<slug> and /dk2/<slug> that are crawlable, and (b) include those
 // URLs in the sitemap so Google/Bing find them. Keep in sync with index.html.
@@ -183,6 +198,7 @@ const SITEMAP_URLS = [
   '/blog',
   '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
   ...NET_URLS,
+  ...CITY_URLS,
 ];
 
 // Real lastmod dates for content pages (from git history / last substantive
@@ -214,6 +230,7 @@ function buildSitemap() {
     if (p === '/') return '1.0';
     if (ZONE_ONLY.test(p)) return '0.5';                    // foreign-market pages
     if (/^\/(dk[12])\/[a-z0-9-]+$/.test(p)) return '0.6'; // per-net long-tail pages
+    if (CITY_PATH.test(p)) return '0.5';                    // the pilot city pages: a test, not yet a bet
     return '0.8';
   };
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -242,6 +259,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Elpriser DK1 Vest](https://elpriser.org/dk1): Elpris time for time for Vestdanmark (Jylland og Fyn) — åbner på "inkl alt" (spot + Energinets tariffer + elafgift + moms); ren spotpris og netselskaber vælges i menuen. Viser i dag og i morgen time for time og prognosen op til 10 døgn frem.
 - [Elpriser DK2 Øst](https://elpriser.org/dk2): Samme for Østdanmark (Sjælland, Lolland-Falster, Bornholm).
 - Per-netselskab priser: \`/dk1/<slug>\` eller \`/dk2/<slug>\` viser dagens pris inkl. nettarif for det valgte netselskab (fx https://elpriser.org/dk1/n1, https://elpriser.org/dk2/radius).
+- Elpris pr. by (pilot): \`/elpris/<by>\` viser elprisen time for time hos byens hyppigste netselskab, med dagens nettarif-profil og netselskabets andel af de adresser vi har tjekket — ${CITIES.map(c => `[${c.name}](https://elpriser.org/elpris/${c.slug})`).join(', ')}.
 - [Nettariffer](https://elpriser.org/tariffer): Sammenligning af nettariffer for alle danske netselskaber.
 - [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser for DK1 og DK2 time for time de næste 10 døgn. Laves dagligt af en maskinlæringsmodel ud fra vejrprognoser (vind og sol) og prisen samme ugedag de seneste fire uger; skifter til faktiske børspriser, når de offentliggøres ca. kl. 13.
 - [Elpriser i Norden](https://elpriser.org/norden): Alle prisområder i Norge, Sverige, Finland og Holland side om side i kr/kWh uden moms, så de kan sammenlignes. Landesiderne er på landets eget sprog og viser spotpris time for time for i dag og i morgen og prognose for de næste 2 og 5 døgn: [Norge](https://elpriser.org/no/strompris) (NO1 Oslo, NO2 Kristiansand, NO3 Trondheim, NO4 Tromsø, NO5 Bergen), [Sverige](https://elpriser.org/sv/elpris) (SE1 Luleå, SE2 Sundsvall, SE3 Stockholm, SE4 Malmö) og [Finland](https://elpriser.org/fi/sahkon-hinta). Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder ([model på Hugging Face](https://huggingface.co/Elpriser/nordic-price-forecast)); omregnet til lokal valuta med Den Europæiske Centralbanks daglige referencekurs, uden moms, afgifter og nettariffer.
@@ -373,8 +391,8 @@ Den samlede elpris per kWh består af:
 
 ## Netselskaber
 
-Understøttede netselskaber i DK1: N1, Trefor, Konstant, Vores Elnet, RAH Net, Elværk, Nord Energi, NOE Net, Elnet Midt m.fl.
-Understøttede netselskaber i DK2: Radius, Cerius, Dinel, Midtfyns Elforsyning m.fl.
+Understøttede netselskaber i DK1: N1, Trefor, Konstant, Vores Elnet, RAH Net, Elværk, Nord Energi, NOE Net, Elnet Midt, Flow Elnet og LNet.
+Understøttede netselskaber i DK2: Radius, Cerius og Trefor Øst.
 
 GPS-funktionen finder automatisk dit netselskab ud fra din position via OpenStreetMap (adresseopslag) og Green Power Denmark. Positionen bruges kun ét øjeblik og gemmes aldrig — kun netselskabets navn gemmes.
 
@@ -761,7 +779,8 @@ export async function onRequest(context) {
     if (url.pathname === '/prognose') opts.forecastChart = true;
     if (page.zonePage) opts.zonePage = page.zonePage;
     if (page.norden) opts.norden = true;
-    if (opts.zonePage || opts.norden) return renderZonePage(context, url.pathname, page, opts);
+    if (page.city) { opts.city = page.city; return renderCachedPage(context, url.pathname, page, opts, CITY_SSR_VERSION); }
+    if (opts.zonePage || opts.norden) return renderCachedPage(context, url.pathname, page, opts, ZONE_SSR_VERSION);
     return renderSPA(context, url.pathname, page, opts);
   }
 
@@ -1684,6 +1703,9 @@ async function buildPricesIntro(context, area, net) {
       const t = (i) => (rec['Price' + i] ?? 0).toFixed(2).replace('.', ',');
       ps.push(`${net.name}s aktuelle Nettarif C (${daDateLabel()}) er ${t(1)} kr/kWh i lavlast (kl. 00–06), ${t(7)} kr/kWh i højlast (kl. 06–17) og ${t(18)} kr/kWh i spidslast (kl. 17–21), ekskl. moms. Sammenlign alle netselskaber på <a href="/tariffer" class="text-brand-500 underline">tarifsiden</a>.`);
     }
+    // The cities (pilot pages) whose most common net company this is.
+    const towns = CITIES.filter(c => c.area === area && c.nets[0].slug === net.slug);
+    if (towns.length) ps.push(`Byer i området: ${towns.map(c => `<a href="/elpris/${c.slug}" class="text-brand-500 underline">${c.name}</a>`).join(', ')}.`);
   } else {
     ps.push(`${area} dækker ${region}. Priserne fastsættes dagen i forvejen på elbørsen Nord Pool og opdateres her time for time — vælg dit netselskab øverst på siden for den præcise pris inkl. din lokale nettarif.`);
   }
@@ -1732,6 +1754,84 @@ async function buildTariffFacts(context) {
   } catch { return ''; }
 }
 
+/** The NETS entry of a city's main net company. */
+function cityNet(c) {
+  return NETS[c.area].find(n => n.slug === c.nets[0].slug);
+}
+/** The page address of a net company in the NETS table. */
+function netPath(slug) {
+  return '/' + (NETS.DK1.some(n => n.slug === slug) ? 'dk1' : 'dk2') + '/' + slug;
+}
+/** Runs of consecutive hours whose value satisfies `want`, as "17–21" (start hour to the hour it ends). */
+function hourRuns(vals, want) {
+  const out = [];
+  for (let h = 0; h < vals.length; h++) {
+    if (!want(vals[h])) continue;
+    let e = h; while (e + 1 < vals.length && want(vals[e + 1])) e++;
+    out.push(`${prisHH(h)}–${prisHH(e + 1)}`); h = e;
+  }
+  return out.join(' og ');
+}
+/** "Anders A, Bo B og Cid C". */
+function daList(xs) { return xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' og ' + xs[xs.length - 1]; }
+
+/**
+ * The ten /elpris/<by> pages: ONE generator, no per-city markup. Returns the heading (above the Pris
+ * screen) and the text block (below it). Everything city-specific is data: the name, the price area, the
+ * main net company, how many of the addresses we looked up belong to which net company (_cities.js), and the
+ * figures the forecast for that net gives today — its nettarif by the hour and its cheapest and dearest
+ * hours. Nothing else is claimed. `fc` is /api/forecast?mode=net_inkl_alt for the main net; null when the
+ * feed is down, and the page then has no figures but keeps the facts from the table.
+ */
+function cityHTML(c, net, fc, todayDk, nowH) {
+  const p = (t, cls) => `<p class="${cls || 'mt-3'}">${t}</p>`;
+  const link = (href, t) => '<a href="' + href + '" class="text-brand-500 underline">' + t + '</a>';
+  const kr = v => prisNum(v, 2);
+  const main = c.nets[0], n = c.samples, cnt = x => Math.round(x.share * n);
+  // Who owns the addresses we looked up: the main net company, the others (with a page of their own
+  // when they are one of the 14 we price), and the ones we do not.
+  const parts = [...c.nets.slice(1).map(x => `${cnt(x)} til ${link(netPath(x.slug), x.name)}`), ...(c.other || []).map(x => `${cnt(x)} til ${x.name}`)];
+  const varies = main.share < 0.75;
+  let who;
+  if (varies) {
+    who = `Netselskabet i ${c.name} afhænger af adressen. Af de ${n} adresser vi slog op i byen, hørte ${cnt(main)} til ${main.name}, ${daList(parts)}.`;
+  } else {
+    who = `${main.name} er netselskab for ${cnt(main) === n ? `alle de ${n}` : `${cnt(main)} af de ${n}`} adresser vi slog op i ${c.name}` + (parts.length ? `; de sidste hørte ${daList(parts)}` : '') + '. Netselskabet følger adressen, så tjek dit eget.';
+  }
+  if ((c.other || []).length) who += ` ${daList(c.other.map(x => x.name))} har vi endnu ikke tariffer for.`;
+  const head = `<p class="page-eyebrow">${AREA_LABEL[c.area]} · ${net.name}</p><h1 class="page-title">Elpris i ${c.name} i dag — time for time</h1>`;
+  const ps = [];
+  ps.push(p(`${c.name} ligger i prisområde ${AREA_LABEL[c.area]} — ${AREA_REGION[c.area]}. ${who}`, 'mt-2'));
+  ps.push(`<p class="mt-3"><button type="button" class="gps-light" onclick="openNetDialog()" aria-haspopup="dialog">Er dit netselskab et andet? Skift</button></p>`);
+
+  const all = fc ? prisDays(fc.days || [], todayDk) : [];
+  const today = all[0], gt = today && today.gt;
+  if (gt) {
+    const lo = Math.min(...gt), hi = Math.max(...gt);
+    ps.push(p(hi - lo < 0.0005
+      ? `Hos ${net.name} er nettariffen den samme hele døgnet i dag: ${kr(lo)} kr/kWh ekskl. moms.`
+      : `Hos ${net.name} er nettariffen i dag lavest kl. ${hourRuns(gt, v => v - lo < 0.0005)} (${kr(lo)} kr/kWh) og højest kl. ${hourRuns(gt, v => hi - v < 0.0005)} (${kr(hi)} kr/kWh), ekskl. moms.`));
+  }
+  const C = prisCtx({}, all);
+  const slot = e => `kl. ${prisHH(e.h)}–${prisHH(e.h + 1)} (${kr(e.p)} kr/kWh)`;
+  const ex = i => prisExtremes(all[i].ps.map((q, h) => ({ d: i, h, p: q })));
+  if (today && ex(0).lo) {
+    let t = `Hos ${net.name} er den billigste time i dag ${slot(ex(0).lo)} og den dyreste ${slot(ex(0).hi)}`;
+    if (all[1] && ex(1).lo) t += `. I morgen ${all[1].real ? 'er' : 'forventes'} den billigste ${slot(ex(1).lo)} og den dyreste ${slot(ex(1).hi)}`;
+    t += '. Priserne er inkl. nettarif, afgifter og moms.';
+    ps.push(p(t));
+  }
+  const days = Math.min(5, all.length);
+  if (days >= 3) {
+    const win = []; for (let i = 0; i < days; i++) all[i].ps.forEach((q, h) => win.push({ d: i, h, p: q }));
+    const e = prisExtremes(win), when = s => { const w = prisWhen(s, all, C); return s.d > 1 ? prisDate(all[s.d].date).wd + ' ' + w.split(' ')[1] : w; };
+    ps.push(p(`Set over de næste ${days} døgn er den billigste time ${when(e.lo)} ${slot(e.lo)} og den dyreste ${when(e.hi)} ${slot(e.hi)} — de døgn, børsen endnu ikke har prissat, er prognose.`));
+  }
+  ps.push(p(`Sådan regnes prisen: spotprisen på elbørsen Nord Pool for ${AREA_LABEL[c.area]} plus nettariffen hos ${net.name}, Energinets system- og transmissionstarif, elafgift og 25 % moms. ${link('/om-elpriser', 'Læs mere i Forstå din elpris')}.`));
+  const cls = 'text-sm text-gray-600 dark:text-gray-400 leading-relaxed text-left';
+  return { head, body: `<div class="${cls}">${ps.join('')}</div>` };
+}
+
 /** The Danish calendar date and clock hour, whatever zone the Worker runs in. */
 function danishClock() {
   const cph = { timeZone: 'Europe/Copenhagen' };
@@ -1749,7 +1849,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v69');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v70');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1794,14 +1894,15 @@ async function renderHomepage(context) {
   return res;
 }
 
-/** /no/strompris, /sv/elpris, /fi/sahkon-hinta and /norden, cached at the edge for five minutes like the
- *  homepage, under a key of their own. Bump the version when index.html's markup for them
- *  changes, so a deploy is not masked by a render cached under the old key. Only a render
+/** /no/strompris, /sv/elpris, /fi/sahkon-hinta, /norden and the ten /elpris/<by> pages, cached at the edge for
+ *  five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
+ *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v4';
-async function renderZonePage(context, pathname, meta, opts) {
+const ZONE_SSR_VERSION = 'zone-ssr-v5';
+const CITY_SSR_VERSION = 'city-ssr-v1';
+async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
-  const key = new Request(`https://cache.local/${ZONE_SSR_VERSION}${pathname}`);
+  const key = new Request(`https://cache.local/${version}${pathname}`);
   const cached = await cache.match(key);
   if (cached) return cached;
   opts.done = {};
@@ -1839,6 +1940,7 @@ function dataPageForHash(hash) {
   const h = (hash || '').replace(/^#/, '');
   if (HASH_TO_DATA_PAGE[h]) return HASH_TO_DATA_PAGE[h];
   if (/^DK[12]\//.test(h)) return 'prices';
+  if (/^elpris\//.test(h)) return 'city';
   return 'start';
 }
 
@@ -1854,6 +1956,8 @@ function breadcrumbLd(pathname, meta, opts) {
     items.push({ name: pi.net.name, url: `https://elpriser.org${pathname}` });
   } else if (pi) {
     items.push({ name: AREA_LABEL[pi.area], url: `https://elpriser.org${pathname}` });
+  } else if (opts.city) {
+    items.push({ name: opts.city.name, url: `https://elpriser.org${pathname}` });
   } else if (pathname.startsWith('/blog/')) {
     items.push({ name: 'Blog', url: 'https://elpriser.org/blog' });
     items.push({ name: short(meta.title), url: `https://elpriser.org${pathname}` });
@@ -1900,6 +2004,29 @@ function cphHourOf(d) {
   return (d.getUTCHours() + 2) % 24;  // last resort: CEST; the page is still better than 'NaN'
 }
 
+/** The forecast the Pris screen draws for a net page or an area page: Din pris, with the net's tariff when there is a net. */
+function fetchNetForecast(context, area, net) {
+  const origin = new URL(context.request.url).origin;
+  return fetch(`${origin}/api/forecast?area=${area}&mode=${net ? 'net_inkl_alt' : 'inkl_alt'}${net ? `&gln=${net.gln}` : ''}`)
+    .then(r => (r.ok ? r.json() : null)).catch(() => null);
+}
+/** The Pris screen for a price page, drawn for the Danish date and hour. */
+function prisScreen(fc, area, net) {
+  const { todayDk, nowH } = danishClock();
+  return prisHTML(fc.days || [], todayDk, nowH, {
+    view: 'din', period: 2, net: net ? net.name : null,
+    where: AREA_LABEL[area] + (net ? ' · ' + net.name : ''),
+    key: `${area}|din|${net ? net.slug : ''}`,
+    charges: fc.charges,
+  });
+}
+/** The net chip in the header, for the page's own net (or area). */
+function withNetChip(html, pre, area) {
+  return html
+    .replace(/id="netChipLong">[^<]*</, `id="netChipLong">${pre} · ${area === 'DK2' ? 'Østdanmark' : 'Vestdanmark'}<`)
+    .replace(/id="netChipShort">[^<]*</, `id="netChipShort">${pre} · ${area === 'DK2' ? 'Øst' : 'Vest'}<`);
+}
+
 async function renderSPA(context, pathname, meta, opts = {}) {
   meta = { ...meta, description: tidyDescription(meta.description) };
   const pageUrl = `https://elpriser.org${pathname}`;
@@ -1915,28 +2042,32 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   html = html.replace('</head>', `  ${breadcrumbLd(pathname, meta, opts)}\n</head>`);
   if (opts.pricesIntro) {
     const { area, net } = opts.pricesIntro;
-    const origin = new URL(context.request.url).origin;
     // The Pris screen for the URL's own view — Din pris, which is the net
     // company's all-in price on a net page and the area's otherwise.
     const [intro, fc] = await Promise.all([
       buildPricesIntro(context, area, net),
-      fetch(`${origin}/api/forecast?area=${area}&mode=${net ? 'net_inkl_alt' : 'inkl_alt'}${net ? `&gln=${net.gln}` : ''}`)
-        .then(r => (r.ok ? r.json() : null)).catch(() => null),
+      fetchNetForecast(context, area, net),
     ]);
     html = html.replace('<!--SSR_PRICES_INTRO-->', intro);
-    if (fc) {
-      const { todayDk, nowH } = danishClock();
-      html = html.replace('<!--SSR_PRIS-->', prisHTML(fc.days || [], todayDk, nowH, {
-        view: 'din', period: 2, net: net ? net.name : null,
-        where: AREA_LABEL[area] + (net ? ' · ' + net.name : ''),
-        key: `${area}|din|${net ? net.slug : ''}`,
-        charges: fc.charges,
-      }));
-    }
-    // The net chip in the header, for the page's own net.
-    const pre = net ? net.name : area;
-    html = html.replace(/id="netChipLong">[^<]*</, `id="netChipLong">${pre} · ${area === 'DK2' ? 'Østdanmark' : 'Vestdanmark'}<`);
-    html = html.replace(/id="netChipShort">[^<]*</, `id="netChipShort">${pre} · ${area === 'DK2' ? 'Øst' : 'Vest'}<`);
+    if (fc) html = html.replace('<!--SSR_PRIS-->', prisScreen(fc, area, net));
+    html = withNetChip(html, net ? net.name : area, area);
+  }
+  if (opts.city) {
+    // A city page: the Pris screen for the city's main net company, then the text the generator
+    // writes from the same forecast. The section carries the area and net for the browser's router.
+    const c = opts.city, net = cityNet(c);
+    const fc = await fetchNetForecast(context, c.area, net);
+    const { todayDk, nowH } = danishClock();
+    const { head, body } = cityHTML(c, net, fc, todayDk, nowH);
+    html = html.replace('<!--SSR_CITY_HEAD-->', () => head).replace('<!--SSR_CITY-->', () => body);
+    if (fc) html = html.replace('<!--SSR_PRIS-->', () => prisScreen(fc, c.area, net));
+    html = html.replace('<main data-page="city"', `<main data-page="city" data-area="${c.area}" data-net="${net.slug}"`);
+    html = withNetChip(html, net.name, c.area);
+    const page = { '@context': 'https://schema.org', '@type': 'WebPage', name: meta.title, description: meta.description,
+      url: pageUrl, inLanguage: 'da', isPartOf: { '@type': 'WebSite', name: 'elpriser.org', url: 'https://elpriser.org' },
+      about: { '@type': 'City', name: c.name, containedInPlace: { '@type': 'Country', name: 'Danmark' } } };
+    html = html.replace('</head>', `  <script type="application/ld+json">${JSON.stringify(page).replace(/</g, '\\u003c')}</script>\n</head>`);
+    if (opts.done) opts.done.full = !!fc;
   }
   if (opts.zonePage || opts.norden) {
     // The foreign price areas: the same Pris screen as the Danish pages, drawn from /api/nordic

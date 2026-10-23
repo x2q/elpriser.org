@@ -36,6 +36,9 @@ const LEGACY = {
   // the first spelling of the three country pages, live for a day: straight to the final URL, no chain
   '/norge': '/no/strompris', '/sverige': '/sv/elpris', '/finland': '/fi/sahkon-hinta',
 };
+// The pilot city table. functions/_cities.js is an ES module and this file is CommonJS, but the array is plain data.
+const CITIES_SRC = fs.readFileSync(path.join(ROOT, 'functions', '_cities.js'), 'utf8');
+const CITY_TABLE = JSON.parse(JSON.stringify(require('node:vm').runInNewContext('(' + CITIES_SRC.match(/export const CITIES = (\[[\s\S]*?\n\]);/)[1] + ')')));   // through JSON: a vm object has another realm's prototypes
 const LEGACY_SLUGS = Object.keys(LEGACY).filter(k => k.startsWith('/blog/')).map(k => k.replace('/blog/', ''));
 const LEGACY_ZONES = Object.keys(LEGACY).filter(k => !k.startsWith('/blog/'));
 
@@ -269,7 +272,7 @@ test('server: every top-level piece the renderer calls still exists', () => {
   // so the presence of each one is asserted directly.
   const SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const required = [
-    'var ZONES', 'var PRIS_I18N', 'var PRIS_COUNTRIES', 'const ZONE_SSR_VERSION', 'function renderZonePage(',
+    'var ZONES', 'var PRIS_I18N', 'var PRIS_COUNTRIES', 'const ZONE_SSR_VERSION', 'const CITY_SSR_VERSION', 'function renderCachedPage(', 'function cityHTML(', 'function prisScreen(', 'function fetchNetForecast(',
     'function zoneToPrisDays(', 'function prisZoneTabs(', 'function prisZoneList(', 'function prisNordenHTML(',
     'function fcChartHTML(', 'function buildSitemap(',
     'const CONTENT_LASTMOD', 'const SITEMAP_URLS',
@@ -278,7 +281,7 @@ test('server: every top-level piece the renderer calls still exists', () => {
   assert.deepEqual(missing, [], `functions/[[path]].js is missing: ${missing.join(', ')}`);
 
   // And nothing may be referenced that is no longer defined.
-  for (const name of ['zoneToPrisDays', 'prisZoneTabs', 'prisZoneList', 'prisNordenHTML', 'renderZonePage', 'fcChartHTML']) {
+  for (const name of ['zoneToPrisDays', 'prisZoneTabs', 'prisZoneList', 'prisNordenHTML', 'renderCachedPage', 'cityHTML', 'prisScreen', 'fetchNetForecast', 'withNetChip', 'fcChartHTML']) {
     const called = new RegExp(`[^a-zA-Z.]${name}\\s*\\(`).test(
       SRC.slice(SRC.indexOf('async function renderHomepage')));
     const defined = SRC.includes(`function ${name}(`);
@@ -434,10 +437,18 @@ test('price pages: the Pris screen sits above the heading and is drawn for the v
   assert.ok(/loadPriceData\(S\._loadId\);loadPris\(\);/.test(INDEX), 'a price page does not load the Pris screen');
   // The server draws the same screen for the URL's own view, with the net's gln.
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
-  const sp = SRV.slice(SRV.indexOf('if (opts.pricesIntro) {'), SRV.indexOf('if (opts.zone) {'));
-  assert.ok(/api\/forecast\?area=\$\{area\}&mode=\$\{net \? 'net_inkl_alt' : 'inkl_alt'\}\$\{net \? `&gln=\$\{net\.gln\}` : ''\}/.test(sp), 'server forecast is not the net\'s own');
-  assert.ok(/html\.replace\('<!--SSR_PRIS-->', prisHTML\(/.test(sp), 'the server does not draw the Pris screen on price pages');
-  assert.ok(/netChipLong/.test(sp) && /netChipShort/.test(sp), 'the net chip is not written for the page\'s net');
+  // The forecast request, the drawing and the chip are helpers (fetchNetForecast, prisScreen, withNetChip) since the
+  // city pages use them too; the price pages must still call all three, with the page's own area and net.
+  const sp = SRV.slice(SRV.indexOf('if (opts.pricesIntro) {'), SRV.indexOf('\n  if (opts.city) {'));
+  const fetcher = SRV.slice(SRV.indexOf('function fetchNetForecast('), SRV.indexOf('function prisScreen('));
+  assert.ok(/api\/forecast\?area=\$\{area\}&mode=\$\{net \? 'net_inkl_alt' : 'inkl_alt'\}\$\{net \? `&gln=\$\{net\.gln\}` : ''\}/.test(fetcher), 'server forecast is not the net\'s own');
+  assert.ok(/fetchNetForecast\(context, area, net\)/.test(sp), 'the price pages do not fetch the net\'s own forecast');
+  assert.ok(/html\.replace\('<!--SSR_PRIS-->', prisScreen\(fc, area, net\)\)/.test(sp), 'the server does not draw the Pris screen on price pages');
+  const drawer = SRV.slice(SRV.indexOf('function prisScreen('), SRV.indexOf('function withNetChip('));
+  assert.ok(/prisHTML\(fc\.days \|\| \[\], todayDk, nowH/.test(drawer) && /view: 'din'/.test(drawer) && /charges: fc\.charges/.test(drawer), 'the Pris screen is not drawn as Din pris from the response\'s days and charges');
+  assert.ok(/withNetChip\(html, net \? net\.name : area, area\)/.test(sp), 'the net chip is not written for the page\'s net');
+  const chip = SRV.slice(SRV.indexOf('function withNetChip('), SRV.indexOf('async function renderSPA('));
+  assert.ok(/netChipLong/.test(chip) && /netChipShort/.test(chip), 'the net chip function does not write both chips');
 });
 
 test('seo: no heading tag written inside an HTML comment', () => {
@@ -1415,13 +1426,15 @@ test('footer: all 14 net companies and the four foreign-area pages sit inside ON
   for (const [area, slugs] of Object.entries(NET_SLUGS)) {
     for (const s of slugs) assert.ok(inside.includes(`/${area}/${s}`), `/${area}/${s} is inside the details`);
   }
-  assert.deepEqual(inside.slice(14), ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta'], 'Andre prisområder: Norden, Norge, Sverige, Finland — in that order, after the 14 nets');
-  assert.equal(inside.length, 18, 'nothing else in there');
+  // The ten pilot cities sit between the nets and the foreign areas, in the order of the table (the table is the pilot's list).
+  assert.deepEqual(inside.slice(14, 24), CITY_TABLE.map(c => '/elpris/' + c.slug), 'Byer: the ten cities, in the table\'s order, after the 14 nets');
+  assert.deepEqual(inside.slice(24), ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta'], 'Andre prisområder: Norden, Norge, Sverige, Finland — in that order, after the cities');
+  assert.equal(inside.length, 28, 'nothing else in there');
   assert.equal(new Set(inside).size, inside.length, 'no duplicate href in the details');
-  for (const h of ['Vestdanmark (DK1)', 'Østdanmark (DK2)', 'Andre prisområder']) assert.ok(m[1].includes(h), `heading ${h}`);
+  for (const h of ['Vestdanmark (DK1)', 'Østdanmark (DK2)', 'Byer', 'Andre prisområder']) assert.ok(m[1].includes(h), `heading ${h}`);
   // Nothing outside the details links a net page: the visible footer stays short.
   const outside = footerHrefs(FOOTER.replace(m[0], ''));
-  assert.deepEqual(outside.filter(h => /^\/(dk[12]\/|norden|no\/strompris|sv\/elpris|fi\/sahkon-hinta)/.test(h)), [], 'net pages and foreign-area pages only behind the disclosure');
+  assert.deepEqual(outside.filter(h => /^\/(dk[12]\/|elpris\/|norden|no\/strompris|sv\/elpris|fi\/sahkon-hinta)/.test(h)), [], 'net pages, city pages and foreign-area pages only behind the disclosure');
 });
 
 test('footer: both app stores are linked, rel=noopener, with the Danish button wording', () => {
@@ -1443,7 +1456,8 @@ test('footer: no link list is repeated, and the credits line keeps both external
   const dup = hrefs.filter((h, i) => hrefs.indexOf(h) !== i);
   assert.deepEqual(dup, [], 'a link appears twice in the footer');
   // 38 since /download joined the Elpriser group ("Hent appen"); the two store buttons below it still point straight at the stores.
-  assert.equal(hrefs.length, 38, `footer has ${hrefs.length} links: 18 in the groups and the apps, 14 nets, Norden/Norge/Sverige/Finland, and the two credits`);
+  // 48 since the ten city pages joined the disclosure ("Byer").
+  assert.equal(hrefs.length, 48, `footer has ${hrefs.length} links: 18 in the groups and the apps, 14 nets, 10 cities, Norden/Norge/Sverige/Finland, and the two credits`);
   const legal = FOOTER.match(/<p class="sf-legal">([^]*?)<\/p>/);
   assert.ok(legal, 'credits line');
   assert.ok(/&copy; Elpriser\.org &mdash; Data fra <a href="https:\/\/www\.energidataservice\.dk"[^>]*rel="noopener">Energi Data Service<\/a> \(Energinet\)\. Åbne datasæt på <a href="https:\/\/huggingface\.co\/Elpriser"[^>]*rel="noopener">Hugging Face<\/a>\./.test(legal[1]), 'credits wording and links');
@@ -1475,11 +1489,14 @@ test('crawl hygiene: no templated href literal anywhere a crawler can read it', 
 });
 
 test('footer: the homepage render cache key was bumped with the shared markup', () => {
-  // v68: header "Hent appen" became a link to /download and the footer gained "Hent appen"; the app dialog is gone.
+  // v69 and earlier: see git. v68: header "Hent appen" became a link to /download and the footer gained "Hent appen"; the app dialog is gone.
   // (v67: the footer's Andre prisområder links moved to the localised paths.)
-  assert.ok(/homepage-ssr-v69/.test(ROUTES), 'homepage-ssr-v69');
+  // v70: the footer gained the "Byer" group (ten city links).
+  assert.ok(/homepage-ssr-v70/.test(ROUTES), 'homepage-ssr-v70');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v4'/.test(ROUTES), 'zone-ssr-v4');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v5'/.test(ROUTES), 'zone-ssr-v5');
+  // The city pages share them too, under a key of their own that starts at v1.
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v1'/.test(ROUTES), 'city-ssr-v1');
 });
 
 
@@ -1739,6 +1756,115 @@ test('header: "Hent appen" is a plain link to /download — the dialog, its scri
   assert.ok(/<meta name="apple-itunes-app" content="app-id=6820474476">/.test(INDEX.slice(0, INDEX.indexOf('</head>'))), 'the Smart App Banner meta is in the shared head, so every page — /download too — carries it');
   // Page views follow the other pages' convention: a GA page_view with the clean path, no bespoke event.
   assert.ok(/pv\('Hent appen','\/download'\)/.test(INDEX), 'page_view for /download');
+});
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2026-10-24 pilot: ten city pages, /elpris/<by>
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CITY_SLUGS = ['silkeborg', 'svendborg', 'viborg', 'aarhus', 'odense', 'aalborg', 'esbjerg', 'kolding', 'koebenhavn', 'roskilde'];
+const cityBlock = () => ROUTES.slice(ROUTES.indexOf('function cityNet('), ROUTES.indexOf('/** The Danish calendar date and clock hour'));
+
+test('cities: the table has the ten pilot cities, ASCII slugs, and every row points at net companies the site prices', () => {
+  assert.deepEqual(CITY_TABLE.map(c => c.slug), CITY_SLUGS, 'the ten cities, in the order of the footer');
+  const nets = {};
+  for (const m of INDEX.matchAll(/\{name:'([^']+)',slug:'([^']+)',gln:'(\d{13})'/g)) nets[m[2]] = { name: m[1], gln: m[3] };
+  const dk1 = getNetsFromIndex().DK1, fnGln = new Set([...ROUTES.matchAll(/gln: '(\d{13})'/g)].map(m => m[1]));
+  const ALLOWED = { city: ['slug', 'name', 'area', 'samples', 'nets', 'other'], net: ['name', 'gln', 'slug', 'share'], other: ['name', 'share'] };
+  for (const c of CITY_TABLE) {
+    assert.deepEqual(Object.keys(c).filter(k => !ALLOWED.city.includes(k)), [], `${c.slug}: only slug, name, area, samples, nets, other — nothing personal`);
+    assert.ok(/^[a-z]+$/.test(c.slug), `${c.slug}: ASCII letters only`);
+    assert.ok(typeof c.name === 'string' && c.name.length >= 3, `${c.slug}: display name`);
+    assert.ok(c.area === 'DK1' || c.area === 'DK2', `${c.slug}: price area`);
+    assert.ok(Number.isInteger(c.samples) && c.samples >= 8, `${c.slug}: at least 8 addresses were sampled`);
+    assert.ok(c.nets.length >= 1, `${c.slug}: a main net company`);
+    let sum = 0, prev = 1.0001;
+    for (const n of c.nets) {
+      assert.deepEqual(Object.keys(n).filter(k => !ALLOWED.net.includes(k)), [], `${c.slug}/${n.slug}: only name, gln, slug, share`);
+      assert.deepEqual(nets[n.slug], { name: n.name, gln: n.gln }, `${c.slug}: ${n.slug} is a net company in NETS (index.html) with that name and GLN`);
+      assert.ok(fnGln.has(n.gln), `${c.slug}: the server knows GLN ${n.gln}`);
+      assert.equal(dk1.includes(n.slug), c.area === 'DK1', `${c.slug}: ${n.slug} belongs to ${c.area}`);
+      assert.ok(n.share > 0 && n.share <= prev, `${c.slug}: shares are positive and in descending order`);
+      prev = n.share; sum += n.share;
+      assert.ok(Math.abs(n.share * c.samples - Math.round(n.share * c.samples)) < 0.11, `${c.slug}/${n.slug}: share ${n.share} is a whole number of the ${c.samples} samples`);
+    }
+    for (const o of c.other || []) {
+      assert.deepEqual(Object.keys(o).filter(k => !ALLOWED.other.includes(k)), [], `${c.slug}/${o.name}: only name and share`);
+      assert.ok(!nets[o.name.toLowerCase()] && !Object.values(nets).some(n => n.name === o.name), `${c.slug}: ${o.name} is "other" and so must not be a net we price`);
+      sum += o.share;
+    }
+    assert.ok(Math.abs(sum - 1) < 0.011, `${c.slug}: shares add up to 1 (got ${sum.toFixed(3)})`);
+    assert.equal(new Set(c.nets.map(n => n.slug)).size, c.nets.length, `${c.slug}: no net listed twice`);
+  }
+  assert.equal(new Set(CITY_TABLE.map(c => c.name)).size, 10, 'distinct names');
+});
+
+test('cities: the table says where the numbers come from, how few they are, and how to reproduce them', () => {
+  const head = CITIES_SRC.slice(0, CITIES_SRC.indexOf('export const'));
+  assert.ok(/Green Power Denmark/.test(head) && /supplierlookup/.test(head), 'the source of the answers');
+  assert.ok(/2026-10-24/.test(head), 'the date of the lookups');
+  assert.ok(/node scripts\/city-nets\.mjs/.test(head), 'how to reproduce');
+  assert.ok(/SMALL SAMPLE/.test(head) && /never printed or stored/.test(head), 'honest about the sample size, and about addresses');
+});
+
+test('cities: the sampling script prints counts only — no address is printed, written or kept', () => {
+  const S = fs.readFileSync(path.join(ROOT, 'scripts', 'city-nets.mjs'), 'utf8');
+  const logs = [...S.matchAll(/console\.(log|error|warn|info)\(([^\n]*)\)/g)].map(m => m[2]);
+  assert.deepEqual(logs, ['JSON.stringify({ slug, samples: n, noAnswer: unknown, nets })'], 'the one thing it prints');
+  assert.ok(!/writeFile|appendFile|createWriteStream/.test(S), 'it writes no file');
+  assert.ok(/'User-Agent': 'elpriser\.org\/1\.0 \(\+https:\/\/elpriser\.org; hello@elpriser\.org\)'/.test(S), 'Nominatim sees the site\'s User-Agent');
+  assert.ok(/Date\.now\(\) \+ 1100|last \+ 1100/.test(S), 'at most one Nominatim request per second');
+});
+
+test('cities: one path through SEO entries, sitemap, llms.txt, server.js, the router and the net pages — and no /elpris hub', () => {
+  assert.ok(/import \{ CITIES \} from '\.\/_cities\.js'/.test(ROUTES), 'the function imports the table');
+  assert.ok(/for \(const c of CITIES\) SEO_PAGES\['\/elpris\/' \+ c\.slug\] = \{ \.\.\.cityMeta\(c\), city: c \}/.test(ROUTES), 'SEO_PAGES entries are generated from the table');
+  assert.ok(/\.\.\.CITY_URLS,?\s*\]/.test(ROUTES) && /CITY_URLS = CITIES\.map\(c => '\/elpris\/' \+ c\.slug\)/.test(ROUTES), 'the sitemap spreads the generated URLs');
+  assert.ok(/CITY_PATH\.test\(p\)\) return '0\.5'/.test(ROUTES), 'priority 0.5');
+  assert.ok(/CITIES\.map\(c => `\[\$\{c\.name\}\]\(https:\/\/elpriser\.org\/elpris\/\$\{c\.slug\}\)`\)/.test(ROUTES), 'llms.txt links every city, generated from the table');
+  assert.ok(!/'\/elpris'\s*[:\]]/.test(ROUTES) && !/'\/elpris',/.test(ROUTES), 'there is no /elpris hub: no SEO entry, sitemap URL or static route');
+  assert.ok(/CITY_SLUGS/.test(SERVER) && /functions\/_cities\.js/.test(SERVER) && /pathname\.startsWith\('\/elpris\/'\)/.test(SERVER), 'server.js routes /elpris/<by> from the same table');
+  // The browser: one route key per city ('elpris/<by>'), one section for all of them, nothing to remember.
+  assert.ok(/\^\\\/elpris\\\/\[a-z0-9-\]\+\$\/\.test\(p\)\)return p\.slice\(1\)/.test(INDEX), 'pathToHash maps /elpris/<by> to the key elpris/<by>');
+  assert.ok(/\/\^elpris\\\/\/\.test\(h\)\)return 'city'/.test(INDEX), 'dataPageFor maps the key to the shared city section');
+  assert.ok(/\(dk\[12\]\|elpris\)/.test(INDEX), 'a city path counts as a path this site serves');
+  assert.equal((INDEX.match(/<main[^>]*data-page="city"/g) || []).length, 1, 'ONE <main data-page="city"> for all ten cities');
+  const main = mainOf('city');
+  assert.ok(main.indexOf('<!--SSR_CITY_HEAD-->') < main.indexOf('data-pris-mount') && main.indexOf('data-pris-mount') < main.indexOf('<!--SSR_CITY-->'), 'heading, then the Pris screen, then the text');
+  assert.ok(!/<h[1-6]/.test(main) && !CITY_TABLE.some(c => main.includes(c.name)) && !/\d/.test(textOf(main)), 'the shared section carries no heading, no city name, no number: all of it is written per city');
+  const router = INDEX.slice(INDEX.indexOf("if(/^elpris\\//.test(h)){"), INDEX.indexOf("const p=h.split('/'),area=p[0]"));
+  assert.ok(router.length > 50 && !/document\.title\s*=/.test(router) && !/rememberNet|saveNetPick/.test(router), 'the city route keeps the server\'s title and does not save the city\'s net as the visitor\'s own');
+  assert.ok(/const city=\/\^elpris\\\/\/\.test\(h\|\|''\)\?document\.querySelector\('\[data-page="city"\]'\):null;/.test(INDEX) && /city\.dataset\.area/.test(INDEX) && /city\.dataset\.net/.test(INDEX), 'the chip and the Pris screen take the city\'s net from the section the server wrote');
+  assert.ok(/function rememberNetFromHash\(h\)\{\s*const m=\/\^\(DK\[12\]\)/.test(INDEX), 'rememberNetFromHash only accepts DK routes, so visiting a city page never changes the remembered net');
+  // The net pages link back: "Byer i området".
+  assert.ok(/CITIES\.filter\(c => c\.area === area && c\.nets\[0\]\.slug === net\.slug\)/.test(ROUTES) && /Byer i området: /.test(ROUTES), 'net pages list the cities whose main net company they are');
+});
+
+test('cities: the footer\'s Byer links carry the display names of the table', () => {
+  const m = FOOTER.match(/<p class="sf-h">Byer<\/p>\s*<ul class="sf-chips">([\s\S]*?)<\/ul>/);
+  assert.ok(m, 'Byer group in the collapsed footer list');
+  const links = [...m[1].matchAll(/<li><a href="\/elpris\/([a-z]+)">([^<]+)<\/a><\/li>/g)].map(x => [x[1], x[2]]);
+  assert.deepEqual(links, CITY_TABLE.map(c => [c.slug, c.name]));
+});
+
+test('cities: the generator writes data and API figures only — no ten-day horizon, no Dataset/spatialCoverage/FAQ, no invented numbers', () => {
+  const gen = cityBlock(), meta = ROUTES.slice(ROUTES.indexOf('function cityMeta('), ROUTES.indexOf('for (const c of CITIES) SEO_PAGES'));
+  const render = ROUTES.slice(ROUTES.indexOf('\n  if (opts.city) {'), ROUTES.indexOf('\n  if (opts.zonePage || opts.norden) {'));
+  for (const [name, src] of [['cityHTML', gen], ['cityMeta', meta], ['the city block of renderSPA', render]]) {
+    assert.ok(src.length > 200 || name === 'cityMeta', `${name} found`);
+    assert.ok(!/10 døgn|10 dage|10-dag|ti døgn|slice\(0, 10\)|Math\.min\(10/.test(src), `${name}: no ten-day horizon`);
+    assert.ok(!/Dataset|spatialCoverage|FAQPage|"Question"|'Question'|PriceSpecification|areaServed/.test(src), `${name}: no Dataset, spatialCoverage, FAQPage or PriceSpecification`);
+    assert.ok(!/indbygger|befolkning|population|husstande|kommune/i.test(src), `${name}: no population or municipality claims`);
+    assert.ok(!/\b\d{4,}\b/.test(src.replace(/\d{4}-\d{2}-\d{2}/g, '').replace(/\d*\.\d+/g, '')), `${name}: no number of four digits or more written into the prose`);
+  }
+  assert.ok(/main\.share < 0\.75/.test(gen), 'the net-varies-by-address threshold is 0.75');
+  assert.ok(/Math\.min\(5, all\.length\)/.test(gen), 'the outlook is at most five days');
+  assert.ok(/'@type': 'City'/.test(render) && /containedInPlace: \{ '@type': 'Country', name: 'Danmark' \}/.test(render) && /inLanguage: 'da'/.test(render), 'WebPage about a City in Danmark, in Danish');
+  assert.ok(/onclick="openNetDialog\(\)"/.test(gen) && /Er dit netselskab et andet\? Skift/.test(gen), 'the button that opens the existing net chooser');
+  assert.ok(/href="\/om-elpriser"|'\/om-elpriser'/.test(gen), 'links the explainer');
+  assert.ok(/<h1 class="page-title">Elpris i \$\{c\.name\} i dag — time for time<\/h1>/.test(gen), 'the h1');
 });
 
 

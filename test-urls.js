@@ -175,6 +175,7 @@ async function main() {
   const redirects = [
     ['/dk1/', '/dk1'], ['/no/strompris/', '/no/strompris'], ['/tariffer/', '/tariffer'],
     ['/dk1/n1/', '/dk1/n1'], ['/DK1', '/dk1'], ['/blog/', '/blog'],
+    ['/elpris/silkeborg/', '/elpris/silkeborg'], ['/elpris/Silkeborg', '/elpris/silkeborg'], ['/elpris/', '/elpris'],
   ];
   await pool(redirects, async ([from, to]) => {
     const r = await get(from);
@@ -246,7 +247,8 @@ async function main() {
   }
 
   console.log('\n6. UKENDTE STIER SKAL 404');
-  const gone = ['/no6', '/no', '/sv', '/findes-ikke', '/dk1/ukendt-net', '/blog/ukendt-indlaeg'];
+  // /elpris itself is 404 on purpose: the ten city pages have no hub page.
+  const gone = ['/no6', '/no', '/sv', '/findes-ikke', '/dk1/ukendt-net', '/blog/ukendt-indlaeg', '/elpris', '/elpris/findes-ikke', '/elpris/koebenhavn/x'];
   await pool(gone, async p => {
     const r = await get(p);
     check(r.status === 404, `404 ${p}`, `status ${r.status}`);
@@ -340,6 +342,40 @@ async function main() {
     check(!/\b10 (døgn|dager|dage|dygn|vrk)/i.test(page), `${p}: ingen tekst om 10 døgn`);
     check(sitemap.includes(p), `${p}: i sitemap`);
   }
+  console.log('\n9b. BYSIDER — /elpris/<by> (pilot)');
+  // The ten pages are written by the function from functions/_cities.js (read here as data) and the live forecast.
+  const CITY_TABLE = require('node:vm').runInNewContext('(' + require('node:fs').readFileSync(require('node:path').join(__dirname, 'functions', '_cities.js'), 'utf8').match(/export const CITIES = (\[[\s\S]*?\n\]);/)[1] + ')');
+  const cityLd = body => [...body.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => { try { return JSON.parse(m[1]); } catch { return { '@type': 'INVALID' }; } });
+  const cityTexts = new Set();
+  check(CITY_TABLE.length === 10, 'byer: tabellen har ti byer', String(CITY_TABLE.length));
+  for (const c of CITY_TABLE) {
+    const p = '/elpris/' + c.slug, net = c.nets[0], r = await get(p);
+    const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<dialog[\s\S]*?<\/dialog>/g, '');
+    const title = one(r.body, /<title>([^<]*)<\/title>/) || '', desc = one(r.body, /<meta name="description" content="([^"]*)"/) || '';
+    check(r.status === 200 && sitemap.includes(p), `${p}: 200 og i sitemap`, String(r.status));
+    check(title.length <= 62 && title.includes(c.name) && desc.length >= 80 && desc.length <= 155, `${p}: titel ≤ 62 og beskrivelse 80-155 tegn`, `${title.length}/${desc.length}`);
+    check(new RegExp(`<h1 class="page-title">Elpris i ${c.name} i dag — time for time</h1>`).test(page) && (page.match(/<h1[ >]/g) || []).length === 1, `${p}: én h1 med byens navn`);
+    check(/<html lang="da"/.test(r.body), `${p}: html lang="da"`);
+    check(new RegExp(`<main data-page="city" data-area="${c.area}" data-net="${net.slug}"`).test(r.body), `${p}: sektionen oplyser prisområde og hovednetselskab`);
+    check(/<div class="pris" data-period="2"/.test(page) && page.includes(`data-key="${c.area}|din|${net.slug}"`) && /class="pris-now">-?\d+,\d\d</.test(page), `${p}: Pris-skærmen er tegnet i HTML'en for ${net.name}`);
+    check(page.includes(`id="netChipLong">${net.name} · `), `${p}: netselskabs-chippen viser ${net.name}`);
+    const t = page.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+    check(t.includes(`Hos ${net.name} er nettariffen`) && t.includes('den billigste time i dag kl.') && t.includes('Set over de næste 5 døgn'), `${p}: nettarif-profil, billigste time og femdøgnsudsigt står som tekst`);
+    check(/Er dit netselskab et andet\? Skift<\/button>/.test(page) && /href="\/om-elpriser"/.test(page), `${p}: knappen til netvælgeren og linket til /om-elpriser`);
+    check(!/\b10 (døgn|dage)|10-dag/i.test(t) && !/\bNaN\b|\bundefined\b|\[object /.test(page) && (page.match(/data-pris-period="/g) || []).length === 2, `${p}: kun 2 og 5 døgn, ingen NaN`);
+    const ld = cityLd(r.body), lt = ld.map(j => j['@type']);
+    check(lt.includes('BreadcrumbList') && !lt.some(x => ['Dataset', 'FAQPage', 'INVALID'].includes(x)) && !/spatialCoverage/.test(r.body.replace(/<script(?![^>]*ld\+json)[\s\S]*?<\/script>/g, '')), `${p}: brødkrummer, ingen Dataset/FAQ/spatialCoverage`, lt.join(','));
+    const web = ld.find(j => j['@type'] === 'WebPage');
+    check(web && web.about && web.about['@type'] === 'City' && web.about.name === c.name && web.about.containedInPlace.name === 'Danmark' && web.inLanguage === 'da', `${p}: WebPage om byen`);
+    if (c.nets[0].share < 0.75) check(t.includes('afhænger af adressen'), `${p}: siger at netselskabet afhænger af adressen`);
+    for (const o of c.nets.slice(1)) check(new RegExp(`href="/dk[12]/${o.slug}"`).test(page), `${p}: linker ${o.name}s side`);
+    cityTexts.add(t.slice(t.indexOf(`${c.name} ligger i prisområde`), t.indexOf('Sådan regnes prisen')));
+    const np = await get(`/${c.area.toLowerCase()}/${net.slug}`);
+    check(np.body.includes(`href="/elpris/${c.slug}"`) && /Byer i området: /.test(np.body), `/${c.area.toLowerCase()}/${net.slug}: "Byer i området" linker ${c.name}`);
+  }
+  check(cityTexts.size === 10, 'byer: ti forskellige tekster', String(cityTexts.size));
+  check(CITY_TABLE.every(c => homeFooter.includes(`<a href="/elpris/${c.slug}">${c.name}</a>`)), 'forside: sidefoden linker alle ti byer');
+  check(!/Byer i området/.test((await get('/dk1/elvaerk')).body.replace(/<script[\s\S]*?<\/script>/g, '')) || CITY_TABLE.some(c => c.nets[0].slug === 'elvaerk'), '/dk1/elvaerk: ingen by-linje uden by');
   check(/<title>Elpriser prognose 7 dage — time for time, op til 10 døgn frem<\/title>/.test(prog.body), '/prognose: titel har "7 dage" og de sande 10 døgn');
   // Count inside the week container: the page's own script carries the same
   // markup as a string literal, which is not a row anyone can read.

@@ -449,6 +449,13 @@ function hashForNetPath(pathname) {
   return null;
 }
 
+// The ten city pages, /elpris/<by>: the slugs come from the table the production function uses
+// (functions/_cities.js), so the two cannot disagree. The dev server does not render them on the
+// server — the headline, text and net company are written by the function — so locally they show
+// the Pris screen for DK1; `wrangler pages dev` serves the real page.
+let CITY_SLUGS = new Set();
+import('./functions/_cities.js').then(m => { CITY_SLUGS = new Set(m.CITIES.map(c => c.slug)); }).catch(() => {});
+
 function serveSPA(res, _hash) {
   fs.readFile(path.join(__dir, 'index.html'), 'utf8', (err, html) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
@@ -473,6 +480,9 @@ function serveStatic(req, res) {
 
   // Clean-URL SPA routes — inject hash redirect (same as production functions)
   if (SPA_ROUTES[pathname]) return serveSPA(res, SPA_ROUTES[pathname]);
+
+  // City pages /elpris/<by> (an unknown one falls through to the start page like any unknown path here)
+  if (pathname.startsWith('/elpris/') && CITY_SLUGS.has(pathname.slice('/elpris/'.length))) return serveSPA(res, '#' + pathname.slice(1));
 
   // Per-netselskab clean URLs /dk[12]/<slug>
   const netHash = hashForNetPath(pathname);
