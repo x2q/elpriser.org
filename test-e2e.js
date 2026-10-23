@@ -140,6 +140,7 @@ async function startServer() {
     ['/automation',                    'automation'],
     ['/api',                           'api'],
     ['/om-elpriser',                   'om-elpriser'],
+    ['/download',                      'download'],
     ['/dk1',                           'prices'],
     ['/dk2',                           'prices'],
     ['/no/strompris',                         'zone'],
@@ -190,7 +191,7 @@ async function startServer() {
   for (const url of ['/blog/elafgift-2028', '/blog/hvornaar-er-stroemmen-billigst',
                      '/blog/groennest-og-dyrest', '/blog/elafgift-og-spotpris', '/blog',
                      '/tariffer', '/automation', '/api',
-                     '/om-elpriser', '/prognose', '/dk1', '/dk2', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/norden']) {
+                     '/om-elpriser', '/download', '/prognose', '/dk1', '/dk2', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/norden']) {
     await test(`clean-URL: ${url} does NOT redirect to /#hash`, async () => {
       await page.goto(BASE + url);
       const state = await page.evaluate(() => ({
@@ -693,6 +694,8 @@ async function startServer() {
     assert.deepEqual(links, ['Pris', 'Smart hjem', 'Om']);
     assert.equal((await page.locator('#netChipLong').textContent()).trim(), 'DK1 · Vestdanmark');
     assert.equal(await page.locator('header.site-nav .app-btn').textContent(), 'Hent appen');
+    assert.equal(await page.locator('header.site-nav a.app-btn').getAttribute('href'), '/download', '"Hent appen" is a link to the page, not a button that opens a dialog');
+    assert.equal(await page.locator('dialog#appDialog').count(), 0, 'the app dialog is gone');
     await page.locator('header.site-nav .site-links a:has-text("Smart hjem")').click();
     await page.waitForSelector('main[data-page="automation"].active');
     assert.equal((await page.locator('main[data-page="automation"] .page-title').textContent()).trim(), 'Smart hjem');
@@ -1365,6 +1368,108 @@ async function startServer() {
     const vis = await p2.evaluate(() => { const r = document.getElementById('zt-no5').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1; });
     assert.ok(vis, 'the selected tab is scrolled into view');
     await ctx2.close();
+  });
+
+
+  // ── 10. /download: the "Hent appen" page with the two store badges ─────────
+
+  const APPLE = 'https://apps.apple.com/dk/app/id6820474476';
+  const PLAY  = 'https://play.google.com/store/apps/details?id=org.elpriser.app';
+  const IOS_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
+  const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
+  const downloadCtx = async opts => {
+    const c = await browser.newContext({ bypassCSP: true, ...opts });
+    await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
+    return c;
+  };
+  /** The badges in the order they are laid out, left to right and top to bottom. */
+  const badgeOrder = p => p.evaluate(() => [...document.querySelectorAll('.dl-badge')]
+    .map(a => ({ id: a.classList.contains('dl-apple') ? 'apple' : 'play', x: a.getBoundingClientRect().x, y: a.getBoundingClientRect().y }))
+    .sort((a, b) => a.y - b.y || a.x - b.x).map(b => b.id));
+
+  await test('/download: H1, the honest lead, both badges with the exact links and Danish accessible names, in the same size', async () => {
+    await page.goto(BASE + '/download');
+    await page.waitForSelector('main[data-page="download"].active');
+    assert.equal((await page.locator('main[data-page="download"] .page-title').textContent()).trim(), 'Hent Elpriser-appen');
+    const main = await page.locator('main[data-page="download"]').innerText();
+    assert.match(main, /i morgen og de næste 5 døgn/);
+    assert.doesNotMatch(main, /10 døgn/);
+    const apple = page.getByRole('link', { name: 'Hent i App Store — iPhone og iPad' });
+    const play  = page.getByRole('link', { name: 'Hent på Google Play — Android' });
+    assert.equal(await apple.getAttribute('href'), APPLE);
+    assert.equal(await play.getAttribute('href'), PLAY);
+    for (const l of [apple, play]) assert.equal(await l.getAttribute('rel'), 'noopener');
+    const [a, p] = [await apple.boundingBox(), await play.boundingBox()];
+    assert.ok(a.height >= 44 && a.height === p.height && a.width === p.width, `badges differ: ${JSON.stringify([a, p])}`);
+    assert.equal(await page.locator('header.site-nav a.app-btn').getAttribute('aria-current'), 'page', 'the header button marks the page it leads to');
+    assert.equal(await page.locator('.site-links a.on').count(), 0, 'no main-menu item claims this page');
+    assert.equal(await page.evaluate(() => document.title), 'Hent Elpriser-appen — iPhone og Android, gratis');
+  });
+
+  await test('/download: header "Hent appen" navigates there from the front page, and the footer links it once', async () => {
+    await page.goto(BASE + '/');
+    await page.locator('header.site-nav a.app-btn').click();
+    await page.waitForSelector('main[data-page="download"].active');
+    assert.equal(await page.evaluate(() => location.pathname), '/download');
+    assert.deepEqual(await page.locator('footer a[href="/download"]').allTextContents(), ['Hent appen']);
+  });
+
+  await test('/download: no device hides a store — desktop shows both side by side, iPhone puts the App Store first, Android Google Play first', async () => {
+    const desk = await page.context().newPage();
+    await desk.setViewportSize({ width: 1280, height: 800 });
+    await desk.goto(BASE + '/download');
+    await desk.waitForSelector('.dl-badge');
+    assert.deepEqual(await badgeOrder(desk), ['apple', 'play']);
+    const rows = await desk.evaluate(() => [...document.querySelectorAll('.dl-badge')].map(a => Math.round(a.getBoundingClientRect().y)));
+    assert.equal(rows[0], rows[1], 'side by side on a desktop');
+    await desk.close();
+
+    for (const [ua, want] of [[IOS_UA, ['apple', 'play']], [ANDROID_UA, ['play', 'apple']]]) {
+      const c = await downloadCtx({ userAgent: ua, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+      const p = await c.newPage();
+      await p.goto(BASE + '/download');
+      await p.waitForSelector('.dl-badge');
+      assert.deepEqual(await badgeOrder(p), want, ua.slice(0, 40));
+      assert.equal(await p.locator('.dl-badge').evaluateAll(l => l.every(a => a.getBoundingClientRect().width > 0 && getComputedStyle(a).display !== 'none')), true, 'both badges stay visible');
+      await c.close();
+    }
+    // JavaScript off: the markup order, App Store first, and both there.
+    const c = await downloadCtx({ userAgent: ANDROID_UA, javaScriptEnabled: false });
+    const p = await c.newPage();
+    await p.goto(BASE + '/download');
+    assert.equal(await p.locator('.dl-badge').count(), 2);
+    await c.close();
+  });
+
+  await test('/download: dark mode — page, badges and text all follow the dark ramp', async () => {
+    const c = await downloadCtx({ colorScheme: 'dark', viewport: { width: 1280, height: 800 } });
+    const p = await c.newPage();
+    await p.goto(BASE + '/download');
+    await p.waitForSelector('.dl-badge');
+    assert.equal(await p.evaluate(() => document.documentElement.classList.contains('dark')), true);
+    const look = await p.evaluate(() => ({
+      body: getComputedStyle(document.body).backgroundColor,
+      title: getComputedStyle(document.querySelector('main[data-page="download"] .page-title')).color,
+      btn: getComputedStyle(document.querySelector('.app-btn')).backgroundColor,
+    }));
+    assert.equal(look.body, 'rgb(13, 18, 33)', 'the dark page ground');
+    assert.equal(look.title, 'rgb(232, 237, 245)', 'light title on dark');
+    assert.equal(look.btn, 'rgb(238, 242, 249)', 'the header button flips with the theme, as before');
+    await c.close();
+  });
+
+  await test('/download: at 390 px there is no horizontal scroll, the badges stack at full size, and every link is at least 44 px', async () => {
+    const c = await downloadCtx({ viewport: { width: 390, height: 844 } });
+    const p = await c.newPage();
+    await p.goto(BASE + '/download');
+    await p.waitForSelector('.dl-badge');
+    const sw = await p.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+    assert.equal(sw[0], sw[1], `horizontal scroll: ${sw.join(' vs ')}`);
+    const boxes = await p.locator('.dl-badge').evaluateAll(l => l.map(a => { const r = a.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; }));
+    assert.equal(boxes[0][0], boxes[1][0], 'stacked, left-aligned');
+    assert.ok(boxes[1][1] > boxes[0][1], 'one under the other');
+    assert.ok(boxes.every(b => b[3] >= 44 && b[2] + b[0] <= 390), JSON.stringify(boxes));
+    await c.close();
   });
 
   // ── report & cleanup ────────────────────────────────────────────────────────

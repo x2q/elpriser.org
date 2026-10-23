@@ -215,6 +215,14 @@ async function main() {
   const autoPage = await get('/automation');
   check(/<section id="shelly"/.test(autoPage.body) && /<section id="home-assistant"/.test(autoPage.body), '/automation: sektionerne #shelly og #home-assistant står i HTML\'en');
   check(/<h1 class="page-title">Forstå din elpris<\/h1>/.test((await get('/om-elpriser')).body), '/om-elpriser: h1 er "Forstå din elpris"');
+  // /download: the page behind the header's "Hent appen" and the footer link, with both store badges.
+  const dl = await get('/download');
+  check(dl.status === 200 && /<h1 class="page-title">Hent Elpriser-appen<\/h1>/.test(dl.body), '/download: 200 og h1 er "Hent Elpriser-appen"', String(dl.status));
+  check(/href="https:\/\/apps\.apple\.com\/dk\/app\/id6820474476" rel="noopener" aria-label="Hent i App Store — iPhone og iPad"/.test(dl.body) &&
+        /href="https:\/\/play\.google\.com\/store\/apps\/details\?id=org\.elpriser\.app" rel="noopener" aria-label="Hent på Google Play — Android"/.test(dl.body), '/download: begge butiksknapper står i HTML\'en med de rigtige links og navne');
+  check(/"@type": "MobileApplication"/.test(dl.body) && !/10 døgn/.test(dl.body.replace(/<script[\s\S]*?<\/script>/g, '')), '/download: MobileApplication-markup, og ingen "10 døgn"-påstand');
+  check(/<a href="\/download" class="app-btn">Hent appen<\/a>/.test((await get('/')).body) && !/appDialog/.test((await get('/')).body), 'forside: "Hent appen" er et link til /download, ingen dialog');
+  check(sitemap.includes('/download'), '/download: i sitemap');
   const blogIdx = await get('/blog');
   check(JSON.stringify(all(blogIdx.body, /<a href="(\/blog\/[^"]+)" class="card/g).sort()) ===
         JSON.stringify(['/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/blog/groennest-og-dyrest', '/blog/hvornaar-er-stroemmen-billigst']), '/blog: kun de fire tilbageværende indlæg');

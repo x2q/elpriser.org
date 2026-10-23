@@ -346,7 +346,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .chip-btn,.app-btn{display:inline-flex;align-items:center;gap:.5rem;height:40px;border-radius:20px;font:inherit;font-size:.875rem;font-weight:700;cursor:pointer;white-space:nowrap}
   .chip-btn{padding:0 1rem;background:var(--p-card);border:1px solid var(--p-chip-line);color:var(--p-ink)}
   .chip-btn svg{color:var(--p-brand);flex-shrink:0}
-  .app-btn{padding:0 1.1rem;background:var(--p-btn);color:var(--p-btn-ink);border:0;font-weight:800}
+  .app-btn{justify-content:center;padding:0 1.1rem;background:var(--p-btn);color:var(--p-btn-ink);border:0;font-weight:800;text-decoration:none}
   .chip-btn:focus-visible,.app-btn:focus-visible,.site-links a:focus-visible,.tabbar a:focus-visible{outline:2px solid var(--p-brand);outline-offset:2px}
   .nc-short{display:none}
   @media (max-width:640px){
@@ -405,7 +405,17 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .sf-legal a{color:inherit;text-decoration:underline}
   .sf-legal a:hover{color:var(--p-brand)}
 
-  /* ── Net chip + "Hent appen" open a dialog ── */
+  /* ── /download: two store badges, drawn in the SVG itself so both are exactly the same size ── */
+  .dl-stores{display:flex;flex-direction:column;align-items:flex-start;gap:.75rem;margin:1.25rem 0 0}
+  .dl-stores~section{margin-top:2.5rem}
+  @media (min-width:520px){.dl-stores{flex-direction:row;flex-wrap:wrap;gap:1rem}}
+  .dl-badge{display:block;height:52px;border-radius:11px;line-height:0;-webkit-tap-highlight-color:transparent}
+  .dl-badge svg{display:block;height:52px;width:auto}
+  .dl-badge:hover{opacity:.88}
+  .dl-badge:focus-visible{outline:2px solid var(--p-brand);outline-offset:3px}
+  .dl-stores.is-android .dl-play{order:-1}
+
+  /* ── The net chip opens a dialog ── */
   .pris-dialog{border:0;padding:0;border-radius:22px;width:calc(100% - 2rem);max-width:34rem;max-height:calc(100vh - 2rem);overflow:auto;
     background:var(--p-card);color:var(--p-ink);box-shadow:0 24px 60px rgba(0,0,0,.3)}
   .pris-dialog::backdrop{background:rgba(14,21,48,.5);backdrop-filter:blur(3px)}
@@ -703,7 +713,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
         <span><span class="nc-long" id="netChipLong">DK1 · Vestdanmark</span><span class="nc-short" id="netChipShort">DK1 · Vest</span></span>
       </button>
-      <button type="button" class="app-btn" onclick="openAppDialog()" aria-haspopup="dialog">Hent appen</button>
+      <a href="/download" class="app-btn">Hent appen</a>
     </div>
   </div>
 </header>
@@ -1796,6 +1806,71 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
   </article>
 </main>
 
+<!-- ═══════ DOWNLOAD PAGE: the two store badges (code-drawn, in the style of the OG image) ═══════ -->
+<main style="display:none" data-page="download" class="max-w-2xl mx-auto px-4 py-6">
+  <!-- The app these badges install; scoped to this page like the other pages' structured data. -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "MobileApplication",
+  "name": "Elpriser – time for time",
+  "url": "https://elpriser.org/download",
+  "description": "Elprisen lige nu, i morgen og de næste 5 døgn — med dit netselskab, nettarif, afgifter og moms.",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "iOS 18 eller nyere, Android 8 eller nyere",
+  "inLanguage": "da",
+  "isAccessibleForFree": true,
+  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "DKK"},
+  "downloadUrl": ["https://apps.apple.com/dk/app/id6820474476", "https://play.google.com/store/apps/details?id=org.elpriser.app"],
+  "publisher": {"@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org"}
+}</script>
+  <div class="flex items-center justify-between mb-6">
+    <div><div class="page-eyebrow">Gratis app til iPhone, iPad og Android</div><h2 class="page-title">Hent Elpriser-appen</h2></div>
+    <a href="/" title="Startside" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+      <svg class="ico" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+  <div class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+    <p class="text-base text-gray-700 dark:text-gray-300">Elprisen lige nu, i morgen og de næste 5 døgn — med dit netselskab — direkte på telefonen. Appen er gratis, kræver ingen konto og har ingen reklamer.</p>
+    <div class="dl-stores">
+      <a class="dl-badge dl-apple" href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Hent i App Store — iPhone og iPad">
+        <svg viewBox="0 0 190 54" width="183" height="52" aria-hidden="true" focusable="false">
+          <rect x=".5" y=".5" width="189" height="53" rx="10" fill="#000" stroke="#a6a6a6"/>
+          <rect x="12" y="11" width="32" height="32" rx="7.5" fill="#1a8cff"/>
+          <path d="M20.5 36.5 28 18l7.5 18.5M23.6 30.5h8.8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="54" y="23" fill="#fff" font-size="11.5" font-weight="600" font-family="Manrope,system-ui,sans-serif">Hent i</text>
+          <text x="54" y="42" fill="#fff" font-size="19" font-weight="700" font-family="Manrope,system-ui,sans-serif">App Store</text>
+        </svg>
+      </a>
+      <a class="dl-badge dl-play" href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener" aria-label="Hent på Google Play — Android">
+        <svg viewBox="0 0 190 54" width="183" height="52" aria-hidden="true" focusable="false">
+          <rect x=".5" y=".5" width="189" height="53" rx="10" fill="#000" stroke="#a6a6a6"/>
+          <path d="M13 10 28 27 13 44Z" fill="#00c3ff"/>
+          <path d="M13 10 28 27 34 21Z" fill="#00f076"/>
+          <path d="M34 21 43 27 34 33 28 27Z" fill="#ffce00"/>
+          <path d="M13 44 28 27 34 33Z" fill="#ff3a44"/>
+          <text x="54" y="23" fill="#fff" font-size="11.5" font-weight="600" font-family="Manrope,system-ui,sans-serif">Hent på</text>
+          <text x="54" y="42" fill="#fff" font-size="19" font-weight="700" font-family="Manrope,system-ui,sans-serif">Google Play</text>
+        </svg>
+      </a>
+    </div>
+    <script>(function(){var b=document.currentScript.previousElementSibling,u=navigator.userAgent;if(/Android/i.test(u))b.className+=' is-android';else if(/iPhone|iPad|iPod/.test(u)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))b.className+=' is-ios';})();</script>
+    <section>
+      <h3 class="font-bold text-gray-900 dark:text-white mb-2">Det får du i appen</h3>
+      <ul class="mt-2 space-y-1 ml-4 list-disc">
+        <li><strong class="text-gray-800 dark:text-gray-200">Prisen lige nu</strong> &mdash; den store pris i kr/kWh og en vurdering: billig, middel eller dyr lige nu.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">2 døgn eller 5 døgn</strong> &mdash; prisen time for time som graf, for i dag og i morgen eller for de næste fem døgn.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Din pris eller Spotpris</strong> &mdash; Din pris er med dit netselskab: nettarif, afgifter og moms. Fold den ud og se, hvad hver del koster. Spotpris er børsprisen inkl. moms.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">Dit netselskab</strong> &mdash; find det med din position, eller vælg det på listen. Positionen bruges kun, når du trykker, og kun netselskabet gemmes.</li>
+        <li><strong class="text-gray-800 dark:text-gray-200">DK1 eller DK2</strong> &mdash; vælg Vestdanmark eller Østdanmark.</li>
+      </ul>
+    </section>
+    <section>
+      <h3 class="font-bold text-gray-900 dark:text-white mb-2">Til telefon og tablet</h3>
+      <p>Appen findes til iPhone og iPad (iOS 18 eller nyere) og til Android (Android 8 eller nyere). Den viser de samme priser som elpriser.org, som du stadig kan bruge i browseren uden at installere noget. Hvad prisen består af, står under <a href="/om-elpriser" class="text-brand-500 underline">Forstå din elpris</a>, og hvordan appen behandler din position, står under <a href="/privatliv" class="text-brand-500 underline">Privatliv</a>.</p>
+    </section>
+  </div>
+</main>
+
 <!-- ═══════ ABOUT PAGE ═══════ -->
 <main style="display:none" data-page="om-elpriser" class="max-w-2xl mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
@@ -2606,6 +2681,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
         <p class="sf-h" id="sfOm">Elpriser</p>
         <ul class="sf-l">
           <li><a href="/privatliv">Privatliv</a></li>
+          <li><a href="/download">Hent appen</a></li>
         </ul>
         <div class="sf-apps">
           <a href="https://apps.apple.com/dk/app/id6820474476" rel="noopener">Hent til iPhone og iPad<span class="vh"> i App Store</span></a>
@@ -2677,19 +2753,6 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
     <div><p class="pd-gt">Østdanmark · DK2</p><div class="pd-links" id="netDlgDK2"></div></div>
     <div><p class="pd-gt">Andre prisområder</p><div class="pd-links"><a href="/norden">Norden</a><a href="/no/strompris">Norge</a><a href="/sv/elpris">Sverige</a><a href="/fi/sahkon-hinta">Finland</a></div></div>
     <p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p>
-  </div>
-</dialog>
-<dialog id="appDialog" class="pris-dialog" aria-labelledby="appDialogTitle">
-  <div class="pd-head">
-    <h2 id="appDialogTitle">Hent appen</h2>
-    <button type="button" class="pd-x" onclick="closeAppDialog()" aria-label="Luk"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-  </div>
-  <div class="pd-body">
-    <p class="pd-foot">Elprisen lige nu, i morgen og de næste 10 døgn — med dit netselskab — direkte på telefonen.</p>
-    <div class="pd-links">
-      <a href="https://apps.apple.com/dk/app/id6820474476" rel="noopener">App Store — iPhone og iPad</a>
-      <a href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener">Google Play — Android</a>
-    </div>
   </div>
 </dialog>
 
@@ -2921,8 +2984,8 @@ async function maybeAutoDetect(){
 }
 
 // ═══ TOP NAV ═══
-// The two dialogs (net chip → "Netselskab og indstillinger", "Hent appen") are
-// native <dialog>s outside every <main>, so they exist on every page.
+// The net chip opens "Netselskab og indstillinger", a native <dialog> outside
+// every <main>, so it exists on every page. "Hent appen" is a plain link to /download.
 function openDlg(id){
   const d=document.getElementById(id);
   if(!d)return;
@@ -2935,8 +2998,6 @@ function closeDlg(id){
 }
 function openNetDialog(){track('net_dialog_open');markNetDialog();openDlg('netDialog');}
 function closeNetDialog(){closeDlg('netDialog');}
-function openAppDialog(){track('app_dialog_open');openDlg('appDialog');}
-function closeAppDialog(){closeDlg('appDialog');}
 // A click on the backdrop lands on the <dialog> itself (it has no padding).
 document.addEventListener('click',e=>{
   if(e.target instanceof HTMLDialogElement&&e.target.classList.contains('pris-dialog'))closeDlg(e.target.id);
@@ -2969,7 +3030,9 @@ function markNetDialog(){
 function updateNavActive(){
   const dp=document.querySelector('[data-page].active')?.getAttribute('data-page')||'start';
   const key=dp==='automation'||dp==='shelly-tariff'?'automation':dp==='om-elpriser'?'om'
-    :dp.startsWith('blog')||dp==='api'?'':'pris';
+    :dp.startsWith('blog')||dp==='api'||dp==='download'?'':'pris';
+  const ab=document.querySelector('.app-btn');
+  if(ab){if(dp==='download')ab.setAttribute('aria-current','page');else ab.removeAttribute('aria-current');}
   document.querySelectorAll('.site-links a[data-nav]').forEach(a=>{
     const on=a.dataset.nav===key;
     a.classList.toggle('on',on);
@@ -3035,7 +3098,7 @@ function initBehaviorTracking(){
 const PATH_ROUTES={
   '/dk1':'DK1/inkl_alt','/dk2':'DK2/inkl_alt',
   '/tariffer':'tariffer','/automation':'automation','/api':'api','/shelly-tariff':'shelly-tariff',
-  '/om-elpriser':'om-elpriser','/prognose':'prognose',
+  '/om-elpriser':'om-elpriser','/prognose':'prognose','/download':'download',
   '/no/strompris':'no/strompris','/sv/elpris':'sv/elpris','/fi/sahkon-hinta':'fi/sahkon-hinta','/norden':'norden',
   '/blog':'blog',
   '/blog/elafgift-2028':'blog/elafgift-2028',
@@ -3085,7 +3148,7 @@ function hashToPath(h){
     const m=h.match(/^DK[12]\/net_[a-z_]+\/([a-z0-9-]+)/);
     return m?`/${area}/${m[1]}`:`/${area}`;
   }
-  return '/'+h; // tariffer, automation, api, prognose, om-elpriser, shelly-tariff, blog/…
+  return '/'+h; // tariffer, automation, api, prognose, om-elpriser, download, shelly-tariff, blog/…
 }
 // ═══ Clean URLs ═══
 //
@@ -3251,6 +3314,7 @@ function route(){
   if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpriser API til Home Assistant og Shelly — gratis, med kode';pv('Automation','/automation');loadAutomationPage().finally(scrollToAnchor);scrollToAnchor();return;}
   if(h==='api'){document.querySelector('[data-page="api"]').classList.add('active');document.title='elpriser.org API — Gratis JSON API for danske elpriser';pv('API','/api');return;}
   if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — Tibber-kompatibel elpris-JSON';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}
+  if(h==='download'){document.querySelector('[data-page="download"]').classList.add('active');document.title='Hent Elpriser-appen — iPhone og Android, gratis';pv('Hent appen','/download');return;}
   if(h==='om-elpriser'){document.querySelector('[data-page="om-elpriser"]').classList.add('active');document.title='Om elpriser i Danmark — Spotpris, tariffer og afgifter';pv('Om elpriser','/om-elpriser');return;}
   if(h==='blog'){document.querySelector('[data-page="blog"]').classList.add('active');document.title='Blog — Guides og analyser om elpriser';pv('Blog','/blog');return;}
   if(h==='blog/hvornaar-er-stroemmen-billigst'){document.querySelector('[data-page="blog-hvornaar-er-stroemmen-billigst"]').classList.add('active');document.title='Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret';pv('Blog: Hvornår billigst','/blog/hvornaar-er-stroemmen-billigst');return;}

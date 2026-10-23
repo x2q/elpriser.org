@@ -393,6 +393,7 @@ const SPA_ROUTES = {
   '/tariffer': '#tariffer',
   '/automation': '#automation',
   '/om-elpriser': '#om-elpriser',
+  '/download': '#download',
   '/no/strompris': '#no/strompris',
   '/sv/elpris': '#sv/elpris',
   '/fi/sahkon-hinta': '#fi/sahkon-hinta',

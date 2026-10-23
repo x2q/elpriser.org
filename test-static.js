@@ -1383,6 +1383,8 @@ test('footer: four labelled groups, each a nav with a visible heading', () => {
   assert.deepEqual(viden, ['/om-elpriser', '/blog/elafgift-2028', '/blog/elafgift-og-spotpris',
     '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest', '/blog']);
   assert.ok(footerHrefs(col('sfOm'))[0] === '/privatliv', 'Privatliv leads the Elpriser group (the explainer moved to Viden)');
+  assert.deepEqual(footerHrefs(col('sfOm')), ['/privatliv', '/download', 'https://apps.apple.com/dk/app/id6820474476', 'https://play.google.com/store/apps/details?id=org.elpriser.app'],
+    'the Elpriser group: Privatliv, the text link "Hent appen" → /download, then the two store buttons');
 });
 
 test('footer: ONE link to the explainer, labelled "Forstå din elpris" in Viden — no second "Om Elpriser", no "Flere guides"', () => {
@@ -1437,7 +1439,8 @@ test('footer: no link list is repeated, and the credits line keeps both external
   const hrefs = footerHrefs(FOOTER);
   const dup = hrefs.filter((h, i) => hrefs.indexOf(h) !== i);
   assert.deepEqual(dup, [], 'a link appears twice in the footer');
-  assert.equal(hrefs.length, 37, `footer has ${hrefs.length} links: 17 in the groups and the apps, 14 nets, Norden/Norge/Sverige/Finland, and the two credits`);
+  // 38 since /download joined the Elpriser group ("Hent appen"); the two store buttons below it still point straight at the stores.
+  assert.equal(hrefs.length, 38, `footer has ${hrefs.length} links: 18 in the groups and the apps, 14 nets, Norden/Norge/Sverige/Finland, and the two credits`);
   const legal = FOOTER.match(/<p class="sf-legal">([^]*?)<\/p>/);
   assert.ok(legal, 'credits line');
   assert.ok(/&copy; Elpriser\.org &mdash; Data fra <a href="https:\/\/www\.energidataservice\.dk"[^>]*rel="noopener">Energi Data Service<\/a> \(Energinet\)\. Åbne datasæt på <a href="https:\/\/huggingface\.co\/Elpriser"[^>]*rel="noopener">Hugging Face<\/a>\./.test(legal[1]), 'credits wording and links');
@@ -1469,8 +1472,11 @@ test('crawl hygiene: no templated href literal anywhere a crawler can read it', 
 });
 
 test('footer: the homepage render cache key was bumped with the shared markup', () => {
-  // v67: the footer's Andre prisområder links moved to the localised paths (/no/strompris, /sv/elpris, /fi/sahkon-hinta).
-  assert.ok(/homepage-ssr-v67/.test(ROUTES), 'homepage-ssr-v67');
+  // v68: header "Hent appen" became a link to /download and the footer gained "Hent appen"; the app dialog is gone.
+  // (v67: the footer's Andre prisområder links moved to the localised paths.)
+  assert.ok(/homepage-ssr-v68/.test(ROUTES), 'homepage-ssr-v68');
+  // The zone pages share the header and footer and are cached under their own key; it moved with them.
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v3'/.test(ROUTES), 'zone-ssr-v3');
 });
 
 
@@ -1646,6 +1652,92 @@ test('start page: exactly 5 FAQ items, and the FAQPage markup mirrors them word 
   const cheap = items.find(i => i.q === 'Hvornår er strømmen billigst?').a;
   assert.ok(/68 %/.test(cheap) && !/typisk billigst om natten/.test(cheap), 'the cheapest-hour answer contradicts the blog analysis');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// /download: the "Hent appen" dialog became a page with the two store badges
+// ─────────────────────────────────────────────────────────────────────────────
+
+const APPLE_URL = 'https://apps.apple.com/dk/app/id6820474476';
+const PLAY_URL  = 'https://play.google.com/store/apps/details?id=org.elpriser.app';
+
+test('/download: one path through the SEO entry, sitemap, route maps, router and llms.txt', () => {
+  const entry = ROUTES.slice(ROUTES.indexOf(`'/download': {`), ROUTES.indexOf('\n  },', ROUTES.indexOf(`'/download': {`)));
+  const field = f => (entry.match(new RegExp(`${f}: '([^']*)'`)) || [])[1] || '';
+  assert.ok(/^Hent Elpriser-appen/.test(field('title')), 'the title leads with the action');
+  assert.ok(field('title').length <= 62, `title is ${field('title').length} characters`);
+  assert.ok(field('description').length >= 80 && field('description').length <= 155, `description is ${field('description').length} characters`);
+  assert.ok(/5 døgn/.test(field('description')) && !/10 døgn/.test(entry), 'the apps show 2 and 5 døgn, never 10');
+  assert.equal(field('hash'), '#download');
+  assert.ok(/SITEMAP_URLS = \[[^\]]*'\/download'/.test(ROUTES), 'sitemap lists /download');
+  assert.ok(/'\/download': '2026-10-23'/.test(ROUTES), 'a real lastmod (a static page, not daily)');
+  assert.ok(/'download': 'download'/.test(ROUTES), 'HASH_TO_DATA_PAGE');
+  assert.ok(SERVER.includes("'/download': '#download'"), 'dev-server route');
+  assert.ok(INDEX.includes("'/download':'download'"), 'client PATH_ROUTES');
+  assert.ok(/h==='download'\)\{[^\n]*document\.title='Hent Elpriser-appen/.test(INDEX), 'the router sets the same title');
+  const llms = ROUTES.slice(ROUTES.indexOf('const LLMS_TXT = `'), ROUTES.indexOf('const LLMS_FULL_TXT'));
+  assert.ok(llms.includes('https://elpriser.org/download)'), 'llms.txt links /download');
+  assert.ok(llms.includes(APPLE_URL) && llms.includes(PLAY_URL), 'and names both stores (llms-full.txt is llms.txt plus more)');
+  assert.ok(/LLMS_FULL_TXT = LLMS_TXT \+/.test(ROUTES), 'llms-full.txt contains llms.txt');
+});
+
+test('/download: H1, honest copy, two identical store badges with the exact links and Danish accessible names', () => {
+  const m = mainOf('download');
+  assert.ok(/<h2 class="page-title">Hent Elpriser-appen<\/h2>/.test(m), 'the title the server promotes to the page\'s h1');
+  const text = textOf(m);
+  assert.ok(/i morgen og de næste 5 døgn/.test(text) && /med dit netselskab/.test(text), 'the lead says what the apps show');
+  assert.ok(!/10 døgn|3.10 døgn|10 dage/.test(text), 'no 10-day claim: the apps show 2 døgn | 5 døgn');
+  for (const claim of ['2 døgn', '5 døgn', 'Din pris', 'Spotpris', 'DK1', 'DK2', 'nettarif', 'moms', 'gratis', 'ingen konto'])
+    assert.ok(new RegExp(claim, 'i').test(text), `copy lost "${claim}"`);
+  assert.ok(!/prognose|CO₂|usikkerhed|aflæs|styr|automatis/i.test(text), 'copy names a feature the apps no longer have or never had');
+  const badges = [...m.matchAll(/<a class="dl-badge ([\w-]+)" href="([^"]+)"([^>]*)>([\s\S]*?)<\/a>/g)];
+  assert.equal(badges.length, 2, 'two badges');
+  const [apple, play] = badges;
+  assert.equal(apple[2], APPLE_URL); assert.equal(play[2], PLAY_URL);
+  assert.ok(/aria-label="Hent i App Store — iPhone og iPad"/.test(apple[3]), 'App Store accessible name');
+  assert.ok(/aria-label="Hent på Google Play — Android"/.test(play[3]), 'Google Play accessible name');
+  for (const b of badges) {
+    assert.ok(/rel="noopener"/.test(b[3]), 'rel=noopener');
+    assert.ok(/<svg viewBox="0 0 190 54" width="183" height="52" aria-hidden="true"/.test(b[4]), 'drawn inline, same size, hidden from the accessibility tree (the link carries the name)');
+    assert.ok(/<rect[^>]*fill="#000"/.test(b[4]), 'black rounded badge');
+  }
+  assert.ok(/Hent i<\/text>[\s\S]*App Store<\/text>/.test(apple[4]) && /Hent på<\/text>[\s\S]*Google Play<\/text>/.test(play[4]), 'the visible words are inside the accessible names');
+  const css = INDEX.match(/\.dl-badge\{([^}]*)\}/)[1];
+  assert.ok(/height:5\d px|height:52px/.test(css) && parseInt(css.match(/height:(\d+)px/)[1], 10) >= 44, 'badge target is at least 44 px high');
+  assert.ok(/\.dl-badge:focus-visible\{outline:2px solid var\(--p-brand\)/.test(INDEX), 'visible focus ring');
+  // Device order: App Store first in the markup and by default; Android swaps with a class set by an inline script after the badges.
+  assert.ok(m.indexOf('dl-apple') < m.indexOf('dl-play'), 'App Store badge first without JS');
+  assert.ok(/\.dl-stores\.is-android \.dl-play\{order:-1\}/.test(INDEX), 'Android puts Google Play first');
+  assert.ok(/\/Android\/i\.test\(u\)\)b\.className\+=' is-android'/.test(m) && /iPhone\|iPad\|iPod/.test(m), 'the inline script picks the order from the user agent');
+  assert.ok(!/display:none|\shidden[\s>]/.test(m.match(/<div class="dl-stores">[\s\S]*?<\/div>/)[0]), 'nothing is hidden: both badges stay on every device');
+});
+
+test('/download: MobileApplication JSON-LD lives on this page only — free, iOS and Android, both stores, no invented rating', () => {
+  const m = mainOf('download');
+  const ld = JSON.parse(m.match(/<script type="application\/ld\+json">(\{[\s\S]*?\})<\/script>/)[1]);
+  assert.equal(ld['@type'], 'MobileApplication');
+  assert.equal(ld.url, 'https://elpriser.org/download');
+  assert.ok(/iOS/.test(ld.operatingSystem) && /Android/.test(ld.operatingSystem));
+  assert.equal(ld.offers.price, '0'); assert.equal(ld.isAccessibleForFree, true);
+  assert.deepEqual(ld.downloadUrl, [APPLE_URL, PLAY_URL]);
+  assert.ok(!/aggregateRating|ratingValue|reviewCount|review"/i.test(m), 'no rating: there is none to quote');
+  assert.ok(!INDEX.slice(0, INDEX.indexOf('<body')).includes('MobileApplication'), 'not in the shared <head>');
+  assert.equal((INDEX.match(/"@type": "MobileApplication"/g) || []).length, 1, 'one block, in this main');
+});
+
+test('header: "Hent appen" is a plain link to /download — the dialog, its script and its event are gone; the smart banner stays', () => {
+  assert.ok(/<a href="\/download" class="app-btn">Hent appen<\/a>/.test(INDEX), 'a link, same class and label as the old button');
+  assert.ok(!/<button[^>]*app-btn/.test(INDEX), 'no button with the app-btn class');
+  for (const gone of ['appDialog', 'openAppDialog', 'closeAppDialog', 'app_dialog_open', 'appDialogTitle'])
+    assert.ok(!INDEX.includes(gone), `${gone} is still in index.html`);
+  assert.ok(INDEX.indexOf('class="app-btn"') < INDEX.indexOf('</header>'), 'it sits in the header');
+  // The net dialog uses the same helpers and the same .pris-dialog CSS: both must survive.
+  assert.ok(/function openDlg\(/.test(INDEX) && /<dialog id="netDialog"/.test(INDEX) && /\.pris-dialog\{/.test(INDEX), 'the net dialog is untouched');
+  assert.deepEqual([...INDEX.matchAll(/<dialog id="(\w+)"/g)].map(x => x[1]), ['infoModal', 'netDialog'], 'the app dialog is gone; the info modal and the net dialog remain');
+  assert.ok(/<meta name="apple-itunes-app" content="app-id=6820474476">/.test(INDEX.slice(0, INDEX.indexOf('</head>'))), 'the Smart App Banner meta is in the shared head, so every page — /download too — carries it');
+  // Page views follow the other pages' convention: a GA page_view with the clean path, no bespoke event.
+  assert.ok(/pv\('Hent appen','\/download'\)/.test(INDEX), 'page_view for /download');
+});
+
 
 
 console.log('\n⚡ Static integrity tests\n' + '─'.repeat(50));
