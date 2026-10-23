@@ -149,15 +149,13 @@ async function staticChecks() {
         'buildGpdAddress must replace dots with " " (space)');
     });
 
-  // ── 54646d5: All "Startside" home icons href to "/" not "#" ──────────────
-  await test('every home icon href="/" (not href="#") — guards 54646d5',
+  // ── The per-page "Startside" house icon is gone; the header logo is the way home ──
+  await test('no per-page home icon remains; the header logo links to "/"',
     () => {
-      const links = [...indexHtml.matchAll(/<a\s+href="([^"]+)"\s+title="Startside"/g)];
-      assert.ok(links.length > 0, 'no <a title="Startside"> links found at all — markup changed?');
-      const broken = links.filter(m => m[1] !== '/');
-      assert.equal(broken.length, 0,
-        `${broken.length} home icon(s) still href="${broken[0]?.[1]}" instead of "/" — ` +
-        `breaks return-to-start from clean-URL pages like /dk1/n1.`);
+      assert.equal([...indexHtml.matchAll(/title="Startside"/g)].length, 0,
+        'a per-page home icon is back — the header logo (href="/") is the one way home');
+      assert.ok(/<a[^>]*class="site-logo"[^>]*href="\/"|<a[^>]*href="\/"[^>]*class="site-logo"/.test(indexHtml),
+        'the header logo no longer links to "/"');
     });
 
   // ── 12c1057: SEO renderer must NOT inject the legacy hash-redirect ───────

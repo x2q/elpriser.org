@@ -645,6 +645,9 @@ test('structured data: each block is served only on the page it describes', () =
   assert.ok(blocksIn('start').some(j => j['@type'] === 'FAQPage'), 'the homepage FAQ markup is gone');
   const api = blocksIn('api').find(j => j['@type'] === 'Dataset');
   assert.ok(api && api.url === 'https://elpriser.org/api', 'the dataset is not on /api with its own URL');
+  // Search Console flagged 'Invalid object type for field "spatialCoverage"': Google accepts Place or text there, not Country.
+  assert.ok(typeof api.spatialCoverage === 'string' || api.spatialCoverage?.['@type'] === 'Place',
+    `spatialCoverage must be Text or Place, got ${JSON.stringify(api.spatialCoverage)}`);
   for (const slug of ['elafgift-2028', 'hvornaar-er-stroemmen-billigst', 'groennest-og-dyrest', 'elafgift-og-spotpris']) {
     const posts = blocksIn('blog-' + slug).filter(j => j['@type'] === 'BlogPosting');
     assert.equal(posts.length, 1, `blog-${slug} has ${posts.length} BlogPosting blocks`);
@@ -1474,9 +1477,9 @@ test('crawl hygiene: no templated href literal anywhere a crawler can read it', 
 test('footer: the homepage render cache key was bumped with the shared markup', () => {
   // v68: header "Hent appen" became a link to /download and the footer gained "Hent appen"; the app dialog is gone.
   // (v67: the footer's Andre prisområder links moved to the localised paths.)
-  assert.ok(/homepage-ssr-v68/.test(ROUTES), 'homepage-ssr-v68');
+  assert.ok(/homepage-ssr-v69/.test(ROUTES), 'homepage-ssr-v69');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v3'/.test(ROUTES), 'zone-ssr-v3');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v4'/.test(ROUTES), 'zone-ssr-v4');
 });
 
 

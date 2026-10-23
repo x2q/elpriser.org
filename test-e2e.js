@@ -1001,17 +1001,16 @@ async function startServer() {
   // the pathname-fallback in route() mapped it right back to the same page.
   // Home icon must navigate to /.
   for (const url of ['/automation', '/blog/elafgift-2028', '/dk1/n1']) {
-    await test(`routing: home-icon on ${url} returns to start page`, async () => {
+    await test(`routing: the header logo on ${url} returns to start page`, async () => {
       await page.goto(BASE + url);
       const dp = await page.evaluate(() =>
         document.querySelector('main.active')?.dataset.page);
-      // Sub-pages have either the in-page home icon or the header logo; both
-      // must lead to "/". (The prices page only has the logo.)
-      await page.locator(
-        `[data-page="${dp}"] a[title="Startside"], header.site-nav a.site-logo`).first().click();
+      // The header logo is the one way home (the per-page house icons are gone).
+      assert.equal(await page.locator(`[data-page="${dp}"] a[title="Startside"]`).count(), 0, 'per-page home icon is back');
+      await page.locator('header.site-nav a.site-logo').first().click();
       await page.waitForSelector('main[data-page="start"].active');
       assert.equal(await page.evaluate(() => location.pathname), '/',
-        'home icon must land on / (not keep sub-page pathname)');
+        'the logo must land on / (not keep sub-page pathname)');
     });
   }
 
