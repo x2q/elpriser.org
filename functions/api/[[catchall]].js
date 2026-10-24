@@ -1901,13 +1901,24 @@ async function recently(key, ttlSec) {
 // That read is itself a KV operation, and it returned the whole value each time.
 // `recently()` answers "was this written a moment ago?" for free, per location,
 // so the metadata read only happens once per interval per location.
+// Yesterday's measurement (2026-10-23, alert at 50 % of the 1,000 writes/day) showed
+// the backups were rewritten every 10 minutes per key although a day's prices do not
+// change once published. So: an unchanged body (FNV-1a hash in the metadata) is not
+// rewritten, except once a day to renew the 7-day expiry.
+const KV_UNCHANGED_REFRESH_MS = 24 * 3600_000;
+function bodyHash(s) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(16) + ':' + s.length;
+}
 async function kvPutThrottled(kv, key, body, { minIntervalMs, expirationTtl }) {
   try {
     if (await recently('put:' + key, Math.max(60, Math.floor(minIntervalMs / 1000)))) return false;
     const { metadata } = await kv.getWithMetadata(key);
-    const now = Date.now();
+    const now = Date.now(), h = bodyHash(body);
     if (metadata && metadata.writtenAt && now - metadata.writtenAt < minIntervalMs) return false;
-    await kv.put(key, body, { expirationTtl, metadata: { writtenAt: now } });
+    if (metadata && metadata.h === h && metadata.writtenAt && now - metadata.writtenAt < KV_UNCHANGED_REFRESH_MS) return false;
+    await kv.put(key, body, { expirationTtl, metadata: { writtenAt: now, h } });
     return true;
   } catch (e) {
     console.error('kvPutThrottled failed', e);
@@ -2001,7 +2012,10 @@ async function updateRollingPriceBackup(area, records, env) {
     for (const r of records) byTime.set(r.TimeUTC, r);
     const cutoff = new Date(now - 45 * 86_400_000).toISOString();
     const merged = Array.from(byTime.values()).filter(r => r.TimeUTC >= cutoff);
-    await env.PRICE_CACHE.put(key, JSON.stringify(merged), {
+    const body = JSON.stringify(merged);
+    // The same records again (every request re-reads the same published prices): only renew the expiry, once a day.
+    if (existingRaw === body && metadata && metadata.writtenAt && now - metadata.writtenAt < KV_UNCHANGED_REFRESH_MS) return;
+    await env.PRICE_CACHE.put(key, body, {
       expirationTtl: 60 * 86400,
       metadata: { writtenAt: now },
     });

@@ -405,3 +405,42 @@ test('the served sitemap and llms.txt name none of the retired URLs and keep the
     assert.ok(sitemap.includes(`<loc>https://elpriser.org${keep}</loc>`), `sitemap lost ${keep}`);
   assert.ok(llms.includes('https://elpriser.org/automation#shelly') && llms.includes('https://elpriser.org/om-elpriser'), 'llms.txt points at the replacements');
 });
+
+// ── KV writes — the free plan allows 1,000 a day (alert at 50 % on 2026-10-23) ──
+
+async function withClock(offsetMs, fn) {
+  const real = Date.now;
+  Date.now = () => real() + offsetMs;
+  try { return await fn(); } finally { Date.now = real; }
+}
+
+test('an unchanged price backup is not rewritten every ten minutes — guards the KV write limit', async () => {
+  // Backups were rewritten once per 10 minutes per key, although a day's published
+  // prices do not change. Same body: leave it; renew the 7-day expiry once a day.
+  const kv = makeKv({});
+  const urls = [`/api/raw/prices?area=DK1&${range}`, '/api/prices?area=DK1&mode=inkl_alt'];
+  const hit = async () => { const api = await createApi({ kv }); for (const u of urls) await api.get(u); };
+  await hit();
+  const first = [...kv.ops.put];
+  assert.ok(first.includes('raw-prices-backup-DK1'), 'the rolling backup is written the first time');
+  assert.ok(first.some(k => k.startsWith('prices-DK1-')), 'the per-window backup is written the first time');
+
+  await withClock(30 * 60_000, hit);
+  assert.deepEqual(kv.ops.put, first, `unchanged data rewritten 30 minutes later: ${kv.ops.put.slice(first.length)}`);
+
+  await withClock(25 * 3600_000, hit);
+  assert.ok(kv.ops.put.length > first.length, 'the expiry is never renewed, so the backups would vanish after 7 days');
+  assert.ok(kv.ops.put.length <= first.length * 2 + 1, 'the daily renewal rewrote more than the same backups once');
+});
+
+test('a changed price backup is still written (after the ten-minute window)', async () => {
+  const kv = makeKv({});
+  const api = await createApi({ kv });
+  await api.get(`/api/raw/prices?area=DK1&${range}`);
+  const before = kv.ops.put.length;
+  // A different range holds different records, so the rolling backup gains data.
+  await withClock(30 * 60_000, async () => {
+    await (await createApi({ kv })).get(`/api/raw/prices?area=DK1&start=${day(-30)}&end=${day(-20)}`);
+  });
+  assert.ok(kv.ops.put.length > before, 'new data was not stored');
+});
