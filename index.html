@@ -880,7 +880,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   <div class="pris-page" data-pris-mount><!--SSR_PRIS--></div>
 
   <div class="max-w-4xl mx-auto px-4 py-12">
-    <!-- Net company and price area in one row. The 15 net pages stay crawlable
+    <!-- Net company and price area in one row. The 16 net pages stay crawlable
          through the footer's net list and the dialog this button opens. -->
     <div class="area-row" data-area-row>
       <button type="button" class="gps-light" onclick="openNetDialog()" aria-haspopup="dialog">Find dit netselskab</button>
@@ -1017,7 +1017,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   <section class="mt-10 space-y-5 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
     <div>
       <h3 class="font-bold text-gray-900 dark:text-white mb-2">Hvilke netselskaber dækker tabellen?</h3>
-      <p>Tabellen ovenfor viser Nettarif C for alle større netselskaber i Danmark — i Vestdanmark <a href="/dk1/n1" class="text-brand-500 underline">N1</a>, <a href="/dk1/trefor" class="text-brand-500 underline">Trefor</a>, <a href="/dk1/konstant" class="text-brand-500 underline">Konstant</a>, <a href="/dk1/dinel" class="text-brand-500 underline">Dinel</a>, <a href="/dk1/vores-elnet" class="text-brand-500 underline">Vores Elnet</a>, <a href="/dk1/rah-net" class="text-brand-500 underline">RAH Net</a>, <a href="/dk1/elvaerk" class="text-brand-500 underline">Elværk</a>, <a href="/dk1/nord-energi" class="text-brand-500 underline">Nord Energi</a>, <a href="/dk1/noe-net" class="text-brand-500 underline">NOE Net</a>, <a href="/dk1/elnet-midt" class="text-brand-500 underline">Elnet Midt</a>, <a href="/dk1/flow-elnet" class="text-brand-500 underline">Flow Elnet</a>, <a href="/dk1/lnet" class="text-brand-500 underline">LNet</a> og i Østdanmark <a href="/dk2/cerius" class="text-brand-500 underline">Cerius</a>, <a href="/dk2/trefor-ost" class="text-brand-500 underline">Trefor Øst</a>, <a href="/dk2/radius" class="text-brand-500 underline">Radius</a>. Dit netselskab afgøres af din adresse, ikke af hvem du køber strøm hos — du kan ikke selv vælge netselskab. Er du i tvivl om, hvilket netselskab du hører under, kan du finde det via GPS-knappen på <a href="/" class="text-brand-500 underline">forsiden</a> eller slå det op hos <a href="https://www.danskenergi.dk/vejledning/nettilslutning/find-dit-netselskab" target="_blank" rel="noopener" class="text-brand-500 underline">Dansk Energi</a>.</p>
+      <p>Tabellen ovenfor viser Nettarif C for alle større netselskaber i Danmark — i Vestdanmark <a href="/dk1/n1" class="text-brand-500 underline">N1</a>, <a href="/dk1/trefor" class="text-brand-500 underline">Trefor</a>, <a href="/dk1/konstant" class="text-brand-500 underline">Konstant</a>, <a href="/dk1/dinel" class="text-brand-500 underline">Dinel</a>, <a href="/dk1/vores-elnet" class="text-brand-500 underline">Vores Elnet</a>, <a href="/dk1/ravdex" class="text-brand-500 underline">Ravdex</a>, <a href="/dk1/rah-net" class="text-brand-500 underline">RAH Net</a>, <a href="/dk1/elvaerk" class="text-brand-500 underline">Elværk</a>, <a href="/dk1/nord-energi" class="text-brand-500 underline">Nord Energi</a>, <a href="/dk1/noe-net" class="text-brand-500 underline">NOE Net</a>, <a href="/dk1/elnet-midt" class="text-brand-500 underline">Elnet Midt</a>, <a href="/dk1/flow-elnet" class="text-brand-500 underline">Flow Elnet</a>, <a href="/dk1/lnet" class="text-brand-500 underline">LNet</a> og i Østdanmark <a href="/dk2/cerius" class="text-brand-500 underline">Cerius</a>, <a href="/dk2/trefor-ost" class="text-brand-500 underline">Trefor Øst</a>, <a href="/dk2/radius" class="text-brand-500 underline">Radius</a>. Dit netselskab afgøres af din adresse, ikke af hvem du køber strøm hos — du kan ikke selv vælge netselskab. Er du i tvivl om, hvilket netselskab du hører under, kan du finde det via GPS-knappen på <a href="/" class="text-brand-500 underline">forsiden</a> eller slå det op hos <a href="https://www.danskenergi.dk/vejledning/nettilslutning/find-dit-netselskab" target="_blank" rel="noopener" class="text-brand-500 underline">Dansk Energi</a>.</p>
     </div>
     <div>
       <h3 class="font-bold text-gray-900 dark:text-white mb-2">Nettarif inkl. afgift — den samlede elpris</h3>
@@ -2673,6 +2673,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
             <li><a href="/dk1/konstant">Konstant</a></li>
             <li><a href="/dk1/dinel">Dinel</a></li>
             <li><a href="/dk1/vores-elnet">Vores Elnet</a></li>
+            <li><a href="/dk1/ravdex">Ravdex</a></li>
             <li><a href="/dk1/rah-net">RAH Net</a></li>
             <li><a href="/dk1/elvaerk">Elværk</a></li>
             <li><a href="/dk1/nord-energi">Nord Energi</a></li>
@@ -2752,6 +2753,7 @@ const NETS={DK1:[
   {name:'Konstant',slug:'konstant',gln:'5790000704842',match:['KONSTANT','Konstant Net']},
   {name:'Dinel',slug:'dinel',gln:'5790000610099',match:['Dinel']},
   {name:'Vores Elnet',slug:'vores-elnet',gln:'5790000610976',match:['Vores Elnet']},
+  {name:'Ravdex',slug:'ravdex',gln:'5790000836727',match:['Ravdex']},
   {name:'RAH Net',slug:'rah-net',gln:'5790000681327',match:['RAH Net','RAH']},
   {name:'Elværk',slug:'elvaerk',gln:'5790000681358',match:['Netselskabet Elværk','Elværk']},
   {name:'Nord Energi',slug:'nord-energi',gln:'5790000610877',match:['Nord Energi']},
@@ -3309,7 +3311,7 @@ function route(){
   if(!h){
     document.querySelector('[data-page="start"]').classList.add('active');document.title='Elpriser i dag og i morgen — strømpris lige nu, time for time';pv('Start','/');restoreNetPick();maybeAutoDetect();loadPris();return;
   }
-  if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Nettariffer 2026: Nettarif C for alle 15 netselskaber, pr. kWh';pv('Tariffer','/tariffer');loadTariffPage();return;}
+  if(h==='tariffer'){document.querySelector('[data-page="tariffer"]').classList.add('active');document.title='Nettariffer 2026: Nettarif C for alle 16 netselskaber, pr. kWh';pv('Tariffer','/tariffer');loadTariffPage();return;}
   if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpriser API til Home Assistant og Shelly — gratis, med kode';pv('Automation','/automation');loadAutomationPage().finally(scrollToAnchor);scrollToAnchor();return;}
   if(h==='api'){document.querySelector('[data-page="api"]').classList.add('active');document.title='elpriser.org API — Gratis JSON API for danske elpriser';pv('API','/api');return;}
   if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — Tibber-kompatibel elpris-JSON';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}

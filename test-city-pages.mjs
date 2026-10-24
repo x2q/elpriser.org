@@ -133,7 +133,7 @@ for (const c of CITIES) {
   // Crawl hygiene: no templated href, no empty link.
   ok(!/href="[^"]*(\$\{|undefined|\[object)/.test(r.main) && !/href=""/.test(r.main), `${p}: ingen skabelon- eller tomme links`);
   // Cached under its own versioned key; a second request does not ask the feed again.
-  ok([...store.keys()].some(k => k === `https://cache.local/city-ssr-v2${p}`), `${p}: egen versioneret cache-nøgle`, [...store.keys()].join(' '));
+  ok([...store.keys()].some(k => k === `https://cache.local/city-ssr-v3${p}`), `${p}: egen versioneret cache-nøgle`, [...store.keys()].join(' '));
   const again = await get(p);
   ok(again.page === h && upstream.length === 1, `${p}: andet svar kommer fra cachen`);
 }
@@ -264,6 +264,33 @@ for (const c of CITIES) {
   // Dinel's page names the city it serves; the footer links the page on every city page too.
   ok(strip(r.page).includes('Byer i området: Aarhus') && r.page.includes('href="/elpris/aarhus"'), `${p}: "Byer i området: Aarhus" med link`);
   ok(a.page.includes('href="/dk1/dinel"'), '/elpris/aarhus: sidefoden/teksten linker /dk1/dinel');
+}
+
+// ── Ravdex, the 16th: GLN 5790000836727, DK1, named "Ravdex" by the lookup; 2 of 20 Odense addresses ─────────────
+{
+  const GLN = '5790000836727', p = '/dk1/ravdex';
+  const entry = INDEX.match(/\{name:'Ravdex',slug:'ravdex',gln:'(\d{13})',match:\[([^\]]*)\]\}/);
+  ok(entry && entry[1] === GLN && entry[2] === "'Ravdex'" && INDEX.indexOf("slug:'ravdex'") < INDEX.indexOf('],DK2:['), 'index.html: NETS har Ravdex i DK1 med GLN 5790000836727 og match-strengen "Ravdex"', entry && entry.slice(1).join(' '));
+  store.clear(); upstream = [];
+  const r = await get(p), raw = r.body, h = r.page;
+  const title = (raw.match(/<title>([^<]*)<\/title>/) || [])[1] || '', desc = (raw.match(/<meta name="description" content="([^"]*)"/) || [])[1] || '';
+  ok(r.status === 200, `${p}: 200`, String(r.status));
+  ok(title.length >= 30 && title.length <= 62 && title.includes('Ravdex') && title.includes('DK1'), `${p}: titel ≤ 62 tegn med Ravdex og DK1`, `${title.length}: ${title}`);
+  ok(desc.length >= 80 && desc.length <= 155 && desc.includes('Ravdex'), `${p}: beskrivelse 80-155 tegn med Ravdex`, `${desc.length}: ${desc}`);
+  ok(h.includes('<link rel="canonical" href="https://elpriser.org/dk1/ravdex">') && /<h1[^>]*>Elpris hos Ravdex i dag — DK1 Vest<\/h1>/.test(h), `${p}: canonical og h1`);
+  ok(h.includes('<div class="pris" data-period="2"') && h.includes('data-key="DK1|din|ravdex"') && h.includes('aria-label="Elpris lige nu — DK1 Vest · Ravdex"'), `${p}: Pris-skærmen er tegnet for Ravdex`);
+  ok(upstream.includes(`/api/forecast?area=DK1&mode=net_inkl_alt&gln=${GLN}`), `${p}: prognosen hentes med Ravdex' GLN`, upstream.join(' '));
+  ok(strip(r.main).includes('Ravdex er et lokalt netselskab') && strip(r.main).includes('dele af Odense') && !/NaN|undefined/.test(r.main), `${p}: egen dækningstekst, ingen NaN/undefined`);
+  // 10 % of Odense is below the "Byer i området" share: the net page does not claim Odense, the city page links the net in its own text.
+  ok(!strip(r.page).includes('Byer i området'), `${p}: ingen "Byer i området" (10 % af Odense)`);
+  const ot = strip(pages.odense.text);
+  ok(pages.odense.text.includes('<a href="/dk1/ravdex" class="text-brand-500 underline">Ravdex</a>') && ot.includes('de sidste hørte 2 til Ravdex') && !ot.includes('har vi endnu ikke tariffer for') && ot.includes('18 af de 20 adresser'), '/elpris/odense: "de sidste hørte 2 til Ravdex" med link, og ingen netselskab uden tariffer', ot.slice(0, 400));
+  ok(pages.odense.page.includes('data-key="DK1|din|vores-elnet"'), '/elpris/odense: Pris-skærmen er stadig tegnet for Vores Elnet');
+  ok(strip(pages.esbjerg.text).includes('Hjerting Transformatorforening har vi endnu ikke tariffer for'), '/elpris/esbjerg: Hjerting står stadig som netselskab uden tariffer (dets husholdningstarif ligger ikke i arkivet)');
+  ok((await get('/dk2/ravdex')).status === 404, '/dk2/ravdex er 404');
+  ok((await get('/dk1/hjerting-transformatorforening')).status === 404, '/dk1/hjerting-transformatorforening er 404: ikke en understøttet net');
+  const sm = (await get('/sitemap.xml')).body;
+  ok(/<loc>https:\/\/elpriser\.org\/dk1\/ravdex<\/loc>\s*<lastmod>[^<]+<\/lastmod>\s*<changefreq>[^<]+<\/changefreq>\s*<priority>0\.6<\/priority>/.test(sm), 'sitemap: /dk1/ravdex med prioritet 0,6');
 }
 
 console.log(`${pass} beståede, ${fails.length} fejl`);

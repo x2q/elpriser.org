@@ -16,6 +16,7 @@ object Nets {
         Net("Konstant", "5790000704842", "DK1", listOf("KONSTANT", "Konstant Net")),
         Net("Dinel", "5790000610099", "DK1", listOf("Dinel")),
         Net("Vores Elnet", "5790000610976", "DK1", listOf("Vores Elnet")),
+        Net("Ravdex", "5790000836727", "DK1", listOf("Ravdex")),
         Net("RAH Net", "5790000681327", "DK1", listOf("RAH Net", "RAH")),
         Net("Elværk", "5790000681358", "DK1", listOf("Netselskabet Elværk", "Elværk")),
         Net("Nord Energi", "5790000610877", "DK1", listOf("Nord Energi")),

@@ -32,7 +32,7 @@ const SEO_PAGES = {
     hash: '#DK2/inkl_alt',
   },
   '/tariffer': {
-    title: 'Nettariffer 2026: Nettarif C for alle 15 netselskaber, pr. kWh',
+    title: 'Nettariffer 2026: Nettarif C for alle 16 netselskaber, pr. kWh',
     description: 'Nettarif 2026 (nettarif C) for N1, Radius, Trefor, Cerius, RAH, Konstant m.fl. — lav-, høj- og spidslast i øre/kWh. Se hvad dit netselskab koster.',
     hash: '#tariffer',
   },
@@ -160,6 +160,7 @@ const NETS = {
     { name: 'Konstant',    slug: 'konstant',    gln: '5790000704842' },
     { name: 'Dinel',       slug: 'dinel',       gln: '5790000610099' },
     { name: 'Vores Elnet', slug: 'vores-elnet', gln: '5790000610976' },
+    { name: 'Ravdex',      slug: 'ravdex',      gln: '5790000836727' },
     { name: 'RAH Net',     slug: 'rah-net',     gln: '5790000681327' },
     { name: 'Elværk',      slug: 'elvaerk',     gln: '5790000681358' },
     { name: 'Nord Energi', slug: 'nord-energi', gln: '5790000610877' },
@@ -330,33 +331,39 @@ tariffs + elafgift + 25 % VAT. \`hour\` is the current Danish local hour
  *  its basis and carries the date and hour, so it stays true when quoted out
  *  of context. Any source failing drops its line, never the file. */
 async function llmsNowSection(context) {
+  try { return await llmsNowSectionUnsafe(context); } catch { return ''; }   // the static text is the file; the figures are a bonus
+}
+async function llmsNowSectionUnsafe(context) {
   const origin = new URL(context.request.url).origin;
-  const get = u => fetch(origin + u).then(r => (r.ok ? r.json() : null)).catch(() => null);
+  // A source that errors, throws (even before it returns a promise), times out or answers with something that is not
+  // JSON is "no data", never a failure of the file.
+  const get = async u => { try { const r = await fetch(origin + u); return r.ok ? await r.json() : null; } catch { return null; } };
   const f = v => (v == null ? null : v.toFixed(2).replace('.', ',').replace(/^-(0,00)$/, '$1'));
   const cph = { timeZone: 'Europe/Copenhagen' };
   const today = new Intl.DateTimeFormat('en-CA', cph).format(new Date());
   const hh = new Intl.DateTimeFormat('en-GB', { ...cph, hour: '2-digit', hour12: false }).format(new Date());
   const areas = [['DK1', 'Vestdanmark'], ['DK2', 'Østdanmark']];
-  const rows = await Promise.all(areas.map(async ([a, name]) => {
+  const rows = await Promise.all(areas.map(async ([a, name]) => { try {
     const [spot, alt, day, fc] = await Promise.all([
       get(`/api/now?area=${a}&mode=spot_inkl`), get(`/api/now?area=${a}&mode=inkl_alt`),
       get(`/api/prices?area=${a}&mode=inkl_alt&date=${today}`), get(`/api/forecast?area=${a}&mode=inkl_alt`)]);
     const out = [];
     if (spot && alt && spot.price != null && alt.price != null)
       out.push(`- ${a} (${name}), kl. ${hh}:00: spotpris ${f(spot.price)} kr/kWh inkl. moms; med Energinets tariffer, elafgift og moms ${f(alt.price)} kr/kWh — før nettariffen fra det lokale netselskab.`);
-    const ps = (day && (day.prices || day.hours || [])).map((p, h) => ({ h: p.hour ?? h, p: p.price ?? p.total ?? p }))
+    const dayList = day && (day.prices || day.hours);
+    const ps = (Array.isArray(dayList) ? dayList : []).map((p, h) => ({ h: p?.hour ?? h, p: p?.price ?? p?.total ?? p }))
       .filter(x => typeof x.p === 'number');
     if (ps.length >= 20) {
       const lo = ps.reduce((a, b) => (b.p < a.p ? b : a)), hi = ps.reduce((a, b) => (b.p > a.p ? b : a));
       const t = h => `${String(h).padStart(2, '0')}–${String((h + 1) % 24).padStart(2, '0')}`;
       out.push(`- ${a} i dag (${today}): billigst kl. ${t(lo.h)} (${f(lo.p)} kr/kWh), dyrest kl. ${t(hi.h)} (${f(hi.p)} kr/kWh), begge inkl. Energinets tariffer, elafgift og moms.`);
     }
-    const tm = fc && (fc.days || []).find(d => d.date > today);
-    const tv = tm && tm.prices.map(p => p.price).filter(v => v != null);
+    const tm = fc && Array.isArray(fc.days) ? fc.days.find(d => d && d.date > today && Array.isArray(d.prices)) : null;
+    const tv = tm && tm.prices.map(p => p && p.price).filter(v => typeof v === 'number');
     if (tv && tv.length)
       out.push(`- ${a} i morgen (${tm.date}): ${f(Math.min(...tv))}–${f(Math.max(...tv))} kr/kWh inkl. Energinets tariffer, elafgift og moms (${tm.type === 'actual' ? 'faktiske børspriser' : 'prognose'}).`);
     return out.join('\n');
-  }));
+  } catch { return ''; } }));   // one area's figures failing leaves the other's
   const body = rows.filter(Boolean).join('\n');
   if (!body) return '';
   return `\n## Elpriser lige nu (${today} kl. ${hh}:00, dansk tid)\n\n` +
@@ -392,7 +399,7 @@ Den samlede elpris per kWh består af:
 
 ## Netselskaber
 
-Understøttede netselskaber i DK1: N1, Trefor, Konstant, Dinel, Vores Elnet, RAH Net, Elværk, Nord Energi, NOE Net, Elnet Midt, Flow Elnet og LNet.
+Understøttede netselskaber i DK1: N1, Trefor, Konstant, Dinel, Vores Elnet, Ravdex, RAH Net, Elværk, Nord Energi, NOE Net, Elnet Midt, Flow Elnet og LNet.
 Understøttede netselskaber i DK2: Radius, Cerius og Trefor Øst.
 
 GPS-funktionen finder automatisk dit netselskab ud fra din position via OpenStreetMap (adresseopslag) og Green Power Denmark. Positionen bruges kun ét øjeblik og gemmes aldrig — kun netselskabets navn gemmes.
@@ -530,6 +537,7 @@ Elpriser.org bruger GLN-numre (Global Location Number) til at slå nettariffer o
 | Konstant | DK1 | \`konstant\` | 5790000704842 |
 | Dinel | DK1 | \`dinel\` | 5790000610099 |
 | Vores Elnet | DK1 | \`vores-elnet\` | 5790000610976 |
+| Ravdex | DK1 | \`ravdex\` | 5790000836727 |
 | RAH Net | DK1 | \`rah-net\` | 5790000681327 |
 | Elværk | DK1 | \`elvaerk\` | 5790000681358 |
 | Nord Energi | DK1 | \`nord-energi\` | 5790000610877 |
@@ -1622,6 +1630,7 @@ const NET_COVERAGE = {
   'trefor': 'Trefor står for eldistributionen i Trekantområdet omkring Vejle, Kolding og Fredericia.',
   'konstant': 'Konstant leverer elnettet i Aarhus-området og store dele af Østjylland.',
   'dinel': 'Dinel er et lokalt netselskab, der forsyner et afgrænset område i Vestdanmark med el, bl.a. dele af Aarhus.',
+  'ravdex': 'Ravdex er et lokalt netselskab, der forsyner et afgrænset område i Vestdanmark med el, bl.a. dele af Odense.',
   'vores-elnet': 'Vores Elnet dækker elforsyningen på Fyn.',
   'rah-net': 'RAH Net dækker elnettet i Vestjylland omkring Ringkøbing.',
   'elvaerk': 'Elværk er et lokalt netselskab, der står for eldistributionen i et afgrænset område af Vestdanmark.',
@@ -1670,7 +1679,7 @@ function priceNowText(mode, hh, price, area, net){
 }
 
 /**
- * SSR intro for the 17 price pages: a real H1, a dated answer sentence with
+ * SSR intro for the 18 price pages: a real H1, a dated answer sentence with
  * the live price, per-net coverage prose + current tariff rates, and a
  * PriceSpecification JSON-LD block. This is what makes each price URL carry
  * unique, quotable content for crawlers and answer engines.
@@ -1856,7 +1865,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v71');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v72');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1905,8 +1914,8 @@ async function renderHomepage(context) {
  *  five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v6';
-const CITY_SSR_VERSION = 'city-ssr-v2';
+const ZONE_SSR_VERSION = 'zone-ssr-v7';
+const CITY_SSR_VERSION = 'city-ssr-v3';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);

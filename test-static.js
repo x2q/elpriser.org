@@ -1282,7 +1282,7 @@ test('seo: every net-company page is linked from the footer and the tariff page,
   const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
   const fn = fs.readFileSync(path.join(__dirname, 'functions', '[[path]].js'), 'utf8');
   const slugs = [...fn.matchAll(/slug: '([a-z0-9-]+)'/g)].map(m => m[1]);
-  assert.ok(slugs.length >= 15, 'found the net slugs');
+  assert.ok(slugs.length >= 16, 'found the net slugs');
   const footer = html.slice(html.indexOf('aria-label="Netselskaber"'));
   const tariff = html.slice(html.indexOf('data-page="tariffer"'), html.indexOf('data-page="tariffer"') + 20000);
   for (const area of ['dk1', 'dk2']) {
@@ -1295,43 +1295,68 @@ test('seo: every net-company page is linked from the footer and the tariff page,
   }
 });
 
-test('dinel: the 15th net company is in every list a net lives in, with one GLN, in DK1, and the lookup\'s "Dinel A/S" resolves to it', () => {
+// The net companies added after the first fourteen: found in the city lookups (_cities.js, 2026-10-24), each with a household
+// Nettarif C in DatahubPricelist and in the KV archive dk-nettarif-<gln>. `lookup` is the name Green Power Denmark answers with.
+const ADDED_NETS = [
+  { slug: 'dinel', name: 'Dinel', gln: '5790000610099', lookup: 'Dinel A/S', after: 'konstant', city: ['aarhus', 'dinel', 0.4] },
+  { slug: 'ravdex', name: 'Ravdex', gln: '5790000836727', lookup: 'Ravdex', after: 'vores-elnet', city: ['odense', 'ravdex', 0.1] },
+];
+
+test('nets: sixteen net companies, one GLN and one slug each, the same in index.html, functions/[[path]].js, server.js and the footer', () => {
   const vm = require('node:vm');
-  const GLN = '5790000610099';   // DatahubPricelist "Dinel A/S"; tariff archive key dk-nettarif-5790000610099
   const web = vm.runInNewContext('(' + INDEX.match(/const NETS=(\{[\s\S]*?\]\});/)[1] + ')');
   const all = [...web.DK1, ...web.DK2];
-  assert.equal(all.length, 15, 'fifteen net companies in index.html NETS');
-  assert.equal(new Set(all.map(n => n.gln)).size, 15, 'every GLN once');
-  assert.equal(new Set(all.map(n => n.slug)).size, 15, 'every slug once');
-  const d = web.DK1.find(n => n.slug === 'dinel');
-  assert.ok(d && d.name === 'Dinel' && d.gln === GLN && JSON.stringify(d.match) === '["Dinel"]', 'index.html NETS: Dinel, DK1, the GLN, match "Dinel"');
-  assert.ok(!web.DK2.some(n => n.slug === 'dinel'), 'not in DK2');
-  // The server\'s own table (functions/[[path]].js NETS) has the same names and GLNs, area by area.
+  assert.equal(all.length, 16, 'sixteen net companies in index.html NETS');
+  assert.equal(new Set(all.map(n => n.gln)).size, 16, 'every GLN once');
+  assert.equal(new Set(all.map(n => n.slug)).size, 16, 'every slug once');
+  // The server's own table (functions/[[path]].js NETS) has the same names and GLNs, area by area, in the same order.
   const fnBlock = (area, next) => ROUTES.match(new RegExp(area + ':\\s*\\[([\\s\\S]*?)\\],\\s*' + next))[1];
   for (const [area, next] of [['DK1', 'DK2:'], ['DK2', '\\}']]) {
     const fn = [...fnBlock(area, next).matchAll(/\{ name: '([^']+)',\s*slug: '([^']+)',\s*gln: '(\d{13})' \}/g)].map(m => ({ name: m[1], slug: m[2], gln: m[3] }));
     assert.deepEqual(fn, JSON.parse(JSON.stringify(web[area].map(n => ({ name: n.name, slug: n.slug, gln: n.gln })))), `functions/[[path]].js NETS.${area} equals index.html NETS.${area} (name, slug, GLN, order)`);
   }
-  // server.js maps /dk1/dinel to its hash; llms-full.txt lists it and its GLN; the coverage prose exists; the tariff page title counts 15.
-  assert.ok(/DK1: \[[^\]]*'konstant','dinel','vores-elnet'/.test(SERVER), 'server.js NET_SLUGS.DK1 has dinel');
-  assert.ok(ROUTES.includes('| Dinel | DK1 | \\`dinel\\` | ' + GLN + ' |'), 'llms-full.txt GLN table has the Dinel row');
-  assert.ok(/Understøttede netselskaber i DK1: [^\n]*Dinel/.test(ROUTES), 'llms-full.txt lists Dinel among the supported net companies');
-  assert.ok(/'dinel': 'Dinel er /.test(ROUTES), 'NET_COVERAGE has a Dinel sentence');
+  assert.deepEqual(SERVER.match(/NET_SLUGS\s*=\s*\{\s*DK1: \[([^\]]*)\]/)[1].replace(/'/g, '').split(','), JSON.parse(JSON.stringify(web.DK1.map(n => n.slug))), 'server.js NET_SLUGS.DK1 is index.html DK1, in order');
   const title = ROUTES.match(/'\/tariffer': \{\s*title: '([^']+)'/)[1];
-  assert.ok(/for alle 15 netselskaber/.test(title) && title.length <= 62, `the tariff page title counts 15 net companies and fits (${title.length})`);
+  assert.ok(/for alle 16 netselskaber/.test(title) && title.length <= 62, `the tariff page title counts 16 net companies and fits (${title.length})`);
   assert.ok(INDEX.includes(`document.title='${title}'`), 'the router sets the same /tariffer title');
-  // The footer, the tariff page and the dialog source all reach it.
-  assert.ok(INDEX.slice(INDEX.indexOf('<footer'), INDEX.indexOf('</footer>')).includes('<li><a href="/dk1/dinel">Dinel</a></li>'), 'footer links /dk1/dinel');
-  assert.ok(INDEX.includes('<a href="/dk1/dinel" class="text-brand-500 underline">Dinel</a>'), 'tariff page prose links /dk1/dinel');
-  // The name Green Power Denmark answers with — matched like the apps match it (longest match wins).
-  const matchNet = (name) => { let best = null; for (const n of all) for (const m of n.match) if (name.toLowerCase().includes(m.toLowerCase()) && (!best || m.length > best.len)) best = { n, len: m.length }; return best && best.n.slug; };
-  assert.equal(matchNet('Dinel A/S'), 'dinel', 'the lookup name "Dinel A/S" is Dinel');
-  assert.equal(matchNet('KONSTANT Net A/S'), 'konstant', 'and Konstant is still Konstant');
-  assert.ok(all.filter(n => n.slug !== 'dinel').every(n => n.match.every(m => !'dinel a/s'.includes(m.toLowerCase()) && !m.toLowerCase().includes('dinel'))), 'no other net\'s match string overlaps with "Dinel", so neither can be taken for the other');
-  // The city table: Dinel is a net we price in Aarhus, no longer an "other".
-  const aarhus = CITY_TABLE.find(c => c.slug === 'aarhus');
-  assert.deepEqual(aarhus.nets.map(n => [n.slug, n.gln, n.share]), [['konstant', '5790000704842', 0.6], ['dinel', GLN, 0.4]], 'Aarhus: Konstant stays the main net company, Dinel 40 %');
-  assert.ok(!(aarhus.other || []).some(o => /dinel/i.test(o.name)), 'Dinel is not "other" any more');
+  // The new names overlap with no other net's match string, so neither can be taken for the other.
+  const strs = all.flatMap(n => n.match.map(m => [n.slug, m.toLowerCase()]));
+  for (const [sa, a] of strs.filter(([sl]) => ['dinel', 'ravdex'].includes(sl))) for (const [sb, b] of strs) if (sa !== sb) assert.ok(!a.includes(b) && !b.includes(a), `"${a}" (${sa}) and "${b}" (${sb}) overlap`);
+});
+
+for (const N of ADDED_NETS) {
+  test(`${N.slug}: ${N.name} is in every list a net lives in, with its GLN, in DK1, after ${N.after}, and the lookup's "${N.lookup}" resolves to it`, () => {
+    const vm = require('node:vm');
+    const web = vm.runInNewContext('(' + INDEX.match(/const NETS=(\{[\s\S]*?\]\});/)[1] + ')');
+    const all = [...web.DK1, ...web.DK2];
+    const d = web.DK1.find(n => n.slug === N.slug);   // tariff archive key dk-nettarif-<gln>
+    assert.ok(d && d.name === N.name && d.gln === N.gln && JSON.stringify(d.match) === JSON.stringify([N.name]), `index.html NETS: ${N.name}, DK1, the GLN, match "${N.name}"`);
+    assert.ok(!web.DK2.some(n => n.slug === N.slug), 'not in DK2');
+    const order = web.DK1.map(n => n.slug);
+    assert.equal(order[order.indexOf(N.slug) - 1], N.after, `listed right after ${N.after}`);
+    assert.ok(SERVER.match(/NET_SLUGS\s*=\s*\{\s*DK1: \[([^\]]*)\]/)[1].includes(`'${N.slug}'`), 'server.js NET_SLUGS.DK1');
+    assert.ok(ROUTES.includes(`| ${N.name} | DK1 | \\\`${N.slug}\\\` | ${N.gln} |`), 'llms-full.txt GLN table has the row');
+    assert.ok(new RegExp(`Understøttede netselskaber i DK1: [^\\n]*${N.name}`).test(ROUTES), 'llms-full.txt lists it among the supported net companies');
+    assert.ok(ROUTES.includes(`'${N.slug}': '${N.name} er `), 'NET_COVERAGE has a sentence');
+    assert.ok(INDEX.slice(INDEX.indexOf('<footer'), INDEX.indexOf('</footer>')).includes(`<li><a href="/dk1/${N.slug}">${N.name}</a></li>`), `footer links /dk1/${N.slug}`);
+    assert.ok(INDEX.includes(`<a href="/dk1/${N.slug}" class="text-brand-500 underline">${N.name}</a>`), 'tariff page prose links it');
+    // The name Green Power Denmark answers with — matched like the apps match it (longest match wins).
+    const matchNet = (name) => { let best = null; for (const n of all) for (const m of n.match) if (name.toLowerCase().includes(m.toLowerCase()) && (!best || m.length > best.len)) best = { n, len: m.length }; return best && best.n.slug; };
+    assert.equal(matchNet(N.lookup), N.slug, `the lookup name "${N.lookup}" is ${N.name}`);
+    assert.equal(matchNet('KONSTANT Net A/S'), 'konstant', 'and Konstant is still Konstant');
+    // The city table: a net we price, no longer an "other".
+    const [city, slug, share] = N.city, row = CITY_TABLE.find(c => c.slug === city);
+    const mine = row.nets.find(n => n.slug === slug);
+    assert.ok(mine && mine.gln === N.gln && mine.name === N.name && mine.share === share, `${city}: ${N.name} ${share * 100} % in nets`);
+    assert.ok(!(row.other || []).some(o => o.name.toLowerCase().includes(N.slug)), `${N.name} is not "other" any more`);
+  });
+}
+
+test('nets: Aarhus keeps Konstant as main net company, Odense keeps Vores Elnet; Hjerting (no Nettarif C in the archive) is still "other"', () => {
+  assert.deepEqual(CITY_TABLE.find(c => c.slug === 'aarhus').nets.map(n => [n.slug, n.share]), [['konstant', 0.6], ['dinel', 0.4]]);
+  assert.deepEqual(CITY_TABLE.find(c => c.slug === 'odense').nets.map(n => [n.slug, n.share]), [['vores-elnet', 0.9], ['ravdex', 0.1]]);
+  assert.equal(CITY_TABLE.find(c => c.slug === 'odense').other, undefined, 'Odense: nothing left without tariffs');
+  assert.deepEqual(CITY_TABLE.find(c => c.slug === 'esbjerg').other.map(o => o.name), ['Hjerting Transformatorforening'], 'Esbjerg: Hjerting publishes its household tariff as "C-Kunde Nettarif", which the archive does not read');
 });
 
 test('seo: /api/<endpoint> answers carry X-Robots-Tag noindex, the /api docs page does not', () => {
@@ -1455,7 +1480,7 @@ test('footer: ONE link to the explainer, labelled "Forstå din elpris" in Viden 
   for (const gone of Object.keys(LEGACY)) assert.ok(!FOOTER.includes(`href="${gone}"`), `footer still links ${gone}`);
 });
 
-test('footer: all 15 net companies and the four foreign-area pages sit inside ONE collapsed details, as real links', () => {
+test('footer: all 16 net companies and the four foreign-area pages sit inside ONE collapsed details, as real links', () => {
   const m = FOOTER.match(/<details class="sf-all">\s*<summary>[^]*?Alle netselskaber og prisområder[^]*?<\/summary>([^]*?)<\/details>/);
   assert.ok(m, 'details "Alle netselskaber og prisområder"');
   assert.ok(!/<details[^>]*\bopen\b/.test(m[0]), 'collapsed by default');
@@ -1466,9 +1491,9 @@ test('footer: all 15 net companies and the four foreign-area pages sit inside ON
     for (const s of slugs) assert.ok(inside.includes(`/${area}/${s}`), `/${area}/${s} is inside the details`);
   }
   // The ten pilot cities sit between the nets and the foreign areas, in the order of the table (the table is the pilot's list).
-  assert.deepEqual(inside.slice(15, 25), CITY_TABLE.map(c => '/elpris/' + c.slug), 'Byer: the ten cities, in the table\'s order, after the 15 nets');
-  assert.deepEqual(inside.slice(25), ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta'], 'Andre prisområder: Norden, Norge, Sverige, Finland — in that order, after the cities');
-  assert.equal(inside.length, 29, 'nothing else in there');
+  assert.deepEqual(inside.slice(16, 26), CITY_TABLE.map(c => '/elpris/' + c.slug), 'Byer: the ten cities, in the table\'s order, after the 16 nets');
+  assert.deepEqual(inside.slice(26), ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta'], 'Andre prisområder: Norden, Norge, Sverige, Finland — in that order, after the cities');
+  assert.equal(inside.length, 30, 'nothing else in there');
   assert.equal(new Set(inside).size, inside.length, 'no duplicate href in the details');
   for (const h of ['Vestdanmark (DK1)', 'Østdanmark (DK2)', 'Byer', 'Andre prisområder']) assert.ok(m[1].includes(h), `heading ${h}`);
   // Nothing outside the details links a net page: the visible footer stays short.
@@ -1495,8 +1520,8 @@ test('footer: no link list is repeated, and the credits line keeps both external
   const dup = hrefs.filter((h, i) => hrefs.indexOf(h) !== i);
   assert.deepEqual(dup, [], 'a link appears twice in the footer');
   // 38 since /download joined the Elpriser group ("Hent appen"); the two store buttons below it still point straight at the stores.
-  // 48 since the ten city pages joined the disclosure ("Byer"); 49 since Dinel became the 15th net company.
-  assert.equal(hrefs.length, 49, `footer has ${hrefs.length} links: 18 in the groups and the apps, 15 nets, 10 cities, Norden/Norge/Sverige/Finland, and the two credits`);
+  // 48 since the ten city pages joined the disclosure ("Byer"); 49 since Dinel became the 15th net company; 50 with Ravdex.
+  assert.equal(hrefs.length, 50, `footer has ${hrefs.length} links: 18 in the groups and the apps, 16 nets, 10 cities, Norden/Norge/Sverige/Finland, and the two credits`);
   const legal = FOOTER.match(/<p class="sf-legal">([^]*?)<\/p>/);
   assert.ok(legal, 'credits line');
   assert.ok(/&copy; Elpriser\.org &mdash; Data fra <a href="https:\/\/www\.energidataservice\.dk"[^>]*rel="noopener">Energi Data Service<\/a> \(Energinet\)\. Åbne datasæt på <a href="https:\/\/huggingface\.co\/Elpriser"[^>]*rel="noopener">Hugging Face<\/a>\./.test(legal[1]), 'credits wording and links');
@@ -1532,11 +1557,12 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // (v67: the footer's Andre prisområder links moved to the localised paths.)
   // v70: the footer gained the "Byer" group (ten city links).
   // v71: Dinel, the 15th net company, joined the footer's net list and NETS.
-  assert.ok(/homepage-ssr-v71/.test(ROUTES), 'homepage-ssr-v71');
+  // v72: Ravdex, the 16th.
+  assert.ok(/homepage-ssr-v72/.test(ROUTES), 'homepage-ssr-v72');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v6'/.test(ROUTES), 'zone-ssr-v6');
-  // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text).
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v2'/.test(ROUTES), 'city-ssr-v2');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v7'/.test(ROUTES), 'zone-ssr-v7');
+  // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v3'/.test(ROUTES), 'city-ssr-v3');
 });
 
 

@@ -435,7 +435,7 @@ const LEGACY_REDIRECTS = {
 // Mirrors NETS in index.html and functions/[[path]].js. Used to map
 // /dk1/<slug> / /dk2/<slug> to their SPA hash for local dev.
 const NET_SLUGS = {
-  DK1: ['n1','trefor','konstant','dinel','vores-elnet','rah-net','elvaerk','nord-energi','noe-net','elnet-midt','flow-elnet','lnet'],
+  DK1: ['n1','trefor','konstant','dinel','vores-elnet','ravdex','rah-net','elvaerk','nord-energi','noe-net','elnet-midt','flow-elnet','lnet'],
   DK2: ['cerius','trefor-ost','radius'],
 };
 

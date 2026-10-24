@@ -270,7 +270,7 @@ async function startServer() {
     await page.evaluate(() => localStorage.clear());
   });
 
-  await test('start: no area cards and no 15-button net list — one compact row instead', async () => {
+  await test('start: no area cards and no 16-button net list — one compact row instead', async () => {
     await page.goto(BASE + '/');
     await page.waitForSelector('main[data-page="start"].active [data-area-row]');
     for (const sel of ['#dk1-zone', '#dk2-zone', '#dk1-nets', '#dk2-nets', '.net-row', '.zone-btn'])
@@ -290,14 +290,14 @@ async function startServer() {
     });
   }
 
-  await test('start: "Find dit netselskab" opens the net dialog, which lists all 15 nets; choosing one opens its page', async () => {
+  await test('start: "Find dit netselskab" opens the net dialog, which lists all 16 nets; choosing one opens its page', async () => {
     await page.goto(BASE + '/');
     await page.evaluate(() => localStorage.clear());
     await page.locator('main[data-page="start"] [data-area-row] button').click();
     await page.waitForSelector('#netDialog[open]');
     assert.equal((await page.locator('#netDialogTitle').textContent()).trim(), 'Netselskab og indstillinger');
-    // 15 nets plus one "Uden netselskab" per area.
-    assert.equal(await page.locator('#netDialog .pd-links a[data-net]:not([data-net=""])').count(), 15, 'the dialog lists every net');
+    // 16 nets plus one "Uden netselskab" per area.
+    assert.equal(await page.locator('#netDialog .pd-links a[data-net]:not([data-net=""])').count(), 16, 'the dialog lists every net');
     await page.locator('#netDlgDK1 a:has-text("Trefor")').first().click();
     await page.waitForURL(u => u.pathname === '/dk1/trefor');
     await page.evaluate(() => localStorage.clear());
@@ -862,11 +862,11 @@ async function startServer() {
     await page.selectOption('#autoMode', 'net_inkl_alt');
     await page.waitForFunction(() =>
       getComputedStyle(document.getElementById('autoNetRow')).display !== 'none');
-    // Dropdown should have every net across DK1+DK2 (12 + 3 = 15+)
+    // Dropdown should have every net across DK1+DK2 (13 + 3 = 16+)
     await page.waitForFunction(() =>
-      document.querySelectorAll('#autoNet option').length >= 15);
+      document.querySelectorAll('#autoNet option').length >= 16);
     const netCount = await page.locator('#autoNet option').count();
-    assert.ok(netCount >= 15, `#autoNet has ${netCount} options, expected ≥15 (all DK1+DK2 nets)`);
+    assert.ok(netCount >= 16, `#autoNet has ${netCount} options, expected ≥16 (all DK1+DK2 nets)`);
   });
 
   await test('automation: picking a DK2 net auto-switches priszone to DK2', async () => {
@@ -1065,7 +1065,7 @@ async function startServer() {
     await page.goto(BASE + '/dk1/n1');
     await page.waitForSelector('footer.sf');
     assert.equal(await page.locator('footer details[open]').count(), 0, 'no disclosure open');
-    assert.equal(await page.locator('footer details.sf-all a[href^="/dk"]').count(), 15, '15 net links in the DOM');
+    assert.equal(await page.locator('footer details.sf-all a[href^="/dk"]').count(), 16, '16 net links in the DOM');
     assert.equal(await page.locator('footer details.sf-all a[href="/dk1/trefor"]').isVisible(), false, 'hidden while closed');
     assert.deepEqual(await page.locator('footer .sf-h').allTextContents().then(a => a.slice(0, 4)), ['Priser', 'Smart hjem', 'Viden', 'Elpriser']);
   });
