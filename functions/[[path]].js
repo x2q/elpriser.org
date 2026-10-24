@@ -32,7 +32,7 @@ const SEO_PAGES = {
     hash: '#DK2/inkl_alt',
   },
   '/tariffer': {
-    title: 'Nettariffer 2026: Nettarif C for alle 14 netselskaber, pr. kWh',
+    title: 'Nettariffer 2026: Nettarif C for alle 15 netselskaber, pr. kWh',
     description: 'Nettarif 2026 (nettarif C) for N1, Radius, Trefor, Cerius, RAH, Konstant m.fl. — lav-, høj- og spidslast i øre/kWh. Se hvad dit netselskab koster.',
     hash: '#tariffer',
   },
@@ -158,6 +158,7 @@ const NETS = {
     { name: 'N1',          slug: 'n1',          gln: '5790001089030' },
     { name: 'Trefor',      slug: 'trefor',      gln: '5790000392261' },
     { name: 'Konstant',    slug: 'konstant',    gln: '5790000704842' },
+    { name: 'Dinel',       slug: 'dinel',       gln: '5790000610099' },
     { name: 'Vores Elnet', slug: 'vores-elnet', gln: '5790000610976' },
     { name: 'RAH Net',     slug: 'rah-net',     gln: '5790000681327' },
     { name: 'Elværk',      slug: 'elvaerk',     gln: '5790000681358' },
@@ -391,7 +392,7 @@ Den samlede elpris per kWh består af:
 
 ## Netselskaber
 
-Understøttede netselskaber i DK1: N1, Trefor, Konstant, Vores Elnet, RAH Net, Elværk, Nord Energi, NOE Net, Elnet Midt, Flow Elnet og LNet.
+Understøttede netselskaber i DK1: N1, Trefor, Konstant, Dinel, Vores Elnet, RAH Net, Elværk, Nord Energi, NOE Net, Elnet Midt, Flow Elnet og LNet.
 Understøttede netselskaber i DK2: Radius, Cerius og Trefor Øst.
 
 GPS-funktionen finder automatisk dit netselskab ud fra din position via OpenStreetMap (adresseopslag) og Green Power Denmark. Positionen bruges kun ét øjeblik og gemmes aldrig — kun netselskabets navn gemmes.
@@ -527,6 +528,7 @@ Elpriser.org bruger GLN-numre (Global Location Number) til at slå nettariffer o
 | N1 | DK1 | \`n1\` | 5790001089030 |
 | Trefor | DK1 | \`trefor\` | 5790000392261 |
 | Konstant | DK1 | \`konstant\` | 5790000704842 |
+| Dinel | DK1 | \`dinel\` | 5790000610099 |
 | Vores Elnet | DK1 | \`vores-elnet\` | 5790000610976 |
 | RAH Net | DK1 | \`rah-net\` | 5790000681327 |
 | Elværk | DK1 | \`elvaerk\` | 5790000681358 |
@@ -1619,6 +1621,7 @@ const NET_COVERAGE = {
   'n1': 'N1 driver elnettet i store dele af Jylland, herunder Nordjylland og flere midt- og vestjyske egne.',
   'trefor': 'Trefor står for eldistributionen i Trekantområdet omkring Vejle, Kolding og Fredericia.',
   'konstant': 'Konstant leverer elnettet i Aarhus-området og store dele af Østjylland.',
+  'dinel': 'Dinel er et lokalt netselskab, der forsyner et afgrænset område i Vestdanmark med el, bl.a. dele af Aarhus.',
   'vores-elnet': 'Vores Elnet dækker elforsyningen på Fyn.',
   'rah-net': 'RAH Net dækker elnettet i Vestjylland omkring Ringkøbing.',
   'elvaerk': 'Elværk er et lokalt netselskab, der står for eldistributionen i et afgrænset område af Vestdanmark.',
@@ -1667,7 +1670,7 @@ function priceNowText(mode, hh, price, area, net){
 }
 
 /**
- * SSR intro for the 16 price pages: a real H1, a dated answer sentence with
+ * SSR intro for the 17 price pages: a real H1, a dated answer sentence with
  * the live price, per-net coverage prose + current tariff rates, and a
  * PriceSpecification JSON-LD block. This is what makes each price URL carry
  * unique, quotable content for crawlers and answer engines.
@@ -1703,8 +1706,9 @@ async function buildPricesIntro(context, area, net) {
       const t = (i) => (rec['Price' + i] ?? 0).toFixed(2).replace('.', ',');
       ps.push(`${net.name}s aktuelle Nettarif C (${daDateLabel()}) er ${t(1)} kr/kWh i lavlast (kl. 00–06), ${t(7)} kr/kWh i højlast (kl. 06–17) og ${t(18)} kr/kWh i spidslast (kl. 17–21), ekskl. moms. Sammenlign alle netselskaber på <a href="/tariffer" class="text-brand-500 underline">tarifsiden</a>.`);
     }
-    // The cities (pilot pages) whose most common net company this is.
-    const towns = CITIES.filter(c => c.area === area && c.nets[0].slug === net.slug);
+    // The cities (pilot pages) whose most common net company this is, and those where it serves a good
+    // part of the addresses we looked up (CITY_LINK_SHARE) — Aarhus is Konstant's, but 40 % Dinel's.
+    const towns = CITIES.filter(c => c.area === area && c.nets.some((x, i) => x.slug === net.slug && (i === 0 || x.share >= CITY_LINK_SHARE)));
     if (towns.length) ps.push(`Byer i området: ${towns.map(c => `<a href="/elpris/${c.slug}" class="text-brand-500 underline">${c.name}</a>`).join(', ')}.`);
   } else {
     ps.push(`${area} dækker ${region}. Priserne fastsættes dagen i forvejen på elbørsen Nord Pool og opdateres her time for time — vælg dit netselskab øverst på siden for den præcise pris inkl. din lokale nettarif.`);
@@ -1754,6 +1758,9 @@ async function buildTariffFacts(context) {
   } catch { return ''; }
 }
 
+/** A net company's page lists a city under "Byer i området" when it is the city's main net company or has at
+ *  least this share of the addresses we looked up there (so Aalborg's 6 % Nord Energi is not a "Nord Energi city"). */
+const CITY_LINK_SHARE = 0.25;
 /** The NETS entry of a city's main net company. */
 function cityNet(c) {
   return NETS[c.area].find(n => n.slug === c.nets[0].slug);
@@ -1849,7 +1856,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v70');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v71');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1898,8 +1905,8 @@ async function renderHomepage(context) {
  *  five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v5';
-const CITY_SSR_VERSION = 'city-ssr-v1';
+const ZONE_SSR_VERSION = 'zone-ssr-v6';
+const CITY_SSR_VERSION = 'city-ssr-v2';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);

@@ -15,6 +15,7 @@ enum Nets {
         Net(name: "N1", gln: "5790001089030", area: "DK1", match: ["N1", "Elnetselskabet N1"]),
         Net(name: "Trefor", gln: "5790000392261", area: "DK1", match: ["TREFOR El-net"]),
         Net(name: "Konstant", gln: "5790000704842", area: "DK1", match: ["KONSTANT", "Konstant Net"]),
+        Net(name: "Dinel", gln: "5790000610099", area: "DK1", match: ["Dinel"]),
         Net(name: "Vores Elnet", gln: "5790000610976", area: "DK1", match: ["Vores Elnet"]),
         Net(name: "RAH Net", gln: "5790000681327", area: "DK1", match: ["RAH Net", "RAH"]),
         Net(name: "Elværk", gln: "5790000681358", area: "DK1", match: ["Netselskabet Elværk", "Elværk"]),

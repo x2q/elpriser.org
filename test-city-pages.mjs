@@ -133,7 +133,7 @@ for (const c of CITIES) {
   // Crawl hygiene: no templated href, no empty link.
   ok(!/href="[^"]*(\$\{|undefined|\[object)/.test(r.main) && !/href=""/.test(r.main), `${p}: ingen skabelon- eller tomme links`);
   // Cached under its own versioned key; a second request does not ask the feed again.
-  ok([...store.keys()].some(k => k === `https://cache.local/city-ssr-v1${p}`), `${p}: egen versioneret cache-nøgle`, [...store.keys()].join(' '));
+  ok([...store.keys()].some(k => k === `https://cache.local/city-ssr-v2${p}`), `${p}: egen versioneret cache-nøgle`, [...store.keys()].join(' '));
   const again = await get(p);
   ok(again.page === h && upstream.length === 1, `${p}: andet svar kommer fra cachen`);
 }
@@ -209,17 +209,61 @@ for (const c of CITIES) {
   ok(!/<loc>https:\/\/elpriser\.org\/elpris<\/loc>/.test(sm), 'sitemap: ingen /elpris-oversigt');
   const llms = (await get('/llms.txt')).body;
   ok(CITIES.every(c => llms.includes(`[${c.name}](https://elpriser.org/elpris/${c.slug})`)) && !TEN.test(llms.slice(llms.indexOf('Elpris pr. by'), llms.indexOf('- [Nettariffer]'))), 'llms.txt: en linje med alle byerne og uden 10-dages');
-  // Net pages: "Byer i området" for the cities whose main net company this is, and only those.
+  // Net pages: "Byer i området" for the cities whose main net company this is and those where it has at least a
+  // quarter of the sampled addresses (Dinel in Aarhus, Radius in Roskilde) — and no others (Nord Energi's 6 % of Aalborg).
+  const LINKED = 0.25, linked = (c, slug) => c.nets.some((x, i) => x.slug === slug && (i === 0 || x.share >= LINKED));
   for (const area of ['dk1', 'dk2']) {
-    const nets = [...new Set(CITIES.filter(c => c.area.toLowerCase() === area).map(c => c.nets[0].slug))];
+    const nets = [...new Set(CITIES.filter(c => c.area.toLowerCase() === area).flatMap(c => c.nets.map(x => x.slug)))];
     for (const slug of nets) {
-      const r = await get(`/${area}/${slug}`), mine = CITIES.filter(c => c.area.toLowerCase() === area && c.nets[0].slug === slug);
+      const r = await get(`/${area}/${slug}`), mine = CITIES.filter(c => c.area.toLowerCase() === area && linked(c, slug));
       const line = ((strip(r.page).match(/Byer i området: ([^.]*)\./) || [])[1] || '').replace(/\s+,/g, ',').trim();
-      ok(line === mine.map(c => c.name).join(', ') && mine.every(c => r.page.includes(`href="/elpris/${c.slug}"`)), `/${area}/${slug}: "Byer i området: ${mine.map(c => c.name).join(', ')}"`, line);
+      if (mine.length) ok(line === mine.map(c => c.name).join(', ') && mine.every(c => r.page.includes(`href="/elpris/${c.slug}"`)), `/${area}/${slug}: "Byer i området: ${mine.map(c => c.name).join(', ')}"`, line);
+      else ok(!strip(r.page).includes('Byer i området'), `/${area}/${slug}: ingen "Byer i området" (højst en lille andel af en bys adresser)`, line);
     }
   }
-  const none = ['n1', 'trefor', 'konstant', 'vores-elnet', 'rah-net', 'elvaerk', 'nord-energi', 'noe-net', 'elnet-midt', 'flow-elnet', 'lnet'].filter(s => !CITIES.some(c => c.area === 'DK1' && c.nets[0].slug === s))[0];
-  if (none) ok(!strip((await get('/dk1/' + none)).page).includes('Byer i området'), `/dk1/${none}: ingen "Byer i området" når ingen by har det som hovednet`);
+  const none = ['n1', 'trefor', 'konstant', 'dinel', 'vores-elnet', 'rah-net', 'elvaerk', 'nord-energi', 'noe-net', 'elnet-midt', 'flow-elnet', 'lnet'].filter(s => !CITIES.some(c => c.area === 'DK1' && c.nets.some(x => x.slug === s)))[0];
+  if (none) ok(!strip((await get('/dk1/' + none)).page).includes('Byer i området'), `/dk1/${none}: ingen "Byer i området" når ingen by har det som netselskab`);
+  ok(strip((await get('/dk1/konstant')).page).includes('Byer i området: Aarhus'), '/dk1/konstant: Aarhus (hovednet)');
+  ok(strip((await get('/dk1/dinel')).page).includes('Byer i området: Aarhus'), '/dk1/dinel: Aarhus (40 % af adresserne, selv om Konstant er hovednet)');
+  ok(!strip((await get('/dk1/nord-energi')).page).includes('Byer i området'), '/dk1/nord-energi: Aalborg (6 %) er ikke "i området"');
+}
+
+// ── Dinel, the 15th net company: GLN 5790000610099, DK1, named "Dinel A/S" by Green Power Denmark's lookup ──────
+{
+  const GLN = '5790000610099', p = '/dk1/dinel';
+  // index.html knows it (name, GLN, the string the lookup is matched with), in DK1 only.
+  const entry = INDEX.match(/\{name:'Dinel',slug:'dinel',gln:'(\d{13})',match:\[([^\]]*)\]\}/);
+  ok(entry && entry[1] === GLN && entry[2] === "'Dinel'", 'index.html: NETS har Dinel med GLN 5790000610099 og match-strengen "Dinel"', entry && entry.slice(1).join(' '));
+  ok(INDEX.indexOf("slug:'dinel'") < INDEX.indexOf('],DK2:['), 'index.html: Dinel står i DK1-listen');
+  // The page: its own title and description, and the Pris screen drawn for Dinel's all-in price.
+  store.clear(); upstream = [];
+  const r = await get(p), raw = r.body, h = r.page;
+  const title = (raw.match(/<title>([^<]*)<\/title>/) || [])[1] || '', desc = (raw.match(/<meta name="description" content="([^"]*)"/) || [])[1] || '';
+  ok(r.status === 200, `${p}: 200`, String(r.status));
+  ok(title.length >= 30 && title.length <= 62 && title.includes('Dinel') && title.includes('DK1'), `${p}: titel ≤ 62 tegn med Dinel og DK1`, `${title.length}: ${title}`);
+  ok(desc.length >= 80 && desc.length <= 155 && desc.includes('Dinel'), `${p}: beskrivelse 80-155 tegn med Dinel`, `${desc.length}: ${desc}`);
+  ok(h.includes('<link rel="canonical" href="https://elpriser.org/dk1/dinel">'), `${p}: canonical peger på siden selv`);
+  ok(/<h1[^>]*>Elpris hos Dinel i dag — DK1 Vest<\/h1>/.test(h), `${p}: h1 "Elpris hos Dinel i dag — DK1 Vest"`);
+  ok(h.includes('<div class="pris" data-period="2"') && h.includes('data-key="DK1|din|dinel"'), `${p}: Pris-skærmen er tegnet for Dinel (Din pris)`);
+  ok(h.includes('aria-label="Elpris lige nu — DK1 Vest · Dinel"') && h.includes('id="netChipLong">Dinel · Vestdanmark<'), `${p}: skærmen og netchippen navngiver Dinel`);
+  ok(upstream.includes(`/api/forecast?area=DK1&mode=net_inkl_alt&gln=${GLN}`), `${p}: prognosen hentes med Dinels GLN`, upstream.join(' '));
+  ok(strip(r.main).includes('Dinel er et lokalt netselskab') && !/NaN|undefined/.test(r.main), `${p}: egen dækningstekst om Dinel, ingen NaN/undefined`);
+  ok(/data-pris-period="/.test(h) && !TEN.test(h), `${p}: ingen 10-dages`);
+  // Not in DK2: the area is part of the address.
+  const wrong = await get('/dk2/dinel');
+  ok(wrong.status === 404 && !wrong.body.includes('data-key="DK2|din|dinel"'), '/dk2/dinel er 404 (Dinel er DK1)', String(wrong.status));
+  // The sitemap, with the net priority (llms-full.txt's GLN table is pinned in test-static.js).
+  const sm = (await get('/sitemap.xml')).body;
+  ok(/<loc>https:\/\/elpriser\.org\/dk1\/dinel<\/loc>\s*<lastmod>[^<]+<\/lastmod>\s*<changefreq>[^<]+<\/changefreq>\s*<priority>0\.6<\/priority>/.test(sm), 'sitemap: /dk1/dinel med prioritet 0,6');
+  // Aarhus: Konstant stays the main net company, Dinel is a net we price and so has a page and is no longer "without tariffs".
+  const a = pages.aarhus, at = strip(a.text);
+  ok(CITIES.find(c => c.slug === 'aarhus').nets.map(x => x.slug + ':' + x.share).join() === 'konstant:0.6,dinel:0.4', 'Aarhus: Konstant 0,6 og Dinel 0,4 i tabellen');
+  ok(a.text.includes('<a href="/dk1/dinel" class="text-brand-500 underline">Dinel</a>') && at.includes('hørte 12 til Konstant, 8 til Dinel') && at.includes('afhænger af adressen'), '/elpris/aarhus: "hørte 12 til Konstant, 8 til Dinel", Dinel linket, og "afhænger af adressen"', at.slice(0, 300));
+  ok(!at.includes('har vi endnu ikke tariffer for'), '/elpris/aarhus: ingen netselskab uden tariffer tilbage');
+  ok(a.page.includes('data-key="DK1|din|konstant"') && a.page.includes('data-net="konstant"'), '/elpris/aarhus: Pris-skærmen er stadig tegnet for Konstant');
+  // Dinel's page names the city it serves; the footer links the page on every city page too.
+  ok(strip(r.page).includes('Byer i området: Aarhus') && r.page.includes('href="/elpris/aarhus"'), `${p}: "Byer i området: Aarhus" med link`);
+  ok(a.page.includes('href="/dk1/dinel"'), '/elpris/aarhus: sidefoden/teksten linker /dk1/dinel');
 }
 
 console.log(`${pass} beståede, ${fails.length} fejl`);

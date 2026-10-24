@@ -270,7 +270,7 @@ async function startServer() {
     await page.evaluate(() => localStorage.clear());
   });
 
-  await test('start: no area cards and no 14-button net list — one compact row instead', async () => {
+  await test('start: no area cards and no 15-button net list — one compact row instead', async () => {
     await page.goto(BASE + '/');
     await page.waitForSelector('main[data-page="start"].active [data-area-row]');
     for (const sel of ['#dk1-zone', '#dk2-zone', '#dk1-nets', '#dk2-nets', '.net-row', '.zone-btn'])
@@ -290,14 +290,14 @@ async function startServer() {
     });
   }
 
-  await test('start: "Find dit netselskab" opens the net dialog, which lists all 14 nets; choosing one opens its page', async () => {
+  await test('start: "Find dit netselskab" opens the net dialog, which lists all 15 nets; choosing one opens its page', async () => {
     await page.goto(BASE + '/');
     await page.evaluate(() => localStorage.clear());
     await page.locator('main[data-page="start"] [data-area-row] button').click();
     await page.waitForSelector('#netDialog[open]');
     assert.equal((await page.locator('#netDialogTitle').textContent()).trim(), 'Netselskab og indstillinger');
-    // 14 nets plus one "Uden netselskab" per area.
-    assert.equal(await page.locator('#netDialog .pd-links a[data-net]:not([data-net=""])').count(), 14, 'the dialog lists every net');
+    // 15 nets plus one "Uden netselskab" per area.
+    assert.equal(await page.locator('#netDialog .pd-links a[data-net]:not([data-net=""])').count(), 15, 'the dialog lists every net');
     await page.locator('#netDlgDK1 a:has-text("Trefor")').first().click();
     await page.waitForURL(u => u.pathname === '/dk1/trefor');
     await page.evaluate(() => localStorage.clear());
@@ -862,11 +862,11 @@ async function startServer() {
     await page.selectOption('#autoMode', 'net_inkl_alt');
     await page.waitForFunction(() =>
       getComputedStyle(document.getElementById('autoNetRow')).display !== 'none');
-    // Dropdown should have every net across DK1+DK2 (13 + 3 = 16+)
+    // Dropdown should have every net across DK1+DK2 (12 + 3 = 15+)
     await page.waitForFunction(() =>
-      document.querySelectorAll('#autoNet option').length >= 14);
+      document.querySelectorAll('#autoNet option').length >= 15);
     const netCount = await page.locator('#autoNet option').count();
-    assert.ok(netCount >= 14, `#autoNet has ${netCount} options, expected ≥14 (all DK1+DK2 nets)`);
+    assert.ok(netCount >= 15, `#autoNet has ${netCount} options, expected ≥15 (all DK1+DK2 nets)`);
   });
 
   await test('automation: picking a DK2 net auto-switches priszone to DK2', async () => {
@@ -1065,7 +1065,7 @@ async function startServer() {
     await page.goto(BASE + '/dk1/n1');
     await page.waitForSelector('footer.sf');
     assert.equal(await page.locator('footer details[open]').count(), 0, 'no disclosure open');
-    assert.equal(await page.locator('footer details.sf-all a[href^="/dk"]').count(), 14, '14 net links in the DOM');
+    assert.equal(await page.locator('footer details.sf-all a[href^="/dk"]').count(), 15, '15 net links in the DOM');
     assert.equal(await page.locator('footer details.sf-all a[href="/dk1/trefor"]').isVisible(), false, 'hidden while closed');
     assert.deepEqual(await page.locator('footer .sf-h').allTextContents().then(a => a.slice(0, 4)), ['Priser', 'Smart hjem', 'Viden', 'Elpriser']);
   });
@@ -1555,6 +1555,22 @@ async function startServer() {
     await page.waitForSelector('main[data-page="prices"].active');
     assert.equal(await page.evaluate(() => location.pathname), '/dk1/trefor');
     assert.equal((await page.locator('#netChipLong').textContent()).trim(), 'Trefor · Vestdanmark');
+  });
+
+  await test('dinel: the Aarhus page links Dinel\'s page, which opens with Dinel\'s Pris screen (its GLN is asked for)', async () => {
+    forecastRequests.length = 0;
+    await page.goto(BASE + '/elpris/aarhus');
+    await page.waitForSelector('main[data-page="city"].active .pris-now');
+    assert.equal((await page.locator('main[data-page="city"] a[href="/dk1/dinel"]').first().textContent()).trim(), 'Dinel', 'Aarhus names Dinel as a link');
+    await page.locator('main[data-page="city"] a[href="/dk1/dinel"]').first().click();
+    await page.waitForSelector('main[data-page="prices"].active .pris-now');
+    assert.equal(await page.evaluate(() => location.pathname), '/dk1/dinel');
+    assert.equal((await page.locator('#netChipLong').textContent()).trim(), 'Dinel · Vestdanmark');
+    assert.ok(forecastRequests.includes('DK1|net_inkl_alt|5790000610099'), `asked for ${forecastRequests.join(', ')}`);
+    assert.equal((await page.locator('.pris-now').textContent()).trim(), pris(fixturePrice('net_inkl_alt', '5790000610099', hourDk())), 'the big number is Dinel\'s all-in price');
+    // The net dialog (built from NETS) lists it in DK1 only.
+    assert.equal(await page.locator('#netDlgDK1 a[data-net="dinel"]').count(), 1, 'the dialog offers Dinel in DK1');
+    assert.equal(await page.locator('#netDlgDK2 a[data-net="dinel"]').count(), 0, 'and not in DK2');
   });
 
   await test('city: Kun spotpris is a view of the same page, and 5 døgn shows five days', async () => {
