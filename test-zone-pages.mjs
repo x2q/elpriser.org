@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The four foreign-area pages: /no/strompris, /sv/elpris, /fi/sahkon-hinta and /norden.
+ * The five foreign-area pages: /no/strompris, /sv/elpris, /fi/sahkon-hinta, /nl/stroomprijs and /norden.
  * Run: npm run test:zone   (hermetic: the real Pages Function, index.html, a fake /api/nordic)
  *
  * They replaced eleven thin zone pages (/no1 … /nl). What this guards:
@@ -9,6 +9,8 @@
  *  - nothing on them can show the feed's longer horizon: the feed carries ten days, these pages two and five;
  *  - /norden draws all thirteen areas in DKK with the basis stated;
  *  - the render is cached under its own versioned key, and an incomplete render is never remembered;
+ *  - the four country pages wear their own chrome (a country navigation and a slim footer in their language; no Danish
+ *    menu, net chip, app button, tab bar, net dialog or footer) and the Danish pages' chrome is the fixture, byte for byte;
  *  - the thirteen old URLs answer 301 to the right place.
  */
 import fs from 'node:fs';
@@ -48,12 +50,18 @@ globalThis.fetch = async u => {
   if (url.pathname === '/api/nordic' && z && !missing.has(z)) return new Response(JSON.stringify(nordic(z)), { headers: { 'content-type': 'application/json' } });
   return new Response('{}', { status: 404 });
 };
+// The words of the chrome, lifted from the Pris block of the real file (the same block index.html carries).
+const chromeI18n = (() => {
+  const src = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const a = src.indexOf('var CHROME_I18N={'), b = src.indexOf('\n};', a) + 3;
+  return new Function(src.slice(a, b) + '\nreturn CHROME_I18N;')();
+})();
 const get = async p => {
   const res = await onRequest({ request: new Request('https://elpriser.org' + p), env: { ASSETS: { fetch: async () => new Response(INDEX, { headers: { 'content-type': 'text/html' } }) } } });
   const body = res.status === 301 ? '' : await res.text();
   // `page`: what the page SAYS — without the script and style (index.html carries the whole app's code,
-  // markup strings included) and without the dialogs, which are the header's chrome ("Hent appen" describes the Danish app).
-  const page = body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<dialog[\s\S]*?<\/dialog>/g, '');
+  // markup strings included). The dialogs stay: on a country page there is none, and that is asserted.
+  const page = body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '');
   return { status: res.status, headers: res.headers, body, page };
 };
 
@@ -62,6 +70,7 @@ const PAGES = {
   '/no/strompris': { lang: 'nb', title: /^Strømpris prognose Norge/, tabs: 5, zones: ['Oslo', 'Kristiansand', 'Trondheim', 'Tromsø', 'Bergen'], unit: 'øre', now: 'Strømpris akkurat nå', p5: '5 døgn', first: 'no1' },
   '/sv/elpris': { lang: 'sv', title: /^Elpris prognos Sverige/, tabs: 4, zones: ['Luleå', 'Sundsvall', 'Stockholm', 'Malmö'], unit: 'öre', now: 'Elpris just nu', p5: '5 dygn', first: 'se3' },
   '/fi/sahkon-hinta': { lang: 'fi', title: /^Sähkön hinta ennuste/, tabs: 0, zones: ['Suomi'], unit: 'snt', now: 'Sähkön hinta juuri nyt', p5: '5 vrk', first: 'fi' },
+  '/nl/stroomprijs': { lang: 'nl', title: /^Stroomprijs vandaag en morgen/, tabs: 0, zones: ['Nederland'], unit: 'cent', now: 'Stroomprijs nu', p5: '5 dagen', first: 'nl' },
 };
 const TEN = /10 (døgn|dager|dage|dygn|vrk|vuorokautta|days)|10-day|tio dygn|kymmenen/i;
 for (const [p, w] of Object.entries(PAGES)) {
@@ -72,9 +81,9 @@ for (const [p, w] of Object.entries(PAGES)) {
   ok(w.title.test(title) && title.length <= 62, `${p}: titel under 62 tegn`, `${title.length}: ${title}`);
   ok(desc.length >= 80 && desc.length <= 155, `${p}: beskrivelse 80-155 tegn`, String(desc.length));
   ok(new RegExp(`<html lang="${w.lang}"`).test(h), `${p}: <html lang="${w.lang}">`);
-  ok(!/hreflang=/.test(h.replace(/<!--[\s\S]*?-->/g, '')), `${p}: ingen hreflang-klynge`);
+  ok(!/<link rel="alternate"/.test(h.replace(/<!--[\s\S]*?-->/g, '')) && (h.match(/hreflang=/g) || []).length === 1 && /<a href="\/privatliv" hreflang="da">/.test(h), `${p}: ingen hreflang-klynge; det eneste hreflang er privatlivslinkets da`);
   ok(new RegExp(`<link rel="canonical" href="https://elpriser.org${p}">`).test(h), `${p}: canonical peger på siden selv`);
-  ok(/"@type":"WebPage"[^<]*"inLanguage":"/.test(raw) && raw.includes(`"@type":"WebPage"`) && /"inLanguage":"(nb|sv|fi)"/.exec(raw.slice(raw.indexOf('"@type":"WebPage"')))[1] === w.lang, `${p}: JSON-LD WebPage med inLanguage ${w.lang}`);
+  ok(/"@type":"WebPage"[^<]*"inLanguage":"/.test(raw) && raw.includes(`"@type":"WebPage"`) && /"inLanguage":"(nb|sv|fi|nl)"/.exec(raw.slice(raw.indexOf('"@type":"WebPage"')))[1] === w.lang, `${p}: JSON-LD WebPage med inLanguage ${w.lang}`);
   ok((h.match(/<h1[ >]/g) || []).length === 1 && new RegExp(`<h1 class="vh" id="zH1">[^<&]{20,}</h1>`).test(h), `${p}: én h1, skrevet af serveren`);
   // The very Pris screen of the Danish pages, in this language.
   ok(h.includes('<div class="pris" data-period="2"') && h.includes(`data-key="${w.first}"`), `${p}: Pris-skærmen er tegnet for ${w.first}`);
@@ -96,6 +105,21 @@ for (const [p, w] of Object.entries(PAGES)) {
   ok(w.zones.every(c => list.includes(`<b>${c}</b>`)), `${p}: tekstblokken nævner alle byer`, list.slice(0, 200));
   ok((list.match(/<li>/g) || []).length === w.zones.length && (list.match(new RegExp(`${w.unit}/kWh`, 'g')) || []).length >= w.zones.length, `${p}: ét punkt pr. zone med pris`);
   ok(!/NaN|undefined|Infinity/.test(h.slice(h.indexOf('<main'), h.indexOf('</main>'))), `${p}: ingen NaN/undefined`);
+  ok(new RegExp(`<meta property="og:locale" content="${{ nb: 'nb_NO', sv: 'sv_SE', fi: 'fi_FI', nl: 'nl_NL' }[w.lang]}">`).test(raw), `${p}: og:locale på sidens sprog`);
+  // The chrome: the country navigation in the page's language, a slim footer, and none of the Danish site's.
+  {
+    const hd = h.slice(h.indexOf('<header'), h.indexOf('</header>')), ft = h.slice(h.indexOf('<footer'), h.indexOf('</footer>')), X = chromeI18n[w.lang];
+    const nav = [...hd.matchAll(/<a href="([^"]+)"([^>]*)>([^<]+)<\/a>/g)].filter(m => m[1] !== '/');
+    ok(/<html lang="[a-z]+" class="xc">/.test(h) && /<a href="\/" class="site-logo" aria-label="[^"]+">[\s\S]*<\/svg><\/span>Elpriser<\/a>/.test(hd), `${p}: logoet viser ordmærket Elpriser og linker til /`);
+    ok(nav.map(m => m[3]).join() === Object.values(X.cn).join() && nav.map(m => m[1]).join() === '/dk1,/no/strompris,/sv/elpris,/fi/sahkon-hinta,/nl/stroomprijs', `${p}: landenavigationen på ${w.lang}`, nav.map(m => m[3]).join());
+    ok(nav.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === p, `${p}: den aktuelle side er aria-current i menuen`);
+    ok(hd.includes(`aria-label="${X.menu}"`) && hd.includes(`aria-label="${X.home}"`), `${p}: menuens og logoets navne på ${w.lang}`);
+    ok(!/id="netChip|class="chip-btn|app-btn|Hent appen|Smart hjem|>Om<|Hovedmenu|href="\/automation"|href="\/om-elpriser"|href="\/download"/.test(hd), `${p}: ingen netchip, ingen app-knap, ingen dansk menu i headeren`);
+    ok(!/class="tabbar|Mobilnavigation|id="netDialog|Netselskab og indstillinger|id="netChip/.test(h.replace(/<!--[\s\S]*?-->/g, '')), `${p}: ingen dansk mobilbar, ingen netdialog og ingen netchip`);
+    ok((h.match(/<footer\b/g) || []).length === 1 && ft.includes('class="sf sf-x"') && ft.includes(`id="sfLand">${X.land}<`) && ft.includes(X.privacy) && !/Privatliv|Hent appen|Hent til|Netselskab|Alle guides|Tariffer|Prognose<|Forstå din elpris|Åbne datasæt|class="sf-apps|class="sf-all|<details/.test(ft), `${p}: sidefoden er den slanke på ${w.lang}`);
+    ok(ft.includes('&copy; Elpriser.org') && ft.includes(X.src) && ft.includes(X.open) && /href="\/privatliv" hreflang="da"/.test(ft), `${p}: ophavsret, kilder og privatlivslink på ${w.lang}`);
+    ok(!/href="\/(automation|om-elpriser|download|tariffer|prognose|blog|api|shelly-tariff|norden)"/.test(hd + ft) && !/href="\/(dk[12]|elpris)\/[a-z]/.test(hd + ft), `${p}: header og fod linker ingen danske undersider, kun landesiderne og /privatliv`);
+  }
   ok(upstream.length === (PAGES[p].tabs || 1) && upstream.every(x => x.startsWith('/api/nordic?zone=')), `${p}: serveren henter præcis landets zoner`, upstream.join(' '));
   // The edge cache: a second request is served without touching the feed again, under its own versioned key.
   const n = upstream.length;
@@ -111,6 +135,42 @@ for (const [p, w] of Object.entries(PAGES)) {
   const expect = Math.round(d0[nowH].eur_mwh * 10 / 10);
   ok(new RegExp(`class="pris-now">${expect}<`).test(h), 'NO1: prisen nu er EUR/MWh × kurs ÷ 10 i øre (kurs 10 fra svaret)', `${expect} vs ${(h.match(/class="pris-now">([^<]*)</) || [])[1]}`);
   ok(/data-tip="I dag kl\. \d\d · \d+ øre\/kWh"/.test(h) && /data-tip="[a-zæøå]{3} \d+\. [a-z]{3} kl\. \d\d · \d+ øre\/kWh"/.test(h), 'NO1: tooltips på norsk i øre');
+}
+// Netherlands: EUR, so the rate is 1 and the unit is cent: NL hour h of today is EUR/MWh ÷ 10, in Dutch words.
+{
+  store.clear();
+  const r = await get('/nl/stroomprijs'), h = r.page, d0 = nordic('nl').days[1].prices;
+  const nowH = +new Intl.DateTimeFormat('en-GB', { ...cph, hour: 'numeric', hourCycle: 'h23' }).format(new Date());
+  const v = d0[nowH].eur_mwh / 10, dec = Math.max(...nordic('nl').days.slice(1, 6).flatMap(d => d.prices.map(p => p.eur_mwh / 10))) >= 10 ? 1 : 2;
+  const expect = v.toFixed(dec).replace('.', ',');
+  ok(new RegExp(`class="pris-now">${expect}<`).test(h), 'NL: prisen nu er EUR/MWh ÷ 10 i cent, med komma', `${expect} vs ${(h.match(/class="pris-now">([^<]*)</) || [])[1]}`);
+  ok(/<h1 class="vh" id="zH1">Stroomprijs in Nederland: vandaag en prognose voor de komende 5 dagen<\/h1>/.test(h) && h.includes('Spotprijs zonder btw, belastingen en netkosten') && /Goedkoop|Gemiddeld|Duur/.test(h) && /Komende 5 dagen/.test(h) && h.includes('Beursprijs') && h.includes('Prognose'), 'NL: h1, billedtekst, niveauer, periodekort og typer på hollandsk');
+  ok(/data-tip="Vandaag om \d\d · [\d,]+ cent\/kWh"/.test(h) && /data-tip="Morgen om \d\d · [\d,]+ cent\/kWh"/.test(h) && /data-tip="[a-z]{2} \d+ [a-z]{3} om \d\d · [\d,]+ cent\/kWh"/.test(h), 'NL: tooltips på hollandsk i cent (Vandaag, Morgen, og senere dage som "wo 29 okt")');
+  ok(!/\b(øre|snt|kr\/kWh|døgn|dager|dygn|vrk)\b/.test(h.slice(h.indexOf('<main'), h.indexOf('</main>'))), 'NL: ingen ord eller enheder fra de andre sprog i sidens indhold');
+  ok(/<li><a href="\/nl\/stroomprijs" data-zone="nl"><b>Nederland<\/b> \(NL\)<\/a>: gem\. vandaag [\d,]+ cent\/kWh, gem\. morgen/.test(h), 'NL: tekstblokken har Nederland med dagens og morgendagens gennemsnit');
+}
+// The Danish pages' chrome is the fixture, byte for byte: header, phone tab bar, footer and net dialog.
+// The fixture is index.html's chrome as it was before the country pages got their own, plus the one intended change:
+// Nederland among the other price areas (footer and net dialog).
+{
+  const FIX = fs.readFileSync(path.join(ROOT, 'tests/fixtures/chrome-da.html'), 'utf8');
+  const part = n => FIX.split(`<!--@@${n}@@-->\n`)[1].split('\n<!--@@')[0].replace(/\n$/, '');
+  const BL = { header: ['<header class="site-nav">', '</header>'], tabbar: ['<nav class="tabbar"', '</nav>'], footer: ['<footer class="sf">', '</footer>'], dialog: ['<dialog id="netDialog"', '</dialog>'] };
+  const cut = (html, n) => { const a = html.indexOf(BL[n][0]); return a < 0 ? null : html.slice(a, html.indexOf(BL[n][1], a) + BL[n][1].length); };
+  for (const n of Object.keys(BL)) ok(cut(INDEX, n) === part(n), `index.html: ${n} er fixturen, tegn for tegn`, 'ret tests/fixtures/chrome-da.html bevidst hvis den danske chrome skal ændres');
+  for (const p of ['/', '/tariffer', '/prognose', '/norden', '/automation', '/blog', '/om-elpriser', '/download', '/api']) {
+    store.clear();
+    const r = await get(p);
+    for (const n of Object.keys(BL)) if (n !== 'header' || p !== '/dk1') ok(cut(r.body, n) === part(n), `${p}: dansk ${n} er uændret, tegn for tegn`);
+    ok(/<html lang="da">/.test(r.body) && !/ class="xc"/.test(r.body.slice(0, 200)), `${p}: dansk side uden xc-kroge`);
+  }
+  // The per-net and per-city pages change only the text of the net chip (their own net), nothing else in the header.
+  for (const p of ['/dk1', '/dk2/radius', '/elpris/aarhus']) {
+    store.clear();
+    const r = await get(p), hd = cut(r.body, 'header');
+    ok(hd.replace(/(id="netChip(?:Long|Short)">)[^<]*</g, '$1<') === part('header').replace(/(id="netChip(?:Long|Short)">)[^<]*</g, '$1<'), `${p}: headeren er den danske, kun netchippens tekst er sidens egen`);
+    ok(cut(r.body, 'footer') === part('footer') && cut(r.body, 'tabbar') === part('tabbar') && cut(r.body, 'dialog') === part('dialog'), `${p}: fod, mobilbar og netdialog er uændrede`);
+  }
 }
 // A missing zone: the page still renders (the others show) but is NOT remembered.
 {
@@ -137,8 +197,8 @@ for (const [p, w] of Object.entries(PAGES)) {
   ok(rows.length === 13, '/norden: tabellen har 13 rækker (11 udenlandske + DK1 og DK2 til sammenligning)', String(rows.length));
   ok(rows.map(m => m[1]).join(',') === 'no1,no2,no3,no4,no5,se1,se2,se3,se4,fi,nl,dk1,dk2', '/norden: rækkefølgen er NO, SE, FI, NL, DK');
   const href = Object.fromEntries(rows.map(m => [m[1], m[2]]));
-  ok(href.no2 === '/no/strompris#no2' && href.se4 === '/sv/elpris#se4' && href.fi === '/fi/sahkon-hinta' && href.dk1 === '/dk1' && href.dk2 === '/dk2', '/norden: rækkerne linker til landesidens anker', JSON.stringify(href));
-  ok(href.nl === undefined, '/norden: NL har ingen side og er en almindelig række');
+  ok(href.no2 === '/no/strompris#no2' && href.se4 === '/sv/elpris#se4' && href.fi === '/fi/sahkon-hinta' && href.nl === '/nl/stroomprijs' && href.dk1 === '/dk1' && href.dk2 === '/dk2', '/norden: rækkerne linker til landesidens anker', JSON.stringify(href));
+  ok(href.nl === '/nl/stroomprijs', '/norden: NL-rækken linker til /nl/stroomprijs ligesom de andre lande', String(href.nl));
   // DKK/kWh = EUR/MWh ÷ 1000 × 7,5 (kursen i DK1-svaret): NO2 hour h of today.
   const nowH = +new Intl.DateTimeFormat('en-GB', { ...cph, hour: 'numeric', hourCycle: 'h23' }).format(new Date());
   const no2 = rows.find(m => m[1] === 'no2'), eur = nordic('no2').days[1].prices[nowH].eur_mwh;
@@ -151,13 +211,13 @@ for (const [p, w] of Object.entries(PAGES)) {
   // One area down: the table still draws, the row shows dashes, and nothing is cached.
   store.clear(); missing = new Set(['nl']);
   const part = (await get('/norden')).page;
-  ok(/<tr id="nl"><th scope="row">NL Nederland<\/th><td>—<\/td><td>—<\/td><td>—<\/td><td>—<\/td>/.test(part) && store.size === 0, '/norden uden NL: en tom række og ingen cache');
+  ok(/<tr id="nl"><th scope="row"><a href="\/nl\/stroomprijs">NL Nederland<\/a><\/th><td>—<\/td><td>—<\/td><td>—<\/td><td>—<\/td>/.test(part) && store.size === 0, '/norden uden NL: en tom række og ingen cache');
   missing = new Set();
 }
 
 // ── The old URLs, the sitemap, the language of the rest of the site ───────────────
 const OLD = { '/no1': '/no/strompris#no1', '/no2': '/no/strompris#no2', '/no3': '/no/strompris#no3', '/no4': '/no/strompris#no4', '/no5': '/no/strompris#no5',
-  '/se1': '/sv/elpris#se1', '/se2': '/sv/elpris#se2', '/se3': '/sv/elpris#se3', '/se4': '/sv/elpris#se4', '/fi': '/fi/sahkon-hinta', '/nl': '/norden#nl',
+  '/se1': '/sv/elpris#se1', '/se2': '/sv/elpris#se2', '/se3': '/sv/elpris#se3', '/se4': '/sv/elpris#se4', '/fi': '/fi/sahkon-hinta', '/nl': '/nl/stroomprijs',
   // the first spelling of the country pages (live for a day) goes straight to the final URL too
   '/norge': '/no/strompris', '/sverige': '/sv/elpris', '/finland': '/fi/sahkon-hinta' };
 for (const [from, to] of Object.entries(OLD)) {
@@ -167,13 +227,13 @@ for (const [from, to] of Object.entries(OLD)) {
 {
   const sm = (await get('/sitemap.xml')).body;
   const locs = [...sm.matchAll(/<loc>https:\/\/elpriser\.org([^<]*)<\/loc>/g)].map(m => m[1]);
-  ok(['/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/norden'].every(p => locs.includes(p)), 'sitemap: de fire nye sider');
+  ok(['/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/norden'].every(p => locs.includes(p)), 'sitemap: de fem sider');
   ok(Object.keys(OLD).every(p => !locs.includes(p)), 'sitemap: ingen af de 11 gamle zone-adresser eller de tre første sidenavne');
   const prio = p => +sm.match(new RegExp(`<loc>https://elpriser\\.org${p}</loc>[\\s\\S]*?<priority>([\\d.]+)`))[1];
-  ok(['/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/norden'].every(p => prio(p) < prio('/dk1') && prio(p) < prio('/dk1/n1') + 0.01), 'sitemap: de fire ligger under de danske sider i prioritet');
+  ok(['/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/norden'].every(p => prio(p) < prio('/dk1') && prio(p) < prio('/dk1/n1') + 0.01), 'sitemap: de fem ligger under de danske sider i prioritet');
   const llms = (await get('/llms.txt')).body;
-  ok(['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta'].every(p => llms.includes(`https://elpriser.org${p})`)) && Object.keys(OLD).every(p => !llms.includes(`elpriser.org${p})`)) && !/10 døgn[^.]*(Norge|Sverige|Finland|prisområder)/.test(llms.slice(llms.indexOf('[Elpriser i Norden]'), llms.indexOf('[Automation]'))),
-    'llms.txt: de fire sider, ingen gamle adresser og ingen 10 døgn om dem');
+  ok(['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs'].every(p => llms.includes(`https://elpriser.org${p})`)) && Object.keys(OLD).every(p => !llms.includes(`elpriser.org${p})`)) && !/10 døgn[^.]*(Norge|Sverige|Finland|prisområder)/.test(llms.slice(llms.indexOf('[Elpriser i Norden]'), llms.indexOf('[Automation]'))),
+    'llms.txt: de fem sider, ingen gamle adresser og ingen 10 døgn om dem');
   ok((await get('/no6')).status === 404, 'et ukendt zone-nummer er stadig 404');
   ok((await get('/no')).status === 404 && (await get('/sv')).status === 404 && (await get('/no/strompris/')).status === 301 && (await get('/no/ukendt')).status === 404, 'sprogmapperne alene er 404, en skråstreg efter siden er 301, en ukendt side under mappen er 404');
 }

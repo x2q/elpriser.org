@@ -122,7 +122,7 @@ ok(!/\d\s*%|MAE|backtest|træffer|rammer|nøjagtig|præcis/i.test(blocks + ' ' +
 ok(/huggingface\.co\/Elpriser\/denmark-price-forecast/.test(h), '/prognose: modellen er linket på Hugging Face');
 
 // ── The edge cache ────────────────────────────────────────────────────────────────────────────
-ok([...store.keys()].join() === 'https://cache.local/prognose-ssr-v1/prognose', '/prognose: renderen er gemt under sin egen versionerede nøgle', [...store.keys()].join());
+ok(/^https:\/\/cache\.local\/prognose-ssr-v\d+\/prognose$/.test([...store.keys()].join()), '/prognose: renderen er gemt under sin egen versionerede nøgle', [...store.keys()].join());
 upstream = [];
 const again = await get('/prognose');
 ok(again.status === 200 && again.body === raw && upstream.length === 0, '/prognose: anden visning kommer fra cachen uden kald til prognosen', String(upstream.length));
@@ -137,6 +137,16 @@ const home = await get('/');
 ok(home.page.includes('<div class="pris" data-period="2"') && (home.page.match(/data-pris-period="/g) || []).length === 2 && !/Usikkerhed|pp7/.test(bare(home.page)), '/: forsiden har stadig 2 døgn | 5 døgn og ingen Usikkerhed');
 const dk1 = await get('/dk1');
 ok(dk1.page.includes('<div class="pris" data-period="2"') && (dk1.page.match(/data-pris-period="/g) || []).length === 2 && !/Usikkerhed|pp7/.test(bare(dk1.page)), '/dk1: samme');
+
+// ── "Ugen i korte træk": the written summary under the chart, on /prognose and nowhere else ───
+const sums = [...h.matchAll(/<section class="pris-days pris-sum pp(\d)" aria-label="([^"]*)"><p class="pris-dt">([^<]*)<\/p><ul>([\s\S]*?)<\/ul><\/section>/g)];
+ok(sums.map(m => `${m[1]}:${m[3]}`).join('|') === '2:I dag og i morgen i korte træk|5:De næste 5 døgn i korte træk|7:Ugen i korte træk' && sums.every(m => m[2] === m[3]), '/prognose: tre resuméer (2/5/7) med overskrifterne I dag og i morgen / De næste 5 døgn / Ugen i korte træk', sums.map(m => m[3]).join('|'));
+ok(sums.every(m => (m[4].match(/<li><strong>[^<]+:<\/strong> [^<]+<\/li>/g) || []).length >= 3 && (m[4].match(/<li>/g) || []).length <= 5), '/prognose: hvert resumé har 3-5 punkter med fed etiket');
+const sev = txt(sums[2][4]);
+ok(/Billigste dag: (i dag|i morgen|\S+) \(\d,\d\d–\d,\d\d kr\/kWh\)/.test(sev) && /Dyreste dag: (i dag|i morgen|\S+) \(/.test(sev) && /Bedste tid at bruge strøm: .*kl\. \d\d–\d\d/.test(sev) && /Sikkerhed: de næste to dage er sikre\. Fra og med \S+ er prognosen mere usikker, og mest usikker fra og med \S+\./.test(sev), '/prognose: 7-døgnsresuméet har billigste og dyreste dag, bedste tid og sikkerhed', sev);
+ok(!/NaN|undefined|Infinity|null/.test(sev + txt(sums[0][4]) + txt(sums[1][4])) && !TEN.test(txt(sums.map(m => m[0]).join(' '))) && !/\d\s*%/.test(txt(sums.map(m => m[0]).join(' '))), '/prognose: resuméerne har ingen NaN/undefined, ingen "10 døgn" og ingen procenttal');
+ok(h.indexOf('pris-tiles pp7') < h.indexOf('pris-sum pp2') && h.indexOf('pris-sum pp7') < h.indexOf('class="pris-days"'), '/prognose: resuméet står under diagrammet/flisen og over "Dag for dag"');
+ok(/<p class="pris-dt">Ugen i korte træk<\/p>/.test(h) && !/class="pris-sum/.test(bare(home.page) + bare(dk1.page)), '/ og /dk1: intet resumé');
 
 console.log(`${pass} beståede, ${fails.length} fejl`);
 fails.forEach(f => console.log('  ✗ ' + f));

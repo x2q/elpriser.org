@@ -21,7 +21,7 @@ const ROUTES = fs.readFileSync(path.join(ROOT, 'functions', '[[path]].js'), 'utf
 const SERVER = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
 
 // The pages folded into others and where they now go: five blog posts (2026-10-17 cleanup) and the
-// eleven foreign zone pages that became /no/strompris, /sv/elpris, /fi/sahkon-hinta and /norden. This is the ONE copy
+// eleven foreign zone pages that became /no/strompris, /sv/elpris, /fi/sahkon-hinta, /nl/stroomprijs and /norden. This is the ONE copy
 // of the expectation: functions/[[path]].js and server.js must agree with it, and nothing else in the
 // site may mention the retired paths.
 const LEGACY = {
@@ -32,7 +32,7 @@ const LEGACY = {
   '/blog/forsta-din-elpris': '/om-elpriser',
   '/no1': '/no/strompris#no1', '/no2': '/no/strompris#no2', '/no3': '/no/strompris#no3', '/no4': '/no/strompris#no4', '/no5': '/no/strompris#no5',
   '/se1': '/sv/elpris#se1', '/se2': '/sv/elpris#se2', '/se3': '/sv/elpris#se3', '/se4': '/sv/elpris#se4',
-  '/fi': '/fi/sahkon-hinta', '/nl': '/norden#nl',
+  '/fi': '/fi/sahkon-hinta', '/nl': '/nl/stroomprijs',
   // the first spelling of the three country pages, live for a day: straight to the final URL, no chain
   '/norge': '/no/strompris', '/sverige': '/sv/elpris', '/finland': '/fi/sahkon-hinta',
 };
@@ -528,7 +528,7 @@ test('/prognose: the canonical Pris screen with PRIS_FC, a head above it, two te
   // The server draws DK1 with PRIS_FC through the same prisScreen the price pages use, under its own cache key.
   const blk = ROUTES.slice(ROUTES.indexOf('if (opts.prognose) {'), ROUTES.indexOf("// The foreign-area pages are served in their country's language"));
   assert.ok(/fetchNetForecast\(context, 'DK1', null\)/.test(blk) && /html\.replace\('<!--SSR_PRIS-->', \(\) => prisScreen\(fc, 'DK1', null, PRIS_FC\)\)/.test(blk) && /opts\.done\.full = !!fc/.test(blk), 'the server does not draw the /prognose screen with PRIS_FC for DK1');
-  assert.ok(/url\.pathname === '\/prognose'\) opts\.prognose = true/.test(ROUTES) && /renderCachedPage\(context, url\.pathname, page, opts, PROGNOSE_SSR_VERSION\)/.test(ROUTES) && /PROGNOSE_SSR_VERSION = 'prognose-ssr-v1'/.test(ROUTES), '/prognose is not served through its own cached render');
+  assert.ok(/url\.pathname === '\/prognose'\) opts\.prognose = true/.test(ROUTES) && /renderCachedPage\(context, url\.pathname, page, opts, PROGNOSE_SSR_VERSION\)/.test(ROUTES) && /PROGNOSE_SSR_VERSION = 'prognose-ssr-v\d+'/.test(ROUTES), '/prognose is not served through its own cached render');
   // The browser: the route loads the screen like the front page, the header chip's dialog changes the page instead of leaving it.
   assert.ok(/h==='prognose'\)\{[^\n]*syncFcHead\(\);loadPris\(\);return;\}/.test(INDEX), 'the /prognose route does not load the Pris screen');
   assert.ok(/#netDialog \.pd-links a\[data-net\]/.test(INDEX) && /\[data-page="prognose"\]\.active/.test(INDEX), 'the net dialog does not stay on /prognose');
@@ -568,7 +568,7 @@ test('seo/llm: nothing claims what the page does not show', () => {
   assert.ok(!/mode=inkl_alt\\` — Current total price right now \(DKK\/kWh, incl\. all tariffs/.test(SRV), 'llms.txt says inkl_alt includes all tariffs');
   // llms.txt lists the four foreign-area pages — and none of the eleven retired ones.
   const llms = SRV.slice(SRV.indexOf('const LLMS_TXT = `'), SRV.indexOf('const LLMS_FULL_TXT'));
-  for (const z of ['norden', 'no/strompris', 'sv/elpris', 'fi/sahkon-hinta'])
+  for (const z of ['norden', 'no/strompris', 'sv/elpris', 'fi/sahkon-hinta', 'nl/stroomprijs'])
     assert.ok(llms.includes(`https://elpriser.org/${z})`), `llms.txt does not list /${z}`);
   for (const z of LEGACY_ZONES) assert.ok(!llms.includes(`https://elpriser.org${z})`), `llms.txt still lists ${z}`);
   assert.ok(/\/api\/nordic\?zone=/.test(llms), 'llms.txt does not list /api/nordic');
@@ -596,11 +596,11 @@ test('seo: the pages keep the words Search Console shows people typing', () => {
     assert.ok(field(k, 'title').length <= 62, `${k} title is ${field(k, 'title').length} characters; results cut it near 60`);
 });
 
-test('foreign-area pages: four SEO entries in the page\'s own language, with titles and descriptions that fit a result', () => {
+test('foreign-area pages: five SEO entries in the page\'s own language, with titles and descriptions that fit a result', () => {
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const entry = k => SRV.slice(SRV.indexOf(`'${k}': {`), SRV.indexOf('\n  },', SRV.indexOf(`'${k}': {`)));
   const field = (k, f) => (entry(k).match(new RegExp(`${f}: '([^']*)'`)) || [])[1] || '';
-  for (const [k, lang, lead] of [['/no/strompris', 'nb', /^Strømpris prognose Norge/], ['/sv/elpris', 'sv', /^Elpris prognos Sverige/], ['/fi/sahkon-hinta', 'fi', /^Sähkön hinta ennuste/], ['/norden', '', /^Elpriser i Norden/]]) {
+  for (const [k, lang, lead] of [['/no/strompris', 'nb', /^Strømpris prognose Norge/], ['/sv/elpris', 'sv', /^Elpris prognos Sverige/], ['/fi/sahkon-hinta', 'fi', /^Sähkön hinta ennuste/], ['/nl/stroomprijs', 'nl', /^Stroomprijs/], ['/norden', '', /^Elpriser i Norden/]]) {
     assert.ok(lead.test(field(k, 'title')), `${k} title`);
     assert.ok(field(k, 'title').length <= 62, `${k} title is ${field(k, 'title').length} characters`);
     assert.ok(field(k, 'description').length >= 80 && field(k, 'description').length <= 155, `${k} description is ${field(k, 'description').length} characters`);
@@ -616,7 +616,7 @@ test('foreign-area pages: ONE path table; the first spelling (/norge, /sverige, 
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const table = Object.fromEntries([...INDEX.slice(INDEX.indexOf('var PRIS_COUNTRIES={'), INDEX.indexOf('};', INDEX.indexOf('var PRIS_COUNTRIES={')))
     .matchAll(/'([a-z]{2}\/[a-z-]+)':\{lang:'(\w+)'/g)].map(m => [m[1], m[2]]));
-  assert.deepEqual(table, { 'no/strompris': 'nb', 'sv/elpris': 'sv', 'fi/sahkon-hinta': 'fi' }, 'PRIS_COUNTRIES is the table of paths and languages');
+  assert.deepEqual(table, { 'no/strompris': 'nb', 'sv/elpris': 'sv', 'fi/sahkon-hinta': 'fi', 'nl/stroomprijs': 'nl' }, 'PRIS_COUNTRIES is the table of paths and languages');
   const OLD = ['/norge', '/sverige', '/finland'];
   for (const [p, lang] of Object.entries(table)) {
     // every place that needs the path spells it as the table does
@@ -646,6 +646,28 @@ test('seo: the foreign-area pages carry no hreflang cluster', () => {
   const branch = SRV.slice(SRV.indexOf('if (meta.lang) {'), SRV.indexOf('html = html.replace(\n    /<title>'));
   assert.ok(!/hreflang="\$\{m\.lang\}"/.test(branch) && !/x-default/.test(branch), 'the zone-page hreflang cluster is back');
   assert.ok(/hreflang="\[\^"\]\*" href="\[\^"\]\*">\/g, ''\)/.test(branch), 'zone pages do not strip the base hreflang');
+});
+
+test('country pages: ONE chrome builder (chromeHTML) feeds the server render and the browser; the Danish markup carries no hook for it', () => {
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  // The builder and its words are in the canonical Pris block (test-forecast-chart.mjs diffs the two copies).
+  for (const src of [SRV, INDEX]) assert.ok(src.includes('var CHROME_I18N={') && src.includes('function chromeHTML(pg){'), 'CHROME_I18N / chromeHTML missing');
+  // Server: only for a country page (inside the `if (C)` branch), after the zone list.
+  assert.ok(/prisZoneList\(pg, raws, todayDk\)\);\s*html = withCountryChrome\(html, pg\);/.test(SRV), 'the server does not localise the chrome of a country page');
+  assert.equal((SRV.match(/= withCountryChrome\(html/g) || []).length, 1, 'withCountryChrome is used once, for country pages only');
+  // Browser: openZonePage localises, and nothing else does.
+  assert.ok(/document\.documentElement\.lang=C\.lang;\s*localiseChrome\(pg\);/.test(INDEX) && (INDEX.match(/localiseChrome\(/g) || []).length === 2, 'the client localises in openZonePage only');
+  // The Danish header and footer are plain markup: no xc class, no data-pg, no placeholder.
+  const header = INDEX.slice(INDEX.indexOf('<header class="site-nav">'), INDEX.indexOf('</header>'));
+  assert.ok(!/xc|data-pg|SSR_/.test(header) && !/data-pg|class="sf sf-x"/.test(INDEX.slice(INDEX.indexOf('<footer'), INDEX.indexOf('</footer>'))), 'the Danish chrome carries a hook for the country chrome');
+  // No per-language markup: the four languages share one template — the tables hold words, not tags.
+  const tbl = INDEX.slice(INDEX.indexOf('var CHROME_I18N={'), INDEX.indexOf('function chromeHTML(pg){'));
+  assert.ok(!/<[a-z]/.test(tbl), 'CHROME_I18N holds markup');
+  // The country pages' mobile chrome: no Danish bottom bar room, the navigation as a row of its own.
+  assert.ok(/\.xc body\{padding-bottom:0\}/.test(INDEX) && /\.xc \.site-links\{display:flex;order:2;flex:1 0 100%/.test(INDEX), 'phone styles for html.xc');
+  // /nl/stroomprijs is wired everywhere a country page is.
+  assert.ok(SRV.includes("'nl/stroomprijs': 'zone'") && INDEX.includes("'/nl/stroomprijs':'nl/stroomprijs'") && SERVER.includes("'/nl/stroomprijs': '#nl/stroomprijs'") && INDEX.includes("h==='nl/stroomprijs'"), 'a route table lacks /nl/stroomprijs');
+  assert.ok(/nl: 'nl_NL'/.test(SRV), 'og:locale for nl');
 });
 
 test('structured data: each block is served only on the page it describes', () => {
@@ -1443,7 +1465,11 @@ const NET_SLUGS = {
 
 test('footer: four labelled groups, each a nav with a visible heading', () => {
   assert.ok(FOOTER.startsWith('<footer'), 'footer found');
-  assert.equal((INDEX.match(/<footer\b/g) || []).length, 1, 'exactly one footer');
+  // One <footer> in the markup. The country pages' footer is built by chromeHTML() inside the script (one more
+  // `<footer` in the text of the file, and none in the Danish markup); the script is cut away before counting.
+  const markup = INDEX.replace(/<script[\s\S]*?<\/script>/g, '');
+  assert.equal((markup.match(/<footer\b/g) || []).length, 1, 'exactly one footer');
+  assert.equal((INDEX.match(/<footer\b/g) || []).length, 2, 'the Danish footer plus the country footer chromeHTML() builds');
   const heads = [...FOOTER.matchAll(/<nav class="sf-col" aria-labelledby="(\w+)">\s*<p class="sf-h" id="\1">([^<]+)<\/p>/g)].map(m => m[2]);
   assert.deepEqual(heads, ['Priser', 'Smart hjem', 'Viden', 'Elpriser']);
   // The grouped columns, in the owner's order and with the owner's links.
@@ -1485,13 +1511,13 @@ test('footer: all 16 net companies and the four foreign-area pages sit inside ON
   }
   // The ten pilot cities sit between the nets and the foreign areas, in the order of the table (the table is the pilot's list).
   assert.deepEqual(inside.slice(16, 26), CITY_TABLE.map(c => '/elpris/' + c.slug), 'Byer: the ten cities, in the table\'s order, after the 16 nets');
-  assert.deepEqual(inside.slice(26), ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta'], 'Andre prisområder: Norden, Norge, Sverige, Finland — in that order, after the cities');
-  assert.equal(inside.length, 30, 'nothing else in there');
+  assert.deepEqual(inside.slice(26), ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs'], 'Andre prisområder: Norden, Norge, Sverige, Finland, Nederland — in that order, after the cities');
+  assert.equal(inside.length, 31, 'nothing else in there');
   assert.equal(new Set(inside).size, inside.length, 'no duplicate href in the details');
   for (const h of ['Vestdanmark (DK1)', 'Østdanmark (DK2)', 'Byer', 'Andre prisområder']) assert.ok(m[1].includes(h), `heading ${h}`);
   // Nothing outside the details links a net page: the visible footer stays short.
   const outside = footerHrefs(FOOTER.replace(m[0], ''));
-  assert.deepEqual(outside.filter(h => /^\/(dk[12]\/|elpris\/|norden|no\/strompris|sv\/elpris|fi\/sahkon-hinta)/.test(h)), [], 'net pages, city pages and foreign-area pages only behind the disclosure');
+  assert.deepEqual(outside.filter(h => /^\/(dk[12]\/|elpris\/|norden|no\/strompris|sv\/elpris|fi\/sahkon-hinta|nl\/stroomprijs)/.test(h)), [], 'net pages, city pages and foreign-area pages only behind the disclosure');
 });
 
 test('footer: both app stores are linked, rel=noopener, with the Danish button wording', () => {
@@ -1514,7 +1540,8 @@ test('footer: no link list is repeated, and the credits line keeps both external
   assert.deepEqual(dup, [], 'a link appears twice in the footer');
   // 38 since /download joined the Elpriser group ("Hent appen"); the two store buttons below it still point straight at the stores.
   // 48 since the ten city pages joined the disclosure ("Byer"); 49 since Dinel became the 15th net company; 50 with Ravdex.
-  assert.equal(hrefs.length, 50, `footer has ${hrefs.length} links: 18 in the groups and the apps, 16 nets, 10 cities, Norden/Norge/Sverige/Finland, and the two credits`);
+  // 51 with Nederland (/nl/stroomprijs) among the other price areas.
+  assert.equal(hrefs.length, 51, `footer has ${hrefs.length} links: 18 in the groups and the apps, 16 nets, 10 cities, Norden/Norge/Sverige/Finland/Nederland, and the two credits`);
   const legal = FOOTER.match(/<p class="sf-legal">([^]*?)<\/p>/);
   assert.ok(legal, 'credits line');
   assert.ok(/&copy; Elpriser\.org &mdash; Data fra <a href="https:\/\/www\.energidataservice\.dk"[^>]*rel="noopener">Energi Data Service<\/a> \(Energinet\)\. Åbne datasæt på <a href="https:\/\/huggingface\.co\/Elpriser"[^>]*rel="noopener">Hugging Face<\/a>\./.test(legal[1]), 'credits wording and links');
@@ -1552,12 +1579,15 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // v71: Dinel, the 15th net company, joined the footer's net list and NETS.
   // v72: Ravdex, the 16th.
   // v73: the Pris screen gained the PRIS_FC configuration (7 døgn, Usikkerhed) and /prognose draws it; three sentences that linked to /prognose say 7 døgn.
-  assert.ok(/homepage-ssr-v73/.test(ROUTES), 'homepage-ssr-v73');
+  // v74: the footer and the net dialog list Nederland (/nl/stroomprijs); the country pages swap the chrome for their own (CHROME_I18N).
+  assert.ok(/homepage-ssr-v74/.test(ROUTES), 'homepage-ssr-v74');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
   // (v8: the shared Pris block changed with PRIS_FC.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v8'/.test(ROUTES), 'zone-ssr-v8');
+  // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v9'/.test(ROUTES), 'zone-ssr-v9');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v4'/.test(ROUTES), 'city-ssr-v4');
+  // (v5: Nederland in the footer and the net dialog.)
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v5'/.test(ROUTES), 'city-ssr-v5');
 });
 
 
@@ -1584,7 +1614,7 @@ const tableOf = (src, name, re) => {
 test('legacy redirects: functions/[[path]].js and server.js carry the same table, and it is the expected one', () => {
   const prod = tableOf(ROUTES, 'functions/[[path]].js', /const LEGACY_REDIRECTS = \{([\s\S]*?)\};/);
   const dev = tableOf(SERVER, 'server.js', /const LEGACY_REDIRECTS = \{([\s\S]*?)\};/);
-  assert.deepEqual(prod, LEGACY, 'production table differs from the expected redirects (5 posts + 11 zone pages)');
+  assert.deepEqual(prod, LEGACY, 'production table differs from the expected redirects (5 posts + 11 zone pages, /nl straight to its own page)');
   assert.deepEqual(dev, prod, 'server.js (local dev) differs from production');
   // The handler answers 301 with a one-hour cache header, before any rendering.
   const i = ROUTES.indexOf('const legacyTo = LEGACY_REDIRECTS[url.pathname]');

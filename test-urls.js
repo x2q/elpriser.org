@@ -200,11 +200,11 @@ async function main() {
     check(!sitemap.includes(from), `nedlagt ${from}: ikke i sitemap`);
     check(!extra.includes(from), `nedlagt ${from}: ingen side linker til den`);
   }
-  // The eleven foreign zone pages became /no/strompris, /sv/elpris, /fi/sahkon-hinta and /norden (2026-10-17).
+  // The eleven foreign zone pages became /no/strompris, /sv/elpris, /fi/sahkon-hinta, /nl/stroomprijs and /norden (2026-10-17; /nl went straight to its own page when that existed).
   const zoneRetired = [
     ['/no1', '/no/strompris#no1'], ['/no2', '/no/strompris#no2'], ['/no3', '/no/strompris#no3'], ['/no4', '/no/strompris#no4'], ['/no5', '/no/strompris#no5'],
     ['/se1', '/sv/elpris#se1'], ['/se2', '/sv/elpris#se2'], ['/se3', '/sv/elpris#se3'], ['/se4', '/sv/elpris#se4'],
-    ['/fi', '/fi/sahkon-hinta'], ['/nl', '/norden#nl'],
+    ['/fi', '/fi/sahkon-hinta'], ['/nl', '/nl/stroomprijs'],
     ['/norge', '/no/strompris'], ['/sverige', '/sv/elpris'], ['/finland', '/fi/sahkon-hinta'],   // the first spelling of the three pages
   ];
   for (const [from, to] of zoneRetired) {
@@ -332,10 +332,12 @@ async function main() {
   check(!/\bpp7\b|Usikkerhed/.test(home.body.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), 'forside: ingen 7 døgn og ingen Usikkerhed på de andre sider');
 
   const se3 = await get('/sv/elpris');
-  check(!/hreflang=/.test(se3.body.replace(/<!--[\s\S]*?-->/g, '')), '/sv/elpris: ingen hreflang-klynge');
+  check(!/<link rel="alternate"/.test(se3.body.replace(/<!--[\s\S]*?-->/g, '')) && (se3.body.replace(/<script[\s\S]*?<\/script>/g, '').match(/hreflang=/g) || []).length === 1, '/sv/elpris: ingen hreflang-klynge (kun privatlivslinkets hreflang="da")');
   check(/<html lang="sv"/.test(se3.body), '/sv/elpris: html lang="sv"');
-  // The four foreign-area pages: own language, the canonical Pris screen drawn into the HTML, and only 2 and 5 døgn.
-  for (const [p, lang, unit] of [['/no/strompris', 'nb', 'øre'], ['/sv/elpris', 'sv', 'öre'], ['/fi/sahkon-hinta', 'fi', 'snt'], ['/norden', 'da', null]]) {
+  // The five foreign-area pages: own language, the canonical Pris screen drawn into the HTML, and only 2 and 5 døgn.
+  // The four country pages also wear their own chrome (a country navigation and a slim footer in their language):
+  // no net chip, app button, Danish menu, tab bar or net dialog.
+  for (const [p, lang, unit] of [['/no/strompris', 'nb', 'øre'], ['/sv/elpris', 'sv', 'öre'], ['/fi/sahkon-hinta', 'fi', 'snt'], ['/nl/stroomprijs', 'nl', 'cent'], ['/norden', 'da', null]]) {
     const r = p === '/sv/elpris' ? se3 : await get(p);
     const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<dialog[\s\S]*?<\/dialog>/g, '');
     const title = one(r.body, /<title>([^<]*)<\/title>/), desc = one(r.body, /<meta name="description" content="([^"]*)"/);
@@ -343,8 +345,13 @@ async function main() {
     check(new RegExp(`<html lang="${lang}"`).test(r.body), `${p}: html lang="${lang}"`);
     check((page.match(/<h1[ >]/g) || []).length === 1, `${p}: præcis én h1`);
     check(unit ? (/<div class="pris" data-period="2"/.test(page) && page.includes(`>${unit}/kWh</span>`) && !/kr\/kWh/.test(page.slice(page.indexOf('<main')))) : (page.match(/<tr id="/g) || []).length === 13, `${p}: ${unit ? 'Pris-skærmen er tegnet i HTML\'en' : 'tabellen har 13 områder'}`);
-    check(!/\b10 (døgn|dager|dage|dygn|vrk)/i.test(page), `${p}: ingen tekst om 10 døgn`);
+    check(!/\b10 (døgn|dager|dage|dygn|vrk|dagen)/i.test(page), `${p}: ingen tekst om 10 døgn`);
     check(sitemap.includes(p), `${p}: i sitemap`);
+    if (unit) {
+      const chrome = page.replace(/<!--[\s\S]*?-->/g, '');
+      check(/<html lang="[a-z]+" class="xc">/.test(r.body) && /<nav class="site-links" aria-label="[^"]+">(<a href="[^"]+"[^>]*>[^<]+<\/a>){5}<\/nav>/.test(chrome) && /<footer class="sf sf-x"/.test(chrome) && /<a href="\/privatliv" hreflang="da">/.test(chrome), `${p}: landenavigation og slank fod på sidens sprog`);
+      check(!/id="netChip|class="app-btn|class="tabbar|id="netDialog|Smart hjem|Hent appen|Hovedmenu|Alle netselskaber/.test(chrome), `${p}: ingen dansk netchip, app-knap, menu, mobilbar eller netdialog`);
+    }
   }
   console.log('\n9b. BYSIDER — /elpris/<by> (pilot)');
   // The ten pages are written by the function from functions/_cities.js (read here as data) and the live forecast.

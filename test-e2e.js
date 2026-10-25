@@ -159,7 +159,7 @@ async function startServer() {
   // EUR/MWh = 10 × (zone number) + the day's swing, at rate 10 → øre/kWh = EUR/MWh.
   const ZN = ['dk1', 'dk2', 'no1', 'no2', 'no3', 'no4', 'no5', 'se1', 'se2', 'se3', 'se4', 'fi', 'nl'];
   const nordicRequests = [];
-  await ctx.route('**/api/nordic*', route => {
+  const nordicRoute = route => {
     const zone = new URL(route.request().url()).searchParams.get('zone');
     nordicRequests.push(zone);
     const k = ZN.indexOf(zone);
@@ -169,7 +169,8 @@ async function startServer() {
       days: Array.from({ length: 10 }, (_, i) => ({
         date: new Date(base + (i - 1) * 86400000).toISOString().slice(0, 10), type: i < 3 ? 'actual' : 'forecast',
         prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: +(60 + k * 10 + Math.sin(h / 24 * 6.28) * 25 + i).toFixed(2) })) })) } });
-  });
+  };
+  await ctx.route('**/api/nordic*', nordicRoute);   // all thirteen zones, nl included (index 12: the Dutch page draws from it)
   const page = await ctx.newPage();
   page.setDefaultTimeout(5000);
   const pris = n => String(n.toFixed(2)).replace('.', ',');
@@ -189,6 +190,7 @@ async function startServer() {
     ['/no/strompris',                         'zone'],
     ['/sv/elpris',                       'zone'],
     ['/fi/sahkon-hinta',                       'zone'],
+    ['/nl/stroomprijs',                        'zone'],
     ['/norden',                        'norden'],
     ['/blog',                                    'blog'],
     ['/blog/elafgift-2028',                      'blog-elafgift-2028'],
@@ -234,7 +236,7 @@ async function startServer() {
   for (const url of ['/blog/elafgift-2028', '/blog/hvornaar-er-stroemmen-billigst',
                      '/blog/groennest-og-dyrest', '/blog/elafgift-og-spotpris', '/blog',
                      '/tariffer', '/automation', '/api',
-                     '/om-elpriser', '/download', '/prognose', '/dk1', '/dk2', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/norden']) {
+                     '/om-elpriser', '/download', '/prognose', '/dk1', '/dk2', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/norden']) {
     await test(`clean-URL: ${url} does NOT redirect to /#hash`, async () => {
       await page.goto(BASE + url);
       const state = await page.evaluate(() => ({
@@ -1095,6 +1097,74 @@ async function startServer() {
     assert.equal(await page.locator('main[data-page="start"] .pris').getAttribute('data-period'), '2', 'the front page still opens on 2 døgn');
   });
 
+  // The written summary ("Ugen i korte træk"): one card per period in the HTML, only the chosen one is shown.
+  const sumView = () => page.evaluate(() => {
+    const vis = [...document.querySelectorAll('main[data-page="prognose"] .pris-sum')].filter(e => e.getClientRects().length);
+    return vis.map(e => ({ heading: e.querySelector('.pris-dt').textContent, items: [...e.querySelectorAll('li')].map(li => li.textContent) }));
+  });
+  await test('prognose: the written summary sits between the chart and "Dag for dag", follows 2 → 5 → 7 døgn, and the header chip (area and net)', async () => {
+    await page.goto(BASE + '/prognose');
+    await page.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
+    const order = await page.evaluate(() => {
+      const m = document.querySelector('main[data-page="prognose"] .pris'), kids = [...m.children].map(c => c.className.split(' ')[0] + (c.classList.contains('pris-sum') ? ' ' + [...c.classList].find(x => /^pp\d/.test(x)) : ''));
+      return kids.join('|');
+    });
+    assert.match(order, /pris-right\|pris-days pp2\|pris-days pp5\|pris-days pp7\|pris-days$/, order);
+    const want = { 2: ['I dag og i morgen i korte træk', /^Sikkerhed: begge dage er sikre\.$/], 5: ['De næste 5 døgn i korte træk', /^Sikkerhed: /], 7: ['Ugen i korte træk', /^Sikkerhed: /] };
+    const heads = [];
+    for (const n of [2, 5, 7]) {
+      await page.locator(`.pris-period [data-pris-period="${n}"]`).click();
+      const v = await sumView();
+      assert.equal(v.length, 1, `${n}: exactly one summary is visible`);
+      assert.equal(v[0].heading, want[n][0]);
+      assert.ok(v[0].items.length >= 3 && v[0].items.length <= 5, `${n}: ${v[0].items.length} bullets`);
+      assert.match(v[0].items.at(-1), want[n][1]);
+      assert.ok(!/NaN|undefined|10 d/.test(v[0].items.join(' ')), v[0].items.join(' '));
+      heads.push(v[0].heading);
+    }
+    assert.equal(new Set(heads).size, 3);
+    const dk1 = (await sumView())[0].items.join('|');
+    await page.locator('#netChip').click();
+    await page.waitForSelector('#netDialog[open]');
+    await page.locator('#netDlgDK2 a', { hasText: /^Radius$/ }).click();
+    await page.waitForFunction(() => document.querySelector('main[data-page="prognose"] .pris')?.dataset.key === 'DK2|din|radius');
+    const radius = (await sumView())[0].items.join('|');
+    assert.notEqual(radius, dk1, 'the summary follows area and net (the numbers are Radius\'s all-in prices)');
+    await page.locator('#netChip').click();
+    await page.locator('#netDlgDK1 a[data-net=""]').click();
+    await page.waitForFunction(() => document.querySelector('main[data-page="prognose"] .pris')?.dataset.key === 'DK1|din|');
+    assert.equal((await sumView())[0].items.join('|'), dk1, 'back to DK1: the same summary again');
+    await page.evaluate(() => localStorage.clear());
+  });
+
+  await test('prognose: the written summary fits at 390 px in every period and is readable in dark mode', async () => {
+    for (const dark of [false, true]) {
+      const c = await browser.newContext({ viewport: dark ? { width: 1280, height: 800 } : { width: 390, height: 844 }, isMobile: !dark, hasTouch: !dark, colorScheme: dark ? 'dark' : 'light', bypassCSP: true });
+      await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
+      await c.route('**/api/forecast*', forecastRoute);
+      await c.route('**/prognose', prognoseRoute);
+      const p = await c.newPage();
+      await p.goto(BASE + '/prognose');
+      await p.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
+      for (const n of [7, 5, 2]) {
+        await p.locator(`.pris-period [data-pris-period="${n}"]`).click();
+        const m = await p.evaluate(() => {
+          const s = [...document.querySelectorAll('main[data-page="prognose"] .pris-sum')].find(e => e.getClientRects().length), r = s.getBoundingClientRect();
+          const lum = c => { const [a, b, d] = c.match(/\d+/g).map(Number); return (0.2126 * a + 0.7152 * b + 0.0722 * d) / 255; };
+          const li = s.querySelector('li');
+          return { sw: [document.documentElement.scrollWidth, innerWidth], box: [r.left, r.right], over: [...s.querySelectorAll('li')].some(l => l.scrollWidth > l.clientWidth + 1),
+            card: lum(getComputedStyle(s).backgroundColor), text: lum(getComputedStyle(li).color) };
+        });
+        assert.equal(m.sw[0], m.sw[1], `${n}: horizontal scroll ${m.sw.join(' vs ')}`);
+        assert.ok(m.box[0] >= 0 && m.box[1] <= m.sw[1], `${n}: the summary card is outside the screen`);
+        assert.ok(!m.over, `${n}: a bullet overflows`);
+        if (dark) assert.ok(m.card < 0.25 && m.text > 0.45, `${n}: dark card ${m.card} text ${m.text}`);
+        else assert.ok(m.card > 0.8 && m.text < 0.4, `${n}: light card ${m.card} text ${m.text}`);
+      }
+      await c.close();
+    }
+  });
+
   await test('prognose: a legacy period (10, "3–10") reads as 7; the arrow keys walk 2 → 5 → 7 → 2 round the pill; the page does not move to the tooltips', async () => {
     await page.goto(BASE + '/prognose');
     await page.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
@@ -1481,12 +1551,12 @@ async function startServer() {
   });
 
   await test('the foreign pages offer only 2 and 5 døgn: no 10-day wording, five day rows, 120 bars', async () => {
-    for (const [url, five] of [['/no/strompris', '5 døgn'], ['/sv/elpris', '5 dygn'], ['/fi/sahkon-hinta', '5 vrk']]) {
+    for (const [url, five] of [['/no/strompris', '5 døgn'], ['/sv/elpris', '5 dygn'], ['/fi/sahkon-hinta', '5 vrk'], ['/nl/stroomprijs', '5 dagen']]) {
       await page.goto(BASE + url);
       await page.waitForSelector('main[data-page="zone"] .pris');
       await page.locator('main[data-page="zone"] [data-pris-period="5"]').click();
       const t = await page.evaluate(() => document.querySelector('main[data-page="zone"]').innerText);
-      assert.ok(!/\b10 (døgn|dager|dygn|vrk)/i.test(t), `${url} mentions 10 days`);
+      assert.ok(!/\b10 (døgn|dager|dygn|vrk|dagen)/i.test(t), `${url} mentions 10 days`);
       assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pc[data-tip]').count(), 120);
       assert.equal(await page.locator('main[data-page="zone"] .pris-week tbody tr').count(), 5);
       assert.ok((await page.locator('main[data-page="zone"] .pris-card.pp5 .pris-ct').textContent()).endsWith(five));
@@ -1510,16 +1580,16 @@ async function startServer() {
     assert.equal(await page.locator('main[data-page="norden"] .nt tbody tr').count(), 13);
     assert.match(await page.locator('.nt-cap').textContent(), /DKK\/kWh uden moms, afgifter og nettariffer/);
     const hrefs = await page.locator('main[data-page="norden"] .nt tbody a').evaluateAll(a => a.map(x => x.getAttribute('href')));
-    assert.deepEqual(hrefs, ['/no/strompris#no1', '/no/strompris#no2', '/no/strompris#no3', '/no/strompris#no4', '/no/strompris#no5', '/sv/elpris#se1', '/sv/elpris#se2', '/sv/elpris#se3', '/sv/elpris#se4', '/fi/sahkon-hinta', '/dk1', '/dk2']);
+    assert.deepEqual(hrefs, ['/no/strompris#no1', '/no/strompris#no2', '/no/strompris#no3', '/no/strompris#no4', '/no/strompris#no5', '/sv/elpris#se1', '/sv/elpris#se2', '/sv/elpris#se3', '/sv/elpris#se4', '/fi/sahkon-hinta', '/nl/stroomprijs', '/dk1', '/dk2']);
     const no1 = await page.locator('#no1 td').allTextContents();
     assert.ok(no1.every(x => /^-?\d+,\d\d(–-?\d+,\d\d)?$/.test(x)), no1.join(' '));
     // EUR/MWh 70 + swing; rate 10 on the zone, DKK rate 10 on dk1 in this stub → kr = EUR/MWh / 100.
     assert.ok(parseFloat(no1[1].replace(',', '.')) > 0.2 && parseFloat(no1[1].replace(',', '.')) < 1.5);
-    assert.equal(await page.locator('#nl th a').count(), 0, 'NL has no page');
+    assert.equal(await page.locator('#nl th a').getAttribute('href'), '/nl/stroomprijs', 'NL has a page of its own, like the other countries');
     assert.equal(await page.locator('html').getAttribute('lang'), 'da');
   });
 
-  await test('the old zone addresses redirect (server.js mirrors production): /no2 → /no/strompris#no2 with NO2 selected, /nl → /norden#nl', async () => {
+  await test('the old zone addresses redirect (server.js mirrors production): /no2 → /no/strompris#no2 with NO2 selected, /nl → /nl/stroomprijs', async () => {
     await page.goto(BASE + '/no2');
     await page.waitForSelector('main[data-page="zone"] .pris');
     assert.equal(new URL(page.url()).pathname, '/no/strompris'); assert.equal(new URL(page.url()).hash, '#no2');
@@ -1534,13 +1604,13 @@ async function startServer() {
       await page.goto(BASE + from);
       assert.equal(new URL(page.url()).pathname, to, `${from} redirects to ${to}`);
     }
-    await page.goto(BASE + '/nl');
-    await page.waitForSelector('main[data-page="norden"] .nt tbody tr');
-    assert.equal(new URL(page.url()).pathname + new URL(page.url()).hash, '/norden#nl');
+    await page.goto(BASE + '/nl');   // straight to the Dutch page, not through /norden#nl
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    assert.equal(new URL(page.url()).pathname + new URL(page.url()).hash, '/nl/stroomprijs');
   });
 
   await test('the localised paths are routed: clean URL stays, hash tabs stay, a language folder alone is not a page', async () => {
-    for (const [url, dp] of [['/no/strompris', 'zone'], ['/sv/elpris', 'zone'], ['/fi/sahkon-hinta', 'zone']]) {
+    for (const [url, dp] of [['/no/strompris', 'zone'], ['/sv/elpris', 'zone'], ['/fi/sahkon-hinta', 'zone'], ['/nl/stroomprijs', 'zone']]) {
       await page.goto(BASE + url);
       await page.waitForSelector(`main[data-page="${dp}"].active .pris`);
       assert.equal(new URL(page.url()).pathname, url); assert.equal(new URL(page.url()).hash, '');
@@ -1560,15 +1630,17 @@ async function startServer() {
     await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no3');
     assert.equal(new URL(page.url()).hash, '#no3');
     await page.goto(BASE + '/#nl');
-    await page.waitForFunction(() => location.pathname === '/norden');
+    await page.waitForFunction(() => location.pathname === '/nl/stroomprijs');
   });
 
-  await test('footer and the net dialog link Norden, Norge, Sverige and Finland — and nothing links an old zone URL', async () => {
+  await test('footer and the net dialog link Norden, Norge, Sverige, Finland and Nederland — and nothing links an old zone URL', async () => {
     await page.goto(BASE + '/');
     await page.waitForSelector('main[data-page="start"].active');
     const foot = await page.locator('footer .sf-all .sf-nets > div:last-child a').evaluateAll(a => a.map(x => x.getAttribute('href')));
-    assert.deepEqual(foot, ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta']);
-    for (const url of ['/', '/dk1', '/automation', '/om-elpriser', '/blog', '/blog/groennest-og-dyrest', '/tariffer', '/api', '/no/strompris', '/norden']) {
+    assert.deepEqual(foot, ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs']);
+    const dlg = await page.locator('#netDialog .pd-links:not([id])').last().evaluate(el => [...el.querySelectorAll('a')].map(a => [a.getAttribute('href'), a.textContent]));
+    assert.deepEqual(dlg, [['/norden', 'Norden'], ['/no/strompris', 'Norge'], ['/sv/elpris', 'Sverige'], ['/fi/sahkon-hinta', 'Finland'], ['/nl/stroomprijs', 'Nederland']], 'the net dialog lists the same five');
+    for (const url of ['/', '/dk1', '/automation', '/om-elpriser', '/blog', '/blog/groennest-og-dyrest', '/tariffer', '/api', '/no/strompris', '/nl/stroomprijs', '/norden']) {
       await page.goto(BASE + url);
       await page.waitForSelector('main.active');
       const bad = await page.evaluate(() => [...document.querySelectorAll('a[href]')].map(a => a.getAttribute('href').split('#')[0].split('?')[0]).filter(h => /^\/(no[1-5]|se[1-4]|fi|nl)$/.test(h)));
@@ -1587,6 +1659,164 @@ async function startServer() {
     const vis = await p2.evaluate(() => { const r = document.getElementById('zt-no5').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1; });
     assert.ok(vis, 'the selected tab is scrolled into view');
     await ctx2.close();
+  });
+
+  // ── 9b. The country pages' chrome: header navigation and footer in the page's own language ──────────────────────
+  // server.js hands the browser the whole index.html, so this is the client side of the localisation (the same
+  // chromeHTML the server renders from; test-zone-pages.mjs covers the server's HTML through the real function).
+  const CHROME = {
+    '/no/strompris':   { lang: 'nb', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederland'], cur: 'Norge', menu: 'Hovedmeny', land: 'Land', privacy: 'Personvern (på dansk)' },
+    '/sv/elpris':      { lang: 'sv', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederländerna'], cur: 'Sverige', menu: 'Huvudmeny', land: 'Länder', privacy: 'Integritet (på danska)' },
+    '/fi/sahkon-hinta': { lang: 'fi', nav: ['Tanska', 'Norja', 'Ruotsi', 'Suomi', 'Alankomaat'], cur: 'Suomi', menu: 'Päävalikko', land: 'Maat', privacy: 'Tietosuoja (tanskaksi)' },
+    '/nl/stroomprijs': { lang: 'nl', nav: ['Denemarken', 'Noorwegen', 'Zweden', 'Finland', 'Nederland'], cur: 'Nederland', menu: 'Hoofdmenu', land: 'Landen', privacy: 'Privacy (in het Deens)' },
+  };
+  const DANISH_CHROME = /Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Mobilnavigation|Privatliv|Åbne datasæt|Alle guides|Forstå din elpris|Tariffer|Prognose$/m;
+  const chromeState = p => p.evaluate(() => {
+    const q = s => document.querySelector(s), r = el => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, w: b.width, h: b.height }; };
+    const links = [...document.querySelectorAll('.site-nav .site-links a')];
+    return {
+      lang: document.documentElement.lang, scroll: [document.documentElement.scrollWidth, innerWidth],
+      navText: links.map(a => a.textContent), navHref: links.map(a => a.getAttribute('href')),
+      navCur: links.filter(a => a.getAttribute('aria-current') === 'page').map(a => a.textContent),
+      navHeights: links.map(a => r(a).h), navVisible: links.map(a => r(a).r <= innerWidth + 1 && r(a).l >= -1),
+      menu: q('.site-links')?.getAttribute('aria-label'), logo: q('.site-logo')?.textContent.trim(), logoHref: q('.site-logo')?.getAttribute('href'),
+      chip: !!q('#netChip'), app: !!q('.app-btn'), tabbar: !!q('#tabBar'), dialog: !!q('#netDialog'), actions: !!q('.site-actions'),
+      headText: q('.site-nav').innerText, footText: q('footer').innerText,
+      footHeading: q('footer .sf-h')?.textContent, footLinks: [...document.querySelectorAll('footer .sf-chips a')].map(a => [a.textContent, a.getAttribute('href'), a.getAttribute('aria-current')]),
+      privacy: (a => a && [a.textContent, a.getAttribute('href'), a.getAttribute('hreflang')])(q('footer .sf-legal a[href="/privatliv"]')),
+      footers: document.querySelectorAll('footer').length, details: document.querySelectorAll('footer details').length,
+      navBottom: r(q('.site-nav')).h,
+      bodyPad: getComputedStyle(document.body).paddingBottom,
+    };
+  });
+  for (const [url, w] of Object.entries(CHROME)) {
+    for (const [vw, vh] of [[1280, 800], [390, 844]]) {
+      await test(`${url} at ${vw} px: header and footer are ${w.lang} — country navigation, no net chip/app button/tab bar/net dialog, slim footer, no overflow`, async () => {
+        const c = await browser.newContext({ viewport: { width: vw, height: vh }, bypassCSP: true, ...(vw < 600 ? { isMobile: true, hasTouch: true } : {}) });
+        await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
+        await c.route('**/api/nordic*', nordicRoute);
+        const p = await c.newPage();
+        await p.goto(BASE + url);
+        await p.waitForSelector('main[data-page="zone"] .pris');
+        const s = await chromeState(p);
+        assert.equal(s.lang, w.lang);
+        assert.deepEqual(s.navText, w.nav); assert.deepEqual(s.navHref, ['/dk1', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs']);
+        assert.deepEqual(s.navCur, [w.cur], 'the current country is marked aria-current');
+        assert.equal(s.menu, w.menu); assert.equal(s.logo, 'Elpriser'); assert.equal(s.logoHref, '/');
+        assert.deepEqual([s.chip, s.app, s.tabbar, s.dialog, s.actions], [false, false, false, false, false], 'no Danish net chip, app button, tab bar, net dialog or action row');
+        assert.ok(!/Smart hjem|Hent appen|DK1 ·/.test(s.headText), `header text: ${s.headText}`);
+        assert.ok(!DANISH_CHROME.test(s.footText), `footer text: ${s.footText}`);
+        assert.equal(s.footers, 1); assert.equal(s.details, 0, 'a slim footer: no disclosure of net companies');
+        assert.equal(s.footHeading, w.land);
+        assert.deepEqual(s.footLinks.map(x => x[0]), w.nav); assert.deepEqual(s.footLinks.map(x => x[1]), ['/dk1', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs']);
+        assert.deepEqual(s.footLinks.filter(x => x[2]).map(x => x[0]), [w.cur]);
+        assert.deepEqual(s.privacy, [w.privacy, '/privatliv', 'da']);
+        assert.match(s.footText, /© Elpriser\.org — .*ENTSO-E.*Energi Data Service.*Hugging Face/s);
+        assert.equal(s.scroll[0], s.scroll[1], `horizontal page scroll ${s.scroll.join(' vs ')}`);
+        assert.ok(s.navVisible.every(Boolean) || vw < 600, 'every country is inside the viewport on a wide screen');
+        if (vw < 600) {
+          assert.ok(s.navHeights.every(h => h >= 44), `tap targets ${s.navHeights.join(',')}`);
+          assert.equal(s.bodyPad, '0px', 'the Danish tab bar\'s room at the bottom is gone');
+          // the row scrolls on its own if it is wider than the screen; the page never does
+          const sc = await p.evaluate(() => { const n = document.querySelector('.site-links'); return [n.scrollWidth, n.clientWidth, n.getBoundingClientRect().right <= innerWidth + 1]; });
+          assert.ok(sc[2], 'the navigation row stays inside the screen');
+        }
+        // the Pris screen is still there and was not disturbed by the chrome swap
+        assert.ok(await p.locator('main[data-page="zone"] .pris-now').count() === 1);
+        await c.close();
+      });
+    }
+  }
+
+  await test('the country navigation works: a link leads to that country\'s page (its own chrome), Danmark leads to the Danish site with the Danish chrome back', async () => {
+    await page.goto(BASE + '/no/strompris');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    await page.locator('.site-nav .site-links a', { hasText: /^Sverige$/ }).click();
+    await page.waitForFunction(() => location.pathname === '/sv/elpris' && document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'se3');
+    assert.deepEqual((await chromeState(page)).navCur, ['Sverige']);
+    assert.equal((await chromeState(page)).menu, 'Huvudmeny', 'the new page has the Swedish chrome, not the Norwegian one');
+    await page.locator('footer .sf-chips a', { hasText: /^Nederländerna$/ }).click();
+    await page.waitForFunction(() => location.pathname === '/nl/stroomprijs' && document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'nl');
+    assert.equal((await chromeState(page)).menu, 'Hoofdmenu');
+    await page.locator('.site-nav .site-links a', { hasText: /^Denemarken$/ }).click();
+    await page.waitForFunction(() => location.pathname === '/dk1');
+    await page.waitForSelector('main[data-page="prices"].active');
+    const d = await chromeState(page);
+    assert.deepEqual([d.chip, d.app, d.tabbar, d.dialog], [true, true, true, true], 'the Danish site has its chip, app button, tab bar and dialog');
+    assert.equal(d.lang, 'da'); assert.deepEqual(d.navText, ['Pris', 'Smart hjem', 'Om']);
+    assert.ok(await page.evaluate(() => !document.documentElement.classList.contains('xc')));
+    // And the other way: the Danish net dialog links Nederland.
+    await page.locator('#netChip').click();
+    await page.locator('#netDialog a[href="/nl/stroomprijs"]').click();
+    await page.waitForFunction(() => location.pathname === '/nl/stroomprijs');
+  });
+
+  await test('tab switching still works with the localised chrome, and the chrome survives it unchanged', async () => {
+    await page.goto(BASE + '/no/strompris');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    const before = await chromeState(page);
+    await page.locator('#zt-no3').click();
+    await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no3');
+    await page.locator('main[data-page="zone"] [data-pris-period="5"]').click();
+    const after = await chromeState(page);
+    assert.deepEqual([after.navText, after.navCur, after.footLinks, after.menu, after.lang], [before.navText, before.navCur, before.footLinks, before.menu, before.lang]);
+    assert.equal(await page.locator('main[data-page="zone"] .pris').getAttribute('data-period'), '5');
+  });
+
+  await test('dark mode: the country header and footer follow the theme (dark surfaces, readable links, a marked current country)', async () => {
+    for (const url of Object.keys(CHROME)) {
+      const c = await browser.newContext({ viewport: { width: 1280, height: 800 }, colorScheme: 'dark', bypassCSP: true });
+      await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
+      await c.route('**/api/nordic*', nordicRoute);
+      const p = await c.newPage();
+      await p.goto(BASE + url);
+      await p.waitForSelector('main[data-page="zone"] .pris');
+      const m = await p.evaluate(() => {
+        const lum = col => { const [a, b, d] = col.match(/[\d.]+/g).slice(0, 3).map(Number); return (0.2126 * a + 0.7152 * b + 0.0722 * d) / 255; };
+        const cur = document.querySelector('.site-links a[aria-current]'), other = document.querySelector('.site-links a:not([aria-current])'), chip = document.querySelector('footer .sf-chips a[aria-current]'), chip2 = document.querySelector('footer .sf-chips a:not([aria-current])');
+        return { dark: document.documentElement.classList.contains('dark'), head: lum(getComputedStyle(document.querySelector('.site-nav')).backgroundColor), body: lum(getComputedStyle(document.body).backgroundColor),
+          other: lum(getComputedStyle(other).color), chipBg: lum(getComputedStyle(chip).backgroundColor), chipTx: lum(getComputedStyle(chip).color), chip2Tx: lum(getComputedStyle(chip2).color), chip2Bg: lum(getComputedStyle(chip2).backgroundColor),
+          legal: lum(getComputedStyle(document.querySelector('.sf-legal')).color), curColor: getComputedStyle(cur).color, otherColor: getComputedStyle(other).color };
+      });
+      assert.ok(m.dark && m.head < 0.25 && m.body < 0.25, `${url}: dark surfaces ${JSON.stringify(m)}`);
+      assert.ok(m.other > 0.4 && m.chip2Tx > 0.5 && m.chip2Bg < 0.25 && m.legal > 0.4, `${url}: readable on dark ${JSON.stringify(m)}`);
+      assert.ok(m.curColor !== m.otherColor, `${url}: the current country is told apart in the header`);
+      assert.ok(m.chipTx > 0.9 && m.chipBg < 0.6, `${url}: the current country's chip in the footer is a filled pill with white text ${JSON.stringify(m)}`);
+      await c.close();
+    }
+  });
+
+  await test('/nl/stroomprijs: Dutch Pris screen in cent, one zone and no tabs, Dutch period switch 2 ⇄ 5 dagen (120 bars, five rows), <html lang="nl">', async () => {
+    await page.goto(BASE + '/nl/stroomprijs');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    const z = await zoneNow();
+    assert.deepEqual(z.sel, []); assert.equal(z.key, 'nl'); assert.equal(z.lang, 'nl'); assert.equal(z.hash, '');
+    assert.equal(await page.locator('#zTabs [role="tab"]').count(), 0);
+    assert.equal(await page.title(), 'Stroomprijs vandaag en morgen, prognose 5 dagen vooruit');
+    assert.equal((await page.locator('main[data-page="zone"] h1').textContent()), 'Stroomprijs in Nederland: vandaag en prognose voor de komende 5 dagen');
+    assert.equal(await page.locator('main[data-page="zone"] .pris-u').textContent(), 'cent/kWh');
+    assert.match(await page.locator('main[data-page="zone"] .pris-label').textContent(), /^Stroomprijs nu · (zon|maan|dins|woens|donder|vrij|zater)dag om \d\d$/);
+    assert.match(await page.locator('main[data-page="zone"] .pris-hero .pris-cap').first().textContent(), /Spotprijs zonder btw, belastingen en netkosten/);
+    assert.equal(await page.locator('[data-pris-view]').count(), 0);
+    assert.deepEqual(await page.locator('main[data-page="zone"] .pris-period button').allTextContents(), ['2 dagen', '5 dagen']);
+    assert.equal(await page.locator('main[data-page="zone"] .pris-period [aria-selected="true"]').textContent(), '2 dagen');
+    // NL is index 12 in the stub: 60 + 12 × 10 = 180 EUR/MWh + swing; rate 10 → the figure is EUR/MWh in cent/kWh × 10 ÷ 10.
+    const price = parseFloat((await page.locator('main[data-page="zone"] .pris-now').textContent()).replace(',', '.'));
+    assert.ok(price > 140 && price < 230, `price ${price}`);
+    await page.locator('main[data-page="zone"] [data-pris-period="5"]').click();
+    assert.equal(await page.locator('main[data-page="zone"] .pris').getAttribute('data-period'), '5');
+    assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pc[data-tip]').count(), 120);
+    assert.equal(await page.locator('main[data-page="zone"] .pris-week tbody tr').count(), 5);
+    assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pris-ct').textContent(), 'Komende 5 dagen');
+    await page.locator('main[data-page="zone"] [data-pris-period="2"]').click();
+    assert.equal(await page.locator('main[data-page="zone"] .pris').getAttribute('data-period'), '2');
+    assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp2 .pc[data-tip]').count(), 48);
+    const list = await page.locator('#zList').textContent();
+    assert.match(list, /Nederland \(NL\): gem\. vandaag [\d,]+ cent\/kWh, gem\. morgen [\d,]+ cent\/kWh/);
+    const t = await page.evaluate(() => document.querySelector('main[data-page="zone"]').innerText);
+    assert.ok(!/NaN|undefined|\b10 d|\børe\b|\bsnt\b|døgn|dygn|vrk/.test(t), t.slice(0, 300));
+    await page.locator('main[data-page="zone"] .pris-card.pp2 .pris-plot').hover({ position: { x: 300, y: 80 } });
+    assert.match(await page.locator('main[data-page="zone"] .pris-card.pp2 .pris-tip').textContent(), /^(Vandaag|Morgen) om \d\d · [\d,]+ cent\/kWh$/);
   });
 
 

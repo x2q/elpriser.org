@@ -37,7 +37,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   ok(ps.length > 5000, 'Pris-blokken blev faktisk hentet ud', `${ps.length} tegn`);
   const pctx = { console, Date, Math };
   vm.createContext(pctx);
-  vm.runInContext(ps + '\nglobalThis.pris = prisHTML; globalThis.parts = prisParts; globalThis.panel = prisPanel; globalThis.days = prisDays;', pctx);
+  vm.runInContext(ps + '\nglobalThis.pris = prisHTML; globalThis.parts = prisParts; globalThis.panel = prisPanel; globalThis.days = prisDays; globalThis.summary = prisSummary; globalThis.ctx = prisCtx;', pctx);
   const pris = pctx.pris;
 
   // The numbers of the A-Desktop mock (N1, 14 Oct, 21:00).
@@ -243,8 +243,8 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   ok(/<p class="pris-cap">Spotpris inkl\. moms<\/p>/.test(pris(netFeed, D0, 21, { ...o, view: 'spot' })), 'spotpris uden charges: ren billedtekst');
 
 // ── One screen for every price area: language table, adapter, zone rendering ─────────────
-  const L = pctx.PRIS_I18N, langs = ['da', 'nb', 'sv', 'fi'];
-  ok(Object.keys(L).join() === langs.join(), 'PRIS_I18N har præcis da, nb, sv og fi', Object.keys(L).join());
+  const L = pctx.PRIS_I18N, langs = ['da', 'nb', 'sv', 'fi', 'nl'];
+  ok(Object.keys(L).join() === langs.join(), 'PRIS_I18N har præcis da, nb, sv, fi og nl', Object.keys(L).join());
   // Every key in every language, with the same shape and no empty text.
   const shape = v => Array.isArray(v) ? `array${v.length}` : typeof v;
   const keys = Object.keys(L.da);
@@ -253,7 +253,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     ok(have.length === keys.length && keys.every(k => k in L[lang]), `${lang}: samme nøgler som dansk`, keys.filter(k => !(k in L[lang])).concat(have.filter(k => !keys.includes(k))).join(','));
     ok(keys.every(k => shape(L[lang][k]) === shape(L.da[k])), `${lang}: samme form på hver nøgle`, keys.filter(k => shape(L[lang][k]) !== shape(L.da[k])).join(','));
     const flat = keys.flatMap(k => [].concat(L[lang][k]));
-    ok(flat.every(x => typeof x === 'string') && flat.filter(x => x === '').length === (lang === 'sv' ? 1 : 0), `${lang}: ingen tom tekst (kun svensk '' = ingen punktum efter dagstal)`);
+    ok(flat.every(x => typeof x === 'string') && flat.filter(x => x === '').length === (lang === 'sv' || lang === 'nl' ? 1 : 0), `${lang}: ingen tom tekst (kun svensk og hollandsk '' = ingen punktum efter dagstal)`);
     ok(L[lang].wd.length === 7 && L[lang].ws.length === 7 && L[lang].mon.length === 12 && L[lang].verdict.length === 3 && L[lang].tier.length === 3, `${lang}: 7 ugedage, 12 måneder, 3 niveauer`);
   }
   ok(langs.every(l => !/\b10\b/.test(JSON.stringify(L[l]))), 'ingen sprog nævner 10 døgn');
@@ -307,14 +307,45 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const tabs = pctx.prisZoneTabs('no/strompris', 'no2');
   ok((tabs.match(/role="tab"/g) || []).length === 5 && /href="#no2" data-zone="no2" aria-selected="true" tabindex="0">NO2<small>Kristiansand<\/small>/.test(tabs) && (tabs.match(/tabindex="-1"/g) || []).length === 4 && /role="tablist" aria-label="Prisområde"/.test(tabs), 'zone-fanerne: tablist, valgt fane har tabindex 0 og by');
   ok(pctx.prisZoneTabs('fi/sahkon-hinta', 'fi') === '' && /aria-label="Elområde"/.test(pctx.prisZoneTabs('sv/elpris', 'se3')), 'Finland har ingen faner; Sverige siger Elområde');
-  ok(pctx.prisHref('no5') === '/no/strompris#no5' && pctx.prisHref('fi') === '/fi/sahkon-hinta' && pctx.prisHref('dk2') === '/dk2' && pctx.prisHref('nl') === '', 'prisHref: landesidens anker, Finland uden, DK, NL ingen');
+  ok(pctx.prisHref('no5') === '/no/strompris#no5' && pctx.prisHref('fi') === '/fi/sahkon-hinta' && pctx.prisHref('dk2') === '/dk2' && pctx.prisHref('nl') === '/nl/stroomprijs', 'prisHref: landesidens anker, Finland og Holland uden anker, DK');
   ok(pctx.PRIS_COUNTRIES['no/strompris'].def === 'no1' && pctx.PRIS_COUNTRIES['sv/elpris'].def === 'se3' && pctx.PRIS_COUNTRIES['no/strompris'].zones.every(k => pctx.ZONES[k].lang === 'nb'), 'landenes startzone og sprog');
   ok(Object.values(pctx.ZONES).every(z => z.name && z.city && z.cur && z.rate > 0 && z.sub) && Object.keys(pctx.ZONES).length === 13, 'ZONES: 13 områder med navn, by, valuta, kurs og enhed');
+  ok(pctx.ZONES.nl.lang === 'nl' && pctx.ZONES.nl.sub === 'cent' && pctx.ZONES.nl.rate === 1 && pctx.PRIS_COUNTRIES['nl/stroomprijs'].def === 'nl' && pctx.PRIS_COUNTRIES['nl/stroomprijs'].zones.join() === 'nl', 'NL: hollandsk, cent, kurs 1, og landets eneste zone');
+  ok(Object.values(pctx.ZONES).every(z => z.lang in L) && Object.values(pctx.PRIS_COUNTRIES).every(c => c.lang in L), 'hver zone og hvert land peger på et sprog der findes');
+
+  // ── The country pages' chrome: CHROME_I18N has the same keys in all four languages, chromeHTML is the one template ──
+  {
+    const X = pctx.CHROME_I18N, cl = ['nb', 'sv', 'fi', 'nl'];
+    ok(Object.keys(X).join() === cl.join(), 'CHROME_I18N har præcis nb, sv, fi og nl (den danske chrome er index.html\'s egen markup)', Object.keys(X).join());
+    const ks = Object.keys(X.nb), cks = Object.keys(X.nb.cn);
+    for (const l of cl) {
+      ok(Object.keys(X[l]).join() === ks.join() && Object.keys(X[l].cn).join() === cks.join(), `${l}: chrome-nøgler som norsk`, Object.keys(X[l]).join());
+      ok(ks.every(k => k === 'cn' || (typeof X[l][k] === 'string' && X[l][k].length > 1)) && cks.every(k => typeof X[l].cn[k] === 'string' && X[l].cn[k].length > 2), `${l}: ingen tom chrome-tekst`);
+    }
+    ok(cks.join() === 'dk,no,sv,fi,nl' && Object.values(pctx.PRIS_COUNTRIES).every(c => cks.includes(c.cc)), 'landenavnene dækker Danmark og hvert landeside-cc');
+    // The words differ between the languages — a copy-pasted Norwegian table would pass every check above.
+    ok(new Set(cl.map(l => X[l].menu)).size === 4 && new Set(cl.map(l => X[l].privacy)).size === 4 && new Set(cl.map(l => X[l].land)).size === 4, 'menu, privatlivs- og landeord er forskellige på de fire sprog');
+    const html = pg => pctx.chromeHTML(pg);
+    for (const pg of Object.keys(pctx.PRIS_COUNTRIES)) {
+      const c = html(pg), C = pctx.PRIS_COUNTRIES[pg], x = X[C.lang];
+      const navLinks = [...c.nav.matchAll(/<a href="([^"]+)"([^>]*)>([^<]+)<\/a>/g)];
+      ok(navLinks.map(m => m[1]).join() === '/dk1,/no/strompris,/sv/elpris,/fi/sahkon-hinta,/nl/stroomprijs', `${pg}: landenavigationen er Danmark og de fire landesider, i den rækkefølge`, navLinks.map(m => m[1]).join());
+      ok(navLinks.map(m => m[3]).join() === Object.values(x.cn).join(), `${pg}: landenavnene er på ${C.lang}`, navLinks.map(m => m[3]).join());
+      ok(navLinks.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === '/' + pg && (c.nav.match(/aria-current/g) || []).length === 1, `${pg}: præcis den aktuelle side er aria-current`);
+      ok(c.nav.includes(`aria-label="${x.menu}"`) && c.home === x.home, `${pg}: menuens og logoets navne er på ${C.lang}`);
+      ok(c.foot.startsWith('<footer ') && (c.foot.match(/<footer/g) || []).length === 1 && c.foot.includes(`<p class="sf-h" id="sfLand">${x.land}</p>`) && (c.foot.match(/aria-current="page"/g) || []).length === 1, `${pg}: sidefoden har en landeliste med den aktuelle markeret`);
+      ok(c.foot.includes(`<a href="/privatliv" hreflang="da">${x.privacy}</a>`) && (c.foot.match(/hreflang/g) || []).length === 1, `${pg}: privatlivslinket peger på /privatliv med hreflang="da" og er mærket på ${C.lang}`);
+      ok(/&copy; Elpriser\.org &mdash; /.test(c.foot) && c.foot.includes('>ENTSO-E</a>') && c.foot.includes('>Energi Data Service</a>') && c.foot.includes('>Hugging Face</a>'), `${pg}: ophavsretslinjen med kilderne`);
+      const all = c.nav + c.foot;
+      ok(!/Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Mobilnavigation|Privatliv|Åbne datasæt|Alle guides|Forstå din elpris|id="netChip|class="app-btn|class="tabbar|<dialog/.test(all), `${pg}: ingen dansk chrome, ingen netchip, ingen app-knap`, (all.match(/Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Privatliv|Åbne datasæt/) || [])[0]);
+      ok(/^<footer class="sf sf-x" data-pg="[^"]+">/.test(c.foot) && !/\$\{|undefined|NaN/.test(all), `${pg}: ingen skabelonrester`);
+    }
+  }
 
   // ── /prognose: the SAME screen with a configuration (PRIS_FC) ──────────────────────────────────────────────
   const STD = pctx.PRIS_STD, FC = pctx.PRIS_FC;
-  ok(JSON.stringify(STD) === '{"periods":[2,5],"def":2,"days":10,"unc":false}' && JSON.stringify(FC) === '{"periods":[2,5,7],"def":7,"days":7,"unc":true}',
-     'PRIS_STD er 2|5 (åbner på 2, ti dage som tekst) og PRIS_FC er 2|5|7 (åbner på 7, syv dage, Usikkerhed)', JSON.stringify([STD, FC]));
+  ok(JSON.stringify(STD) === '{"periods":[2,5],"def":2,"days":10,"unc":false}' && JSON.stringify(FC) === '{"periods":[2,5,7],"def":7,"days":7,"unc":true,"summary":true}',
+     'PRIS_STD er 2|5 (åbner på 2, ti dage som tekst, intet resumé) og PRIS_FC er 2|5|7 (åbner på 7, syv dage, Usikkerhed, resumé)', JSON.stringify([STD, FC]));
   // The period value: 10 is the longest period the page offers (5 elsewhere, 7 on /prognose); unreadable is the page's default.
   const pp = (cfg, ...vs) => vs.map(v => pctx.prisPeriod(v, cfg)).join();
   ok(pp(STD, 2, '2', 5, '5', 10, '10', '3–10', '3-10', 7, undefined, null, '', 'x', 1, 25) === '2,2,5,5,5,5,5,5,5,2,2,2,2,2,2', 'prisPeriod på de almindelige sider: 2 og 5; 10 og 7 læses som 5; resten som 2', pp(STD, 2, '2', 5, '5', 10, '10', '3–10', '3-10', 7, undefined, null, '', 'x', 1, 25));
@@ -365,6 +396,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const stripped = pris(seven, D0, 21, { ...FO, period: 5 })
     .replace(/<button type="button" role="tab" aria-selected="\w+" data-pris-period="7">[^<]*<\/button>/, '')
     .replace(/<section class="pris-card pp7"[\s\S]*?<\/section>/, '')
+    .replace(/<section class="pris-days pris-sum pp\d"[\s\S]*?<\/section>/g, '')
     .replace(/<div class="pris-tiles pp7">(?:<div class="pris-tile">.*?<\/div><\/div>)+<\/div>/, '')
     .replace('<th scope="col">Usikkerhed</th>', '').replace(/<td>(?:—|Lav|Middel|Høj)<\/td><\/tr>/g, '</tr>').replace(/<tr class="r7">/g, '<tr class="r10">');
   ok(stripped === common, 'tager man det /prognose tilføjer væk, er skærmen tegn for tegn den fælles', stripped === common ? '' : `${stripped.length} vs ${common.length}`);
@@ -372,6 +404,69 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const f4 = pris(feed.slice(0, 4), D0, 21, FO);
   ok((f4.slice(f4.indexOf('pris-card pp7'), f4.indexOf('pris-tiles pp2')).match(/<span class="pc[ "]/g) || []).length === 96 && !/NaN|undefined|Infinity/.test(f4) && (f4.match(/<tr class="r\d+"><th/g) || []).length === 4, 'med fire døgn tegnes fire døgn og ingen NaN');
   ok(Object.values(pctx.PRIS_I18N).every(l => /^7 /.test(l.p7)) && pctx.PRIS_I18N.da.p7 === '7 døgn', 'p7 findes på alle fire sprog');
+
+  // ── prisSummary: "Ugen i korte træk" — bullets from the days already drawn ──
+  {
+    const mk = (date, fn, type = 'forecast') => ({ date, type, prices: Array.from({ length: 24 }, (_, hour) => ({ hour, price: fn(hour) })) });
+    const sum = (fd, p, cfg = FC) => { const a = pctx.days(fd, D0, cfg.days); return pctx.summary(a, p, cfg, pctx.ctx({}, a)); };
+    const bul = h => [...h.matchAll(/<li><strong>([^<]*):<\/strong> ([^<]*)<\/li>/g)].map(m => `${m[1]}: ${m[2]}`);
+    const head = h => (h.match(/<p class="pris-dt">([^<]*)<\/p>/) || [])[1];
+    // 14 Oct 2026 is a Wednesday. Every day dips at 13 except Sat/Sun (dip at 03); level per day = k[i].
+    const k = [1.0, 1.2, 0.8, 1.1, 1.5, 0.9, 1.3];
+    const wk = Array.from({ length: 7 }, (_, i) => mk(nextDate(i), hh => {
+      const we = i === 3 || i === 4;   // lør 17 and søn 18 ... (D+3, D+4)
+      return +(k[i] * ((we ? hh === 3 : hh === 13) ? 0.5 : 1.5) + hh * 0.001).toFixed(4);
+    }, i < 2 ? 'actual' : 'forecast'));
+    const s7 = sum(wk, 7), b7 = bul(s7);
+    ok(head(s7) === 'Ugen i korte træk' && b7.length === 4 && /^pris-days pris-sum pp7$/.test((s7.match(/class="([^"]*)"/) || [])[1]), 'resumé 7 døgn: overskrift og fire punkter', s7);
+    ok(b7[0] === 'Billigste dag: fredag (0,41–1,22 kr/kWh)', 'billigste dag er fredag (laveste dagsgennemsnit)', b7[0]);
+    ok(b7[1] === 'Dyreste dag: søndag (0,75–2,27 kr/kWh)', 'dyreste dag er søndag, interval med decimalkomma og kr/kWh', b7[1]);
+    ok(b7[2] === 'Bedste tid at bruge strøm: hverdage kl. 13–14, hvor prisen oftest er lavest.', 'bedste tid: kl. 13–14 på de fem hverdage af syv (≥ 60 %, ingen weekenddag) hedder "hverdage"', b7[2]);
+    ok(b7[3] === 'Sikkerhed: de næste to dage er sikre. Fra og med lørdag er prognosen mere usikker, og mest usikker fra og med tirsdag.', 'sikkerhed: to dage sikre, usikker fra D+3 (lørdag), mest usikker fra D+6 (tirsdag)', b7[3]);
+    const s2 = sum(wk, 2), s5 = sum(wk, 5);
+    ok(head(s2) === 'I dag og i morgen i korte træk' && head(s5) === 'De næste 5 døgn i korte træk', 'overskrifter pr. periode');
+    ok(bul(s2)[0].startsWith('Billigste dag: i dag (') && bul(s2)[1].startsWith('Dyreste dag: i morgen (') && bul(s2).at(-1) === 'Sikkerhed: begge dage er sikre.', '2 døgn: i dag / i morgen og "begge dage er sikre"', bul(s2).join(' | '));
+    ok(bul(s5).at(-1) === 'Sikkerhed: de næste to dage er sikre. Fra og med lørdag er prognosen mere usikker.', '5 døgn nævner ikke "mest usikker"', bul(s5).at(-1));
+    // hver dag / hverdage
+    const flat13 = Array.from({ length: 7 }, (_, i) => mk(nextDate(i), hh => +((hh === 13 ? 0.5 : 1.5) + i * 0.1).toFixed(4)));
+    ok(bul(sum(flat13, 7))[2] === 'Bedste tid at bruge strøm: hver dag kl. 13–14, hvor prisen oftest er lavest.', '"hver dag" når alle dage har samme billigste time');
+    ok(bul(sum(flat13.slice(0, 5), 5))[2].includes('hver dag kl. 13–14'), 'fem dage, samme time hver dag');
+    const wkdays = Array.from({ length: 7 }, (_, i) => mk(nextDate(i), hh => +(((i === 3 || i === 4) ? hh === 3 : hh === 13) ? 0.5 : 1.5).toFixed(4) + i * 0.01));
+    ok(/de fleste dage kl\. 13–14/.test(bul(sum(Array.from({ length: 7 }, (_, i) => mk(nextDate(i), hh => (hh === (i === 4 ? 3 : 13) ? 0.5 : 1.5) + i * 0.01)), 7))[2]), '"de fleste dage" når ≥ 60 % har tiden men også en weekenddag er med');
+    // the 60 % line: 2 of 5 days (40 %) is not enough, 3 of 5 (60 %) is
+    const dip = n => Array.from({ length: 5 }, (_, i) => mk(nextDate(i), hh => (hh === (i < n ? 13 : 3 + i) ? 0.5 : 1.5) + i * 0.001));
+    ok(/^Bedste tid at bruge strøm: lavest /.test(bul(sum(dip(2), 5)).find(x => /^Bedste/.test(x))) && /^Bedste tid at bruge strøm: (hverdage|de fleste dage) kl\. 13–14/.test(bul(sum(dip(3), 5)).find(x => /^Bedste/.test(x))), '60 %-grænsen: 2 af 5 dage er for lidt, 3 af 5 er nok');
+    // under 60 %: the cheapest window of the whole period, with its day
+    const spread = Array.from({ length: 5 }, (_, i) => mk(nextDate(i), hh => +((hh === 2 + i * 4 ? 0.4 + i * 0.01 : 1.5)).toFixed(4)));
+    ok(bul(sum(spread, 5)).find(x => /^Bedste/.test(x)) === 'Bedste tid at bruge strøm: lavest i dag kl. 02–03 (0,40 kr/kWh).', 'spredt billigste time: perioden samlet billigste vindue med dag', bul(sum(spread, 5)).join(' | '));
+    // tie on average goes to the earlier day
+    const tie = [mk(nextDate(0), () => 1), mk(nextDate(1), () => 2), mk(nextDate(2), () => 1), mk(nextDate(3), () => 2)];
+    const bt = bul(sum(tie, 5));
+    ok(bt[0].startsWith('Billigste dag: i dag (') && bt[1].startsWith('Dyreste dag: i morgen ('), 'lige dagsgennemsnit: den tidligste dag vinder', bt.join(' | '));
+    // flat: identical days and one day only
+    const flat = sum(Array.from({ length: 4 }, (_, i) => mk(nextDate(i), () => 1.5)), 5);
+    ok(bul(flat)[0] === 'Prisniveau: næsten ens alle dage (1,50–1,50 kr/kWh)' && !/Billigste/.test(flat), 'helt ens dage: ét punkt "Prisniveau" i stedet for billigste/dyreste', bul(flat)[0]);
+    const one = sum([mk(D0, () => 1, 'actual')], 7);
+    ok(bul(one)[0] === 'Prisniveau: i dag (1,00–1,00 kr/kWh)' && !/Sikkerhed/.test(one) && !/NaN|undefined/.test(one), 'ét døgn: kun det der findes, ingen sikkerhedslinje');
+    // negative prices are said plainly
+    const neg = sum([mk(nextDate(0), hh => hh < 6 ? -0.2 : 1), mk(nextDate(1), () => -0.3), mk(nextDate(2), () => 1.2)], 5);
+    ok(bul(neg)[0] === 'Billigste dag: i morgen (negative priser hele dagen)' && bul(neg).join().includes('negative priser') && !/-0,|–-/.test(neg), 'negative priser siges rent ud, ikke som et forkert interval', bul(neg).join(' | '));
+    const part = sum([mk(nextDate(0), hh => hh < 6 ? -0.2 : 1), mk(nextDate(1), () => 5)], 2);
+    ok(/^Billigste dag: i dag \(negative priser i nogle timer, op til 1,00 kr\/kWh\)/.test(bul(part)[0]), 'delvis negative priser', bul(part).join(' | '));
+    // already-published tomorrow: the uncertain stretch starts later (same rule as the column plus types)
+    const real4 = wk.map((d, i) => ({ ...d, type: i < 4 ? 'actual' : 'forecast' }));
+    ok(bul(sum(real4, 7)).at(-1).startsWith('Sikkerhed: de næste tre dage er sikre. Fra og med søndag er prognosen mere usikker'), 'faktiske priser flytter usikkerheden senere', bul(sum(real4, 7)).at(-1));
+    // short feed (hole), holes in a day, empty
+    const short = sum(wk.slice(0, 3), 7);
+    ok(!/NaN|undefined|Infinity/.test(short) && bul(short).at(-1) === 'Sikkerhed: alle viste dage er sikre.' && head(short) === 'Ugen i korte træk', 'kort feed: kun det der findes, alle viste dage er sikre', bul(short).join(' | '));
+    const holes = sum([mk(nextDate(0), hh => hh < 12 ? null : 1), mk(nextDate(1), hh => hh % 2 ? null : 2)], 2);
+    ok(!/NaN|undefined|null/.test(holes) && bul(holes).length >= 3, 'timer uden pris springes over');
+    ok(sum([], 7) === '' && sum([mk(nextDate(0), () => null)], 7) === '' && sum([mk(nextDate(2), () => 1)], 7) === '', 'tomt eller uden priser: intet kort');
+    // only the configuration that asks for it draws it; the zone screen never does
+    ok(sum(wk, 7, STD) === '' && !/pris-sum/.test(pris(feed, D0, 21, o)) && /pris-sum/.test(f7), 'PRIS_STD tegner intet resumé; PRIS_FC gør');
+    ok((f7.match(/<section class="pris-days pris-sum pp\d"/g) || []).length === 3 && f7.indexOf('pris-sum') < f7.indexOf('class="pris-days"') && f7.indexOf('pris-sum pp7') > f7.indexOf('pris-tiles pp7'), 'tre resuméer (2/5/7) mellem kortene og "Dag for dag"');
+    ok(!/10 (døgn|dage)|NaN|undefined/.test(f7) && [2, 5, 7].every(p => bul(sum(wk, p)).length >= 3 && bul(sum(wk, p)).length <= 5), '2/5/7 døgn: 3–5 punkter, ingen 10 dage/NaN');
+  }
 
   // ── What the old curve's tests guarded, now for the screen ────────────────────────────────────────────────
   const flatAx = pctx.prisAxis([1, 1, 1], 1);

@@ -1,0 +1,149 @@
+<!--@@header@@-->
+<header class="site-nav">
+  <div class="site-nav-inner">
+    <a href="/" class="site-logo" aria-label="elpriser.org forside"><span class="mark"><svg width="16" height="16" viewBox="0 0 512 512" aria-hidden="true"><polygon points="294,60 150,290 232,290 206,452 374,206 278,206 304,100" fill="#fff"/></svg></span>Elpriser</a>
+    <nav class="site-links" aria-label="Hovedmenu">
+      <a href="/" data-nav="pris">Pris</a>
+      <a href="/automation" data-nav="automation">Smart hjem</a>
+      <a href="/om-elpriser" data-nav="om">Om</a>
+    </nav>
+    <div class="site-actions">
+      <button type="button" class="chip-btn" id="netChip" onclick="openNetDialog()" aria-haspopup="dialog" aria-label="Netselskab og indstillinger">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+        <span><span class="nc-long" id="netChipLong">DK1 · Vestdanmark</span><span class="nc-short" id="netChipShort">DK1 · Vest</span></span>
+      </button>
+      <a href="/download" class="app-btn">Hent appen</a>
+    </div>
+  </div>
+</header>
+<!--@@tabbar@@-->
+<nav class="tabbar" id="tabBar" aria-label="Mobilnavigation">
+  <a href="/" data-tab="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg>Pris</a>
+  <a href="/automation" data-tab="/automation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Smart hjem</a>
+</nav>
+<!--@@footer@@-->
+<footer class="sf">
+  <div class="sf-in">
+    <div class="sf-cols">
+      <nav class="sf-col" aria-labelledby="sfPriser">
+        <p class="sf-h" id="sfPriser">Priser</p>
+        <ul class="sf-l">
+          <li><a href="/">Elpris i dag</a></li>
+          <li><a href="/dk1">DK1 Vest</a></li>
+          <li><a href="/dk2">DK2 Øst</a></li>
+          <li><a href="/prognose">Prognose</a></li>
+          <li><a href="/tariffer">Tariffer</a></li>
+        </ul>
+      </nav>
+      <nav class="sf-col" aria-labelledby="sfHjem">
+        <p class="sf-h" id="sfHjem">Smart hjem</p>
+        <ul class="sf-l">
+          <li><a href="/automation">Smart hjem</a></li>
+          <li><a href="/shelly-tariff">Shelly Live Tariff</a></li>
+          <li><a href="/api">Åbent API</a></li>
+        </ul>
+      </nav>
+      <nav class="sf-col" aria-labelledby="sfViden">
+        <p class="sf-h" id="sfViden">Viden</p>
+        <ul class="sf-l">
+          <li><a href="/om-elpriser">Forstå din elpris</a></li>
+          <li><a href="/blog/elafgift-2028">Elafgift 2028</a></li>
+          <li><a href="/blog/elafgift-og-spotpris">Elafgift og spotpris</a></li>
+          <li><a href="/blog/hvornaar-er-stroemmen-billigst">Hvornår er strømmen billigst?</a></li>
+          <li><a href="/blog/groennest-og-dyrest">Grønnest og dyrest</a></li>
+          <li><a href="/blog">Alle guides →</a></li>
+        </ul>
+      </nav>
+      <nav class="sf-col" aria-labelledby="sfOm">
+        <p class="sf-h" id="sfOm">Elpriser</p>
+        <ul class="sf-l">
+          <li><a href="/privatliv">Privatliv</a></li>
+          <li><a href="/download">Hent appen</a></li>
+        </ul>
+        <div class="sf-apps">
+          <a href="https://apps.apple.com/dk/app/id6820474476" rel="noopener">Hent til iPhone og iPad<span class="vh"> i App Store</span></a>
+          <a href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener">Hent til Android<span class="vh"> i Google Play</span></a>
+        </div>
+      </nav>
+    </div>
+    <details class="sf-all">
+      <summary><span>Alle netselskaber og prisområder</span><i class="sf-chev" aria-hidden="true"></i></summary>
+      <nav class="sf-nets" aria-label="Netselskaber">
+        <div>
+          <p class="sf-h">Vestdanmark (DK1)</p>
+          <ul class="sf-chips">
+            <li><a href="/dk1/n1">N1</a></li>
+            <li><a href="/dk1/trefor">Trefor</a></li>
+            <li><a href="/dk1/konstant">Konstant</a></li>
+            <li><a href="/dk1/dinel">Dinel</a></li>
+            <li><a href="/dk1/vores-elnet">Vores Elnet</a></li>
+            <li><a href="/dk1/ravdex">Ravdex</a></li>
+            <li><a href="/dk1/rah-net">RAH Net</a></li>
+            <li><a href="/dk1/elvaerk">Elværk</a></li>
+            <li><a href="/dk1/nord-energi">Nord Energi</a></li>
+            <li><a href="/dk1/noe-net">NOE Net</a></li>
+            <li><a href="/dk1/elnet-midt">Elnet Midt</a></li>
+            <li><a href="/dk1/flow-elnet">Flow Elnet</a></li>
+            <li><a href="/dk1/lnet">LNet</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="sf-h">Østdanmark (DK2)</p>
+          <ul class="sf-chips">
+            <li><a href="/dk2/cerius">Cerius</a></li>
+            <li><a href="/dk2/trefor-ost">Trefor Øst</a></li>
+            <li><a href="/dk2/radius">Radius</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="sf-h">Byer</p>
+          <ul class="sf-chips">
+            <li><a href="/elpris/silkeborg">Silkeborg</a></li>
+            <li><a href="/elpris/svendborg">Svendborg</a></li>
+            <li><a href="/elpris/viborg">Viborg</a></li>
+            <li><a href="/elpris/aarhus">Aarhus</a></li>
+            <li><a href="/elpris/odense">Odense</a></li>
+            <li><a href="/elpris/aalborg">Aalborg</a></li>
+            <li><a href="/elpris/esbjerg">Esbjerg</a></li>
+            <li><a href="/elpris/kolding">Kolding</a></li>
+            <li><a href="/elpris/koebenhavn">København</a></li>
+            <li><a href="/elpris/roskilde">Roskilde</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="sf-h">Andre prisområder</p>
+          <ul class="sf-chips">
+            <li><a href="/norden">Norden</a></li>
+            <li><a href="/no/strompris">Norge</a></li>
+            <li><a href="/sv/elpris">Sverige</a></li>
+            <li><a href="/fi/sahkon-hinta">Finland</a></li>
+            <li><a href="/nl/stroomprijs">Nederland</a></li>
+          </ul>
+        </div>
+      </nav>
+    </details>
+    <p class="sf-legal">&copy; Elpriser.org &mdash; Data fra <a href="https://www.energidataservice.dk" target="_blank" rel="noopener">Energi Data Service</a> (Energinet). Åbne datasæt på <a href="https://huggingface.co/Elpriser" target="_blank" rel="noopener">Hugging Face</a>.</p>
+  </div>
+</footer>
+<!--@@dialog@@-->
+<dialog id="netDialog" class="pris-dialog" aria-labelledby="netDialogTitle">
+  <div class="pd-head">
+    <h2 id="netDialogTitle">Netselskab og indstillinger</h2>
+    <button type="button" class="pd-x" onclick="closeNetDialog()" aria-label="Luk"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="pd-body">
+    <div class="text-center mt-8">
+      <button id="gpsBtn" onclick="detectLocation()" class="gps-light">
+        <svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="gpsText">Find dit netselskab automatisk</span>
+      </button>
+      <div id="gpsForget" style="display:none" class="mt-2">
+        <button type="button" onclick="forgetNetPick()" class="text-xs text-gray-400 dark:text-gray-500 underline hover:text-gray-600 dark:hover:text-gray-300">Glem mit netselskab</button>
+      </div>
+    </div>
+    <div><p class="pd-gt">Vestdanmark · DK1</p><div class="pd-links" id="netDlgDK1"></div></div>
+    <div><p class="pd-gt">Østdanmark · DK2</p><div class="pd-links" id="netDlgDK2"></div></div>
+    <div><p class="pd-gt">Andre prisområder</p><div class="pd-links"><a href="/norden">Norden</a><a href="/no/strompris">Norge</a><a href="/sv/elpris">Sverige</a><a href="/fi/sahkon-hinta">Finland</a><a href="/nl/stroomprijs">Nederland</a></div></div>
+    <p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p>
+  </div>
+</dialog>
