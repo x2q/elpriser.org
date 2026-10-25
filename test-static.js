@@ -272,16 +272,16 @@ test('server: every top-level piece the renderer calls still exists', () => {
   // so the presence of each one is asserted directly.
   const SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const required = [
-    'var ZONES', 'var PRIS_I18N', 'var PRIS_COUNTRIES', 'const ZONE_SSR_VERSION', 'const CITY_SSR_VERSION', 'function renderCachedPage(', 'function cityHTML(', 'function prisScreen(', 'function fetchNetForecast(',
+    'var ZONES', 'var PRIS_I18N', 'var PRIS_COUNTRIES', 'var PRIS_STD', 'var PRIS_FC', 'const ZONE_SSR_VERSION', 'const CITY_SSR_VERSION', 'const PROGNOSE_SSR_VERSION', 'function renderCachedPage(', 'function cityHTML(', 'function prisScreen(', 'function fetchNetForecast(',
     'function zoneToPrisDays(', 'function prisZoneTabs(', 'function prisZoneList(', 'function prisNordenHTML(',
-    'function fcChartHTML(', 'function buildSitemap(',
+    'function buildSitemap(',
     'const CONTENT_LASTMOD', 'const SITEMAP_URLS',
   ];
   const missing = required.filter(r => !SRC.includes(r));
   assert.deepEqual(missing, [], `functions/[[path]].js is missing: ${missing.join(', ')}`);
 
   // And nothing may be referenced that is no longer defined.
-  for (const name of ['zoneToPrisDays', 'prisZoneTabs', 'prisZoneList', 'prisNordenHTML', 'renderCachedPage', 'cityHTML', 'prisScreen', 'fetchNetForecast', 'withNetChip', 'fcChartHTML']) {
+  for (const name of ['zoneToPrisDays', 'prisZoneTabs', 'prisZoneList', 'prisNordenHTML', 'renderCachedPage', 'cityHTML', 'prisScreen', 'fetchNetForecast', 'withNetChip']) {
     const called = new RegExp(`[^a-zA-Z.]${name}\\s*\\(`).test(
       SRC.slice(SRC.indexOf('async function renderHomepage')));
     const defined = SRC.includes(`function ${name}(`);
@@ -510,46 +510,55 @@ test('prices: nothing prints a minus in front of a zero', () => {
   assert.equal(ctx.n(-0.6, 0), '-1'); assert.equal(ctx.n(-1.25, 2), '-1,25'); assert.equal(ctx.n(3.456, 1), '3,5');
 });
 
-test('/prognose: curve above the heading, server-drawn, redrawn from the table\'s data', () => {
-  const main = INDEX.slice(INDEX.indexOf('data-page="prognose"'), INDEX.indexOf('id="fcTableWrapper"'));
-  assert.ok(main.indexOf('id="prognoseForecastWrap"') > 0 && main.indexOf('id="prognoseForecastWrap"') < main.indexOf('class="page-title"'),
-    'the /prognose chart is not above the page heading');
-  assert.ok(/<div id="prognoseForecast"><!--SSR_PROGNOSE_CHART--><\/div>/.test(INDEX), 'no server placeholder for the chart');
-  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
-  assert.ok(/'\/prognose'\) opts\.forecastChart = true/.test(SRV) &&
-            /html\.replace\('<!--SSR_PROGNOSE_CHART-->', fcChartHTML\(/.test(SRV), 'the server does not draw the /prognose chart');
-  // The server draws the page's default view; it must be what the dropdowns default to.
-  assert.ok(/<option value="DK1">DK1 Vest<\/option>/.test(INDEX.slice(INDEX.indexOf('id="fcArea"'))) &&
-            /<option value="inkl_alt" selected>/.test(INDEX.slice(INDEX.indexOf('id="fcMode"'))),
-    '/prognose no longer defaults to DK1 inkl alt — update the server-drawn chart to match');
-  assert.ok(/api\/forecast\?area=DK1&mode=inkl_alt/.test(SRV.slice(SRV.indexOf('if (opts.forecastChart)'))), 'server chart is not DK1 inkl alt');
-  assert.ok(/if\(!days\.length\)return;\n  renderPrognoseForecast\(days\);/.test(INDEX), 'the chart is not redrawn from the table\'s data');
-  const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
-  assert.ok(/#prognoseForecast\{min-height|,#prognoseForecast\{min-height/.test(style), 'no reserved height for the /prognose chart');
+test('/prognose: the canonical Pris screen with PRIS_FC, a head above it, two text blocks below — and none of the old page', () => {
+  const main = INDEX.slice(INDEX.indexOf('<main style="display:none" data-page="prognose"'), INDEX.indexOf('<!-- ═══════ API DOCS PAGE'));
+  const at = x => main.indexOf(x);
+  // Order: eyebrow, the page's one h1, lead, the screen's mount, then the two text blocks.
+  assert.ok(at('class="page-eyebrow"') > 0 && at('<h1 class="page-title">Elprisprognose</h1>') > at('class="page-eyebrow"') && at('id="fcPeriodDays"') > at('<h1 ')
+    && at('data-pris-mount><!--SSR_PRIS--></div>') > at('id="fcPeriodDays"') && at('Sådan laves prognosen') > at('<!--SSR_PRIS-->') && at('Det kan prognosen ikke') > at('Sådan laves prognosen'),
+    'the section is not head, Pris screen, "Sådan laves prognosen", "Det kan prognosen ikke" in that order');
+  assert.equal((main.match(/<h1[\s>]/g) || []).length, 1, 'the /prognose section must carry exactly one h1');
+  assert.ok(/Forventede elpriser · <span id="fcWhere">DK1 Vest<\/span>/.test(main), 'the eyebrow does not name the area (DK1 Vest is what the server draws)');
+  assert.ok(/Nu og <span id="fcPeriodDays">7<\/span> døgn frem, time for time: faktiske børspriser, så langt de er afregnet, og en prognose for resten\. Jo længere frem, jo mere usikker er den\./.test(main), 'the lead has changed');
+  // No second renderer, no selects, no old chart or table: the screen is the only thing that draws prices here.
+  for (const gone of ['fcArea', 'fcMode', 'fcLoading', 'fcTableWrapper', 'prognoseForecast', 'prognoseWeek', 'SSR_PROGNOSE', 'fcweek', 'chartcard', '<select'])
+    assert.ok(!main.includes(gone), `${gone} is back on the /prognose page`);
+  for (const fn of ['fcChartHTML', 'fcWeekHTML', 'fcTicks', 'fcYaxis', 'renderPrognoseForecast', 'renderPrognoseWeek', 'loadForecastPage', 'renderForecastTable', 'setColorRange', 'lerpColor'])
+    assert.ok(!INDEX.includes(fn) && !ROUTES.includes(fn), `${fn} (the old /prognose page) is back`);
+  // The server draws DK1 with PRIS_FC through the same prisScreen the price pages use, under its own cache key.
+  const blk = ROUTES.slice(ROUTES.indexOf('if (opts.prognose) {'), ROUTES.indexOf("// The foreign-area pages are served in their country's language"));
+  assert.ok(/fetchNetForecast\(context, 'DK1', null\)/.test(blk) && /html\.replace\('<!--SSR_PRIS-->', \(\) => prisScreen\(fc, 'DK1', null, PRIS_FC\)\)/.test(blk) && /opts\.done\.full = !!fc/.test(blk), 'the server does not draw the /prognose screen with PRIS_FC for DK1');
+  assert.ok(/url\.pathname === '\/prognose'\) opts\.prognose = true/.test(ROUTES) && /renderCachedPage\(context, url\.pathname, page, opts, PROGNOSE_SSR_VERSION\)/.test(ROUTES) && /PROGNOSE_SSR_VERSION = 'prognose-ssr-v1'/.test(ROUTES), '/prognose is not served through its own cached render');
+  // The browser: the route loads the screen like the front page, the header chip's dialog changes the page instead of leaving it.
+  assert.ok(/h==='prognose'\)\{[^\n]*syncFcHead\(\);loadPris\(\);return;\}/.test(INDEX), 'the /prognose route does not load the Pris screen');
+  assert.ok(/#netDialog \.pd-links a\[data-net\]/.test(INDEX) && /\[data-page="prognose"\]\.active/.test(INDEX), 'the net dialog does not stay on /prognose');
+  assert.ok(/function prisCfg\(\)\{[^}]*PRIS_FC:PRIS_STD/.test(INDEX) && /cfg:prisCfg\(\)/.test(INDEX), 'the client does not hand the page\'s config to prisHTML');
 });
 
 test('seo/llm: nothing claims what the page does not show', () => {
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
-  // /prognose shows ten days from a daily-trained model — not "7 dage" from
-  // "historiske prismønstre", which its title, description and llms.txt said.
+  // /prognose shows seven days (the feed carries ten; the page keeps the first seven) from a daily-trained
+  // model — not "historiske prismønstre", which its title, description and llms.txt once said.
   const APIF = fs.readFileSync(path.join(ROOT, 'functions/api/[[catchall]].js'), 'utf8');
   // /api is rendered by the API function, not the page function — the first
   // version of this test missed its "7-dages prognose" for exactly that reason.
   assert.ok(!/7-dages prognose/.test(APIF), '/api still describes a 7-day forecast');
+  // A seven-day claim is true on /prognose and nowhere else: it may sit in that page's own section, its SEO entry,
+  // its llms.txt line, the screen's period word (p7), a code comment — or in a sentence that links to /prognose.
+  const seoEntry = SRV.slice(SRV.indexOf("'/prognose': {"), SRV.indexOf('},', SRV.indexOf("'/prognose': {")));
+  const section = INDEX.slice(INDEX.indexOf('<main style="display:none" data-page="prognose"'), INDEX.indexOf('<!-- ═══════ API DOCS PAGE'));
   for (const [where, txt] of [['functions/[[path]].js', SRV], ['index.html', INDEX]]) {
     // Every spelling: "7 dage", "7-dages", "7-døgns", "7-day", "7 days".
-    // "7 dage" is the biggest query /prognose ranks for, so it may appear — but
-    // only beside the truth ("op til 10 døgn"), or in a code comment. On its
-    // own it claims the forecast is a week long, which it is not.
     const hit = [...txt.matchAll(/\b7[- ](?:dage|dages|døgn|døgns|day|days)\b[^\n]{0,40}|baseret på historiske prismønstre/g)]
       .find(m => {
         const ls = txt.lastIndexOf('\n', m.index) + 1, le = txt.indexOf('\n', m.index);
         const line = txt.slice(ls, le < 0 ? txt.length : le);
         if (/^\s*(\/\/|\*|\/\*)/.test(line)) return false;
-        if (m[0].startsWith('7 dage, dag for dag')) return false;   // the week list's own heading: it is seven days
-        return !/10 (døgn|dage)/.test(txt.slice(Math.max(0, m.index - 140), m.index + 160));
+        if (/\bp7:'7 /.test(line)) return false;   // the period word of the Pris screen's language table
+        if (seoEntry.includes(line.trim()) || section.includes(line.trim())) return false;
+        return !/\/prognose/.test(txt.slice(Math.max(0, m.index - 200), m.index + 200));
       });
-    assert.ok(!hit, `${where} still describes the forecast as 7 days / historical patterns: "${hit && hit[0]}"`);
+    assert.ok(!hit, `${where} claims a 7-day forecast / historical patterns away from /prognose: "${hit && hit[0]}"`);
   }
   // The homepage figure is inkl alt, which excludes the local nettarif.
   const head = INDEX.slice(0, INDEX.indexOf('</head>'));
@@ -568,15 +577,15 @@ test('seo/llm: nothing claims what the page does not show', () => {
 test('seo: the pages keep the words Search Console shows people typing', () => {
   // Evidence, not taste (Performance on Search, 3 months to 2026-10-04):
   //  - /prognose: "elpriser prognose 7 dage" is its biggest query, ~700 impressions
-  //    with its variants. The title must carry "7 dage" — beside the true "10 døgn".
+  //    with its variants. The title must carry "7 dage" — which is now the whole truth: the page shows seven days.
   //  - the elafgift post ranks 1.7-3.6 for "kommer elafgiften tilbage" and clicked
   //    at 1.6-2.4 %: the snippet has to say yes.
   //  - /dk1 and /dk2: people type "elpris vest" / "elpriser øst"; "spotpris" stays.
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const entry = k => SRV.slice(SRV.indexOf(`'${k}': {`), SRV.indexOf('},', SRV.indexOf(`'${k}': {`)));
   const field = (k, f) => (entry(k).match(new RegExp(`${f}: '([^']*)'`)) || [])[1] || '';
-  assert.ok(/7 dage/.test(field('/prognose', 'title')) && /10 døgn/.test(field('/prognose', 'title')), '/prognose title lost "7 dage" or the true "10 døgn"');
-  assert.ok(/7 dage/.test(field('/prognose', 'description')) && /10 døgn/.test(field('/prognose', 'description')), '/prognose description lost "7 dage" or "10 døgn"');
+  assert.ok(/7 dage/.test(field('/prognose', 'title')) && !/10/.test(field('/prognose', 'title')), '/prognose title lost "7 dage" or names ten days');
+  assert.ok(/7 dage/.test(field('/prognose', 'description')) && !/10 (døgn|dage)/.test(field('/prognose', 'description')), '/prognose description lost "7 dage" or names ten days');
   assert.ok(/elafgiften/i.test(field('/blog/elafgift-2028', 'title')) && /stiger igen/.test(field('/blog/elafgift-2028', 'title')) && /^Elafgift 2028/.test(field('/blog/elafgift-2028', 'title')),
     'the elafgift title no longer leads with "Elafgift 2028" and answers');
   assert.ok(/^Kommer elafgiften tilbage\? Ja/.test(field('/blog/elafgift-2028', 'description')), 'the elafgift description does not answer the question first');
@@ -691,13 +700,6 @@ test('indexnow: the served key and the submitting script agree', () => {
   assert.ok(/^npm run test:gate && /.test(pj.scripts.deploy), 'deploy must run the test gate before building');
 });
 
-test('/prognose: the week is text in the HTML and follows the table', () => {
-  const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
-  assert.ok(/<div id="prognoseWeek"><!--SSR_PROGNOSE_WEEK--><\/div>/.test(INDEX), 'no placeholder for the week list');
-  assert.ok(/html\.replace\('<!--SSR_PROGNOSE_WEEK-->', fcWeekHTML\(fc\.days \|\| \[\], todayDk, 7\)\)/.test(SRV), 'the server does not draw the week list');
-  assert.ok(/renderPrognoseForecast\(days\);\n  renderPrognoseWeek\(days\);/.test(INDEX), 'the week list is not redrawn with the table');
-  assert.ok(INDEX.includes('Næste 7 dage, dag for dag'), 'the week list has no "næste 7 dage" heading');
-});
 
 test('security: no credential is written into tracked code', () => {
   // The repository is public. A JAO API token sat as a default value in a
@@ -883,26 +885,17 @@ test('clock: the Copenhagen hour and date never turn into NaN, whatever the engi
   }
 });
 
-test('homepage: the forecast numbers stay as text, not just path data', () => {
-  // A polyline is unreadable to a crawler and to a screen reader. The whole
-  // point of server-rendering this section is the numbers, so the per-day
-  // figures have to leave the function as text.
-  const ROUTES_SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
-  const fn = ROUTES_SRC.slice(ROUTES_SRC.indexOf('function fcChartHTML('),
-                              ROUTES_SRC.indexOf('/** Build the live-price JSON-LD block'));
-  assert.ok(/class="minirow"/.test(fn), 'the per-day figures are gone from the chart output');
-  assert.ok(/aria-label=/.test(fn), 'the svg has no accessible name');
-});
-
-test('homepage: the chart reuses the hero card styles, which are hand-written', () => {
-  // Tailwind does not scan JS- or server-generated markup, so a utility class
-  // used only there is purged out of style.css and silently does nothing.
-  // The chart deliberately reuses .chartcard/.minirow/.mini rather than
-  // inventing new classes, and those must stay in the hand-written block.
+test('Pris screen: the numbers stay as text, and every class its server-drawn markup uses is hand-written', () => {
+  // A bar is unreadable to a crawler and to a screen reader. The tooltip text of every hour, the day list with its
+  // columns, and the chart's accessible name have to leave prisHTML as text — on /prognose too (PRIS_FC adds a column).
+  const fn = ROUTES.slice(ROUTES.indexOf('function prisChart('), ROUTES.indexOf('// ═══ /Pris-skærmen ═══'));
+  assert.ok(/data-tip="/.test(fn) && /aria-label="/.test(fn) && /class="pris-week"/.test(fn) && /cfg\.unc\?'<th scope="col">Usikkerhed<\/th>'/.test(fn), 'the per-hour or per-day figures are gone from the screen\'s output');
+  // Tailwind does not scan JS- or server-generated markup, so a utility class used only there is purged out of
+  // style.css and silently does nothing. The screen has its own classes, hand-written in the <style> block —
+  // including the seven-day card, its tiles and its day rows.
   const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
-  for (const cls of ['.chartcard', '.minirow', '.mini{', '.mini .v', '.mini.best', '.fc-days', '.fc-hours', '.yplot', '.yax', '.ygut', '.fcweek']) {
+  for (const cls of ['.pp7 .pris-cols', '.pp7 .pb', '.pp7 .pd', '[data-period="7"] .pp2', '[data-period="7"] .pp5', '[data-period="2"] .pp7', '[data-period="5"] .pp7', '.r7', '.r10', '.pris-week', '.pris-tiles'])
     assert.ok(style.includes(cls), `${cls} is not hand-written in the <style> block`);
-  }
 });
 
 test('structure: index.html begins with the doctype', () => {
@@ -1558,11 +1551,13 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // v70: the footer gained the "Byer" group (ten city links).
   // v71: Dinel, the 15th net company, joined the footer's net list and NETS.
   // v72: Ravdex, the 16th.
-  assert.ok(/homepage-ssr-v72/.test(ROUTES), 'homepage-ssr-v72');
+  // v73: the Pris screen gained the PRIS_FC configuration (7 døgn, Usikkerhed) and /prognose draws it; three sentences that linked to /prognose say 7 døgn.
+  assert.ok(/homepage-ssr-v73/.test(ROUTES), 'homepage-ssr-v73');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v7'/.test(ROUTES), 'zone-ssr-v7');
+  // (v8: the shared Pris block changed with PRIS_FC.)
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v8'/.test(ROUTES), 'zone-ssr-v8');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v3'/.test(ROUTES), 'city-ssr-v3');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v4'/.test(ROUTES), 'city-ssr-v4');
 });
 
 

@@ -84,16 +84,16 @@ const SEO_PAGES = {
     norden: true,
   },
   '/prognose': {
-    // The page shows ten days, and every forecast day comes from the daily-
-    // trained model (weather forecasts for wind and sun, plus the same weekday
-    // over the last four weeks), not "historical price patterns" alone.
+    // The page shows seven days (the feed has ten; the page keeps the first seven),
+    // and every forecast day comes from the daily-trained model (weather forecasts
+    // for wind and sun, plus the same weekday over the last four weeks), not
+    // "historical price patterns" alone.
     // "elpriser prognose 7 dage" is the biggest query this page ranks for (667
     // impressions, 49 clicks in Search Console's three months to 2026-10-04,
-    // position 6.5), and the first rewrite of this title — "…de næste 10 døgn" —
-    // dropped the words people type. Both are true: the page forecasts ten days,
-    // and the first seven are in the list and the curve above its table.
-    title: 'Elpriser prognose 7 dage — time for time, op til 10 døgn frem',
-    description: 'Elpriser prognose for de næste 7 dage — og op til 10 døgn frem — time for time for DK1 og DK2. Laves dagligt af en maskinlæringsmodel ud fra vejrprognoser for vind og sol. Skifter til faktiske børspriser, når de offentliggøres ca. kl. 13.',
+    // position 6.5), and a rewrite of this title that dropped "7 dage" lost the
+    // words people type.
+    title: 'Elpriser prognose 7 dage — time for time, DK1 og DK2',
+    description: 'Elpriser prognose for de næste 7 dage, time for time for DK1 og DK2. Laves dagligt af en maskinlæringsmodel ud fra vejrprognoser for vind og sol. Skifter til faktiske børspriser, når de offentliggøres ca. kl. 13.',
     hash: '#prognose',
   },
   '/api': {
@@ -263,7 +263,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - Per-netselskab priser: \`/dk1/<slug>\` eller \`/dk2/<slug>\` viser dagens pris inkl. nettarif for det valgte netselskab (fx https://elpriser.org/dk1/n1, https://elpriser.org/dk2/radius).
 - Elpris pr. by (pilot): \`/elpris/<by>\` viser elprisen time for time hos byens hyppigste netselskab, med dagens nettarif-profil og netselskabets andel af de adresser vi har tjekket — ${CITIES.map(c => `[${c.name}](https://elpriser.org/elpris/${c.slug})`).join(', ')}.
 - [Nettariffer](https://elpriser.org/tariffer): Sammenligning af nettariffer for alle danske netselskaber.
-- [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser for DK1 og DK2 time for time de næste 10 døgn. Laves dagligt af en maskinlæringsmodel ud fra vejrprognoser (vind og sol) og prisen samme ugedag de seneste fire uger; skifter til faktiske børspriser, når de offentliggøres ca. kl. 13.
+- [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser for DK1 og DK2 time for time de næste 7 døgn. Laves dagligt af en maskinlæringsmodel ud fra vejrprognoser (vind og sol) og prisen samme ugedag de seneste fire uger; skifter til faktiske børspriser, når de offentliggøres ca. kl. 13.
 - [Elpriser i Norden](https://elpriser.org/norden): Alle prisområder i Norge, Sverige, Finland og Holland side om side i kr/kWh uden moms, så de kan sammenlignes. Landesiderne er på landets eget sprog og viser spotpris time for time for i dag og i morgen og prognose for de næste 2 og 5 døgn: [Norge](https://elpriser.org/no/strompris) (NO1 Oslo, NO2 Kristiansand, NO3 Trondheim, NO4 Tromsø, NO5 Bergen), [Sverige](https://elpriser.org/sv/elpris) (SE1 Luleå, SE2 Sundsvall, SE3 Stockholm, SE4 Malmö) og [Finland](https://elpriser.org/fi/sahkon-hinta). Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder ([model på Hugging Face](https://huggingface.co/Elpriser/nordic-price-forecast)); omregnet til lokal valuta med Den Europæiske Centralbanks daglige referencekurs, uden moms, afgifter og nettariffer.
 - [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home. Guides: [Shelly](https://elpriser.org/automation#shelly) (script, der henter døgnets plan én gang) og [Home Assistant](https://elpriser.org/automation#home-assistant) (REST-sensor og automation).
 - [Hent appen](https://elpriser.org/download): Gratis app til iPhone, iPad og Android — elprisen lige nu, i morgen og de næste 5 døgn med dit netselskab, uden konto. Links til [App Store](https://apps.apple.com/dk/app/id6820474476) og [Google Play](https://play.google.com/store/apps/details?id=org.elpriser.app).
@@ -786,11 +786,12 @@ export async function onRequest(context) {
       opts.pricesIntro = { area: url.pathname.slice(1).toUpperCase(), net: null };
     }
     if (url.pathname === '/tariffer') opts.tariffFacts = true;
-    if (url.pathname === '/prognose') opts.forecastChart = true;
+    if (url.pathname === '/prognose') opts.prognose = true;
     if (page.zonePage) opts.zonePage = page.zonePage;
     if (page.norden) opts.norden = true;
     if (page.city) { opts.city = page.city; return renderCachedPage(context, url.pathname, page, opts, CITY_SSR_VERSION); }
     if (opts.zonePage || opts.norden) return renderCachedPage(context, url.pathname, page, opts, ZONE_SSR_VERSION);
+    if (opts.prognose) return renderCachedPage(context, url.pathname, page, opts, PROGNOSE_SSR_VERSION);
     return renderSPA(context, url.pathname, page, opts);
   }
 
@@ -876,196 +877,6 @@ async function fetchAreaSnapshot(context, area) {
   };
 }
 
-/** The homepage's price curve: today's settled hours and three days of forecast.
- *
- *  Rendered here rather than left to the client because the reason the section
- *  exists is search: the homepage was receiving "elpriser prognose" queries and
- *  ranking 18th on them with nothing on the page that answered them, while
- *  /prognose ranked 7th. A chart that only appears after JS runs would not fix
- *  that — which is also why the per-day figures below it stay as text. */
-// ═══ Forsidens kurve: nu og 2 døgn frem ═══
-// This function is CANONICAL and exists verbatim in two places: here and in
-// functions/[[path]].js. The server draws it so a crawler gets the numbers on
-// /prognose and the front page, the client redraws it from the table's data —
-// and neither runtime can import from the other. test-forecast-chart.mjs runs both copies
-// over the same fixtures and fails on the first differing byte, so the
-// duplication cannot rot quietly.
-//
-// Everything here is deterministic on purpose: weekday and month names come
-// from the arrays below rather than toLocaleDateString, whose output depends
-// on the ICU build and would differ between Workers and a browser.
-/** Round price-axis values between lo and hi: steps of 1, 2, 2.5 or 5 times a
- *  power of ten, aiming at about four. */
-function fcTicks(lo, hi){
-  var span=hi-lo;
-  if(!(span>0))return [lo];
-  var raw=span/4, mag=Math.pow(10,Math.floor(Math.log(raw)/Math.LN10)), n=raw/mag;
-  var step=(n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*mag;
-  var out=[];
-  for(var v=Math.ceil(lo/step-1e-9)*step;v<=hi+1e-9;v+=step)out.push(+v.toFixed(6));
-  return out;
-}
-/** The scale's labels, as HTML beside the svg. Like the day names, they cannot
- *  be <text> inside it: the svg is stretched with preserveAspectRatio="none"
- *  and glyphs would be squashed on a phone. Each sits at the same fraction of
- *  the height the svg draws its gridline at. */
-function fcYaxis(ticks, Y, H){
-  return ticks.map(function(v){
-    var s=v.toFixed(2);if(/^-0\.?0*$/.test(s))s=s.slice(1);
-    return '<span style="top:'+(Y(v)/H*100).toFixed(2)+'%">'+s.replace('.',',')+'</span>';
-  }).join('');
-}
-/** The next days as text, one row per day: range and cheapest hour. The curve
- *  is a picture; this is what a crawler — and a reader who wants the week at a
- *  glance — can actually read. Same contiguity rule as the curve: it starts on
- *  today and stops at the first missing day, so a hole never closes up and
- *  shifts "I morgen" onto the wrong date. */
-function fcWeekHTML(days, todayStr, n){
-  var WD=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
-  var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
-  var f2=function(v){var s=v.toFixed(2);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',',');};
-  var hh=function(h){return (h<10?'0':'')+h;};
-  var dayNo=function(x){
-    return Math.round((Date.parse(x+'T12:00:00Z')-Date.parse(todayStr+'T12:00:00Z'))/86400000);};
-  var rows='',got=0;
-  for(var k=0;k<days.length&&got<n;k++){
-    var d=days[k];
-    if(!d||!d.date||!d.prices)continue;
-    var i=dayNo(d.date);
-    if(i<0)continue;
-    if(i!==got)break;
-    var lo=null,hi=null,loH=0;
-    for(var p=0;p<d.prices.length;p++){
-      var pr=d.prices[p], v=pr&&pr.price!=null?pr.price:null;
-      if(v==null)continue;
-      if(lo==null||v<lo){lo=v;loH=pr.hour!=null?pr.hour:p;}
-      if(hi==null||v>hi)hi=v;
-    }
-    if(lo==null)break;
-    var dt=new Date(d.date+'T12:00:00Z');
-    var label=got===0?'I dag':got===1?'I morgen':WD[dt.getUTCDay()];
-    var real=d.type==='actual';
-    rows+='<tr><th scope="row">'+label+'<small>'+dt.getUTCDate()+'. '+MON[dt.getUTCMonth()]+'</small></th>'
-      +'<td>'+f2(lo)+'–'+f2(hi)+'</td>'
-      +'<td>kl. '+hh(loH)+'–'+hh((loH+1)%24)+'</td>'
-      +'<td class="'+(real?'real':'fc')+'">'+(real?'Børspris':'Prognose')+'</td></tr>';
-    got++;
-  }
-  if(got<2)return '';
-  return '<table class="fcweek"><thead><tr><th scope="col">Dag</th><th scope="col">Spænd</th>'
-    +'<th scope="col">Billigst</th><th scope="col">Type</th></tr></thead><tbody>'+rows+'</tbody></table>';
-}
-
-function fcChartHTML(days, todayStr, nowHour){
-  var WD=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
-  var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
-  // A price that rounds to zero is printed without its minus: "-0" is not a
-  // price anyone should have to read. Real negative prices keep their sign.
-  var f2=function(v){var s=v.toFixed(2);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',',');};
-  var dm=function(dt){return dt.getUTCDate()+'. '+MON[dt.getUTCMonth()];};
-  var dayName=function(n,dt){return n===0?'I dag':n===1?'I morgen':WD[dt.getUTCDay()];};
-  // The feed opens on yesterday, so the window is keyed off today's date, not
-  // off row 0. A day is only taken when it is exactly the next one expected:
-  // skipping a hole and carrying on would splice non-adjacent days into one
-  // continuous line, which reads as a price movement that never happened, and
-  // would slide "I morgen" onto the wrong date.
-  var dayNo=function(x){
-    return Math.round((Date.parse(x+'T12:00:00Z')-Date.parse(todayStr+'T12:00:00Z'))/86400000);};
-  var WINDOW=3;                  // i dag + 2 døgn frem
-  var sel=[];
-  for(var k=0;k<days.length&&sel.length<WINDOW;k++){
-    var d=days[k];
-    if(!d||!d.date||!d.prices)continue;
-    var n=dayNo(d.date);
-    if(n<0)continue;
-    if(n!==sel.length)break;
-    var ps=d.prices.map(function(p){return p&&p.price!=null?p.price:null;});
-    if(!ps.some(function(p){return p!=null;}))break;
-    sel.push({date:d.date,real:d.type==='actual',ps:ps});
-  }
-  if(sel.length<2)return '';
-  var N=sel.length*24, W=720, H=190, PT=14, PB=10;
-  var pts=[];
-  for(var di=0;di<sel.length;di++)for(var h=0;h<24;h++){
-    var p=sel[di].ps[h];
-    if(p!=null)pts.push({i:di*24+h,p:p,di:di,real:sel[di].real});
-  }
-  if(pts.length<24)return '';
-  var lo=Math.min.apply(null,pts.map(function(x){return x.p;}));
-  var hi=Math.max.apply(null,pts.map(function(x){return x.p;}));
-  var span=(hi-lo)||1;
-  var X=function(i){return +(i/(N-1)*W).toFixed(1);};
-  var Y=function(p){return +(PT+(1-(p-lo)/span)*(H-PT-PB)).toFixed(1);};
-  var xy=function(x){return X(x.i)+','+Y(x.p);};
-  // The colour language is the hero curve's, so the two charts read the same.
-  var col=function(p){var t=(p-lo)/span;
-    return t<.25?'#34c759':t<.5?'#a8d84a':t<.75?'#ffcc00':t<.9?'#ff9500':'#ff3b30';};
-  // One stop per hour, exactly as the hero curve does it. Emitting only the
-  // ends of each colour run is fewer stops, but it stops adjacent stops
-  // interpolating and the curve comes out in hard-edged bands instead of the
-  // blend the hero has — and the two charts sit on the same page.
-  var stops=pts.map(function(x){
-    return '<stop offset="'+(x.i/(N-1)*100).toFixed(1)+'%" stop-color="'+col(x.p)+'"/>';}).join('');
-  // Split at the last settled hour. The two polylines share that point, so the
-  // solid and dashed halves meet with no gap.
-  var lastReal=-1;
-  for(var j=0;j<pts.length;j++)if(pts[j].real)lastReal=j;
-  var solid=lastReal>=0?pts.slice(0,lastReal+1):[];
-  var dashed=lastReal>=0?pts.slice(lastReal):pts;
-  var poly=function(a){return a.map(xy).join(' ');};
-  var svg='<defs><linearGradient id="fcg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="'+W+'" y2="0">'+stops+'</linearGradient>'
-    +'<linearGradient id="fcf" x1="0" y1="0" x2="0" y2="1">'
-    +'<stop offset="0%" stop-color="#5b8bff" stop-opacity=".22"/>'
-    +'<stop offset="100%" stop-color="#5b8bff" stop-opacity="0"/></linearGradient></defs>';
-  var ticks=fcTicks(lo,hi);
-  for(var ti=0;ti<ticks.length;ti++)
-    svg+='<line x1="0" y1="'+Y(ticks[ti])+'" x2="'+W+'" y2="'+Y(ticks[ti])+'" stroke="currentColor" stroke-opacity=".07"/>';
-  svg+='<polygon points="'+X(pts[0].i)+','+(H-PB+12)+' '+poly(pts)+' '+X(pts[pts.length-1].i)+','+(H-PB+12)+'" fill="url(#fcf)"/>';
-  if(solid.length>1)
-    svg+='<polyline points="'+poly(solid)+'" fill="none" stroke="url(#fcg)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>';
-  if(dashed.length>1)
-    svg+='<polyline points="'+poly(dashed)+'" fill="none" stroke="url(#fcg)" stroke-width="2.6" stroke-dasharray="5 4" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>';
-  // Midnight separators and the day names between them.
-  for(var s=1;s<sel.length;s++)
-    svg+='<line x1="'+X(s*24)+'" y1="'+PT+'" x2="'+X(s*24)+'" y2="'+(H-PB+6)+'" stroke="currentColor" stroke-opacity=".12"/>';
-  // Six-hour gridlines, fainter than midnight so the days still read as days.
-  // Their labels go in HTML like the day names, for the same reason: text
-  // inside this stretched svg is squashed on a phone.
-  var hours='';
-  for(var g=0;g<N;g+=6){
-    var hh=g%24;
-    if(hh)svg+='<line x1="'+X(g)+'" y1="'+PT+'" x2="'+X(g)+'" y2="'+(H-PB+6)+'" stroke="currentColor" stroke-opacity=".06" stroke-dasharray="2 4"/>';
-    hours+='<span'+(g===0?' class="first"':'')+' style="left:'+(g/(N-1)*100).toFixed(2)+'%">'+(hh<10?'0':'')+hh+'</span>';
-  }
-  var labels='';
-  for(var t=0;t<sel.length;t++){
-    var dt=new Date(sel[t].date+'T12:00:00Z');
-    labels+='<span>'+dayName(t,dt)+'<small>'+dm(dt)+'</small></span>';
-  }
-  // "Nu" sits on today's curve, and only when today is settled.
-  if(nowHour!=null&&sel[0].real&&sel[0].ps[nowHour]!=null){
-    svg+='<line x1="'+X(nowHour)+'" y1="'+(PT-6)+'" x2="'+X(nowHour)+'" y2="'+(H-PB+6)+'" stroke="currentColor" stroke-opacity=".2" stroke-dasharray="3 4"/>'
-      +'<circle cx="'+X(nowHour)+'" cy="'+Y(sel[0].ps[nowHour])+'" r="5.5" fill="#1b57f5" stroke="#fff" stroke-width="2.5"/>';
-  }
-  // The per-day figures stay as text. They are what the front page answers
-  // "elpriser prognose" with, and an SVG path answers nothing.
-  var dayLo=sel.map(function(d){return Math.min.apply(null,d.ps.filter(function(p){return p!=null;}));});
-  var cheap=dayLo.indexOf(Math.min.apply(null,dayLo));
-  var cards=sel.map(function(d,n){
-    var v=d.ps.filter(function(p){return p!=null;});
-    var dt=new Date(d.date+'T12:00:00Z');
-    return '<div class="mini'+(n===cheap?' best':'')+'">'
-      +'<div class="k">'+dayName(n,dt)+' · '+(d.real?'Børspris':'Prognose')+'</div>'
-      +'<div class="v">'+f2(Math.min.apply(null,v))+'–'+f2(Math.max.apply(null,v))+'</div>'
-      +'<div class="s">'+dm(dt)+' · '+'kr/kWh'+'</div></div>';
-  }).join('');
-  return '<div class="yplot"><svg id="fcCurve" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="min-height:160px" role="img" aria-label="Elpris time for time i dag og '+(sel.length-1)+' døgn frem">'+svg+'</svg>'
-    +'<div class="yax">'+fcYaxis(ticks,Y,H)+'</div></div>'
-    +'<div class="fc-hours ygut">'+hours+'</div>'
-    +'<div class="fc-days ygut">'+labels+'</div>'
-    +'<div class="minirow">'+cards+'</div>';
-}
-
 /** Build the live-price JSON-LD block + Reader-summary prose. */
 function buildLivePriceMarkup(dk1, dk2) {
   const hh = String(dk1.hour).padStart(2, '0');
@@ -1101,14 +912,16 @@ ${JSON.stringify({
 }
 
 // ═══ Pris-skærmen (Design A: ét svar) ═══
-// CANONICAL, like fcChartHTML: verbatim in index.html and functions/[[path]].js.
+// CANONICAL: verbatim in index.html and functions/[[path]].js.
 // The server draws it, so a crawler is served the price, the sentence, the
 // bars' numbers and the day list as text; the browser redraws it from the same
 // /api/forecast shape when the visitor switches Din pris / Spotpris or the area.
-// Neither runtime can import from the other; test-static.js diffs the two copies
-// and test-forecast-chart.mjs runs both over the same fixtures.
+// Neither runtime can import from the other; test-forecast-chart.mjs diffs the two
+// copies and runs both over the same fixtures.
 //
-// ONE screen for every price area. The Danish pages call prisHTML with a net and a
+// ONE screen for every price area, and for /prognose too: that page draws this very
+// markup with PRIS_FC (below) as `o.cfg` — the periods it offers and one extra table
+// column, nothing else. The Danish pages call prisHTML with a net and a
 // view; /no/strompris, /sv/elpris and /fi/sahkon-hinta call it with `zone` (a key of ZONES) and get
 // the same markup in that zone's language (PRIS_I18N), in its sub-unit (øre, öre,
 // snt), spot price only. zoneToPrisDays turns an /api/nordic response into the
@@ -1128,7 +941,7 @@ var PRIS_I18N={
     now:'Elpris lige nu',hourly:'Elpris time for time',at:'kl.',today:'i dag',tomorrow:'i morgen',evening:'i aften',
     verdict:['Billig lige nu','Middel lige nu','Dyr lige nu'],tier:['Billig','Middel','Dyr'],
     cheaper:'Billigere',cheapest24:'Billigste time de næste 24 timer',lo:'billigst',hi:'dyrest',
-    next:'Næste',p2:'2 døgn',p5:'5 døgn',period:'Periode',fc:'Prognose',actual:'Børspris',
+    next:'Næste',p2:'2 døgn',p5:'5 døgn',p7:'7 døgn',period:'Periode',fc:'Prognose',actual:'Børspris',
     byDay:'Dag for dag',day:'Dag',range:'Spænd',type:'Type',none:'Priserne kunne ikke hentes lige nu.',
     cap:'Spotpris uden moms, afgifter og nettarif',h1:'Elpriser i Danmark i dag',zoneTabs:'Prisområde',
     zonesH:'Elpriser i Danmark',avg:'gns.',note:'Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder. Omregnet fra EUR med Den Europæiske Centralbanks dagskurs.',model:'Se modellen på Hugging Face'},
@@ -1137,7 +950,7 @@ var PRIS_I18N={
     now:'Strømpris akkurat nå',hourly:'Strømpris time for time',at:'kl.',today:'i dag',tomorrow:'i morgen',evening:'i kveld',
     verdict:['Billig akkurat nå','Middels akkurat nå','Dyr akkurat nå'],tier:['Billig','Middels','Dyr'],
     cheaper:'Billigere',cheapest24:'Billigste time de neste 24 timene',lo:'billigst',hi:'dyrest',
-    next:'Neste',p2:'2 døgn',p5:'5 døgn',period:'Periode',fc:'Prognose',actual:'Børspris',
+    next:'Neste',p2:'2 døgn',p5:'5 døgn',p7:'7 døgn',period:'Periode',fc:'Prognose',actual:'Børspris',
     byDay:'Dag for dag',day:'Dag',range:'Spenn',type:'Type',none:'Prisene kunne ikke hentes akkurat nå.',
     cap:'Spotpris uten mva, avgifter og nettleie',h1:'Strømpris i Norge: i dag og prognose for de neste 5 døgnene',zoneTabs:'Prisområde',
     zonesH:'Strømpriser i Norge etter by og prisområde',avg:'snitt',note:'Prognosen kommer fra én åpen maskinlæringsmodell for alle 13 prisområder. Omregnet fra EUR med Den europeiske sentralbankens daglige kurs.',model:'Se modellen på Hugging Face'},
@@ -1146,7 +959,7 @@ var PRIS_I18N={
     now:'Elpris just nu',hourly:'Elpris timme för timme',at:'kl.',today:'idag',tomorrow:'imorgon',evening:'ikväll',
     verdict:['Billigt just nu','Medel just nu','Dyrt just nu'],tier:['Billigt','Medel','Dyrt'],
     cheaper:'Billigare',cheapest24:'Billigaste timmen de närmaste 24 timmarna',lo:'billigast',hi:'dyrast',
-    next:'Kommande',p2:'2 dygn',p5:'5 dygn',period:'Period',fc:'Prognos',actual:'Börspris',
+    next:'Kommande',p2:'2 dygn',p5:'5 dygn',p7:'7 dygn',period:'Period',fc:'Prognos',actual:'Börspris',
     byDay:'Dag för dag',day:'Dag',range:'Spann',type:'Typ',none:'Priserna kunde inte hämtas just nu.',
     cap:'Spotpris utan moms, skatter och nätavgift',h1:'Elpris i Sverige: idag och prognos för de närmaste 5 dygnen',zoneTabs:'Elområde',
     zonesH:'Elpriser i Sverige per stad och elområde',avg:'snitt',note:'Prognosen kommer från en öppen maskininlärningsmodell för alla 13 elområden. Omräknat från EUR med Europeiska centralbankens dagliga kurs.',model:'Se modellen på Hugging Face'},
@@ -1155,7 +968,7 @@ var PRIS_I18N={
     now:'Sähkön hinta juuri nyt',hourly:'Sähkön hinta tunneittain',at:'klo',today:'tänään',tomorrow:'huomenna',evening:'illalla',
     verdict:['Halpa juuri nyt','Keskihintainen juuri nyt','Kallis juuri nyt'],tier:['Halpa','Keskihintainen','Kallis'],
     cheaper:'Halvempi',cheapest24:'Halvin tunti seuraavan 24 tunnin aikana',lo:'halvin',hi:'kallein',
-    next:'Seuraavat',p2:'2 vrk',p5:'5 vrk',period:'Jakso',fc:'Ennuste',actual:'Pörssihinta',
+    next:'Seuraavat',p2:'2 vrk',p5:'5 vrk',p7:'7 vrk',period:'Jakso',fc:'Ennuste',actual:'Pörssihinta',
     byDay:'Päivä päivältä',day:'Päivä',range:'Vaihteluväli',type:'Tyyppi',none:'Hintoja ei voitu hakea juuri nyt.',
     cap:'Pörssihinta ilman arvonlisäveroa, veroja ja siirtomaksua',h1:'Sähkön hinta Suomessa: tänään ja ennuste seuraaville 5 vuorokaudelle',zoneTabs:'Hinta-alue',
     zonesH:'Sähkön hinta Suomessa',avg:'keskihinta',note:'Ennuste tulee yhdestä avoimesta koneoppimismallista, joka kattaa kaikki 13 hinta-aluetta. Muunnettu euroista Euroopan keskuspankin päiväkurssilla.',model:'Katso malli Hugging Facessa'}
@@ -1197,12 +1010,31 @@ function prisDate(date,L){
   return {wd:L.wd[dt.getUTCDay()],ws:L.ws[dt.getUTCDay()],d:dt.getUTCDate(),m:L.mon[dt.getUTCMonth()]};
 }
 
-/** The period pill: 2 (næste 2 døgn) or 5 (næste 5 døgn). The pill used to read
- *  "3–10 døgn" and its value was 10, so 10, "10" and "3–10" — anything an old
- *  link, a stored setting or a test still carries — resolve to the 5 døgn view. */
-function prisPeriod(p){
-  var s=String(p==null?'':p);
-  return /(^|[^0-9])(5|10)([^0-9]|$)/.test(s)?5:2;
+/** What differs between the pages that draw this screen, and nothing else. Every page but
+ *  /prognose uses PRIS_STD: a pill with 2 and 5 døgn (2 first), the feed's days kept as text
+ *  up to ten. /prognose uses PRIS_FC: 2, 5 and 7 døgn (7 first), seven days and no more, and a
+ *  column "Usikkerhed" in the day list. */
+var PRIS_STD={periods:[2,5],def:2,days:10,unc:false};
+var PRIS_FC={periods:[2,5,7],def:7,days:7,unc:true};
+
+/** The period pill's value: one of cfg.periods. The pill used to read "3–10 døgn" and its
+ *  value was 10, so 10, "10" and "3–10" — anything an old link, a stored setting or a test
+ *  still carries — resolve to the longest period the page offers up to ten: 5 døgn on
+ *  most pages, 7 on /prognose. Any other number is read the same way (7 on a page that
+ *  stops at 5 is 5); anything unreadable is the page's own default. */
+function prisPeriod(p,cfg){
+  cfg=cfg||PRIS_STD;
+  var m=/(^|[^0-9])(10|7|5|2)([^0-9]|$)/.exec(String(p==null?'':p));
+  if(!m)return cfg.def;
+  var n=+m[2],r=cfg.periods[0];
+  for(var i=0;i<cfg.periods.length;i++)if(cfg.periods[i]<=n)r=cfg.periods[i];
+  return r;
+}
+/** How sure the forecast is for the day `i` days from today — a function of the horizon and
+ *  of nothing else: today is settled, tomorrow and the day after are low, D+3 to D+5 middle,
+ *  D+6 and beyond high. */
+function prisUncertainty(i){
+  return i<1?'—':i<3?'Lav':i<6?'Middel':'Høj';
 }
 
 /** /api/nordic as the days[] this screen draws. Prices go from EUR/MWh to the
@@ -1222,15 +1054,14 @@ function zoneToPrisDays(raw,info,todayStr){
   return out;
 }
 
-/** The forecast feed as up to ten consecutive days from today, 24 slots each.
- *  Same contiguity rule as fcChartHTML: it starts on today and stops at the first
- *  missing day, so a hole never closes up and shifts "I morgen" onto the wrong
- *  date. */
-function prisDays(days,todayStr){
-  var out=[];
+/** The forecast feed as up to `max` (ten) consecutive days from today, 24 slots each.
+ *  It starts on today and stops at the first missing day, so a hole never closes up and
+ *  shifts "I morgen" onto the wrong date. */
+function prisDays(days,todayStr,max){
+  var out=[];max=max||10;
   var dayNo=function(x){
     return Math.round((Date.parse(x+'T12:00:00Z')-Date.parse(todayStr+'T12:00:00Z'))/86400000);};
-  for(var k=0;k<days.length&&out.length<10;k++){
+  for(var k=0;k<days.length&&out.length<max;k++){
     var d=days[k];
     if(!d||!d.date||!d.prices)continue;
     var n=dayNo(d.date);
@@ -1486,9 +1317,10 @@ function prisFlat(rows){
   return out;
 }
 
-/** Per-day range and cheapest hour, as text. */
-function prisDayRows(all,C){
-  var L=C.L,rows='';
+/** Per-day range and cheapest hour, as text; with cfg.unc a last column says how sure the
+ *  forecast is for that day (prisUncertainty). */
+function prisDayRows(all,C,cfg){
+  var L=C.L,rows='',last=cfg.periods[cfg.periods.length-1];
   for(var i=0;i<all.length;i++){
     var d=all[i],lo=null,hi=null,loH=0;
     for(var h=0;h<24;h++){
@@ -1500,26 +1332,28 @@ function prisDayRows(all,C){
     if(lo==null)continue;
     var dt=prisDate(d.date,L);
     var name=i===0?prisCap(L.today):i===1?prisCap(L.tomorrow):prisCap(dt.wd);
-    // r2: shown in both periods, r5: only in 5 døgn, r10: days 6-10, kept in the
-    // markup as text for crawlers and never shown on this screen.
-    rows+='<tr class="'+(i<2?'r2':i<5?'r5':'r10')+'"><th scope="row">'+name+'<small>'+dt.d+L.dot+' '+dt.m+'</small></th>'
+    // r2: shown in every period, r5: from 5 døgn, r7: only in 7 døgn, r10: the days beyond the
+    // longest period, kept in the markup as text for crawlers and never shown on this screen.
+    rows+='<tr class="'+(i<2?'r2':i<5?'r5':i<last?'r'+last:'r10')+'"><th scope="row">'+name+'<small>'+dt.d+L.dot+' '+dt.m+'</small></th>'
       +'<td>'+prisNum(lo,C.d)+'–'+prisNum(hi,C.d)+'</td>'
       +'<td>'+L.at+' '+prisHH(loH)+'–'+prisHH((loH+1)%24)+'</td>'
-      +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?L.actual:L.fc)+'</td></tr>';
+      +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?L.actual:L.fc)+'</td>'
+      +(cfg.unc?'<td>'+prisUncertainty(i)+'</td>':'')+'</tr>';
   }
   if(!rows)return '';
   return '<section class="pris-days" aria-label="'+L.byDay+'"><p class="pris-dt">'+L.byDay+'</p>'
     +'<table class="pris-week"><thead><tr><th scope="col">'+L.day+'</th><th scope="col">'+L.range+', '+C.u+'/kWh</th>'
-    +'<th scope="col">'+prisCap(L.lo)+'</th><th scope="col">'+L.type+'</th></tr></thead><tbody>'+rows+'</tbody></table></section>';
+    +'<th scope="col">'+prisCap(L.lo)+'</th><th scope="col">'+L.type+'</th>'+(cfg.unc?'<th scope="col">Usikkerhed</th>':'')
+    +'</tr></thead><tbody>'+rows+'</tbody></table></section>';
 }
 
-/** The whole screen. `o`: {view:'din'|'spot', period:2|5 (legacy 10 reads as 5), net:name|null, where:'DK1 Vest', key,
+/** The whole screen. `o`: {view:'din'|'spot', period:2|5|7 as the page's cfg offers (legacy 10 reads as its longest), cfg:PRIS_STD (default) or PRIS_FC, net:name|null, where:'DK1 Vest', key,
  *  charges:{sys,trans,afg,vat} from the same response (without it the caption stays plain), open:true to draw the breakdown unfolded,
  *  zone:key of ZONES for a foreign area — its language, its unit, spot only, no switch}. */
 function prisHTML(days,todayStr,nowHour,o){
   o=o||{};
-  var view=o.view==='spot'?'spot':'din',period=prisPeriod(o.period);
-  var all=prisDays(days||[],todayStr),C=prisCtx(o,all),L=C.L;
+  var cfg=o.cfg||PRIS_STD,view=o.view==='spot'?'spot':'din',period=prisPeriod(o.period,cfg);
+  var all=prisDays(days||[],todayStr,cfg.days),C=prisCtx(o,all),L=C.L;
   var today=all.length?all[0]:null;
   var nowP=today?today.ps[nowHour]:null;
   var td=today?[]:null,i;
@@ -1538,24 +1372,28 @@ function prisHTML(days,todayStr,nowHour,o){
     +'</div>'
     +'<div class="pris-modebox">'+(C.z?'':prisSwitch(view,'pris-seg-hero','Kun spotpris'))
     +prisCapHTML(false,caption,panel,o.open)+'</div></section>';
-  var tabs='<div class="pris-period" role="tablist" aria-label="'+L.period+'">'
-    +'<button type="button" role="tab" aria-selected="'+(period===2)+'" data-pris-period="2">'+L.p2+'</button>'
-    +'<button type="button" role="tab" aria-selected="'+(period===5)+'" data-pris-period="5">'+L.p5+'</button></div>';
+  var tabs='<div class="pris-period" role="tablist" aria-label="'+L.period+'">'+cfg.periods.map(function(p){
+    return '<button type="button" role="tab" aria-selected="'+(period===p)+'" data-pris-period="'+p+'">'+L['p'+p]+'</button>';}).join('')+'</div>';
   var legend='<div class="pris-legend"><span><i class="t0"></i>'+L.tier[0]+'</span><span><i class="t1"></i>'+L.tier[1]+'</span><span><i class="t2"></i>'+L.tier[2]+'</span></div>';
   var head=function(t){
     return '<div class="pris-ch"><p class="pris-ct">'+t+'</p>'+legend+(C.z?'':prisSwitch(view,'pris-seg-card','Spotpris'))+'</div>'
       +prisCapHTML(true,caption,panel,o.open);};
-  var two=all.slice(0,2),nFive=all.length?Math.min(5,all.length):5,five=all.slice(0,nFive);
   var nowSlot=today&&today.date===todayStr?nowHour:-1;
-  var t2=L.next+' '+L.p2,t5=L.next+' '+L.p5,ttl=L.hourly+' '+L.next.toLowerCase()+' ';
-  var card2='<section class="pris-card pp2" aria-label="'+t2+'">'+head(t2)
-    +prisChart(two,2,{ref:td||[],nowSlot:nowSlot,title:ttl+L.p2,C:C})+'</section>';
-  var card5='<section class="pris-card pp5" aria-label="'+t5+'">'+head(t5)
-    +prisChart(five,nFive,{nowSlot:nowSlot,xDays:true,seps:true,title:ttl+L.p5,C:C})+'</section>';
+  var ttl=L.hourly+' '+L.next.toLowerCase()+' ';
+  // One card and one pair of tiles per period. 2 døgn: hourly labels, bars coloured against
+  // today; every longer period: a label per day and a divider at each midnight.
+  var cards='',tiles='';
+  cfg.periods.forEach(function(p){
+    var t=L.next+' '+L['p'+p],n=p===2?2:all.length?Math.min(p,all.length):p;
+    cards+='<section class="pris-card pp'+p+'" aria-label="'+t+'">'+head(t)
+      +prisChart(all.slice(0,n),n,p===2?{ref:td||[],nowSlot:nowSlot,title:ttl+L.p2,C:C}
+        :{nowSlot:nowSlot,xDays:true,seps:true,title:ttl+L['p'+p],C:C})+'</section>';
+    tiles+=prisTiles(all,nowHour,p,'pp'+p,C);
+  });
   return '<div class="pris" data-period="'+period+'" data-view="'+view+'" data-key="'+prisEsc(o.key||'')
     +'" data-hour="'+nowHour+'" data-date="'+todayStr+'">'+hero
-    +'<div class="pris-right">'+tabs+card2+card5+prisTiles(all,nowHour,2,'pp2',C)+prisTiles(all,nowHour,5,'pp5',C)+'</div>'
-    +prisDayRows(all,C)+'</div>';
+    +'<div class="pris-right">'+tabs+cards+tiles+'</div>'
+    +prisDayRows(all,C,cfg)+'</div>';
 }
 
 // ── The country pages and /norden: everything around the screen ──
@@ -1651,7 +1489,7 @@ function daDateLabel() {
 }
 
 // ═══ Pris lige nu, i ord ═══
-// CANONICAL, like fcChartHTML: verbatim in index.html and functions/[[path]].js.
+// CANONICAL: verbatim in index.html and functions/[[path]].js.
 // The server writes this sentence for the URL's own view so a crawler reads
 // it; the browser rewrites it whenever the view changes, so the sentence, the
 // dropdown, the big number and the chart always describe the same price.
@@ -1865,7 +1703,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v72');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v73');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -1910,12 +1748,13 @@ async function renderHomepage(context) {
   return res;
 }
 
-/** /no/strompris, /sv/elpris, /fi/sahkon-hinta, /norden and the ten /elpris/<by> pages, cached at the edge for
- *  five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
+/** /no/strompris, /sv/elpris, /fi/sahkon-hinta, /norden, the ten /elpris/<by> pages and /prognose, cached at the
+ *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v7';
-const CITY_SSR_VERSION = 'city-ssr-v3';
+const ZONE_SSR_VERSION = 'zone-ssr-v8';
+const CITY_SSR_VERSION = 'city-ssr-v4';
+const PROGNOSE_SSR_VERSION = 'prognose-ssr-v1';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);
@@ -2026,11 +1865,12 @@ function fetchNetForecast(context, area, net) {
   return fetch(`${origin}/api/forecast?area=${area}&mode=${net ? 'net_inkl_alt' : 'inkl_alt'}${net ? `&gln=${net.gln}` : ''}`)
     .then(r => (r.ok ? r.json() : null)).catch(() => null);
 }
-/** The Pris screen for a price page, drawn for the Danish date and hour. */
-function prisScreen(fc, area, net) {
+/** The Pris screen for a price page, drawn for the Danish date and hour. `cfg` is the page's PRIS_STD (the
+ *  default: 2 and 5 døgn, opening on 2) or PRIS_FC (/prognose: 2, 5 and 7, opening on 7). */
+function prisScreen(fc, area, net, cfg = PRIS_STD) {
   const { todayDk, nowH } = danishClock();
   return prisHTML(fc.days || [], todayDk, nowH, {
-    view: 'din', period: 2, net: net ? net.name : null,
+    view: 'din', cfg, period: cfg.def, net: net ? net.name : null,
     where: AREA_LABEL[area] + (net ? ' · ' + net.name : ''),
     key: `${area}|din|${net ? net.slug : ''}`,
     charges: fc.charges,
@@ -2117,22 +1957,14 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   if (opts.tariffFacts) {
     html = html.replace('<!--SSR_TARIFF_FACTS-->', await buildTariffFacts(context));
   }
-  if (opts.forecastChart) {
-    // The same curve as the front page, drawn here for /prognose's default view
-    // (DK1, inkl alt — the page's own dropdown defaults) so the numbers are in
-    // the HTML; the browser redraws it from the table's data on any change.
-    const origin = new URL(context.request.url).origin;
-    const fc = await fetch(`${origin}/api/forecast?area=DK1&mode=inkl_alt`)
-      .then(r => (r.ok ? r.json() : null)).catch(() => null);
-    if (fc) {
-      const cph = { timeZone: 'Europe/Copenhagen' };
-      const todayDk = new Intl.DateTimeFormat('en-CA', cph).format(new Date());
-      const nowH = cphHourOf(new Date());
-      html = html.replace('<!--SSR_PROGNOSE_CHART-->', fcChartHTML(fc.days || [], todayDk, nowH));
-      // The next seven days as text — what "elpriser prognose 7 dage" asks for,
-      // and the part of the page's ten-day forecast a crawler can otherwise not read.
-      html = html.replace('<!--SSR_PROGNOSE_WEEK-->', fcWeekHTML(fc.days || [], todayDk, 7));
-    }
+  if (opts.prognose) {
+    // The Pris screen of the front page, drawn for /prognose's default view (DK1, Din pris with no
+    // net company chosen, seven days) by the same prisScreen the price pages use; the page head,
+    // the two text blocks and the FAQ are in the template. The browser redraws it from the visitor's
+    // own area and net, exactly as on the front page.
+    const fc = await fetchNetForecast(context, 'DK1', null);
+    if (fc) html = html.replace('<!--SSR_PRIS-->', () => prisScreen(fc, 'DK1', null, PRIS_FC));
+    if (opts.done) opts.done.full = !!fc;
   }
   // The foreign-area pages are served in their country's language, so the document has
   // to say so — a Norwegian page still labelled lang="da" gets read (and indexed, and

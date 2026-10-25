@@ -323,9 +323,13 @@ async function main() {
   check(/apps\.apple\.com\/dk\/app\/id6820474476/.test(homeFooter) && /play\.google\.com\/store\/apps\/details\?id=org\.elpriser\.app/.test(homeFooter), 'forside: sidefoden linker begge app-butikker');
 
   const prog = await get('/prognose');
-  check(/<svg id="fcCurve"/.test(prog.body), '/prognose: kurven står i HTML\'en');
-  check(!prog.body.includes('<div id="prognoseForecast"><!--SSR_PROGNOSE_CHART-->'), '/prognose: placeholder er erstattet');
-  check(/<div class="v">\d,\d\d–\d,\d\d<\/div>/.test(prog.body), '/prognose: døgnenes spænd står som tekst');
+  // /prognose is the canonical Pris screen with PRIS_FC: 2 | 5 | 7 døgn opening on 7, seven day rows with a Usikkerhed column.
+  const progPage = prog.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '');
+  check(!prog.body.includes('<!--SSR_PRIS-->') && /<div class="pris" data-period="7" data-view="din" data-key="DK1\|din\|"/.test(progPage), '/prognose: Pris-skærmen er tegnet i HTML\'en for DK1 på 7 døgn');
+  check([...progPage.matchAll(/data-pris-period="(\d)">([^<]*)</g)].map(m => m[2]).join('|') === '2 døgn|5 døgn|7 døgn' && (progPage.match(/<h1[ >]/g) || []).length === 1 && />Elprisprognose<\/h1>/.test(progPage), '/prognose: pillen er 2 | 5 | 7 døgn og der er én h1');
+  check((progPage.slice(progPage.indexOf('pris-card pp7')).match(/<span class="pc[ "]/g) || []).length >= 168 && (progPage.match(/<tr class="r\d+"><th scope="row">/g) || []).length === 7 && /<th scope="col">Usikkerhed<\/th>/.test(progPage), '/prognose: 168 søjler, syv dage som tekst og kolonnen Usikkerhed');
+  check(!/\b10 (døgn|dage)|ti døgn|Nu og 2 døgn frem|id="fcArea"/i.test(progPage) && /Sådan laves prognosen/.test(progPage) && /Det kan prognosen ikke/.test(progPage), '/prognose: ingen 10 døgn, intet af den gamle side, og de to tekstblokke');
+  check(!/\bpp7\b|Usikkerhed/.test(home.body.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), 'forside: ingen 7 døgn og ingen Usikkerhed på de andre sider');
 
   const se3 = await get('/sv/elpris');
   check(!/hreflang=/.test(se3.body.replace(/<!--[\s\S]*?-->/g, '')), '/sv/elpris: ingen hreflang-klynge');
@@ -376,15 +380,12 @@ async function main() {
   check(cityTexts.size === 10, 'byer: ti forskellige tekster', String(cityTexts.size));
   check(CITY_TABLE.every(c => homeFooter.includes(`<a href="/elpris/${c.slug}">${c.name}</a>`)), 'forside: sidefoden linker alle ti byer');
   check(!/Byer i området/.test((await get('/dk1/elvaerk')).body.replace(/<script[\s\S]*?<\/script>/g, '')) || CITY_TABLE.some(c => c.nets[0].slug === 'elvaerk'), '/dk1/elvaerk: ingen by-linje uden by');
-  check(/<title>Elpriser prognose 7 dage — time for time, op til 10 døgn frem<\/title>/.test(prog.body), '/prognose: titel har "7 dage" og de sande 10 døgn');
-  // Count inside the week container: the page's own script carries the same
-  // markup as a string literal, which is not a row anyone can read.
-  const weekHtml = prog.body.slice(prog.body.indexOf('id="prognoseWeek">'), prog.body.indexOf('id="prognoseWeek">') + 4000);
-  check((weekHtml.match(/<tr><th scope="row">/g) || []).length === 7, '/prognose: syv dage som tekst i HTML\'en');
+  check(/<title>Elpriser prognose 7 dage — time for time, DK1 og DK2<\/title>/.test(prog.body), '/prognose: titel har "7 dage" og nævner ikke 10 døgn');
   check(/<title>Elafgift 2028: Elafgiften stiger igen/.test((await get('/blog/elafgift-2028')).body), 'elafgift-indlægget: titlen svarer ja');
   check(/<title>Elpris Vest \(DK1\) i dag/.test((await get('/dk1')).body), '/dk1: titlen starter med "Elpris Vest"');
   const llms = await get('/llms.txt');
-  check(!/7 dage|7-day/.test(llms.body) && /elpriser\.org\/sv\/elpris\)/.test(llms.body) && /elpriser\.org\/norden\)/.test(llms.body), 'llms.txt: 10 døgn og de fire nordiske sider');
+  const llmsProg = llms.body.split('\n').find(l => l.includes('elpriser.org/prognose)')) || '';
+  check(/7 døgn/.test(llmsProg) && !/10 døgn/.test(llmsProg) && /elpriser\.org\/sv\/elpris\)/.test(llms.body) && /elpriser\.org\/norden\)/.test(llms.body), 'llms.txt: linjen om /prognose siger 7 døgn, og de fire nordiske sider er med');
   const home2 = await get('/');
   check(!/name="description" content="[^"]*inkl\. nettariffer/.test(home2.body), 'forside: beskrivelsen påstår ikke nettarif');
 

@@ -145,6 +145,14 @@ async function startServer() {
     route.fulfill({ status: r.status, contentType: 'text/html; charset=utf-8', body: r.body });
   };
   await ctx.route('**/elpris/*', cityRoute);
+  // /prognose is written by the Pages Function too (the screen for DK1 on 7 døgn is in the HTML it serves): the same treatment.
+  const prognoseRoute = async route => {
+    const u = new URL(route.request().url());
+    if (route.request().resourceType() !== 'document' || u.pathname !== '/prognose') return route.fallback();
+    const r = await ssrCity(u.pathname);
+    route.fulfill({ status: r.status, contentType: 'text/html; charset=utf-8', body: r.body });
+  };
+  await ctx.route('**/prognose', prognoseRoute);
 
   // server.js has no /api/nordic either. The foreign-area pages draw from it, so answer it for all thirteen
   // zones with ten days from yesterday (like the live feed). The price encodes the zone, so a tab switch is visible:
@@ -1012,21 +1020,198 @@ async function startServer() {
       'https://shelly-test.example/v2/abc');
   });
 
-  // ── 6. Forecast page — area + mode selects ─────────────────────────────────
+  // ── 6. Forecast page — the Pris screen on 2 | 5 | 7 døgn, area and net from the header chip ──
 
-  await test('prognose: #fcArea and #fcMode selects render', async () => {
-    await page.goto(BASE + '/#prognose');
-    await page.waitForSelector('#fcArea');
-    await page.waitForSelector('#fcMode');
-    const areas = await page.locator('#fcArea option').evaluateAll(o => o.map(x => x.value));
-    assert.ok(areas.includes('DK1') && areas.includes('DK2'), '#fcArea needs DK1+DK2');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  /** The state of the screen as a visitor sees it: only what is displayed counts. */
+  const progView = () => page.evaluate(() => {
+    const vis = e => e.getClientRects().length > 0;
+    const card = [...document.querySelectorAll('main[data-page="prognose"] .pris-card')].filter(vis);
+    const tiles = [...document.querySelectorAll('main[data-page="prognose"] .pris-tiles')].filter(vis);
+    const rows = [...document.querySelectorAll('main[data-page="prognose"] .pris-week tbody tr')].filter(vis);
+    return {
+      period: document.querySelector('main[data-page="prognose"] .pris').dataset.period,
+      cards: card.map(c => c.getAttribute('aria-label')), bars: card.map(c => c.querySelectorAll('.pc').length),
+      labels: card.map(c => [...c.querySelectorAll('.pris-xl span')].map(x => x.textContent)),
+      tiles: tiles.map(t => t.className), rows: rows.length,
+      unc: rows.map(r => r.lastElementChild.textContent), type: rows.map(r => r.children[3].textContent),
+      lead: document.getElementById('fcPeriodDays').textContent,
+      selected: document.querySelector('main[data-page="prognose"] .pris-period [aria-selected="true"]').dataset.prisPeriod,
+    };
   });
 
-  await test('prognose: changing #fcArea triggers loadForecastPage()', async () => {
-    await page.goto(BASE + '/#prognose');
-    await page.waitForSelector('#fcArea');
-    await page.selectOption('#fcArea', 'DK2');
-    assert.equal(await page.locator('#fcArea').inputValue(), 'DK2');
+  await test('prognose: the canonical Pris screen — one h1, head, 2 | 5 | 7 døgn opening on 7, no selects, no old chart', async () => {
+    await page.goto(BASE + '/prognose');
+    await page.evaluate(() => localStorage.clear());
+    await page.goto(BASE + '/prognose');
+    await page.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
+    assert.deepEqual(await page.locator('h1').allTextContents(), ['Elprisprognose']);
+    assert.equal((await page.locator('main[data-page="prognose"] .page-eyebrow').textContent()).trim(), 'Forventede elpriser · DK1 Vest');
+    assert.equal((await page.locator('main[data-page="prognose"] #fcPeriodDays').evaluate(e => e.parentElement.textContent)).trim(),
+      'Nu og 7 døgn frem, time for time: faktiske børspriser, så langt de er afregnet, og en prognose for resten. Jo længere frem, jo mere usikker er den.');
+    assert.deepEqual((await page.locator('.pris-period [role="tab"]').allTextContents()).map(t => t.trim()), ['2 døgn', '5 døgn', '7 døgn']);
+    const v = await progView();
+    assert.equal(v.period, '7'); assert.equal(v.selected, '7');
+    assert.deepEqual(v.cards, ['Næste 7 døgn']); assert.deepEqual(v.bars, [168]); assert.equal(v.rows, 7);
+    assert.deepEqual(v.tiles, ['pris-tiles pp7']);
+    assert.equal(await page.locator('main[data-page="prognose"] select').count(), 0, 'the area and mode selects are gone');
+    for (const gone of ['#fcArea', '#fcMode', '#fcTable', '#fcCurve', '#prognoseForecast', '#prognoseWeek', '.fcweek'])
+      assert.equal(await page.locator(gone).count(), 0, `${gone} is back`);
+    assert.ok(!/Nu og 2 døgn frem|10 døgn|10 dage/.test(await page.locator('main[data-page="prognose"]').innerText()), 'old or ten-day wording on the page');
+    assert.equal(await page.title(), 'Elpriser prognose 7 dage — time for time, DK1 og DK2');
+    assert.equal(await page.evaluate(() => location.pathname), '/prognose');
+    // The big number is the area's price now (DK1, no net), like the front page; the sections below the screen are text.
+    assert.equal((await page.locator('.pris-now').textContent()).trim(), pris(fixturePrice('inkl_alt', null, hourDk())));
+    assert.ok((await page.locator('main[data-page="prognose"] h2').allTextContents()).slice(0, 2).join('|') === 'Sådan laves prognosen|Det kan prognosen ikke');
+  });
+
+  await test('prognose: 2 → 5 → 7 døgn changes the card, the bars, the labels, the tiles, the rows, Usikkerhed and the lead', async () => {
+    await page.goto(BASE + '/prognose');
+    await page.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
+    const want = {
+      2: { card: 'Næste 2 døgn', bars: 48, rows: 2, unc: ['—', 'Lav'], tile: 'pp2' },
+      5: { card: 'Næste 5 døgn', bars: 120, rows: 5, unc: ['—', 'Lav', 'Lav', 'Middel', 'Middel'], tile: 'pp5' },
+      7: { card: 'Næste 7 døgn', bars: 168, rows: 7, unc: ['—', 'Lav', 'Lav', 'Middel', 'Middel', 'Middel', 'Høj'], tile: 'pp7' },
+    };
+    const seen = [];
+    for (const n of [2, 5, 7]) {
+      await page.locator(`.pris-period [data-pris-period="${n}"]`).click();
+      const v = await progView(), w = want[n];
+      assert.equal(v.period, String(n)); assert.equal(v.selected, String(n));
+      assert.deepEqual(v.cards, [w.card], `${n}: the visible card`); assert.deepEqual(v.bars, [w.bars], `${n}: bars`);
+      assert.equal(v.rows, w.rows, `${n}: day rows`); assert.deepEqual(v.unc, w.unc, `${n}: Usikkerhed`);
+      assert.deepEqual(v.tiles, [`pris-tiles ${w.tile}`], `${n}: tiles`); assert.equal(v.lead, String(n), `${n}: the lead`);
+      assert.deepEqual(v.type.slice(0, 2), ['Børspris', 'Børspris'], `${n}: Type stays Børspris/Prognose`);
+      seen.push(v.labels[0]);
+    }
+    assert.equal(seen[0][0], 'I dag 00', '2 døgn keeps its hourly labels');
+    assert.equal(seen[1].length, 5, '5 døgn: a label per day'); assert.equal(seen[2].length, 7, '7 døgn: a label per day');
+    assert.match(seen[2][0], /^(søn|man|tir|ons|tor|fre|lør) \d+$/, 'weekday and date');
+    assert.equal(await page.locator('.pris-period [data-pris-period="7"]').getAttribute('aria-selected'), 'true');
+    // Back to the front page: its pill is untouched.
+    await page.goto(BASE + '/');
+    await page.waitForSelector('main[data-page="start"].active .pris');
+    assert.deepEqual((await page.locator('.pris-period [role="tab"]').allTextContents()).map(t => t.trim()), ['2 døgn', '5 døgn']);
+    assert.equal(await page.locator('main[data-page="start"] .pris').getAttribute('data-period'), '2', 'the front page still opens on 2 døgn');
+  });
+
+  await test('prognose: a legacy period (10, "3–10") reads as 7; the arrow keys walk 2 → 5 → 7 → 2 round the pill; the page does not move to the tooltips', async () => {
+    await page.goto(BASE + '/prognose');
+    await page.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
+    await page.locator('.pris-period [data-pris-period="2"]').click();
+    for (const legacy of [10, '10', '3–10', '3-10']) {
+      await page.locator('.pris-period [data-pris-period="2"]').click();
+      await page.evaluate(v => setPrisPeriod(v), legacy);
+      assert.equal(await page.locator('main[data-page="prognose"] .pris').getAttribute('data-period'), '7', `legacy ${legacy}`);
+    }
+    await page.locator('.pris-period [data-pris-period="2"]').click();
+    await page.locator('.pris-period [data-pris-period="2"]').focus();
+    const order = [];
+    for (let i = 0; i < 3; i++) { await page.keyboard.press('ArrowRight'); order.push(await page.evaluate(() => document.activeElement.dataset.prisPeriod)); }
+    assert.deepEqual(order, ['5', '7', '2']);
+    await page.keyboard.press('ArrowLeft');
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.prisPeriod), '7');
+    assert.equal(await page.locator('main[data-page="prognose"] .pris').getAttribute('data-period'), '7');
+  });
+
+  await test('prognose: hovering a bar of the 7 døgn chart shows the exact price and the day; a later day can be picked', async () => {
+    await page.goto(BASE + '/prognose');
+    await page.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
+    const plot = page.locator('.pp7 .pris-plot');
+    const box = await plot.boundingBox();
+    await page.mouse.move(box.x + box.width * 0.93, box.y + box.height / 2);
+    const tip = (await page.locator('.pp7 .pris-tip').textContent()).trim();
+    assert.match(tip, /^(søn|man|tir|ons|tor|fre|lør) \d+\. [a-zæøå]+ kl\. \d\d · \d,\d\d kr\/kWh$/, tip);
+    await page.mouse.click(box.x + box.width * 0.93, box.y + box.height / 2);
+    assert.equal(await page.locator('main[data-page="prognose"] .pris-bdback').count() > 0, true, 'the picked bar opens the breakdown for its day');
+  });
+
+  await test('prognose: the header chip chooses the area and net on the page itself — the address stays, the screen, eyebrow and chip follow', async () => {
+    await page.goto(BASE + '/prognose');
+    await page.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
+    forecastRequests.length = 0;
+    await page.locator('#netChip').click();
+    await page.waitForSelector('#netDialog[open]');
+    await page.locator('#netDlgDK2 a', { hasText: /^Radius$/ }).click();
+    await page.waitForFunction(() => document.querySelector('main[data-page="prognose"] .pris')?.dataset.key === 'DK2|din|radius');
+    assert.equal(await page.evaluate(() => location.pathname), '/prognose', 'the address stays');
+    assert.equal(await page.locator('#netDialog').evaluate(d => d.open), false, 'the dialog closes');
+    assert.equal((await page.locator('#fcWhere').textContent()).trim(), 'DK2 Øst · Radius');
+    assert.equal((await page.locator('#netChipLong').textContent()).trim(), 'Radius · Østdanmark');
+    assert.ok(forecastRequests.includes('DK2|net_inkl_alt|5790000705689'), forecastRequests.join(', '));
+    assert.equal((await page.locator('.pris-now').textContent()).trim(), pris(fixturePrice('net_inkl_alt', '5790000705689', hourDk())), 'the big number is Radius\'s all-in price');
+    const v = await progView();
+    assert.equal(v.period, '7', 'the period survives'); assert.equal(v.rows, 7);
+    assert.equal(await page.evaluate(() => localStorage.getItem('dk_net_pick')), 'DK2/net_inkl_alt/radius', 'the choice is remembered like any net pick');
+    // The period word in the lead follows too, and a reload comes back to the remembered net.
+    await page.locator('.pris-period [data-pris-period="5"]').click();
+    assert.equal((await page.locator('#fcPeriodDays').textContent()).trim(), '5');
+    await page.reload();
+    await page.waitForFunction(() => document.querySelector('main[data-page="prognose"] .pris')?.dataset.key === 'DK2|din|radius');
+    assert.equal((await page.locator('#fcWhere').textContent()).trim(), 'DK2 Øst · Radius');
+    assert.equal((await page.locator('#fcPeriodDays').textContent()).trim(), '7', 'a fresh visit opens on 7 døgn again');
+    // "Uden netselskab" in DK1: the area's own price.
+    forecastRequests.length = 0;
+    await page.locator('#netChip').click();
+    await page.locator('#netDlgDK1 a[data-net=""]').click();
+    await page.waitForFunction(() => document.querySelector('main[data-page="prognose"] .pris')?.dataset.key === 'DK1|din|');
+    assert.equal((await page.locator('#fcWhere').textContent()).trim(), 'DK1 Vest');
+    assert.equal((await page.locator('#netChipLong').textContent()).trim(), 'DK1 · Vestdanmark');
+    assert.ok(forecastRequests.includes('DK1|inkl_alt|'), forecastRequests.join(', '));
+    // The dialog's other links still leave the page: Norge is a page of its own.
+    await page.locator('#netChip').click();
+    await page.locator('#netDialog a[href="/no/strompris"]').click();
+    await page.waitForURL(u => u.pathname === '/no/strompris');
+    await page.evaluate(() => localStorage.clear());
+  });
+
+  await test('prognose: at 390 px nothing scrolls sideways in any of the three periods, and the day list fits its card', async () => {
+    const c = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, bypassCSP: true });
+    await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
+    await c.route('**/api/forecast*', forecastRoute);
+    await c.route('**/prognose', prognoseRoute);
+    const p = await c.newPage();
+    await p.goto(BASE + '/prognose');
+    await p.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
+    for (const n of [7, 5, 2]) {
+      await p.locator(`.pris-period [data-pris-period="${n}"]`).tap();
+      const m = await p.evaluate(() => {
+        const t = document.querySelector('main[data-page="prognose"] .pris-week'), d = t.closest('.pris-days').getBoundingClientRect();
+        const card = [...document.querySelectorAll('main[data-page="prognose"] .pris-card')].find(c => c.getClientRects().length).getBoundingClientRect();
+        return { sw: [document.documentElement.scrollWidth, innerWidth], table: [t.getBoundingClientRect().right, d.right], card: [card.left, card.right],
+          cells: [...t.querySelectorAll('thead th')].map(x => x.textContent) };
+      });
+      assert.equal(m.sw[0], m.sw[1], `${n}: horizontal scroll ${m.sw.join(' vs ')}`);
+      assert.ok(m.table[0] <= m.table[1] + 0.5, `${n}: the day list overflows its card ${m.table.join(' > ')}`);
+      assert.ok(m.card[0] >= 0 && m.card[1] <= 390, `${n}: the chart card is outside the screen ${m.card.join(', ')}`);
+      assert.equal(m.cells[m.cells.length - 1], 'Usikkerhed');
+    }
+    await c.close();
+  });
+
+  await test('prognose: dark mode — the head, the screen, the day list and the text blocks follow the dark ramp', async () => {
+    const c = await browser.newContext({ colorScheme: 'dark', viewport: { width: 1280, height: 800 }, bypassCSP: true });
+    await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
+    await c.route('**/api/forecast*', forecastRoute);
+    await c.route('**/prognose', prognoseRoute);
+    const p = await c.newPage();
+    await p.goto(BASE + '/prognose');
+    await p.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
+    assert.equal(await p.evaluate(() => document.documentElement.classList.contains('dark')), true);
+    const look = await p.evaluate(() => {
+      const col = e => getComputedStyle(e).color, bgc = e => getComputedStyle(e).backgroundColor;
+      const m = document.querySelector('main[data-page="prognose"]');
+      return { body: bgc(document.body), h1: col(m.querySelector('h1')), eyebrow: col(m.querySelector('.page-eyebrow')), lead: col(m.querySelector('#fcPeriodDays').parentElement),
+        block: col(m.querySelector('h2 + p')), heading: col(m.querySelector('h2')), link: col(m.querySelector('h2 + p a')),
+        hero: bgc(m.querySelector('.pris-hero')), cell: col(m.querySelector('.pris-week tbody td')), unc: col(m.querySelector('.pris-week tbody tr:last-child td:last-child')),
+        days: bgc(m.querySelector('.pris-days')) };
+    });
+    const lum = c => { const [r, g, b] = c.match(/\d+/g).map(Number); return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255; };
+    assert.equal(look.body, 'rgb(13, 18, 33)', 'the dark page ground');
+    assert.equal(look.h1, 'rgb(232, 237, 245)', 'light heading on dark');
+    for (const k of ['eyebrow', 'lead', 'block', 'heading', 'link', 'cell', 'unc']) assert.ok(lum(look[k]) > 0.45, `${k} is too dark on dark: ${look[k]}`);
+    for (const k of ['hero', 'days']) assert.ok(lum(look[k]) < 0.25, `${k} is not a dark card: ${look[k]}`);
+    await c.close();
   });
 
   // ── 7. Page-level home-link regression ─────────────────────────────────────
@@ -1515,6 +1700,7 @@ async function startServer() {
     await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
     await c.route('**/api/forecast*', forecastRoute);
     await c.route('**/elpris/*', cityRoute);
+    await c.route('**/prognose', prognoseRoute);
     return c;
   };
   const byName = n => CITIES.find(c => c.name === n);
