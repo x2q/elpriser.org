@@ -3,23 +3,17 @@ package org.elpriser.app
 import org.elpriser.app.data.Day
 import org.elpriser.app.ui.DAYS_FIVE
 import org.elpriser.app.ui.PERIOD_FIVE
-import org.elpriser.app.ui.PERIOD_LABELS
 import org.elpriser.app.ui.PERIOD_TWO
+import org.elpriser.app.ui.Extreme
 import org.elpriser.app.ui.axisFor
-import org.elpriser.app.ui.cheaperSentence
-import org.elpriser.app.ui.cheapestTile
 import org.elpriser.app.ui.coercePeriod
-import org.elpriser.app.ui.dayLabels
 import org.elpriser.app.ui.effectivePeriod
 import org.elpriser.app.ui.forecastStart
-import org.elpriser.app.ui.heroLabel
-import org.elpriser.app.ui.hourLabels
+import org.elpriser.app.ui.XLabel
+import org.elpriser.app.ui.label
 import org.elpriser.app.ui.parsePeriod
-import org.elpriser.app.ui.periodTitle
-import org.elpriser.app.ui.priceCaption
-import org.elpriser.app.ui.priciestTile
+import org.elpriser.app.ui.periodLabels
 import org.elpriser.app.ui.tiersFor
-import org.elpriser.app.ui.tooltipText
 import org.elpriser.app.ui.verdict
 import org.elpriser.app.ui.visibleDays
 import org.junit.Assert.assertEquals
@@ -28,6 +22,19 @@ import org.junit.Test
 
 /** Logikken bag den nye Pris-skærm (Design A): sætning, nøgletal, akse, etiketter og bobler. */
 class PriceLogicTest {
+    // The Danish texts, read from res/values/strings.xml. The wrappers keep every assertion below as it was
+    // (they only hand the texts to the logic); an assertion on Danish wording therefore also pins the resource file.
+    private val tx = TestStrings.da
+    private fun cheaperSentence(vals: List<Double>, now: Int): String = org.elpriser.app.ui.cheaperSentence(tx, vals, now)
+    private fun cheapestTile(vals: List<Double>, now: Int, days: List<Day>? = null): Extreme? = org.elpriser.app.ui.cheapestTile(tx, vals, now, days)
+    private fun priciestTile(vals: List<Double>, now: Int, days: List<Day>? = null): Extreme? = org.elpriser.app.ui.priciestTile(tx, vals, now, days)
+    private fun tooltipText(days: List<Day>, vals: List<Double>, i: Int): String = org.elpriser.app.ui.tooltipText(tx, days, vals, i)
+    private fun hourLabels(n: Int, step: Int): List<XLabel> = org.elpriser.app.ui.hourLabels(tx, n, step)
+    private fun dayLabels(days: List<Day>): List<XLabel> = org.elpriser.app.ui.dayLabels(tx, days)
+    private fun periodTitle(period: Int): String = org.elpriser.app.ui.periodTitle(tx, period)
+    private fun priceCaption(mode: String): String = org.elpriser.app.ui.priceCaption(tx, mode)
+    private fun heroLabel(hour: Int, weekday: String?): String = org.elpriser.app.ui.heroLabel(tx, hour, weekday)
+
     // Prisserien fra designets skitse: i dag og i morgen, kl. 21 nu.
     private val today = listOf(1.32, 1.37, 1.35, 1.31, 1.30, 1.43, 1.78, 1.92, 2.11, 1.97, 1.86, 1.74, 1.52, 1.39, 1.44, 1.63, 1.98, 3.21, 3.68, 3.90, 3.67, 2.67, 2.43, 2.20)
     private val tomorrow = listOf(1.73, 1.69, 1.69, 1.69, 1.64, 1.63, 1.95, 2.23, 2.45, 2.18, 2.07, 1.84, 1.53, 1.38, 1.42, 1.63, 2.00, 3.03, 3.33, 3.34, 2.98, 2.15, 2.10, 2.09)
@@ -210,7 +217,7 @@ class PriceLogicTest {
     }
 
     @Test fun period_titles_and_labels_say_5_dogn() {
-        assertEquals(listOf("2 døgn", "5 døgn"), PERIOD_LABELS)
+        assertEquals(listOf("2 døgn", "5 døgn"), periodLabels(tx))
         assertEquals("Næste 2 døgn", periodTitle(PERIOD_TWO))
         assertEquals("Næste 5 døgn", periodTitle(PERIOD_FIVE))
     }
@@ -242,6 +249,6 @@ class PriceLogicTest {
         // 39 af 48 timer er billigere end 2,67 (81 %), så designets skitse viser "Dyr lige nu".
         val v = verdict(vals[now], vals)
         assertEquals(2, v.kind)
-        assertEquals("Dyr lige nu", v.label)
+        assertEquals("Dyr lige nu", v.label(tx))
     }
 }

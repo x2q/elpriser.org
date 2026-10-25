@@ -7,6 +7,7 @@ import org.elpriser.app.ui.cheapestWindow
 import org.elpriser.app.ui.dayLong
 import org.elpriser.app.ui.dayMonth
 import org.elpriser.app.ui.dayShort
+import org.elpriser.app.ui.label
 import org.elpriser.app.ui.verdict
 import org.json.JSONArray
 import org.json.JSONObject
@@ -76,7 +77,7 @@ class ContractTest {
             val v = verdict(c.getDouble("price"), doubles(c.getJSONArray("vals")))
             val e = c.getJSONObject("expect")
             assertEquals("case $i kind", e.getInt("kind"), v.kind)
-            assertEquals("case $i label", e.getString("label"), v.label)
+            assertEquals("case $i label", e.getString("label"), v.label(TestStrings.da))
         }
     }
 
@@ -85,9 +86,9 @@ class ContractTest {
         for (i in 0 until cases.length()) {
             val c = cases.getJSONObject(i)
             val d = Day(c.getString("date"), true, List(24) { 1.0 }, null, null)
-            assertEquals(c.getString("short"), dayShort(d))
-            assertEquals(c.getString("month"), dayMonth(d))
-            assertEquals(c.getString("long"), dayLong(d))
+            assertEquals(c.getString("short"), dayShort(TestStrings.da, d))
+            assertEquals(c.getString("month"), dayMonth(TestStrings.da, d))
+            assertEquals(c.getString("long"), dayLong(TestStrings.da, d))
         }
     }
 

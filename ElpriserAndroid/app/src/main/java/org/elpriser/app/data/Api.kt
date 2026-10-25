@@ -21,7 +21,7 @@ object Api {
             conn.setRequestProperty("User-Agent", UA)
             conn.setRequestProperty("Accept", "application/json")
             val code = conn.responseCode
-            if (code !in 200..299) throw java.io.IOException("Serverfejl ($code)")
+            if (code !in 200..299) throw java.io.IOException("HTTP $code")
             JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
         } finally {
             conn.disconnect()

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Suomi (fi). Luonnos äidinkielisen puhujan tarkistettavaksi; nimien ja paikkamerkkien tulee vastata tiedostoa values/strings.xml. -->
+<resources>
+    <string name="nav_price">Hinta</string>
+    <string name="nav_smart">Älykoti</string>
+    <string name="open_settings_label">Avaa verkkoyhtiö ja asetukset</string>
+    <string name="settings_back_label">Takaisin Hinta-näkymään</string>
+    <string name="settings_title">Verkkoyhtiö ja asetukset</string>
+    <string name="settings_subtitle">Verkkoyhtiö, hintanäkymä ja ulkoasu</string>
+    <string name="error_no_prices_today">Tämän päivän hintoja ei ole vielä saatavilla.</string>
+    <string name="error_load_failed">Hintojen haku epäonnistui. Tarkista yhteytesi ja yritä uudelleen.</string>
+    <string name="error_load_stale">Näytetään viimeisimmät hinnat – päivitys ei onnistunut.</string>
+    <string name="action_retry">Yritä uudelleen</string>
+    <string name="hero_label">Sähkön hinta juuri nyt · klo %1$s</string>
+    <string name="hero_label_weekday">Sähkön hinta juuri nyt · %1$s klo %2$s</string>
+    <string name="unit_price">kr/kWh</string>
+    <string name="unit_kr">kr</string>
+    <string name="price_kwh">%1$s kr/kWh</string>
+    <string name="value_ore">%1$s øre</string>
+    <string name="verdict_cheap">Halpa juuri nyt</string>
+    <string name="verdict_mid">Keskihintainen juuri nyt</string>
+    <string name="verdict_high">Kallis juuri nyt</string>
+    <string name="legend_cheap">Halpa</string>
+    <string name="legend_mid">Keskihintainen</string>
+    <string name="legend_high">Kallis</string>
+    <string name="mode_net_price">Hintasi</string>
+    <string name="mode_spot_price">Pörssihinta</string>
+    <string name="view_label">Hintanäkymä</string>
+    <string name="period_label">Jakso</string>
+    <string name="period_two">2 vrk</string>
+    <string name="period_five">5 vrk</string>
+    <string name="period_title_two">Seuraavat 2 vrk</string>
+    <string name="period_title_five">Seuraavat 5 vrk</string>
+    <string name="caption_net">Sis. siirtomaksun, verot ja alv:n</string>
+    <string name="caption_system">Sis. Energinetin maksut, verot ja alv:n</string>
+    <string name="caption_spot_incl">Pörssihinta sis. alv:n</string>
+    <string name="caption_spot_excl">Pörssihinta ilman alv:tä</string>
+    <string name="area_west">Länsi</string>
+    <string name="area_east">Itä</string>
+    <string name="area_label_dk1">DK1 Länsi</string>
+    <string name="area_label_dk2">DK2 Itä</string>
+    <string name="forecast_label">Ennuste</string>
+    <string name="cheaper_none">Halvin tunti seuraavan 24 tunnin aikana</string>
+    <string name="cheaper_later">Halvempaa %1$s klo %2$s – %3$s kr</string>
+    <string name="tile_cheapest">Halvin %1$s</string>
+    <string name="tile_priciest">Kallein %1$s</string>
+    <string name="stat_price_hour">kr · klo %1$s</string>
+    <string name="day_today">tänään</string>
+    <string name="day_tomorrow">huomenna</string>
+    <string name="day_tonight">illalla</string>
+    <string name="day_later">myöhemmin</string>
+    <string name="day_today_cap">Tänään</string>
+    <string name="day_tomorrow_cap">Huomenna</string>
+    <string name="day_short_date">%1$s %2$d.</string>
+    <string name="day_short_num">%1$s %2$d</string>
+    <string name="date_day_month">%1$d. %2$s</string>
+    <string name="date_long">%1$s %2$d. %3$s</string>
+    <string name="axis_today_midnight">Tänään 00</string>
+    <string name="axis_tomorrow_midnight">Huomenna 00</string>
+    <string name="tooltip">%1$s klo %2$s · %3$s kr/kWh</string>
+    <string name="chart_selected">Valittu: %1$s.</string>
+    <string name="chart_summary_tile">%1$s: %2$s kr klo %3$s.</string>
+    <string name="chart_hint">Napauta tai vedä kaaviota nähdäksesi hinnan tunti tunnilta.</string>
+    <string-array name="weekdays_long">
+        <item>sunnuntai</item>
+        <item>maanantai</item>
+        <item>tiistai</item>
+        <item>keskiviikko</item>
+        <item>torstai</item>
+        <item>perjantai</item>
+        <item>lauantai</item>
+    </string-array>
+    <string-array name="weekdays_short">
+        <item>su</item>
+        <item>ma</item>
+        <item>ti</item>
+        <item>ke</item>
+        <item>to</item>
+        <item>pe</item>
+        <item>la</item>
+    </string-array>
+    <string-array name="months_short">
+        <item>tammik.</item>
+        <item>helmik.</item>
+        <item>maalisk.</item>
+        <item>huhtik.</item>
+        <item>toukok.</item>
+        <item>kesäk.</item>
+        <item>heinäk.</item>
+        <item>elok.</item>
+        <item>syysk.</item>
+        <item>lokak.</item>
+        <item>marrask.</item>
+        <item>jouluk.</item>
+    </string-array>
+    <string name="part_spot_actual">Pörssihinta (Nord Pool)</string>
+    <string name="part_spot_forecast">Pörssihinta (ennuste)</string>
+    <string name="part_system">Järjestelmämaksu (Energinet)</string>
+    <string name="part_transmission">Kantaverkkomaksu (Energinet)</string>
+    <string name="part_grid_named">Siirtomaksu (%1$s, klo %2$s)</string>
+    <string name="part_grid">Siirtomaksu (klo %1$s)</string>
+    <string name="part_duty">Sähkövero</string>
+    <string name="part_vat">Alv (%1$d %%)</string>
+    <string name="part_total">Yhteensä</string>
+    <string name="breakdown_heading_now">Näin hinta klo %1$s muodostuu</string>
+    <string name="breakdown_heading_when">Näin hinta %1$s klo %2$s muodostuu</string>
+    <string name="breakdown_back_to_now">Takaisin nykyhetkeen</string>
+    <string name="breakdown_fold_in">Kutista hinnan erittely</string>
+    <string name="breakdown_fold_out">Laajenna hinnan erittely</string>
+    <string name="state_expanded">Laajennettu</string>
+    <string name="state_collapsed">Kutistettu</string>
+    <string name="settings_net_label">Verkkoyhtiö</string>
+    <string name="settings_no_net">Verkkoyhtiötä ei ole valittu</string>
+    <string name="settings_net_gps">Löytyi sijainnillasi · tallennettu puhelimeen</string>
+    <string name="settings_net_manual">Valitsit itse · tallennettu puhelimeen</string>
+    <string name="settings_net_none_hint">Hinnat näytetään ilman siirtomaksua</string>
+    <string name="settings_area_label">Hinta-alue</string>
+    <string name="settings_privacy_note">Kysymme sijaintiasi vain, kun painat nappia. Tallennamme vastauksen – verkkoyhtiön – emmekä koskaan koordinaatteja.</string>
+    <string name="action_change">Vaihda</string>
+    <string name="action_find_net">Etsi verkkoyhtiöni</string>
+    <string name="action_find_net_again">Etsi verkkoyhtiö uudelleen</string>
+    <string name="action_forget">Unohda</string>
+    <string name="view_total_title">Kokonaishinta verkkoyhtiön kanssa</string>
+    <string name="view_total_sub">Pörssihinta, siirtomaksu, verot ja alv</string>
+    <string name="view_nonet_title">Ilman verkkoyhtiötä</string>
+    <string name="view_nonet_sub">Energinetin maksut, sähkövero ja alv</string>
+    <string name="view_spot_incl_title">Pörssihinta sis. alv:n</string>
+    <string name="view_spot_incl_sub">Pörssihinta sellaisenaan</string>
+    <string name="view_spot_excl_title">Pörssihinta ilman alv:tä</string>
+    <string name="view_spot_excl_sub">Laskelmiin ja laskuihin</string>
+    <string name="view_needs_net">%1$s – valitse ensin verkkoyhtiö</string>
+    <string name="settings_look_label">Ulkoasu</string>
+    <string name="theme_system">Järjestelmä</string>
+    <string name="theme_light">Vaalea</string>
+    <string name="theme_dark">Tumma</string>
+    <string name="settings_about_label">Tietoja sovelluksesta</string>
+    <string name="about_text">Hinnat: Energi Data Service ja ENTSO-E · ennuste perustuu avoimeen malliin Hugging Facessa · elpriser %1$s</string>
+    <string name="action_privacy">Tietosuoja</string>
+    <string name="smart_subtitle">Aja halvimpien tuntien mukaan tänään</string>
+    <string name="savings_today">Säästö tänään</string>
+    <plurals name="devices_active">
+        <item quantity="one">%1$d laite päällä</item>
+        <item quantity="other">%1$d laitetta päällä</item>
+    </plurals>
+    <string name="kwh_moved">%1$s kWh siirretty</string>
+    <string name="device_heatpump">Lämpöpumppu</string>
+    <string name="device_car">Sähköauto</string>
+    <string name="device_water">Vedenlämmitin</string>
+    <string name="device_power_line">%1$s kW · halvimmat tunnit</string>
+    <string name="stepper_less">Yksi tunti vähemmän</string>
+    <string name="stepper_more">Yksi tunti lisää</string>
+    <plurals name="hours_count">
+        <item quantity="one">%1$d tunti</item>
+        <item quantity="other">%1$d tuntia</item>
+    </plurals>
+    <string name="device_avg_save">ka. %1$s kr/kWh\nsäästö %2$s kr</string>
+    <string name="plan_title">Päivän suunnitelma</string>
+    <string name="plan_row_price">Hinta</string>
+    <string name="export_title">Hae suunnitelma Home Assistantille</string>
+    <string name="export_subtitle">tai Shellylle – JSON valituilla tunneilla</string>
+    <string name="export_copy">Kopioi</string>
+    <string name="export_copied">Kopioitu</string>
+    <string name="welcome_skip">Ohita</string>
+    <string name="welcome_cancel">Peruuta</string>
+    <string name="welcome_title">Etsi verkkoyhtiösi</string>
+    <string name="welcome_body">Sähkölaskusi riippuu siitä, kuka omistaa taloosi johtavat linjat. Sijaintisi avulla löydämme verkkoyhtiön, jotta sovelluksen hinnat ovat niitä, jotka todella maksat.</string>
+    <string name="welcome_point_1">Kysymme vain, kun painat nappia – emme koskaan taustalla.</string>
+    <string name="welcome_point_2">Sijaintia käytetään kerran. Tallennamme verkkoyhtiön, emme koordinaatteja.</string>
+    <string name="welcome_point_3">Voit aina vaihtaa verkkoyhtiön tai unohtaa sen Asetuksissa.</string>
+    <string name="welcome_pick_myself">Valitse itse luettelosta</string>
+    <string name="searching_title">Etsitään verkkoyhtiötäsi …</string>
+    <string name="searching_hint">Tämä kestää hetken. Sijaintia ei tallenneta.</string>
+    <string name="found_label">Löysimme</string>
+    <string name="found_area">Hinta-alue %1$s · osoitteesi verkkoyhtiö</string>
+    <string name="found_saved_title">Mitä tallennetaan</string>
+    <string name="found_saved_net">Verkkoyhtiö: %1$s (hinta-alue %2$s)</string>
+    <string name="found_saved_local">Tallennetaan vain tähän puhelimeen</string>
+    <string name="found_saved_not">Sijaintiasi – ei koordinaatteja eikä osoitetta</string>
+    <string name="found_wrong_hint">Onko verkkoyhtiö väärä? Sijainti voi olla epätarkka kahden verkkoyhtiön rajan lähellä – valitse tällöin yhtiö luettelosta.</string>
+    <string name="found_use">Käytä: %1$s</string>
+    <string name="found_not_mine">Tämä ei ole minun verkkoyhtiöni</string>
+    <string name="picker_title">Valitse verkkoyhtiö</string>
+    <string name="picker_subtitle">Näkyy sähkölaskussasi</string>
+    <string name="picker_search_hint">Hae verkkoyhtiötä</string>
+    <string name="picker_locate">Etkö tiedä? Etsi se sijainnillasi</string>
+    <string name="picker_group_dk1">DK1 · Jyllanti ja Fyn</string>
+    <string name="picker_group_dk2">DK2 · Selanti, Lolland ja Falster</string>
+    <string name="picker_no_match">Hakua “%1$s” vastaavia verkkoyhtiöitä ei löytynyt.</string>
+    <string name="picker_save">Tallenna %1$s verkkoyhtiökseni</string>
+    <string name="picker_choose">Valitse verkkoyhtiö</string>
+    <string name="note_no_position">Sijaintiasi ei löytynyt. Valitse verkkoyhtiösi luettelosta.</string>
+    <string name="note_outside_denmark">Sijaintisi on Tanskan ulkopuolella. Valitse verkkoyhtiösi luettelosta.</string>
+    <string name="note_no_net">Sijaintisi verkkoyhtiötä ei löytynyt. Valitse se luettelosta – se näkyy sähkölaskussasi.</string>
+    <string name="note_lookup_failed">Haku epäonnistui. Valitse verkkoyhtiösi luettelosta tai yritä myöhemmin uudelleen.</string>
+    <string name="note_denied">Sijaintia ei jaettu. Valitse verkkoyhtiösi luettelosta – sovellus toimii silti samalla tavalla.</string>
+</resources>

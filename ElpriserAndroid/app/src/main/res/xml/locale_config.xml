@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Appens sprog til Android 13+ "Sprog pr. app". Dansk er standard; skal passe til values-*/ og resourceConfigurations. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="da" />
+    <locale android:name="nb" />
+    <locale android:name="sv" />
+    <locale android:name="fi" />
+    <locale android:name="nl" />
+</locale-config>

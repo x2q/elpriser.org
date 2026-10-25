@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.elpriser.app.R
 
 /*
  * Billedtekstens opdeling: "Inkl. nettarif, afgifter og moms" er en knap, der folder pris-delene ud.
@@ -70,6 +71,7 @@ fun PriceCaption(
     selectedHour: Boolean, onBackToNow: () -> Unit, fontSize: TextUnit, modifier: Modifier = Modifier,
 ) {
     val t = T
+    val tx = rememberStrings()
     if (breakdown == null) {
         Text(caption, modifier, fontSize = fontSize, fontWeight = FontWeight.SemiBold, color = t.text2)
         return
@@ -77,14 +79,14 @@ fun PriceCaption(
     Column(modifier.fillMaxWidth().animateContentSize()) {
         Row(
             Modifier.heightIn(min = 44.dp)
-                .clickable(role = Role.Button, onClickLabel = if (expanded) "Fold prisopbygningen ind" else "Fold prisopbygningen ud", onClick = onToggle)
+                .clickable(role = Role.Button, onClickLabel = tx.get(if (expanded) R.string.breakdown_fold_in else R.string.breakdown_fold_out), onClick = onToggle)
                 .semantics {
-                    stateDescription = if (expanded) "Udfoldet" else "Foldet sammen"
+                    stateDescription = tx.get(if (expanded) R.string.state_expanded else R.string.state_collapsed)
                     if (expanded) collapse { onToggle(); true } else expand { onToggle(); true }
                 },
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text(caption, fontSize = fontSize, fontWeight = FontWeight.SemiBold, color = t.text2)
+            Text(caption, Modifier.weight(1f, fill = false), fontSize = fontSize, fontWeight = FontWeight.SemiBold, color = t.text2)
             Icon(Ic.Down, t.text2, 16.dp, stroke = 2.4f, modifier = Modifier.rotate(if (expanded) 180f else 0f))
         }
         AnimatedVisibility(expanded) {
@@ -96,6 +98,7 @@ fun PriceCaption(
 @Composable
 private fun BreakdownPanel(b: Breakdown, selectedHour: Boolean, onBackToNow: () -> Unit) {
     val t = T
+    val tx = rememberStrings()
     val figures = TextStyle(fontFeatureSettings = "tnum")
     val shape = RoundedCornerShape(14.dp)
     Column(
@@ -109,7 +112,7 @@ private fun BreakdownPanel(b: Breakdown, selectedHour: Boolean, onBackToNow: () 
                     Modifier.heightIn(min = 44.dp).clickable(role = Role.Button, onClick = onBackToNow).padding(horizontal = 4.dp),
                     contentAlignment = Alignment.CenterEnd,
                 ) {
-                    Text("Tilbage til nu", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = t.brand)
+                    Text(tx.get(R.string.breakdown_back_to_now), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = t.brand)
                 }
             }
         }
@@ -141,7 +144,7 @@ private fun BreakdownPanel(b: Breakdown, selectedHour: Boolean, onBackToNow: () 
                     .semantics(mergeDescendants = true) { collectionItemInfo = CollectionItemInfo(b.rows.size, 1, 0, 1) },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("I alt", Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                Text(tx.get(R.string.part_total), Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                 Text(b.totalText, style = figures, color = t.text, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
             }
         }

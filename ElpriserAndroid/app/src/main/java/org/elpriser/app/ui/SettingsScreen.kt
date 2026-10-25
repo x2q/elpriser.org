@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.elpriser.app.AppViewModel
 import org.elpriser.app.BuildConfig
+import org.elpriser.app.R
 import org.elpriser.app.Tab
 
 @Composable
@@ -39,45 +40,46 @@ fun SettingsScreen(vm: AppViewModel, wide: Boolean) {
     val t = T
     val s = vm.settings
     val ctx = LocalContext.current
+    val tx = rememberStrings()
     fun open(url: String) = ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
 
     val netCard: @Composable () -> Unit = {
         val net = s.net
         AppCard {
-            SectionLabel("Netselskab")
+            SectionLabel(tx.get(R.string.settings_net_label))
             Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(48.dp).clip(CircleShape).background(t.brandSoft), contentAlignment = Alignment.Center) { Icon(Ic.Pin, t.brand, 24.dp) }
                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                    Text(if (net != null) "${net.name} · ${net.areaLabel}" else "Intet netselskab valgt", fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
+                    Text(if (net != null) "${net.name} · ${areaLabel(tx, net.area)}" else tx.get(R.string.settings_no_net), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
                     Text(
-                        if (net != null) (if (s.netHow == "gps") "Fundet med din position · gemt på telefonen" else "Valgt af dig · gemt på telefonen") else "Priserne vises uden nettarif",
+                        if (net != null) tx.get(if (s.netHow == "gps") R.string.settings_net_gps else R.string.settings_net_manual) else tx.get(R.string.settings_net_none_hint),
                         fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = t.text2,
                     )
                 }
-                SoftButton("Skift", { vm.openPicker() })
+                SoftButton(tx.get(R.string.action_change), { vm.openPicker() })
             }
             Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(Modifier.weight(1f)) { PrimaryButton(if (net != null) "Find mit netselskab igen" else "Find mit netselskab", { vm.openWelcome() }, height = 46.dp) }
-                if (net != null) SoftButton("Glem", { vm.forget() }, bg = t.badSoft, fg = t.bad, modifier = Modifier.height(46.dp))
+                Box(Modifier.weight(1f)) { PrimaryButton(tx.get(if (net != null) R.string.action_find_net_again else R.string.action_find_net), { vm.openWelcome() }, height = 46.dp) }
+                if (net != null) SoftButton(tx.get(R.string.action_forget), { vm.forget() }, bg = t.badSoft, fg = t.bad, modifier = Modifier.height(46.dp))
             }
             if (net == null) {
-                Text("PRISOMRÅDE", Modifier.padding(top = 14.dp, bottom = 6.dp), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = t.text2)
-                Segmented(listOf("DK1 Vest", "DK2 Øst"), if (s.area == "DK1") 0 else 1, { s.updateArea(if (it == 0) "DK1" else "DK2"); vm.refresh(true) })
+                SectionLabel(tx.get(R.string.settings_area_label), Modifier.padding(top = 14.dp, bottom = 6.dp))
+                Segmented(listOf(areaLabel(tx, "DK1"), areaLabel(tx, "DK2")), if (s.area == "DK1") 0 else 1, { s.updateArea(if (it == 0) "DK1" else "DK2"); vm.refresh(true) })
             }
-            Text("Vi spørger kun om din position, når du trykker. Vi gemmer svaret — netselskabet — og aldrig koordinaterne.",
+            Text(tx.get(R.string.settings_privacy_note),
                 Modifier.padding(top = 10.dp), fontSize = 12.5.sp, lineHeight = 18.sp, color = t.text2)
         }
     }
 
     val viewCard: @Composable () -> Unit = {
         val defs = listOf(
-            "Samlet pris med netselskab" to "Spot, nettarif, afgifter og moms",
-            "Uden netselskab" to "Energinets tariffer, elafgift og moms",
-            "Spotpris inkl. moms" to "Børsprisen, som den er",
-            "Spotpris ekskl. moms" to "Til beregninger og fakturaer",
+            tx.get(R.string.view_total_title) to tx.get(R.string.view_total_sub),
+            tx.get(R.string.view_nonet_title) to tx.get(R.string.view_nonet_sub),
+            tx.get(R.string.view_spot_incl_title) to tx.get(R.string.view_spot_incl_sub),
+            tx.get(R.string.view_spot_excl_title) to tx.get(R.string.view_spot_excl_sub),
         )
         AppCard(padding = PaddingValues(start = 8.dp, end = 8.dp, top = 16.dp, bottom = 8.dp)) {
-            SectionLabel("Prisvisning", Modifier.padding(horizontal = 8.dp))
+            SectionLabel(tx.get(R.string.view_label), Modifier.padding(horizontal = 8.dp))
             defs.forEachIndexed { i, (label, sub) ->
                 Row(
                     Modifier.fillMaxWidth().padding(top = 2.dp).heightIn(min = 54.dp).clip(RoundedCornerShape(16.dp))
@@ -86,7 +88,7 @@ fun SettingsScreen(vm: AppViewModel, wide: Boolean) {
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text(label, fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
-                        Text(if (i == 0 && s.net == null) "$sub — vælg først et netselskab" else sub, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = t.text2)
+                        Text(if (i == 0 && s.net == null) tx.get(R.string.view_needs_net, sub) else sub, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = t.text2)
                     }
                     RadioMark(s.view == i)
                 }
@@ -96,9 +98,9 @@ fun SettingsScreen(vm: AppViewModel, wide: Boolean) {
 
     val lookCard: @Composable () -> Unit = {
         AppCard {
-            SectionLabel("Udseende")
+            SectionLabel(tx.get(R.string.settings_look_label))
             Box(Modifier.padding(top = 10.dp)) {
-                Segmented(listOf("System", "Lys", "Mørk"), when (s.theme) { "light" -> 1; "dark" -> 2; else -> 0 },
+                Segmented(listOf(tx.get(R.string.theme_system), tx.get(R.string.theme_light), tx.get(R.string.theme_dark)), when (s.theme) { "light" -> 1; "dark" -> 2; else -> 0 },
                     { s.updateTheme(listOf("system", "light", "dark")[it]) })
             }
         }
@@ -106,12 +108,12 @@ fun SettingsScreen(vm: AppViewModel, wide: Boolean) {
 
     val aboutCard: @Composable () -> Unit = {
         AppCard {
-            SectionLabel("Om appen")
-            Text("Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra en åben model på Hugging Face · elpriser ${BuildConfig.VERSION_NAME}",
+            SectionLabel(tx.get(R.string.settings_about_label))
+            Text(tx.get(R.string.about_text, BuildConfig.VERSION_NAME),
                 Modifier.padding(top = 8.dp), fontSize = 12.5.sp, lineHeight = 18.sp, color = t.text2, fontWeight = FontWeight.Medium)
             Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SoftButton("Privatliv", { open("https://elpriser.org/privatliv") }, bg = t.brandSoft, fg = t.brand)
-                SoftButton("elpriser.org", { open("https://elpriser.org") }, bg = t.brandSoft, fg = t.brand)
+                SoftButton(tx.get(R.string.action_privacy), { open("https://elpriser.org/privatliv") }, bg = t.brandSoft, fg = t.brand)
+                SoftButton(tx.get(R.string.link_site), { open("https://elpriser.org") }, bg = t.brandSoft, fg = t.brand)
             }
         }
     }
@@ -119,12 +121,12 @@ fun SettingsScreen(vm: AppViewModel, wide: Boolean) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(start = 8.dp, end = 20.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = "Tilbage til Pris") { vm.tab = Tab.Pris },
+                Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClickLabel = tx.get(R.string.settings_back_label)) { vm.tab = Tab.Pris },
                 contentAlignment = Alignment.Center,
             ) { Icon(Ic.Back, t.text, 24.dp, stroke = 2.2f) }
             Column(Modifier.weight(1f).padding(start = 4.dp)) {
-                Text("Netselskab og indstillinger", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.4).sp, lineHeight = 26.sp)
-                Text("Netselskab, prisvisning og udseende", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = t.text2)
+                Text(tx.get(R.string.settings_title), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.4).sp, lineHeight = 26.sp)
+                Text(tx.get(R.string.settings_subtitle), fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = t.text2)
             }
         }
         if (wide) {

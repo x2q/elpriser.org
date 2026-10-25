@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.elpriser.app.R
 import org.elpriser.app.Tab
 
 @Composable
@@ -123,10 +124,11 @@ fun Loading(modifier: Modifier = Modifier) {
 @Composable
 fun ErrorCard(text: String, onRetry: (() -> Unit)?) {
     val t = T
+    val tx = rememberStrings()
     AppCard {
         Text(text, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, lineHeight = 21.sp)
         if (onRetry != null) {
-            Box(Modifier.padding(top = 12.dp)) { SoftButton("Prøv igen", onRetry, bg = t.brandSoft, fg = t.brand) }
+            Box(Modifier.padding(top = 12.dp)) { SoftButton(tx.get(R.string.action_retry), onRetry, bg = t.brandSoft, fg = t.brand) }
         }
     }
 }
@@ -155,7 +157,7 @@ fun NavItem(label: String, path: String, active: Boolean, onClick: () -> Unit, m
 }
 
 private val navItems = listOf(
-    Triple(Tab.Pris, "Pris", Ic.Bolt), Triple(Tab.Smart, "Smart hjem", Ic.Sliders),
+    Triple(Tab.Pris, R.string.nav_price, Ic.Bolt), Triple(Tab.Smart, R.string.nav_smart, Ic.Sliders),
 )
 
 /** Indstillinger åbnes fra Pris-skærmen, så Pris står som aktiv, mens de er åbne. */
@@ -164,23 +166,25 @@ private fun activeTab(t: Tab) = if (t == Tab.Settings) Tab.Pris else t
 @Composable
 fun BottomNav(tab: Tab, onTab: (Tab) -> Unit) {
     val t = T
+    val tx = rememberStrings()
     Row(
         Modifier.fillMaxWidth().background(t.nav).drawBehind { drawLine(t.outline, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 1.dp.toPx()) }
             .padding(top = 12.dp, bottom = 12.dp),
         horizontalArrangement = Arrangement.SpaceAround,
     ) {
-        navItems.forEach { (tb, label, icon) -> NavItem(label, icon, activeTab(tab) == tb, { onTab(tb) }, Modifier.weight(1f)) }
+        navItems.forEach { (tb, label, icon) -> NavItem(tx.get(label), icon, activeTab(tab) == tb, { onTab(tb) }, Modifier.weight(1f)) }
     }
 }
 
 @Composable
 fun SideRail(tab: Tab, onTab: (Tab) -> Unit) {
     val t = T
+    val tx = rememberStrings()
     Column(Modifier.width(96.dp).fillMaxHeight().background(t.nav).padding(top = 20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(t.brandSolid), contentAlignment = Alignment.Center) {
             Icon(Ic.Bolt, Color.White, 24.dp, fill = true)
         }
         Box(Modifier.height(10.dp))
-        navItems.forEach { (tb, label, icon) -> NavItem(label, icon, activeTab(tab) == tb, { onTab(tb) }, Modifier.width(88.dp).padding(vertical = 4.dp)) }
+        navItems.forEach { (tb, label, icon) -> NavItem(tx.get(label), icon, activeTab(tab) == tb, { onTab(tb) }, Modifier.width(88.dp).padding(vertical = 4.dp)) }
     }
 }

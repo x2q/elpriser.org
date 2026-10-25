@@ -1,5 +1,6 @@
 package org.elpriser.app.ui
 
+import org.elpriser.app.R
 import org.elpriser.app.data.Charges
 import org.elpriser.app.data.Day
 import kotlin.math.abs
@@ -24,7 +25,7 @@ const val DAYS_TWO = 2
 const val DAYS_FIVE = 5
 
 /** Etiketterne i periode-pillen, i samme rækkefølge som PERIOD_TWO / PERIOD_FIVE. */
-val PERIOD_LABELS = listOf("2 døgn", "5 døgn")
+fun periodLabels(tx: Strings): List<String> = listOf(tx.get(R.string.period_two), tx.get(R.string.period_five))
 
 /** Gemt heltal -> gyldig periode. Ukendte værdier falder tilbage til 2 døgn og må aldrig kaste. */
 fun coercePeriod(raw: Int): Int = if (raw == PERIOD_FIVE) PERIOD_FIVE else PERIOD_TWO
@@ -58,44 +59,44 @@ fun forecastStart(days: List<Day>): Int? = days.indexOfFirst { !it.actual }.take
 fun tiersFor(vals: List<Double>): IntArray = IntArray(vals.size) { verdict(vals[it], vals).kind }
 
 /** "i dag" / "i morgen" / "søn 17." for timen med det givne indeks. Uden dage at slå op i: "senere". */
-fun dayWord(index: Int, days: List<Day>? = null): String {
+fun dayWord(tx: Strings, index: Int, days: List<Day>? = null): String {
     val d = index / 24
     return when {
-        d == 0 -> "i dag"
-        d == 1 -> "i morgen"
-        days != null && d in days.indices -> "${dayShort(days[d])} ${days[d].localDate.dayOfMonth}."
-        else -> "senere"
+        d == 0 -> tx.get(R.string.day_today)
+        d == 1 -> tx.get(R.string.day_tomorrow)
+        days != null && d in days.indices -> tx.get(R.string.day_short_date, dayShort(tx, days[d]), days[d].localDate.dayOfMonth)
+        else -> tx.get(R.string.day_later)
     }
 }
 
 /** Sætningen under prisen: den billigste time de næste 24 timer, hvis den er billigere end nu. */
-fun cheaperSentence(vals: List<Double>, now: Int): String {
+fun cheaperSentence(tx: Strings, vals: List<Double>, now: Int): String {
     if (now !in vals.indices) return ""
     val end = minOf(vals.size, now + 24)
     var best = now
     for (i in now + 1 until end) if (vals[i] < vals[best]) best = i
-    return if (best == now || cents(vals[best]) >= cents(vals[now])) "Billigste time de næste 24 timer"
-    else "Billigere ${dayWord(best)} kl. ${pad(best % 24)} — ${fmt(vals[best])} kr"
+    return if (best == now || cents(vals[best]) >= cents(vals[now])) tx.get(R.string.cheaper_none)
+    else tx.get(R.string.cheaper_later, dayWord(tx, best), pad(best % 24), fmt(vals[best]))
 }
 
 /** En af de to nøgletal-felter: etiket, pris og klokkeslæt. */
 class Extreme(val label: String, val price: Double, val hour: Int)
 
 /** Billigste time fra nu og frem i det viste vindue. Etiketten er "Billigst i dag", "Billigst i morgen" eller "Billigst søn 17.". */
-fun cheapestTile(vals: List<Double>, now: Int, days: List<Day>? = null): Extreme? {
+fun cheapestTile(tx: Strings, vals: List<Double>, now: Int, days: List<Day>? = null): Extreme? {
     if (now !in vals.indices) return null
     var best = now
     for (i in now + 1 until vals.size) if (vals[i] < vals[best]) best = i
-    return Extreme("Billigst ${dayWord(best, days)}", vals[best], best % 24)
+    return Extreme(tx.get(R.string.tile_cheapest, dayWord(tx, best, days)), vals[best], best % 24)
 }
 
 /** Dyreste time fra nu og frem. "i aften" bruges kun for i dag fra kl. 17. */
-fun priciestTile(vals: List<Double>, now: Int, days: List<Day>? = null): Extreme? {
+fun priciestTile(tx: Strings, vals: List<Double>, now: Int, days: List<Day>? = null): Extreme? {
     if (now !in vals.indices) return null
     var worst = now
     for (i in now + 1 until vals.size) if (vals[i] > vals[worst]) worst = i
-    val word = if (worst / 24 == 0 && worst % 24 >= 17) "i aften" else dayWord(worst, days)
-    return Extreme("Dyrest $word", vals[worst], worst % 24)
+    val word = if (worst / 24 == 0 && worst % 24 >= 17) tx.get(R.string.day_tonight) else dayWord(tx, worst, days)
+    return Extreme(tx.get(R.string.tile_priciest, word), vals[worst], worst % 24)
 }
 
 /** Lodret akse, nulbaseret. Maks = højeste pris × 1,12 rundet op til næste 0,5, så den højeste søjle aldrig rører toppen. */
@@ -116,39 +117,51 @@ fun axisFor(vals: List<Double>): Axis {
 }
 
 /** Teksten i boblen: "I dag kl. 19 · 3,90 kr/kWh", "I morgen kl. 13 · …", og fra døgn 3 "søn 17. okt kl. 13 · 0,51 kr/kWh". */
-fun tooltipText(days: List<Day>, vals: List<Double>, i: Int): String {
+fun tooltipText(tx: Strings, days: List<Day>, vals: List<Double>, i: Int): String {
     val d = days[i / 24]
-    val whenText = when (i / 24) { 0 -> "I dag"; 1 -> "I morgen"; else -> "${dayShort(d)} ${dayMonth(d)}" }
-    return "$whenText kl. ${pad(i % 24)} · ${fmt(vals[i])} kr/kWh"
+    val whenText = when (i / 24) {
+        0 -> tx.get(R.string.day_today_cap)
+        1 -> tx.get(R.string.day_tomorrow_cap)
+        else -> "${dayShort(tx, d)} ${dayMonth(tx, d)}"
+    }
+    return tx.get(R.string.tooltip, whenText, pad(i % 24), fmt(vals[i]))
 }
 
 /** Placering (0..1 langs aksen) og tekst for vandrette akseetiketter. */
 class XLabel(val frac: Float, val text: String)
 
 /** 2 døgn: hvert [step]. time; kl. 00 hedder "I dag 00" / "I morgen 00". */
-fun hourLabels(n: Int, step: Int): List<XLabel> =
+fun hourLabels(tx: Strings, n: Int, step: Int): List<XLabel> =
     (0 until n step step).map { h ->
-        XLabel(h.toFloat() / n, if (h % 24 == 0) (if (h == 0) "I dag 00" else "I morgen 00") else pad(h % 24))
+        XLabel(
+            h.toFloat() / n,
+            if (h % 24 == 0) tx.get(if (h == 0) R.string.axis_today_midnight else R.string.axis_tomorrow_midnight) else pad(h % 24),
+        )
     }
 
 /** 5 døgn: ét navn pr. døgn, midt under døgnets 24 søjler ("fre 15"). */
-fun dayLabels(days: List<Day>): List<XLabel> =
-    days.mapIndexed { k, d -> XLabel((k + 0.5f) / days.size, "${dayShort(d)} ${d.localDate.dayOfMonth}") }
+fun dayLabels(tx: Strings, days: List<Day>): List<XLabel> =
+    days.mapIndexed { k, d -> XLabel((k + 0.5f) / days.size, tx.get(R.string.day_short_num, dayShort(tx, d), d.localDate.dayOfMonth)) }
 
-fun periodTitle(period: Int) = if (period == PERIOD_FIVE) "Næste 5 døgn" else "Næste 2 døgn"
+fun periodTitle(tx: Strings, period: Int) = tx.get(if (period == PERIOD_FIVE) R.string.period_title_five else R.string.period_title_two)
 
-fun priceCaption(mode: String) = when (mode) {
-    "net_inkl_alt" -> "Inkl. nettarif, afgifter og moms"
-    "inkl_alt" -> "Inkl. Energinets tariffer, afgifter og moms"
-    "spot_inkl" -> "Spotpris inkl. moms"
-    else -> "Spotpris ekskl. moms"
-}
+fun priceCaption(tx: Strings, mode: String) = tx.get(
+    when (mode) {
+        "net_inkl_alt" -> R.string.caption_net
+        "inkl_alt" -> R.string.caption_system
+        "spot_inkl" -> R.string.caption_spot_incl
+        else -> R.string.caption_spot_excl
+    },
+)
 
-fun areaShort(area: String) = if (area == "DK1") "Vest" else "Øst"
+fun areaShort(tx: Strings, area: String) = tx.get(if (area == "DK1") R.string.area_west else R.string.area_east)
+
+/** "DK1 Vest" / "DK2 Øst" — prisområdets kode og dets navn. */
+fun areaLabel(tx: Strings, area: String) = tx.get(if (area == "DK1") R.string.area_label_dk1 else R.string.area_label_dk2)
 
 /** Hero-etiketten: "Elpris lige nu · kl. 21" (telefon) eller "Elpris lige nu · onsdag kl. 21" (bred). */
-fun heroLabel(hour: Int, weekday: String?) =
-    "Elpris lige nu · " + (if (weekday != null) "$weekday " else "") + "kl. ${pad(hour)}"
+fun heroLabel(tx: Strings, hour: Int, weekday: String?) =
+    if (weekday != null) tx.get(R.string.hero_label_weekday, weekday, pad(hour)) else tx.get(R.string.hero_label, pad(hour))
 
 /* ── Prisopbygning ───────────────────────────────────────────────────────────────────────
  * Opdelingen af en times pris i dens dele (spot, tariffer, afgift, moms), i øre/kWh med én decimal.
@@ -158,10 +171,8 @@ fun heroLabel(hour: Int, weekday: String?) =
 /** Rollen styrer farven på søjlestykket og prikken; selve betydningen bæres altid af etiketten. */
 enum class PartRole { Spot, Energinet, Grid, Duty, Vat }
 
-/** En række i opdelingen. `tenths` er øre/kWh × 10 (afrundet), `text` er f.eks. "85,3 øre". */
-class BreakdownRow(val role: PartRole, val label: String, val tenths: Long) {
-    val text: String get() = tenthsText(tenths) + " øre"
-}
+/** En række i opdelingen. `tenths` er øre/kWh × 10 (afrundet), `text` er f.eks. "85,3 øre" (uden enhed: bare "85,3"). */
+class BreakdownRow(val role: PartRole, val label: String, val tenths: Long, val text: String = tenthsText(tenths))
 
 /** Hele opdelingen: rækker, total og overskrift. Rækkerne summer præcis til totalen (`totalTenths`). */
 class Breakdown(val rows: List<BreakdownRow>, val totalTenths: Long, val totalText: String, val heading: String) {
@@ -195,7 +206,7 @@ private fun tenthsOf(kr: Double): Long = Math.round(kr * 1000.0)
  * [headingWhen] er "" for denne time og ellers dagsordene fra [breakdownWhen] ("i morgen", "søn 18. okt").
  */
 fun breakdownOf(
-    mode: String, price: Double, hour: Int, forecastDay: Boolean, charges: Charges?, gridTariff: Double?,
+    tx: Strings, mode: String, price: Double, hour: Int, forecastDay: Boolean, charges: Charges?, gridTariff: Double?,
     netName: String?, headingWhen: String = "",
 ): Breakdown? {
     if (charges == null || !price.isFinite() || hour !in 0..23) return null
@@ -215,25 +226,35 @@ fun breakdownOf(
     // Moms = pris − pris/(1+sats); rundet for sig. Spotprisen er resten, så summen går op.
     val vat = tenthsOf(price - price / (1 + charges.vat))
     val spot = total - sys - trans - grid - afg - vat
-    val spotLabel = if (forecastDay) "Spotpris (prognose)" else "Spotpris (Nord Pool)"
-    val vatLabel = "Moms (${Math.round(charges.vat * 100)} %)"
+    val spotLabel = tx.get(if (forecastDay) R.string.part_spot_forecast else R.string.part_spot_actual)
+    val vatLabel = tx.get(R.string.part_vat, Math.round(charges.vat * 100))
+    fun row(role: PartRole, label: String, tenths: Long) = BreakdownRow(role, label, tenths, tx.get(R.string.value_ore, tenthsText(tenths)))
     val rows = ArrayList<BreakdownRow>()
-    rows.add(BreakdownRow(PartRole.Spot, spotLabel, spot))
+    rows.add(row(PartRole.Spot, spotLabel, spot))
     if (mode != "spot_inkl") {
-        rows.add(BreakdownRow(PartRole.Energinet, "Systemtarif (Energinet)", sys))
-        rows.add(BreakdownRow(PartRole.Energinet, "Transmissionstarif (Energinet)", trans))
-        if (net) rows.add(BreakdownRow(PartRole.Grid, "Nettarif (${if (netName.isNullOrBlank()) "" else "$netName, "}kl. ${pad(hour)})", grid))
-        rows.add(BreakdownRow(PartRole.Duty, "Elafgift", afg))
+        rows.add(row(PartRole.Energinet, tx.get(R.string.part_system), sys))
+        rows.add(row(PartRole.Energinet, tx.get(R.string.part_transmission), trans))
+        if (net) {
+            val gridLabel = if (netName.isNullOrBlank()) tx.get(R.string.part_grid, pad(hour)) else tx.get(R.string.part_grid_named, netName, pad(hour))
+            rows.add(row(PartRole.Grid, gridLabel, grid))
+        }
+        rows.add(row(PartRole.Duty, tx.get(R.string.part_duty), afg))
     }
-    rows.add(BreakdownRow(PartRole.Vat, vatLabel, vat))
-    val heading = "Sådan er prisen ${if (headingWhen.isEmpty()) "" else "$headingWhen "}kl. ${pad(hour)} sammensat"
-    return Breakdown(rows, total, "${fmt(price)} kr/kWh", heading)
+    rows.add(row(PartRole.Vat, vatLabel, vat))
+    val heading =
+        if (headingWhen.isEmpty()) tx.get(R.string.breakdown_heading_now, pad(hour))
+        else tx.get(R.string.breakdown_heading_when, headingWhen, pad(hour))
+    return Breakdown(rows, total, tx.get(R.string.price_kwh, fmt(price)), heading)
 }
 
 /** Dagsordene i overskriften for en valgt time: samme ord som boblen, men med småt ("i dag", "i morgen", "søn 18. okt"). */
-fun breakdownWhen(days: List<Day>, index: Int): String {
+fun breakdownWhen(tx: Strings, days: List<Day>, index: Int): String {
     val d = days.getOrNull(index / 24) ?: return ""
-    return when (index / 24) { 0 -> "i dag"; 1 -> "i morgen"; else -> "${dayShort(d)} ${dayMonth(d)}" }
+    return when (index / 24) {
+        0 -> tx.get(R.string.day_today)
+        1 -> tx.get(R.string.day_tomorrow)
+        else -> "${dayShort(tx, d)} ${dayMonth(tx, d)}"
+    }
 }
 
 /**
@@ -241,13 +262,13 @@ fun breakdownWhen(days: List<Day>, index: Int): String {
  * [selected] er true, når timen er valgt på grafen (overskriften nævner så dagen); false for "lige nu".
  */
 fun breakdownAt(
-    mode: String, days: List<Day>, vals: List<Double>, index: Int, selected: Boolean, charges: Charges?, netName: String?,
+    tx: Strings, mode: String, days: List<Day>, vals: List<Double>, index: Int, selected: Boolean, charges: Charges?, netName: String?,
 ): Breakdown? {
     if (index !in vals.indices) return null
     val day = days.getOrNull(index / 24) ?: return null
     val hour = index % 24
     return breakdownOf(
-        mode, vals[index], hour, !day.actual, charges, day.gridTariff?.getOrNull(hour), netName,
-        if (selected) breakdownWhen(days, index) else "",
+        tx, mode, vals[index], hour, !day.actual, charges, day.gridTariff?.getOrNull(hour), netName,
+        if (selected) breakdownWhen(tx, days, index) else "",
     )
 }

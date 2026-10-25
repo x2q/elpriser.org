@@ -1,14 +1,17 @@
 package org.elpriser.app.data
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import org.json.JSONArray
 import org.json.JSONObject
+import org.elpriser.app.R
 
-class Device(val key: String, val name: String, val kw: Double, val hours: Int, val on: Boolean) {
-    fun copy(hours: Int = this.hours, on: Boolean = this.on) = Device(key, name, kw, hours, on)
+/** Navnet er et tekst-id, så det følger appens sprog; selve nøglen (`key`) er det, der gemmes. */
+class Device(val key: String, @StringRes val nameRes: Int, val kw: Double, val hours: Int, val on: Boolean) {
+    fun copy(hours: Int = this.hours, on: Boolean = this.on) = Device(key, nameRes, kw, hours, on)
 }
 
 /**
@@ -71,9 +74,9 @@ class Settings(context: Context) {
 
     private fun loadDevices(): List<Device> {
         val base = listOf(
-            Device("heatpump", "Varmepumpe", 1.8, 10, true),
-            Device("car", "Elbil", 7.4, 5, true),
-            Device("water", "Vandvarmer", 2.0, 3, false),
+            Device("heatpump", R.string.device_heatpump, 1.8, 10, true),
+            Device("car", R.string.device_car, 7.4, 5, true),
+            Device("water", R.string.device_water, 2.0, 3, false),
         )
         val raw = sp.getString("devices", null) ?: return base
         return try {

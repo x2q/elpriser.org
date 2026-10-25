@@ -5,9 +5,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 /** Et netselskab, som elpriser.org kender. `match` er de navne, Green Power Denmark svarer med. */
-data class Net(val name: String, val gln: String, val area: String, val match: List<String>) {
-    val areaLabel: String get() = if (area == "DK1") "DK1 Vest" else "DK2 Øst"
-}
+data class Net(val name: String, val gln: String, val area: String, val match: List<String>)
 
 object Nets {
     val all = listOf(

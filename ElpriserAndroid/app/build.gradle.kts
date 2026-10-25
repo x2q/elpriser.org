@@ -21,6 +21,10 @@ android {
         targetSdk = 36
         versionCode = 2
         versionName = "1.0.1"
+        // The app's own languages (Danish is the default values/ folder). Keeps library translations for other
+        // locales out of the bundle. AGP 8.10 still has this property (deprecated in favour of
+        // androidResources.localeFilters, which was not in the cached 8.7 API); res/xml/locale_config.xml lists the same five.
+        resourceConfigurations += listOf("da", "nb", "sv", "fi", "nl")
     }
 
     signingConfigs {
@@ -58,6 +62,8 @@ android {
             // The contract file lives outside the project; without declaring it, Gradle
             // calls the test task up to date when only that file changed.
             it.inputs.file(rootProject.file("../tests/golden/app-contract.json")).withPropertyName("goldenContract")
+            // The unit tests read the Danish texts from this file; its text changes do not change any class, so declare it.
+            it.inputs.file("src/main/res/values/strings.xml").withPropertyName("danishStrings")
         }
     }
 }

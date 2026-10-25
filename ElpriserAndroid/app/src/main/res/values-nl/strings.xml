@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nederlands (nl). Concept ter controle door een moedertaalspreker; namen en plaatsaanduidingen moeten gelijk zijn aan values/strings.xml. -->
+<resources>
+    <string name="nav_price">Prijs</string>
+    <string name="nav_smart">Slim huis</string>
+    <string name="open_settings_label">Netbeheerder en instellingen openen</string>
+    <string name="settings_back_label">Terug naar Prijs</string>
+    <string name="settings_title">Netbeheerder en instellingen</string>
+    <string name="settings_subtitle">Netbeheerder, prijsweergave en uiterlijk</string>
+    <string name="error_no_prices_today">Nog geen prijzen voor vandaag.</string>
+    <string name="error_load_failed">De prijzen konden niet worden opgehaald. Controleer je verbinding en probeer het opnieuw.</string>
+    <string name="error_load_stale">De laatste prijzen worden getoond – bijwerken is niet gelukt.</string>
+    <string name="action_retry">Opnieuw proberen</string>
+    <string name="hero_label">Stroomprijs nu · %1$s:00</string>
+    <string name="hero_label_weekday">Stroomprijs nu · %1$s %2$s:00</string>
+    <string name="unit_price">kr/kWh</string>
+    <string name="unit_kr">kr</string>
+    <string name="price_kwh">%1$s kr/kWh</string>
+    <string name="value_ore">%1$s øre</string>
+    <string name="verdict_cheap">Goedkoop nu</string>
+    <string name="verdict_mid">Gemiddeld nu</string>
+    <string name="verdict_high">Duur nu</string>
+    <string name="legend_cheap">Goedkoop</string>
+    <string name="legend_mid">Gemiddeld</string>
+    <string name="legend_high">Duur</string>
+    <string name="mode_net_price">Jouw prijs</string>
+    <string name="mode_spot_price">Spotprijs</string>
+    <string name="view_label">Prijsweergave</string>
+    <string name="period_label">Periode</string>
+    <string name="period_two">2 dagen</string>
+    <string name="period_five">5 dagen</string>
+    <string name="period_title_two">Komende 2 dagen</string>
+    <string name="period_title_five">Komende 5 dagen</string>
+    <string name="caption_net">Incl. nettarief, belastingen en btw</string>
+    <string name="caption_system">Incl. Energinet-tarieven, belastingen en btw</string>
+    <string name="caption_spot_incl">Spotprijs incl. btw</string>
+    <string name="caption_spot_excl">Spotprijs excl. btw</string>
+    <string name="area_west">West</string>
+    <string name="area_east">Oost</string>
+    <string name="area_label_dk1">DK1 West</string>
+    <string name="area_label_dk2">DK2 Oost</string>
+    <string name="forecast_label">Prognose</string>
+    <string name="cheaper_none">Goedkoopste uur van de komende 24 uur</string>
+    <string name="cheaper_later">Goedkoper %1$s om %2$s:00 – %3$s kr</string>
+    <string name="tile_cheapest">Goedkoopst %1$s</string>
+    <string name="tile_priciest">Duurst %1$s</string>
+    <string name="stat_price_hour">kr · %1$s:00</string>
+    <string name="day_today">vandaag</string>
+    <string name="day_tomorrow">morgen</string>
+    <string name="day_tonight">vanavond</string>
+    <string name="day_later">later</string>
+    <string name="day_today_cap">Vandaag</string>
+    <string name="day_tomorrow_cap">Morgen</string>
+    <string name="day_short_date">%1$s %2$d</string>
+    <string name="day_short_num">%1$s %2$d</string>
+    <string name="date_day_month">%1$d %2$s</string>
+    <string name="date_long">%1$s %2$d %3$s</string>
+    <string name="axis_today_midnight">Vandaag 00</string>
+    <string name="axis_tomorrow_midnight">Morgen 00</string>
+    <string name="tooltip">%1$s om %2$s:00 · %3$s kr/kWh</string>
+    <string name="chart_selected">Geselecteerd: %1$s.</string>
+    <string name="chart_summary_tile">%1$s: %2$s kr om %3$s:00.</string>
+    <string name="chart_hint">Tik of sleep over de grafiek om de prijs per uur te zien.</string>
+    <string-array name="weekdays_long">
+        <item>zondag</item>
+        <item>maandag</item>
+        <item>dinsdag</item>
+        <item>woensdag</item>
+        <item>donderdag</item>
+        <item>vrijdag</item>
+        <item>zaterdag</item>
+    </string-array>
+    <string-array name="weekdays_short">
+        <item>zo</item>
+        <item>ma</item>
+        <item>di</item>
+        <item>wo</item>
+        <item>do</item>
+        <item>vr</item>
+        <item>za</item>
+    </string-array>
+    <string-array name="months_short">
+        <item>jan</item>
+        <item>feb</item>
+        <item>mrt</item>
+        <item>apr</item>
+        <item>mei</item>
+        <item>jun</item>
+        <item>jul</item>
+        <item>aug</item>
+        <item>sep</item>
+        <item>okt</item>
+        <item>nov</item>
+        <item>dec</item>
+    </string-array>
+    <string name="part_spot_actual">Spotprijs (Nord Pool)</string>
+    <string name="part_spot_forecast">Spotprijs (prognose)</string>
+    <string name="part_system">Systeemtarief (Energinet)</string>
+    <string name="part_transmission">Transmissietarief (Energinet)</string>
+    <string name="part_grid_named">Nettarief (%1$s, %2$s:00)</string>
+    <string name="part_grid">Nettarief (%1$s:00)</string>
+    <string name="part_duty">Energiebelasting</string>
+    <string name="part_vat">Btw (%1$d%%)</string>
+    <string name="part_total">Totaal</string>
+    <string name="breakdown_heading_now">Zo is de prijs om %1$s:00 opgebouwd</string>
+    <string name="breakdown_heading_when">Zo is de prijs %1$s om %2$s:00 opgebouwd</string>
+    <string name="breakdown_back_to_now">Terug naar nu</string>
+    <string name="breakdown_fold_in">Prijsopbouw inklappen</string>
+    <string name="breakdown_fold_out">Prijsopbouw uitklappen</string>
+    <string name="state_expanded">Uitgeklapt</string>
+    <string name="state_collapsed">Ingeklapt</string>
+    <string name="settings_net_label">Netbeheerder</string>
+    <string name="settings_no_net">Geen netbeheerder gekozen</string>
+    <string name="settings_net_gps">Gevonden met je locatie · opgeslagen op je telefoon</string>
+    <string name="settings_net_manual">Door jou gekozen · opgeslagen op je telefoon</string>
+    <string name="settings_net_none_hint">Prijzen worden getoond zonder nettarief</string>
+    <string name="settings_area_label">Prijsgebied</string>
+    <string name="settings_privacy_note">We vragen alleen om je locatie als je tikt. We bewaren het antwoord – de netbeheerder – en nooit de coördinaten.</string>
+    <string name="action_change">Wijzigen</string>
+    <string name="action_find_net">Mijn netbeheerder zoeken</string>
+    <string name="action_find_net_again">Netbeheerder opnieuw zoeken</string>
+    <string name="action_forget">Vergeten</string>
+    <string name="view_total_title">Totaalprijs met netbeheerder</string>
+    <string name="view_total_sub">Spot, nettarief, belastingen en btw</string>
+    <string name="view_nonet_title">Zonder netbeheerder</string>
+    <string name="view_nonet_sub">Tarieven van Energinet, energiebelasting en btw</string>
+    <string name="view_spot_incl_title">Spotprijs incl. btw</string>
+    <string name="view_spot_incl_sub">De beursprijs zoals die is</string>
+    <string name="view_spot_excl_title">Spotprijs excl. btw</string>
+    <string name="view_spot_excl_sub">Voor berekeningen en facturen</string>
+    <string name="view_needs_net">%1$s – kies eerst een netbeheerder</string>
+    <string name="settings_look_label">Uiterlijk</string>
+    <string name="theme_system">Systeem</string>
+    <string name="theme_light">Licht</string>
+    <string name="theme_dark">Donker</string>
+    <string name="settings_about_label">Over de app</string>
+    <string name="about_text">Prijzen van Energi Data Service en ENTSO-E · de prognose komt van een open model op Hugging Face · elpriser %1$s</string>
+    <string name="action_privacy">Privacy</string>
+    <string name="smart_subtitle">Draai op de goedkoopste uren van vandaag</string>
+    <string name="savings_today">Besparing vandaag</string>
+    <plurals name="devices_active">
+        <item quantity="one">%1$d apparaat actief</item>
+        <item quantity="other">%1$d apparaten actief</item>
+    </plurals>
+    <string name="kwh_moved">%1$s kWh verschoven</string>
+    <string name="device_heatpump">Warmtepomp</string>
+    <string name="device_car">E-auto</string>
+    <string name="device_water">Boiler</string>
+    <string name="device_power_line">%1$s kW · goedkoopste uren</string>
+    <string name="stepper_less">Eén uur minder</string>
+    <string name="stepper_more">Eén uur meer</string>
+    <plurals name="hours_count">
+        <item quantity="one">%1$d uur</item>
+        <item quantity="other">%1$d uur</item>
+    </plurals>
+    <string name="device_avg_save">gem. %1$s kr/kWh\nbesparing %2$s kr</string>
+    <string name="plan_title">Plan van vandaag</string>
+    <string name="plan_row_price">Prijs</string>
+    <string name="export_title">Plan ophalen voor Home Assistant</string>
+    <string name="export_subtitle">of Shelly – JSON met de gekozen uren</string>
+    <string name="export_copy">Kopiëren</string>
+    <string name="export_copied">Gekopieerd</string>
+    <string name="welcome_skip">Overslaan</string>
+    <string name="welcome_cancel">Annuleren</string>
+    <string name="welcome_title">Zoek je netbeheerder</string>
+    <string name="welcome_body">Je energierekening hangt af van wie de leidingen naar je huis beheert. Met je locatie vinden we de netbeheerder, zodat de prijzen in de app de prijzen zijn die je echt betaalt.</string>
+    <string name="welcome_point_1">We vragen alleen om je locatie als je op de knop tikt – nooit op de achtergrond.</string>
+    <string name="welcome_point_2">De locatie wordt één keer gebruikt. We bewaren de netbeheerder, niet de coördinaten.</string>
+    <string name="welcome_point_3">Je kunt de netbeheerder altijd wijzigen of vergeten onder Instellingen.</string>
+    <string name="welcome_pick_myself">Zelf kiezen uit de lijst</string>
+    <string name="searching_title">Je netbeheerder zoeken …</string>
+    <string name="searching_hint">Dit duurt even. De locatie wordt niet opgeslagen.</string>
+    <string name="found_label">We vonden</string>
+    <string name="found_area">Prijsgebied %1$s · netbeheerder voor je adres</string>
+    <string name="found_saved_title">Wat wordt opgeslagen</string>
+    <string name="found_saved_net">Netbeheerder: %1$s (prijsgebied %2$s)</string>
+    <string name="found_saved_local">Alleen opgeslagen op deze telefoon</string>
+    <string name="found_saved_not">Je locatie – geen coördinaten en geen adres</string>
+    <string name="found_wrong_hint">Klopt de netbeheerder niet? De locatie kan onnauwkeurig zijn vlak bij de grens tussen twee netbeheerders – kies dan de juiste uit de lijst.</string>
+    <string name="found_use">%1$s gebruiken</string>
+    <string name="found_not_mine">Dit is mijn netbeheerder niet</string>
+    <string name="picker_title">Kies netbeheerder</string>
+    <string name="picker_subtitle">Staat op je energierekening</string>
+    <string name="picker_search_hint">Netbeheerder zoeken</string>
+    <string name="picker_locate">Weet je het niet? Zoek met je locatie</string>
+    <string name="picker_group_dk1">DK1 · Jutland en Funen</string>
+    <string name="picker_group_dk2">DK2 · Seeland, Lolland en Falster</string>
+    <string name="picker_no_match">Geen netbeheerders gevonden voor “%1$s”.</string>
+    <string name="picker_save">%1$s opslaan als mijn netbeheerder</string>
+    <string name="picker_choose">Kies een netbeheerder</string>
+    <string name="note_no_position">We konden je locatie niet vinden. Kies je netbeheerder in de lijst.</string>
+    <string name="note_outside_denmark">Je locatie ligt buiten Denemarken. Kies je netbeheerder in de lijst.</string>
+    <string name="note_no_net">We konden de netbeheerder voor je locatie niet vinden. Kies deze in de lijst – hij staat op je energierekening.</string>
+    <string name="note_lookup_failed">Het opzoeken is mislukt. Kies je netbeheerder in de lijst of probeer het later opnieuw.</string>
+    <string name="note_denied">De locatie is niet gedeeld. Kies je netbeheerder in de lijst – de app werkt dan op dezelfde manier.</string>
+</resources>

@@ -2,6 +2,7 @@ package org.elpriser.app
 
 import android.app.Application
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -27,7 +28,8 @@ sealed interface Step {
     data object Welcome : Step
     data object Searching : Step
     class Found(val net: Net) : Step
-    class Picker(val note: String?) : Step
+    /** [note] er et tekst-id (eller null), så beskeden følger appens sprog. */
+    class Picker(@StringRes val note: Int?) : Step
 }
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
@@ -39,7 +41,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     var loading by mutableStateOf(false)
         private set
-    var error by mutableStateOf<String?>(null)
+    /** Tekst-id for den fejl, der vises (eller null); oversættes, når den vises. */
+    var error by mutableStateOf<Int?>(null)
         private set
     /** Hentede serier pr. visning (mode). */
     var series by mutableStateOf<Map<String, Forecast>>(emptyMap())
@@ -75,7 +78,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 co2 = runCatching { Api.co2(area) }.getOrDefault(co2)
                 loadedAt = System.currentTimeMillis()
             } catch (e: Exception) {
-                error = if (series.isEmpty()) "Vi kunne ikke hente priserne. Tjek din forbindelse og prøv igen." else "Viser de seneste priser — kunne ikke opdatere."
+                error = if (series.isEmpty()) R.string.error_load_failed else R.string.error_load_stale
                 loadedKey = ""
             }
             loading = false
@@ -85,7 +88,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ── netselskab og position ─────────────────────────────────────────────
 
     fun openWelcome() { step = Step.Welcome }
-    fun openPicker(note: String? = null) { step = Step.Picker(note) }
+    fun openPicker(@StringRes note: Int? = null) { step = Step.Picker(note) }
     fun closeStep() { step = null }
 
     fun skip() {
@@ -110,7 +113,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val loc = Position.current(context)
             if (loc == null) {
-                step = Step.Picker("Vi kunne ikke finde din position. Vælg dit netselskab på listen i stedet.")
+                step = Step.Picker(R.string.note_no_position)
                 return@launch
             }
             try {
@@ -118,16 +121,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val net = Nets.match(r.name)
                 step = when {
                     net != null -> Step.Found(net)
-                    r.error == "outside_denmark" -> Step.Picker("Din position ligger uden for Danmark. Vælg dit netselskab på listen.")
-                    else -> Step.Picker("Vi kunne ikke finde netselskabet for din position. Vælg det på listen — det står på din elregning.")
+                    r.error == "outside_denmark" -> Step.Picker(R.string.note_outside_denmark)
+                    else -> Step.Picker(R.string.note_no_net)
                 }
             } catch (e: Exception) {
-                step = Step.Picker("Opslaget lykkedes ikke. Vælg dit netselskab på listen, eller prøv igen senere.")
+                step = Step.Picker(R.string.note_lookup_failed)
             }
         }
     }
 
     fun positionDenied() {
-        step = Step.Picker("Positionen blev ikke delt. Vælg dit netselskab på listen — så virker appen på samme måde.")
+        step = Step.Picker(R.string.note_denied)
     }
 }

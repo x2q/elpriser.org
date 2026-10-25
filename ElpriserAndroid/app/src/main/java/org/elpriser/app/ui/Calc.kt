@@ -1,5 +1,6 @@
 package org.elpriser.app.ui
 
+import org.elpriser.app.R
 import org.elpriser.app.data.Clock
 import org.elpriser.app.data.Day
 import java.time.LocalDate
@@ -18,31 +19,34 @@ fun cheapestWindow(vals: List<Double>, n: Int, highest: Boolean = false): Win {
     return best!!
 }
 
-/** 0 billig, 1 middel, 2 dyr — efter hvor mange af døgnets timer der er billigere. */
-class Verdict(val kind: Int, val label: String)
+/** 0 billig, 1 middel, 2 dyr — efter hvor mange af døgnets timer der er billigere. Teksten hentes med [label]. */
+class Verdict(val kind: Int)
 
 fun verdict(price: Double, vals: List<Double>): Verdict {
     val pct = Math.round(vals.count { it < price }.toDouble() / vals.size * 100).toInt()
     return when {
-        pct <= 33 -> Verdict(0, "Billig lige nu")
-        pct <= 66 -> Verdict(1, "Middel lige nu")
-        else -> Verdict(2, "Dyr lige nu")
+        pct <= 33 -> Verdict(0)
+        pct <= 66 -> Verdict(1)
+        else -> Verdict(2)
     }
 }
 
-private val WD = listOf("søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag")
-private val WS = listOf("søn", "man", "tir", "ons", "tor", "fre", "lør")
-private val MON = listOf("jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec")
+/** "Billig lige nu" / "Middel lige nu" / "Dyr lige nu" i det valgte sprog. */
+fun Verdict.label(tx: Strings): String =
+    tx.get(when (kind) { 0 -> R.string.verdict_cheap; 1 -> R.string.verdict_mid; else -> R.string.verdict_high })
 
 private fun LocalDate.dow() = dayOfWeek.value % 7
 
-fun dayShort(d: Day) = WS[d.localDate.dow()]
-fun dayMonth(d: Day) = "${d.localDate.dayOfMonth}. ${MON[d.localDate.monthValue - 1]}"
-fun dayLong(d: Day) = "${WD[d.localDate.dow()].replaceFirstChar { it.uppercase() }} ${d.localDate.dayOfMonth}. ${MON[d.localDate.monthValue - 1]}"
-fun todayLong(): String {
-    val ld = LocalDate.parse(Clock.today())
-    return "${WD[ld.dow()].replaceFirstChar { it.uppercase() }} ${ld.dayOfMonth}. ${MON[ld.monthValue - 1]}"
-}
+private fun weekdayLong(tx: Strings, ld: LocalDate) = tx.array(R.array.weekdays_long)[ld.dow()]
+private fun monthShort(tx: Strings, ld: LocalDate) = tx.array(R.array.months_short)[ld.monthValue - 1]
+
+fun dayShort(tx: Strings, d: Day) = tx.array(R.array.weekdays_short)[d.localDate.dow()]
+fun dayMonth(tx: Strings, d: Day) = tx.get(R.string.date_day_month, d.localDate.dayOfMonth, monthShort(tx, d.localDate))
+fun dayLong(tx: Strings, d: Day) = longDate(tx, d.localDate)
+fun todayLong(tx: Strings): String = longDate(tx, LocalDate.parse(Clock.today()))
+
+private fun longDate(tx: Strings, ld: LocalDate) =
+    tx.get(R.string.date_long, weekdayLong(tx, ld).replaceFirstChar { it.uppercase() }, ld.dayOfMonth, monthShort(tx, ld))
 
 /** Ugedagens navn med småt ("onsdag") til sætninger som "Elpris lige nu · onsdag kl. 21". */
-fun todayWeekday(): String = WD[LocalDate.parse(Clock.today()).dow()]
+fun todayWeekday(tx: Strings): String = weekdayLong(tx, LocalDate.parse(Clock.today()))

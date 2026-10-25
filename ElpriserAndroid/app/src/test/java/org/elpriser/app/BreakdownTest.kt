@@ -5,9 +5,7 @@ import org.elpriser.app.data.Charges
 import org.elpriser.app.data.Day
 import org.elpriser.app.ui.PartRole
 import org.elpriser.app.ui.barWeights
-import org.elpriser.app.ui.breakdownAt
-import org.elpriser.app.ui.breakdownOf
-import org.elpriser.app.ui.breakdownWhen
+import org.elpriser.app.ui.Breakdown
 import org.elpriser.app.ui.tenthsText
 import org.json.JSONArray
 import org.json.JSONObject
@@ -24,6 +22,17 @@ import org.junit.Test
  */
 class BreakdownTest {
     private val charges = Charges(sys = 0.07, trans = 0.054, afg = 0.008, vat = 0.25)
+
+    // The Danish texts, read from res/values/strings.xml. The wrappers keep every assertion below as it was.
+    private val tx = TestStrings.da
+    private fun breakdownOf(
+        mode: String, price: Double, hour: Int, forecastDay: Boolean, charges: Charges?, gridTariff: Double?,
+        netName: String?, headingWhen: String = "",
+    ): Breakdown? = org.elpriser.app.ui.breakdownOf(tx, mode, price, hour, forecastDay, charges, gridTariff, netName, headingWhen)
+    private fun breakdownAt(
+        mode: String, days: List<Day>, vals: List<Double>, index: Int, selected: Boolean, charges: Charges?, netName: String?,
+    ): Breakdown? = org.elpriser.app.ui.breakdownAt(tx, mode, days, vals, index, selected, charges, netName)
+    private fun breakdownWhen(days: List<Day>, index: Int): String = org.elpriser.app.ui.breakdownWhen(tx, days, index)
 
     private fun texts(b: org.elpriser.app.ui.Breakdown) = b.rows.map { it.label to it.text }
 
