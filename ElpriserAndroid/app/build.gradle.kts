@@ -23,8 +23,10 @@ android {
         versionName = "1.0.1"
         // The app's own languages (Danish is the default values/ folder). Keeps library translations for other
         // locales out of the bundle. AGP 8.10 still has this property (deprecated in favour of
-        // androidResources.localeFilters, which was not in the cached 8.7 API); res/xml/locale_config.xml lists the same five.
-        resourceConfigurations += listOf("da", "nb", "sv", "fi", "nl")
+        // androidResources.localeFilters, which was not in the cached 8.7 API); res/xml/locale_config.xml lists the five
+        // languages shown in the per-app language picker. nn and no are fallbacks only: Android does not map Nynorsk or the
+        // legacy 'no' code to nb, so values-nn/ and values-no/ are copies of values-nb/ (tested to stay identical).
+        resourceConfigurations += listOf("da", "nb", "nn", "no", "sv", "fi", "nl")
     }
 
     signingConfigs {

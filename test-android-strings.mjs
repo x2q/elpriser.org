@@ -10,7 +10,8 @@
  *      a literal percent sign is written %%, and apostrophes are escaped (an unescaped one breaks the resource compile);
  *  (c) no translation is empty, and none is identical to the Danish text when that is longer than 12 characters
  *      (a string somebody forgot to translate) unless it is in SAME_AS_DANISH below, with a reason;
- *  (d) res/xml/locale_config.xml lists exactly da, nb, sv, fi, nl, matching the values-* folders, the manifest
+ *  (d) res/xml/locale_config.xml lists exactly da, nb, sv, fi, nl (the picker), matching the values-* folders (plus the
+ *      nn/no aliases, which must be copies of nb), the manifest
  *      attribute and the resourceConfigurations in build.gradle.kts;
  *  (e) a few Danish-only words do not occur in the foreign files ('lige nu', 'døgn', 'netselskab', 'afgifter'),
  *      except where the language really has the word (nb: 'døgn');
@@ -31,6 +32,9 @@ const RES = path.join(ANDROID, 'app/src/main/res');
 const KOTLIN = path.join(ANDROID, 'app/src/main/java');
 const LANGS = ['nb', 'sv', 'fi', 'nl'];
 const EXPECTED_LOCALES = ['da', 'nb', 'sv', 'fi', 'nl'];
+// Android does not fall back from Nynorsk (nn) or the legacy Norwegian code (no) to nb, so those users would get Danish.
+// values-nn/ and values-no/ are byte-identical copies of values-nb/ and are NOT in the per-app language picker.
+const NB_ALIASES = ['nn', 'no'];
 
 /* Strings that are legitimately the same as the Danish text although they are longer than 12 characters.
  * Each entry says why; an entry that is no longer identical (or no longer exists) fails the test, so the list cannot rot. */
@@ -234,14 +238,23 @@ test('(d) locale_config.xml lists exactly da, nb, sv, fi, nl — and the folders
   const listed = [...cfg.matchAll(/<locale\s+android:name="([^"]+)"\s*\/>/g)].map(m => m[1]);
   assert.deepEqual([...listed].sort(), [...EXPECTED_LOCALES].sort(), 'locale_config.xml must list exactly da, nb, sv, fi, nl (once each)');
   const folders = fs.readdirSync(RES).filter(d => /^values-/.test(d) && fs.existsSync(path.join(RES, d, 'strings.xml'))).map(d => d.slice('values-'.length));
-  assert.deepEqual(folders.sort(), [...LANGS].sort(), 'res/values-* folders with a strings.xml must be exactly nb, sv, fi, nl');
+  assert.deepEqual(folders.sort(), [...LANGS, ...NB_ALIASES].sort(), 'res/values-* folders with a strings.xml must be exactly nb, sv, fi, nl plus the aliases nn, no');
   const manifest = fs.readFileSync(path.join(ANDROID, 'app/src/main/AndroidManifest.xml'), 'utf8');
   assert.match(manifest, /android:localeConfig="@xml\/locale_config"/, 'the manifest <application> must set android:localeConfig="@xml/locale_config"');
   const gradle = fs.readFileSync(path.join(ANDROID, 'app/build.gradle.kts'), 'utf8');
   const cfgLine = /resourceConfigurations\s*\+?=\s*listOf\(([^)]*)\)|localeFilters\s*\+?=\s*listOf\(([^)]*)\)/.exec(gradle);
   assert.ok(cfgLine, 'build.gradle.kts must restrict the bundled languages (resourceConfigurations / localeFilters)');
   const filtered = [...(cfgLine[1] || cfgLine[2]).matchAll(/"([^"]+)"/g)].map(m => m[1]);
-  assert.deepEqual([...filtered].sort(), [...EXPECTED_LOCALES].sort(), 'the Gradle language filter must list the same five languages');
+  assert.deepEqual([...filtered].sort(), [...EXPECTED_LOCALES, ...NB_ALIASES].sort(), 'the Gradle language filter must list the five languages plus the aliases nn and no (otherwise they are stripped from the bundle)');
+});
+
+test('(d2) values-nn and values-no are byte-identical copies of values-nb (Nynorsk and legacy "no" fall back to Bokmål, not Danish)', () => {
+  const nb = fs.readFileSync(path.join(RES, 'values-nb/strings.xml'));
+  for (const alias of NB_ALIASES) {
+    const file = path.join(RES, `values-${alias}/strings.xml`);
+    assert.ok(fs.existsSync(file), `values-${alias}/strings.xml is missing: Android does not fall back from ${alias} to nb`);
+    assert.ok(nb.equals(fs.readFileSync(file)), `values-${alias}/strings.xml differs from values-nb/strings.xml — edit nb and copy it (cp values-nb/strings.xml values-${alias}/strings.xml)`);
+  }
 });
 
 /* ── (e) Danish-only words ────────────────────────────────────────────────────────────── */

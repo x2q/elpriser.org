@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Norsk bokmål (nb). Utkast til gjennemlesning av morsmålstalende; navn og pladsholdere skal være som i values/strings.xml. -->
+<resources>
+    <string name="nav_price">Pris</string>
+    <string name="nav_smart">Smart hjem</string>
+    <string name="open_settings_label">Åpne nettselskap og innstillinger</string>
+    <string name="settings_back_label">Tilbake til Pris</string>
+    <string name="settings_title">Nettselskap og innstillinger</string>
+    <string name="settings_subtitle">Nettselskap, prisvisning og utseende</string>
+    <string name="error_no_prices_today">Ingen priser for i dag ennå.</string>
+    <string name="error_load_failed">Vi kunne ikke hente prisene. Sjekk tilkoblingen din og prøv igjen.</string>
+    <string name="error_load_stale">Viser de siste prisene – kunne ikke oppdatere.</string>
+    <string name="action_retry">Prøv igjen</string>
+    <string name="hero_label">Strømpris akkurat nå · kl. %1$s</string>
+    <string name="hero_label_weekday">Strømpris akkurat nå · %1$s kl. %2$s</string>
+    <string name="unit_price">kr/kWh</string>
+    <string name="unit_kr">kr</string>
+    <string name="price_kwh">%1$s kr/kWh</string>
+    <string name="value_ore">%1$s øre</string>
+    <string name="verdict_cheap">Billig akkurat nå</string>
+    <string name="verdict_mid">Middels akkurat nå</string>
+    <string name="verdict_high">Dyr akkurat nå</string>
+    <string name="legend_cheap">Billig</string>
+    <string name="legend_mid">Middels</string>
+    <string name="legend_high">Dyr</string>
+    <string name="mode_net_price">Din pris</string>
+    <string name="mode_spot_price">Spotpris</string>
+    <string name="view_label">Prisvisning</string>
+    <string name="period_label">Periode</string>
+    <string name="period_two">2 døgn</string>
+    <string name="period_five">5 døgn</string>
+    <string name="period_title_two">Neste 2 døgn</string>
+    <string name="period_title_five">Neste 5 døgn</string>
+    <string name="caption_net">Inkl. nettleie, avgifter og mva.</string>
+    <string name="caption_system">Inkl. Energinets tariffer, avgifter og mva.</string>
+    <string name="caption_spot_incl">Spotpris inkl. mva.</string>
+    <string name="caption_spot_excl">Spotpris eksl. mva.</string>
+    <string name="area_west">Vest</string>
+    <string name="area_east">Øst</string>
+    <string name="area_label_dk1">DK1 Vest</string>
+    <string name="area_label_dk2">DK2 Øst</string>
+    <string name="forecast_label">Prognose</string>
+    <string name="cheaper_none">Billigste time de neste 24 timene</string>
+    <string name="cheaper_later">Billigere %1$s kl. %2$s – %3$s kr</string>
+    <string name="tile_cheapest">Billigst %1$s</string>
+    <string name="tile_priciest">Dyrest %1$s</string>
+    <string name="stat_price_hour">kr · kl. %1$s</string>
+    <string name="day_today">i dag</string>
+    <string name="day_tomorrow">i morgen</string>
+    <string name="day_tonight">i kveld</string>
+    <string name="day_later">senere</string>
+    <string name="day_today_cap">I dag</string>
+    <string name="day_tomorrow_cap">I morgen</string>
+    <string name="day_short_date">%1$s %2$d.</string>
+    <string name="day_short_num">%1$s %2$d</string>
+    <string name="date_day_month">%1$d. %2$s</string>
+    <string name="date_long">%1$s %2$d. %3$s</string>
+    <string name="axis_today_midnight">I dag 00</string>
+    <string name="axis_tomorrow_midnight">I morgen 00</string>
+    <string name="tooltip">%1$s kl. %2$s · %3$s kr/kWh</string>
+    <string name="chart_selected">Valgt: %1$s.</string>
+    <string name="chart_summary_tile">%1$s: %2$s kr kl. %3$s.</string>
+    <string name="chart_hint">Trykk eller dra på grafen for å se prisen time for time.</string>
+    <string-array name="weekdays_long">
+        <item>søndag</item>
+        <item>mandag</item>
+        <item>tirsdag</item>
+        <item>onsdag</item>
+        <item>torsdag</item>
+        <item>fredag</item>
+        <item>lørdag</item>
+    </string-array>
+    <string-array name="weekdays_short">
+        <item>søn</item>
+        <item>man</item>
+        <item>tir</item>
+        <item>ons</item>
+        <item>tor</item>
+        <item>fre</item>
+        <item>lør</item>
+    </string-array>
+    <string-array name="months_short">
+        <item>jan</item>
+        <item>feb</item>
+        <item>mar</item>
+        <item>apr</item>
+        <item>mai</item>
+        <item>jun</item>
+        <item>jul</item>
+        <item>aug</item>
+        <item>sep</item>
+        <item>okt</item>
+        <item>nov</item>
+        <item>des</item>
+    </string-array>
+    <string name="part_spot_actual">Spotpris (Nord Pool)</string>
+    <string name="part_spot_forecast">Spotpris (prognose)</string>
+    <string name="part_system">Systemtariff (Energinet)</string>
+    <string name="part_transmission">Transmisjonstariff (Energinet)</string>
+    <string name="part_grid_named">Nettleie (%1$s, kl. %2$s)</string>
+    <string name="part_grid">Nettleie (kl. %1$s)</string>
+    <string name="part_duty">Elavgift</string>
+    <string name="part_vat">Mva. (%1$d %%)</string>
+    <string name="part_total">Totalt</string>
+    <string name="breakdown_heading_now">Slik er prisen kl. %1$s satt sammen</string>
+    <string name="breakdown_heading_when">Slik er prisen %1$s kl. %2$s satt sammen</string>
+    <string name="breakdown_back_to_now">Tilbake til nå</string>
+    <string name="breakdown_fold_in">Skjul prisoppbyggingen</string>
+    <string name="breakdown_fold_out">Vis prisoppbyggingen</string>
+    <string name="state_expanded">Utvidet</string>
+    <string name="state_collapsed">Sammenfoldet</string>
+    <string name="settings_net_label">Nettselskap</string>
+    <string name="settings_no_net">Ingen nettselskap valgt</string>
+    <string name="settings_net_gps">Funnet med posisjonen din · lagret på telefonen</string>
+    <string name="settings_net_manual">Valgt av deg · lagret på telefonen</string>
+    <string name="settings_net_none_hint">Prisene vises uten nettleie</string>
+    <string name="settings_area_label">Prisområde</string>
+    <string name="settings_privacy_note">Vi spør bare om posisjonen din når du trykker. Vi lagrer svaret – nettselskapet – og aldri koordinatene.</string>
+    <string name="action_change">Bytt</string>
+    <string name="action_find_net">Finn nettselskapet mitt</string>
+    <string name="action_find_net_again">Finn nettselskap på nytt</string>
+    <string name="action_forget">Glem</string>
+    <string name="view_total_title">Samlet pris med nettselskap</string>
+    <string name="view_total_sub">Spot, nettleie, avgifter og mva.</string>
+    <string name="view_nonet_title">Uten nettselskap</string>
+    <string name="view_nonet_sub">Energinets tariffer, elavgift og mva.</string>
+    <string name="view_spot_incl_title">Spotpris inkl. mva.</string>
+    <string name="view_spot_incl_sub">Børsprisen, slik den er</string>
+    <string name="view_spot_excl_title">Spotpris eksl. mva.</string>
+    <string name="view_spot_excl_sub">Til beregninger og fakturaer</string>
+    <string name="view_needs_net">%1$s – velg først et nettselskap</string>
+    <string name="settings_look_label">Utseende</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Lys</string>
+    <string name="theme_dark">Mørk</string>
+    <string name="settings_about_label">Om appen</string>
+    <string name="about_text">Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra en åpen modell på Hugging Face · elpriser %1$s</string>
+    <string name="action_privacy">Personvern</string>
+    <string name="smart_subtitle">Kjør på de billigste timene i dag</string>
+    <string name="savings_today">Besparelse i dag</string>
+    <plurals name="devices_active">
+        <item quantity="one">%1$d enhet aktiv</item>
+        <item quantity="other">%1$d enheter aktive</item>
+    </plurals>
+    <string name="kwh_moved">%1$s kWh flyttet</string>
+    <string name="device_heatpump">Varmepumpe</string>
+    <string name="device_car">Elbil</string>
+    <string name="device_water">Vannvarmer</string>
+    <string name="device_power_line">%1$s kW · billigste timer</string>
+    <string name="stepper_less">Én time mindre</string>
+    <string name="stepper_more">Én time mer</string>
+    <plurals name="hours_count">
+        <item quantity="one">%1$d time</item>
+        <item quantity="other">%1$d timer</item>
+    </plurals>
+    <string name="device_avg_save">snitt %1$s kr/kWh\nspar %2$s kr</string>
+    <string name="plan_title">Dagens plan</string>
+    <string name="plan_row_price">Pris</string>
+    <string name="export_title">Hent planen til Home Assistant</string>
+    <string name="export_subtitle">eller Shelly – JSON med de valgte timene</string>
+    <string name="export_copy">Kopier</string>
+    <string name="export_copied">Kopiert</string>
+    <string name="welcome_skip">Hopp over</string>
+    <string name="welcome_cancel">Avbryt</string>
+    <string name="welcome_title">Finn nettselskapet ditt</string>
+    <string name="welcome_body">Strømregningen din avhenger av hvem som eier ledningene til huset ditt. Med posisjonen din finner vi nettselskapet, slik at prisene i appen er dem du faktisk betaler.</string>
+    <string name="welcome_point_1">Vi spør bare når du trykker på knappen – aldri i bakgrunnen.</string>
+    <string name="welcome_point_2">Posisjonen brukes én gang. Vi lagrer nettselskapet, ikke koordinatene.</string>
+    <string name="welcome_point_3">Du kan alltid bytte eller glemme nettselskapet under Innstillinger.</string>
+    <string name="welcome_pick_myself">Velg selv fra listen</string>
+    <string name="searching_title">Finner nettselskapet ditt …</string>
+    <string name="searching_hint">Det tar et øyeblikk. Posisjonen blir ikke lagret.</string>
+    <string name="found_label">Vi fant</string>
+    <string name="found_area">Prisområde %1$s · nettselskap for adressen din</string>
+    <string name="found_saved_title">Dette lagres</string>
+    <string name="found_saved_net">Nettselskap: %1$s (prisområde %2$s)</string>
+    <string name="found_saved_local">Lagres bare på denne telefonen</string>
+    <string name="found_saved_not">Posisjonen din – verken koordinater eller adresse</string>
+    <string name="found_wrong_hint">Feil nettselskap? Posisjonen kan være unøyaktig nær grensen mellom to nettselskaper – velg det fra listen i så fall.</string>
+    <string name="found_use">Bruk %1$s</string>
+    <string name="found_not_mine">Dette er ikke nettselskapet mitt</string>
+    <string name="picker_title">Velg nettselskap</string>
+    <string name="picker_subtitle">Står på strømregningen din</string>
+    <string name="picker_search_hint">Søk etter nettselskap</string>
+    <string name="picker_locate">Vet du ikke? Finn det med posisjonen din</string>
+    <string name="picker_group_dk1">DK1 · Jylland og Fyn</string>
+    <string name="picker_group_dk2">DK2 · Sjælland, Lolland og Falster</string>
+    <string name="picker_no_match">Ingen nettselskaper samsvarer med «%1$s».</string>
+    <string name="picker_save">Lagre %1$s som mitt nettselskap</string>
+    <string name="picker_choose">Velg et nettselskap</string>
+    <string name="note_no_position">Vi fant ikke posisjonen din. Velg nettselskapet fra listen i stedet.</string>
+    <string name="note_outside_denmark">Posisjonen din er utenfor Danmark. Velg nettselskapet fra listen.</string>
+    <string name="note_no_net">Vi fant ikke nettselskapet for posisjonen din. Velg det fra listen – det står på strømregningen.</string>
+    <string name="note_lookup_failed">Oppslaget mislyktes. Velg nettselskapet fra listen, eller prøv igjen senere.</string>
+    <string name="note_denied">Posisjonen ble ikke delt. Velg nettselskapet fra listen – da fungerer appen på samme måte.</string>
+</resources>
