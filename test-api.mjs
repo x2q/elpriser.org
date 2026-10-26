@@ -592,7 +592,7 @@ test('a missing tomorrow after 12:30 is kept for one minute only, in the respons
   } finally { upstreamState.tomorrowPublished = true; clock.restore(); }
 });
 
-test('before 12:30 a missing tomorrow is normal: no short caching, no extra fetching', async () => {
+test('before 12:30 a missing tomorrow is normal: no short caching', async () => {
   const clock = freezeClock('2026-10-26T10:00:00Z');          // 11:00 CET
   try {
     upstreamState.tomorrowPublished = false;
