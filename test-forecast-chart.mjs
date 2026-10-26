@@ -243,20 +243,37 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   ok(/<p class="pris-cap">Spotpris inkl\. moms<\/p>/.test(pris(netFeed, D0, 21, { ...o, view: 'spot' })), 'spotpris uden charges: ren billedtekst');
 
 // ── One screen for every price area: language table, adapter, zone rendering ─────────────
-  const L = pctx.PRIS_I18N, langs = ['da', 'nb', 'sv', 'fi', 'nl'];
-  ok(Object.keys(L).join() === langs.join(), 'PRIS_I18N har præcis da, nb, sv, fi og nl', Object.keys(L).join());
+  const L = pctx.PRIS_I18N, langs = ['da', 'nb', 'sv', 'fi', 'nl', 'de', 'fr', 'pl', 'it'], ACTL = ['de', 'fr', 'pl', 'it'];
+  ok(Object.keys(L).join() === langs.join(), 'PRIS_I18N har præcis da, nb, sv, fi, nl, de, fr, pl og it', Object.keys(L).join());
+  // The four EU languages carry three keys more (act1, act2: the card title for one and two days; cheapRest) and may carry the
+  // optional hs (a suffix after the hour or range: " Uhr", " h").
+  const OPT = ['hs'], ACTKEYS = ['act1', 'act2', 'cheapRest'];
   // Every key in every language, with the same shape and no empty text.
   const shape = v => Array.isArray(v) ? `array${v.length}` : typeof v;
   const keys = Object.keys(L.da);
   for (const lang of langs) {
-    const have = Object.keys(L[lang]);
+    const have = Object.keys(L[lang]).filter(k => !OPT.includes(k) && !(ACTL.includes(lang) && ACTKEYS.includes(k)));
     ok(have.length === keys.length && keys.every(k => k in L[lang]), `${lang}: samme nøgler som dansk`, keys.filter(k => !(k in L[lang])).concat(have.filter(k => !keys.includes(k))).join(','));
+    ok(ACTL.includes(lang) ? ACTKEYS.every(k => typeof L[lang][k] === 'string' && L[lang][k].length > 2) : ACTKEYS.every(k => !(k in L[lang])), `${lang}: act-nøglerne findes på de fire EU-sprog og kun dér`);
+    ok(OPT.every(k => !(k in L[lang]) || typeof L[lang][k] === 'string') && (lang !== 'de' || L.de.hs === ' Uhr') && (lang !== 'fr' || L.fr.hs === ' h') && (!['da', 'nb', 'sv', 'fi', 'nl', 'pl', 'it'].includes(lang) || !('hs' in L[lang])) && !('dec' in L[lang]) && !('hm' in L[lang]), `${lang}: hs kun på tysk og fransk (ingen engelsk decimalpunktum eller :00 mere)`);
     ok(keys.every(k => shape(L[lang][k]) === shape(L.da[k])), `${lang}: samme form på hver nøgle`, keys.filter(k => shape(L[lang][k]) !== shape(L.da[k])).join(','));
     const flat = keys.flatMap(k => [].concat(L[lang][k]));
-    ok(flat.every(x => typeof x === 'string') && flat.filter(x => x === '').length === (lang === 'sv' || lang === 'nl' ? 1 : 0), `${lang}: ingen tom tekst (kun svensk og hollandsk '' = ingen punktum efter dagstal)`);
+    ok(flat.every(x => typeof x === 'string') && flat.filter(x => x === '').length === (['sv', 'nl', 'fr', 'pl', 'it'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl og it)`);
     ok(L[lang].wd.length === 7 && L[lang].ws.length === 7 && L[lang].mon.length === 12 && L[lang].verdict.length === 3 && L[lang].tier.length === 3, `${lang}: 7 ugedage, 12 måneder, 3 niveauer`);
   }
   ok(langs.every(l => !/\b10\b/.test(JSON.stringify(L[l]))), 'ingen sprog nævner 10 døgn');
+  // The four EU languages: no Danish words, no forecast word (every day on those pages is settled), and words of their own.
+  const DANISH = /\b(lige nu|døgn|børspris|billig|dyr|næste|prognose|spotpris|uden moms|afgifter|nettarif|i dag|i morgen|dag for dag|spænd|kl\.)\b/i;
+  const FCWORD = { de: /prognos|vorhersage|vorschau/i, fr: /prévision|prevision|prédi/i, pl: /prognoz|przewid/i, it: /previsi|prognosi|stima/i };
+  for (const l of ACTL) {
+    const all = Object.values(L[l]).flat().join(' | ');
+    ok(!DANISH.test(all), `${l}: ingen danske ord i tabellen`, (all.match(DANISH) || [])[0]);
+    ok(!FCWORD[l].test(all) && !/prognos|forecast|ennuste/i.test(all), `${l}: intet ord for prognose i tabellen (siderne viser kun faktiske priser)`, (all.match(FCWORD[l]) || [])[0]);
+    ok(L[l].fc === L[l].actual && L[l].p2 !== L.da.p2 && L[l].h1 !== L.da.h1 && L[l].cap !== L.da.cap && L[l].model === 'Bundesnetzagentur | SMARD.de' && !/ENTSO/i.test(all), `${l}: fc er samme ord som actual, egne ord, kilden er Bundesnetzagentur | SMARD.de og ENTSO-E nævnes ikke`);
+    ok(/elpriser\.org/.test(L[l].note) && /berechnet|calculées|przeliczone|calcolate/.test(L[l].note) && /verändert|modifiées|zmienione|modificati/.test(L[l].note), `${l}: noten siger at elpriser.org har ændret dataene (timegennemsnit)`, L[l].note);
+    ok(/ohne|hors|bez|al netto/i.test(L[l].cap) && /VAT|MwSt|TVA|IVA/.test(L[l].cap), `${l}: billedteksten siger "ekskl. moms" (spotpris, ikke hvad kunden betaler)`, L[l].cap);
+  }
+  ok(new Set(ACTL.map(l => L[l].now)).size === 4 && new Set(ACTL.map(l => L[l].cap)).size === 4 && new Set(ACTL.map(l => L[l].act2)).size === 4, 'de fire EU-sprog har hver deres tekster');
   ok(langs.slice(1).every(l => L[l].p2 !== L.da.p2 || l === 'nb'), 'sv og fi har egne ord for 2 døgn');
 
   // The adapter: five days from today, at the response's ECB rate.
@@ -303,39 +320,86 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   ok(/class="pris-now">0,80</.test(cheap) && /class="pris-u">snt\/kWh</.test(cheap), 'FI: 8 EUR/MWh er 0,80 snt med to decimaler');
   // The Danish screen is untouched by all of this: the same call with no zone is the Danish output, byte for byte.
   ok(pris(feed, D0, 21, o) === pris(feed, D0, 21, { ...o, zone: undefined }) && /Din pris/.test(pris(feed, D0, 21, o)), 'uden zone er skærmen den danske');
+  // ── The EU pages (PRIS_ACT): actual prices only, one period, today and tomorrow — or today alone ──
+  {
+    const eu = (zone, nDays, rate, base = 100) => ({ zone, zoneInfo: { rate, currency: rate === 1 ? 'EUR' : 'PLN' }, trainedThrough: null,
+      days: Array.from({ length: nDays }, (_, i) => ({ date: nextDate(i), type: 'actual', prices: M.map((v, h) => ({ hour: h, eur_mwh: Math.round((base + v * 10 + i * 3) * 100) / 100 })) })) });
+    const draw = (zone, nDays, rate, hour = 21) => { const r = eu(zone, nDays, rate); return pris(pctx.zoneToPrisDays(r, r.zoneInfo, D0), D0, hour, { zone, key: zone, period: 2, cfg: pctx.prisCountryCfg(Object.keys(pctx.PRIS_COUNTRIES).find(k => pctx.PRIS_COUNTRIES[k].zones.includes(zone))), where: zone }); };
+    // The adapter for one and for two days, and for PLN at a known rate.
+    ok(pctx.zoneToPrisDays(eu('de', 2, 1), { rate: 1 }, D0).length === 2 && pctx.zoneToPrisDays(eu('de', 1, 1), { rate: 1 }, D0).length === 1, 'adapteren: ét og to døgn giver ét og to døgn');
+    const plDay = pctx.zoneToPrisDays({ zone: 'pl', days: [{ date: D0, type: 'actual', prices: [{ hour: 0, eur_mwh: 100 }, { hour: 1, eur_mwh: -5.5 }, { hour: 2, eur_mwh: null }] }] }, { rate: 4.25 }, D0)[0].prices;
+    ok(Math.abs(plDay[0].price - 42.5) < 1e-9 && Math.abs(plDay[1].price - (-2.3375)) < 1e-9 && plDay[2] === null, 'PL: 100 EUR/MWh ved 4,25 zł/€ er 42,5 gr/kWh; en negativ pris bliver negativ; et hul er null');
+    ok(Math.abs(pctx.zoneToPrisDays({ zone: 'pl', days: [{ date: D0, type: 'actual', prices: [{ hour: 0, eur_mwh: 100 }] }] }, null, D0)[0].prices[0].price - 43.9) < 1e-9 && pctx.ZONES.pl.cur === 'PLN' && pctx.ZONES.pl.sub === 'gr', 'PL: uden kurs i svaret bruges reservekursen 4,39');
+    for (const z of ['de', 'fr', 'it-n']) ok(Math.abs(pctx.zoneToPrisDays({ zone: z, days: [{ date: D0, type: 'actual', prices: [{ hour: 0, eur_mwh: 101 }] }] }, { rate: 1 }, D0)[0].prices[0].price - 10.1) < 1e-9, `${z}: 101 EUR/MWh er 10,1 cent/kWh`);
+    // Two days: one card, no pill, no forecast divider, the type "Day-ahead" only, the title says today and tomorrow.
+    for (const [zone, w] of [['de', { card: 'Heute und morgen', one: 'Heute', kind: 'Day-Ahead-Preis', u: 'ct' }], ['fr', { card: 'Aujourd’hui et demain', one: 'Aujourd’hui', kind: 'Prix day-ahead', u: 'c€' }],
+        ['pl', { card: 'Dziś i jutro', one: 'Dziś', kind: 'Cena RDN', u: 'gr' }], ['it-n', { card: 'Oggi e domani', one: 'Oggi', kind: 'Prezzo day-ahead', u: 'c€' }]]) {
+      const two = draw(zone, 2, zone === 'pl' ? 4.4 : 1), one = draw(zone, 1, zone === 'pl' ? 4.4 : 1);
+      ok(!/pris-period|data-pris-period/.test(two) && !/pris-period|data-pris-period/.test(one), `${zone}: ingen periodepille (hverken tegnet eller deaktiveret) med ét døgn eller to`);
+      ok((two.match(/<section class="pris-card/g) || []).length === 1 && two.includes(`<section class="pris-card pp2" aria-label="${w.card}">`) && two.includes(`<p class="pris-ct">${w.card}</p>`), `${zone}: to døgn: ét kort med titlen "${w.card}"`);
+      ok(one.includes(`<section class="pris-card pp2" aria-label="${w.one}">`) && one.includes(`<p class="pris-ct">${w.one}</p>`) && !one.includes(w.card), `${zone}: ét døgn: titlen er "${w.one}", ikke "${w.card}"`);
+      const bars = h => (h.slice(h.indexOf('pris-card pp2'), h.indexOf('pris-tiles pp2')).match(/<span class="pc[ "]/g) || []).length;
+      ok(bars(two) === 48 && bars(one) === 24, `${zone}: 48 søjler med to døgn, 24 med ét`, `${bars(two)}/${bars(one)}`);
+      ok((two.match(/<tr class="r\d+">/g) || []).length === 2 && (one.match(/<tr class="r\d+">/g) || []).length === 1 && (two.match(new RegExp(`<td class="real">${w.kind}</td>`, 'g')) || []).length === 2, `${zone}: to og én dagsrække, typen er kun "${w.kind}"`);
+      ok(!/pris-fc|class="fc"|r5|r7|r10|pris-sum/.test(two + one) && !/NaN|undefined|Infinity/.test(two + one), `${zone}: ingen prognose-skillelinje, ingen skjulte dage, ingen NaN`);
+      ok(two.includes(`>${w.u}/kWh</span>`) && !/kr\/kWh|øre|døgn/.test(two), `${zone}: enheden er ${w.u}/kWh`);
+      const aria = (two.match(/role="img" tabindex="0" aria-label="([^"]*)"/) || [])[1] || '';
+      ok(aria.startsWith(zone === 'de' ? 'Strompreis stündlich, heute und morgen: ' : '') && /\d/.test(aria) && !/Prognos|forecast/i.test(aria), `${zone}: diagrammets tekst er sandfærdig og uden prognose`, aria.slice(0, 60));
+    }
+    // The sentence under the verdict: tomorrow's prices make "the next 24 hours" true; with today alone it says what it means.
+    ok(draw('de', 2, 1, 21).includes('Billigere') === false && /Günstiger morgen um 13 Uhr — <b>/.test(draw('de', 2, 1, 21)), 'DE: med to døgn: "Günstiger morgen um 13 Uhr — x ct"');
+    ok(/class="pris-sent">Günstigste Stunde des restlichen Tages</.test(draw('de', 1, 1, 13)) && /class="pris-sent"><\/p>/.test(draw('de', 1, 1, 23)), 'DE: med kun i dag: "Günstigste Stunde des restlichen Tages", og i sidste time ingen sætning');
+    // Hours and decimals the way each language writes them.
+    ok(/<p class="pris-label">Strompreis jetzt · <span class="pris-wd">Mittwoch <\/span>um 21 Uhr<\/p>/.test(draw('de', 2, 1)) && /<td>um 13–14 Uhr<\/td>/.test(draw('de', 2, 1)), 'DE: "um 21 Uhr" og "um 13–14 Uhr"');
+    ok(/Prix de l’électricité maintenant · <span class="pris-wd">mercredi <\/span>à 21 h/.test(draw('fr', 2, 1)) && /<td>à 13–14 h<\/td>/.test(draw('fr', 2, 1)), 'FR: "à 21 h" og "à 13–14 h"');
+    ok(/class="pris-now">[\d,]+</.test(draw('it-n', 2, 1)) && /alle 21/.test(draw('it-n', 2, 1)) && /godz\. 21/.test(draw('pl', 2, 4.4)), 'IT/PL: "alle 21", "godz. 21"');
+    // The Danish screen is not touched: no pill is missing, the forecast divider and the 'Prognose' type are still there.
+    ok(/data-pris-period="2"/.test(pris(feed, D0, 21, o)) && /pris-fc/.test(pris(feed, D0, 21, o)) && /<td class="fc">Prognose<\/td>/.test(pris(feed, D0, 21, o)), 'de danske sider har stadig periodepille, prognose-skillelinje og typen Prognose');
+    // The text block names the source and the basis for an EU page, the model for a Nordic one.
+    const raws = k => { const r = eu(k, 2, k === 'pl' ? 4.4 : 1); return r; };
+    const zl = pctx.prisZoneList('it/prezzo-luce', Object.fromEntries(pctx.PRIS_COUNTRIES['it/prezzo-luce'].zones.map(k => [k, raws(k)])), D0);
+    ok((zl.match(/<li>/g) || []).length === 1 && zl.includes('<a href="https://www.smard.de" target="_blank" rel="noopener">Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</p>') && !/huggingface|entsoe|ENTSO/i.test(zl) && /Fonte:/.test(zl) && /dati modificati/.test(zl), 'IT: én zone i tekstblokken; kilden er Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket, og noten siger at dataene er ændret (ikke modellen, ikke ENTSO-E)');
+    ok(/huggingface/.test(pctx.prisZoneList('no/strompris', Object.fromEntries(pctx.PRIS_COUNTRIES['no/strompris'].zones.map(k => [k, eu(k, 2, 10)])), D0)), 'NO: tekstblokken peger stadig på modellen');
+  }
   // The country pages' pieces.
   const tabs = pctx.prisZoneTabs('no/strompris', 'no2');
   ok((tabs.match(/role="tab"/g) || []).length === 5 && /href="#no2" data-zone="no2" aria-selected="true" tabindex="0">NO2<small>Kristiansand<\/small>/.test(tabs) && (tabs.match(/tabindex="-1"/g) || []).length === 4 && /role="tablist" aria-label="Prisområde"/.test(tabs), 'zone-fanerne: tablist, valgt fane har tabindex 0 og by');
   ok(pctx.prisZoneTabs('fi/sahkon-hinta', 'fi') === '' && /aria-label="Elområde"/.test(pctx.prisZoneTabs('sv/elpris', 'se3')), 'Finland har ingen faner; Sverige siger Elområde');
   ok(pctx.prisHref('no5') === '/no/strompris#no5' && pctx.prisHref('fi') === '/fi/sahkon-hinta' && pctx.prisHref('dk2') === '/dk2' && pctx.prisHref('nl') === '/nl/stroomprijs', 'prisHref: landesidens anker, Finland og Holland uden anker, DK');
   ok(pctx.PRIS_COUNTRIES['no/strompris'].def === 'no1' && pctx.PRIS_COUNTRIES['sv/elpris'].def === 'se3' && pctx.PRIS_COUNTRIES['no/strompris'].zones.every(k => pctx.ZONES[k].lang === 'nb'), 'landenes startzone og sprog');
-  ok(Object.values(pctx.ZONES).every(z => z.name && z.city && z.cur && z.rate > 0 && z.sub) && Object.keys(pctx.ZONES).length === 13, 'ZONES: 13 områder med navn, by, valuta, kurs og enhed');
+  ok(Object.values(pctx.ZONES).every(z => z.name && z.city && z.cur && z.rate > 0 && z.sub) && Object.keys(pctx.ZONES).length === 17, 'ZONES: 17 områder med navn, by, valuta, kurs og enhed');
+  ok(pctx.NORDEN_ZONES.length === 13 && pctx.NORDEN_ZONES.every(k => k in pctx.ZONES && /^(dk|no|se|fi|nl)/.test(k)), '/norden sammenligner stadig kun de 13 nordiske og hollandske områder');
   ok(pctx.ZONES.nl.lang === 'nl' && pctx.ZONES.nl.sub === 'cent' && pctx.ZONES.nl.rate === 1 && pctx.PRIS_COUNTRIES['nl/stroomprijs'].def === 'nl' && pctx.PRIS_COUNTRIES['nl/stroomprijs'].zones.join() === 'nl', 'NL: hollandsk, cent, kurs 1, og landets eneste zone');
   ok(Object.values(pctx.ZONES).every(z => z.lang in L) && Object.values(pctx.PRIS_COUNTRIES).every(c => c.lang in L), 'hver zone og hvert land peger på et sprog der findes');
 
   // ── The country pages' chrome: CHROME_I18N has the same keys in all four languages, chromeHTML is the one template ──
   {
-    const X = pctx.CHROME_I18N, cl = ['nb', 'sv', 'fi', 'nl'];
-    ok(Object.keys(X).join() === cl.join(), 'CHROME_I18N har præcis nb, sv, fi og nl (den danske chrome er index.html\'s egen markup)', Object.keys(X).join());
+    const X = pctx.CHROME_I18N, cl = ['nb', 'sv', 'fi', 'nl', 'de', 'fr', 'pl', 'it'];
+    ok(Object.keys(X).join() === cl.join(), 'CHROME_I18N har præcis nb, sv, fi, nl, de, fr, pl og it (den danske chrome er index.html\'s egen markup)', Object.keys(X).join());
     const ks = Object.keys(X.nb), cks = Object.keys(X.nb.cn);
     for (const l of cl) {
-      ok(Object.keys(X[l]).join() === ks.join() && Object.keys(X[l].cn).join() === cks.join(), `${l}: chrome-nøgler som norsk`, Object.keys(X[l]).join());
-      ok(ks.every(k => k === 'cn' || (typeof X[l][k] === 'string' && X[l][k].length > 1)) && cks.every(k => typeof X[l].cn[k] === 'string' && X[l].cn[k].length > 2), `${l}: ingen tom chrome-tekst`);
+      // the four EU languages carry one key more: chg, the note that the site changed the data
+      ok(Object.keys(X[l]).filter(k => k !== 'chg').join() === ks.join() && Object.keys(X[l].cn).join() === cks.join() && ('chg' in X[l]) === ['de', 'fr', 'pl', 'it'].includes(l), `${l}: chrome-nøgler som norsk (chg kun på de fire EU-sprog)`, Object.keys(X[l]).join());
+      ok(ks.concat(l === 'de' || l === 'fr' || l === 'pl' || l === 'it' ? ['chg'] : []).every(k => k === 'cn' || (typeof X[l][k] === 'string' && X[l][k].length > (k === 'and' ? 0 : 1))) && cks.every(k => typeof X[l].cn[k] === 'string' && X[l].cn[k].length > 2), `${l}: ingen tom chrome-tekst`);
     }
-    ok(cks.join() === 'dk,no,sv,fi,nl' && Object.values(pctx.PRIS_COUNTRIES).every(c => cks.includes(c.cc)), 'landenavnene dækker Danmark og hvert landeside-cc');
+    ok(cks.join() === 'dk,no,sv,fi,nl,de,fr,pl,it' && Object.values(pctx.PRIS_COUNTRIES).every(c => cks.includes(c.cc)), 'landenavnene dækker Danmark og hvert landeside-cc');
     // The words differ between the languages — a copy-pasted Norwegian table would pass every check above.
-    ok(new Set(cl.map(l => X[l].menu)).size === 4 && new Set(cl.map(l => X[l].privacy)).size === 4 && new Set(cl.map(l => X[l].land)).size === 4, 'menu, privatlivs- og landeord er forskellige på de fire sprog');
+    ok(new Set(cl.map(l => X[l].menu)).size === 8 && new Set(cl.map(l => X[l].privacy)).size === 8 && new Set(cl.map(l => X[l].land)).size >= 7 && cl.every(l => new Set(Object.values(X[l].cn)).size === 9), 'menu, privatlivs- og landeord er forskellige på de otte sprog');
     const html = pg => pctx.chromeHTML(pg);
     for (const pg of Object.keys(pctx.PRIS_COUNTRIES)) {
       const c = html(pg), C = pctx.PRIS_COUNTRIES[pg], x = X[C.lang];
       const navLinks = [...c.nav.matchAll(/<a href="([^"]+)"([^>]*)>([^<]+)<\/a>/g)];
-      ok(navLinks.map(m => m[1]).join() === '/dk1,/no/strompris,/sv/elpris,/fi/sahkon-hinta,/nl/stroomprijs', `${pg}: landenavigationen er Danmark og de fire landesider, i den rækkefølge`, navLinks.map(m => m[1]).join());
+      ok(navLinks.map(m => m[1]).join() === '/dk1,/no/strompris,/sv/elpris,/fi/sahkon-hinta,/nl/stroomprijs,/de/strompreis,/fr/prix-electricite,/pl/ceny-pradu,/it/prezzo-luce', `${pg}: landenavigationen er Danmark og de otte landesider, i den rækkefølge`, navLinks.map(m => m[1]).join());
       ok(navLinks.map(m => m[3]).join() === Object.values(x.cn).join(), `${pg}: landenavnene er på ${C.lang}`, navLinks.map(m => m[3]).join());
       ok(navLinks.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === '/' + pg && (c.nav.match(/aria-current/g) || []).length === 1, `${pg}: præcis den aktuelle side er aria-current`);
       ok(c.nav.includes(`aria-label="${x.menu}"`) && c.home === x.home, `${pg}: menuens og logoets navne er på ${C.lang}`);
       ok(c.foot.startsWith('<footer ') && (c.foot.match(/<footer/g) || []).length === 1 && c.foot.includes(`<p class="sf-h" id="sfLand">${x.land}</p>`) && (c.foot.match(/aria-current="page"/g) || []).length === 1, `${pg}: sidefoden har en landeliste med den aktuelle markeret`);
       ok(c.foot.includes(`<a href="/privatliv" hreflang="da">${x.privacy}</a>`) && (c.foot.match(/hreflang/g) || []).length === 1, `${pg}: privatlivslinket peger på /privatliv med hreflang="da" og er mærket på ${C.lang}`);
-      ok(/&copy; Elpriser\.org &mdash; /.test(c.foot) && c.foot.includes('>ENTSO-E</a>') && c.foot.includes('>Energi Data Service</a>') && c.foot.includes('>Hugging Face</a>'), `${pg}: ophavsretslinjen med kilderne`);
+      // The Nordic pages credit ENTSO-E and Energi Data Service; the EU pages credit Bundesnetzagentur | SMARD.de (CC BY 4.0, with the
+      // licence link) and say the data were changed — and name neither ENTSO-E nor Energi Data Service.
+      ok(/&copy; Elpriser\.org &mdash; /.test(c.foot) && c.foot.includes('>Hugging Face</a>') && (C.act
+        ? c.foot.includes('>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> &mdash; ' + x.chg) && !c.foot.includes('Energi Data Service') && !/ENTSO/.test(c.foot)
+        : c.foot.includes('>ENTSO-E</a>') && c.foot.includes('>Energi Data Service</a>')), `${pg}: ophavsretslinjen med kilderne`);
       const all = c.nav + c.foot;
       ok(!/Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Mobilnavigation|Privatliv|Åbne datasæt|Alle guides|Forstå din elpris|id="netChip|class="app-btn|class="tabbar|<dialog/.test(all), `${pg}: ingen dansk chrome, ingen netchip, ingen app-knap`, (all.match(/Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Privatliv|Åbne datasæt/) || [])[0]);
       ok(/^<footer class="sf sf-x" data-pg="[^"]+">/.test(c.foot) && !/\$\{|undefined|NaN/.test(all), `${pg}: ingen skabelonrester`);

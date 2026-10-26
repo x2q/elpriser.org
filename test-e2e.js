@@ -157,14 +157,24 @@ async function startServer() {
   // server.js has no /api/nordic either. The foreign-area pages draw from it, so answer it for all thirteen
   // zones with ten days from yesterday (like the live feed). The price encodes the zone, so a tab switch is visible:
   // EUR/MWh = 10 × (zone number) + the day's swing, at rate 10 → øre/kWh = EUR/MWh.
-  const ZN = ['dk1', 'dk2', 'no1', 'no2', 'no3', 'no4', 'no5', 'se1', 'se2', 'se3', 'se4', 'fi', 'nl'];
+  // The four EU zones (indices 13 to 16) answer like the EU job's KV values: yesterday, today and tomorrow, all `actual`,
+  // EUR rate 1 (Poland 4.4), no model; `euDays` is how many of those days are published (2: tomorrow is not).
+  const ZN = ['dk1', 'dk2', 'no1', 'no2', 'no3', 'no4', 'no5', 'se1', 'se2', 'se3', 'se4', 'fi', 'nl',
+    'de', 'fr', 'pl', 'it-n'];
   const nordicRequests = [];
+  let euDays = 3;
   const nordicRoute = route => {
     const zone = new URL(route.request().url()).searchParams.get('zone');
     nordicRequests.push(zone);
     const k = ZN.indexOf(zone);
     if (k < 0) return route.fulfill({ status: 400, json: { error: 'zone' } });
     const base = Date.parse(todayDk() + 'T12:00:00Z');
+    if (k >= 13) {
+      const b = Date.parse(todayDk() + 'T12:00:00Z');
+      return route.fulfill({ json: { zone, unit: 'EUR/MWh', trainedThrough: null, zoneInfo: { rate: zone === 'pl' ? 4.4 : 1, currency: zone === 'pl' ? 'PLN' : 'EUR' },
+        days: Array.from({ length: euDays }, (_, i) => ({ date: new Date(b + (i - 1) * 86400000).toISOString().slice(0, 10), type: 'actual',
+          prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: +(60 + (k - 13) * 10 + Math.sin(h / 24 * 6.28) * 25 + i).toFixed(2) })) })) } });
+    }
     route.fulfill({ json: { zone, unit: 'EUR/MWh', zoneInfo: { rate: 10, currency: 'X' },
       days: Array.from({ length: 10 }, (_, i) => ({
         date: new Date(base + (i - 1) * 86400000).toISOString().slice(0, 10), type: i < 3 ? 'actual' : 'forecast',
@@ -191,6 +201,10 @@ async function startServer() {
     ['/sv/elpris',                       'zone'],
     ['/fi/sahkon-hinta',                       'zone'],
     ['/nl/stroomprijs',                        'zone'],
+    ['/de/strompreis',                         'zone'],
+    ['/fr/prix-electricite',                   'zone'],
+    ['/pl/ceny-pradu',                         'zone'],
+    ['/it/prezzo-luce',                        'zone'],
     ['/norden',                        'norden'],
     ['/blog',                                    'blog'],
     ['/blog/elafgift-2028',                      'blog-elafgift-2028'],
@@ -236,7 +250,7 @@ async function startServer() {
   for (const url of ['/blog/elafgift-2028', '/blog/hvornaar-er-stroemmen-billigst',
                      '/blog/groennest-og-dyrest', '/blog/elafgift-og-spotpris', '/blog',
                      '/tariffer', '/automation', '/api',
-                     '/om-elpriser', '/download', '/prognose', '/dk1', '/dk2', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/norden']) {
+                     '/om-elpriser', '/download', '/prognose', '/dk1', '/dk2', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce', '/norden']) {
     await test(`clean-URL: ${url} does NOT redirect to /#hash`, async () => {
       await page.goto(BASE + url);
       const state = await page.evaluate(() => ({
@@ -1633,13 +1647,13 @@ async function startServer() {
     await page.waitForFunction(() => location.pathname === '/nl/stroomprijs');
   });
 
-  await test('footer and the net dialog link Norden, Norge, Sverige, Finland and Nederland — and nothing links an old zone URL', async () => {
+  await test('footer and the net dialog link Norden, eight countries — and nothing links an old zone URL', async () => {
     await page.goto(BASE + '/');
     await page.waitForSelector('main[data-page="start"].active');
     const foot = await page.locator('footer .sf-all .sf-nets > div:last-child a').evaluateAll(a => a.map(x => x.getAttribute('href')));
-    assert.deepEqual(foot, ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs']);
+    assert.deepEqual(foot, ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce']);
     const dlg = await page.locator('#netDialog .pd-links:not([id])').last().evaluate(el => [...el.querySelectorAll('a')].map(a => [a.getAttribute('href'), a.textContent]));
-    assert.deepEqual(dlg, [['/norden', 'Norden'], ['/no/strompris', 'Norge'], ['/sv/elpris', 'Sverige'], ['/fi/sahkon-hinta', 'Finland'], ['/nl/stroomprijs', 'Nederland']], 'the net dialog lists the same five');
+    assert.deepEqual(dlg, [['/norden', 'Norden'], ['/no/strompris', 'Norge'], ['/sv/elpris', 'Sverige'], ['/fi/sahkon-hinta', 'Finland'], ['/nl/stroomprijs', 'Nederland'], ['/de/strompreis', 'Tyskland'], ['/fr/prix-electricite', 'Frankrig'], ['/pl/ceny-pradu', 'Polen'], ['/it/prezzo-luce', 'Italien']], 'the net dialog lists the same ten');
     for (const url of ['/', '/dk1', '/automation', '/om-elpriser', '/blog', '/blog/groennest-og-dyrest', '/tariffer', '/api', '/no/strompris', '/nl/stroomprijs', '/norden']) {
       await page.goto(BASE + url);
       await page.waitForSelector('main.active');
@@ -1665,10 +1679,15 @@ async function startServer() {
   // server.js hands the browser the whole index.html, so this is the client side of the localisation (the same
   // chromeHTML the server renders from; test-zone-pages.mjs covers the server's HTML through the real function).
   const CHROME = {
-    '/no/strompris':   { lang: 'nb', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederland'], cur: 'Norge', menu: 'Hovedmeny', land: 'Land', privacy: 'Personvern (på dansk)' },
-    '/sv/elpris':      { lang: 'sv', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederländerna'], cur: 'Sverige', menu: 'Huvudmeny', land: 'Länder', privacy: 'Integritet (på danska)' },
-    '/fi/sahkon-hinta': { lang: 'fi', nav: ['Tanska', 'Norja', 'Ruotsi', 'Suomi', 'Alankomaat'], cur: 'Suomi', menu: 'Päävalikko', land: 'Maat', privacy: 'Tietosuoja (tanskaksi)' },
-    '/nl/stroomprijs': { lang: 'nl', nav: ['Denemarken', 'Noorwegen', 'Zweden', 'Finland', 'Nederland'], cur: 'Nederland', menu: 'Hoofdmenu', land: 'Landen', privacy: 'Privacy (in het Deens)' },
+    '/no/strompris':   { lang: 'nb', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederland', 'Tyskland', 'Frankrike', 'Polen', 'Italia'], cur: 'Norge', menu: 'Hovedmeny', land: 'Land', privacy: 'Personvern (på dansk)' },
+    '/sv/elpris':      { lang: 'sv', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederländerna', 'Tyskland', 'Frankrike', 'Polen', 'Italien'], cur: 'Sverige', menu: 'Huvudmeny', land: 'Länder', privacy: 'Integritet (på danska)' },
+    '/fi/sahkon-hinta': { lang: 'fi', nav: ['Tanska', 'Norja', 'Ruotsi', 'Suomi', 'Alankomaat', 'Saksa', 'Ranska', 'Puola', 'Italia'], cur: 'Suomi', menu: 'Päävalikko', land: 'Maat', privacy: 'Tietosuoja (tanskaksi)' },
+    '/nl/stroomprijs': { lang: 'nl', nav: ['Denemarken', 'Noorwegen', 'Zweden', 'Finland', 'Nederland', 'Duitsland', 'Frankrijk', 'Polen', 'Italië'], cur: 'Nederland', menu: 'Hoofdmenu', land: 'Landen', privacy: 'Privacy (in het Deens)' },
+    // The four EU pages (actual prices only): the footer's data line is the CC BY 4.0 credit to Bundesnetzagentur | SMARD.de plus the note that the data were changed.
+    '/de/strompreis': { lang: 'de', act: 1, nav: ['Dänemark', 'Norwegen', 'Schweden', 'Finnland', 'Niederlande', 'Deutschland', 'Frankreich', 'Polen', 'Italien'], cur: 'Deutschland', menu: 'Hauptmenü', land: 'Länder', privacy: 'Datenschutz (auf Dänisch)' },
+    '/fr/prix-electricite': { lang: 'fr', act: 1, nav: ['Danemark', 'Norvège', 'Suède', 'Finlande', 'Pays-Bas', 'Allemagne', 'France', 'Pologne', 'Italie'], cur: 'France', menu: 'Menu principal', land: 'Pays', privacy: 'Confidentialité (en danois)' },
+    '/pl/ceny-pradu': { lang: 'pl', act: 1, nav: ['Dania', 'Norwegia', 'Szwecja', 'Finlandia', 'Holandia', 'Niemcy', 'Francja', 'Polska', 'Włochy'], cur: 'Polska', menu: 'Menu główne', land: 'Kraje', privacy: 'Prywatność (po duńsku)' },
+    '/it/prezzo-luce': { lang: 'it', act: 1, nav: ['Danimarca', 'Norvegia', 'Svezia', 'Finlandia', 'Paesi Bassi', 'Germania', 'Francia', 'Polonia', 'Italia'], cur: 'Italia', menu: 'Menu principale', land: 'Paesi', privacy: 'Privacy (in danese)' },
   };
   const DANISH_CHROME = /Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Mobilnavigation|Privatliv|Åbne datasæt|Alle guides|Forstå din elpris|Tariffer|Prognose$/m;
   const chromeState = p => p.evaluate(() => {
@@ -1700,7 +1719,7 @@ async function startServer() {
         await p.waitForSelector('main[data-page="zone"] .pris');
         const s = await chromeState(p);
         assert.equal(s.lang, w.lang);
-        assert.deepEqual(s.navText, w.nav); assert.deepEqual(s.navHref, ['/dk1', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs']);
+        assert.deepEqual(s.navText, w.nav); assert.deepEqual(s.navHref, ['/dk1', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce']);
         assert.deepEqual(s.navCur, [w.cur], 'the current country is marked aria-current');
         assert.equal(s.menu, w.menu); assert.equal(s.logo, 'Elpriser'); assert.equal(s.logoHref, '/');
         assert.deepEqual([s.chip, s.app, s.tabbar, s.dialog, s.actions], [false, false, false, false, false], 'no Danish net chip, app button, tab bar, net dialog or action row');
@@ -1708,10 +1727,11 @@ async function startServer() {
         assert.ok(!DANISH_CHROME.test(s.footText), `footer text: ${s.footText}`);
         assert.equal(s.footers, 1); assert.equal(s.details, 0, 'a slim footer: no disclosure of net companies');
         assert.equal(s.footHeading, w.land);
-        assert.deepEqual(s.footLinks.map(x => x[0]), w.nav); assert.deepEqual(s.footLinks.map(x => x[1]), ['/dk1', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs']);
+        assert.deepEqual(s.footLinks.map(x => x[0]), w.nav); assert.deepEqual(s.footLinks.map(x => x[1]), ['/dk1', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce']);
         assert.deepEqual(s.footLinks.filter(x => x[2]).map(x => x[0]), [w.cur]);
         assert.deepEqual(s.privacy, [w.privacy, '/privatliv', 'da']);
-        assert.match(s.footText, /© Elpriser\.org — .*ENTSO-E.*Energi Data Service.*Hugging Face/s);
+        if (w.act) { assert.match(s.footText, /© Elpriser\.org — .*Bundesnetzagentur \| SMARD\.de \(Energy-Charts\.info\), CC BY 4\.0 — .*elpriser\.org.*Hugging Face/s); assert.ok(!/Energi Data Service|ENTSO/.test(s.footText), 'the EU pages credit neither Energi Data Service nor ENTSO-E'); }
+        else assert.match(s.footText, /© Elpriser\.org — .*ENTSO-E.*Energi Data Service.*Hugging Face/s);
         assert.equal(s.scroll[0], s.scroll[1], `horizontal page scroll ${s.scroll.join(' vs ')}`);
         assert.ok(s.navVisible.every(Boolean) || vw < 600, 'every country is inside the viewport on a wide screen');
         if (vw < 600) {
@@ -1819,6 +1839,121 @@ async function startServer() {
     assert.match(await page.locator('main[data-page="zone"] .pris-card.pp2 .pris-tip').textContent(), /^(Vandaag|Morgen) om \d\d · [\d,]+ cent\/kWh$/);
   });
 
+
+  // ── 9c. The four EU pages: Germany, France, Poland, Northern Italy — actual day-ahead prices only ─────────────
+  const EUP = {
+    '/de/strompreis':       { lang: 'de', key: 'de', unit: 'ct/kWh', h1: 'Strompreis in Deutschland: heute und morgen', title: 'Strompreis aktuell und morgen – Börsenstrompreis Deutschland', card: 'Heute und morgen', one: 'Heute', kind: 'Day-Ahead-Preis', now: /^Strompreis jetzt · (Sonn|Mon|Diens|Mittwoch|Donners|Frei|Sams)\w* um \d\d Uhr$/, chg: 'Änderung: Stundenmittel von elpriser.org berechnet' },
+    '/fr/prix-electricite': { lang: 'fr', key: 'fr', unit: 'c€/kWh', h1: 'Prix de l’électricité en France : aujourd’hui et demain', title: 'Prix de l’électricité aujourd’hui et demain en France', card: 'Aujourd’hui et demain', one: 'Aujourd’hui', kind: 'Prix day-ahead', now: /^Prix de l’électricité maintenant · \w+ à \d\d h$/, chg: 'Modifié : moyennes horaires calculées par elpriser.org' },
+    '/pl/ceny-pradu':       { lang: 'pl', key: 'pl', unit: 'gr/kWh', h1: 'Cena prądu w Polsce: dziś i jutro', title: 'Cena prądu dziś i jutro – giełdowa cena energii w Polsce', card: 'Dziś i jutro', one: 'Dziś', kind: 'Cena RDN', now: /^Cena prądu teraz · \S+ godz\. \d\d$/, chg: 'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org' },
+    '/it/prezzo-luce':      { lang: 'it', key: 'it-n', unit: 'c€/kWh', h1: 'Prezzo dell’energia elettrica in Italia del Nord: oggi e domani', title: 'Prezzo dell’energia elettrica oggi e domani – Italia del Nord', card: 'Oggi e domani', one: 'Oggi', kind: 'Prezzo day-ahead', now: /^Prezzo della luce adesso · \S+ alle \d\d$/, chg: 'Modifiche: medie orarie calcolate da elpriser.org' },
+  };
+  const FORECAST_WORDS = /prognos|vorhersage|prévision|previsi|prognoz|forecast|ennuste|\bmodel/i;
+  for (const [url, w] of Object.entries(EUP)) {
+    await test(`${url}: the Pris screen in ${w.lang}, one period (no pill), today and tomorrow, day-ahead type only, no forecast wording, the CC BY 4.0 credit and the change note`, async () => {
+      euDays = 3;
+      await page.goto(BASE + url);
+      await page.waitForSelector('main[data-page="zone"] .pris');
+      assert.equal(await page.locator('html').getAttribute('lang'), w.lang);
+      assert.equal(await page.title(), w.title);
+      assert.equal(await page.locator('main[data-page="zone"] h1').textContent(), w.h1);
+      assert.equal(await page.locator('main[data-page="zone"] .pris').getAttribute('data-key'), w.key);
+      assert.equal(await page.locator('main[data-page="zone"] .pris-u').textContent(), w.unit);
+      assert.match(await page.locator('main[data-page="zone"] .pris-label').textContent(), w.now);
+      assert.equal(await page.locator('main[data-page="zone"] .pris-period').count(), 0, 'one period: no pill at all');
+      assert.equal(await page.locator('main[data-page="zone"] .pris-card').count(), 1);
+      assert.equal(await page.locator('main[data-page="zone"] .pris-card .pris-ct').textContent(), w.card);
+      assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp2 .pc[data-tip]').count(), 48);
+      assert.equal(await page.locator('main[data-page="zone"] .pris-week tbody tr').count(), 2);
+      assert.deepEqual([...new Set(await page.locator('main[data-page="zone"] .pris-week tbody td:last-child').allTextContents())], [w.kind]);
+      assert.equal(await page.locator('main[data-page="zone"] .pris-fc').count(), 0, 'no forecast divider');
+      assert.equal(await page.locator('[data-pris-view]').count(), 0);
+      assert.equal(await page.locator('#zTabs [role="tab"]').count(), 0, 'one zone: no tabs');
+      const t = await page.evaluate(() => document.querySelector('main[data-page="zone"]').innerText);
+      assert.ok(!FORECAST_WORDS.test(t) && !/NaN|undefined|\børe\b|\bsnt\b|døgn|dygn|vrk|Børspris|ENTSO/.test(t), t.slice(0, 400));
+      // The licence: attribution to Bundesnetzagentur | SMARD.de (via Energy-Charts.info), the CC BY 4.0 link, and that the data were changed — in the text block and in the footer.
+      const list = await page.locator('#zList').textContent();
+      assert.match(list, /Bundesnetzagentur \| SMARD\.de \(Energy-Charts\.info\), CC BY 4\.0\.$/);
+      assert.deepEqual(await page.locator('#zList .zl-n a').evaluateAll(a => a.map(x => [x.textContent, x.getAttribute('href')])),
+        [['Bundesnetzagentur | SMARD.de', 'https://www.smard.de'], ['Energy-Charts.info', 'https://www.energy-charts.info'], ['CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/']]);
+      const foot = await page.locator('footer .sf-legal').textContent();
+      assert.ok(foot.includes('Bundesnetzagentur | SMARD.de (Energy-Charts.info), CC BY 4.0 — ' + w.chg), foot);
+      assert.ok(!/ENTSO|Energi Data Service/.test(foot + list));
+      const tip = await page.evaluate(() => document.querySelector('main[data-page="zone"] .pris-card.pp2 .pc[data-tip]').dataset.tip);
+      assert.match(tip, /\d/);
+    });
+  }
+
+  await test('/pl/ceny-pradu: the euro price is converted to grosze at the response\'s PLN rate (÷10 × 4,4), with a comma', async () => {
+    await page.goto(BASE + '/pl/ceny-pradu');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    // k = 15 in the stub: 60 + 2 × 10 = 80 EUR/MWh ± 25 swing + 1 → 56…106 EUR/MWh → 24.6…46.6 gr/kWh.
+    const v = parseFloat((await page.locator('main[data-page="zone"] .pris-now').textContent()).replace(',', '.'));
+    assert.ok(v > 24 && v < 47, `price ${v}`);
+    assert.match(await page.locator('main[data-page="zone"] .pris-now').textContent(), /^\d+,\d$/);
+    assert.match(await page.locator('#zList').textContent(), /Polska \(PL\): śr\. dziś [\d,]+ gr\/kWh, śr\. jutro [\d,]+ gr\/kWh/);
+  });
+
+  await test('/it/prezzo-luce: one zone (IT-North) and no tabs — the page says Nord everywhere; Ireland and the other Italian zones are gone', async () => {
+    nordicRequests.length = 0;
+    await page.goto(BASE + '/it/prezzo-luce');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    assert.equal(await page.locator('#zTabs [role="tab"]').count(), 0);
+    assert.equal(await page.locator('main[data-page="zone"] .pris').getAttribute('data-key'), 'it-n');
+    assert.deepEqual([...new Set(nordicRequests)], ['it-n'], 'the page asks for IT-North only');
+    assert.equal(await page.locator('#zList li').count(), 1);
+    assert.match(await page.locator('#zList li').textContent(), /^Italia del Nord \(IT-Nord\): media oggi [\d,]+ c€\/kWh, media domani [\d,]+ c€\/kWh$/);
+    assert.equal(await page.locator('.site-links a[href="/ie/electricity-price"]').count(), 0);
+    const r = await page.goto(BASE + '/ie/electricity-price');
+    assert.ok(r.status() === 404 || (await page.locator('main[data-page="zone"].active').count()) === 0, 'Ireland is not a page any more');
+  });
+
+  await test('the EU pages while tomorrow is not published: one day — the title says so, 24 bars, one row, no NaN', async () => {
+    euDays = 2;
+    try {
+      for (const [url, w] of Object.entries(EUP)) {
+        await page.goto(BASE + url);
+        await page.waitForSelector('main[data-page="zone"] .pris');
+        assert.equal(await page.locator('main[data-page="zone"] .pris-card .pris-ct').textContent(), w.one, url);
+        assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp2 .pc[data-tip]').count(), 24, url);
+        assert.equal(await page.locator('main[data-page="zone"] .pris-week tbody tr').count(), 1, url);
+        const t = await page.evaluate(() => document.querySelector('main[data-page="zone"]').innerText);
+        assert.ok(!/NaN|undefined/.test(t) && !FORECAST_WORDS.test(t), `${url}: ${t.slice(0, 200)}`);
+      }
+    } finally { euDays = 3; }
+  });
+
+  await test('the country navigation has nine entries in one row on a desktop, and scrolls sideways on a phone without the page doing so', async () => {
+    await page.goto(BASE + '/de/strompreis');
+    await page.waitForSelector('main[data-page="zone"] .pris');
+    const wide = await page.evaluate(() => { const l = [...document.querySelectorAll('.site-nav .site-links a')]; return { n: l.length, tops: [...new Set(l.map(a => Math.round(a.getBoundingClientRect().top)))], right: Math.max(...l.map(a => a.getBoundingClientRect().right)), w: innerWidth }; });
+    assert.equal(wide.n, 9); assert.equal(wide.tops.length, 1, `the row wraps: ${wide.tops}`); assert.ok(wide.right <= wide.w);
+    const c = await browser.newContext({ viewport: { width: 390, height: 844 }, bypassCSP: true, isMobile: true, hasTouch: true });
+    await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
+    await c.route('**/api/nordic*', nordicRoute);
+    const p = await c.newPage();
+    await p.goto(BASE + '/it/prezzo-luce');
+    await p.waitForSelector('main[data-page="zone"] .pris');
+    const m = await p.evaluate(() => { const n = document.querySelector('.site-links'), l = [...n.querySelectorAll('a')]; return { n: l.length, tops: [...new Set(l.map(a => Math.round(a.getBoundingClientRect().top)))], scrolls: n.scrollWidth > n.clientWidth, page: document.documentElement.scrollWidth <= innerWidth, cur: l.filter(a => a.getAttribute('aria-current')).length }; });
+    assert.deepEqual([m.n, m.tops.length, m.scrolls, m.page, m.cur], [9, 1, true, true, 1], JSON.stringify(m));
+    await c.close();
+  });
+
+  await test('the EU pages at 390 px, light and dark: nothing overflows (the day list wraps), the chart and the cards stay inside the screen', async () => {
+    for (const scheme of ['light', 'dark']) {
+      const c = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: scheme, bypassCSP: true, isMobile: true, hasTouch: true });
+      await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
+      await c.route('**/api/nordic*', nordicRoute);
+      const p = await c.newPage();
+      for (const url of Object.keys(EUP)) {
+        await p.goto(BASE + url);
+        await p.waitForSelector('main[data-page="zone"] .pris');
+        const o = await p.evaluate(() => ({ page: document.documentElement.scrollWidth - innerWidth,
+          wide: [...document.querySelectorAll('main[data-page="zone"] .pris *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1 && !e.closest('.zt')).length }));
+        assert.deepEqual([o.page, o.wide], [0, 0], `${url} ${scheme}: ${JSON.stringify(o)}`);
+      }
+      await c.close();
+    }
+  });
 
   // ── 10. /download: the "Hent appen" page with the two store badges ─────────
 

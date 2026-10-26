@@ -137,11 +137,29 @@ function danishNow() {
 // are immutable until the next day's publication. So there is genuinely no new
 // data to fetch between publications — we cache until the next ~13:00 window.
 
-/** Seconds until the next 13:00 Danish local time (clamped 5 min … 6 h). */
+// Tomorrow's prices normally appear a little before 13:00, and on 2026-10-26 a page was
+// still showing "I morgen · Prognose" at 13:29. Two things held the "no tomorrow yet" answer:
+// (1) an answer fetched after 13:00 was kept until the NEXT 13:00 (up to 6 h) even when it
+// lacked tomorrow, and (2) /api/forecast told browsers and the edge to keep it for 30 minutes.
+// So the window now opens at 12:30, and an answer that should contain tomorrow but does not
+// is kept for one minute only.
+const PUBLISH_FROM_MIN = 12 * 60 + 30;
+const WAIT_FOR_TOMORROW_S = 60;
+
+/** Danish date of tomorrow, YYYY-MM-DD. */
+function tomorrowDK() { return fmtUTC(new Date(danishNow().getTime() + 86_400_000)); }
+
+/** From 12:30 Danish time tomorrow's prices are expected; a missing tomorrow is then a delay, not the norm. */
+function tomorrowDue() { const d = danishNow(); return d.getUTCHours() * 60 + d.getUTCMinutes() >= PUBLISH_FROM_MIN; }
+
+/** Seconds to keep an answer: `ttl`, or one minute when it should contain tomorrow's prices and does not. */
+function ttlFor(hasTomorrow, ttl) { return tomorrowDue() && !hasTomorrow ? WAIT_FOR_TOMORROW_S : ttl; }
+
+/** Seconds until the next 12:30 Danish local time (clamped 5 min … 6 h). */
 function secondsUntilNextPublish() {
   const dk  = danishNow(); // DK-local components readable via UTC getters
   const sec = dk.getUTCHours() * 3600 + dk.getUTCMinutes() * 60 + dk.getUTCSeconds();
-  const target = 13 * 3600;
+  const target = PUBLISH_FROM_MIN * 60;
   const delta  = sec < target ? target - sec : (86400 - sec) + target;
   return Math.max(300, Math.min(delta, 6 * 3600));
 }
@@ -656,7 +674,8 @@ async function loadPrices(area, from, to, env) {
     // otherwise become its own KV key and its own write.
     const recent = liveFrom >= fmtUTC(new Date(Date.now() - 3 * 86_400_000));
     const live = await edgeCached(`prices-${area}-${liveFrom}-${liveTo}`, priceTtl(liveTo),
-      () => fetchSpotPrices(area, liveFrom, liveTo), recent ? env : undefined);
+      () => fetchSpotPrices(area, liveFrom, liveTo), recent ? env : undefined,
+      (d) => liveTo > tomorrowDK() && tomorrowDue() && !(d && d[tomorrowDK()]));
     return { ...archive, ...live };
   } catch (err) {
     if (Object.keys(archive).length) {
@@ -931,7 +950,7 @@ const NORDIC_ZONES = ['dk1','dk2','no1','no2','no3','no4','no5','se1','se2','se3
 // in øre was ~8 % too high, grid-company totals included. The ECB's daily
 // reference rate is used now; these are only the fallback, set to the ECB
 // fixing of 2026-09-25, for when the ECB cannot be reached.
-const FX_FALLBACK = { EUR: 1, DKK: 7.4755, NOK: 10.84, SEK: 11.29, date: '2026-09-25' };
+const FX_FALLBACK = { EUR: 1, DKK: 7.4755, NOK: 10.84, SEK: 11.29, PLN: 4.39, date: '2026-09-25' };   // PLN: the ECB fixing of 2026-10-23
 const NORDIC_ZONE_INFO = {
   dk1: { name: 'DK1 Vestdanmark',  country: 'DK', currency: 'DKK', rate: FX_FALLBACK.DKK },
   dk2: { name: 'DK2 Østdanmark',   country: 'DK', currency: 'DKK', rate: FX_FALLBACK.DKK },
@@ -948,6 +967,21 @@ const NORDIC_ZONE_INFO = {
   nl:  { name: 'NL Nederland',     country: 'NL', currency: 'EUR', rate: 1 },
 };
 
+// The four zones of the EU price pages (Germany, France, Poland, Northern Italy): ACTUAL day-ahead prices only, data CC BY 4.0
+// from Bundesnetzagentur | SMARD.de via Energy-Charts.info, written by scripts/eu_prices/build_eu_prices.py into KV
+// `eu-prices-<zone>` as hourly means of the 15-minute prices (a change of the data, which the pages say) in the very
+// shape of a Nordic zone (days of type 'actual', no forecast), served here by the same code path: same zoneInfo,
+// same cache headers, same 404 for a zone without data. `it-n` is Italy's bidding zone IT-North only. The job in
+// scripts/eu_prices/ must list exactly these zones (test-eu-prices.mjs). Only zones whose price data is CC BY 4.0
+// there may be added; the others of Energy-Charts' list are for private and internal use only.
+const EU_ZONES = ['de','fr','pl','it-n'];
+const EU_ZONE_INFO = {
+  de:       { name: 'DE-LU Germany and Luxembourg',  country: 'DE', currency: 'EUR', rate: 1 },
+  fr:       { name: 'FR France',                     country: 'FR', currency: 'EUR', rate: 1 },
+  pl:       { name: 'PL Poland',                     country: 'PL', currency: 'PLN', rate: FX_FALLBACK.PLN },
+  'it-n':   { name: 'IT-North',                      country: 'IT', currency: 'EUR', rate: 1 },
+};
+
 /** The ECB's daily euro reference rates, edge-cached for six hours (the ECB
  *  publishes once a working day, ~16:00 CET). A rate outside a sane band is
  *  treated as a parse failure, so a malformed file can never put a Norwegian
@@ -960,8 +994,9 @@ async function ecbRates() {
     const x = await r.text();
     const date = (x.match(/time='(\d{4}-\d{2}-\d{2})'/) || [])[1];
     const get = c => +((x.match(new RegExp(`currency='${c}' rate='([\\d.]+)'`)) || [])[1]);
-    const rates = { EUR: 1, DKK: get('DKK'), NOK: get('NOK'), SEK: get('SEK') };
-    const sane = rates.DKK > 7 && rates.DKK < 8 && rates.NOK > 7 && rates.NOK < 16 && rates.SEK > 7 && rates.SEK < 16;
+    const rates = { EUR: 1, DKK: get('DKK'), NOK: get('NOK'), SEK: get('SEK'), PLN: get('PLN') };
+    const sane = rates.DKK > 7 && rates.DKK < 8 && rates.NOK > 7 && rates.NOK < 16 && rates.SEK > 7 && rates.SEK < 16
+      && rates.PLN > 3 && rates.PLN < 6;
     if (!date || !sane) throw new Error('ECB file did not parse');
     return { rates, date, source: 'ECB' };
   } catch (e) {
@@ -1166,6 +1201,27 @@ const OPENAPI_SPEC = {
         responses: { '200': { description: 'The run, or the list of run dates.' }, '404': { description: 'No run archived for that date.' } },
       },
     },
+    '/api/nordic': {
+      get: {
+        operationId: 'getZonePrices',
+        summary: 'Hourly prices for a bidding zone outside Denmark\'s two',
+        description: [
+          'EUR/MWh by the zone\'s own wall clock, hour 0-23, `days[].type` `actual` (settled day-ahead price) or `forecast`,',
+          'with the ECB reference rate to the local currency in `zoneInfo` (`rate`, `rateDate`, `rateSource`).',
+          'Spot price only: excluding VAT, taxes and grid fees, not what a customer pays.',
+          '',
+          '**Nordic zones and the Netherlands** (`dk1`, `dk2`, `no1`-`no5`, `se1`-`se4`, `fi`, `nl`): ten days from yesterday, settled days as `actual` and',
+          'the rest a `forecast` from one open model (`trainedThrough` says how fresh its training data is).',
+          '',
+          '**EU zones, actual prices only, no forecast** (`trainedThrough` is null; every day is `actual`; tomorrow is absent until it is published, about 13:00 CET):',
+          '`de` Germany and Luxembourg (DE-LU), `fr` France, `pl` Poland (`zoneInfo.currency` PLN, so convert with `zoneInfo.rate`) and `it-n` Italy, bidding zone North only.',
+          'Source: Bundesnetzagentur | SMARD.de via Energy-Charts.info, licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). The data were changed by elpriser.org:',
+          'the 15-minute prices are aggregated to hourly means by the zone\'s local clock.',
+        ].join('\n'),
+        parameters: [{ name: 'zone', in: 'query', schema: { type: 'string', enum: [...NORDIC_ZONES, ...EU_ZONES], default: 'dk1' }, description: 'The bidding zone. Unknown values answer 400.' }],
+        responses: { '200': { description: 'Days of hourly prices in EUR/MWh plus zoneInfo.' }, '400': { description: 'Unknown zone.' }, '404': { description: 'No data for that zone (yet).' } },
+      },
+    },
     '/api/shelly/tariff': {
       get: {
         operationId: 'getShellyTariff',
@@ -1350,18 +1406,20 @@ async function handleApi(context) {
   }
 
   // ── /api/nordic — 13-zone forecast (served before the DK1/DK2 area check,
-  //    since its zones are Nordic bidding zones, not Danish price areas) ───
+  //    since its zones are Nordic bidding zones, not Danish price areas). The same handler serves
+  //    the eleven EU price zones (EU_ZONES: actual day-ahead prices only, KV `eu-prices-<zone>`). ───
   if (seg1 === 'nordic') {
     const zone = (q.get('zone') || 'dk1').toLowerCase();
-    if (!NORDIC_ZONES.includes(zone)) {
-      return fail(400, `zone must be one of: ${NORDIC_ZONES.join(', ')}`);
+    const eu = EU_ZONES.includes(zone);
+    if (!eu && !NORDIC_ZONES.includes(zone)) {
+      return fail(400, `zone must be one of: ${NORDIC_ZONES.join(', ')}, ${EU_ZONES.join(', ')}`);
     }
     if (!context.env || !context.env.PRICE_CACHE) return fail(503, 'forecast store unavailable');
     try {
-      const raw = await kvJson(context.env, `nordic-forecast-${zone}`, { ttl: 900 });
-      if (!raw) return fail(404, `no forecast available for ${zone}`);
+      const raw = await kvJson(context.env, eu ? `eu-prices-${zone}` : `nordic-forecast-${zone}`, { ttl: 900 });
+      if (!raw) return fail(404, eu ? `no prices available for ${zone}` : `no forecast available for ${zone}`);
       const fx = await ecbRates();
-      const info = NORDIC_ZONE_INFO[zone];
+      const info = eu ? EU_ZONE_INFO[zone] : NORDIC_ZONE_INFO[zone];
       return jsonResponse({ ...raw, zoneInfo: { ...info,
                             rate: fx.rates[info.currency] ?? info.rate,
                             rateDate: fx.date, rateSource: fx.source } },
@@ -1549,7 +1607,8 @@ async function handleApi(context) {
           .filter(Boolean);
       }
 
-      // Today+tomorrow entries are stable until the next ~13:00 publication.
+      // Today+tomorrow entries are stable until the next ~13:00 publication (one minute while tomorrow is due and missing).
+      const tomorrowEntries = makeEntries(tomorrow);
       return jsonResponse({
         data: {
           viewer: {
@@ -1557,13 +1616,13 @@ async function handleApi(context) {
               currentSubscription: {
                 priceInfo: {
                   today:    makeEntries(today),
-                  tomorrow: makeEntries(tomorrow),
+                  tomorrow: tomorrowEntries,
                 },
               },
             }],
           },
         },
-      }, { maxAge: secondsUntilNextPublish(), request });
+      }, { maxAge: ttlFor(tomorrowEntries.length > 0, secondsUntilNextPublish()), request });
     }
 
     // ── /api/prices | /api/now | /api/schedule ──────────────────────────────
@@ -1615,7 +1674,7 @@ async function handleApi(context) {
         days_with_data: days.filter(d => d.prices).length,
         ...(noTariff ? { days_without_grid_tariff: noTariff } : {}),
         days,
-      }, { maxAge: priceTtl(range.end), request });
+      }, { maxAge: range.end > tomorrowDK() ? ttlFor(days.some(d => d.date === tomorrowDK() && d.prices), priceTtl(range.end)) : priceTtl(range.end), request });
     }
 
     if (seg1 === 'prices') {
@@ -1926,10 +1985,13 @@ async function kvPutThrottled(kv, key, body, { minIntervalMs, expirationTtl }) {
   }
 }
 
-async function edgeCached(key, ttlSec, build, env) {
+async function edgeCached(key, ttlSec, build, env, shortWhen) {
+  // `shortWhen(data)` true = the answer is incomplete (tomorrow's prices are due but missing):
+  // keep it for WAIT_FOR_TOMORROW_S instead of ttlSec, in both layers.
+  const effTtl = (d) => (shortWhen && shortWhen(d) ? Math.min(ttlSec, WAIT_FOR_TOMORROW_S) : ttlSec);
   // 1. In-memory (peek directly — `cached()` would store the null sentinel)
   const now = Date.now(), mem = _cache.get(key);
-  if (mem && now - mem.ts < ttlSec * 1000) return mem.v;
+  if (mem && now - mem.ts < (mem.ttl ?? ttlSec) * 1000 && !(shortWhen && shortWhen(mem.v) && now - mem.ts >= WAIT_FOR_TOMORROW_S * 1000)) return mem.v;
 
   // 2. Cloudflare Cache API (shared across isolates within a colo).
   //    `/v2/` namespace abandons any poisoned (empty) entries cached by the
@@ -1939,7 +2001,7 @@ async function edgeCached(key, ttlSec, build, env) {
   const hit = await cache.match(cacheKey);
   if (hit) {
     const data = await hit.json();
-    if (isCacheable(data)) { _cache.set(key, { ts: now, v: data }); return data; }
+    if (isCacheable(data)) { _cache.set(key, { ts: now, v: data, ttl: effTtl(data) }); return data; }
     // Defensive: an empty slipped in somehow — drop it and re-fetch.
     await cache.delete(cacheKey);
   }
@@ -1968,11 +2030,12 @@ async function edgeCached(key, ttlSec, build, env) {
   // Only cache real data. A transient empty is returned to this caller but
   // never stored, so the very next request retries upstream.
   if (isCacheable(data)) {
-    _cache.set(key, { ts: Date.now(), v: data });
+    const ttl = effTtl(data);
+    _cache.set(key, { ts: Date.now(), v: data, ttl });
     const body = JSON.stringify(data);
     await Promise.all([
       cache.put(cacheKey, new Response(body, {
-        headers: { 'Cache-Control': `public, max-age=${ttlSec}` },
+        headers: { 'Cache-Control': `public, max-age=${ttl}` },
       })),
       // KV backup only needs to be "recent enough" for a stale-if-error
       // fallback, not continuously fresh -- throttled to at most once per
@@ -2448,5 +2511,5 @@ async function handleForecast(area, mode, gln, request, env) {
     // weekday-average fallback (source: "heuristic" on those days).
     model: modelMeta,
     days,
-  }, { maxAge: 1800, request });
+  }, { maxAge: ttlFor(days.some(d => d.date === tomorrowDK() && d.type === 'actual'), 1800), request });
 }

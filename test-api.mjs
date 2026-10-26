@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
-import { createApi, makeKv, priceArchiveYear, tariffArchive } from './tests/upstream.mjs';
+import { createApi, makeKv, priceArchiveYear, tariffArchive, upstreamState } from './tests/upstream.mjs';
 
 const day = offset => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
 const range = `start=${day(-7)}&end=${day(2)}`;
@@ -443,4 +443,174 @@ test('a changed price backup is still written (after the ten-minute window)', as
     await (await createApi({ kv })).get(`/api/raw/prices?area=DK1&start=${day(-30)}&end=${day(-20)}`);
   });
   assert.ok(kv.ops.put.length > before, 'new data was not stored');
+});
+
+// ── /api/nordic — the Nordic zones, and the eleven EU zones (actual prices only) ─────────────────────────────
+
+const ECB = { DKK: 7.4748, NOK: 10.4665, SEK: 11.131, PLN: 4.3945, date: '2026-10-23' };
+/** A KV value as the Spark jobs write it: days of 24 hours, EUR/MWh. `actual` days only for the EU job. */
+const feed = (zone, dates, type = 'actual', trained = null) => ({
+  zone, generated: day(0), trainedThrough: trained, unit: 'EUR/MWh',
+  days: dates.map((d, i) => ({ date: d, type, prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: 50 + h + i })) })),
+});
+const EU = ['de', 'fr', 'pl', 'it-n'];   // the four zones Energy-Charts licenses CC BY 4.0; Ireland and Italy's other zones are not served
+
+test('/api/nordic: a Nordic zone is served exactly as before — the KV value plus zoneInfo with the ECB rate', async () => {
+  // The EU zones share this handler; the Nordic answer must not change by a byte.
+  const f = feed('no1', [day(-1), day(0), day(1)], 'actual', '2026-10-25');
+  const api = await createApi({ kv: makeKv({ 'nordic-forecast-no1': f }), ecb: ECB });
+  const r = await api.get('/api/nordic?zone=no1');
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.body, { ...f, zoneInfo: { name: 'NO1 Oslo', country: 'NO', currency: 'NOK', rate: 10.4665, rateDate: '2026-10-23', rateSource: 'ECB' } });
+  assert.equal(r.headers.get('cache-control'), 'public, max-age=1800, s-maxage=1800');
+  // Without the ECB the fallback rate is used and says so.
+  const fb = await (await createApi({ kv: makeKv({ 'nordic-forecast-no1': f }) })).get('/api/nordic?zone=no1');
+  assert.equal(fb.body.zoneInfo.rate, 10.84);
+  assert.equal(fb.body.zoneInfo.rateSource, 'fallback');
+  assert.equal((await (await createApi({ kv: makeKv({ 'nordic-forecast-dk1': feed('dk1', [day(0)]) }), ecb: ECB })).get('/api/nordic')).body.zone, 'dk1', 'no zone means dk1, as before');
+});
+
+test('/api/nordic: every EU zone (de, fr, pl, it-n) is served from its own eu-prices key, with zoneInfo, and nothing but actual days', async () => {
+  const seed = Object.fromEntries(EU.map(z => [`eu-prices-${z}`, feed(z, [day(0), day(1)])]));
+  for (const z of EU) {
+    const kv = makeKv(seed), api = await createApi({ kv, ecb: ECB });
+    const r = await api.get(`/api/nordic?zone=${z}`);
+    assert.equal(r.status, 200, z);
+    assert.deepEqual(kv.ops.get, [`eu-prices-${z}`], `${z} reads exactly its own key`);
+    assert.equal(r.body.zone, z);
+    assert.equal(r.body.trainedThrough, null, `${z}: no model, so no training date`);
+    assert.equal(r.body.unit, 'EUR/MWh');
+    assert.ok(r.body.days.every(d => d.type === 'actual' && d.prices.length === 24), `${z}: actual days of 24 hours`);
+    const info = r.body.zoneInfo;
+    assert.deepEqual(Object.keys(info), ['name', 'country', 'currency', 'rate', 'rateDate', 'rateSource'], `${z}: zoneInfo has the Nordic shape`);
+    assert.equal(info.currency, z === 'pl' ? 'PLN' : 'EUR');
+    assert.equal(info.rate, z === 'pl' ? 4.3945 : 1, `${z}: rate`);
+    assert.equal(info.country, z === 'it-n' ? 'IT' : z.toUpperCase());
+    assert.equal(info.rateSource, 'ECB');
+    assert.equal(r.headers.get('cache-control'), 'public, max-age=1800, s-maxage=1800', `${z}: same caching as a Nordic zone`);
+  }
+});
+
+test('/api/nordic: Poland is converted with the ECB PLN rate, and falls back (saying so) when the ECB file is not sane', async () => {
+  const kv = makeKv({ 'eu-prices-pl': feed('pl', [day(0)]) });
+  assert.equal((await (await createApi({ kv, ecb: ECB })).get('/api/nordic?zone=pl')).body.zoneInfo.rate, 4.3945);
+  const bad = await (await createApi({ kv: makeKv({ 'eu-prices-pl': feed('pl', [day(0)]) }), ecb: { ...ECB, PLN: 0.43 } })).get('/api/nordic?zone=pl');
+  assert.equal(bad.body.zoneInfo.rate, 4.39);
+  assert.equal(bad.body.zoneInfo.rateSource, 'fallback');
+});
+
+test('/api/nordic: a day that is not published yet is simply absent — tomorrow before the auction gives one day', async () => {
+  const api = await createApi({ kv: makeKv({ 'eu-prices-de': feed('de', [day(-1), day(0)]) }), ecb: ECB });
+  const r = await api.get('/api/nordic?zone=de');
+  assert.deepEqual(r.body.days.map(d => d.date), [day(-1), day(0)]);
+  assert.ok(!r.body.days.some(d => d.date === day(1)), 'a day that is not in KV must not appear');
+});
+
+test('/api/nordic: a zone without data answers 404 exactly like a Nordic zone without data, and nothing is invented', async () => {
+  for (const z of ['it-n', 'se2']) {
+    const api = await createApi({ kv: makeKv({}), ecb: ECB });
+    const r = await api.get(`/api/nordic?zone=${z}`);
+    assert.equal(r.status, 404, z);
+    assert.deepEqual(Object.keys(r.body), ['error'], `${z}: the same JSON error shape`);
+    assert.equal(r.headers.get('content-type'), 'application/json');
+    assert.equal(r.headers.get('access-control-allow-origin'), '*');
+  }
+  // The key families do not cross: a Nordic key never answers for an EU zone and the other way round.
+  const kv = makeKv({ 'nordic-forecast-de': feed('de', [day(0)], 'forecast'), 'eu-prices-no1': feed('no1', [day(0)]) });
+  assert.equal((await (await createApi({ kv, ecb: ECB })).get('/api/nordic?zone=de')).status, 404);
+  assert.equal((await (await createApi({ kv, ecb: ECB })).get('/api/nordic?zone=no1')).status, 404);
+});
+
+test('/api/nordic: an unknown zone is rejected with 400 and the list of zones, and never reaches KV', async () => {
+  // Ireland and Italy's other zones are not served (their price data is not CC BY 4.0 at the source): 400, not an empty 404.
+  for (const z of ['xx', 'it', 'it-x', 'gb', 'de-lu', 'nl2', '../x', 'eu-prices-de', 'ie', 'it-cn', 'it-cs', 'it-s', 'it-cal', 'it-sic', 'it-sar']) {
+    const kv = makeKv({}), api = await createApi({ kv, ecb: ECB });
+    const r = await api.get(`/api/nordic?zone=${encodeURIComponent(z)}`);
+    assert.equal(r.status, 400, z);
+    assert.match(r.body.error, /zone must be one of: .*no1.*de, fr, pl, it-n$/);
+    assert.equal(kv.reads(), 0, `${z} must not cost a KV read`);
+  }
+  assert.equal((await (await createApi({ kv: makeKv({ 'eu-prices-de': feed('de', [day(0)]) }), ecb: ECB })).get('/api/nordic?zone=DE')).status, 200, 'the zone is case-insensitive like the Nordic ones');
+});
+
+test('/api/nordic: EU zones carry an ETag, answer 304, and cost one KV read however often they are asked', async () => {
+  const kv = makeKv({ 'eu-prices-it-n': feed('it-n', [day(0)]) });
+  const api = await createApi({ kv, ecb: ECB });
+  const first = await api.get('/api/nordic?zone=it-n');
+  const etag = first.headers.get('etag');
+  assert.ok(etag, 'ETag');
+  assert.equal((await api.get('/api/nordic?zone=it-n', { 'If-None-Match': etag })).status, 304);
+  for (let i = 0; i < 20; i++) await api.get('/api/nordic?zone=it-n');
+  assert.equal(kv.reads(), 1, `20 requests cost ${kv.reads()} KV reads`);
+});
+
+test('/api/openapi.json documents /api/nordic with every zone, and says the EU zones are actual prices only', async () => {
+  const spec = (await (await createApi()).get('/api/openapi.json')).body;
+  const op = spec.paths['/api/nordic'].get;
+  const zones = op.parameters[0].schema.enum;
+  for (const z of ['dk1', 'no5', 'se4', 'fi', 'nl', ...EU]) assert.ok(zones.includes(z), `${z} missing from the zone enum`);
+  assert.equal(zones.length, 13 + 4);
+  for (const z of ['ie', 'it-cn', 'it-sar']) assert.ok(!zones.includes(z), `${z} must not be offered`);
+  assert.match(op.description, /actual prices only, no forecast/);
+  assert.match(op.description, /Bundesnetzagentur \| SMARD\.de via Energy-Charts\.info/);
+  assert.match(op.description, /CC BY 4\.0/);
+  assert.match(op.description, /changed by elpriser\.org/);
+  assert.doesNotMatch(op.description, /ENTSO-E/);
+  assert.match(op.description, /excluding VAT, taxes and grid fees/);
+});
+
+// ── Tomorrow's prices around 13:00 (a page still said "Prognose" for tomorrow at 13:29 on 2026-10-26) ──
+
+/** Freeze `new Date()` and Date.now() at an instant; returns { set(iso), restore() }. */
+function freezeClock(iso) {
+  const Real = Date;
+  let fixed = Real.parse(iso);
+  class FakeDate extends Real {
+    constructor(...a) { super(...(a.length ? a : [fixed])); }
+    static now() { return fixed; }
+  }
+  globalThis.Date = FakeDate;
+  return { set(next) { fixed = Real.parse(next); }, restore() { globalThis.Date = Real; } };
+}
+const FC = '/api/forecast?area=DK1&mode=inkl_alt';
+const tomorrowOf = body => body.days.find(d => d.date === '2026-10-27');
+
+test('a missing tomorrow after 12:30 is kept for one minute only, in the response and in every cache layer', async () => {
+  const clock = freezeClock('2026-10-26T11:40:00Z');          // 12:40 CET, 13:00 not yet struck
+  try {
+    upstreamState.tomorrowPublished = false;
+    const api = await createApi();
+    const first = await api.get(FC);
+    assert.equal(tomorrowOf(first.body).type, 'forecast', 'tomorrow is a forecast until the auction results are out');
+    assert.match(first.headers.get('cache-control'), /max-age=60, s-maxage=60/, 'an answer lacking a due tomorrow must not be cached for half an hour');
+
+    upstreamState.tomorrowPublished = true;                    // the results appear
+    clock.set('2026-10-26T11:42:00Z');                         // two minutes later
+    const second = await api.get(FC);
+    assert.equal(tomorrowOf(second.body).type, 'actual', 'tomorrow stayed a forecast after the prices were published');
+    assert.match(second.headers.get('cache-control'), /max-age=1800/, 'once tomorrow is in, the normal 30 minutes apply');
+  } finally { upstreamState.tomorrowPublished = true; clock.restore(); }
+});
+
+test('before 12:30 a missing tomorrow is normal: no short caching, no extra fetching', async () => {
+  const clock = freezeClock('2026-10-26T10:00:00Z');          // 11:00 CET
+  try {
+    upstreamState.tomorrowPublished = false;
+    const api = await createApi();
+    const r = await api.get(FC);
+    assert.match(r.headers.get('cache-control'), /max-age=1800/);
+  } finally { upstreamState.tomorrowPublished = true; clock.restore(); }
+});
+
+test('prices fetched after 13:00 without tomorrow are not kept until the next day — guards the underlying price cache', async () => {
+  // The old rule kept anything fetched after 13:00 until the NEXT 13:00 (clamped to 6 h), whatever it contained.
+  const clock = freezeClock('2026-10-26T12:05:00Z');          // 13:05 CET, results delayed
+  try {
+    upstreamState.tomorrowPublished = false;
+    const api = await createApi();
+    assert.equal(tomorrowOf((await api.get(FC)).body).type, 'forecast');
+    upstreamState.tomorrowPublished = true;
+    clock.set('2026-10-26T12:08:00Z');                         // three minutes later: published
+    assert.equal(tomorrowOf((await api.get(FC)).body).type, 'actual', 'a missing tomorrow was kept for hours');
+  } finally { upstreamState.tomorrowPublished = true; clock.restore(); }
 });

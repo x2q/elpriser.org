@@ -28,11 +28,22 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
 const cph = { timeZone: 'Europe/Copenhagen' };
 const today = new Intl.DateTimeFormat('en-CA', cph).format(new Date());
 const addDays = (d, n) => new Date(Date.parse(d + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
-const RATE = { dk1: 7.5, dk2: 7.5, no: 10, se: 11, eur: 1 };
-const rateOf = z => /^dk/.test(z) ? RATE.dk1 : z.startsWith('no') ? RATE.no : z.startsWith('se') ? RATE.se : 1;
-const BASE = { no1: 80, no2: 120, no3: 60, no4: 30, no5: 100, se1: 25, se2: 35, se3: 70, se4: 110, fi: 45, nl: 95, dk1: 90, dk2: 100 };
+const RATE = { dk1: 7.5, dk2: 7.5, no: 10, se: 11, eur: 1, pl: 4.4 };
+const rateOf = z => /^dk/.test(z) ? RATE.dk1 : z.startsWith('no') ? RATE.no : z.startsWith('se') ? RATE.se : z === 'pl' ? RATE.pl : 1;
+const BASE = { no1: 80, no2: 120, no3: 60, no4: 30, no5: 100, se1: 25, se2: 35, se3: 70, se4: 110, fi: 45, nl: 95, dk1: 90, dk2: 100,
+  de: 95, fr: 62, pl: 118, 'it-n': 118 };
+const EU = ['de', 'fr', 'pl', 'it-n'];
+let noTomorrow = false;   // the EU job has not published tomorrow yet
 /** Ten days from YESTERDAY, like the live feed; EUR/MWh with a daily swing so there is a cheapest hour. */
-const nordic = zone => ({
+const nordic = zone => EU.includes(zone) ? ({
+  // The EU job's value: yesterday, today (and tomorrow once published), all `actual`, no model.
+  zone, generated: today, trainedThrough: null, unit: 'EUR/MWh',
+  zoneInfo: { name: zone.toUpperCase(), currency: zone === 'pl' ? 'PLN' : 'EUR', rate: rateOf(zone), rateSource: 'test' },
+  days: Array.from({ length: noTomorrow ? 2 : 3 }, (_, i) => ({
+    date: addDays(today, i - 1), type: 'actual',
+    prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: +(BASE[zone] + 25 * Math.sin(h / 24 * 6.2832) + i * 2).toFixed(2) })),
+  })),
+}) : ({
   zone, generated: today, unit: 'EUR/MWh',
   zoneInfo: { name: zone.toUpperCase(), currency: 'X', rate: rateOf(zone), rateSource: 'test' },
   days: Array.from({ length: 10 }, (_, i) => ({
@@ -111,7 +122,7 @@ for (const [p, w] of Object.entries(PAGES)) {
     const hd = h.slice(h.indexOf('<header'), h.indexOf('</header>')), ft = h.slice(h.indexOf('<footer'), h.indexOf('</footer>')), X = chromeI18n[w.lang];
     const nav = [...hd.matchAll(/<a href="([^"]+)"([^>]*)>([^<]+)<\/a>/g)].filter(m => m[1] !== '/');
     ok(/<html lang="[a-z]+" class="xc">/.test(h) && /<a href="\/" class="site-logo" aria-label="[^"]+">[\s\S]*<\/svg><\/span>Elpriser<\/a>/.test(hd), `${p}: logoet viser ordmærket Elpriser og linker til /`);
-    ok(nav.map(m => m[3]).join() === Object.values(X.cn).join() && nav.map(m => m[1]).join() === '/dk1,/no/strompris,/sv/elpris,/fi/sahkon-hinta,/nl/stroomprijs', `${p}: landenavigationen på ${w.lang}`, nav.map(m => m[3]).join());
+    ok(nav.map(m => m[3]).join() === Object.values(X.cn).join() && nav.map(m => m[1]).join() === '/dk1,/no/strompris,/sv/elpris,/fi/sahkon-hinta,/nl/stroomprijs,/de/strompreis,/fr/prix-electricite,/pl/ceny-pradu,/it/prezzo-luce', `${p}: landenavigationen på ${w.lang}`, nav.map(m => m[3]).join());
     ok(nav.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === p, `${p}: den aktuelle side er aria-current i menuen`);
     ok(hd.includes(`aria-label="${X.menu}"`) && hd.includes(`aria-label="${X.home}"`), `${p}: menuens og logoets navne på ${w.lang}`);
     ok(!/id="netChip|class="chip-btn|app-btn|Hent appen|Smart hjem|>Om<|Hovedmenu|href="\/automation"|href="\/om-elpriser"|href="\/download"/.test(hd), `${p}: ingen netchip, ingen app-knap, ingen dansk menu i headeren`);
@@ -183,6 +194,114 @@ for (const [p, w] of Object.entries(PAGES)) {
   const r2 = await get('/no/strompris');
   ok(r2.status === 200 && !r2.page.includes('<div class="pris"') && /role="tablist"/.test(r2.page) && store.size === 0, 'uden NO1 (førstevalget) ingen skærm, men fanerne og teksten er der, og intet huskes');
   missing = new Set();
+}
+
+// ── The five EU pages: actual day-ahead prices only ─────────────────────────────────────────
+// Germany, France, Poland, Italy (seven zones) and Ireland, each in its own language, on the very same Pris screen but with
+// ONE period (no pill), no forecast anywhere, the source ENTSO-E named, and the first zone drawn by the server.
+const ACT = {
+  '/de/strompreis': { lang: 'de', title: /^Strompreis aktuell und morgen/, zones: ['Deutschland'], unit: 'ct', now: 'Strompreis jetzt', first: 'de', card: 'Heute und morgen', one: 'Heute', kind: 'Day-Ahead-Preis', loc: 'de_DE', h1: 'Strompreis in Deutschland: heute und morgen' },
+  '/fr/prix-electricite': { lang: 'fr', title: /^Prix de l’électricité aujourd’hui et demain/, zones: ['France'], unit: 'c€', now: 'Prix de l’électricité maintenant', first: 'fr', card: 'Aujourd’hui et demain', one: 'Aujourd’hui', kind: 'Prix day-ahead', loc: 'fr_FR', h1: 'Prix de l’électricité en France\u00a0: aujourd’hui et demain' },
+  '/pl/ceny-pradu': { lang: 'pl', title: /^Cena prądu dziś i jutro/, zones: ['Polska'], unit: 'gr', now: 'Cena prądu teraz', first: 'pl', card: 'Dziś i jutro', one: 'Dziś', kind: 'Cena RDN', loc: 'pl_PL', h1: 'Cena prądu w Polsce: dziś i jutro' },
+  '/it/prezzo-luce': { lang: 'it', title: /^Prezzo dell’energia elettrica oggi e domani – Italia del Nord/, zones: ['Italia del Nord'], unit: 'c€', now: 'Prezzo della luce adesso', first: 'it-n', card: 'Oggi e domani', one: 'Oggi', kind: 'Prezzo day-ahead', loc: 'it_IT', h1: 'Prezzo dell’energia elettrica in Italia del Nord: oggi e domani' },
+};
+// What the text block says about the data's change and its source, per language (the words before the credit links).
+const PRISNOTE = {
+  de: 'Stundenmittel der Viertelstundenpreise, von elpriser.org berechnet (gegenüber den Originaldaten verändert). Deutschland und Luxemburg bilden eine gemeinsame Gebotszone. Quelle:',
+  fr: 'Moyennes horaires des prix au quart d’heure, calculées par elpriser.org (données modifiées par rapport à l’original). Source\u00a0:',
+  pl: 'Średnie godzinowe z cen kwadransowych, przeliczone z euro według dziennego kursu referencyjnego EBC przez elpriser.org (dane zmienione względem oryginału). Źródło:',
+  it: 'Zona di mercato Nord. Medie orarie dei prezzi al quarto d’ora, calcolate da elpriser.org (dati modificati rispetto all’originale). Fonte:' };
+const PRISCAP = {
+  de: 'Börsenstrompreis (Day-Ahead) ohne MwSt., Steuern, Abgaben und Netzentgelte', fr: 'Prix spot day-ahead hors TVA, taxes et frais de réseau',
+  pl: 'Cena giełdowa na rynku dnia następnego (RDN) bez VAT, podatków i opłat sieciowych', it: 'Prezzo day-ahead al netto di IVA, imposte e costi di rete' };
+// "<avg word> <tomorrow word> <number>" — what a text block would say about tomorrow.
+const PRISTOM = { de: 'Ø morgen', fr: 'moy\\. demain', pl: 'śr\\. jutro', it: 'media domani' };
+const FORECAST = /prognos|vorhersage|vorschau|prévision|previsi|prognoz|przewid|forecast|prediction|predict|modell?o?\b|machine|maskinl|hugging/i;
+// The CC BY 4.0 attribution of the four pages and the note that the site changed the data; ENTSO-E is named on none of them.
+const CREDIT = '<a href="https://www.smard.de" target="_blank" rel="noopener">Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>';
+const CHANGED = { de: 'Änderung: Stundenmittel von elpriser.org berechnet', fr: 'Modifié\u00a0: moyennes horaires calculées par elpriser.org', pl: 'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org', it: 'Modifiche: medie orarie calcolate da elpriser.org' };
+const X9 = ['dk', 'no', 'sv', 'fi', 'nl', 'de', 'fr', 'pl', 'it'];
+for (const [p, w] of Object.entries(ACT)) {
+  store.clear(); upstream = []; noTomorrow = false;
+  const r = await get(p), h = r.page, raw = r.body, X = chromeI18n[w.lang];
+  const title = (raw.match(/<title>([^<]*)<\/title>/) || [])[1] || '', desc = (raw.match(/<meta name="description" content="([^"]*)"/) || [])[1] || '';
+  const noc = h.replace(/<!--[\s\S]*?-->/g, ''), main = noc.slice(noc.indexOf('<main'), noc.indexOf('</main>'));
+  ok(r.status === 200, `${p}: 200`, String(r.status));
+  ok(w.title.test(title) && title.length <= 62, `${p}: titel under 62 tegn`, `${title.length}: ${title}`);
+  ok(desc.length >= 80 && desc.length <= 155, `${p}: beskrivelse 80-155 tegn`, String(desc.length));
+  ok(new RegExp(`<html lang="${w.lang}" class="xc"`).test(h) || new RegExp(`<html lang="${w.lang}"`).test(h), `${p}: <html lang="${w.lang}">`);
+  ok(new RegExp(`<link rel="canonical" href="https://elpriser.org${p}">`).test(h), `${p}: canonical peger på siden selv`);
+  ok(new RegExp(`<meta property="og:locale" content="${w.loc}">`).test(raw), `${p}: og:locale ${w.loc}`);
+  const ld = raw.slice(raw.indexOf('"@type":"WebPage"') - 40, raw.indexOf('"@type":"WebPage"') + 600);
+  ok(new RegExp(`"inLanguage":"${w.lang}"`).test(ld), `${p}: JSON-LD WebPage med inLanguage ${w.lang}`);
+  ok(!/<link rel="alternate"/.test(h.replace(/<!--[\s\S]*?-->/g, '')) && (h.match(/hreflang=/g) || []).length === 1, `${p}: ingen hreflang-klynge`);
+  ok((h.match(/<h1[ >]/g) || []).length === 1 && h.includes(`<h1 class="vh" id="zH1">${w.h1}</h1>`), `${p}: én h1 på sidens sprog`);
+  // The Pris screen, drawn by the server: one period, so NO period pill (not even a disabled one).
+  ok(h.includes('<div class="pris" data-period="2"') && h.includes(`data-key="${w.first}"`) && h.includes(w.now) && h.includes(`>${w.unit}/kWh</span>`), `${p}: Pris-skærmen er tegnet for ${w.first}, med etiket og enhed på sidens sprog`);
+  ok(!/data-pris-period|pris-period|role="tab" aria-selected="(true|false)" data-pris/.test(h), `${p}: ingen periodeknap`);
+  ok(h.includes(`aria-label="${w.card}"`) && h.includes(`<p class="pris-ct">${w.card}</p>`) && !h.includes('pris-card pp5') && !h.includes('pris-card pp7'), `${p}: ét kort, "${w.card}"`);
+  ok(!/class="pris-fc/.test(h) && !/<td class="fc">/.test(h) && (h.match(/<td class="real">/g) || []).length === 2 && (h.match(new RegExp(`<td class="real">${w.kind}</td>`, 'g')) || []).length === 2, `${p}: ingen prognose-skillelinje, to rækker med typen "${w.kind}"`);
+  ok((h.match(/<tr class="r\d+">/g) || []).length === 2 && !/class="r5"|class="r10"/.test(h), `${p}: dagslisten har to rækker (i dag og i morgen)`);
+  const bars = (h.slice(h.indexOf('pris-card pp2'), h.indexOf('pris-tiles pp2')).match(/<span class="pc[ "]/g) || []).length;
+  ok(bars === 48, `${p}: 48 søjler for to døgn`, String(bars));
+  ok(!FORECAST.test(main) && !FORECAST.test(desc) && !FORECAST.test(title) && !FORECAST.test(ld), `${p}: ingen prognose-ord i indhold, titel, beskrivelse eller JSON-LD`, (main.match(FORECAST) || [])[0]);
+  ok(!/\b(øre|kr\/kWh|døgn|snt|cent\/kWh|Prognose|Børspris|Spotpris)\b/.test(main.replace(/Spotpr/g, '')), `${p}: ingen danske ord eller enheder i indholdet`, (main.match(/\b(øre|kr\/kWh|døgn|snt)\b/) || [])[0]);
+  ok(!/NaN|undefined|Infinity/.test(main), `${p}: ingen NaN/undefined`);
+  ok(!/data-pris-view|pris-seg|Din pris/.test(main), `${p}: ingen Din pris/Spotpris-kontakt`);
+  // The honest basis, in the page's language, with the source named and linked.
+  const list = h.slice(h.indexOf('<section class="zl"'), h.indexOf('</section>', h.indexOf('<section class="zl"')));
+  ok(h.includes(PRISCAP[w.lang]) && list.includes(CREDIT.replace(/ target="_blank"/g, '')) === false && list.includes(CREDIT) && list.includes(PRISNOTE[w.lang]), `${p}: billedtekst og tekstblok siger hvad prisen er, at dataene er ændret, og har kilden med licenslink`, list.slice(-420));
+  ok(!/ENTSO/.test(raw.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '')), `${p}: ENTSO-E nævnes ikke noget sted på siden`);
+  ok(w.zones.every(c => list.includes(`<b>${c}</b>`)) && (list.match(/<li>/g) || []).length === w.zones.length, `${p}: tekstblokken nævner zonen`, list.slice(0, 160));
+  ok(new RegExp(`${w.unit}/kWh`).test(list) && /(Ø|moy\.|śr\.|media) \S+ [\d.,]+/.test(list), `${p}: tekstblokken har dagens og morgendagens gennemsnit`);
+  ok((h.match(/role="tab" id="zt-/g) || []).length === 0, `${p}: ingen zone-faner (én zone)`);
+  // The chrome: ten countries in the page's language, a slim footer whose data line names ENTSO-E and not Energi Data Service.
+  const hd = h.slice(h.indexOf('<header'), h.indexOf('</header>')), ft = h.slice(h.indexOf('<footer'), h.indexOf('</footer>'));
+  const nav = [...hd.matchAll(/<a href="([^"]+)"([^>]*)>([^<]+)<\/a>/g)].filter(m => m[1] !== '/');
+  ok(nav.length === 9 && nav.map(m => m[3]).join() === X9.map(c => X.cn[c]).join() && nav.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === p, `${p}: landenavigationen har ni lande på ${w.lang}, den aktuelle er aria-current`, nav.map(m => m[3]).join());
+  ok(ft.includes(`&copy; Elpriser.org &mdash; ${X.src} ${CREDIT} &mdash; ${CHANGED[w.lang]}. ${X.open}`) && !/Energi Data Service|energidataservice|ENTSO/.test(ft + hd) && ft.includes(X.privacy), `${p}: fodens kilde er Bundesnetzagentur | SMARD.de (CC BY 4.0, med licenslink) og siger at dataene er ændret — hverken ENTSO-E eller Energi Data Service`, ft.slice(ft.indexOf('sf-legal')));
+  ok(!/id="netChip|class="tabbar|id="netDialog|Hent appen|Smart hjem/.test(h.replace(/<!--[\s\S]*?-->/g, '')), `${p}: ingen dansk chrome`);
+  ok(upstream.length === 1 && upstream.every(x => x.startsWith('/api/nordic?zone=')), `${p}: serveren henter præcis landets zone`, upstream.join(' '));
+  const n = upstream.length, again = await get(p);
+  ok(again.page === h && upstream.length === n && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v\\d+${p}$`).test(k)), `${p}: andet svar kommer fra cachen, under egen versioneret nøgle`);
+  // Tomorrow not published yet: one day, and the text and the chart title stay true.
+  store.clear(); noTomorrow = true;
+  const one = (await get(p)).page.replace(/<!--[\s\S]*?-->/g, ''), om = one.slice(one.indexOf('<main'), one.indexOf('</main>'));
+  const oneBars = (om.slice(om.indexOf('pris-card pp2'), om.indexOf('pris-tiles pp2')).match(/<span class="pc[ "]/g) || []).length;
+  ok(om.includes(`<p class="pris-ct">${w.one}</p>`) && !om.includes(`<p class="pris-ct">${w.card}</p>`) && oneBars === 24 && (om.match(/<tr class="r\d+">/g) || []).length === 1, `${p}: uden i morgen: titlen er "${w.one}", 24 søjler og én række`, `${oneBars}`);
+  ok(!/NaN|undefined/.test(om) && !FORECAST.test(om) && /avg|Ø|moy|śr|media/.test(om) && !new RegExp(`${PRISTOM[w.lang]}`).test(om), `${p}: uden i morgen: ingen i-morgen-tal i tekstblokken, ingen NaN`, (om.match(new RegExp(PRISTOM[w.lang])) || [])[0]);
+  noTomorrow = false;
+}
+// Poland: PLN, grosze, at the response's rate (÷10 × 4,4): the zone's hour h of today is EUR/MWh × 4,4 ÷ 10 gr/kWh.
+{
+  store.clear();
+  const h = (await get('/pl/ceny-pradu')).page, d0 = nordic('pl').days[1].prices;
+  const nowH = +new Intl.DateTimeFormat('en-GB', { ...cph, hour: 'numeric', hourCycle: 'h23' }).format(new Date());
+  const v = d0[nowH].eur_mwh * 4.4 / 10, all = nordic('pl').days.slice(1).flatMap(d => d.prices.map(q => q.eur_mwh * 4.4 / 10));
+  const dec = Math.max(...all) >= 100 ? 0 : Math.max(...all) >= 10 ? 1 : 2;
+  ok(new RegExp(`class="pris-now">${v.toFixed(dec).replace('.', ',')}<`).test(h), 'PL: prisen nu er EUR/MWh × PLN-kursen ÷ 10 i grosze', `${v.toFixed(dec)} vs ${(h.match(/class="pris-now">([^<]*)</) || [])[1]}`);
+  ok(/data-tip="Dziś godz\. \d\d · [\d,]+ gr\/kWh"/.test(h) && /data-tip="Jutro godz\. \d\d · [\d,]+ gr\/kWh"/.test(h), 'PL: tooltips på polsk i grosze');
+}
+// Germany: ct with a comma and "Uhr" after the hour.
+{
+  store.clear();
+  const de = (await get('/de/strompreis')).page;
+  ok(/data-tip="Heute um \d\d Uhr · -?\d+,\d ct\/kWh"/.test(de) && /<td>um \d\d–\d\d Uhr<\/td>/.test(de) && /<small>ct · um \d\d Uhr<\/small>/.test(de), 'DE: tooltips, dagsliste og felter på tysk, med "Uhr" efter timen');
+}
+// Italy is ONE zone, IT-North: no tabs, and the page says "Nord" — it never claims to be all of Italy.
+{
+  store.clear(); upstream = [];
+  const r = await get('/it/prezzo-luce'), h = r.page;
+  ok((h.match(/role="tab"/g) || []).length === 0 && upstream.length === 1 && upstream[0] === '/api/nordic?zone=it-n' && h.includes('data-key="it-n"'), 'IT: én zone (it-n), ingen faner, serveren henter kun den');
+  const t = (r.body.match(/<title>([^<]*)<\/title>/) || [])[1], d = (r.body.match(/<meta name="description" content="([^"]*)"/) || [])[1];
+  ok(/Nord/.test(t) && /Nord Italia/.test(d) && /Nord/.test(h.slice(h.indexOf('<h1'), h.indexOf('</h1>'))), 'IT: titel, beskrivelse og h1 siger Nord');
+  ok(!/\b(ie|it-cn|it-cs|it-sic|it-sar|it-cal)\b/.test(h.replace(/<!--[\s\S]*?-->/g, '')) && !/electricity-price|Irland|Ireland/.test(h.replace(/<!--[\s\S]*?-->/g, '').slice(h.indexOf('<header'), h.indexOf('</footer>'))), 'IT: ingen rester af de andre italienske zoner eller af Irland');
+}
+// Ireland is not served any more: its page is a 404 and appears nowhere.
+{
+  ok((await get('/ie/electricity-price')).status === 404, '/ie/electricity-price: 404 (Irlands prisdata er ikke CC BY 4.0 hos kilden)');
+  const sm = (await get('/sitemap.xml')).body, llms = (await get('/llms.txt')).body;
+  ok(!/electricity-price|\/ie\//.test(sm + llms) && !/Irland/.test(llms.slice(llms.indexOf('[Elpriser i Europa]'), llms.indexOf('[Automation]'))), 'sitemap og llms.txt nævner ikke Irland');
 }
 
 // ── /norden ─────────────────────────────────────────────────────────────────

@@ -56,9 +56,12 @@ function chargeRecords() {
   ];
 }
 
-/** Hourly day-ahead rows for [start, end), published up to the end of tomorrow. */
+/** Tests flip this to model the minutes around 13:00 when tomorrow's prices are not out yet. */
+export const upstreamState = { tomorrowPublished: true };
+
+/** Hourly day-ahead rows for [start, end), published up to the end of tomorrow (or of today, until tomorrow is out). */
 function priceRows(dataset, area, start, end) {
-  const lastPublished = Date.parse(dayStr(new Date(Date.now() + 86_400_000)) + 'T00:00:00Z') + 86_400_000;
+  const lastPublished = Date.parse(dayStr(new Date(Date.now() + 86_400_000)) + 'T00:00:00Z') + (upstreamState.tomorrowPublished ? 86_400_000 : 0);
   const rows = [];
   for (let t = Date.parse(start + 'T00:00:00Z'); t < Date.parse(end + 'T00:00:00Z') && t < lastPublished; t += 3_600_000) {
     const d = new Date(t), dkk = spotAt(d);
@@ -99,14 +102,24 @@ function eds(url) {
  *   nominatim(lat, lon) -> object | null   body for /reverse, null = HTTP 500
  *   gpd(address)        -> {status, body?, contentType?}
  *   kv                  -> a makeKv() store bound as PRICE_CACHE (default: none)
+ *   ecb                 -> rates {DKK, NOK, SEK, PLN, date} the ECB reference file reports (default: the ECB is
+ *                          unreachable, so the handler uses its fallback rates and says so in rateSource)
  */
-export async function createApi({ nominatim = () => null, gpd = () => ({ status: 404 }), kv = null } = {}) {
+export async function createApi({ nominatim = () => null, gpd = () => ({ status: 404 }), kv = null, ecb = null } = {}) {
   const calls = [];
   const store = new Map();
+  // Like the real Cache API, an entry stops matching once its max-age has passed (Date.now() may be frozen by a test).
+  const stamp = new Map();
   globalThis.caches = {
     default: {
-      match: async req => { const r = store.get(req.url); return r ? r.clone() : undefined; },
-      put: async (req, res) => { store.set(req.url, res); },
+      match: async req => {
+        const r = store.get(req.url);
+        if (!r) return undefined;
+        const maxAge = +((/max-age=(\d+)/.exec(r.headers.get('cache-control') || '') || [])[1] ?? Infinity);
+        if (Date.now() - stamp.get(req.url) >= maxAge * 1000) { store.delete(req.url); return undefined; }
+        return r.clone();
+      },
+      put: async (req, res) => { store.set(req.url, res); stamp.set(req.url, Date.now()); },
       delete: async req => store.delete(req.url),
     },
   };
@@ -129,6 +142,11 @@ export async function createApi({ nominatim = () => null, gpd = () => ({ status:
       return new Response(r.body === undefined ? '' : JSON.stringify(r.body), {
         status: r.status, headers: { 'content-type': r.contentType || 'application/json' },
       });
+    }
+    if (url.hostname === 'www.ecb.europa.eu' && ecb) {
+      const cube = c => `<Cube currency='${c}' rate='${ecb[c]}'/>`;
+      return new Response(`<?xml version="1.0"?><gesmes:Envelope xmlns:gesmes="http://www.gesmes.org/xml/2002-08-01" xmlns="http://www.ecb.int/vocabulary/2002-08-01/eurofxref"><Cube><Cube time='${ecb.date || '2026-10-23'}'>`
+        + ['DKK', 'PLN', 'SEK', 'NOK'].map(cube).join('') + `</Cube></Cube></gesmes:Envelope>`, { status: 200, headers: { 'content-type': 'text/xml' } });
     }
     throw new Error('hermetic test reached an unexpected upstream: ' + url.href);
   };

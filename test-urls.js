@@ -337,7 +337,8 @@ async function main() {
   // The five foreign-area pages: own language, the canonical Pris screen drawn into the HTML, and only 2 and 5 døgn.
   // The four country pages also wear their own chrome (a country navigation and a slim footer in their language):
   // no net chip, app button, Danish menu, tab bar or net dialog.
-  for (const [p, lang, unit] of [['/no/strompris', 'nb', 'øre'], ['/sv/elpris', 'sv', 'öre'], ['/fi/sahkon-hinta', 'fi', 'snt'], ['/nl/stroomprijs', 'nl', 'cent'], ['/norden', 'da', null]]) {
+  for (const [p, lang, unit] of [['/no/strompris', 'nb', 'øre'], ['/sv/elpris', 'sv', 'öre'], ['/fi/sahkon-hinta', 'fi', 'snt'], ['/nl/stroomprijs', 'nl', 'cent'],
+      ['/de/strompreis', 'de', 'ct'], ['/fr/prix-electricite', 'fr', 'c€'], ['/pl/ceny-pradu', 'pl', 'gr'], ['/it/prezzo-luce', 'it', 'c€'], ['/norden', 'da', null]]) {
     const r = p === '/sv/elpris' ? se3 : await get(p);
     const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<dialog[\s\S]*?<\/dialog>/g, '');
     const title = one(r.body, /<title>([^<]*)<\/title>/), desc = one(r.body, /<meta name="description" content="([^"]*)"/);
@@ -349,9 +350,35 @@ async function main() {
     check(sitemap.includes(p), `${p}: i sitemap`);
     if (unit) {
       const chrome = page.replace(/<!--[\s\S]*?-->/g, '');
-      check(/<html lang="[a-z]+" class="xc">/.test(r.body) && /<nav class="site-links" aria-label="[^"]+">(<a href="[^"]+"[^>]*>[^<]+<\/a>){5}<\/nav>/.test(chrome) && /<footer class="sf sf-x"/.test(chrome) && /<a href="\/privatliv" hreflang="da">/.test(chrome), `${p}: landenavigation og slank fod på sidens sprog`);
+      check(/<html lang="[a-z]+" class="xc">/.test(r.body) && /<nav class="site-links" aria-label="[^"]+">(<a href="[^"]+"[^>]*>[^<]+<\/a>){9}<\/nav>/.test(chrome) && /<footer class="sf sf-x"/.test(chrome) && /<a href="\/privatliv" hreflang="da">/.test(chrome), `${p}: landenavigation og slank fod på sidens sprog`);
       check(!/id="netChip|class="app-btn|class="tabbar|id="netDialog|Smart hjem|Hent appen|Hovedmenu|Alle netselskaber/.test(chrome), `${p}: ingen dansk netchip, app-knap, menu, mobilbar eller netdialog`);
     }
+  }
+  // The four EU pages show ACTUAL prices only (data CC BY 4.0 from Bundesnetzagentur | SMARD.de via Energy-Charts): one period, no forecast
+  // wording, the source, the licence and the note that the data were changed. They need the Spark job (scripts/eu_prices) to have written KV:
+  // without data the page still answers 200 but has no screen.
+  const llmsTxt = (await get('/llms.txt')).body;
+  for (const [p, lang] of [['/de/strompreis', 'de'], ['/fr/prix-electricite', 'fr'], ['/pl/ceny-pradu', 'pl'], ['/it/prezzo-luce', 'it']]) {
+    const r = await get(p);
+    const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<!--[\s\S]*?-->/g, '');
+    const main = page.slice(page.indexOf('<main'), page.indexOf('</main>'));
+    check(/<div class="pris" data-period="2"/.test(main) && !/data-pris-period|pris-period/.test(main), `${p}: Pris-skærmen er tegnet, uden periodeknap`, 'kører Spark-jobbet (eu-prices-*)?');
+    check(!/prognos|vorhersage|prévision|previsi|prognoz|forecast|machine|hugging/i.test(main + one(r.body, /<title>([^<]*)<\/title>/) + one(r.body, /<meta name="description" content="([^"]*)"/)), `${p}: ingen prognose-ord`);
+    check(main.includes('>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/"') && /Bundesnetzagentur \| SMARD\.de/.test(page.slice(page.indexOf('<footer'))) && !/ENTSO|Energi Data Service/.test(page), `${p}: kilden er Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket — hverken ENTSO-E eller EDS`);
+    check(/(Änderung|Modifié|Zmiany|Modifiche)/.test(page.slice(page.indexOf('<footer'))) && /elpriser\.org/.test(page.slice(page.indexOf('<footer'))), `${p}: fodens kildelinje siger at dataene er ændret`);
+    check(new RegExp(`"inLanguage":"${lang}"`).test(r.body) && new RegExp(`<link rel="canonical" href="https://elpriser.org${p}">`).test(r.body) && llmsTxt.includes(`https://elpriser.org${p})`), `${p}: inLanguage, canonical og llms.txt`);
+  }
+  {
+    const it = await get('/it/prezzo-luce');
+    check((it.body.match(/role="tab" id="zt-/g) || []).length === 0 && /Nord/.test(one(it.body, /<title>([^<]*)<\/title>/)), '/it/prezzo-luce: én zone (Nord), ingen faner');
+    check((await get('/ie/electricity-price')).status === 404, '/ie/electricity-price: 404 (ikke længere en side)');
+    for (const z of ['de', 'fr', 'pl', 'it-n']) {
+      const a = await get('/api/nordic?zone=' + z);
+      let j = {}; try { j = JSON.parse(a.body); } catch {}
+      // 200 once the Spark job has written the key; a 404 "no prices available" before that.
+      check(a.status === 200 ? (j.zone === z && j.trainedThrough === null && Array.isArray(j.days) && j.days.every(d => d.type === 'actual') && j.zoneInfo && j.zoneInfo.currency === (z === 'pl' ? 'PLN' : 'EUR')) : (a.status === 404 && /no prices available/.test(a.body)), `/api/nordic?zone=${z}: ${a.status === 200 ? 'faktiske døgn og zoneInfo' : '404 før jobbet har kørt'}`, String(a.status));
+    }
+    for (const z of ['xx', 'ie', 'it-cn']) check((await get('/api/nordic?zone=' + z)).status === 400, `/api/nordic?zone=${z}: 400`);
   }
   console.log('\n9b. BYSIDER — /elpris/<by> (pilot)');
   // The ten pages are written by the function from functions/_cities.js (read here as data) and the live forecast.
