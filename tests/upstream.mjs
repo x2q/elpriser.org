@@ -56,9 +56,12 @@ function chargeRecords() {
   ];
 }
 
-/** Hourly day-ahead rows for [start, end), published up to the end of tomorrow. */
+/** Tests flip this to model the minutes around 13:00 when tomorrow's prices are not out yet. */
+export const upstreamState = { tomorrowPublished: true };
+
+/** Hourly day-ahead rows for [start, end), published up to the end of tomorrow (or of today, until tomorrow is out). */
 function priceRows(dataset, area, start, end) {
-  const lastPublished = Date.parse(dayStr(new Date(Date.now() + 86_400_000)) + 'T00:00:00Z') + 86_400_000;
+  const lastPublished = Date.parse(dayStr(new Date(Date.now() + 86_400_000)) + 'T00:00:00Z') + (upstreamState.tomorrowPublished ? 86_400_000 : 0);
   const rows = [];
   for (let t = Date.parse(start + 'T00:00:00Z'); t < Date.parse(end + 'T00:00:00Z') && t < lastPublished; t += 3_600_000) {
     const d = new Date(t), dkk = spotAt(d);
@@ -103,10 +106,18 @@ function eds(url) {
 export async function createApi({ nominatim = () => null, gpd = () => ({ status: 404 }), kv = null } = {}) {
   const calls = [];
   const store = new Map();
+  // Like the real Cache API, an entry stops matching once its max-age has passed (Date.now() may be frozen by a test).
+  const stamp = new Map();
   globalThis.caches = {
     default: {
-      match: async req => { const r = store.get(req.url); return r ? r.clone() : undefined; },
-      put: async (req, res) => { store.set(req.url, res); },
+      match: async req => {
+        const r = store.get(req.url);
+        if (!r) return undefined;
+        const maxAge = +((/max-age=(\d+)/.exec(r.headers.get('cache-control') || '') || [])[1] ?? Infinity);
+        if (Date.now() - stamp.get(req.url) >= maxAge * 1000) { store.delete(req.url); return undefined; }
+        return r.clone();
+      },
+      put: async (req, res) => { store.set(req.url, res); stamp.set(req.url, Date.now()); },
       delete: async req => store.delete(req.url),
     },
   };

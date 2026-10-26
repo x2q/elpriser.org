@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
-import { createApi, makeKv, priceArchiveYear, tariffArchive } from './tests/upstream.mjs';
+import { createApi, makeKv, priceArchiveYear, tariffArchive, upstreamState } from './tests/upstream.mjs';
 
 const day = offset => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
 const range = `start=${day(-7)}&end=${day(2)}`;
@@ -443,4 +443,60 @@ test('a changed price backup is still written (after the ten-minute window)', as
     await (await createApi({ kv })).get(`/api/raw/prices?area=DK1&start=${day(-30)}&end=${day(-20)}`);
   });
   assert.ok(kv.ops.put.length > before, 'new data was not stored');
+});
+
+// ── Tomorrow's prices around 13:00 (a page still said "Prognose" for tomorrow at 13:29 on 2026-10-26) ──
+
+/** Freeze `new Date()` and Date.now() at an instant; returns { set(iso), restore() }. */
+function freezeClock(iso) {
+  const Real = Date;
+  let fixed = Real.parse(iso);
+  class FakeDate extends Real {
+    constructor(...a) { super(...(a.length ? a : [fixed])); }
+    static now() { return fixed; }
+  }
+  globalThis.Date = FakeDate;
+  return { set(next) { fixed = Real.parse(next); }, restore() { globalThis.Date = Real; } };
+}
+const FC = '/api/forecast?area=DK1&mode=inkl_alt';
+const tomorrowOf = body => body.days.find(d => d.date === '2026-10-27');
+
+test('a missing tomorrow after 12:30 is kept for one minute only, in the response and in every cache layer', async () => {
+  const clock = freezeClock('2026-10-26T11:40:00Z');          // 12:40 CET, 13:00 not yet struck
+  try {
+    upstreamState.tomorrowPublished = false;
+    const api = await createApi();
+    const first = await api.get(FC);
+    assert.equal(tomorrowOf(first.body).type, 'forecast', 'tomorrow is a forecast until the auction results are out');
+    assert.match(first.headers.get('cache-control'), /max-age=60, s-maxage=60/, 'an answer lacking a due tomorrow must not be cached for half an hour');
+
+    upstreamState.tomorrowPublished = true;                    // the results appear
+    clock.set('2026-10-26T11:42:00Z');                         // two minutes later
+    const second = await api.get(FC);
+    assert.equal(tomorrowOf(second.body).type, 'actual', 'tomorrow stayed a forecast after the prices were published');
+    assert.match(second.headers.get('cache-control'), /max-age=1800/, 'once tomorrow is in, the normal 30 minutes apply');
+  } finally { upstreamState.tomorrowPublished = true; clock.restore(); }
+});
+
+test('before 12:30 a missing tomorrow is normal: no short caching', async () => {
+  const clock = freezeClock('2026-10-26T10:00:00Z');          // 11:00 CET
+  try {
+    upstreamState.tomorrowPublished = false;
+    const api = await createApi();
+    const r = await api.get(FC);
+    assert.match(r.headers.get('cache-control'), /max-age=1800/);
+  } finally { upstreamState.tomorrowPublished = true; clock.restore(); }
+});
+
+test('prices fetched after 13:00 without tomorrow are not kept until the next day — guards the underlying price cache', async () => {
+  // The old rule kept anything fetched after 13:00 until the NEXT 13:00 (clamped to 6 h), whatever it contained.
+  const clock = freezeClock('2026-10-26T12:05:00Z');          // 13:05 CET, results delayed
+  try {
+    upstreamState.tomorrowPublished = false;
+    const api = await createApi();
+    assert.equal(tomorrowOf((await api.get(FC)).body).type, 'forecast');
+    upstreamState.tomorrowPublished = true;
+    clock.set('2026-10-26T12:08:00Z');                         // three minutes later: published
+    assert.equal(tomorrowOf((await api.get(FC)).body).type, 'actual', 'a missing tomorrow was kept for hours');
+  } finally { upstreamState.tomorrowPublished = true; clock.restore(); }
 });

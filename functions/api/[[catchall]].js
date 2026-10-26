@@ -137,11 +137,29 @@ function danishNow() {
 // are immutable until the next day's publication. So there is genuinely no new
 // data to fetch between publications — we cache until the next ~13:00 window.
 
-/** Seconds until the next 13:00 Danish local time (clamped 5 min … 6 h). */
+// Tomorrow's prices normally appear a little before 13:00, and on 2026-10-26 a page was
+// still showing "I morgen · Prognose" at 13:29. Two things held the "no tomorrow yet" answer:
+// (1) an answer fetched after 13:00 was kept until the NEXT 13:00 (up to 6 h) even when it
+// lacked tomorrow, and (2) /api/forecast told browsers and the edge to keep it for 30 minutes.
+// So the window now opens at 12:30, and an answer that should contain tomorrow but does not
+// is kept for one minute only.
+const PUBLISH_FROM_MIN = 12 * 60 + 30;
+const WAIT_FOR_TOMORROW_S = 60;
+
+/** Danish date of tomorrow, YYYY-MM-DD. */
+function tomorrowDK() { return fmtUTC(new Date(danishNow().getTime() + 86_400_000)); }
+
+/** From 12:30 Danish time tomorrow's prices are expected; a missing tomorrow is then a delay, not the norm. */
+function tomorrowDue() { const d = danishNow(); return d.getUTCHours() * 60 + d.getUTCMinutes() >= PUBLISH_FROM_MIN; }
+
+/** Seconds to keep an answer: `ttl`, or one minute when it should contain tomorrow's prices and does not. */
+function ttlFor(hasTomorrow, ttl) { return tomorrowDue() && !hasTomorrow ? WAIT_FOR_TOMORROW_S : ttl; }
+
+/** Seconds until the next 12:30 Danish local time (clamped 5 min … 6 h). */
 function secondsUntilNextPublish() {
   const dk  = danishNow(); // DK-local components readable via UTC getters
   const sec = dk.getUTCHours() * 3600 + dk.getUTCMinutes() * 60 + dk.getUTCSeconds();
-  const target = 13 * 3600;
+  const target = PUBLISH_FROM_MIN * 60;
   const delta  = sec < target ? target - sec : (86400 - sec) + target;
   return Math.max(300, Math.min(delta, 6 * 3600));
 }
@@ -656,7 +674,8 @@ async function loadPrices(area, from, to, env) {
     // otherwise become its own KV key and its own write.
     const recent = liveFrom >= fmtUTC(new Date(Date.now() - 3 * 86_400_000));
     const live = await edgeCached(`prices-${area}-${liveFrom}-${liveTo}`, priceTtl(liveTo),
-      () => fetchSpotPrices(area, liveFrom, liveTo), recent ? env : undefined);
+      () => fetchSpotPrices(area, liveFrom, liveTo), recent ? env : undefined,
+      (d) => liveTo > tomorrowDK() && tomorrowDue() && !(d && d[tomorrowDK()]));
     return { ...archive, ...live };
   } catch (err) {
     if (Object.keys(archive).length) {
@@ -1549,7 +1568,8 @@ async function handleApi(context) {
           .filter(Boolean);
       }
 
-      // Today+tomorrow entries are stable until the next ~13:00 publication.
+      // Today+tomorrow entries are stable until the next ~13:00 publication (one minute while tomorrow is due and missing).
+      const tomorrowEntries = makeEntries(tomorrow);
       return jsonResponse({
         data: {
           viewer: {
@@ -1557,13 +1577,13 @@ async function handleApi(context) {
               currentSubscription: {
                 priceInfo: {
                   today:    makeEntries(today),
-                  tomorrow: makeEntries(tomorrow),
+                  tomorrow: tomorrowEntries,
                 },
               },
             }],
           },
         },
-      }, { maxAge: secondsUntilNextPublish(), request });
+      }, { maxAge: ttlFor(tomorrowEntries.length > 0, secondsUntilNextPublish()), request });
     }
 
     // ── /api/prices | /api/now | /api/schedule ──────────────────────────────
@@ -1615,7 +1635,7 @@ async function handleApi(context) {
         days_with_data: days.filter(d => d.prices).length,
         ...(noTariff ? { days_without_grid_tariff: noTariff } : {}),
         days,
-      }, { maxAge: priceTtl(range.end), request });
+      }, { maxAge: range.end > tomorrowDK() ? ttlFor(days.some(d => d.date === tomorrowDK() && d.prices), priceTtl(range.end)) : priceTtl(range.end), request });
     }
 
     if (seg1 === 'prices') {
@@ -1926,10 +1946,13 @@ async function kvPutThrottled(kv, key, body, { minIntervalMs, expirationTtl }) {
   }
 }
 
-async function edgeCached(key, ttlSec, build, env) {
+async function edgeCached(key, ttlSec, build, env, shortWhen) {
+  // `shortWhen(data)` true = the answer is incomplete (tomorrow's prices are due but missing):
+  // keep it for WAIT_FOR_TOMORROW_S instead of ttlSec, in both layers.
+  const effTtl = (d) => (shortWhen && shortWhen(d) ? Math.min(ttlSec, WAIT_FOR_TOMORROW_S) : ttlSec);
   // 1. In-memory (peek directly — `cached()` would store the null sentinel)
   const now = Date.now(), mem = _cache.get(key);
-  if (mem && now - mem.ts < ttlSec * 1000) return mem.v;
+  if (mem && now - mem.ts < (mem.ttl ?? ttlSec) * 1000 && !(shortWhen && shortWhen(mem.v) && now - mem.ts >= WAIT_FOR_TOMORROW_S * 1000)) return mem.v;
 
   // 2. Cloudflare Cache API (shared across isolates within a colo).
   //    `/v2/` namespace abandons any poisoned (empty) entries cached by the
@@ -1939,7 +1962,7 @@ async function edgeCached(key, ttlSec, build, env) {
   const hit = await cache.match(cacheKey);
   if (hit) {
     const data = await hit.json();
-    if (isCacheable(data)) { _cache.set(key, { ts: now, v: data }); return data; }
+    if (isCacheable(data)) { _cache.set(key, { ts: now, v: data, ttl: effTtl(data) }); return data; }
     // Defensive: an empty slipped in somehow — drop it and re-fetch.
     await cache.delete(cacheKey);
   }
@@ -1968,11 +1991,12 @@ async function edgeCached(key, ttlSec, build, env) {
   // Only cache real data. A transient empty is returned to this caller but
   // never stored, so the very next request retries upstream.
   if (isCacheable(data)) {
-    _cache.set(key, { ts: Date.now(), v: data });
+    const ttl = effTtl(data);
+    _cache.set(key, { ts: Date.now(), v: data, ttl });
     const body = JSON.stringify(data);
     await Promise.all([
       cache.put(cacheKey, new Response(body, {
-        headers: { 'Cache-Control': `public, max-age=${ttlSec}` },
+        headers: { 'Cache-Control': `public, max-age=${ttl}` },
       })),
       // KV backup only needs to be "recent enough" for a stale-if-error
       // fallback, not continuously fresh -- throttled to at most once per
@@ -2448,5 +2472,5 @@ async function handleForecast(area, mode, gln, request, env) {
     // weekday-average fallback (source: "heuristic" on those days).
     model: modelMeta,
     days,
-  }, { maxAge: 1800, request });
+  }, { maxAge: ttlFor(days.some(d => d.date === tomorrowDK() && d.type === 'actual'), 1800), request });
 }
