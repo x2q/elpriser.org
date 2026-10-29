@@ -67,14 +67,16 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   ok([...h.matchAll(/<button type="button" role="tab"[^>]*>([^<]*)</g)].map(m => m[1]).join('|') === '2 døgn|5 døgn', 'pillernes tekst er præcis 2 døgn og 5 døgn');
   const two = h.slice(h.indexOf('pris-card pp2'), h.indexOf('pris-card pp5'));
   ok((two.match(/<span class="pc[ "]/g) || []).length === 48, 'to døgn er 48 søjler');
-  ok((two.match(/class="pc past"/g) || []).length === 21, 'de 21 timer der er gået er dæmpet');
+  ok((two.match(/class="pc past"/g) || []).length === 0, '2 døgn starter ved den nuværende time, så intet er dæmpet');
+  ok(/<span class="pc"[^>]*><i class="pb t\d"[^>]*><\/i><b class="pd"/.test(two) && two.indexOf('<b class="pd"') < two.indexOf('data-tip="I dag kl. 22'), 'prikken sidder på den første søjle');
   ok((two.match(/<b class="pd"/g) || []).length === 1, 'én prik over den nuværende time');
-  ok(/data-tip="I dag kl\. 19 · 3,90 kr\/kWh"/.test(two) && /data-tip="I morgen kl\. 13 · 1,38 kr\/kWh"/.test(two), 'den præcise pris står i tip-teksten');
+  ok(/data-tip="I dag kl\. 21 · 2,67 kr\/kWh"/.test(two) && /data-tip="I morgen kl\. 13 · 1,38 kr\/kWh"/.test(two) && !/data-tip="I dag kl\. 19/.test(two), 'den præcise pris står i tip-teksten, og timerne før nu er ikke med');
+  ok((two.match(/data-tip="I dag/g) || []).length === 3 && (two.match(/data-tip="I morgen/g) || []).length === 24 && (two.match(/data-tip="fre 16\. okt/g) || []).length === 21, '48 timer frem fra kl. 21: 3 i dag, 24 i morgen og 21 af dagen efter');
   ok(/<div class="pris-yl"><span style="top:[\d.]+%">0<\/span>(<span[^>]*>\d<\/span>){4}<\/div>/.test(two), 'y-aksen er 0 1 2 3 4', text(/class="pris-yl">([\s\S]*?)<\/div>/));
   ok(/class="pris-unit">kr\/kWh</.test(two), 'enhedsmærket kr/kWh står over aksen');
-  ok(/>I dag 00<\/span>/.test(two) && />I morgen 00<\/span>/.test(two) && />12<\/span>/.test(two), 'x-aksen: I dag 00, 06 12 18, I morgen 00');
-  // The tallest bar (3,90 on an axis to 4,5) is 86,7 % high — never touching the top.
-  ok(/height:86\.7%/.test(two), 'aksen når 4,5, så den højeste søjle er 86,7 %');
+  ok(!/>I dag 00<\/span>/.test(two) && />I morgen 00<\/span>/.test(two) && />fre 00<\/span>/.test(two) && />12<\/span>/.test(two), 'x-aksen følger uret fra nu: I morgen 00, 06 12 18, fre 00');
+  // The window starts at the current hour, so the tallest bar is tomorrow's 3,34 on an axis to 4 — 83,5 % high, never touching the top.
+  ok(/height:83\.5%/.test(two), 'aksen når 4, så den højeste søjle er 83,5 %');
   // Tiers by the same verdict the apps use: the current bar is the pill's colour.
   const nowCol = two.match(/<span class="pc"[^>]*><i class="pb t(\d)"[^>]*><\/i><b class="pd"/);
   ok(nowCol && nowCol[1] === '2', 'den nuværende søjle har pillens farve', nowCol && nowCol[1]);
@@ -138,8 +140,8 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   ok(/Billigere i dag kl\. /.test(eve) === false && /Billigste time de næste 24|Billigere i dag/.test(eve), 'uden i morgen findes sætningen stadig, med i dag');
   // Tomorrow missing: one day, no crash, no "i morgen".
   const one = pris(feed.slice(0, 1), D0, 21, o);
-  ok((one.slice(one.indexOf('pris-card pp2'), one.indexOf('pris-card pp5')).match(/data-tip=/g) || []).length === 24 && !/i morgen/.test(one.replace(/Næste 2 døgn/g, '')),
-     'uden i morgen tegnes kun i dag');
+  ok((one.slice(one.indexOf('pris-card pp2'), one.indexOf('pris-card pp5')).match(/data-tip=/g) || []).length === 3 && !/i morgen/.test(one.replace(/Næste 2 døgn/g, '')),
+     'uden i morgen tegnes kun de tre timer der er tilbage af i dag');
   // Spotpris and no net: the captions.
   ok(/Spotpris inkl\. moms/.test(pris(feed, D0, 21, { ...o, view: 'spot' })), 'billedtekst for spotpris');
   ok(/Inkl\. Energinets tariffer, afgifter og moms/.test(pris(feed, D0, 21, { ...o, net: null })), 'billedtekst uden net');
@@ -151,7 +153,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const neg = pris([dayOf(D0, T.map((v, i) => i === 3 ? -0.8 : v), 'actual'), dayOf(nextDate(1), M, 'actual')], D0, 21, o);
   ok(!/NaN|Infinity/.test(neg) && /<span style="top:[\d.]+%">-1<\/span>/.test(neg), 'negative priser giver en akse under nul');
   ok(!/-0,00/.test(pris([dayOf(D0, T.map(() => -0.004), 'actual')], D0, 5, o)), 'et beløb der runder til nul vises uden minus');
-  ok(/aria-label="Elpris lige nu — DK1 Vest · N1"/.test(h) && /role="img" tabindex="0" aria-label="Elpris time for time næste 2 døgn: billigst 1,30 kr\/kWh kl\. 04, dyrest 3,90 kr\/kWh kl\. 19\./.test(h), 'grafen har en tekstlig beskrivelse');
+  ok(/aria-label="Elpris lige nu — DK1 Vest · N1"/.test(h) && /role="img" tabindex="0" aria-label="Elpris time for time næste 2 døgn: billigst 1,38 kr\/kWh kl\. 13, dyrest 3,34 kr\/kWh kl\. 19\./.test(h), 'grafen har en tekstlig beskrivelse');
   ok(!/<h[1-6]/.test(h), 'skærmen indeholder ingen overskriftstags — sidens h1 står andetsteds');
 
   // ── What the price is made of (the folded-out caption) ──────────────────────
@@ -428,7 +430,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
      'pillen har 2 døgn, 5 døgn og 7 døgn, og 7 døgn er valgt');
   ok(/<section class="pris-card pp2" aria-label="Næste 2 døgn">/.test(f7) && /<section class="pris-card pp5" aria-label="Næste 5 døgn">/.test(f7) && /<section class="pris-card pp7" aria-label="Næste 7 døgn">/.test(f7) && /<p class="pris-ct">Næste 7 døgn<\/p>/.test(f7), 'tre kort, det sidste hedder Næste 7 døgn');
   const c2 = f7.slice(f7.indexOf('pris-card pp2'), f7.indexOf('pris-card pp5')), c5 = f7.slice(f7.indexOf('pris-card pp5'), f7.indexOf('pris-card pp7')), c7 = f7.slice(f7.indexOf('pris-card pp7'), f7.indexOf('pris-tiles pp2'));
-  ok((c2.match(/<span class="pc[ "]/g) || []).length === 48 && (c5.match(/<span class="pc[ "]/g) || []).length === 120 && /pris-xl">/.test(c2) && />I dag 00</.test(c2), '2 døgn er stadig 48 søjler med timemærker og 5 døgn 120');
+  ok((c2.match(/<span class="pc[ "]/g) || []).length === 48 && (c5.match(/<span class="pc[ "]/g) || []).length === 120 && /pris-xl">/.test(c2) && />I morgen 00</.test(c2), '2 døgn er stadig 48 søjler med timemærker og 5 døgn 120');
   ok((c7.match(/<span class="pc[ "]/g) || []).length === 168, '7 døgn er 168 timesøjler');
   ok((c7.match(/class="pc past"/g) || []).length === 21 && (c7.match(/<b class="pd"/g) || []).length === 1, 'de 21 timer der er gået er dæmpet, og der er én prik');
   ok(/data-tip="tir 20\. okt kl\. 13 · \d,\d\d kr\/kWh"/.test(c7) && !/ 21\. okt/.test(f7), 'dag syv (tir 20.) er med og dag otte (21.) er ikke');

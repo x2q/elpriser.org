@@ -703,12 +703,14 @@ async function startServer() {
     await page.goto(BASE + '/dk1');
     await page.waitForSelector('.pp2 .pris-plot');
     const box = await page.locator('.pp2 .pris-plot').boundingBox();
-    for (const [fx, hour, day] of [[0.005, 0, 'I dag'], [0.995, 23, 'I morgen']]) {
+    // 2 døgn is 48 hours on from the current hour: the first bar is now, the last is 47 hours later.
+    const now = hourDk(), last = (now + 47) % 24;
+    for (const [fx, hour, day] of [[0.005, now, 'I dag'], [0.995, last, now === 0 ? 'I morgen' : null]]) {
       await page.mouse.move(box.x + box.width * fx, box.y + box.height * 0.7);
       const tip = page.locator('.pp2 .pris-tip');
       await tip.waitFor({ state: 'visible' });
-      const want = `${day} kl. ${String(hour).padStart(2, '0')} · ${pris(fixturePrice('inkl_alt', null, hour))} kr/kWh`;
-      assert.equal((await tip.textContent()).trim(), want);
+      const want = `kl. ${String(hour).padStart(2, '0')} · ${pris(fixturePrice('inkl_alt', null, hour))} kr/kWh`, got = (await tip.textContent()).trim();
+      assert.ok(day ? got === `${day} ${want}` : got.endsWith(want) && /^(man|tir|ons|tor|fre|lør|søn) \d+\. \w+ kl\./.test(got), `${got} is not ${day || 'a later day'} ${want}`);
       const inside = await page.evaluate(() => {
         const t = document.querySelector('.pp2 .pris-tip').getBoundingClientRect(), c = document.querySelector('.pp2').getBoundingClientRect();
         return t.left >= c.left && t.right <= c.right && t.top >= c.top;
@@ -1100,7 +1102,7 @@ async function startServer() {
       assert.deepEqual(v.type.slice(0, 2), ['Børspris', 'Børspris'], `${n}: Type stays Børspris/Prognose`);
       seen.push(v.labels[0]);
     }
-    assert.equal(seen[0][0], 'I dag 00', '2 døgn keeps its hourly labels');
+    assert.ok(seen[0].length >= 6 && seen[0].includes('I morgen 00') && seen[0].every(l => /^(\d\d|I morgen 00|I dag 00|\S+ 00)$/.test(l)), '2 døgn keeps its hourly labels, by the clock from now');
     assert.equal(seen[1].length, 5, '5 døgn: a label per day'); assert.equal(seen[2].length, 7, '7 døgn: a label per day');
     assert.match(seen[2][0], /^(søn|man|tir|ons|tor|fre|lør) \d+$/, 'weekday and date');
     assert.equal(await page.locator('.pris-period [data-pris-period="7"]').getAttribute('aria-selected'), 'true');

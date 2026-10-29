@@ -337,8 +337,6 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
      slim footer. On a phone the navigation is a second row of the header (the Danish bottom tab bar is gone). ── */
   .xc .site-nav-inner{flex-wrap:wrap}
   .sf-x .sf-in{display:grid;gap:.5rem}
-  /* "Vandaag 00" is the one first axis label that runs into the 06 label beside it on the wide 2-day chart. */
-  html[lang="nl"] .pris-xl:not(.days) .x6:nth-child(2),html[lang="fr"] .pris-xl:not(.days) .x6:nth-child(2),html[lang="fr"] .pris-xl:not(.days) .x12:nth-child(3){visibility:hidden}
   .sf-x .sf-chips a[aria-current]{background:var(--p-pill);border-color:var(--p-pill);color:#fff}
   @media (max-width:640px){
     .xc body{padding-bottom:0}
@@ -4030,8 +4028,8 @@ function prisSwitch(view,cls,spotLabel){
  *  of every hour in data-tip for the browser's hover/tap tooltip. The first two
  *  days read "I dag" / "I morgen", later ones "søn 17. okt". */
 function prisChart(rows,nDays,o){
-  var C=o.C,L=C.L,n=nDays*24,vals=[],i;
-  for(i=0;i<rows.length;i++)for(var h0=0;h0<24;h0++)if(rows[i].ps[h0]!=null)vals.push(rows[i].ps[h0]);
+  var C=o.C,L=C.L,n=nDays*24,st=o.start||0,vals=[],i;
+  for(i=0;i<rows.length;i++)for(var h0=0;h0<24;h0++)if(rows[i].ps[h0]!=null&&i*24+h0>=st&&i*24+h0<st+n)vals.push(rows[i].ps[h0]);
   var ax=prisAxis(vals,C.sc),span=ax.hi-ax.lo;
   var ref=o.ref||vals;
   var y=function(v){return (v-ax.lo)/span*100;};
@@ -4043,17 +4041,17 @@ function prisChart(rows,nDays,o){
   }
   var cols='',seps='',fcAt=-1;
   for(var s=0;s<n;s++){
-    var r=rows[Math.floor(s/24)],h=s%24,p=r?r.ps[h]:null;
+    var a=st+s,r=rows[Math.floor(a/24)],h=a%24,p=r?r.ps[h]:null;
     if(fcAt<0&&r&&!r.real)fcAt=s;
-    if(s%24===0&&s>0&&o.seps)seps+='<span class="pris-sep" style="left:'+(s/n*100).toFixed(2)+'%"></span>';
+    if(a%24===0&&s>0&&o.seps)seps+='<span class="pris-sep" style="left:'+(s/n*100).toFixed(2)+'%"></span>';
     if(p==null){cols+='<span class="pc"></span>';continue;}
     var base=y(Math.min(p,0)),ht=Math.abs(p)/span*100,dt=prisDate(r.date,L);
-    var dn=Math.floor(s/24);
+    var dn=Math.floor(a/24);
     var tip=(dn===0?prisCap(L.today):dn===1?prisCap(L.tomorrow):dt.ws+' '+dt.d+L.dot+' '+dt.m)
       +' '+prisAt(L,h)+' · '+prisNum(p,C.d)+' '+C.u+'/kWh';
-    cols+='<span class="pc'+(s<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
+    cols+='<span class="pc'+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
       +'" style="bottom:'+base.toFixed(1)+'%;height:'+ht.toFixed(1)+'%"></i>'
-      +(s===o.nowSlot?'<b class="pd" style="bottom:calc('+(base+ht).toFixed(1)+'% + 3px)"></b>':'')+'</span>';
+      +(a===o.nowSlot?'<b class="pd" style="bottom:calc('+(base+ht).toFixed(1)+'% + 3px)"></b>':'')+'</span>';
   }
   // "Prognose" where the settled prices end: a thin divider with its label.
   var fc=fcAt>=0?'<span class="pris-fc'+(fcAt>0?' mid':'')+'" style="left:'+(fcAt/n*100).toFixed(2)+'%"><i></i>'+L.fc+'</span>':'';
@@ -4064,12 +4062,16 @@ function prisChart(rows,nDays,o){
       if(dd)xl+='<span class="xd" style="left:'+((i*24+12)/n*100).toFixed(2)+'%">'+dd.ws+' '+dd.d+'</span>';
     }
   }else{
-    for(var hx=0;hx<n;hx+=6){
-      var lbl=hx===0?prisCap(L.today)+' 00':hx===24?prisCap(L.tomorrow)+' 00':prisHH(hx%24);
-      xl+='<span class="'+(hx%12?'x6':'x12')+(hx===0?' first':'')+'" style="left:'+(hx/n*100).toFixed(2)+'%">'+lbl+'</span>';
+    // A label at every sixth clock hour inside the window, so a chart that starts at the current hour
+    // is labelled by the clock; each midnight carries its day.
+    for(var hx=0;hx<n-1;hx++){
+      var ab=st+hx;
+      if(ab%6)continue;
+      var rd=rows[ab/24],lbl=ab%24?prisHH(ab%24):ab===0?prisCap(L.today)+' 00':ab===24?prisCap(L.tomorrow)+' 00':(rd?prisDate(rd.date,L).ws+' ':'')+'00';
+      xl+='<span class="'+(ab%12?'x6':'x12')+(hx===0?' first':'')+'" style="left:'+(hx/n*100).toFixed(2)+'%">'+lbl+'</span>';
     }
   }
-  var ex=prisExtremes(prisFlat(rows));
+  var ex=prisExtremes(prisFlat(rows).slice(st,st+n));
   var at=function(s){return ' '+C.u+'/kWh '+prisAt(L,s.h);};
   var aria=o.title+': '+(ex.lo?L.lo+' '+prisNum(ex.lo.p,C.d)+at(ex.lo)+', ':'')
     +(ex.hi?L.hi+' '+prisNum(ex.hi.p,C.d)+at(ex.hi)+'.':'');
@@ -4232,8 +4234,10 @@ function prisHTML(days,todayStr,nowHour,o){
   var cards='',tiles='';
   cfg.periods.forEach(function(p){
     var t=C.act?actT:L.next+' '+L['p'+p],n=C.act?an:p===2?2:all.length?Math.min(p,all.length):p;
+    // 2 døgn counts 48 hours on from the current hour, not today and tomorrow; an actual-prices page keeps its calendar days.
+    var st=p===2&&!C.act&&nowSlot>0?nowSlot:0;
     cards+='<section class="pris-card pp'+p+'" aria-label="'+t+'">'+head(t)
-      +prisChart(all.slice(0,n),n,p===2?{ref:td||[],nowSlot:nowSlot,title:C.act?L.hourly+', '+actT.toLowerCase():ttl+L.p2,C:C}
+      +prisChart(all.slice(0,n+(st?1:0)),n,p===2?{ref:td||[],nowSlot:nowSlot,start:st,title:C.act?L.hourly+', '+actT.toLowerCase():ttl+L.p2,C:C}
         :{nowSlot:nowSlot,xDays:true,seps:true,title:ttl+L['p'+p],C:C})+'</section>';
     tiles+=prisTiles(all,nowHour,p,'pp'+p,C);
   });
