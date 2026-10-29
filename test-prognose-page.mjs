@@ -94,7 +94,9 @@ ok(!h.includes('<!--SSR_PRIS-->'), '/prognose: pladsholderen er erstattet');
 ok(upstream.filter(u => u.startsWith('/api/forecast')).join() === '/api/forecast?area=DK1&mode=inkl_alt', '/prognose: ét kald til prognosen, DK1 inkl alt som på forsiden', upstream.join());
 ok([...h.matchAll(/<button type="button" role="tab" aria-selected="(\w+)" data-pris-period="(\d)">([^<]*)</g)].map(m => `${m[2]}:${m[1]}:${m[3]}`).join('|') === '2:false:2 døgn|5:false:5 døgn|7:true:7 døgn', '/prognose: pillen er 2 døgn | 5 døgn | 7 døgn med 7 valgt');
 const c7 = h.slice(h.indexOf('pris-card pp7'), h.indexOf('pris-tiles pp2'));
-ok((c7.match(/<span class="pc[ "]/g) || []).length === 168, '/prognose: 7 døgn er 168 søjler', String((c7.match(/<span class="pc[ "]/g) || []).length));
+// From six hours before now (the whole first day at hour 0) to the end of the seven days the feed has.
+const nowH = +new Intl.DateTimeFormat('en-GB', { ...cph, hour: '2-digit', hourCycle: 'h23' }).format(new Date());
+ok((c7.match(/<span class="pc[ "]/g) || []).length === 168 - (nowH > 0 ? nowH - Math.min(6, nowH) : 0), '/prognose: 7 døgn starter seks timer før nu og når til udgangen af døgn syv', String((c7.match(/<span class="pc[ "]/g) || []).length));
 ok(/aria-label="Elpris lige nu — DK1 Vest"/.test(h) && /<p class="pris-ct">Næste 7 døgn<\/p>/.test(h), '/prognose: skærmen navngiver området, og kortet hedder Næste 7 døgn');
 const rows = h.slice(h.indexOf('<tbody>'), h.indexOf('</tbody>')).split('<tr class=').slice(1);
 ok(rows.length === 7, '/prognose: dagslisten har syv rækker i HTML\'en', String(rows.length));

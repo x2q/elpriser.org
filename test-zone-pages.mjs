@@ -27,6 +27,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
 // ── A fake edge: ASSETS serves index.html, /api/nordic answers from a fixture, caches.default is a Map ──
 const cph = { timeZone: 'Europe/Copenhagen' };
 const today = new Intl.DateTimeFormat('en-CA', cph).format(new Date());
+const NOW_H = +new Intl.DateTimeFormat('en-GB', { ...cph, hour: 'numeric', hourCycle: 'h23' }).format(new Date());
 const addDays = (d, n) => new Date(Date.parse(d + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
 const RATE = { dk1: 7.5, dk2: 7.5, no: 10, se: 11, eur: 1, pl: 4.4 };
 const rateOf = z => /^dk/.test(z) ? RATE.dk1 : z.startsWith('no') ? RATE.no : z.startsWith('se') ? RATE.se : z === 'pl' ? RATE.pl : 1;
@@ -104,7 +105,7 @@ for (const [p, w] of Object.entries(PAGES)) {
   ok((h.match(/data-pris-period="/g) || []).length === 2, `${p}: præcis to periodeknapper`);
   // Five days at most: 120 bars in the five-day card, five rows in the day list, no hidden sixth to tenth day.
   const five = h.slice(h.indexOf('pris-card pp5'), h.indexOf('pris-tiles pp2'));
-  ok((five.match(/<span class="pc[ "]/g) || []).length === 120, `${p}: 5 døgn er 120 søjler`, String((five.match(/<span class="pc[ "]/g) || []).length));
+  ok((five.match(/<span class="pc[ "]/g) || []).length === 120 - (NOW_H > 0 ? NOW_H - Math.min(6, NOW_H) : 0), `${p}: 5 døgn er fem døgn fra seks timer før nu`, String((five.match(/<span class="pc[ "]/g) || []).length));
   ok((h.match(/<tr class="r\d+">/g) || []).length === 5 && !/class="r10"/.test(h), `${p}: dagslisten har fem rækker og ingen skjult dag seks-ti`);
   ok(!TEN.test(h), `${p}: ingen tekst om 10 døgn`, (h.match(TEN) || [])[0]);
   // The tab row.

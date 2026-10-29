@@ -1503,9 +1503,10 @@ function prisChart(rows,nDays,o){
   var fc=fcAt>=0?'<span class="pris-fc'+(fcAt>0?' mid':'')+'" style="left:'+(fcAt/n*100).toFixed(2)+'%"><i></i>'+L.fc+'</span>':'';
   var xl='';
   if(o.xDays){
-    for(i=0;i<nDays;i++){
-      var dd=rows[i]?prisDate(rows[i].date,L):null;
-      if(dd)xl+='<span class="xd" style="left:'+((i*24+12)/n*100).toFixed(2)+'%">'+dd.ws+' '+dd.d+'</span>';
+    // One label per day, at the middle of the part of the day that is in the window (a day with under six hours of it has none).
+    for(i=Math.floor(st/24);i*24<st+n;i++){
+      var vs=Math.max(i*24,st),ve=Math.min(i*24+24,st+n),dd=rows[i]&&ve-vs>=6?prisDate(rows[i].date,L):null;
+      if(dd)xl+='<span class="xd" style="left:'+(((vs+ve)/2-st)/n*100).toFixed(2)+'%">'+dd.ws+' '+dd.d+'</span>';
     }
   }else{
     // A label at every sixth clock hour inside the window, so a chart that starts at the current hour
@@ -1682,10 +1683,12 @@ function prisHTML(days,todayStr,nowHour,o){
     var t=C.act?actT:L.next+' '+L['p'+p],n=C.act?an:p===2?2:all.length?Math.min(p,all.length):p;
     // 2 døgn counts 48 hours on from the current hour (with the six hours before it, dimmed), not today and tomorrow; an
     // actual-prices page keeps its calendar days.
-    var win=p===2&&!C.act&&nowSlot>0,back=win?Math.min(6,nowSlot):0,st=win?nowSlot-back:0;
+    // Every longer period starts at the same place (the hour six before now) and runs p days on, as far as the data goes.
+    var win=!C.act&&nowSlot>0,back=win?Math.min(6,nowSlot):0,st=win?nowSlot-back:0,len=win?back+p*24:0;
+    if(win&&p>2)len=Math.min(len,all.length*24-st);
     cards+='<section class="pris-card pp'+p+'" aria-label="'+t+'">'+head(t)
-      +prisChart(all.slice(0,n+(win?1:0)),n,p===2?{ref:td||[],nowSlot:nowSlot,start:st,len:win?back+48:0,title:C.act?L.hourly+', '+actT.toLowerCase():ttl+L.p2,C:C}
-        :{nowSlot:nowSlot,xDays:true,seps:true,title:ttl+L['p'+p],C:C})+'</section>';
+      +prisChart(all.slice(0,win?Math.ceil((st+len)/24):n),n,p===2?{ref:td||[],nowSlot:nowSlot,start:st,len:len,title:C.act?L.hourly+', '+actT.toLowerCase():ttl+L.p2,C:C}
+        :{nowSlot:nowSlot,start:st,len:len,xDays:true,seps:true,title:ttl+L['p'+p],C:C})+'</section>';
     tiles+=prisTiles(all,nowHour,p,'pp'+p,C);
   });
   return '<div class="pris" data-period="'+period+'" data-view="'+view+'" data-key="'+prisEsc(o.key||'')

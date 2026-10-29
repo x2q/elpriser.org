@@ -88,6 +88,11 @@ async function startServer() {
   const cph = { timeZone: 'Europe/Copenhagen' };
   const todayDk = () => new Intl.DateTimeFormat('en-CA', cph).format(new Date());
   const hourDk = () => +new Intl.DateTimeFormat('en-GB', { ...cph, hour: '2-digit', hourCycle: 'h23' }).format(new Date());
+  // A chart starts six hours before now (at hour 0: at midnight) and runs `days` days on, as far as the `have` days of data go.
+  // st is the window's first hour counted from today 00:00, n its length in bars; winDays are the day labels (a day with under
+  // six hours of the window has none) with their left edge in %.
+  const win = (days, have = 10) => { const h = hourDk(), back = Math.min(6, h), st = h - back; let n = h > 0 ? back + days * 24 : days * 24; if (h > 0 && days > 2) n = Math.min(n, have * 24 - st); return { st, n, back }; };
+  const winDays = w => { const out = []; for (let i = Math.floor(w.st / 24); i * 24 < w.st + w.n; i++) { const vs = Math.max(i * 24, w.st), ve = Math.min(i * 24 + 24, w.st + w.n); if (ve - vs >= 6) out.push({ i, left: ((vs + ve) / 2 - w.st) / w.n * 100 }); } return out; };
   const fixturePrice = (mode, gln, h) => {
     const k = mode === 'spot_inkl' ? 0.4 : gln ? 1.3 : 1;
     return +((1.5 + Math.sin(h / 24 * 6.28) * 0.8 + (h >= 17 && h <= 20 ? 1 : 0)) * k).toFixed(4);
@@ -520,8 +525,8 @@ async function startServer() {
     await page.waitForSelector('.pp2 .pris-plot');
     await page.locator('.pris-period [data-pris-period="5"]').click();
     await page.locator('.pris-modebox details.pris-bd > summary').click();
-    const box = await page.locator('.pp5 .pris-plot').boundingBox();
-    await page.mouse.click(box.x + box.width * (3 * 24 + 13.5) / 120, box.y + box.height * 0.7);
+    const box = await page.locator('.pp5 .pris-plot').boundingBox(), w5 = win(5);
+    await page.mouse.click(box.x + box.width * (3 * 24 + 13.5 - w5.st) / w5.n, box.y + box.height * 0.7);
     const x = dayAfter(3);
     assert.equal((await page.locator('.pris-modebox .pris-bdh').textContent()).trim(), `Sådan er prisen ${x.ws} ${x.d}. ${x.m} kl. 13 sammensat`);
     assert.equal((await panelRows('.pris-modebox'))[0][0], 'Spotpris (prognose)');
@@ -589,7 +594,7 @@ async function startServer() {
     assert.equal((await page.locator('.pp5 .pris-ct').textContent()).trim(), 'Næste 5 døgn');
     assert.equal(await page.locator('.pris-period [data-pris-period="5"]').getAttribute('aria-selected'), 'true');
     assert.equal(await page.locator('.pris-period [data-pris-period="2"]').getAttribute('aria-selected'), 'false');
-    assert.equal(await page.locator('.pp5 .pc').count(), 120, 'five days of hourly bars');
+    assert.equal(await page.locator('.pp5 .pc').count(), win(5).n, 'six hours before now and five days on, hourly bars');
     assert.equal(await page.locator('.pris').getAttribute('data-period'), '5');
   });
 
@@ -597,17 +602,18 @@ async function startServer() {
     await page.goto(BASE + '/dk1');
     await page.waitForSelector('.pp2 .pris-plot');
     await page.locator('.pris-period [data-pris-period="5"]').click();
+    const w5 = win(5), wd = winDays(w5);
     const labels = await page.locator('.pp5 .pris-xl .xd').allTextContents();
-    assert.deepEqual(labels, [0, 1, 2, 3, 4].map(n => { const x = dayAfter(n); return `${x.ws} ${x.d}`; }));
+    assert.deepEqual(labels, wd.map(d => { const x = dayAfter(d.i); return `${x.ws} ${x.d}`; }));
     const lefts = await page.locator('.pp5 .pris-xl .xd').evaluateAll(els => els.map(e => parseFloat(e.style.left)));
-    lefts.forEach((l, i) => assert.ok(Math.abs(l - (i * 24 + 12) / 120 * 100) < 0.01, `label ${i} at ${l}%`));
-    assert.equal(await page.locator('.pp5 .pris-sep').count(), 4, 'a divider at every midnight');
+    lefts.forEach((l, i) => assert.ok(Math.abs(l - wd[i].left) < 0.01, `label ${i} at ${l}%`));
+    assert.equal(await page.locator('.pp5 .pris-sep').count(), [24, 48, 72, 96, 120].filter(m => m > w5.st && m < w5.st + w5.n).length, 'a divider at every midnight inside the window');
     // Days 0 and 1 are børspriser in the fixture, day 2 is the first forecast day.
     const fc = page.locator('.pp5 .pris-fc');
     assert.equal((await fc.textContent()).trim(), 'Prognose');
-    assert.ok(Math.abs(parseFloat(await fc.evaluate(e => e.style.left)) - 48 / 120 * 100) < 0.01, 'Prognose sits at the start of day 3');
-    // Today is dimmed up to the current hour, with one dot on it.
-    assert.equal(await page.locator('.pp5 .pc.past').count(), hourDk());
+    assert.ok(Math.abs(parseFloat(await fc.evaluate(e => e.style.left)) - (48 - w5.st) / w5.n * 100) < 0.01, 'Prognose sits at the start of day 3');
+    // The six hours before now are dimmed, with one dot on the current one.
+    assert.equal(await page.locator('.pp5 .pc.past').count(), Math.min(6, hourDk()));
     assert.equal(await page.locator('.pp5 .pd').count(), 1);
   });
 
@@ -615,9 +621,9 @@ async function startServer() {
     await page.goto(BASE + '/dk1');
     await page.waitForSelector('.pp2 .pris-plot');
     await page.locator('.pris-period [data-pris-period="5"]').click();
-    const box = await page.locator('.pp5 .pris-plot').boundingBox();
-    const hit = async i => {
-      await page.mouse.move(box.x + box.width * (i + 0.5) / 120, box.y + box.height * 0.7);
+    const box = await page.locator('.pp5 .pris-plot').boundingBox(), w5 = win(5);
+    const hit = async i => {   // i counts hours from today 00:00
+      await page.mouse.move(box.x + box.width * (i - w5.st + 0.5) / w5.n, box.y + box.height * 0.7);
       const tip = page.locator('.pp5 .pris-tip');
       await tip.waitFor({ state: 'visible' });
       return (await tip.textContent()).trim();
@@ -625,8 +631,8 @@ async function startServer() {
     const x = dayAfter(3);
     assert.equal(await hit(3 * 24 + 13), `${x.ws} ${x.d}. ${x.m} kl. 13 · ${pris(fixturePrice('inkl_alt', null, 13))} kr/kWh`);
     assert.equal(await hit(24 + 13), `I morgen kl. 13 · ${pris(fixturePrice('inkl_alt', null, 13))} kr/kWh`);
-    assert.equal(await hit(19), `I dag kl. 19 · ${pris(fixturePrice('inkl_alt', null, 19))} kr/kWh`);
-    for (const i of [0, 119]) {
+    assert.equal(await hit(w5.st + 6), `I dag kl. ${String(w5.st + 6).padStart(2, '0')} · ${pris(fixturePrice('inkl_alt', null, w5.st + 6))} kr/kWh`);
+    for (const i of [w5.st, w5.st + w5.n - 1]) {
       await hit(i);
       const inside = await page.evaluate(() => {
         const t = document.querySelector('.pp5 .pris-tip').getBoundingClientRect(), c = document.querySelector('.pp5').getBoundingClientRect();
@@ -1072,7 +1078,7 @@ async function startServer() {
     assert.deepEqual((await page.locator('.pris-period [role="tab"]').allTextContents()).map(t => t.trim()), ['2 døgn', '5 døgn', '7 døgn']);
     const v = await progView();
     assert.equal(v.period, '7'); assert.equal(v.selected, '7');
-    assert.deepEqual(v.cards, ['Næste 7 døgn']); assert.deepEqual(v.bars, [168]); assert.equal(v.rows, 7);
+    assert.deepEqual(v.cards, ['Næste 7 døgn']); assert.deepEqual(v.bars, [win(7, 7).n]); assert.equal(v.rows, 7);
     assert.deepEqual(v.tiles, ['pris-tiles pp7']);
     assert.equal(await page.locator('main[data-page="prognose"] select').count(), 0, 'the area and mode selects are gone');
     for (const gone of ['#fcArea', '#fcMode', '#fcTable', '#fcCurve', '#prognoseForecast', '#prognoseWeek', '.fcweek'])
@@ -1090,8 +1096,8 @@ async function startServer() {
     await page.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
     const want = {
       2: { card: 'Næste 2 døgn', bars: 48 + Math.min(6, hourDk()), rows: 2, unc: ['—', 'Lav'], tile: 'pp2' },
-      5: { card: 'Næste 5 døgn', bars: 120, rows: 5, unc: ['—', 'Lav', 'Lav', 'Middel', 'Middel'], tile: 'pp5' },
-      7: { card: 'Næste 7 døgn', bars: 168, rows: 7, unc: ['—', 'Lav', 'Lav', 'Middel', 'Middel', 'Middel', 'Høj'], tile: 'pp7' },
+      5: { card: 'Næste 5 døgn', bars: win(5, 7).n, rows: 5, unc: ['—', 'Lav', 'Lav', 'Middel', 'Middel'], tile: 'pp5' },
+      7: { card: 'Næste 7 døgn', bars: win(7, 7).n, rows: 7, unc: ['—', 'Lav', 'Lav', 'Middel', 'Middel', 'Middel', 'Høj'], tile: 'pp7' },
     };
     const seen = [];
     for (const n of [2, 5, 7]) {
@@ -1105,7 +1111,7 @@ async function startServer() {
       seen.push(v.labels[0]);
     }
     assert.ok(seen[0].length >= 6 && seen[0].includes('I morgen 00') && seen[0].every(l => /^(\d\d|I morgen 00|I dag 00|\S+ 00)$/.test(l)), '2 døgn keeps its hourly labels, by the clock from now');
-    assert.equal(seen[1].length, 5, '5 døgn: a label per day'); assert.equal(seen[2].length, 7, '7 døgn: a label per day');
+    assert.equal(seen[1].length, winDays(win(5, 7)).length, '5 døgn: a label per day in the window'); assert.equal(seen[2].length, 7, '7 døgn: a label per day');
     assert.match(seen[2][0], /^(søn|man|tir|ons|tor|fre|lør) \d+$/, 'weekday and date');
     assert.equal(await page.locator('.pris-period [data-pris-period="7"]').getAttribute('aria-selected'), 'true');
     // Back to the front page: its pill is untouched.
@@ -1568,14 +1574,14 @@ async function startServer() {
     assert.deepEqual(await page.locator('main[data-page="zone"] .pris-period button').allTextContents(), ['2 vrk', '5 vrk']);
   });
 
-  await test('the foreign pages offer only 2 and 5 døgn: no 10-day wording, five day rows, 120 bars', async () => {
+  await test('the foreign pages offer only 2 and 5 døgn: no 10-day wording, five day rows, the bars from six hours before now to the end of day five', async () => {
     for (const [url, five] of [['/no/strompris', '5 døgn'], ['/sv/elpris', '5 dygn'], ['/fi/sahkon-hinta', '5 vrk'], ['/nl/stroomprijs', '5 dagen']]) {
       await page.goto(BASE + url);
       await page.waitForSelector('main[data-page="zone"] .pris');
       await page.locator('main[data-page="zone"] [data-pris-period="5"]').click();
       const t = await page.evaluate(() => document.querySelector('main[data-page="zone"]').innerText);
       assert.ok(!/\b10 (døgn|dager|dygn|vrk|dagen)/i.test(t), `${url} mentions 10 days`);
-      assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pc[data-tip]').count(), 120);
+      assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pc[data-tip]').count(), win(5, 5).n);
       assert.equal(await page.locator('main[data-page="zone"] .pris-week tbody tr').count(), 5);
       assert.ok((await page.locator('main[data-page="zone"] .pris-card.pp5 .pris-ct').textContent()).endsWith(five));
     }
@@ -1836,7 +1842,7 @@ async function startServer() {
     }
   });
 
-  await test('/nl/stroomprijs: Dutch Pris screen in cent, one zone and no tabs, Dutch period switch 2 ⇄ 5 dagen (120 bars, five rows), <html lang="nl">', async () => {
+  await test('/nl/stroomprijs: Dutch Pris screen in cent, one zone and no tabs, Dutch period switch 2 ⇄ 5 dagen (six hours before now to the end of day five, five rows), <html lang="nl">', async () => {
     await page.goto(BASE + '/nl/stroomprijs');
     await page.waitForSelector('main[data-page="zone"] .pris');
     const z = await zoneNow();
@@ -1855,7 +1861,7 @@ async function startServer() {
     assert.ok(price > 140 && price < 230, `price ${price}`);
     await page.locator('main[data-page="zone"] [data-pris-period="5"]').click();
     assert.equal(await page.locator('main[data-page="zone"] .pris').getAttribute('data-period'), '5');
-    assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pc[data-tip]').count(), 120);
+    assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pc[data-tip]').count(), win(5, 5).n);
     assert.equal(await page.locator('main[data-page="zone"] .pris-week tbody tr').count(), 5);
     assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pris-ct').textContent(), 'Komende 5 dagen');
     await page.locator('main[data-page="zone"] [data-pris-period="2"]').click();
