@@ -327,7 +327,7 @@ async function main() {
   const progPage = prog.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '');
   check(!prog.body.includes('<!--SSR_PRIS-->') && /<div class="pris" data-period="7" data-view="din" data-key="DK1\|din\|"/.test(progPage), '/prognose: Pris-skærmen er tegnet i HTML\'en for DK1 på 7 døgn');
   check([...progPage.matchAll(/data-pris-period="(\d)">([^<]*)</g)].map(m => m[2]).join('|') === '2 døgn|5 døgn|7 døgn' && (progPage.match(/<h1[ >]/g) || []).length === 1 && />Elprisprognose<\/h1>/.test(progPage), '/prognose: pillen er 2 | 5 | 7 døgn og der er én h1');
-  check((progPage.slice(progPage.indexOf('pris-card pp7')).match(/<span class="pc[ "]/g) || []).length >= 168 && (progPage.match(/<tr class="r\d+"><th scope="row">/g) || []).length === 7 && /<th scope="col">Usikkerhed<\/th>/.test(progPage), '/prognose: 168 søjler, syv dage som tekst og kolonnen Usikkerhed');
+  check((progPage.slice(progPage.indexOf('pris-card pp7')).match(/<span class="pc[ "]/g) || []).length >= 150 && (progPage.match(/<tr class="r\d+"><th scope="row">/g) || []).length === 7 && /<th scope="col">Usikkerhed<\/th>/.test(progPage), '/prognose: 7 døgns søjler (fra seks timer før nu, 151-168), syv dage som tekst og kolonnen Usikkerhed');
   check(!/\b10 (døgn|dage)|ti døgn|Nu og 2 døgn frem|id="fcArea"/i.test(progPage) && /Sådan laves prognosen/.test(progPage) && /Det kan prognosen ikke/.test(progPage), '/prognose: ingen 10 døgn, intet af den gamle side, og de to tekstblokke');
   check(!/\bpp7\b|Usikkerhed/.test(home.body.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), 'forside: ingen 7 døgn og ingen Usikkerhed på de andre sider');
 
