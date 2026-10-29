@@ -370,7 +370,7 @@ async function main() {
   }
   {
     const it = await get('/it/prezzo-luce');
-    check((it.body.replace(/<script[\s\S]*?<\/script>/g, '').match(/role="tab" id="zt-/g) || []).length === 0 && /Nord/.test(one(it.body, /<title>([^<]*)<\/title>/)), '/it/prezzo-luce: én zone (Nord), ingen faner');
+    check((it.body.replace(/<script[\s\S]*?<\/script>/g, '').match(/id="zt-|data-zone="/g) || []).length === 0 && /Nord/.test(one(it.body, /<title>([^<]*)<\/title>/)), '/it/prezzo-luce: én zone (Nord), ingen faner');
     check((await get('/ie/electricity-price')).status === 404, '/ie/electricity-price: 404 (ikke længere en side)');
     for (const z of ['de', 'fr', 'pl', 'it-n']) {
       const a = await get('/api/nordic?zone=' + z);

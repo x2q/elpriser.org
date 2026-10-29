@@ -366,9 +366,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     ok(/huggingface/.test(pctx.prisZoneList('no/strompris', Object.fromEntries(pctx.PRIS_COUNTRIES['no/strompris'].zones.map(k => [k, eu(k, 2, 10)])), D0)), 'NO: tekstblokken peger stadig på modellen');
   }
   // The country pages' pieces.
-  const tabs = pctx.prisZoneTabs('no/strompris', 'no2');
-  ok((tabs.match(/role="tab"/g) || []).length === 5 && /href="#no2" data-zone="no2" aria-selected="true" tabindex="0">NO2<small>Kristiansand<\/small>/.test(tabs) && (tabs.match(/tabindex="-1"/g) || []).length === 4 && /role="tablist" aria-label="Prisområde"/.test(tabs), 'zone-fanerne: tablist, valgt fane har tabindex 0 og by');
-  ok(pctx.prisZoneTabs('fi/sahkon-hinta', 'fi') === '' && /aria-label="Elområde"/.test(pctx.prisZoneTabs('sv/elpris', 'se3')), 'Finland har ingen faner; Sverige siger Elområde');
+  ok(!('prisZoneTabs' in pctx) && !/zoneTabs/.test(JSON.stringify(Object.values(pctx.PRIS_I18N))), 'ingen zonefaner: funktionen og de otte sprogs fanetekster er væk (zonen vælges i stedsdialogen)');
   ok(pctx.prisHref('no5') === '/no/strompris#no5' && pctx.prisHref('fi') === '/fi/sahkon-hinta' && pctx.prisHref('dk2') === '/dk2' && pctx.prisHref('nl') === '/nl/stroomprijs', 'prisHref: landesidens anker, Finland og Holland uden anker, DK');
   ok(pctx.PRIS_COUNTRIES['no/strompris'].def === 'no1' && pctx.PRIS_COUNTRIES['sv/elpris'].def === 'se3' && pctx.PRIS_COUNTRIES['no/strompris'].zones.every(k => pctx.ZONES[k].lang === 'nb'), 'landenes startzone og sprog');
   ok(Object.values(pctx.ZONES).every(z => z.name && z.city && z.cur && z.rate > 0 && z.sub) && Object.keys(pctx.ZONES).length === 17, 'ZONES: 17 områder med navn, by, valuta, kurs og enhed');

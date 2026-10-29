@@ -981,7 +981,7 @@ var PRIS_I18N={
     cheaper:'Billigere',cheapest24:'Billigste time de næste 24 timer',lo:'billigst',hi:'dyrest',
     next:'Næste',p2:'2 døgn',p5:'5 døgn',p7:'7 døgn',period:'Periode',fc:'Prognose',actual:'Børspris',
     byDay:'Dag for dag',day:'Dag',range:'Spænd',type:'Type',none:'Priserne kunne ikke hentes lige nu.',
-    cap:'Spotpris uden moms, afgifter og nettarif',h1:'Elpriser i Danmark i dag',zoneTabs:'Prisområde',
+    cap:'Spotpris uden moms, afgifter og nettarif',h1:'Elpriser i Danmark i dag',
     zonesH:'Elpriser i Danmark',avg:'gns.',note:'Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder. Omregnet fra EUR med Den Europæiske Centralbanks dagskurs.',model:'Se modellen på Hugging Face'},
   nb:{wd:['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'],ws:['søn','man','tir','ons','tor','fre','lør'],
     mon:['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'],dot:'.',
@@ -990,7 +990,7 @@ var PRIS_I18N={
     cheaper:'Billigere',cheapest24:'Billigste time de neste 24 timene',lo:'billigst',hi:'dyrest',
     next:'Neste',p2:'2 døgn',p5:'5 døgn',p7:'7 døgn',period:'Periode',fc:'Prognose',actual:'Børspris',
     byDay:'Dag for dag',day:'Dag',range:'Spenn',type:'Type',none:'Prisene kunne ikke hentes akkurat nå.',
-    cap:'Spotpris uten mva, avgifter og nettleie',h1:'Strømpris i Norge: i dag og prognose for de neste 5 døgnene',zoneTabs:'Prisområde',
+    cap:'Spotpris uten mva, avgifter og nettleie',h1:'Strømpris i Norge: i dag og prognose for de neste 5 døgnene',
     zonesH:'Strømpriser i Norge etter by og prisområde',avg:'snitt',note:'Prognosen kommer fra én åpen maskinlæringsmodell for alle 13 prisområder. Omregnet fra EUR med Den europeiske sentralbankens daglige kurs.',model:'Se modellen på Hugging Face'},
   sv:{wd:['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'],ws:['sön','mån','tis','ons','tors','fre','lör'],
     mon:['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'],dot:'',
@@ -999,7 +999,7 @@ var PRIS_I18N={
     cheaper:'Billigare',cheapest24:'Billigaste timmen de närmaste 24 timmarna',lo:'billigast',hi:'dyrast',
     next:'Kommande',p2:'2 dygn',p5:'5 dygn',p7:'7 dygn',period:'Period',fc:'Prognos',actual:'Börspris',
     byDay:'Dag för dag',day:'Dag',range:'Spann',type:'Typ',none:'Priserna kunde inte hämtas just nu.',
-    cap:'Spotpris utan moms, skatter och nätavgift',h1:'Elpris i Sverige: idag och prognos för de närmaste 5 dygnen',zoneTabs:'Elområde',
+    cap:'Spotpris utan moms, skatter och nätavgift',h1:'Elpris i Sverige: idag och prognos för de närmaste 5 dygnen',
     zonesH:'Elpriser i Sverige per stad och elområde',avg:'snitt',note:'Prognosen kommer från en öppen maskininlärningsmodell för alla 13 elområden. Omräknat från EUR med Europeiska centralbankens dagliga kurs.',model:'Se modellen på Hugging Face'},
   fi:{wd:['sunnuntai','maanantai','tiistai','keskiviikko','torstai','perjantai','lauantai'],ws:['su','ma','ti','ke','to','pe','la'],
     mon:['tammik.','helmik.','maalisk.','huhtik.','toukok.','kesäk.','heinäk.','elok.','syysk.','lokak.','marrask.','jouluk.'],dot:'.',
@@ -1008,7 +1008,7 @@ var PRIS_I18N={
     cheaper:'Halvempi',cheapest24:'Halvin tunti seuraavan 24 tunnin aikana',lo:'halvin',hi:'kallein',
     next:'Seuraavat',p2:'2 vrk',p5:'5 vrk',p7:'7 vrk',period:'Jakso',fc:'Ennuste',actual:'Pörssihinta',
     byDay:'Päivä päivältä',day:'Päivä',range:'Vaihteluväli',type:'Tyyppi',none:'Hintoja ei voitu hakea juuri nyt.',
-    cap:'Pörssihinta ilman arvonlisäveroa, veroja ja siirtomaksua',h1:'Sähkön hinta Suomessa: tänään ja ennuste seuraaville 5 vuorokaudelle',zoneTabs:'Hinta-alue',
+    cap:'Pörssihinta ilman arvonlisäveroa, veroja ja siirtomaksua',h1:'Sähkön hinta Suomessa: tänään ja ennuste seuraaville 5 vuorokaudelle',
     zonesH:'Sähkön hinta Suomessa',avg:'keskihinta',note:'Ennuste tulee yhdestä avoimesta koneoppimismallista, joka kattaa kaikki 13 hinta-aluetta. Muunnettu euroista Euroopan keskuspankin päiväkurssilla.',model:'Katso malli Hugging Facessa'},
   nl:{wd:['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'],ws:['zo','ma','di','wo','do','vr','za'],
     mon:['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],dot:'',
@@ -1017,7 +1017,7 @@ var PRIS_I18N={
     cheaper:'Goedkoper',cheapest24:'Goedkoopste uur van de komende 24 uur',lo:'goedkoopst',hi:'duurst',
     next:'Komende',p2:'2 dagen',p5:'5 dagen',p7:'7 dagen',period:'Periode',fc:'Prognose',actual:'Beursprijs',
     byDay:'Dag voor dag',day:'Dag',range:'Bereik',type:'Type',none:'De prijzen konden nu niet worden opgehaald.',
-    cap:'Spotprijs zonder btw, belastingen en netkosten',h1:'Stroomprijs in Nederland: vandaag en prognose voor de komende 5 dagen',zoneTabs:'Prijsgebied',
+    cap:'Spotprijs zonder btw, belastingen en netkosten',h1:'Stroomprijs in Nederland: vandaag en prognose voor de komende 5 dagen',
     zonesH:'Stroomprijs in Nederland',avg:'gem.',note:'De prognose komt van één open machinelearningmodel voor alle 13 prijsgebieden. Prijzen in euro, uitgedrukt in cent per kWh.',model:'Bekijk het model op Hugging Face'},
   // The four EU price pages (Germany, France, Poland, Northern Italy) show ACTUAL day-ahead prices only (PRIS_ACT): no
   // forecast, so `fc` is the same word as `actual`, and the tables carry three more keys: act1 / act2, the card title for one
@@ -1032,7 +1032,7 @@ var PRIS_I18N={
     cheaper:'Günstiger',cheapest24:'Günstigste Stunde der nächsten 24 Stunden',lo:'günstigste Stunde',hi:'teuerste Stunde',
     next:'Nächste',p2:'2 Tage',p5:'5 Tage',p7:'7 Tage',period:'Zeitraum',fc:'Day-Ahead-Preis',actual:'Day-Ahead-Preis',
     byDay:'Tag für Tag',day:'Tag',range:'Spanne',type:'Art',none:'Die Preise konnten gerade nicht geladen werden.',
-    cap:'Börsenstrompreis (Day-Ahead) ohne MwSt., Steuern, Abgaben und Netzentgelte',h1:'Strompreis in Deutschland: heute und morgen',zoneTabs:'Gebotszone',
+    cap:'Börsenstrompreis (Day-Ahead) ohne MwSt., Steuern, Abgaben und Netzentgelte',h1:'Strompreis in Deutschland: heute und morgen',
     zonesH:'Strompreis in Deutschland',avg:'Ø',note:'Stundenmittel der Viertelstundenpreise, von elpriser.org berechnet (gegenüber den Originaldaten verändert). Deutschland und Luxemburg bilden eine gemeinsame Gebotszone. Quelle:',model:'Bundesnetzagentur | SMARD.de',
     act1:'Heute',act2:'Heute und morgen',cheapRest:'Günstigste Stunde des restlichen Tages'},
   fr:{wd:['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'],ws:['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'],
@@ -1042,7 +1042,7 @@ var PRIS_I18N={
     cheaper:'Moins cher',cheapest24:'Heure la moins chère des 24 prochaines heures',lo:'heure la moins chère',hi:'heure la plus chère',
     next:'Prochains',p2:'2 jours',p5:'5 jours',p7:'7 jours',period:'Période',fc:'Prix day-ahead',actual:'Prix day-ahead',
     byDay:'Jour par jour',day:'Jour',range:'Fourchette',type:'Type',none:'Les prix n’ont pas pu être chargés pour le moment.',
-    cap:'Prix spot day-ahead hors TVA, taxes et frais de réseau',h1:'Prix de l’électricité en France : aujourd’hui et demain',zoneTabs:'Zone de prix',
+    cap:'Prix spot day-ahead hors TVA, taxes et frais de réseau',h1:'Prix de l’électricité en France : aujourd’hui et demain',
     zonesH:'Prix de l’électricité en France',avg:'moy.',note:'Moyennes horaires des prix au quart d’heure, calculées par elpriser.org (données modifiées par rapport à l’original). Source :',model:'Bundesnetzagentur | SMARD.de',
     act1:'Aujourd’hui',act2:'Aujourd’hui et demain',cheapRest:'Heure la moins chère du reste de la journée'},
   pl:{wd:['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'],ws:['niedz.','pon.','wt.','śr.','czw.','pt.','sob.'],
@@ -1052,7 +1052,7 @@ var PRIS_I18N={
     cheaper:'Taniej',cheapest24:'Najtańsza godzina w ciągu najbliższych 24 godzin',lo:'najtańsza godzina',hi:'najdroższa godzina',
     next:'Najbliższe',p2:'2 dni',p5:'5 dni',p7:'7 dni',period:'Okres',fc:'Cena RDN',actual:'Cena RDN',
     byDay:'Dzień po dniu',day:'Dzień',range:'Zakres',type:'Rodzaj',none:'Nie udało się teraz pobrać cen.',
-    cap:'Cena giełdowa na rynku dnia następnego (RDN) bez VAT, podatków i opłat sieciowych',h1:'Cena prądu w Polsce: dziś i jutro',zoneTabs:'Strefa cenowa',
+    cap:'Cena giełdowa na rynku dnia następnego (RDN) bez VAT, podatków i opłat sieciowych',h1:'Cena prądu w Polsce: dziś i jutro',
     zonesH:'Cena prądu w Polsce',avg:'śr.',note:'Średnie godzinowe z cen kwadransowych, przeliczone z euro według dziennego kursu referencyjnego EBC przez elpriser.org (dane zmienione względem oryginału). Źródło:',model:'Bundesnetzagentur | SMARD.de',
     act1:'Dziś',act2:'Dziś i jutro',cheapRest:'Najtańsza godzina do końca dnia'},
   it:{wd:['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'],ws:['dom','lun','mar','mer','gio','ven','sab'],
@@ -1062,7 +1062,7 @@ var PRIS_I18N={
     cheaper:'Più basso',cheapest24:'Ora più economica delle prossime 24 ore',lo:'ora più economica',hi:'ora più cara',
     next:'Prossimi',p2:'2 giorni',p5:'5 giorni',p7:'7 giorni',period:'Periodo',fc:'Prezzo day-ahead',actual:'Prezzo day-ahead',
     byDay:'Giorno per giorno',day:'Giorno',range:'Intervallo',type:'Tipo',none:'Non è stato possibile caricare i prezzi in questo momento.',
-    cap:'Prezzo day-ahead al netto di IVA, imposte e costi di rete',h1:'Prezzo dell’energia elettrica in Italia del Nord: oggi e domani',zoneTabs:'Zona di mercato',
+    cap:'Prezzo day-ahead al netto di IVA, imposte e costi di rete',h1:'Prezzo dell’energia elettrica in Italia del Nord: oggi e domani',
     zonesH:'Prezzo dell’energia elettrica in Italia del Nord',avg:'media',note:'Zona di mercato Nord. Medie orarie dei prezzi al quarto d’ora, calcolate da elpriser.org (dati modificati rispetto all’originale). Fonte:',model:'Bundesnetzagentur | SMARD.de',
     act1:'Oggi',act2:'Oggi e domani',cheapRest:'Ora più economica del resto della giornata'}
 };
@@ -1747,16 +1747,6 @@ function prisHref(k){
   return /^dk/.test(k)?'/'+k:'';
 }
 
-/** The zone tabs of a country page (none for a single zone): real links with the
- *  tablist roles; the page's script moves the selection. */
-function prisZoneTabs(pg,sel){
-  var C=PRIS_COUNTRIES[pg];
-  if(C.zones.length<2)return '';
-  return '<div class="zt" role="tablist" aria-label="'+PRIS_I18N[C.lang].zoneTabs+'">'+C.zones.map(function(k){
-    return '<a role="tab" id="zt-'+k+'" href="#'+k+'" data-zone="'+k+'" aria-selected="'+(k===sel)+'" tabindex="'+(k===sel?0:-1)+'">'
-      +ZONES[k].name+'<small>'+ZONES[k].city+'</small></a>';}).join('')+'</div>';
-}
-
 /** The country page's text block, for crawlers and for anyone who wants every zone at a glance:
  *  each zone's city and name with today's and tomorrow's average, then the basis and the model (an `act` page:
  *  the basis, the note that the data were changed, and the source with its licence — prisCredit()). */
@@ -2300,8 +2290,6 @@ async function renderSPA(context, pathname, meta, opts = {}) {
     if (C) {
       const L = PRIS_I18N[C.lang], raw = raws[C.def];
       html = html.replace('id="zH1">&nbsp;<', `id="zH1">${L.h1}<`);
-      html = html.replace('<!--SSR_ZONE_TABS-->', prisZoneTabs(pg, C.def));
-      if (C.zones.length > 1) html = html.replace('id="zPanel"', `id="zPanel" role="tabpanel" aria-labelledby="zt-${C.def}"`);
       if (raw) html = html.replace('<!--SSR_PRIS-->', prisHTML(zoneToPrisDays(raw, raw.zoneInfo, todayDk), todayDk, nowH,
         { zone: C.def, period: 2, cfg: prisCountryCfg(pg), key: C.def, where: `${ZONES[C.def].name} ${ZONES[C.def].city}` }));
       html = html.replace('<!--SSR_ZONE_LIST-->', prisZoneList(pg, raws, todayDk));

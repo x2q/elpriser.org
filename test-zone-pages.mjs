@@ -109,10 +109,8 @@ for (const [p, w] of Object.entries(PAGES)) {
   // One <tbody> per period over the hours its chart shows: 2 døgn reaches into day three (from hour 1 on), 5 døgn is the five days there are.
   ok((h.match(/<tr><th scope="row">/g) || []).length === (NOW_H > 0 ? 3 : 2) + 5 && !/class="r10"/.test(h), `${p}: dagslisten har tre (to) rækker for 2 døgn og fem for 5 døgn, ingen skjult dag seks-ti`);
   ok(!TEN.test(h), `${p}: ingen tekst om 10 døgn`, (h.match(TEN) || [])[0]);
-  // The tab row.
-  ok((h.match(/role="tab" id="zt-/g) || []).length === w.tabs, `${p}: ${w.tabs} zone-faner`);
-  if (w.tabs) ok(/role="tablist" aria-label="[^"]+"/.test(h) && (h.match(/aria-selected="true" tabindex="0"/g) || []).length === 1 && (h.match(/tabindex="-1"/g) || []).length === w.tabs - 1 && /id="zPanel" role="tabpanel" aria-labelledby="zt-/.test(h),
-    `${p}: tablist-semantik med roving tabindex og et tabpanel`);
+  // No tab row: the zone is picked in the place dialog (data-zone links there), the page itself carries no tablist.
+  ok(!/id="zt-|id="zTabs"|class="zt"|id="zPanel" role="tabpanel"/.test(h.replace(/<script[\s\S]*?<\/script>/g, '')) && (h.match(/<dialog id="netDialog"[\s\S]*?<\/dialog>/)[0].match(/data-zone="/g) || []).length === w.tabs, `${p}: ingen zone-faner på siden, og ${w.tabs} zonelinks i stedsdialogen`);
   // The crawlable text block: every zone, its city, and prices.
   const list = h.slice(h.indexOf('<section class="zl"'), h.indexOf('</section>', h.indexOf('<section class="zl"')));
   ok(w.zones.every(c => list.includes(`<b>${c}</b>`)), `${p}: tekstblokken nævner alle byer`, list.slice(0, 200));
@@ -192,7 +190,7 @@ for (const [p, w] of Object.entries(PAGES)) {
   missing = new Set(['no1']);
   store.clear();
   const r2 = await get('/no/strompris');
-  ok(r2.status === 200 && !r2.page.includes('<div class="pris"') && /role="tablist"/.test(r2.page) && store.size === 0, 'uden NO1 (førstevalget) ingen skærm, men fanerne og teksten er der, og intet huskes');
+  ok(r2.status === 200 && !r2.page.includes('<div class="pris"') && /data-zone="no2"/.test(r2.page) && store.size === 0, 'uden NO1 (førstevalget) ingen skærm, men zonerne i stedsdialogen og teksten er der, og intet huskes');
   missing = new Set();
 }
 
@@ -254,7 +252,7 @@ for (const [p, w] of Object.entries(ACT)) {
   ok(!/ENTSO/.test(raw.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '')), `${p}: ENTSO-E nævnes ikke noget sted på siden`);
   ok(w.zones.every(c => list.includes(`<b>${c}</b>`)) && (list.match(/<li>/g) || []).length === w.zones.length, `${p}: tekstblokken nævner zonen`, list.slice(0, 160));
   ok(new RegExp(`${w.unit}/kWh`).test(list) && /(Ø|moy\.|śr\.|media) \S+ [\d.,]+/.test(list), `${p}: tekstblokken har dagens og morgendagens gennemsnit`);
-  ok((h.match(/role="tab" id="zt-/g) || []).length === 0, `${p}: ingen zone-faner (én zone)`);
+  ok(!/data-zone="/.test(h.match(/<dialog id="netDialog"[\s\S]*?<\/dialog>/)[0]), `${p}: ingen zonevalg i stedsdialogen (én zone)`);
   // The chrome: the nine countries (footer list) in the page's language, a slim footer whose data line names ENTSO-E and not Energi Data Service.
   const hd = h.slice(h.indexOf('<header'), h.indexOf('</header>')), ft = h.slice(h.indexOf('<footer'), h.indexOf('</footer>'));
   const nav = [...ft.matchAll(/<li><a href="([^"]+)"([^>]*)>([^<]+)<\/a><\/li>/g)];

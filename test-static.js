@@ -273,7 +273,7 @@ test('server: every top-level piece the renderer calls still exists', () => {
   const SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const required = [
     'var ZONES', 'var PRIS_I18N', 'var PRIS_COUNTRIES', 'var PRIS_STD', 'var PRIS_FC', 'const ZONE_SSR_VERSION', 'const CITY_SSR_VERSION', 'const PROGNOSE_SSR_VERSION', 'function renderCachedPage(', 'function cityHTML(', 'function prisScreen(', 'function fetchNetForecast(',
-    'function zoneToPrisDays(', 'function prisZoneTabs(', 'function prisZoneList(', 'function prisNordenHTML(',
+    'function zoneToPrisDays(', 'function prisZoneList(', 'function prisNordenHTML(',
     'function buildSitemap(',
     'const CONTENT_LASTMOD', 'const SITEMAP_URLS',
   ];
@@ -281,7 +281,7 @@ test('server: every top-level piece the renderer calls still exists', () => {
   assert.deepEqual(missing, [], `functions/[[path]].js is missing: ${missing.join(', ')}`);
 
   // And nothing may be referenced that is no longer defined.
-  for (const name of ['zoneToPrisDays', 'prisZoneTabs', 'prisZoneList', 'prisNordenHTML', 'renderCachedPage', 'cityHTML', 'prisScreen', 'fetchNetForecast', 'withNetChip']) {
+  for (const name of ['zoneToPrisDays', 'prisZoneList', 'prisNordenHTML', 'renderCachedPage', 'cityHTML', 'prisScreen', 'fetchNetForecast', 'withNetChip']) {
     const called = new RegExp(`[^a-zA-Z.]${name}\\s*\\(`).test(
       SRC.slice(SRC.indexOf('async function renderHomepage')));
     const defined = SRC.includes(`function ${name}(`);
@@ -460,12 +460,12 @@ test('seo: no heading tag written inside an HTML comment', () => {
   assert.deepEqual(bad, [], `heading tag inside a comment: ${bad.join(' | ')}`);
 });
 
-test('foreign-area pages: one section with tabs, the Pris screen and a text block — and none of the old zone page is left', () => {
+test('foreign-area pages: one section with the Pris screen and a text block (the zone is picked in the place dialog, no tabs) — and none of the old zone page is left', () => {
   const main = INDEX.slice(INDEX.indexOf('<main style="display:none" data-page="zone"'), INDEX.indexOf('<!-- ═══════ NORDEN'));
   assert.ok(main.length > 100, 'the zone section is gone');
   const at = x => main.indexOf(x);
-  assert.ok(at('<h1 class="vh" id="zH1">') > 0 && at('<!--SSR_ZONE_TABS-->') > at('id="zH1"') && at('<!--SSR_PRIS-->') > at('<!--SSR_ZONE_TABS-->') && at('<!--SSR_ZONE_LIST-->') > at('<!--SSR_PRIS-->'),
-    'the section is not h1, tabs, Pris screen, text block in that order');
+  assert.ok(at('<h1 class="vh" id="zH1">') > 0 && at('<!--SSR_PRIS-->') > at('id="zH1"') && at('<!--SSR_ZONE_LIST-->') > at('<!--SSR_PRIS-->') && !/SSR_ZONE_TABS|id="zTabs"/.test(INDEX),
+    'the section is not h1, Pris screen, text block in that order, or there are still zone tabs');
   assert.ok(/<div class="pris-page" data-pris-mount id="zPanel"><!--SSR_PRIS--><\/div>/.test(main), 'the screen is not the canonical Pris mount');
   assert.equal((main.match(/<h[1-6]/g) || []).length, 1, 'the zone section carries a heading of its own besides the h1');
   // NO second renderer and no per-language copies: the old page's code, markup and strings are gone.
