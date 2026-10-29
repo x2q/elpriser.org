@@ -1446,7 +1446,7 @@ function prisSwitch(view,cls,spotLabel){
  *  of every hour in data-tip for the browser's hover/tap tooltip. The first two
  *  days read "I dag" / "I morgen", later ones "søn 17. okt". */
 function prisChart(rows,nDays,o){
-  var C=o.C,L=C.L,n=nDays*24,st=o.start||0,vals=[],i;
+  var C=o.C,L=C.L,n=o.len||nDays*24,st=o.start||0,vals=[],i;
   for(i=0;i<rows.length;i++)for(var h0=0;h0<24;h0++)if(rows[i].ps[h0]!=null&&i*24+h0>=st&&i*24+h0<st+n)vals.push(rows[i].ps[h0]);
   var ax=prisAxis(vals,C.sc),span=ax.hi-ax.lo;
   var ref=o.ref||vals;
@@ -1494,7 +1494,7 @@ function prisChart(rows,nDays,o){
   var aria=o.title+': '+(ex.lo?L.lo+' '+prisNum(ex.lo.p,C.d)+at(ex.lo)+', ':'')
     +(ex.hi?L.hi+' '+prisNum(ex.hi.p,C.d)+at(ex.hi)+'.':'');
   return '<div class="pris-plotwrap"><span class="pris-unit">'+C.u+'/kWh</span><div class="pris-yl">'+yl+'</div>'
-    +'<div class="pris-plot" role="img" tabindex="0" aria-label="'+prisEsc(aria)+'" data-n="'+n+'">'
+    +'<div class="pris-plot" role="img" tabindex="0" aria-label="'+prisEsc(aria)+'" data-n="'+n+'"'+(st?' data-st="'+st+'"':'')+'>'
     +grid+seps+'<div class="pris-cols">'+cols+'</div>'+fc+'<div class="pris-tip" role="status" hidden></div></div>'
     +'<div class="pris-xl'+(o.xDays?' days':'')+'">'+xl+'</div></div>';
 }
@@ -1652,10 +1652,11 @@ function prisHTML(days,todayStr,nowHour,o){
   var cards='',tiles='';
   cfg.periods.forEach(function(p){
     var t=C.act?actT:L.next+' '+L['p'+p],n=C.act?an:p===2?2:all.length?Math.min(p,all.length):p;
-    // 2 døgn counts 48 hours on from the current hour, not today and tomorrow; an actual-prices page keeps its calendar days.
-    var st=p===2&&!C.act&&nowSlot>0?nowSlot:0;
+    // 2 døgn counts 48 hours on from the current hour (with the six hours before it, dimmed), not today and tomorrow; an
+    // actual-prices page keeps its calendar days.
+    var win=p===2&&!C.act&&nowSlot>0,back=win?Math.min(6,nowSlot):0,st=win?nowSlot-back:0;
     cards+='<section class="pris-card pp'+p+'" aria-label="'+t+'">'+head(t)
-      +prisChart(all.slice(0,n+(st?1:0)),n,p===2?{ref:td||[],nowSlot:nowSlot,start:st,title:C.act?L.hourly+', '+actT.toLowerCase():ttl+L.p2,C:C}
+      +prisChart(all.slice(0,n+(win?1:0)),n,p===2?{ref:td||[],nowSlot:nowSlot,start:st,len:win?back+48:0,title:C.act?L.hourly+', '+actT.toLowerCase():ttl+L.p2,C:C}
         :{nowSlot:nowSlot,xDays:true,seps:true,title:ttl+L['p'+p],C:C})+'</section>';
     tiles+=prisTiles(all,nowHour,p,'pp'+p,C);
   });

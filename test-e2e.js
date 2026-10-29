@@ -496,7 +496,9 @@ async function startServer() {
     const nowHeading = (await page.locator('.pris-modebox .pris-bdh').textContent()).trim();
     const nowRows = await panelRows('.pris-modebox');
     const box = await page.locator('.pp2 .pris-plot').boundingBox();
-    await page.mouse.click(box.x + box.width * (24 + 13.5) / 48, box.y + box.height * 0.7);
+    // The window opens up to six hours before now: tomorrow 13 is slot 37 minus the hour it opens on.
+    const open = hourDk() - Math.min(6, hourDk()), len = 48 + Math.min(6, hourDk());
+    await page.mouse.click(box.x + box.width * (24 + 13 - open + 0.5) / len, box.y + box.height * 0.7);
     assert.equal((await page.locator('.pris-modebox .pris-bdh').textContent()).trim(), 'Sådan er prisen i morgen kl. 13 sammensat');
     const rows = await panelRows('.pris-modebox');
     assert.equal(rows[3][0], 'Nettarif (N1, kl. 13)');
@@ -703,9 +705,9 @@ async function startServer() {
     await page.goto(BASE + '/dk1');
     await page.waitForSelector('.pp2 .pris-plot');
     const box = await page.locator('.pp2 .pris-plot').boundingBox();
-    // 2 døgn is 48 hours on from the current hour: the first bar is now, the last is 47 hours later.
-    const now = hourDk(), last = (now + 47) % 24;
-    for (const [fx, hour, day] of [[0.005, now, 'I dag'], [0.995, last, now === 0 ? 'I morgen' : null]]) {
+    // 2 døgn is the six hours before now (fewer in the small hours) and 48 hours on from the current hour: the last bar is 47 hours after now.
+    const now = hourDk(), first = now - Math.min(6, now), last = (now + 47) % 24;
+    for (const [fx, hour, day] of [[0.005, first, 'I dag'], [0.995, last, now === 0 ? 'I morgen' : null]]) {
       await page.mouse.move(box.x + box.width * fx, box.y + box.height * 0.7);
       const tip = page.locator('.pp2 .pris-tip');
       await tip.waitFor({ state: 'visible' });
@@ -1087,7 +1089,7 @@ async function startServer() {
     await page.goto(BASE + '/prognose');
     await page.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
     const want = {
-      2: { card: 'Næste 2 døgn', bars: 48, rows: 2, unc: ['—', 'Lav'], tile: 'pp2' },
+      2: { card: 'Næste 2 døgn', bars: 48 + Math.min(6, hourDk()), rows: 2, unc: ['—', 'Lav'], tile: 'pp2' },
       5: { card: 'Næste 5 døgn', bars: 120, rows: 5, unc: ['—', 'Lav', 'Lav', 'Middel', 'Middel'], tile: 'pp5' },
       7: { card: 'Næste 7 døgn', bars: 168, rows: 7, unc: ['—', 'Lav', 'Lav', 'Middel', 'Middel', 'Middel', 'Høj'], tile: 'pp7' },
     };
@@ -1832,7 +1834,7 @@ async function startServer() {
     assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pris-ct').textContent(), 'Komende 5 dagen');
     await page.locator('main[data-page="zone"] [data-pris-period="2"]').click();
     assert.equal(await page.locator('main[data-page="zone"] .pris').getAttribute('data-period'), '2');
-    assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp2 .pc[data-tip]').count(), 48);
+    assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp2 .pc[data-tip]').count(), 48 + Math.min(6, hourDk()));
     const list = await page.locator('#zList').textContent();
     assert.match(list, /Nederland \(NL\): gem\. vandaag [\d,]+ cent\/kWh, gem\. morgen [\d,]+ cent\/kWh/);
     const t = await page.evaluate(() => document.querySelector('main[data-page="zone"]').innerText);
