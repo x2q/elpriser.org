@@ -293,7 +293,7 @@ async function main() {
   const panel1 = (bdN1.body.match(/<details class="pris-bd">[\s\S]*?<\/details>/) || [''])[0];
   check(/^<details class="pris-bd"><summary class="pris-cap">Inkl\. nettarif, afgifter og moms</.test(panel1), '/dk1/n1: billedteksten er en lukket <details>');
   // Only the markup counts: the page's own script contains the template '(open?\' open\':\'\')'.
-  check(!/<details[^>]* open/.test(bdN1.body.replace(/<script[\s\S]*?<\/script>/g, '')), '/dk1/n1: åbnes først af besøgende');
+  check(!/<details class="pris-bd"[^>]* open/.test(bdN1.body.replace(/<script[\s\S]*?<\/script>/g, '')), '/dk1/n1: åbnes først af besøgende');
   for (const label of ['Spotpris \\(Nord Pool\\)', 'Systemtarif \\(Energinet\\)', 'Transmissionstarif \\(Energinet\\)', 'Nettarif \\(N1, kl\\. \\d\\d\\)', 'Elafgift', 'Moms \\(25 %\\)', 'I alt'])
     check(new RegExp(`<span class="l">${label}</span><b>-?\\d+,\\d`).test(panel1), `/dk1/n1: rækken ${label.replace(/\\/g, '')} står i HTML'en`);
   check(/Sådan er prisen kl\. \d\d sammensat/.test(panel1) && !/NaN|undefined|Infinity/.test(panel1), '/dk1/n1: overskriften for nu, ingen NaN');
@@ -309,7 +309,7 @@ async function main() {
   check(/^<details class="pris-bd"><summary class="pris-cap">Inkl\. Energinets tariffer, afgifter og moms</.test(panelHome) && !/Nettarif \(/.test(panelHome)
     && (panelHome.match(/<span class="l">/g) || []).length === 6, 'forside: uden net, fem led plus I alt og ingen Nettarif-række');
 
-  const dayRows = (home.body.match(/<tr class="r\d+"><th scope="row">/g) || []).length;
+  const dayRows = (home.body.match(/<tr(?: class="r10")?><th scope="row">/g) || []).length;
   check(dayRows >= 8, 'forside: dagslisten står som tekst', `fandt ${dayRows} rækker`);
   check(/class="(real|fc)">(Børspris|Prognose)</.test(home.body), 'forside: døgnene er mærket børspris eller prognose');
   check(/<td>\d,\d\d–\d,\d\d<\/td>/.test(home.body), 'forside: døgnenes spænd står som tekst');
@@ -327,7 +327,7 @@ async function main() {
   const progPage = prog.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '');
   check(!prog.body.includes('<!--SSR_PRIS-->') && /<div class="pris" data-period="7" data-view="din" data-key="DK1\|din\|"/.test(progPage), '/prognose: Pris-skærmen er tegnet i HTML\'en for DK1 på 7 døgn');
   check([...progPage.matchAll(/data-pris-period="(\d)">([^<]*)</g)].map(m => m[2]).join('|') === '2 døgn|5 døgn|7 døgn' && (progPage.match(/<h1[ >]/g) || []).length === 1 && />Elprisprognose<\/h1>/.test(progPage), '/prognose: pillen er 2 | 5 | 7 døgn og der er én h1');
-  check((progPage.slice(progPage.indexOf('pris-card pp7')).match(/<span class="pc[ "]/g) || []).length >= 150 && (progPage.match(/<tr class="r\d+"><th scope="row">/g) || []).length === 7 && /<th scope="col">Usikkerhed<\/th>/.test(progPage), '/prognose: 7 døgns søjler (fra seks timer før nu, 151-168), syv dage som tekst og kolonnen Usikkerhed');
+  check((progPage.slice(progPage.indexOf('pris-card pp7')).match(/<span class="pc[ "]/g) || []).length >= 150 && ((progPage.match(/<tbody class="pp7">[\s\S]*?<\/tbody>/) || [''])[0].match(/<tr><th scope="row">/g) || []).length === 7 && /<th scope="col">Usikkerhed<\/th>/.test(progPage), '/prognose: 7 døgns søjler (fra seks timer før nu, 151-168), syv dage som tekst og kolonnen Usikkerhed');
   check(!/\b10 (døgn|dage)|ti døgn|Nu og 2 døgn frem|id="fcArea"/i.test(progPage) && /Sådan laves prognosen/.test(progPage) && /Det kan prognosen ikke/.test(progPage), '/prognose: ingen 10 døgn, intet af den gamle side, og de to tekstblokke');
   check(!/\bpp7\b|Usikkerhed/.test(home.body.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), 'forside: ingen 7 døgn og ingen Usikkerhed på de andre sider');
 
@@ -350,8 +350,8 @@ async function main() {
     check(sitemap.includes(p), `${p}: i sitemap`);
     if (unit) {
       const chrome = page.replace(/<!--[\s\S]*?-->/g, '');
-      check(/<html lang="[a-z]+" class="xc">/.test(r.body) && !/class="site-links"/.test(chrome) && /id="countryBtn"/.test(chrome) && /<footer class="sf sf-x"/.test(chrome) && /<a href="\/privatliv" hreflang="da">/.test(chrome), `${p}: landevælger (globus) uden landerække i headeren, slank fod på sidens sprog`);
-      check(!/id="netChip|class="app-btn|class="tabbar|id="netDialog|Smart hjem|Hent appen|Hovedmenu|Alle netselskaber/.test(chrome), `${p}: ingen dansk netchip, app-knap, menu, mobilbar eller netdialog`);
+      check(/<html lang="[a-z]+" class="xc">/.test(r.body) && !/class="site-links"/.test(chrome) && /id="netChip"/.test(chrome) && !/countryBtn/.test(chrome) && /<footer class="sf sf-x"/.test(chrome) && /<a href="\/privatliv" hreflang="da">/.test(chrome), `${p}: stedschip uden landerække i headeren, slank fod på sidens sprog`);
+      check(!/class="app-btn|class="tabbar|id="gpsBtn|netDlgDK|Smart hjem|Hent appen|Hovedmenu|Alle netselskaber/.test(chrome), `${p}: ingen dansk app-knap, menu, mobilbar eller netselskabsliste`);
     }
   }
   // The four EU pages show ACTUAL prices only (data CC BY 4.0 from Bundesnetzagentur | SMARD.de via Energy-Charts): one period, no forecast
