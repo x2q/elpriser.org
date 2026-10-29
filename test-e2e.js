@@ -301,8 +301,8 @@ async function startServer() {
       assert.equal(await page.locator(`main[data-page="start"] ${sel}`).count(), 0, `${sel} is back on the start page`);
     assert.equal((await page.locator('main[data-page="start"] [data-area-row] .gps-light').textContent()).trim(), 'Find dit netselskab');
     assert.deepEqual(await page.locator('main[data-page="start"] [data-area-row] a').allTextContents(), ['DK1 Vest', 'DK2 Øst']);
-    assert.equal(await page.locator('main[data-page="start"] a[href^="/dk1/"], main[data-page="start"] a[href^="/dk2/"]').count(), 0,
-      'net pages are reached through the dialog and the footer, not the start page body');
+    assert.deepEqual(await page.locator('main[data-page="start"] a[href^="/dk1/"], main[data-page="start"] a[href^="/dk2/"]').evaluateAll(as => as.map(a => a.getAttribute('href'))), ['/dk1/n1', '/dk1/konstant', '/dk2/radius'],
+      'the start page body links the three biggest net pages; the rest are reached through the dialog and the footer');
   });
 
   for (const [text, expectedUrl] of [['DK1 Vest', '/dk1'], ['DK2 Øst', '/dk2']]) {
@@ -1703,7 +1703,8 @@ async function startServer() {
       navCur: links.filter(a => a.getAttribute('aria-current') === 'page').map(a => a.textContent),
       navHeights: links.map(a => r(a).h), navVisible: links.map(a => r(a).r <= innerWidth + 1 && r(a).l >= -1),
       menu: q('.site-links')?.getAttribute('aria-label'), logo: q('.site-logo')?.textContent.trim(), logoHref: q('.site-logo')?.getAttribute('href'),
-      chip: !!q('#netChip'), app: !!q('.app-btn'), tabbar: !!q('#tabBar'), dialog: !!q('#netDialog'), actions: !!q('.site-actions'),
+      chip: !!q('#netChip'), app: !!q('.app-btn'), tabbar: !!q('#tabBar'), dialog: !!q('#netDialog'), actions: [...document.querySelectorAll('.site-actions > *')].map(x => x.id),
+      picker: { title: q('#countryDialogTitle')?.textContent, links: [...document.querySelectorAll('#countryDialog .cd-list a')].map(a => [a.querySelector('b').textContent, a.querySelector('span').textContent, a.getAttribute('href'), a.getAttribute('aria-current')]), label: q('#countryBtn')?.getAttribute('aria-label') },
       headText: q('.site-nav').innerText, footText: q('footer').innerText,
       footHeading: q('footer .sf-h')?.textContent, footLinks: [...document.querySelectorAll('footer .sf-chips a')].map(a => [a.textContent, a.getAttribute('href'), a.getAttribute('aria-current')]),
       privacy: (a => a && [a.textContent, a.getAttribute('href'), a.getAttribute('hreflang')])(q('footer .sf-legal a[href="/privatliv"]')),
@@ -1726,7 +1727,12 @@ async function startServer() {
         assert.deepEqual(s.navText, w.nav); assert.deepEqual(s.navHref, ['/dk1', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce']);
         assert.deepEqual(s.navCur, [w.cur], 'the current country is marked aria-current');
         assert.equal(s.menu, w.menu); assert.equal(s.logo, 'Elpriser'); assert.equal(s.logoHref, '/');
-        assert.deepEqual([s.chip, s.app, s.tabbar, s.dialog, s.actions], [false, false, false, false, false], 'no Danish net chip, app button, tab bar, net dialog or action row');
+        assert.deepEqual([s.chip, s.app, s.tabbar, s.dialog], [false, false, false, false], 'no Danish net chip, app button, tab bar or net dialog');
+        assert.deepEqual(s.actions, ['countryBtn'], 'the action row holds the country picker button and nothing Danish');
+        // The picker: the nine countries by their own names, in this page's language for its heading, this page's country marked.
+        assert.equal(s.picker.links.length, 9); assert.equal(s.picker.title, s.picker.label);
+        assert.deepEqual(s.picker.links.filter(x => x[3]).map(x => x[2]), [url], 'the page\'s own country is marked');
+        assert.ok(s.picker.links.some(x => x[0] === 'Danmark' && x[1] === 'Dansk' && x[2] === '/dk1'));
         assert.ok(!/Smart hjem|Hent appen|DK1 ·/.test(s.headText), `header text: ${s.headText}`);
         assert.ok(!DANISH_CHROME.test(s.footText), `footer text: ${s.footText}`);
         assert.equal(s.footers, 1); assert.equal(s.details, 0, 'a slim footer: no disclosure of net companies');
@@ -1773,6 +1779,35 @@ async function startServer() {
     await page.locator('#netChip').click();
     await page.locator('#netDialog a[href="/nl/stroomprijs"]').click();
     await page.waitForFunction(() => location.pathname === '/nl/stroomprijs');
+  });
+
+  await test('country picker: the globe opens the nine countries by their own names (this one marked), in the page\'s language; a country leads to its page and back', async () => {
+    await page.goto(BASE + '/');
+    const rows = () => page.evaluate(() => [...document.querySelectorAll('#countryDialog .cd-list a')].map(a => [a.querySelector('b').textContent, a.querySelector('span').textContent, a.getAttribute('aria-current')]));
+    assert.equal(await page.locator('#countryDialog[open]').count(), 0, 'closed until the globe is pressed');
+    await page.locator('header.site-nav #countryBtn').click();
+    await page.waitForSelector('#countryDialog[open]');
+    assert.equal((await page.locator('#countryDialogTitle').textContent()), 'Vælg land');
+    assert.deepEqual((await rows()).map(r => r[0]), ['Danmark', 'Norge', 'Sverige', 'Suomi', 'Nederland', 'Deutschland', 'France', 'Polska', 'Italia']);
+    assert.deepEqual((await rows()).filter(r => r[2]).map(r => r[0]), ['Danmark'], 'the Danish site marks Danmark');
+    assert.deepEqual((await rows())[2].slice(0, 2), ['Sverige', 'Svenska'], 'the language sits under the country');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#countryDialog[open]').count(), 0, 'Escape closes it');
+    await page.locator('#countryBtn').click();
+    await page.mouse.click(4, 4);
+    assert.equal(await page.locator('#countryDialog[open]').count(), 0, 'a click on the backdrop closes it');
+    await page.locator('#countryBtn').click();
+    await page.locator('#countryDialog a', { hasText: 'Sverige' }).click();
+    await page.waitForFunction(() => location.pathname === '/sv/elpris' && document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'se3');
+    assert.equal(await page.locator('#countryBtn').getAttribute('aria-label'), 'Välj land');
+    await page.locator('#countryBtn').click();
+    await page.waitForSelector('#countryDialog[open]');
+    assert.equal(await page.locator('#countryDialogTitle').textContent(), 'Välj land');
+    assert.deepEqual((await rows()).filter(r => r[2]).map(r => r[0]), ['Sverige'], 'the Swedish page marks Sverige');
+    await page.locator('#countryDialog a', { hasText: 'Danmark' }).click();
+    await page.waitForFunction(() => location.pathname === '/dk1');
+    await page.waitForSelector('main[data-page="prices"].active');
+    assert.equal(await page.locator('header.site-nav #countryBtn').getAttribute('aria-label'), 'Vælg land', 'the Danish chrome is back with its globe');
   });
 
   await test('tab switching still works with the localised chrome, and the chrome survives it unchanged', async () => {

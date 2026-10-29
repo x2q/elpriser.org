@@ -1801,7 +1801,9 @@ test('start page: no nøgletal block, no 14-button area cards — one compact ro
   assert.ok(/<button type="button" class="gps-light" onclick="openNetDialog\(\)"[^>]*>Find dit netselskab<\/button>/.test(row[1]), 'the button must open the net dialog');
   assert.deepEqual([...row[1].matchAll(/<a href="([^"]+)">([^<]+)<\/a>/g)].map(m => [m[1], m[2]]), [['/dk1', 'DK1 Vest'], ['/dk2', 'DK2 Øst']]);
   assert.ok(/<\/a> · <a/.test(row[1]), 'the two links read "DK1 Vest · DK2 Øst"');
-  assert.equal((start.match(/<a href="\/(dk[12])\/[a-z0-9-]+"/g) || []).length, 0, 'net pages are linked from the footer and the dialog, not from the start page body');
+  // The three most visited net pages are linked in a line of their own under the row; every other net page stays in the footer and the dialog.
+  assert.deepEqual([...start.matchAll(/<a href="(\/dk[12]\/[a-z0-9-]+)">([^<]+)<\/a>/g)].map(m => [m[1], m[2]]), [['/dk1/n1', 'N1'], ['/dk1/konstant', 'Konstant'], ['/dk2/radius', 'Radius']], 'the start page links exactly the three biggest net pages');
+  assert.ok(/<p class="area-links area-top" data-top-nets>Mest besøgte netselskaber: /.test(start), 'the three links sit in their own line, not in the area row');
   // The dialog the button opens keeps every net page reachable (built by buildNetDialog; the footer holds the static list).
   assert.ok(/id="netDlgDK1"/.test(INDEX) && /id="netDlgDK2"/.test(INDEX) && /function openNetDialog\(\)/.test(INDEX) && /function buildNetDialog\(\)/.test(INDEX), 'the net dialog');
   // What the page points at instead of the removed block:
@@ -1912,7 +1914,7 @@ test('header: "Hent appen" is a plain link to /download — the dialog, its scri
   assert.ok(INDEX.indexOf('class="app-btn"') < INDEX.indexOf('</header>'), 'it sits in the header');
   // The net dialog uses the same helpers and the same .pris-dialog CSS: both must survive.
   assert.ok(/function openDlg\(/.test(INDEX) && /<dialog id="netDialog"/.test(INDEX) && /\.pris-dialog\{/.test(INDEX), 'the net dialog is untouched');
-  assert.deepEqual([...INDEX.matchAll(/<dialog id="(\w+)"/g)].map(x => x[1]), ['infoModal', 'netDialog'], 'the app dialog is gone; the info modal and the net dialog remain');
+  assert.deepEqual([...INDEX.replace(/<script[\s\S]*?<\/script>/g, '').matchAll(/<dialog id="(\w+)"/g)].map(x => x[1]), ['infoModal', 'netDialog', 'countryDialog'], 'the app dialog is gone; the info modal, the net dialog and the country picker remain');
   assert.ok(/<meta name="apple-itunes-app" content="app-id=6820474476">/.test(INDEX.slice(0, INDEX.indexOf('</head>'))), 'the Smart App Banner meta is in the shared head, so every page — /download too — carries it');
   // Page views follow the other pages' convention: a GA page_view with the clean path, no bespoke event.
   assert.ok(/pv\('Hent appen','\/download'\)/.test(INDEX), 'page_view for /download');

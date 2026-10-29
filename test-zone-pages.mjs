@@ -125,7 +125,7 @@ for (const [p, w] of Object.entries(PAGES)) {
     ok(nav.map(m => m[3]).join() === Object.values(X.cn).join() && nav.map(m => m[1]).join() === '/dk1,/no/strompris,/sv/elpris,/fi/sahkon-hinta,/nl/stroomprijs,/de/strompreis,/fr/prix-electricite,/pl/ceny-pradu,/it/prezzo-luce', `${p}: landenavigationen på ${w.lang}`, nav.map(m => m[3]).join());
     ok(nav.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === p, `${p}: den aktuelle side er aria-current i menuen`);
     ok(hd.includes(`aria-label="${X.menu}"`) && hd.includes(`aria-label="${X.home}"`), `${p}: menuens og logoets navne på ${w.lang}`);
-    ok(!/id="netChip|class="chip-btn|app-btn|Hent appen|Smart hjem|>Om<|Hovedmenu|href="\/automation"|href="\/om-elpriser"|href="\/download"/.test(hd), `${p}: ingen netchip, ingen app-knap, ingen dansk menu i headeren`);
+    ok(!/id="netChip|class="chip-btn(?! cd-btn)|app-btn|Hent appen|Smart hjem|>Om<|Hovedmenu|href="\/automation"|href="\/om-elpriser"|href="\/download"/.test(hd), `${p}: ingen netchip, ingen app-knap, ingen dansk menu i headeren`);
     ok(!/class="tabbar|Mobilnavigation|id="netDialog|Netselskab og indstillinger|id="netChip/.test(h.replace(/<!--[\s\S]*?-->/g, '')), `${p}: ingen dansk mobilbar, ingen netdialog og ingen netchip`);
     ok((h.match(/<footer\b/g) || []).length === 1 && ft.includes('class="sf sf-x"') && ft.includes(`id="sfLand">${X.land}<`) && ft.includes(X.privacy) && !/Privatliv|Hent appen|Hent til|Netselskab|Alle guides|Tariffer|Prognose<|Forstå din elpris|Åbne datasæt|class="sf-apps|class="sf-all|<details/.test(ft), `${p}: sidefoden er den slanke på ${w.lang}`);
     ok(ft.includes('&copy; Elpriser.org') && ft.includes(X.src) && ft.includes(X.open) && /href="\/privatliv" hreflang="da"/.test(ft), `${p}: ophavsret, kilder og privatlivslink på ${w.lang}`);
@@ -162,7 +162,7 @@ for (const [p, w] of Object.entries(PAGES)) {
 }
 // The Danish pages' chrome is the fixture, byte for byte: header, phone tab bar, footer and net dialog.
 // The fixture is index.html's chrome as it was before the country pages got their own, plus the one intended change:
-// Nederland among the other price areas (footer and net dialog).
+// Nederland among the other price areas (footer and net dialog), and the country picker's globe button in the header.
 {
   const FIX = fs.readFileSync(path.join(ROOT, 'tests/fixtures/chrome-da.html'), 'utf8');
   const part = n => FIX.split(`<!--@@${n}@@-->\n`)[1].split('\n<!--@@')[0].replace(/\n$/, '');

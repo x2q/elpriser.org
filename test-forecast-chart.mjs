@@ -408,6 +408,27 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     }
   }
 
+  // ── The country picker (the globe in the header): one template for the Danish pages and the eight languages ──
+  {
+    const X = pctx.CHROME_I18N, HREFS = '/dk1,/no/strompris,/sv/elpris,/fi/sahkon-hinta,/nl/stroomprijs,/de/strompreis,/fr/prix-electricite,/pl/ceny-pradu,/it/prezzo-luce';
+    const NAMES = 'Danmark Dansk,Norge Norsk,Sverige Svenska,Suomi Suomi,Nederland Nederlands,Deutschland Deutsch,France Français,Polska Polski,Italia Italiano';
+    const links = d => [...d.matchAll(/<a href="([^"]+)"( aria-current="page")?><b>([^<]+)<\/b><span>([^<]+)<\/span><\/a>/g)];
+    const da = pctx.pickerHTML('da', 'dk');
+    ok(INDEX.includes(da.dialog) && INDEX.slice(INDEX.indexOf('<header class="site-nav">'), INDEX.indexOf('</header>')).includes(da.btn), 'den danske vælger i index.html er pickerHTML(da, dk), tegn for tegn');
+    ok(links(da.dialog).map(m => m[1]).join() === HREFS && links(da.dialog).map(m => m[3] + ' ' + m[4]).join() === NAMES && links(da.dialog).filter(m => m[2]).map(m => m[1]).join() === '/dk1', 'dansk vælger: ni lande med eget navn og sprog, Danmark markeret');
+    ok(da.dialog.includes('>Vælg land</h2>') && da.dialog.includes('>Norden</p>') && da.dialog.includes('>Resten af Europa</p>') && da.btn.includes('aria-label="Vælg land"'), 'dansk vælger: overskrift, grupper og knapnavn på dansk');
+    const picks = new Set(['Vælg land']);
+    for (const pg of Object.keys(pctx.PRIS_COUNTRIES)) {
+      const C = pctx.PRIS_COUNTRIES[pg], x = X[C.lang], P = pctx.pickerHTML(C.lang, C.cc), l = links(P.dialog);
+      picks.add(x.pick);
+      ok(l.map(m => m[1]).join() === HREFS && l.map(m => m[3] + ' ' + m[4]).join() === NAMES, `${pg}: vælgeren viser de ni lande med deres egne navne, ens på alle sprog`);
+      ok(l.filter(m => m[2]).map(m => m[1]).join() === '/' + pg, `${pg}: præcis sidens eget land er aria-current i vælgeren`);
+      ok(P.dialog.includes(`id="countryDialogTitle">${x.pick}</h2>`) && P.dialog.includes(`<p class="pd-gt">${x.g0}</p>`) && P.dialog.includes(`<p class="pd-gt">${x.g1}</p>`) && P.dialog.includes(`aria-label="${x.close}"`) && P.btn.includes(`aria-label="${x.pick}"`), `${pg}: vælgerens ord er på ${C.lang}`);
+      ok(!/hreflang|\$\{|undefined|NaN/.test(P.dialog + P.btn) && pctx.chromeHTML(pg).btn === P.btn && pctx.chromeHTML(pg).picker === P.dialog, `${pg}: ingen hreflang-klynge eller skabelonrester, og chromeHTML bruger den samme vælger`);
+    }
+    ok(picks.size === 9, 'vælgerens overskrift er forskellig på dansk og de otte sprog', [...picks].join());
+  }
+
   // ── /prognose: the SAME screen with a configuration (PRIS_FC) ──────────────────────────────────────────────
   const STD = pctx.PRIS_STD, FC = pctx.PRIS_FC;
   ok(JSON.stringify(STD) === '{"periods":[2,5],"def":2,"days":10,"unc":false}' && JSON.stringify(FC) === '{"periods":[2,5,7],"def":7,"days":7,"unc":true,"summary":true}',

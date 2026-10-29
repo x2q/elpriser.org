@@ -1114,31 +1114,31 @@ var PRIS_COUNTRIES={
  *  four. `cn`: the country names in this language, keyed by CHROME_I18N's `cc`; `privacy` says that the
  *  policy is in Danish. */
 var CHROME_I18N={
-  nb:{menu:'Hovedmeny',home:'elpriser.org forside',land:'Land',
+  nb:{menu:'Hovedmeny',home:'elpriser.org forside',land:'Land',pick:'Velg land',g0:'Norden',g1:'Resten av Europa',close:'Lukk',
     cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederland',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italia'},
     privacy:'Personvern (på dansk)',src:'Data fra',and:'og',open:'Åpne datasett på'},
-  sv:{menu:'Huvudmeny',home:'elpriser.org startsida',land:'Länder',
+  sv:{menu:'Huvudmeny',home:'elpriser.org startsida',land:'Länder',pick:'Välj land',g0:'Norden',g1:'Övriga Europa',close:'Stäng',
     cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederländerna',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italien'},
     privacy:'Integritet (på danska)',src:'Data från',and:'och',open:'Öppna datamängder på'},
-  fi:{menu:'Päävalikko',home:'elpriser.org etusivu',land:'Maat',
+  fi:{menu:'Päävalikko',home:'elpriser.org etusivu',land:'Maat',pick:'Valitse maa',g0:'Pohjoismaat',g1:'Muu Eurooppa',close:'Sulje',
     cn:{dk:'Tanska',no:'Norja',sv:'Ruotsi',fi:'Suomi',nl:'Alankomaat',de:'Saksa',fr:'Ranska',pl:'Puola',it:'Italia'},
     privacy:'Tietosuoja (tanskaksi)',src:'Tietolähteet:',and:'ja',open:'Avoimet aineistot:'},
-  nl:{menu:'Hoofdmenu',home:'elpriser.org startpagina',land:'Landen',
+  nl:{menu:'Hoofdmenu',home:'elpriser.org startpagina',land:'Landen',pick:'Kies een land',g0:'Noordse landen',g1:'Rest van Europa',close:'Sluiten',
     cn:{dk:'Denemarken',no:'Noorwegen',sv:'Zweden',fi:'Finland',nl:'Nederland',de:'Duitsland',fr:'Frankrijk',pl:'Polen',it:'Italië'},
     privacy:'Privacy (in het Deens)',src:'Gegevens van',and:'en',open:'Open datasets op'},
-  de:{menu:'Hauptmenü',home:'elpriser.org Startseite',land:'Länder',
+  de:{menu:'Hauptmenü',home:'elpriser.org Startseite',land:'Länder',pick:'Land wählen',g0:'Nordische Länder',g1:'Übriges Europa',close:'Schließen',
     cn:{dk:'Dänemark',no:'Norwegen',sv:'Schweden',fi:'Finnland',nl:'Niederlande',de:'Deutschland',fr:'Frankreich',pl:'Polen',it:'Italien'},
     privacy:'Datenschutz (auf Dänisch)',src:'Quelle:',and:'und',open:'Offene Datensätze auf',
     chg:'Änderung: Stundenmittel von elpriser.org berechnet'},
-  fr:{menu:'Menu principal',home:'elpriser.org accueil',land:'Pays',
+  fr:{menu:'Menu principal',home:'elpriser.org accueil',land:'Pays',pick:'Choisir un pays',g0:'Pays nordiques',g1:'Reste de l’Europe',close:'Fermer',
     cn:{dk:'Danemark',no:'Norvège',sv:'Suède',fi:'Finlande',nl:'Pays-Bas',de:'Allemagne',fr:'France',pl:'Pologne',it:'Italie'},
     privacy:'Confidentialité (en danois)',src:'Source\u00a0:',and:'et',open:'Jeux de données ouverts sur',
     chg:'Modifié\u00a0: moyennes horaires calculées par elpriser.org'},
-  pl:{menu:'Menu główne',home:'elpriser.org – strona główna',land:'Kraje',
+  pl:{menu:'Menu główne',home:'elpriser.org – strona główna',land:'Kraje',pick:'Wybierz kraj',g0:'Kraje nordyckie',g1:'Reszta Europy',close:'Zamknij',
     cn:{dk:'Dania',no:'Norwegia',sv:'Szwecja',fi:'Finlandia',nl:'Holandia',de:'Niemcy',fr:'Francja',pl:'Polska',it:'Włochy'},
     privacy:'Prywatność (po duńsku)',src:'Źródło:',and:'i',open:'Otwarte zbiory danych na',
     chg:'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org'},
-  it:{menu:'Menu principale',home:'elpriser.org pagina iniziale',land:'Paesi',
+  it:{menu:'Menu principale',home:'elpriser.org pagina iniziale',land:'Paesi',pick:'Scegli il paese',g0:'Paesi nordici',g1:'Resto d’Europa',close:'Chiudi',
     cn:{dk:'Danimarca',no:'Norvegia',sv:'Svezia',fi:'Finlandia',nl:'Paesi Bassi',de:'Germania',fr:'Francia',pl:'Polonia',it:'Italia'},
     privacy:'Privacy (in danese)',src:'Fonte:',and:'e',open:'Dataset aperti su',
     chg:'Modifiche: medie orarie calcolate da elpriser.org'}
@@ -1153,13 +1153,42 @@ function chromeHTML(pg){
   for(p in PRIS_COUNTRIES)items.push({cc:PRIS_COUNTRIES[p].cc,href:'/'+p,cur:p===pg});
   var a=function(it,cls){return '<a href="'+it.href+'"'+(it.cur?(cls?' class="'+cls+'"':'')+' aria-current="page"':'')+'>'+X.cn[it.cc]+'</a>';};
   var lk=function(href,t){return '<a href="'+href+'" target="_blank" rel="noopener">'+t+'</a>';};
-  return {home:X.home,
+  var P=pickerHTML(PRIS_COUNTRIES[pg].lang,PRIS_COUNTRIES[pg].cc);
+  return {home:X.home,btn:P.btn,picker:P.dialog,
     nav:'<nav class="site-links" aria-label="'+X.menu+'">'+items.map(function(it){return a(it,'on');}).join('')+'</nav>',
     foot:'<footer class="sf sf-x" data-pg="'+pg+'"><div class="sf-in"><nav class="sf-col" aria-labelledby="sfLand"><p class="sf-h" id="sfLand">'+X.land+'</p>'
       +'<ul class="sf-chips">'+items.map(function(it){return '<li>'+a(it,'')+'</li>';}).join('')+'</ul></nav>'
       +'<p class="sf-legal">&copy; Elpriser.org &mdash; '+X.src+' '+(PRIS_COUNTRIES[pg].act?prisCredit()+' &mdash; '+X.chg
         :lk('https://transparency.entsoe.eu','ENTSO-E')+' '+X.and+' '+lk('https://www.energidataservice.dk','Energi Data Service'))
       +'. '+X.open+' '+lk('https://huggingface.co/Elpriser','Hugging Face')+'. <a href="/privatliv" hreflang="da">'+X.privacy+'</a></p></div></footer>'};
+}
+
+/** The country picker, like the one on tesla.com: a globe in the header opens a dialog listing every country the site has
+ *  prices for, each by its own name and language, the page's own country marked. The names are the countries' own (not
+ *  translated), so the dialog differs between pages only in its heading words (PICK_DA, CHROME_I18N). The Danish pages carry
+ *  this markup as plain HTML in index.html (test-forecast-chart.mjs keeps it equal to pickerHTML('da','dk')); a country page
+ *  gets its own from chromeHTML. `cur` is the page's `cc`. Returns the header button and the dialog. */
+var PICK_DA={pick:'Vælg land',g0:'Norden',g1:'Resten af Europa',close:'Luk'};
+var PRIS_PICK=[['dk','Danmark','Dansk',0],['no','Norge','Norsk',0],['sv','Sverige','Svenska',0],['fi','Suomi','Suomi',0],
+  ['nl','Nederland','Nederlands',1],['de','Deutschland','Deutsch',1],['fr','France','Français',1],['pl','Polska','Polski',1],['it','Italia','Italiano',1]];
+function pickerHTML(lang,cur){
+  var X=lang==='da'?PICK_DA:CHROME_I18N[lang],g,i,p,out='';
+  var href=function(cc){if(cc==='dk')return '/dk1';for(p in PRIS_COUNTRIES)if(PRIS_COUNTRIES[p].cc===cc)return '/'+p;return '/';};
+  for(g=0;g<2;g++){
+    out+='<section><p class="pd-gt">'+X['g'+g]+'</p><ul class="cd-list">';
+    for(i=0;i<PRIS_PICK.length;i++){
+      var c=PRIS_PICK[i];
+      if(c[3]!==g)continue;
+      out+='<li><a href="'+href(c[0])+'"'+(c[0]===cur?' aria-current="page"':'')+'><b>'+c[1]+'</b><span>'+c[2]+'</span></a></li>';
+    }
+    out+='</ul></section>';
+  }
+  return {
+    btn:'<button type="button" class="chip-btn cd-btn" id="countryBtn" onclick="openCountryDialog()" aria-haspopup="dialog" aria-label="'+X.pick+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.6 2.7 4 5.9 4 9.5s-1.4 6.8-4 9.5c-2.6-2.7-4-5.9-4-9.5s1.4-6.8 4-9.5z"/></svg></button>',
+    dialog:'<dialog id="countryDialog" class="pris-dialog cd" aria-labelledby="countryDialogTitle"><div class="pd-head"><h2 id="countryDialogTitle">'+X.pick+'</h2>'
+      +'<button type="button" class="pd-x" onclick="closeDlg(\'countryDialog\')" aria-label="'+X.close+'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>'
+      +'<div class="cd-body">'+out+'</div></dialog>'
+  };
 }
 
 /** The CC BY 4.0 attribution of the data on an `act` page: "Bundesnetzagentur | SMARD.de" (the licensor), Energy-Charts.info (the API
@@ -2169,10 +2198,11 @@ function withCountryChrome(html, pg) {
     .replace('<html lang="da">', '<html lang="da" class="xc">')
     .replace('aria-label="elpriser.org forside"', () => `aria-label="${c.home}"`)
     .replace(/<nav class="site-links"[\s\S]*?<\/nav>/, () => c.nav)
-    .replace(/\s*<div class="site-actions">[\s\S]*?<\/div>/, '')
+    .replace(/\s*<div class="site-actions">[\s\S]*?<\/div>/, () => `<div class="site-actions">${c.btn}</div>`)
     .replace(/<nav class="tabbar"[\s\S]*?<\/nav>/, '')
     .replace(/<footer class="sf">[\s\S]*?<\/footer>/, () => c.foot)
-    .replace(/<dialog id="netDialog"[\s\S]*?<\/dialog>/, '');
+    .replace(/<dialog id="netDialog"[\s\S]*?<\/dialog>/, '')
+    .replace(/<dialog id="countryDialog"[\s\S]*?<\/dialog>/, () => c.picker);
 }
 
 async function renderSPA(context, pathname, meta, opts = {}) {
