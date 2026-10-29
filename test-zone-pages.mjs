@@ -117,14 +117,12 @@ for (const [p, w] of Object.entries(PAGES)) {
   ok((list.match(/<li>/g) || []).length === w.zones.length && (list.match(new RegExp(`${w.unit}/kWh`, 'g')) || []).length >= w.zones.length, `${p}: ét punkt pr. zone med pris`);
   ok(!/NaN|undefined|Infinity/.test(h.slice(h.indexOf('<main'), h.indexOf('</main>'))), `${p}: ingen NaN/undefined`);
   ok(new RegExp(`<meta property="og:locale" content="${{ nb: 'nb_NO', sv: 'sv_SE', fi: 'fi_FI', nl: 'nl_NL' }[w.lang]}">`).test(raw), `${p}: og:locale på sidens sprog`);
-  // The chrome: the country navigation in the page's language, a slim footer, and none of the Danish site's.
+  // The chrome: the globe in the page's language, a slim footer, and none of the Danish site's.
   {
     const hd = h.slice(h.indexOf('<header'), h.indexOf('</header>')), ft = h.slice(h.indexOf('<footer'), h.indexOf('</footer>')), X = chromeI18n[w.lang];
-    const nav = [...hd.matchAll(/<a href="([^"]+)"([^>]*)>([^<]+)<\/a>/g)].filter(m => m[1] !== '/');
     ok(/<html lang="[a-z]+" class="xc">/.test(h) && /<a href="\/" class="site-logo" aria-label="[^"]+">[\s\S]*<\/svg><\/span>Elpriser<\/a>/.test(hd), `${p}: logoet viser ordmærket Elpriser og linker til /`);
-    ok(nav.map(m => m[3]).join() === Object.values(X.cn).join() && nav.map(m => m[1]).join() === '/dk1,/no/strompris,/sv/elpris,/fi/sahkon-hinta,/nl/stroomprijs,/de/strompreis,/fr/prix-electricite,/pl/ceny-pradu,/it/prezzo-luce', `${p}: landenavigationen på ${w.lang}`, nav.map(m => m[3]).join());
-    ok(nav.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === p, `${p}: den aktuelle side er aria-current i menuen`);
-    ok(hd.includes(`aria-label="${X.menu}"`) && hd.includes(`aria-label="${X.home}"`), `${p}: menuens og logoets navne på ${w.lang}`);
+    ok(!/class="site-links"|<nav/.test(hd) && /id="countryBtn"/.test(hd), `${p}: headeren har globussen og ingen landerække`);
+    ok(hd.includes(`aria-label="${X.home}"`) && hd.includes(`aria-label="${X.pick}"`), `${p}: logoets og vælgerens navne på ${w.lang}`);
     ok(!/id="netChip|class="chip-btn(?! cd-btn)|app-btn|Hent appen|Smart hjem|>Om<|Hovedmenu|href="\/automation"|href="\/om-elpriser"|href="\/download"/.test(hd), `${p}: ingen netchip, ingen app-knap, ingen dansk menu i headeren`);
     ok(!/class="tabbar|Mobilnavigation|id="netDialog|Netselskab og indstillinger|id="netChip/.test(h.replace(/<!--[\s\S]*?-->/g, '')), `${p}: ingen dansk mobilbar, ingen netdialog og ingen netchip`);
     ok((h.match(/<footer\b/g) || []).length === 1 && ft.includes('class="sf sf-x"') && ft.includes(`id="sfLand">${X.land}<`) && ft.includes(X.privacy) && !/Privatliv|Hent appen|Hent til|Netselskab|Alle guides|Tariffer|Prognose<|Forstå din elpris|Åbne datasæt|class="sf-apps|class="sf-all|<details/.test(ft), `${p}: sidefoden er den slanke på ${w.lang}`);
@@ -255,10 +253,10 @@ for (const [p, w] of Object.entries(ACT)) {
   ok(w.zones.every(c => list.includes(`<b>${c}</b>`)) && (list.match(/<li>/g) || []).length === w.zones.length, `${p}: tekstblokken nævner zonen`, list.slice(0, 160));
   ok(new RegExp(`${w.unit}/kWh`).test(list) && /(Ø|moy\.|śr\.|media) \S+ [\d.,]+/.test(list), `${p}: tekstblokken har dagens og morgendagens gennemsnit`);
   ok((h.match(/role="tab" id="zt-/g) || []).length === 0, `${p}: ingen zone-faner (én zone)`);
-  // The chrome: ten countries in the page's language, a slim footer whose data line names ENTSO-E and not Energi Data Service.
+  // The chrome: the nine countries (footer list) in the page's language, a slim footer whose data line names ENTSO-E and not Energi Data Service.
   const hd = h.slice(h.indexOf('<header'), h.indexOf('</header>')), ft = h.slice(h.indexOf('<footer'), h.indexOf('</footer>'));
-  const nav = [...hd.matchAll(/<a href="([^"]+)"([^>]*)>([^<]+)<\/a>/g)].filter(m => m[1] !== '/');
-  ok(nav.length === 9 && nav.map(m => m[3]).join() === X9.map(c => X.cn[c]).join() && nav.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === p, `${p}: landenavigationen har ni lande på ${w.lang}, den aktuelle er aria-current`, nav.map(m => m[3]).join());
+  const nav = [...ft.matchAll(/<li><a href="([^"]+)"([^>]*)>([^<]+)<\/a><\/li>/g)];
+  ok(!/class="site-links"/.test(hd) && nav.length === 9 && nav.map(m => m[3]).join() === X9.map(c => X.cn[c]).join() && nav.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === p, `${p}: headeren har ingen landerække; fodens landeliste har ni lande på ${w.lang}, den aktuelle er aria-current`, nav.map(m => m[3]).join());
   ok(ft.includes(`&copy; Elpriser.org &mdash; ${X.src} ${CREDIT} &mdash; ${CHANGED[w.lang]}. ${X.open}`) && !/Energi Data Service|energidataservice|ENTSO/.test(ft + hd) && ft.includes(X.privacy), `${p}: fodens kilde er Bundesnetzagentur | SMARD.de (CC BY 4.0, med licenslink) og siger at dataene er ændret — hverken ENTSO-E eller Energi Data Service`, ft.slice(ft.indexOf('sf-legal')));
   ok(!/id="netChip|class="tabbar|id="netDialog|Hent appen|Smart hjem/.test(h.replace(/<!--[\s\S]*?-->/g, '')), `${p}: ingen dansk chrome`);
   ok(upstream.length === 1 && upstream.every(x => x.startsWith('/api/nordic?zone=')), `${p}: serveren henter præcis landets zone`, upstream.join(' '));

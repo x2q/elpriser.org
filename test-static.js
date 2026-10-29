@@ -669,8 +669,8 @@ test('country pages: ONE chrome builder (chromeHTML) feeds the server render and
   // No per-language markup: the four languages share one template — the tables hold words, not tags.
   const tbl = INDEX.slice(INDEX.indexOf('var CHROME_I18N={'), INDEX.indexOf('function chromeHTML(pg){'));
   assert.ok(!/<[a-z]/.test(tbl), 'CHROME_I18N holds markup');
-  // The country pages' mobile chrome: no Danish bottom bar room, the navigation as a row of its own.
-  assert.ok(/\.xc body\{padding-bottom:0\}/.test(INDEX) && /\.xc \.site-links\{display:flex;order:2;flex:1 0 100%/.test(INDEX), 'phone styles for html.xc');
+  // The country pages' mobile chrome: no Danish bottom bar room, and no row of country links (the globe is the navigation).
+  assert.ok(/\.xc body\{padding-bottom:0\}/.test(INDEX) && !/\.xc \.site-links/.test(INDEX), 'phone styles for html.xc');
   // /nl/stroomprijs is wired everywhere a country page is.
   assert.ok(SRV.includes("'nl/stroomprijs': 'zone'") && INDEX.includes("'/nl/stroomprijs':'nl/stroomprijs'") && SERVER.includes("'/nl/stroomprijs': '#nl/stroomprijs'") && INDEX.includes("h==='nl/stroomprijs'"), 'a route table lacks /nl/stroomprijs');
   assert.ok(/nl: 'nl_NL'/.test(SRV), 'og:locale for nl');

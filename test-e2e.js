@@ -1586,7 +1586,7 @@ async function startServer() {
     await page.waitForSelector('main[data-page="zone"] .pris');
     const plot = page.locator('main[data-page="zone"] .pris-card.pp2 .pris-plot');
     const box = await plot.boundingBox();
-    await page.mouse.move(box.x + box.width * 0.7, box.y + box.height / 2);
+    await page.mouse.move(box.x + box.width * 0.5, box.y + box.height / 2);
     assert.match(await page.locator('main[data-page="zone"] .pris-card.pp2 .pris-tip').textContent(), /^I morgen kl\. \d\d · \d+ øre\/kWh$/);
     const ticks = await page.locator('main[data-page="zone"] .pris-card.pp2 .pris-yl span').allTextContents();
     assert.ok(ticks.length >= 3 && ticks.every(x => /^\d+$/.test(x)), ticks.join(' '));
@@ -1679,30 +1679,28 @@ async function startServer() {
     await ctx2.close();
   });
 
-  // ── 9b. The country pages' chrome: header navigation and footer in the page's own language ──────────────────────
+  // ── 9b. The country pages' chrome: header (logo and the country globe) and footer in the page's own language ──────────────────────
   // server.js hands the browser the whole index.html, so this is the client side of the localisation (the same
   // chromeHTML the server renders from; test-zone-pages.mjs covers the server's HTML through the real function).
   const CHROME = {
-    '/no/strompris':   { lang: 'nb', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederland', 'Tyskland', 'Frankrike', 'Polen', 'Italia'], cur: 'Norge', menu: 'Hovedmeny', land: 'Land', privacy: 'Personvern (på dansk)' },
-    '/sv/elpris':      { lang: 'sv', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederländerna', 'Tyskland', 'Frankrike', 'Polen', 'Italien'], cur: 'Sverige', menu: 'Huvudmeny', land: 'Länder', privacy: 'Integritet (på danska)' },
-    '/fi/sahkon-hinta': { lang: 'fi', nav: ['Tanska', 'Norja', 'Ruotsi', 'Suomi', 'Alankomaat', 'Saksa', 'Ranska', 'Puola', 'Italia'], cur: 'Suomi', menu: 'Päävalikko', land: 'Maat', privacy: 'Tietosuoja (tanskaksi)' },
-    '/nl/stroomprijs': { lang: 'nl', nav: ['Denemarken', 'Noorwegen', 'Zweden', 'Finland', 'Nederland', 'Duitsland', 'Frankrijk', 'Polen', 'Italië'], cur: 'Nederland', menu: 'Hoofdmenu', land: 'Landen', privacy: 'Privacy (in het Deens)' },
+    '/no/strompris':   { lang: 'nb', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederland', 'Tyskland', 'Frankrike', 'Polen', 'Italia'], cur: 'Norge', pick: 'Velg land', land: 'Land', privacy: 'Personvern (på dansk)' },
+    '/sv/elpris':      { lang: 'sv', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederländerna', 'Tyskland', 'Frankrike', 'Polen', 'Italien'], cur: 'Sverige', pick: 'Välj land', land: 'Länder', privacy: 'Integritet (på danska)' },
+    '/fi/sahkon-hinta': { lang: 'fi', nav: ['Tanska', 'Norja', 'Ruotsi', 'Suomi', 'Alankomaat', 'Saksa', 'Ranska', 'Puola', 'Italia'], cur: 'Suomi', pick: 'Valitse maa', land: 'Maat', privacy: 'Tietosuoja (tanskaksi)' },
+    '/nl/stroomprijs': { lang: 'nl', nav: ['Denemarken', 'Noorwegen', 'Zweden', 'Finland', 'Nederland', 'Duitsland', 'Frankrijk', 'Polen', 'Italië'], cur: 'Nederland', pick: 'Kies een land', land: 'Landen', privacy: 'Privacy (in het Deens)' },
     // The four EU pages (actual prices only): the footer's data line is the CC BY 4.0 credit to Bundesnetzagentur | SMARD.de plus the note that the data were changed.
-    '/de/strompreis': { lang: 'de', act: 1, nav: ['Dänemark', 'Norwegen', 'Schweden', 'Finnland', 'Niederlande', 'Deutschland', 'Frankreich', 'Polen', 'Italien'], cur: 'Deutschland', menu: 'Hauptmenü', land: 'Länder', privacy: 'Datenschutz (auf Dänisch)' },
-    '/fr/prix-electricite': { lang: 'fr', act: 1, nav: ['Danemark', 'Norvège', 'Suède', 'Finlande', 'Pays-Bas', 'Allemagne', 'France', 'Pologne', 'Italie'], cur: 'France', menu: 'Menu principal', land: 'Pays', privacy: 'Confidentialité (en danois)' },
-    '/pl/ceny-pradu': { lang: 'pl', act: 1, nav: ['Dania', 'Norwegia', 'Szwecja', 'Finlandia', 'Holandia', 'Niemcy', 'Francja', 'Polska', 'Włochy'], cur: 'Polska', menu: 'Menu główne', land: 'Kraje', privacy: 'Prywatność (po duńsku)' },
-    '/it/prezzo-luce': { lang: 'it', act: 1, nav: ['Danimarca', 'Norvegia', 'Svezia', 'Finlandia', 'Paesi Bassi', 'Germania', 'Francia', 'Polonia', 'Italia'], cur: 'Italia', menu: 'Menu principale', land: 'Paesi', privacy: 'Privacy (in danese)' },
+    '/de/strompreis': { lang: 'de', act: 1, nav: ['Dänemark', 'Norwegen', 'Schweden', 'Finnland', 'Niederlande', 'Deutschland', 'Frankreich', 'Polen', 'Italien'], cur: 'Deutschland', pick: 'Land wählen', land: 'Länder', privacy: 'Datenschutz (auf Dänisch)' },
+    '/fr/prix-electricite': { lang: 'fr', act: 1, nav: ['Danemark', 'Norvège', 'Suède', 'Finlande', 'Pays-Bas', 'Allemagne', 'France', 'Pologne', 'Italie'], cur: 'France', pick: 'Choisir un pays', land: 'Pays', privacy: 'Confidentialité (en danois)' },
+    '/pl/ceny-pradu': { lang: 'pl', act: 1, nav: ['Dania', 'Norwegia', 'Szwecja', 'Finlandia', 'Holandia', 'Niemcy', 'Francja', 'Polska', 'Włochy'], cur: 'Polska', pick: 'Wybierz kraj', land: 'Kraje', privacy: 'Prywatność (po duńsku)' },
+    '/it/prezzo-luce': { lang: 'it', act: 1, nav: ['Danimarca', 'Norvegia', 'Svezia', 'Finlandia', 'Paesi Bassi', 'Germania', 'Francia', 'Polonia', 'Italia'], cur: 'Italia', pick: 'Scegli il paese', land: 'Paesi', privacy: 'Privacy (in danese)' },
   };
   const DANISH_CHROME = /Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Mobilnavigation|Privatliv|Åbne datasæt|Alle guides|Forstå din elpris|Tariffer|Prognose$/m;
   const chromeState = p => p.evaluate(() => {
-    const q = s => document.querySelector(s), r = el => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, w: b.width, h: b.height }; };
+    const q = s => document.querySelector(s), r = el => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, w: b.width, h: b.height }; };
     const links = [...document.querySelectorAll('.site-nav .site-links a')];
     return {
       lang: document.documentElement.lang, scroll: [document.documentElement.scrollWidth, innerWidth],
-      navText: links.map(a => a.textContent), navHref: links.map(a => a.getAttribute('href')),
-      navCur: links.filter(a => a.getAttribute('aria-current') === 'page').map(a => a.textContent),
-      navHeights: links.map(a => r(a).h), navVisible: links.map(a => r(a).r <= innerWidth + 1 && r(a).l >= -1),
-      menu: q('.site-links')?.getAttribute('aria-label'), logo: q('.site-logo')?.textContent.trim(), logoHref: q('.site-logo')?.getAttribute('href'),
+      navText: links.map(a => a.textContent), globe: r(q('#countryBtn')), logoBox: r(q('.site-logo')),
+      logo: q('.site-logo')?.textContent.trim(), logoHref: q('.site-logo')?.getAttribute('href'),
       chip: !!q('#netChip'), app: !!q('.app-btn'), tabbar: !!q('#tabBar'), dialog: !!q('#netDialog'), actions: [...document.querySelectorAll('.site-actions > *')].map(x => x.id),
       picker: { title: q('#countryDialogTitle')?.textContent, links: [...document.querySelectorAll('#countryDialog .cd-list a')].map(a => [a.querySelector('b').textContent, a.querySelector('span').textContent, a.getAttribute('href'), a.getAttribute('aria-current')]), label: q('#countryBtn')?.getAttribute('aria-label') },
       headText: q('.site-nav').innerText, footText: q('footer').innerText,
@@ -1715,7 +1713,7 @@ async function startServer() {
   });
   for (const [url, w] of Object.entries(CHROME)) {
     for (const [vw, vh] of [[1280, 800], [390, 844]]) {
-      await test(`${url} at ${vw} px: header and footer are ${w.lang} — country navigation, no net chip/app button/tab bar/net dialog, slim footer, no overflow`, async () => {
+      await test(`${url} at ${vw} px: header and footer are ${w.lang} — globe instead of a menu, no net chip/app button/tab bar/net dialog, slim footer, no overflow`, async () => {
         const c = await browser.newContext({ viewport: { width: vw, height: vh }, bypassCSP: true, ...(vw < 600 ? { isMobile: true, hasTouch: true } : {}) });
         await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
         await c.route('**/api/nordic*', nordicRoute);
@@ -1724,9 +1722,9 @@ async function startServer() {
         await p.waitForSelector('main[data-page="zone"] .pris');
         const s = await chromeState(p);
         assert.equal(s.lang, w.lang);
-        assert.deepEqual(s.navText, w.nav); assert.deepEqual(s.navHref, ['/dk1', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce']);
-        assert.deepEqual(s.navCur, [w.cur], 'the current country is marked aria-current');
-        assert.equal(s.menu, w.menu); assert.equal(s.logo, 'Elpriser'); assert.equal(s.logoHref, '/');
+        assert.deepEqual(s.navText, [], 'no row of country links in the header: the globe is the country navigation');
+        assert.equal(s.picker.title, w.pick); assert.equal(s.logo, 'Elpriser'); assert.equal(s.logoHref, '/');
+        assert.ok(Math.abs((s.globe.t + s.globe.h / 2) - (s.logoBox.t + s.logoBox.h / 2)) < 4 && s.navBottom < 80, `the header is one row: logo ${JSON.stringify(s.logoBox)}, globe ${JSON.stringify(s.globe)}, height ${s.navBottom}`);
         assert.deepEqual([s.chip, s.app, s.tabbar, s.dialog], [false, false, false, false], 'no Danish net chip, app button, tab bar or net dialog');
         assert.deepEqual(s.actions, ['countryBtn'], 'the action row holds the country picker button and nothing Danish');
         // The picker: the nine countries by their own names, in this page's language for its heading, this page's country marked.
@@ -1743,14 +1741,8 @@ async function startServer() {
         if (w.act) { assert.match(s.footText, /© Elpriser\.org — .*Bundesnetzagentur \| SMARD\.de \(Energy-Charts\.info\), CC BY 4\.0 — .*elpriser\.org.*Hugging Face/s); assert.ok(!/Energi Data Service|ENTSO/.test(s.footText), 'the EU pages credit neither Energi Data Service nor ENTSO-E'); }
         else assert.match(s.footText, /© Elpriser\.org — .*ENTSO-E.*Energi Data Service.*Hugging Face/s);
         assert.equal(s.scroll[0], s.scroll[1], `horizontal page scroll ${s.scroll.join(' vs ')}`);
-        assert.ok(s.navVisible.every(Boolean) || vw < 600, 'every country is inside the viewport on a wide screen');
-        if (vw < 600) {
-          assert.ok(s.navHeights.every(h => h >= 44), `tap targets ${s.navHeights.join(',')}`);
-          assert.equal(s.bodyPad, '0px', 'the Danish tab bar\'s room at the bottom is gone');
-          // the row scrolls on its own if it is wider than the screen; the page never does
-          const sc = await p.evaluate(() => { const n = document.querySelector('.site-links'); return [n.scrollWidth, n.clientWidth, n.getBoundingClientRect().right <= innerWidth + 1]; });
-          assert.ok(sc[2], 'the navigation row stays inside the screen');
-        }
+        assert.ok(s.globe.r <= vw + 1 && s.globe.l >= -1, 'the globe is inside the viewport');
+        if (vw < 600) assert.equal(s.bodyPad, '0px', 'the Danish tab bar\'s room at the bottom is gone');
         // the Pris screen is still there and was not disturbed by the chrome swap
         assert.ok(await p.locator('main[data-page="zone"] .pris-now').count() === 1);
         await c.close();
@@ -1758,17 +1750,17 @@ async function startServer() {
     }
   }
 
-  await test('the country navigation works: a link leads to that country\'s page (its own chrome), Danmark leads to the Danish site with the Danish chrome back', async () => {
+  await test('the footer\'s country list works: a link leads to that country\'s page (its own chrome), Danmark leads to the Danish site with the Danish chrome back', async () => {
     await page.goto(BASE + '/no/strompris');
     await page.waitForSelector('main[data-page="zone"] .pris');
-    await page.locator('.site-nav .site-links a', { hasText: /^Sverige$/ }).click();
+    await page.locator('footer .sf-chips a', { hasText: /^Sverige$/ }).click();
     await page.waitForFunction(() => location.pathname === '/sv/elpris' && document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'se3');
-    assert.deepEqual((await chromeState(page)).navCur, ['Sverige']);
-    assert.equal((await chromeState(page)).menu, 'Huvudmeny', 'the new page has the Swedish chrome, not the Norwegian one');
+    assert.deepEqual((await chromeState(page)).footLinks.filter(x => x[2]).map(x => x[0]), ['Sverige']);
+    assert.equal((await chromeState(page)).picker.title, 'Välj land', 'the new page has the Swedish chrome, not the Norwegian one');
     await page.locator('footer .sf-chips a', { hasText: /^Nederländerna$/ }).click();
     await page.waitForFunction(() => location.pathname === '/nl/stroomprijs' && document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'nl');
-    assert.equal((await chromeState(page)).menu, 'Hoofdmenu');
-    await page.locator('.site-nav .site-links a', { hasText: /^Denemarken$/ }).click();
+    assert.equal((await chromeState(page)).picker.title, 'Kies een land');
+    await page.locator('footer .sf-chips a', { hasText: /^Denemarken$/ }).click();
     await page.waitForFunction(() => location.pathname === '/dk1');
     await page.waitForSelector('main[data-page="prices"].active');
     const d = await chromeState(page);
@@ -1818,7 +1810,7 @@ async function startServer() {
     await page.waitForFunction(() => document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'no3');
     await page.locator('main[data-page="zone"] [data-pris-period="5"]').click();
     const after = await chromeState(page);
-    assert.deepEqual([after.navText, after.navCur, after.footLinks, after.menu, after.lang], [before.navText, before.navCur, before.footLinks, before.menu, before.lang]);
+    assert.deepEqual([after.navText, after.footLinks, after.picker.title, after.lang], [before.navText, before.footLinks, before.picker.title, before.lang]);
     assert.equal(await page.locator('main[data-page="zone"] .pris').getAttribute('data-period'), '5');
   });
 
@@ -1832,14 +1824,13 @@ async function startServer() {
       await p.waitForSelector('main[data-page="zone"] .pris');
       const m = await p.evaluate(() => {
         const lum = col => { const [a, b, d] = col.match(/[\d.]+/g).slice(0, 3).map(Number); return (0.2126 * a + 0.7152 * b + 0.0722 * d) / 255; };
-        const cur = document.querySelector('.site-links a[aria-current]'), other = document.querySelector('.site-links a:not([aria-current])'), chip = document.querySelector('footer .sf-chips a[aria-current]'), chip2 = document.querySelector('footer .sf-chips a:not([aria-current])');
+        const chip = document.querySelector('footer .sf-chips a[aria-current]'), chip2 = document.querySelector('footer .sf-chips a:not([aria-current])');
         return { dark: document.documentElement.classList.contains('dark'), head: lum(getComputedStyle(document.querySelector('.site-nav')).backgroundColor), body: lum(getComputedStyle(document.body).backgroundColor),
-          other: lum(getComputedStyle(other).color), chipBg: lum(getComputedStyle(chip).backgroundColor), chipTx: lum(getComputedStyle(chip).color), chip2Tx: lum(getComputedStyle(chip2).color), chip2Bg: lum(getComputedStyle(chip2).backgroundColor),
-          legal: lum(getComputedStyle(document.querySelector('.sf-legal')).color), curColor: getComputedStyle(cur).color, otherColor: getComputedStyle(other).color };
+          other: lum(getComputedStyle(document.querySelector('.site-logo')).color), chipBg: lum(getComputedStyle(chip).backgroundColor), chipTx: lum(getComputedStyle(chip).color), chip2Tx: lum(getComputedStyle(chip2).color), chip2Bg: lum(getComputedStyle(chip2).backgroundColor),
+          legal: lum(getComputedStyle(document.querySelector('.sf-legal')).color) };
       });
       assert.ok(m.dark && m.head < 0.25 && m.body < 0.25, `${url}: dark surfaces ${JSON.stringify(m)}`);
       assert.ok(m.other > 0.4 && m.chip2Tx > 0.5 && m.chip2Bg < 0.25 && m.legal > 0.4, `${url}: readable on dark ${JSON.stringify(m)}`);
-      assert.ok(m.curColor !== m.otherColor, `${url}: the current country is told apart in the header`);
       assert.ok(m.chipTx > 0.9 && m.chipBg < 0.6, `${url}: the current country's chip in the footer is a filled pill with white text ${JSON.stringify(m)}`);
       await c.close();
     }
@@ -1941,7 +1932,7 @@ async function startServer() {
     assert.deepEqual([...new Set(nordicRequests)], ['it-n'], 'the page asks for IT-North only');
     assert.equal(await page.locator('#zList li').count(), 1);
     assert.match(await page.locator('#zList li').textContent(), /^Italia del Nord \(IT-Nord\): media oggi [\d,]+ c€\/kWh, media domani [\d,]+ c€\/kWh$/);
-    assert.equal(await page.locator('.site-links a[href="/ie/electricity-price"]').count(), 0);
+    assert.equal(await page.locator('a[href="/ie/electricity-price"]').count(), 0);
     const r = await page.goto(BASE + '/ie/electricity-price');
     assert.ok(r.status() === 404 || (await page.locator('main[data-page="zone"].active').count()) === 0, 'Ireland is not a page any more');
   });
@@ -1959,22 +1950,6 @@ async function startServer() {
         assert.ok(!/NaN|undefined/.test(t) && !FORECAST_WORDS.test(t), `${url}: ${t.slice(0, 200)}`);
       }
     } finally { euDays = 3; }
-  });
-
-  await test('the country navigation has nine entries in one row on a desktop, and scrolls sideways on a phone without the page doing so', async () => {
-    await page.goto(BASE + '/de/strompreis');
-    await page.waitForSelector('main[data-page="zone"] .pris');
-    const wide = await page.evaluate(() => { const l = [...document.querySelectorAll('.site-nav .site-links a')]; return { n: l.length, tops: [...new Set(l.map(a => Math.round(a.getBoundingClientRect().top)))], right: Math.max(...l.map(a => a.getBoundingClientRect().right)), w: innerWidth }; });
-    assert.equal(wide.n, 9); assert.equal(wide.tops.length, 1, `the row wraps: ${wide.tops}`); assert.ok(wide.right <= wide.w);
-    const c = await browser.newContext({ viewport: { width: 390, height: 844 }, bypassCSP: true, isMobile: true, hasTouch: true });
-    await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
-    await c.route('**/api/nordic*', nordicRoute);
-    const p = await c.newPage();
-    await p.goto(BASE + '/it/prezzo-luce');
-    await p.waitForSelector('main[data-page="zone"] .pris');
-    const m = await p.evaluate(() => { const n = document.querySelector('.site-links'), l = [...n.querySelectorAll('a')]; return { n: l.length, tops: [...new Set(l.map(a => Math.round(a.getBoundingClientRect().top)))], scrolls: n.scrollWidth > n.clientWidth, page: document.documentElement.scrollWidth <= innerWidth, cur: l.filter(a => a.getAttribute('aria-current')).length }; });
-    assert.deepEqual([m.n, m.tops.length, m.scrolls, m.page, m.cur], [9, 1, true, true, 1], JSON.stringify(m));
-    await c.close();
   });
 
   await test('the EU pages at 390 px, light and dark: nothing overflows (the day list wraps), the chart and the cards stay inside the screen', async () => {

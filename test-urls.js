@@ -350,7 +350,7 @@ async function main() {
     check(sitemap.includes(p), `${p}: i sitemap`);
     if (unit) {
       const chrome = page.replace(/<!--[\s\S]*?-->/g, '');
-      check(/<html lang="[a-z]+" class="xc">/.test(r.body) && /<nav class="site-links" aria-label="[^"]+">(<a href="[^"]+"[^>]*>[^<]+<\/a>){9}<\/nav>/.test(chrome) && /<footer class="sf sf-x"/.test(chrome) && /<a href="\/privatliv" hreflang="da">/.test(chrome), `${p}: landenavigation og slank fod på sidens sprog`);
+      check(/<html lang="[a-z]+" class="xc">/.test(r.body) && !/class="site-links"/.test(chrome) && /id="countryBtn"/.test(chrome) && /<footer class="sf sf-x"/.test(chrome) && /<a href="\/privatliv" hreflang="da">/.test(chrome), `${p}: landevælger (globus) uden landerække i headeren, slank fod på sidens sprog`);
       check(!/id="netChip|class="app-btn|class="tabbar|id="netDialog|Smart hjem|Hent appen|Hovedmenu|Alle netselskaber/.test(chrome), `${p}: ingen dansk netchip, app-knap, menu, mobilbar eller netdialog`);
     }
   }

@@ -1114,37 +1114,37 @@ var PRIS_COUNTRIES={
  *  four. `cn`: the country names in this language, keyed by CHROME_I18N's `cc`; `privacy` says that the
  *  policy is in Danish. */
 var CHROME_I18N={
-  nb:{menu:'Hovedmeny',home:'elpriser.org forside',land:'Land',pick:'Velg land',g0:'Norden',g1:'Resten av Europa',close:'Lukk',
+  nb:{home:'elpriser.org forside',land:'Land',pick:'Velg land',g0:'Norden',g1:'Resten av Europa',close:'Lukk',
     cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederland',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italia'},
     privacy:'Personvern (på dansk)',src:'Data fra',and:'og',open:'Åpne datasett på'},
-  sv:{menu:'Huvudmeny',home:'elpriser.org startsida',land:'Länder',pick:'Välj land',g0:'Norden',g1:'Övriga Europa',close:'Stäng',
+  sv:{home:'elpriser.org startsida',land:'Länder',pick:'Välj land',g0:'Norden',g1:'Övriga Europa',close:'Stäng',
     cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederländerna',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italien'},
     privacy:'Integritet (på danska)',src:'Data från',and:'och',open:'Öppna datamängder på'},
-  fi:{menu:'Päävalikko',home:'elpriser.org etusivu',land:'Maat',pick:'Valitse maa',g0:'Pohjoismaat',g1:'Muu Eurooppa',close:'Sulje',
+  fi:{home:'elpriser.org etusivu',land:'Maat',pick:'Valitse maa',g0:'Pohjoismaat',g1:'Muu Eurooppa',close:'Sulje',
     cn:{dk:'Tanska',no:'Norja',sv:'Ruotsi',fi:'Suomi',nl:'Alankomaat',de:'Saksa',fr:'Ranska',pl:'Puola',it:'Italia'},
     privacy:'Tietosuoja (tanskaksi)',src:'Tietolähteet:',and:'ja',open:'Avoimet aineistot:'},
-  nl:{menu:'Hoofdmenu',home:'elpriser.org startpagina',land:'Landen',pick:'Kies een land',g0:'Noordse landen',g1:'Rest van Europa',close:'Sluiten',
+  nl:{home:'elpriser.org startpagina',land:'Landen',pick:'Kies een land',g0:'Noordse landen',g1:'Rest van Europa',close:'Sluiten',
     cn:{dk:'Denemarken',no:'Noorwegen',sv:'Zweden',fi:'Finland',nl:'Nederland',de:'Duitsland',fr:'Frankrijk',pl:'Polen',it:'Italië'},
     privacy:'Privacy (in het Deens)',src:'Gegevens van',and:'en',open:'Open datasets op'},
-  de:{menu:'Hauptmenü',home:'elpriser.org Startseite',land:'Länder',pick:'Land wählen',g0:'Nordische Länder',g1:'Übriges Europa',close:'Schließen',
+  de:{home:'elpriser.org Startseite',land:'Länder',pick:'Land wählen',g0:'Nordische Länder',g1:'Übriges Europa',close:'Schließen',
     cn:{dk:'Dänemark',no:'Norwegen',sv:'Schweden',fi:'Finnland',nl:'Niederlande',de:'Deutschland',fr:'Frankreich',pl:'Polen',it:'Italien'},
     privacy:'Datenschutz (auf Dänisch)',src:'Quelle:',and:'und',open:'Offene Datensätze auf',
     chg:'Änderung: Stundenmittel von elpriser.org berechnet'},
-  fr:{menu:'Menu principal',home:'elpriser.org accueil',land:'Pays',pick:'Choisir un pays',g0:'Pays nordiques',g1:'Reste de l’Europe',close:'Fermer',
+  fr:{home:'elpriser.org accueil',land:'Pays',pick:'Choisir un pays',g0:'Pays nordiques',g1:'Reste de l’Europe',close:'Fermer',
     cn:{dk:'Danemark',no:'Norvège',sv:'Suède',fi:'Finlande',nl:'Pays-Bas',de:'Allemagne',fr:'France',pl:'Pologne',it:'Italie'},
     privacy:'Confidentialité (en danois)',src:'Source\u00a0:',and:'et',open:'Jeux de données ouverts sur',
     chg:'Modifié\u00a0: moyennes horaires calculées par elpriser.org'},
-  pl:{menu:'Menu główne',home:'elpriser.org – strona główna',land:'Kraje',pick:'Wybierz kraj',g0:'Kraje nordyckie',g1:'Reszta Europy',close:'Zamknij',
+  pl:{home:'elpriser.org – strona główna',land:'Kraje',pick:'Wybierz kraj',g0:'Kraje nordyckie',g1:'Reszta Europy',close:'Zamknij',
     cn:{dk:'Dania',no:'Norwegia',sv:'Szwecja',fi:'Finlandia',nl:'Holandia',de:'Niemcy',fr:'Francja',pl:'Polska',it:'Włochy'},
     privacy:'Prywatność (po duńsku)',src:'Źródło:',and:'i',open:'Otwarte zbiory danych na',
     chg:'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org'},
-  it:{menu:'Menu principale',home:'elpriser.org pagina iniziale',land:'Paesi',pick:'Scegli il paese',g0:'Paesi nordici',g1:'Resto d’Europa',close:'Chiudi',
+  it:{home:'elpriser.org pagina iniziale',land:'Paesi',pick:'Scegli il paese',g0:'Paesi nordici',g1:'Resto d’Europa',close:'Chiudi',
     cn:{dk:'Danimarca',no:'Norvegia',sv:'Svezia',fi:'Finlandia',nl:'Paesi Bassi',de:'Germania',fr:'Francia',pl:'Polonia',it:'Italia'},
     privacy:'Privacy (in danese)',src:'Fonte:',and:'e',open:'Dataset aperti su',
     chg:'Modifiche: medie orarie calcolate da elpriser.org'}
 };
-/** The header navigation and the footer of country page `pg`, in its language: one link per country (Denmark
- *  first, then PRIS_COUNTRIES in order), the page's own marked aria-current. No net chip, no app button,
+/** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
+ *  first, then PRIS_COUNTRIES in order), the page's own marked aria-current; the header has the globe (pickerHTML) instead. No net chip, no app button,
  *  no Danish menu — those describe the Danish site. `home` is the logo's accessible name. The footer's data
  *  line names ENTSO-E and Energi Data Service on the Nordic pages; on an `act` page it is prisCredit() — the CC BY 4.0
  *  attribution — and `chg`, the note that the site changed the data. */
@@ -1155,7 +1155,6 @@ function chromeHTML(pg){
   var lk=function(href,t){return '<a href="'+href+'" target="_blank" rel="noopener">'+t+'</a>';};
   var P=pickerHTML(PRIS_COUNTRIES[pg].lang,PRIS_COUNTRIES[pg].cc);
   return {home:X.home,btn:P.btn,picker:P.dialog,
-    nav:'<nav class="site-links" aria-label="'+X.menu+'">'+items.map(function(it){return a(it,'on');}).join('')+'</nav>',
     foot:'<footer class="sf sf-x" data-pg="'+pg+'"><div class="sf-in"><nav class="sf-col" aria-labelledby="sfLand"><p class="sf-h" id="sfLand">'+X.land+'</p>'
       +'<ul class="sf-chips">'+items.map(function(it){return '<li>'+a(it,'')+'</li>';}).join('')+'</ul></nav>'
       +'<p class="sf-legal">&copy; Elpriser.org &mdash; '+X.src+' '+(PRIS_COUNTRIES[pg].act?prisCredit()+' &mdash; '+X.chg
@@ -2188,7 +2187,7 @@ function withNetChip(html, pre, area) {
     .replace(/id="netChipShort">[^<]*</, `id="netChipShort">${pre} · ${area === 'DK2' ? 'Øst' : 'Vest'}<`);
 }
 
-/** A country page's chrome in its own language (chromeHTML): the country navigation replaces the Danish menu, and
+/** A country page's chrome in its own language (chromeHTML): the Danish menu goes (the globe is the country navigation), and
  *  the net chip, the app button, the phone tab bar, the net dialog and the Danish footer are dropped — they
  *  describe the Danish site. The Danish markup in index.html is untouched; index.html's localiseChrome() does
  *  the same to the DOM for the browser. `xc` on <html> is the stylesheet's hook. */
@@ -2197,7 +2196,7 @@ function withCountryChrome(html, pg) {
   return html
     .replace('<html lang="da">', '<html lang="da" class="xc">')
     .replace('aria-label="elpriser.org forside"', () => `aria-label="${c.home}"`)
-    .replace(/<nav class="site-links"[\s\S]*?<\/nav>/, () => c.nav)
+    .replace(/\s*<nav class="site-links"[\s\S]*?<\/nav>/, '')
     .replace(/\s*<div class="site-actions">[\s\S]*?<\/div>/, () => `<div class="site-actions">${c.btn}</div>`)
     .replace(/<nav class="tabbar"[\s\S]*?<\/nav>/, '')
     .replace(/<footer class="sf">[\s\S]*?<\/footer>/, () => c.foot)

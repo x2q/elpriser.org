@@ -386,15 +386,11 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     }
     ok(cks.join() === 'dk,no,sv,fi,nl,de,fr,pl,it' && Object.values(pctx.PRIS_COUNTRIES).every(c => cks.includes(c.cc)), 'landenavnene dækker Danmark og hvert landeside-cc');
     // The words differ between the languages — a copy-pasted Norwegian table would pass every check above.
-    ok(new Set(cl.map(l => X[l].menu)).size === 8 && new Set(cl.map(l => X[l].privacy)).size === 8 && new Set(cl.map(l => X[l].land)).size >= 7 && cl.every(l => new Set(Object.values(X[l].cn)).size === 9), 'menu, privatlivs- og landeord er forskellige på de otte sprog');
+    ok(new Set(cl.map(l => X[l].pick)).size === 8 && new Set(cl.map(l => X[l].privacy)).size === 8 && new Set(cl.map(l => X[l].land)).size >= 7 && cl.every(l => new Set(Object.values(X[l].cn)).size === 9), 'vælger-, privatlivs- og landeord er forskellige på de otte sprog');
     const html = pg => pctx.chromeHTML(pg);
     for (const pg of Object.keys(pctx.PRIS_COUNTRIES)) {
       const c = html(pg), C = pctx.PRIS_COUNTRIES[pg], x = X[C.lang];
-      const navLinks = [...c.nav.matchAll(/<a href="([^"]+)"([^>]*)>([^<]+)<\/a>/g)];
-      ok(navLinks.map(m => m[1]).join() === '/dk1,/no/strompris,/sv/elpris,/fi/sahkon-hinta,/nl/stroomprijs,/de/strompreis,/fr/prix-electricite,/pl/ceny-pradu,/it/prezzo-luce', `${pg}: landenavigationen er Danmark og de otte landesider, i den rækkefølge`, navLinks.map(m => m[1]).join());
-      ok(navLinks.map(m => m[3]).join() === Object.values(x.cn).join(), `${pg}: landenavnene er på ${C.lang}`, navLinks.map(m => m[3]).join());
-      ok(navLinks.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === '/' + pg && (c.nav.match(/aria-current/g) || []).length === 1, `${pg}: præcis den aktuelle side er aria-current`);
-      ok(c.nav.includes(`aria-label="${x.menu}"`) && c.home === x.home, `${pg}: menuens og logoets navne er på ${C.lang}`);
+      ok(!('nav' in c) && c.home === x.home, `${pg}: ingen landerække i headeren (globussen er vælgeren), og logoets navn er på ${C.lang}`);
       ok(c.foot.startsWith('<footer ') && (c.foot.match(/<footer/g) || []).length === 1 && c.foot.includes(`<p class="sf-h" id="sfLand">${x.land}</p>`) && (c.foot.match(/aria-current="page"/g) || []).length === 1, `${pg}: sidefoden har en landeliste med den aktuelle markeret`);
       ok(c.foot.includes(`<a href="/privatliv" hreflang="da">${x.privacy}</a>`) && (c.foot.match(/hreflang/g) || []).length === 1, `${pg}: privatlivslinket peger på /privatliv med hreflang="da" og er mærket på ${C.lang}`);
       // The Nordic pages credit ENTSO-E and Energi Data Service; the EU pages credit Bundesnetzagentur | SMARD.de (CC BY 4.0, with the
@@ -402,7 +398,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
       ok(/&copy; Elpriser\.org &mdash; /.test(c.foot) && c.foot.includes('>Hugging Face</a>') && (C.act
         ? c.foot.includes('>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> &mdash; ' + x.chg) && !c.foot.includes('Energi Data Service') && !/ENTSO/.test(c.foot)
         : c.foot.includes('>ENTSO-E</a>') && c.foot.includes('>Energi Data Service</a>')), `${pg}: ophavsretslinjen med kilderne`);
-      const all = c.nav + c.foot;
+      const all = c.foot;
       ok(!/Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Mobilnavigation|Privatliv|Åbne datasæt|Alle guides|Forstå din elpris|id="netChip|class="app-btn|class="tabbar|<dialog/.test(all), `${pg}: ingen dansk chrome, ingen netchip, ingen app-knap`, (all.match(/Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Privatliv|Åbne datasæt/) || [])[0]);
       ok(/^<footer class="sf sf-x" data-pg="[^"]+">/.test(c.foot) && !/\$\{|undefined|NaN/.test(all), `${pg}: ingen skabelonrester`);
     }
