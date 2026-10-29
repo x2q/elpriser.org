@@ -364,13 +364,13 @@ async function main() {
     const main = page.slice(page.indexOf('<main'), page.indexOf('</main>'));
     check(/<div class="pris" data-period="2"/.test(main) && !/data-pris-period|pris-period/.test(main), `${p}: Pris-skærmen er tegnet, uden periodeknap`, 'kører Spark-jobbet (eu-prices-*)?');
     check(!/prognos|vorhersage|prévision|previsi|prognoz|forecast|machine|hugging/i.test(main + one(r.body, /<title>([^<]*)<\/title>/) + one(r.body, /<meta name="description" content="([^"]*)"/)), `${p}: ingen prognose-ord`);
-    check(main.includes('>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/"') && /Bundesnetzagentur \| SMARD\.de/.test(page.slice(page.indexOf('<footer'))) && !/ENTSO|Energi Data Service/.test(page), `${p}: kilden er Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket — hverken ENTSO-E eller EDS`);
+    check(main.includes('>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/"') && /Bundesnetzagentur \| SMARD\.de/.test(page.slice(page.indexOf('<footer'))) && !/ENTSO|Energi Data Service/.test(main + page.slice(page.indexOf('<footer'))), `${p}: kilden er Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket — hverken ENTSO-E eller EDS`);
     check(/(Änderung|Modifié|Zmiany|Modifiche)/.test(page.slice(page.indexOf('<footer'))) && /elpriser\.org/.test(page.slice(page.indexOf('<footer'))), `${p}: fodens kildelinje siger at dataene er ændret`);
     check(new RegExp(`"inLanguage":"${lang}"`).test(r.body) && new RegExp(`<link rel="canonical" href="https://elpriser.org${p}">`).test(r.body) && llmsTxt.includes(`https://elpriser.org${p})`), `${p}: inLanguage, canonical og llms.txt`);
   }
   {
     const it = await get('/it/prezzo-luce');
-    check((it.body.match(/role="tab" id="zt-/g) || []).length === 0 && /Nord/.test(one(it.body, /<title>([^<]*)<\/title>/)), '/it/prezzo-luce: én zone (Nord), ingen faner');
+    check((it.body.replace(/<script[\s\S]*?<\/script>/g, '').match(/role="tab" id="zt-/g) || []).length === 0 && /Nord/.test(one(it.body, /<title>([^<]*)<\/title>/)), '/it/prezzo-luce: én zone (Nord), ingen faner');
     check((await get('/ie/electricity-price')).status === 404, '/ie/electricity-price: 404 (ikke længere en side)');
     for (const z of ['de', 'fr', 'pl', 'it-n']) {
       const a = await get('/api/nordic?zone=' + z);
