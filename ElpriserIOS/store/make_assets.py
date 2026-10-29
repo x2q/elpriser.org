@@ -68,7 +68,7 @@ def header():
     logo(d, x, 740, 230)
     d.text((x + 230 + 70, 770), "elpriser", font=font(170, 800), fill="white")
     d.text((x, 1090), "Elprisen\ntime for time", font=font(280, 800), fill="white", spacing=30)
-    d.text((x, 1960), "Med dit netselskab · 10 døgn frem", font=font(110, 500), fill=(205, 220, 255))
+    d.text((x, 1960), "Med dit netselskab · 5 døgn frem", font=font(110, 500), fill=(205, 220, 255))
     # kurve med dagens rigtige priser i et hvidt kort til højre
     vals = prices()
     px0, px1, py0, py1 = 3450, 4150, 1050, 1900
@@ -107,7 +107,7 @@ def search():
     img = gradient(W, H).convert("RGBA")
     d = ImageDraw.Draw(img)
     d.text((W // 2, 520), "Elprisen time for time", font=font(300, 800), fill="white", anchor="mm")
-    d.text((W // 2, 800), "Med dit netselskab · 10 døgn frem · til iPhone og iPad", font=font(105, 500), fill=(205, 220, 255), anchor="mm")
+    d.text((W // 2, 800), "Med dit netselskab · 5 døgn frem · til iPhone og iPad", font=font(105, 500), fill=(205, 220, 255), anchor="mm")
     ph = 1700
     shots = ["02_nu.png", "03_prognose.png", "04_time.png"]
     gap = 170

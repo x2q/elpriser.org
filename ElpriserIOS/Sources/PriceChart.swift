@@ -24,9 +24,6 @@ struct PriceBarChart: View {
     /// Større skrift og luft på tablets.
     var large = false
 
-    @State private var startSelection: Int?
-    @State private var active = false
-    @State private var scrolling = false
 
     private var gutter: CGFloat { large ? 36 : 26 }
     private let topRow: CGFloat = 20
@@ -36,11 +33,19 @@ struct PriceBarChart: View {
         GeometryReader { g in
             Canvas { ctx, size in draw(&ctx, size) }
                 .contentShape(Rectangle())
-                // Samtidig med rullen, så en lodret bevægelse stadig ruller siden; vandrette bevægelser scrubber.
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { v in drag(v, width: g.size.width) }
-                        .onEnded { v in dragEnded(v, width: g.size.width) })
+                // Berøringen er UIKit, ikke en SwiftUI-DragGesture: en SwiftUI-bevægelse på grafen (også med minimumsafstand) holder
+                // fingeren fast, så siden ikke kan rulles, når stryget starter på grafen — og grafen fylder det meste af skærmen.
+                // Her starter bevægelsen kun, når den er vandret; et lodret stryg går til siden.
+                .overlay(ChartTouch(
+                    onTap: { x in
+                        guard !spec.bars.isEmpty else { return }
+                        let i = index(at: x, width: g.size.width)
+                        selected = selected == i ? nil : i
+                    },
+                    onScrub: { x in
+                        guard !spec.bars.isEmpty else { return }
+                        selected = index(at: x, width: g.size.width)
+                    }))
         }
         .frame(minHeight: plotHeight + topRow + bottomRow, maxHeight: flexible ? .infinity : plotHeight + topRow + bottomRow)
         .accessibilityElement(children: .ignore)
@@ -57,27 +62,6 @@ struct PriceBarChart: View {
         let n = spec.bars.count
         let w = Swift.max(width - gutter, 1)
         return Swift.min(Swift.max(Int(((x - gutter) / w * CGFloat(n)).rounded(.down)), 0), n - 1)
-    }
-
-    private func drag(_ v: DragGesture.Value, width: CGFloat) {
-        guard !spec.bars.isEmpty else { return }
-        if !active { active = true; scrolling = false; startSelection = selected }
-        if scrolling { return }
-        // Tydeligt lodret: brugeren ruller siden. Slip tippet, som det var, og lad rullen arbejde.
-        if abs(v.translation.height) > 12 && abs(v.translation.height) > abs(v.translation.width) {
-            scrolling = true
-            selected = startSelection
-            return
-        }
-        selected = index(at: v.location.x, width: width)
-    }
-
-    private func dragEnded(_ v: DragGesture.Value, width: CGFloat) {
-        defer { active = false; scrolling = false; startSelection = nil }
-        guard !scrolling, !spec.bars.isEmpty else { return }
-        let moved = hypot(v.translation.width, v.translation.height) > 6
-        // Et tryk på den allerede valgte søjle slukker tippet igen; ellers bliver det stående.
-        if !moved, let s = startSelection, s == index(at: v.location.x, width: width) { selected = nil }
     }
 
     // MARK: tegning
@@ -182,6 +166,43 @@ struct PriceBarChart: View {
             ctx.fill(Path(roundedRect: box.offsetBy(dx: 0, dy: 2), cornerRadius: 9), with: .color(.black.opacity(0.18)))
             ctx.fill(Path(roundedRect: box, cornerRadius: 9), with: .color(T.tooltip))
             ctx.draw(r, at: CGPoint(x: box.midX, y: box.midY), anchor: .center)
+        }
+    }
+}
+
+
+/// Tryk og vandret scrubbing på grafen, som UIKit-bevægelser: den vandrette bevægelse begynder kun, når fingeren bevæger sig mere
+/// vandret end lodret, så lodrette stryg stadig ruller siden under grafen.
+private struct ChartTouch: UIViewRepresentable {
+    var onTap: (CGFloat) -> Void
+    var onScrub: (CGFloat) -> Void
+
+    func makeUIView(context: Context) -> UIView {
+        let v = UIView()
+        v.backgroundColor = .clear
+        let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.pan(_:)))
+        pan.delegate = context.coordinator
+        v.addGestureRecognizer(pan)
+        v.addGestureRecognizer(UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tap(_:))))
+        return v
+    }
+
+    func updateUIView(_ view: UIView, context: Context) { context.coordinator.parent = self }
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        var parent: ChartTouch
+        init(_ parent: ChartTouch) { self.parent = parent }
+
+        @objc func pan(_ g: UIPanGestureRecognizer) {
+            if g.state == .began || g.state == .changed { parent.onScrub(g.location(in: g.view).x) }
+        }
+        @objc func tap(_ g: UITapGestureRecognizer) { parent.onTap(g.location(in: g.view).x) }
+
+        func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
+            guard let p = g as? UIPanGestureRecognizer else { return true }
+            let v = p.velocity(in: p.view)
+            return abs(v.x) > abs(v.y)
         }
     }
 }

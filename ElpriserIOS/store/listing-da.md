@@ -2,7 +2,7 @@
 
 **Navn (maks. 30):** Elpriser – time for time
 **Undertitel (maks. 30):** Elprisen med dit netselskab
-**Promoveringstekst (maks. 170):** Se elprisen lige nu, time for time og 10 døgn frem — med nettarif, afgifter og moms for dit netselskab. Find det med et tryk, og planlæg efter de billigste timer.
+**Promoveringstekst (maks. 170):** Se elprisen lige nu, time for time og 5 døgn frem — med nettarif, afgifter og moms for dit netselskab. Find det med et tryk, og planlæg efter de billigste timer.
 **Nøgleord (maks. 100):** elpris,strøm,spotpris,nettarif,netselskab,elafgift,prognose,billig strøm,tariffer,elbil,varmepumpe
 **Support-URL:** https://elpriser.org
 **Marketing-URL:** https://elpriser.org
@@ -12,14 +12,14 @@
 
 **Beskrivelse (maks. 4000):**
 
-Elpriser viser, hvad strømmen koster lige nu – time for time – og hvornår den bliver billigere de næste 10 døgn.
+Elpriser viser, hvad strømmen koster lige nu – time for time – og hvornår den bliver billigere de næste 5 døgn.
 
-• Prisen lige nu: se timeprisen, om den er billig eller dyr, og hvor grøn strømmen er (CO₂ pr. kWh).
+• Prisen lige nu: se timeprisen, om den er billig, middel eller dyr, og hvilken time de næste 24 timer der er billigst.
 • Din rigtige pris: vælg dit netselskab, så prisen inkluderer nettarif, Energinets tariffer, elafgift og moms – ligesom på din regning. Du kan også se ren spotpris.
 • Find netselskabet automatisk: tryk på knappen, og appen finder netselskabet ud fra din position. Positionen bruges kun én gang og gemmes aldrig – kun netselskabets navn gemmes på din enhed.
-• 10 døgn frem: faktiske børspriser og en åben modelprognose med usikkerhedsbånd.
+• 2 eller 5 døgn frem: faktiske børspriser og en åben modelprognose.
 • Time for time: se, hvordan prisen er sammensat – spotpris, nettarif, afgifter og moms.
-• Automation: se de billigste timer til varmepumpe, elbil og vandvarmer og hvor meget du sparer – og kopiér planen til Home Assistant eller Shelly.
+• Smart hjem: se de billigste timer til varmepumpe, elbil og vandvarmer og hvor meget du sparer – og kopiér planen til Home Assistant eller Shelly.
 • Til iPhone og iPad, med lys og mørk tilstand.
 
 Ingen reklamer. Ingen konto. Priserne kommer fra Energi Data Service (Energinet) og ENTSO-E, og prognosemodellen er åben på Hugging Face.
