@@ -29,6 +29,8 @@ struct PrisScreen: View {
                     : (g.size.width >= 600 && g.size.height >= g.size.width * 0.9 ? .stacked : .phone)
                 content(shape, g.size)
             }
+            // Grafens vindue følger timen: et valgt søjleindeks ville efter et timeskift pege på en anden time.
+            .onChange(of: Clock.hour()) { _, _ in selected = nil }
         }
         .background(T.bg)
         .onChange(of: vm.period) { _, _ in selected = nil }

@@ -157,8 +157,8 @@ final class BreakdownTests: XCTestCase {
     func testSelectedBarNamesItsDayLikeTheTooltip() throws {
         let days = fixtureDays()
         let spec = try XCTUnwrap(prisChart(period: .five, days: days, today: today, now: 8))
-        // i dag kl. 19, i morgen kl. 13, søn 18. okt kl. 13 (fjerde døgn efter i dag)
-        for (idx, when, hour) in [(19, "i dag", 19), (24 + 13, "i morgen", 13), (4 * 24 + 13, "søn 18. okt", 13)] {
+        // i dag kl. 19, i morgen kl. 13, søn 18. okt kl. 13 (fjerde døgn efter i dag); søjle 0 er kl. 02 (seks timer før kl. 08)
+        for (idx, when, hour) in [(19 - 2, "i dag", 19), (24 + 13 - 2, "i morgen", 13), (4 * 24 + 13 - 2, "søn 18. okt", 13)] {
             let r = try XCTUnwrap(breakdown(days, selected: idx))
             XCTAssertEqual(r.heading, "Sådan er prisen \(when) kl. \(pad(hour)) sammensat")
             XCTAssertTrue(r.isSelected)
@@ -169,9 +169,9 @@ final class BreakdownTests: XCTestCase {
     }
 
     func testSelectedBarFromAForecastDayIsLabelledPrognose() throws {
-        let r = try XCTUnwrap(breakdown(fixtureDays(), selected: 2 * 24 + 5))  // fre 16. okt er prognose
+        let r = try XCTUnwrap(breakdown(fixtureDays(), selected: 2 * 24 + 5 - 2))  // fre 16. okt er prognose
         XCTAssertEqual(r.rows[0].label, "Spotpris (prognose)")
-        XCTAssertEqual(try XCTUnwrap(breakdown(fixtureDays(), selected: 24 + 5)).rows[0].label, "Spotpris (Nord Pool)")
+        XCTAssertEqual(try XCTUnwrap(breakdown(fixtureDays(), selected: 24 + 5 - 2)).rows[0].label, "Spotpris (Nord Pool)")
     }
 
     func testSelectionOutsideTheChartFallsBackToNow() throws {
@@ -184,8 +184,8 @@ final class BreakdownTests: XCTestCase {
         XCTAssertNil(priceBreakdown(mode: "net_inkl_alt", days: days, today: today, now: 8, spec: nil, selected: nil, charges: nil, netName: "N1"))
         days[0] = Day(date: "2026-10-14", actual: true, price: [Double](repeating: 1.64, count: 24), lo: nil, hi: nil)
         XCTAssertNil(breakdown(days, selected: nil), "dagen har ingen nettarif")
-        XCTAssertNil(breakdown(days, selected: 3), "samme døgn, valgt søjle")
-        XCTAssertNotNil(breakdown(days, selected: 24 + 3), "andre døgn har stadig tariffen")
+        XCTAssertNil(breakdown(days, selected: 1), "samme døgn, valgt søjle")
+        XCTAssertNotNil(breakdown(days, selected: 24 + 3 - 2), "andre døgn har stadig tariffen")
         // ingen døgn for i dag: ingenting at vise
         XCTAssertNil(priceBreakdown(mode: "inkl_alt", days: [], today: today, now: 8, spec: nil, selected: nil, charges: charges, netName: nil))
     }
@@ -200,10 +200,10 @@ final class BreakdownTests: XCTestCase {
     func testBarsCarryDateAndDayWords() throws {
         let spec = try XCTUnwrap(prisChart(period: .five, days: fixtureDays(), today: today, now: 8))
         XCTAssertEqual(spec.bars[0].when, "I dag")
-        XCTAssertEqual(spec.bars[24].when, "I morgen")
-        XCTAssertEqual(spec.bars[4 * 24].when, "søn 18. okt")
-        XCTAssertEqual(spec.bars[4 * 24].date, "2026-10-18")
-        XCTAssertEqual(breakdownWhen(spec.bars[24]), "i morgen")
+        XCTAssertEqual(spec.bars[24 - 2].when, "I morgen")
+        XCTAssertEqual(spec.bars[4 * 24 - 2].when, "søn 18. okt")
+        XCTAssertEqual(spec.bars[4 * 24 - 2].date, "2026-10-18")
+        XCTAssertEqual(breakdownWhen(spec.bars[24 - 2]), "i morgen")
     }
 
     // MARK: API-felterne

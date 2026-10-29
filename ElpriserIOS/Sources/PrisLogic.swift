@@ -3,12 +3,15 @@ import Foundation
 // Ren logik til Pris-skærmen (Design A): niveau, akse, sætningen under prisen, statistikfelter og
 // søjlerne. Intet her rører ved visning, netværk eller tid — "nu" og "i dag" gives udefra, så alt kan testes.
 
-/// Periode-vælgeren: de næste 2 døgn eller de næste 5 døgn (i dag fra kl. 00 plus fire døgn frem = 120 timer).
+/// Periode-vælgeren: de næste 2 døgn eller de næste 5 døgn. Kalenderdøgnene (hero, nøgletal) er i dag + 1 eller i dag + 4;
+/// grafen starter seks timer før nu og løber 48 eller 120 timer frem (se `chartWindow`).
 enum PricePeriod: Int {
     case two = 2, five = 5
 
-    /// Døgn regnet fra i dag (0 = i dag), som perioden dækker.
+    /// Døgn regnet fra i dag (0 = i dag), som perioden dækker som kalender.
     var offsets: ClosedRange<Int> { self == .two ? 0...1 : 0...4 }
+    /// Døgn, grafen kan komme ind i: vinduet starter i dag og slutter højst seks timer ind i døgn 3 (2 døgn) eller døgn 6 (5 døgn).
+    var chartOffsets: ClosedRange<Int> { self == .two ? 0...2 : 0...5 }
 
     /// Knappen i periodevælgeren.
     var pillTitle: String { self == .two ? "2 døgn" : "5 døgn" }
@@ -80,7 +83,7 @@ func priceAxis(lo: Double, hi: Double) -> PriceAxis {
 struct PrisBar: Equatable {
     let value: Double
     let tier: PriceTier
-    /// Døgn regnet fra i dag (0 = i dag).
+    /// Døgnets plads blandt `PrisChartSpec.dayNames` (0 = det første døgn med søjler i vinduet).
     let dayOffset: Int
     let hour: Int
     /// Timen er allerede gået (kun i dag).
@@ -100,13 +103,28 @@ struct AxisLabel: Equatable {
     let text: String
 }
 
+/// Grafens vindue, talt i timer fra i dag kl. 00: seks timer før nu (ved kl. 00: fra midnat) og `period` døgn frem,
+/// kortet af hvis data slutter før. Samme regel som på nettet (prisChart i functions/[[path]].js).
+struct ChartWindow: Equatable {
+    let start: Int
+    let count: Int
+}
+
+func chartWindow(period: PricePeriod, now: Int, availableHours: Int) -> ChartWindow {
+    let h = Swift.min(Swift.max(now, 0), 23)
+    let back = Swift.min(6, h)
+    let start = h - back
+    let want = h > 0 ? back + period.rawValue * 24 : period.rawValue * 24
+    return ChartWindow(start: start, count: Swift.max(Swift.min(want, availableHours - start), 0))
+}
+
 struct PrisChartSpec: Equatable {
     let period: PricePeriod
     let bars: [PrisBar]
     let axis: PriceAxis
-    /// Ét navn pr. døgn i vinduet: "I dag", "I morgen" (2 døgn) eller "fre 15" (5 døgn).
+    /// Ét navn pr. døgn, der er med i vinduet: "I dag", "I morgen", "fre" (2 døgn; til "fre 00") eller "fre 15" (5 døgn).
     let dayNames: [String]
-    /// Indeks på døgnets første søjle, ét pr. døgn (normalt 0, 24, 48 …; skæve døgn ved sommertidsskifte holder).
+    /// Indeks på døgnets første søjle, ét pr. døgn i vinduet. Det første døgn starter typisk før vinduet (negativt eller 0).
     let dayStarts: [Int]
     let nowIndex: Int?
     /// Første søjle, der er prognose — nil når alt i vinduet er offentliggjort.
@@ -115,20 +133,24 @@ struct PrisChartSpec: Equatable {
     var title: String { period.title }
     var days: Int { dayNames.count }
 
-    /// Søjleindeks hvor et nyt døgn begynder (ikke det første): her tegnes midnatsskillelinjerne.
-    var midnights: [Int] { dayStarts.dropFirst().filter { $0 > 0 && $0 < bars.count } }
+    /// Søjleindeks hvor et nyt døgn begynder strengt inde i vinduet: her tegnes midnatsskillelinjerne.
+    var midnights: [Int] { dayStarts.filter { $0 > 0 && $0 < bars.count } }
 
-    /// 2 døgn: "I dag 00", så hver `step`. time, og "I morgen 00". 5 døgn: ét navn pr. døgn midt under dets søjler.
+    /// 2 døgn: en etiket ved hver `step`. klokketime (6 eller 12) i vinduet, uret fra nu; midnat hedder "I dag 00", "I morgen 00"
+    /// eller "fre 00". 5 døgn: ét navn pr. døgn midt under den del af døgnet, der er med (ingen med under seks timer).
     func xLabels(step: Int) -> [AxisLabel] {
         if period == .five {
-            return dayNames.indices.map { k in
-                let start = k < dayStarts.count ? dayStarts[k] : k * 24
+            return dayNames.indices.compactMap { k in
+                let start = k < dayStarts.count ? dayStarts[k] : 0
                 let end = k + 1 < dayStarts.count ? dayStarts[k + 1] : bars.count
-                return AxisLabel(at: Double(start) + Double(Swift.max(end - start, 1)) / 2, text: dayNames[k])
+                let vs = Swift.max(start, 0), ve = Swift.min(end, bars.count)
+                guard ve - vs >= 6 else { return nil }
+                return AxisLabel(at: Double(vs + ve) / 2, text: dayNames[k])
             }
         }
-        return stride(from: 0, to: bars.count, by: Swift.max(step, 1)).map { i in
+        return bars.indices.compactMap { i in
             let b = bars[i]
+            guard b.hour % Swift.max(step, 1) == 0 else { return nil }
             return AxisLabel(at: Double(i), text: b.hour == 0 ? "\(dayNames[Swift.min(b.dayOffset, dayNames.count - 1)]) 00" : pad(b.hour))
         }
     }
@@ -143,51 +165,71 @@ struct PrisChartSpec: Equatable {
 }
 
 /// Døgnene, en periode dækker, fundet på dato (ikke på plads), så et hul i data ikke flytter timerne.
-func daysIn(_ period: PricePeriod, days: [Day], today: String) -> [(offset: Int, day: Day)] {
+func daysIn(_ period: PricePeriod, days: [Day], today: String, offsets: ClosedRange<Int>? = nil) -> [(offset: Int, day: Day)] {
     let base = Clock.parse(today)
+    let wanted = offsets ?? period.offsets
     return days.compactMap { d in
         guard let n = Clock.calendar.dateComponents([.day], from: base, to: d.localDate).day,
-              period.offsets.contains(n) else { return nil }
+              wanted.contains(n) else { return nil }
         return (n, d)
     }
     .sorted { $0.offset < $1.offset }
 }
 
-/// Søjlerne for en periode. nil når perioden ingen døgn har.
+/// Søjlerne for en periode: seks timer før nu og 48 eller 120 timer frem (`chartWindow`). nil når perioden ingen døgn har.
+/// Alle indeks i specifikationen (nowIndex, forecastFrom, dayStarts, `selected`) tælles fra vinduets første søjle; en søjle
+/// kender selv sin dato og time, så tip og prisopbygning altid peger på den rigtige time.
 func prisChart(period: PricePeriod, days: [Day], today: String, now: Int) -> PrisChartSpec? {
-    let window = daysIn(period, days: days, today: today)
-    guard !window.isEmpty else { return nil }
-    // Niveauet er tertiler af det, der er synligt (2 døgn: 48 timer, 5 døgn: 120 timer).
-    let all = window.flatMap { $0.day.price }
+    let calendar = daysIn(period, days: days, today: today)
+    guard !calendar.isEmpty else { return nil }
+    // Niveauet er tertiler af kalenderperioden (2 døgn: 48 timer, 5 døgn: 120 timer); søjler uden for den måles mod samme referenceværdier.
+    let all = calendar.flatMap { $0.day.price }
     guard !all.isEmpty else { return nil }
+    let span = daysIn(period, days: days, today: today, offsets: period.chartOffsets)
 
     var bars: [PrisBar] = []
     var starts: [Int] = []
-    var forecastFrom: Int?
-    for (k, item) in window.enumerated() {
+    var firstForecast: Int?
+    for (k, item) in span.enumerated() {
         let d = item.day
         starts.append(bars.count)
         // I dag og i morgen går på ord; senere døgn på ugedag og dato.
         let when = item.offset == 0 ? "I dag" : (item.offset == 1 ? "I morgen" : "\(dayShort(d)) \(dayMonth(d))")
         for (h, v) in d.price.enumerated() {
-            if !d.actual && forecastFrom == nil { forecastFrom = bars.count }
+            if !d.actual && firstForecast == nil { firstForecast = bars.count }
             bars.append(PrisBar(
                 value: v, tier: priceTier(v, in: all), dayOffset: k, hour: h,
                 past: item.offset == 0 && h < now, actual: d.actual, date: d.date, when: when,
                 tip: "\(when) kl. \(pad(h)) · \(fmt(v)) kr/kWh"))
         }
     }
-    // Navnene følger døgnets plads fra `today` (ikke urets dato), så logikken er den samme i test og i drift.
-    func twoDayName(_ item: (offset: Int, day: Day)) -> String {
-        item.offset == 0 ? "I dag" : (item.offset == 1 ? "I morgen" : cap(weekdayName(item.day)))
+    let hasToday = span.first?.offset == 0
+    let w = chartWindow(period: period, now: hasToday ? now : 0, availableHours: bars.count)
+    guard w.count > 0 else { return nil }
+    let shown = Array(bars[w.start..<(w.start + w.count)])
+
+    // Døgnene, der har søjler i vinduet, med deres første søjle talt fra vinduets start.
+    var names: [String] = [], dayStarts: [Int] = [], firstDay = -1
+    for (k, item) in span.enumerated() {
+        let from = starts[k], to = k + 1 < starts.count ? starts[k + 1] : bars.count
+        guard to > w.start, from < w.start + w.count else { continue }
+        if firstDay < 0 { firstDay = k }
+        dayStarts.append(from - w.start)
+        let d = item.day
+        names.append(period == .two
+            ? (item.offset == 0 ? "I dag" : (item.offset == 1 ? "I morgen" : dayShort(d)))
+            : "\(dayShort(d)) \(dayNum(d))")
     }
-    let names = window.map { period == .two ? twoDayName($0) : "\(dayShort($0.day)) \(dayNum($0.day))" }
-    let nowIdx = window.firstIndex { $0.offset == 0 }.map { starts[$0] + now }
+    let forecastFrom = firstForecast.flatMap { $0 < w.start + w.count ? Swift.max($0 - w.start, 0) : nil }
+    let nowIdx = hasToday ? now - w.start : -1
+    let values = shown.map(\.value)
     return PrisChartSpec(
-        period: period, bars: bars,
-        axis: priceAxis(lo: Swift.min(all.min() ?? 0, 0), hi: all.max() ?? 0),
-        dayNames: names, dayStarts: starts,
-        nowIndex: nowIdx.flatMap { (0..<bars.count).contains($0) ? $0 : nil },
+        period: period,
+        bars: shown.map { b in PrisBar(value: b.value, tier: b.tier, dayOffset: b.dayOffset - firstDay, hour: b.hour,
+                                       past: b.past, actual: b.actual, date: b.date, when: b.when, tip: b.tip) },
+        axis: priceAxis(lo: Swift.min(values.min() ?? 0, 0), hi: values.max() ?? 0),
+        dayNames: names, dayStarts: dayStarts,
+        nowIndex: (0..<shown.count).contains(nowIdx) ? nowIdx : nil,
         forecastFrom: forecastFrom)
 }
 

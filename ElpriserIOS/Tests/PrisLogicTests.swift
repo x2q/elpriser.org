@@ -122,77 +122,150 @@ final class PrisLogicTests: XCTestCase {
 
     // MARK: søjler
 
+    func testChartWindowStartsSixHoursBeforeNowAndRunsTheWholePeriodOn() {
+        // (nu, start, længde 2 døgn, længde 5 døgn) — med rigeligt data
+        for (now, st, two, five) in [(0, 0, 48, 120), (3, 0, 51, 123), (6, 0, 54, 126), (17, 11, 54, 126), (23, 17, 54, 126)] {
+            XCTAssertEqual(chartWindow(period: .two, now: now, availableHours: 240), ChartWindow(start: st, count: two), "2 døgn kl. \(now)")
+            XCTAssertEqual(chartWindow(period: .five, now: now, availableHours: 240), ChartWindow(start: st, count: five), "5 døgn kl. \(now)")
+        }
+    }
+
+    func testChartWindowIsCutWhereTheDataEnds() {
+        XCTAssertEqual(chartWindow(period: .two, now: 17, availableHours: 48), ChartWindow(start: 11, count: 37))
+        XCTAssertEqual(chartWindow(period: .five, now: 17, availableHours: 120), ChartWindow(start: 11, count: 109))
+        XCTAssertEqual(chartWindow(period: .five, now: 0, availableHours: 72), ChartWindow(start: 0, count: 72))
+        XCTAssertEqual(chartWindow(period: .two, now: 23, availableHours: 10).count, 0)
+    }
+
     func testTwoDayChart() throws {
         let c = try XCTUnwrap(prisChart(period: .two, days: ten(), today: today, now: 21))
         XCTAssertEqual(c.title, "Næste 2 døgn")
-        XCTAssertEqual(c.bars.count, 48)
-        XCTAssertEqual(c.nowIndex, 21)
-        XCTAssertEqual(c.bars.filter(\.past).count, 21)
-        XCTAssertFalse(c.bars[21].past)
-        XCTAssertEqual(c.bars[19].tip, "I dag kl. 19 · 3,90 kr/kWh")
-        XCTAssertEqual(c.bars[37].tip, "I morgen kl. 13 · 1,38 kr/kWh")
+        // seks timer før nu (kl. 15) og 48 timer frem: 54 søjler
+        XCTAssertEqual(c.bars.count, 54)
+        XCTAssertEqual(c.bars[0].hour, 15)
+        XCTAssertEqual(c.nowIndex, 6)
+        XCTAssertEqual(c.bars.filter(\.past).count, 6)
+        XCTAssertTrue(c.bars[0..<6].allSatisfy(\.past))
+        XCTAssertFalse(c.bars[6].past)
+        XCTAssertEqual(c.bars[4].tip, "I dag kl. 19 · 3,90 kr/kWh")
+        XCTAssertEqual(c.bars[22].tip, "I morgen kl. 13 · 1,38 kr/kWh")
+        XCTAssertEqual(c.bars[53].tip, "fre 16. okt kl. 20 · 2,98 kr/kWh")
         XCTAssertEqual(c.axis.max, 4.5)
-        XCTAssertNil(c.forecastFrom)
-        XCTAssertEqual(c.xLabels(step: 12).map(\.text), ["I dag 00", "12", "I morgen 00", "12"])
+        // fredag (kl. 00 = søjle 33) er første prognosedøgn og ligger inde i vinduet
+        XCTAssertEqual(c.forecastFrom, 33)
+        XCTAssertEqual(c.dayNames, ["I dag", "I morgen", "fre"])
+        XCTAssertEqual(c.xLabels(step: 12).map(\.text), ["I morgen 00", "12", "fre 00", "12"])
+        XCTAssertEqual(c.xLabels(step: 6).map(\.text), ["18", "I morgen 00", "06", "12", "18", "fre 00", "06", "12", "18"])
+        XCTAssertEqual(c.xLabels(step: 6).map(\.at), [3, 9, 15, 21, 27, 33, 39, 45, 51])
+    }
+
+    func testTwoDayChartAtMidnightIsTheTwoCalendarDays() throws {
+        let c = try XCTUnwrap(prisChart(period: .two, days: ten(), today: today, now: 0))
+        XCTAssertEqual(c.bars.count, 48)
+        XCTAssertEqual(c.nowIndex, 0)
+        XCTAssertEqual(c.bars.filter(\.past).count, 0)
         XCTAssertEqual(c.xLabels(step: 6).map(\.text), ["I dag 00", "06", "12", "18", "I morgen 00", "06", "12", "18"])
-        XCTAssertEqual(c.xLabels(step: 6).map(\.at), [0, 6, 12, 18, 24, 30, 36, 42])
+    }
+
+    func testTwoDayChartEarlyMorningStartsAtMidnight() throws {
+        let c = try XCTUnwrap(prisChart(period: .two, days: ten(), today: today, now: 3))
+        XCTAssertEqual(c.bars.count, 51)  // 3 timer før nu + 48
+        XCTAssertEqual(c.bars[0].hour, 0)
+        XCTAssertEqual(c.nowIndex, 3)
+        XCTAssertEqual(c.bars.filter(\.past).count, 3)
+        let c6 = try XCTUnwrap(prisChart(period: .two, days: ten(), today: today, now: 6))
+        XCTAssertEqual(c6.bars.count, 54)
+        XCTAssertEqual(c6.nowIndex, 6)
+        let c23 = try XCTUnwrap(prisChart(period: .two, days: ten(), today: today, now: 23))
+        XCTAssertEqual(c23.bars.count, 54)
+        XCTAssertEqual(c23.bars[0].hour, 17)
+        XCTAssertEqual(c23.nowIndex, 6)
+    }
+
+    func testTipAndBreakdownKeepTheBarsOwnHourNotTheWindowOffset() throws {
+        let c = try XCTUnwrap(prisChart(period: .two, days: ten(), today: today, now: 21))
+        // søjle 0 er i dag kl. 15, ikke kl. 00
+        XCTAssertEqual(c.bars[0].hour, 15)
+        XCTAssertEqual(c.bars[0].tip, "I dag kl. 15 · 1,63 kr/kWh")
+        XCTAssertEqual(c.bars[0].date, today)
+        XCTAssertEqual(c.bars[9].hour, 0)
+        XCTAssertEqual(c.bars[9].date, "2026-10-15")
+        let r = try XCTUnwrap(priceBreakdown(mode: "inkl_alt", days: ten(), today: today, now: 21, spec: c, selected: 22,
+                                             charges: Charges(sys: 0.07, trans: 0.054, afg: 0.008, vat: 0.25), netName: nil))
+        XCTAssertEqual(r.heading, "Sådan er prisen i morgen kl. 13 sammensat")
     }
 
     func testBarTiersAgreeWithTheHeroForTheCurrentHour() throws {
         let c = try XCTUnwrap(prisChart(period: .two, days: ten(), today: today, now: 21))
         let s = try XCTUnwrap(prisSummary(days: ten(), today: today, now: 21))
-        XCTAssertEqual(c.bars[21].tier, s.tier)
+        XCTAssertEqual(c.bars[try XCTUnwrap(c.nowIndex)].tier, s.tier)
     }
 
-    func testFiveDayChartIsTodayPlusFourDays() throws {
+    func testFiveDayChartRunsFiveDaysOnFromSixHoursBeforeNow() throws {
         let c = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 21))
         XCTAssertEqual(c.title, "Næste 5 døgn")
-        XCTAssertEqual(c.bars.count, 120)
-        XCTAssertEqual(c.days, 5)
-        XCTAssertEqual(c.dayNames, ["ons 14", "tor 15", "fre 16", "lør 17", "søn 18"])
-        XCTAssertEqual(c.dayStarts, [0, 24, 48, 72, 96])
-        XCTAssertEqual(c.midnights, [24, 48, 72, 96])
-        // i dag fra kl. 00: timer der er gået dæmpes, prikken står på den nuværende time
-        XCTAssertEqual(c.nowIndex, 21)
-        XCTAssertEqual(c.bars.filter(\.past).count, 21)
-        XCTAssertFalse(c.bars[21].past)
-        XCTAssertFalse(c.bars[24 + 3].past)
-        // én etiket pr. døgn, midt under døgnets 24 søjler
+        XCTAssertEqual(c.bars.count, 126)  // kl. 15 i dag + 120 timer: til og med man 19. kl. 20
+        XCTAssertEqual(c.bars[0].hour, 15)
+        XCTAssertEqual(c.bars[125].tip, "man 19. okt kl. 20 · 3,01 kr/kWh")
+        XCTAssertEqual(c.days, 6)
+        XCTAssertEqual(c.dayNames, ["ons 14", "tor 15", "fre 16", "lør 17", "søn 18", "man 19"])
+        XCTAssertEqual(c.dayStarts, [-15, 9, 33, 57, 81, 105])
+        // skillelinje ved hver midnat strengt inde i vinduet
+        XCTAssertEqual(c.midnights, [9, 33, 57, 81, 105])
+        // seks dæmpede timer før nu, prikken på den nuværende time
+        XCTAssertEqual(c.nowIndex, 6)
+        XCTAssertEqual(c.bars.filter(\.past).count, 6)
+        XCTAssertFalse(c.bars[6].past)
+        XCTAssertFalse(c.bars[9 + 3].past)
+        // én etiket pr. døgn midt under den del af døgnet, der er med (9 timer i dag, 24, 24, 24, 24, 21)
         XCTAssertEqual(c.xLabels(step: 12).map(\.text), c.dayNames)
-        XCTAssertEqual(c.xLabels(step: 6).map(\.at), [12, 36, 60, 84, 108])
+        XCTAssertEqual(c.xLabels(step: 6).map(\.at), [4.5, 21, 45, 69, 93, 115.5])
+    }
+
+    func testFiveDayLabelIsSkippedWhenUnderSixHoursOfTheDayAreInTheWindow() throws {
+        // kl. 04: vinduet er 4 timer før nu... start 0, 4+120 = 124 timer: døgn 6 har 4 timer med og får ingen etiket
+        let c = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 4))
+        XCTAssertEqual(c.bars.count, 124)
+        XCTAssertEqual(c.dayNames.count, 6)
+        XCTAssertEqual(c.xLabels(step: 6).map(\.text), ["ons 14", "tor 15", "fre 16", "lør 17", "søn 18"])
+        // kl. 00: præcis fem kalenderdøgn, ingen skillelinje ved slutningen
+        let z = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 0))
+        XCTAssertEqual(z.bars.count, 120)
+        XCTAssertEqual(z.midnights, [24, 48, 72, 96])
+        XCTAssertEqual(z.xLabels(step: 6).map(\.at), [12, 36, 60, 84, 108])
     }
 
     func testFiveDayTooltipsUseIDagIMorgenThenWeekdayAndDate() throws {
         let c = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 21))
-        XCTAssertEqual(c.bars[19].tip, "I dag kl. 19 · 3,90 kr/kWh")
-        XCTAssertEqual(c.bars[24 + 13].tip, "I morgen kl. 13 · 1,38 kr/kWh")
-        XCTAssertEqual(c.bars[48 + 13].tip, "fre 16. okt kl. 13 · 1,38 kr/kWh")
-        XCTAssertEqual(c.bars[96 + 13].tip, "søn 18. okt kl. 13 · 1,40 kr/kWh")
+        XCTAssertEqual(c.bars[19 - 15].tip, "I dag kl. 19 · 3,90 kr/kWh")
+        XCTAssertEqual(c.bars[24 + 13 - 15].tip, "I morgen kl. 13 · 1,38 kr/kWh")
+        XCTAssertEqual(c.bars[48 + 13 - 15].tip, "fre 16. okt kl. 13 · 1,38 kr/kWh")
+        XCTAssertEqual(c.bars[96 + 13 - 15].tip, "søn 18. okt kl. 13 · 1,40 kr/kWh")
     }
 
     func testFiveDayPrognoseMarkerIsTheFirstForecastDay() throws {
         // i morgen er endnu ikke offentliggjort: prognosen begynder ved i morgen kl. 00
         let early = [day(today, t), day("2026-10-15", m, actual: false), day("2026-10-16", m, actual: false),
                      day("2026-10-17", m, actual: false), day("2026-10-18", m, actual: false)]
-        XCTAssertEqual(try XCTUnwrap(prisChart(period: .five, days: early, today: today, now: 9)).forecastFrom, 24)
+        XCTAssertEqual(try XCTUnwrap(prisChart(period: .five, days: early, today: today, now: 9)).forecastFrom, 24 - 3)
         // i morgen er offentliggjort: først dagen efter er prognose
         let c = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 21))
-        XCTAssertEqual(c.forecastFrom, 48)
-        XCTAssertTrue(c.bars[47].actual)
-        XCTAssertTrue(c.bars[24].actual)
-        XCTAssertFalse(c.bars[48].actual)
+        XCTAssertEqual(c.forecastFrom, 48 - 15)
+        XCTAssertTrue(c.bars[47 - 15].actual)
+        XCTAssertTrue(c.bars[24 - 15].actual)
+        XCTAssertFalse(c.bars[48 - 15].actual)
     }
 
-    func testFiveDayTiersAreTercilesOfTheVisibleWindow() throws {
+    func testFiveDayTiersAreTercilesOfTheFiveCalendarDays() throws {
         let c = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 9))
         let n = Double(c.bars.count)
         let low = Double(c.bars.filter { $0.tier == .low }.count) / n
         let high = Double(c.bars.filter { $0.tier == .high }.count) / n
         XCTAssertEqual(low, 1.0 / 3, accuracy: 0.12)
         XCTAssertEqual(high, 1.0 / 3, accuracy: 0.12)
-        // niveauet måles mod de 120 synlige timer, ikke mod de 48 i 2-døgnsvisningen
-        let all = c.bars.map(\.value)
-        for b in c.bars { XCTAssertEqual(b.tier, priceTier(b.value, in: all)) }
+        // niveauet måles mod de 120 timer i de fem kalenderdøgn, ikke mod de 48 i 2-døgnsvisningen
+        let ref = ten().prefix(5).flatMap(\.price)
+        for b in c.bars { XCTAssertEqual(b.tier, priceTier(b.value, in: ref)) }
     }
 
     func testFiveDayAxisFollowsTheHighestVisiblePrice() throws {
@@ -200,20 +273,25 @@ final class PrisLogicTests: XCTestCase {
         days[4] = day("2026-10-18", m.map { $0 + 6 }, actual: false)  // søn 18.: 3,34 + 6 = 9,34
         let c = try XCTUnwrap(prisChart(period: .five, days: days, today: today, now: 9))
         XCTAssertEqual(c.axis.max, 10.5)  // 9,34 × 1,12 = 10,46 → 10,5
-        // et døgn uden for vinduet (døgn 6) rykker ikke aksen
+        // et døgn uden for vinduet (døgn 8) rykker ikke aksen
         days[7] = day("2026-10-21", m.map { $0 + 50 }, actual: false)
         XCTAssertEqual(try XCTUnwrap(prisChart(period: .five, days: days, today: today, now: 9)).axis.max, 10.5)
+        // aksen følger vinduet: en dyr time i dag før vinduets start (kl. 02, vinduet begynder kl. 15) tæller ikke
+        var cheap = ten()
+        cheap[0] = day(today, t.enumerated().map { $0.offset == 2 ? 20.0 : $0.element })
+        XCTAssertEqual(try XCTUnwrap(prisChart(period: .two, days: cheap, today: today, now: 21)).axis.max, 4.5)
+        XCTAssertEqual(try XCTUnwrap(prisChart(period: .two, days: cheap, today: today, now: 3)).axis.max, 22.5)
     }
 
     func testFiveDaySummaryNamesTheExtremeHourAndDay() throws {
         let c = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 21))
-        XCTAssertTrue(c.summary.hasPrefix("Næste 5 døgn. Billigst 1,30 kr/kWh "), c.summary)
+        XCTAssertTrue(c.summary.hasPrefix("Næste 5 døgn. Billigst 1,38 kr/kWh "), c.summary)
         XCTAssertTrue(c.summary.contains("kl. "), c.summary)
     }
 
     func testFiveDayChartShowsWhatExistsWhenForecastIsMissing() throws {
         let c = try XCTUnwrap(prisChart(period: .five, days: [day(today, t), day("2026-10-15", m)], today: today, now: 9))
-        XCTAssertEqual(c.bars.count, 48)
+        XCTAssertEqual(c.bars.count, 45)  // fra kl. 03 (seks timer før kl. 09) til slutningen af i morgen
         XCTAssertEqual(c.title, "Næste 5 døgn")
         XCTAssertEqual(c.dayNames, ["ons 14", "tor 15"])
     }
@@ -222,7 +300,7 @@ final class PrisLogicTests: XCTestCase {
         // et hul i data (lør 17. mangler) flytter ikke de andre døgn
         let days = [day(today, t), day("2026-10-15", m), day("2026-10-16", m, actual: false), day("2026-10-18", m, actual: false)]
         let c = try XCTUnwrap(prisChart(period: .five, days: days, today: today, now: 9))
-        XCTAssertEqual(c.bars.count, 96)
+        XCTAssertEqual(c.bars.count, 96 - 3)
         XCTAssertEqual(c.dayNames, ["ons 14", "tor 15", "fre 16", "søn 18"])
     }
 
@@ -310,7 +388,8 @@ final class PrisLogicTests: XCTestCase {
     func testForecastDividerFallsWhereTomorrowStopsBeingPublished() throws {
         let days = [day(today, t), day("2026-10-15", m, actual: false)]
         let c = try XCTUnwrap(prisChart(period: .two, days: days, today: today, now: 9))
-        XCTAssertEqual(c.forecastFrom, 24)
+        XCTAssertEqual(c.forecastFrom, 24 - 3)
+        XCTAssertEqual(c.bars.count, 45)
     }
 
     // MARK: tekster
