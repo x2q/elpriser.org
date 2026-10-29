@@ -123,11 +123,16 @@ fun PriceScreen(vm: AppViewModel, wide: Boolean) {
         val shownPeriod = effectivePeriod(days.size, period)
         val shownDays = visibleDays(days, period)
         val shownVals = if (shownPeriod == PERIOD_FIVE) shownDays.flatMap { it.price } else twoVals
+        // Grafen starter seks timer før nu og løber 2 eller 5 døgn frem (vinduet kan nå ind i døgn 3 / 6); nøgletallene bliver ved døgnene.
+        val cw = chartWindow(days.size, shownPeriod, now)
+        val chartDays = windowDays(days, cw)
+        val chartVals = chartDays.flatMap { it.price }
+        val winVals = chartVals.subList(cw.st, cw.end)
         // Nøgletal: dyreste/billigste time fra nu og til slutningen af det viste vindue.
         val cheapest = cheapestTile(tx, shownVals, now, shownDays)
         val priciest = priciestTile(tx, shownVals, now, shownDays)
-        val tiers = remember(shownVals) { tiersFor(shownVals) }
-        val axis = remember(shownVals) { axisFor(shownVals) }
+        val tiers = remember(chartVals, cw.st, cw.n) { tiersFor(chartVals, winVals) }
+        val axis = remember(chartVals, cw.st, cw.n) { axisFor(winVals) }
         val nowIndex = now
 
         val modeIdx = if (s.view >= 2) 1 else 0
@@ -135,11 +140,11 @@ fun PriceScreen(vm: AppViewModel, wide: Boolean) {
         val caption = priceCaption(tx, s.mode)
 
         // Det valgte søjleindeks deles af grafen og prisopbygningen (ryddes, når serien skifter: periode, visning eller nye priser).
-        var sel by remember(shownPeriod, shownVals.size, shownVals.firstOrNull(), shownVals.lastOrNull()) { mutableIntStateOf(-1) }
+        var sel by remember(shownPeriod, chartVals.size, chartVals.firstOrNull(), chartVals.lastOrNull(), cw.st) { mutableIntStateOf(-1) }
         var breakdownOpen by rememberSaveable { mutableStateOf(false) }
-        val picked = sel in shownVals.indices
+        val picked = sel in cw.st until cw.end
         val breakdown = breakdownAt(
-            tx, s.mode, shownDays, shownVals, if (picked) sel else now, picked, vm.series[s.mode]?.charges, s.net?.name,
+            tx, s.mode, chartDays, chartVals, if (picked) sel else now, picked, vm.series[s.mode]?.charges, s.net?.name,
         )
         val captionSlot: @Composable (Modifier, TextUnit) -> Unit = { m, size ->
             PriceCaption(caption, breakdown, breakdownOpen, { breakdownOpen = !breakdownOpen }, picked, { sel = -1 }, size, m)
@@ -157,7 +162,7 @@ fun PriceScreen(vm: AppViewModel, wide: Boolean) {
         }
         val chart: @Composable () -> Unit = {
             PriceChartCard(
-                wide = wide, period = shownPeriod, days = shownDays, vals = shownVals, tiers = tiers, axis = axis,
+                wide = wide, period = shownPeriod, days = chartDays, vals = chartVals, window = cw, tiers = tiers, axis = axis,
                 nowIndex = nowIndex, summary = summary, captionSlot = captionSlot, modeIdx = modeIdx, onMode = onMode,
                 sel = sel, onSel = { sel = it },
             )
@@ -354,14 +359,14 @@ private fun PeriodPill(selected: Int, onSelect: (Int) -> Unit, wide: Boolean) {
 
 @Composable
 private fun PriceChartCard(
-    wide: Boolean, period: Int, days: List<Day>, vals: List<Double>, tiers: IntArray, axis: Axis,
+    wide: Boolean, period: Int, days: List<Day>, vals: List<Double>, window: ChartWindow, tiers: IntArray, axis: Axis,
     nowIndex: Int?, summary: String, captionSlot: @Composable (Modifier, TextUnit) -> Unit, modeIdx: Int, onMode: (Int) -> Unit,
     sel: Int, onSel: (Int) -> Unit,
 ) {
     val t = T
     val tx = rememberStrings()
     val radius = if (wide) 28.dp else 22.dp
-    val tip = if (sel in vals.indices) tooltipText(tx, days, vals, sel) else null
+    val tip = if (sel in window.st until window.end) tooltipText(tx, days, vals, sel) else null
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(radius)).background(t.surface)
             .border(BorderStroke(1.dp, t.outline), RoundedCornerShape(radius))
@@ -374,7 +379,7 @@ private fun PriceChartCard(
         }
         if (!wide) captionSlot(Modifier, 11.5.sp)
         PriceBars(
-            vals = vals, days = days, tiers = tiers, axis = axis, nowIndex = nowIndex, period = period, wide = wide,
+            vals = vals, days = days, window = window, tiers = tiers, axis = axis, nowIndex = nowIndex, period = period, wide = wide,
             selected = sel, onSelect = onSel, summary = summary + (tip?.let { " " + tx.get(R.string.chart_selected, it) } ?: ""), tip = tip,
         )
     }
@@ -400,7 +405,7 @@ private fun Legend() {
  */
 @Composable
 private fun PriceBars(
-    vals: List<Double>, days: List<Day>, tiers: IntArray, axis: Axis, nowIndex: Int?, period: Int, wide: Boolean,
+    vals: List<Double>, days: List<Day>, window: ChartWindow, tiers: IntArray, axis: Axis, nowIndex: Int?, period: Int, wide: Boolean,
     selected: Int, onSelect: (Int) -> Unit, summary: String, tip: String?,
 ) {
     val t = T
@@ -409,7 +414,8 @@ private fun PriceBars(
     val forecastText = tx.get(R.string.forecast_label)
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
-    val n = vals.size
+    val st = window.st
+    val n = window.n
     val plotH = if (wide) 240.dp else 160.dp
     val topPad = if (wide) 26.dp else 22.dp
     val labelH = if (wide) 24.dp else 22.dp
@@ -432,11 +438,11 @@ private fun PriceBars(
     Canvas(
         Modifier.fillMaxWidth().height(topPad + plotH + labelH)
             .semantics { contentDescription = summary }
-            .pointerInput(n, gutterPx) {
+            .pointerInput(st, n, gutterPx) {
                 val slop = viewConfiguration.touchSlop
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
-                    fun indexAt(x: Float) = (((x - gutterPx) / (size.width - gutterPx)) * n).toInt().coerceIn(0, n - 1)
+                    fun indexAt(x: Float) = st + (((x - gutterPx) / (size.width - gutterPx)) * n).toInt().coerceIn(0, n - 1)
                     val before = currentSelected
                     val startX = down.position.x
                     val first = indexAt(startX)
@@ -480,12 +486,13 @@ private fun PriceBars(
         }
 
         // døgnskel ved hver midnat (5 døgn)
-        if (period == PERIOD_FIVE) for (d in 1 until n / 24) {
-            val xx = plotL + d * 24 * slot
+        if (period == PERIOD_FIVE) for (m in midnights(window)) {
+            val xx = plotL + (m - st) * slot
             drawLine(t.outline.copy(alpha = 0.6f), Offset(xx, plotT), Offset(xx, plotB), strokeWidth = 1.dp.toPx())
         }
         // prognose: tynd skillelinje og etiket
-        firstForecast?.let { fi ->
+        firstForecast?.takeIf { it < window.end }?.let { f0 ->
+            val fi = maxOf(f0 - st, 0)
             val xx = plotL + fi * slot
             if (fi > 0) drawLine(t.text2.copy(alpha = 0.5f), Offset(xx, plotT), Offset(xx, plotB), strokeWidth = 1.dp.toPx())
             val lab = measurer.measure(forecastText, unitStyle)
@@ -493,19 +500,19 @@ private fun PriceBars(
         }
 
         // markeret time: svagt felt bag søjlen
-        if (selected in 0 until n) {
+        if (selected in st until window.end) {
             drawRoundRect(
-                t.brandSolid.copy(alpha = 0.10f), Offset(plotL + selected * slot, plotT), Size(slot, plotB - plotT),
+                t.brandSolid.copy(alpha = 0.10f), Offset(plotL + (selected - st) * slot, plotT), Size(slot, plotB - plotT),
                 CornerRadius(4.dp.toPx()),
             )
         }
 
         // søjler
-        // 5 døgn: 120 tynde søjler med et hårfint mellemrum; 2 døgn: lidt luft mellem 48 søjler.
+        // 5 døgn: omkring 120 tynde søjler med et hårfint mellemrum; 2 døgn: lidt luft mellem omkring 50 søjler.
         val gap = (if (period == PERIOD_FIVE) (if (wide) 2.dp else 1.dp) else if (wide) 4.dp else 2.dp).toPx().coerceAtMost(slot * 0.35f)
         val barW = (slot - gap).coerceAtLeast(1f)
         val corner = CornerRadius(minOf(2.dp.toPx(), barW / 2))
-        for (i in 0 until n) {
+        for (i in st until window.end) {
             val top = y(vals[i])
             val hTop = minOf(top, y0); val hBottom = maxOf(top, y0)
             val h = (hBottom - hTop).coerceAtLeast(1.dp.toPx())
@@ -513,19 +520,19 @@ private fun PriceBars(
             var c = barOf(tiers[i])
             if (i == selected) c = lerp(c, Color.Black, 0.2f)
             else if (past) c = c.copy(alpha = 0.35f)
-            drawRoundRect(c, Offset(plotL + i * slot + gap / 2, hTop), Size(barW, h), corner)
+            drawRoundRect(c, Offset(plotL + (i - st) * slot + gap / 2, hTop), Size(barW, h), corner)
         }
 
         // nu-prik over timens søjle
-        if (nowIndex != null && nowIndex in 0 until n) {
+        if (nowIndex != null && nowIndex in st until window.end) {
             val r = (if (wide) 3.dp else 2.5.dp).toPx()
-            val cx = plotL + nowIndex * slot + slot / 2
+            val cx = plotL + (nowIndex - st) * slot + slot / 2
             val cy = (minOf(y(vals[nowIndex]), y0) - r - 4.dp.toPx()).coerceAtLeast(plotT + r)
             drawCircle(t.text, r, Offset(cx, cy))
         }
 
         // aksens tekster
-        val labels = if (period == PERIOD_TWO) hourLabels(tx, n, if (plotW / density.density >= 460f) 6 else 12) else dayLabels(tx, days)
+        val labels = if (period == PERIOD_TWO) hourLabels(tx, days, window, if (plotW / density.density >= 460f) 6 else 12) else dayLabels(tx, days, window)
         for (l in labels) {
             val tl = measurer.measure(l.text, xStyle)
             val cx = plotL + l.frac * plotW
@@ -534,11 +541,11 @@ private fun PriceBars(
         }
 
         // boblen sidst, så den ligger øverst — og aldrig uden for kortet
-        if (tip != null && selected in 0 until n) {
+        if (tip != null && selected in st until window.end) {
             val tl = measurer.measure(tip, tipStyle)
             val padH = (if (wide) 11.dp else 10.dp).toPx(); val padV = (if (wide) 7.dp else 6.dp).toPx()
             val bw = tl.size.width + 2 * padH; val bh = tl.size.height + 2 * padV
-            val cx = plotL + selected * slot + slot / 2
+            val cx = plotL + (selected - st) * slot + slot / 2
             val bx = (cx - bw / 2).coerceIn(0f, w - bw)
             val barTop = minOf(y(vals[selected]), y0)
             val by = (barTop - 12.dp.toPx() - bh).coerceAtLeast(0f)

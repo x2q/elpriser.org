@@ -4,7 +4,11 @@ import org.elpriser.app.data.Day
 import org.elpriser.app.ui.DAYS_FIVE
 import org.elpriser.app.ui.PERIOD_FIVE
 import org.elpriser.app.ui.PERIOD_TWO
+import org.elpriser.app.ui.ChartWindow
 import org.elpriser.app.ui.Extreme
+import org.elpriser.app.ui.chartWindow
+import org.elpriser.app.ui.midnights
+import org.elpriser.app.ui.windowDays
 import org.elpriser.app.ui.axisFor
 import org.elpriser.app.ui.coercePeriod
 import org.elpriser.app.ui.effectivePeriod
@@ -29,8 +33,8 @@ class PriceLogicTest {
     private fun cheapestTile(vals: List<Double>, now: Int, days: List<Day>? = null): Extreme? = org.elpriser.app.ui.cheapestTile(tx, vals, now, days)
     private fun priciestTile(vals: List<Double>, now: Int, days: List<Day>? = null): Extreme? = org.elpriser.app.ui.priciestTile(tx, vals, now, days)
     private fun tooltipText(days: List<Day>, vals: List<Double>, i: Int): String = org.elpriser.app.ui.tooltipText(tx, days, vals, i)
-    private fun hourLabels(n: Int, step: Int): List<XLabel> = org.elpriser.app.ui.hourLabels(tx, n, step)
-    private fun dayLabels(days: List<Day>): List<XLabel> = org.elpriser.app.ui.dayLabels(tx, days)
+    private fun hourLabels(days: List<Day>, w: ChartWindow, step: Int): List<XLabel> = org.elpriser.app.ui.hourLabels(tx, days, w, step)
+    private fun dayLabels(days: List<Day>, w: ChartWindow): List<XLabel> = org.elpriser.app.ui.dayLabels(tx, days, w)
     private fun periodTitle(period: Int): String = org.elpriser.app.ui.periodTitle(tx, period)
     private fun priceCaption(mode: String): String = org.elpriser.app.ui.priceCaption(tx, mode)
     private fun heroLabel(hour: Int, weekday: String?): String = org.elpriser.app.ui.heroLabel(tx, hour, weekday)
@@ -122,14 +126,60 @@ class PriceLogicTest {
         assertEquals("tir 19. okt kl. 19 · 2,49 kr/kWh", tooltipText(fiveDays, fiveVals, 96 + 19))
     }
 
+    private fun day(date: String, actual: Boolean = false) = Day(date, actual, List(24) { 1.0 }, null, null)
+
     @Test fun x_labels() {
-        assertEquals(listOf("I dag 00", "12", "I morgen 00", "12"), hourLabels(48, 12).map { it.text })
-        assertEquals(listOf("I dag 00", "06", "12", "18", "I morgen 00", "06", "12", "18"), hourLabels(48, 6).map { it.text })
-        assertEquals(0.5f, hourLabels(48, 12)[2].frac, 0f)
-        val days = listOf(Day("2026-10-16", false, List(24) { 1.0 }, null, null), Day("2026-10-17", false, List(24) { 1.0 }, null, null))
-        assertEquals(listOf("fre 16", "lør 17"), dayLabels(days).map { it.text })
-        assertEquals(0.25f, dayLabels(days)[0].frac, 0f)
+        val three = listOf(day("2026-10-16", true), day("2026-10-17"), day("2026-10-18"))   // fre, lør, søn
+        // Vindue fra kl. 00 (2 døgn om natten): som den gamle akse, nu efter uret.
+        val w0 = ChartWindow(0, 48)
+        assertEquals(listOf("I dag 00", "12", "I morgen 00", "12"), hourLabels(three, w0, 12).map { it.text })
+        assertEquals(listOf("I dag 00", "06", "12", "18", "I morgen 00", "06", "12", "18"), hourLabels(three, w0, 6).map { it.text })
+        assertEquals(0.5f, hourLabels(three, w0, 12)[2].frac, 0f)
+        // Kl. 21: vinduet starter kl. 15 og er 54 søjler; etiketter ved hver sjette klokketime, og midnat hedder dag + 00.
+        val w21 = chartWindow(3, PERIOD_TWO, 21)
+        assertEquals(15, w21.st); assertEquals(54, w21.n)
+        val l = hourLabels(three, w21, 6)
+        assertEquals(listOf("18", "I morgen 00", "06", "12", "18", "søn 00", "06", "12", "18"), l.map { it.text })
+        assertEquals(listOf(3f / 54, 9f / 54, 15f / 54), l.take(3).map { it.frac })
+        val days = listOf(day("2026-10-16"), day("2026-10-17"))
+        assertEquals(listOf("fre 16", "lør 17"), dayLabels(days, ChartWindow(0, 48)).map { it.text })
+        assertEquals(0.25f, dayLabels(days, ChartWindow(0, 48))[0].frac, 0f)
     }
+
+    @Test fun chart_window_starts_six_hours_before_now() {
+        // Kl. 21 med mange døgn: 6 før + 48 frem = 54; 5 døgn: 6 + 120 = 126.
+        assertEquals(15 to 54, chartWindow(10, PERIOD_TWO, 21).let { it.st to it.n })
+        assertEquals(15 to 126, chartWindow(10, PERIOD_FIVE, 21).let { it.st to it.n })
+        // Før kl. 6 er der færre end seks timer bagud; kl. 00 starter det ved midnat med hele døgn.
+        assertEquals(0 to 48, chartWindow(10, PERIOD_TWO, 0).let { it.st to it.n })
+        assertEquals(0 to 120, chartWindow(10, PERIOD_FIVE, 0).let { it.st to it.n })
+        assertEquals(0 to 123, chartWindow(10, PERIOD_FIVE, 3).let { it.st to it.n })
+        assertEquals(0 to 51, chartWindow(10, PERIOD_TWO, 3).let { it.st to it.n })
+        assertEquals(6 to 126, chartWindow(10, PERIOD_FIVE, 12).let { it.st to it.n })
+        // Mangler data, afkortes vinduet: 3 døgn, kl. 21 -> fra 15 til 72 = 57 søjler; kun i dag og i morgen -> til 48.
+        assertEquals(57, chartWindow(3, PERIOD_FIVE, 21).n)
+        assertEquals(33, chartWindow(2, PERIOD_TWO, 21).n)
+        assertEquals(6, windowDays(allDaysFor(10), chartWindow(10, PERIOD_FIVE, 21)).size)   // 15 + 126 = 141 -> døgn 0..5
+        assertEquals(3, windowDays(allDaysFor(10), chartWindow(10, PERIOD_TWO, 21)).size)    // 15 + 54 = 69 -> døgn 0..2
+    }
+
+    @Test fun five_day_window_labels_and_midnights() {
+        val w = chartWindow(10, PERIOD_FIVE, 21)   // 15..141
+        val days = allDaysFor(10).take(6)
+        val l = dayLabels(days, w)
+        assertEquals(listOf("tor 15", "fre 16", "lør 17", "søn 18", "man 19", "tir 20"), l.map { it.text })
+        assertEquals((19.5f - 15) / 126, l[0].frac, 1e-6f)      // døgn 0: timerne 15..24, midten ved 19,5
+        assertEquals((130.5f - 15) / 126, l[5].frac, 1e-6f)     // døgn 5: timerne 120..141, midten ved 130,5
+        assertEquals(listOf(24, 48, 72, 96, 120), midnights(w))
+        // Under seks timer af et døgn i vinduet: ingen etiket. Kl. 05 starter vinduet kl. 00 og slutter kl. 125: døgn 5 har 5 timer.
+        val w5 = chartWindow(10, PERIOD_FIVE, 5)
+        assertEquals(5 + 120, w5.n)
+        assertEquals(5, dayLabels(allDaysFor(10).take(6), w5).size)
+        assertEquals(listOf(24, 48, 72, 96, 120), midnights(w5))
+        assertEquals(listOf(24, 48, 72, 96), midnights(chartWindow(10, PERIOD_FIVE, 0)))   // 0..120: midnat 120 er kanten, ikke inde i vinduet
+    }
+
+    private fun allDaysFor(n: Int) = (0 until n).map { k -> day("2026-10-%02d".format(15 + k), k == 0) }
 
     // ── 5 døgn: i dag fra kl. 00 + de næste fire døgn. Fre 15. – tir 19. okt, tallene fra designets skitse (DK1). ──
     private val fiveRaw = listOf(
@@ -166,7 +216,7 @@ class PriceLogicTest {
     }
 
     @Test fun five_day_x_labels_are_one_per_day_centred_under_24_bars() {
-        val l = dayLabels(fiveDays)
+        val l = dayLabels(fiveDays, ChartWindow(0, 120))
         assertEquals(listOf("fre 15", "lør 16", "søn 17", "man 18", "tir 19"), l.map { it.text })
         assertEquals(listOf(0.1f, 0.3f, 0.5f, 0.7f, 0.9f), l.map { it.frac })
     }

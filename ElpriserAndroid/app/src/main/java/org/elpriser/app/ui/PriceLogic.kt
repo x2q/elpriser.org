@@ -52,11 +52,30 @@ fun effectivePeriod(availableDays: Int, period: Int): Int =
 fun visibleDays(all: List<Day>, period: Int): List<Day> =
     all.take(if (effectivePeriod(all.size, period) == PERIOD_FIVE) DAYS_FIVE else DAYS_TWO)
 
+/**
+ * Grafens vindue (samme regel som webbens): det starter seks timer før nu (kl. 00 om natten) og løber [DAYS_TWO] eller [DAYS_FIVE] døgn frem
+ * fra dér, så langt dataene rækker. [st] er første time talt fra kl. 00 i dag, [n] antal søjler. Søjlernes indeks er altid absolutte
+ * (0 = kl. 00 i dag); kun tegningen trækker [st] fra. Vinduet kan nå ind i døgn nr. 3 (2 døgn) eller nr. 6 (5 døgn).
+ */
+class ChartWindow(val st: Int, val n: Int) {
+    val end: Int get() = st + n
+}
+
+fun chartWindow(availableDays: Int, period: Int, now: Int): ChartWindow {
+    val back = minOf(6, now)
+    val st = now - back
+    val span = back + (if (period == PERIOD_FIVE) DAYS_FIVE else DAYS_TWO) * 24
+    return ChartWindow(st, maxOf(minOf(span, availableDays * 24 - st), 0))
+}
+
+/** De døgn, vinduet berører (det sidste ofte kun delvist). */
+fun windowDays(all: List<Day>, w: ChartWindow): List<Day> = all.take((w.end + 23) / 24)
+
 /** Indeks (i timeserien) for første prognosedøgn, eller null hvis alle viste døgn er offentliggjorte børspriser. */
 fun forecastStart(days: List<Day>): Int? = days.indexOfFirst { !it.actual }.takeIf { it >= 0 }?.times(24)
 
 /** Tier (0 billig, 1 middel, 2 dyr) for hver time, målt mod hele det viste vindue (terciler). */
-fun tiersFor(vals: List<Double>): IntArray = IntArray(vals.size) { verdict(vals[it], vals).kind }
+fun tiersFor(vals: List<Double>, ref: List<Double> = vals): IntArray = IntArray(vals.size) { verdict(vals[it], ref).kind }
 
 /** "i dag" / "i morgen" / "søn 17." for timen med det givne indeks. Uden dage at slå op i: "senere". */
 fun dayWord(tx: Strings, index: Int, days: List<Day>? = null): String {
@@ -130,18 +149,34 @@ fun tooltipText(tx: Strings, days: List<Day>, vals: List<Double>, i: Int): Strin
 /** Placering (0..1 langs aksen) og tekst for vandrette akseetiketter. */
 class XLabel(val frac: Float, val text: String)
 
-/** 2 døgn: hvert [step]. time; kl. 00 hedder "I dag 00" / "I morgen 00". */
-fun hourLabels(tx: Strings, n: Int, step: Int): List<XLabel> =
-    (0 until n step step).map { h ->
+/**
+ * 2 døgn: en etiket ved hver [step]. klokketime i vinduet, så en graf der starter ved nu læses efter uret. Midnat hedder "I dag 00" /
+ * "I morgen 00" og senere "fre 00".
+ */
+fun hourLabels(tx: Strings, days: List<Day>, w: ChartWindow, step: Int): List<XLabel> =
+    (0 until w.n - 1).map { w.st + it }.filter { it % step == 0 }.map { ab ->
         XLabel(
-            h.toFloat() / n,
-            if (h % 24 == 0) tx.get(if (h == 0) R.string.axis_today_midnight else R.string.axis_tomorrow_midnight) else pad(h % 24),
+            (ab - w.st).toFloat() / w.n,
+            when {
+                ab % 24 != 0 -> pad(ab % 24)
+                ab == 0 -> tx.get(R.string.axis_today_midnight)
+                ab == 24 -> tx.get(R.string.axis_tomorrow_midnight)
+                else -> "${dayShort(tx, days[ab / 24])} 00"
+            },
         )
     }
 
-/** 5 døgn: ét navn pr. døgn, midt under døgnets 24 søjler ("fre 15"). */
-fun dayLabels(tx: Strings, days: List<Day>): List<XLabel> =
-    days.mapIndexed { k, d -> XLabel((k + 0.5f) / days.size, tx.get(R.string.day_short_num, dayShort(tx, d), d.localDate.dayOfMonth)) }
+/** 5 døgn: ét navn pr. døgn ("fre 15"), midt under den del af døgnet der er med; et døgn med under seks timer i vinduet har intet. */
+fun dayLabels(tx: Strings, days: List<Day>, w: ChartWindow): List<XLabel> =
+    days.indices.mapNotNull { k ->
+        val vs = maxOf(k * 24, w.st)
+        val ve = minOf(k * 24 + 24, w.end)
+        if (ve - vs < 6) null
+        else XLabel(((vs + ve) / 2f - w.st) / w.n, tx.get(R.string.day_short_num, dayShort(tx, days[k]), days[k].localDate.dayOfMonth))
+    }
+
+/** Midnatterne inde i vinduet (indeks), hvor 5 døgn tegner en døgnskel. */
+fun midnights(w: ChartWindow): List<Int> = (1..w.end / 24).map { it * 24 }.filter { it > w.st && it < w.end }
 
 fun periodTitle(tx: Strings, period: Int) = tx.get(if (period == PERIOD_FIVE) R.string.period_title_five else R.string.period_title_two)
 

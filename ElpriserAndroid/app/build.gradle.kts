@@ -19,8 +19,8 @@ android {
         applicationId = "org.elpriser.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.2"
         // The app's own languages (Danish is the default values/ folder). Keeps library translations for other
         // locales out of the bundle. AGP 8.10 still has this property (deprecated in favour of
         // androidResources.localeFilters, which was not in the cached 8.7 API); res/xml/locale_config.xml lists the five
