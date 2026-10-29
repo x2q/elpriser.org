@@ -116,13 +116,15 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const dl = pris(dearLate, D0, 21, o);
   ok(/<div class="k">Dyrest søn 18\.<\/div><div class="v">5,50 <small>kr · kl\. 19<\/small>/.test(dl.slice(dl.indexOf('pris-tiles pp5'))), 'Dyrest søn 18. 5,50 kr · kl. 19');
   // The day list: text, one row per day, settled or forecast. Rows 6-10 stay as hidden text for crawlers.
-  const trs = h.match(/<tr class="r\d+"><th scope="row">/g) || [];
-  ok(trs.length === 10, 'ti dage i dagslisten', String(trs.length));
-  ok((h.match(/<tr class="r2">/g) || []).length === 2 && (h.match(/<tr class="r5">/g) || []).length === 3 && (h.match(/<tr class="r10">/g) || []).length === 5,
-     'rækkerne: 2 i begge perioder, 3 kun i 5 døgn, 5 kun som tekst');
-  ok(/<tr class="r5"><th scope="row">Fredag<small>16\. okt<\/small>/.test(h), 'tredje række hedder ugedagen og datoen');
-  ok(/<tr class="r2"><th scope="row">I dag<small>14\. okt<\/small><\/th><td>1,30–3,90<\/td><td>kl\. 04–05<\/td><td class="real">Børspris/.test(h), 'dagens spænd og billigste time står som tekst');
-  ok(/<tr class="r5"><th scope="row">Fredag[^]*?<td class="fc">Prognose/.test(h), 'prognosedage er mærket Prognose');
+  // One <tbody> per period, over the hours that period's chart shows: 2 døgn reaches into day three, 5 døgn into day six.
+  const tb = (html, p) => (html.match(new RegExp(`<tbody class="pp${p}">([^]*?)</tbody>`)) || [])[1] || '';
+  const nrows = t => (t.match(/<tr><th scope="row">/g) || []).length;
+  ok(nrows(h) + (h.match(/<tr class="r10">/g) || []).length === 13, 'dagslisten: 3 + 6 rækker i periodernes vinduer og 4 skjulte dage');
+  ok(nrows(tb(h, 2)) === 3 && nrows(tb(h, 5)) === 6 && (h.match(/<tr class="r10">/g) || []).length === 4,
+     'rækkerne: 3 i 2 døgn, 6 i 5 døgn, 4 kun som tekst til crawlere');
+  ok(/<th scope="row">Fredag<small>16\. okt<\/small>/.test(tb(h, 2)) && /<th scope="row">Mandag<small>19\. okt<\/small>/.test(tb(h, 5)) && !/Mandag/.test(tb(h, 2)), 'tredje række hedder ugedagen og datoen; 5 døgn når til mandag');
+  ok(/<tr><th scope="row">I dag<small>14\. okt<\/small><\/th><td>1,63–3,90<\/td><td>kl\. 15–16<\/td><td class="real">Børspris/.test(tb(h, 2)), 'dagens spænd og billigste time tæller kun timerne grafen viser (fra kl. 15, seks før nu), og står som tekst');
+  ok(/<th scope="row">Fredag[^]*?<td class="fc">Prognose/.test(tb(h, 2)), 'prognosedage er mærket Prognose');
   // The old value 10 ("3–10 døgn") and every spelling of it resolves to 5 døgn; unknown values to 2.
   ok(pctx.prisPeriod(10) === 5 && pctx.prisPeriod('10') === 5 && pctx.prisPeriod('3–10') === 5 && pctx.prisPeriod('3-10') === 5 && pctx.prisPeriod(5) === 5 && pctx.prisPeriod('5') === 5,
      'prisPeriod: 10, "10", "3–10" og 5 giver 5');
@@ -311,7 +313,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     ok(w.verdict.test((e.match(/class="pris-pill t\d"><i><\/i>([^<]+)</) || [])[1] || '') && e.includes(`<div class="k">${w.cheap}`), `${zone}: dom og feltetiket på ${lang}`, w.cheap);
     ok([...e.matchAll(/<button type="button" role="tab"[^>]*>([^<]*)</g)].map(m => m[1]).join('|') === w.p.join('|') && e.includes(`<section class="pris-card pp2" aria-label="${w.next}">`), `${zone}: periodepille og korttitel på ${lang}`);
     ok(e.includes(`</i>${w.fc}</span>`) || !/pris-fc/.test(e), `${zone}: prognose-skillelinjen hedder ${w.fc}`);
-    ok((e.match(/<tr class="r\d+">/g) || []).length === 5 && !/class="r10"/.test(e) && !/\b10 /.test(e.replace(/data-tip="[^"]*"/g, '').replace(/style="[^"]*"/g, '').replace(/\d+ ?(snt|öre|øre)/g, '')), `${zone}: fem dagsrækker og ingen dag seks til ti`);
+    ok(nrows(tb(e, 5)) === 5 && nrows(tb(e, 2)) === 3 && !/class="r10"/.test(e) && !/\b10 /.test(e.replace(/data-tip="[^"]*"/g, '').replace(/style="[^"]*"/g, '').replace(/\d+ ?(snt|öre|øre)/g, '')), `${zone}: fem dagsrækker og ingen dag seks til ti`);
     ok((e.match(/<span class="pc[ "]/g) || []).length === 54 + 105 && !/NaN|undefined|Infinity/.test(e), `${zone}: 54 + 105 søjler (6 før nu og resten af de fem døgn feedet har), ingen NaN`);
     ok(/data-tip="[^"]*\d (öre|øre|snt)\/kWh"/.test(e) && !/data-tip="[^"]*,\d\d\d /.test(e), `${zone}: tooltip i zonens enhed`);
   }
@@ -342,7 +344,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
       ok(one.includes(`<section class="pris-card pp2" aria-label="${w.one}">`) && one.includes(`<p class="pris-ct">${w.one}</p>`) && !one.includes(w.card), `${zone}: ét døgn: titlen er "${w.one}", ikke "${w.card}"`);
       const bars = h => (h.slice(h.indexOf('pris-card pp2'), h.indexOf('pris-tiles pp2')).match(/<span class="pc[ "]/g) || []).length;
       ok(bars(two) === 48 && bars(one) === 24, `${zone}: 48 søjler med to døgn, 24 med ét`, `${bars(two)}/${bars(one)}`);
-      ok((two.match(/<tr class="r\d+">/g) || []).length === 2 && (one.match(/<tr class="r\d+">/g) || []).length === 1 && (two.match(new RegExp(`<td class="real">${w.kind}</td>`, 'g')) || []).length === 2, `${zone}: to og én dagsrække, typen er kun "${w.kind}"`);
+      ok(nrows(two) === 2 && nrows(one) === 1 && (two.match(new RegExp(`<td class="real">${w.kind}</td>`, 'g')) || []).length === 2, `${zone}: to og én dagsrække, typen er kun "${w.kind}"`);
       ok(!/pris-fc|class="fc"|r5|r7|r10|pris-sum/.test(two + one) && !/NaN|undefined|Infinity/.test(two + one), `${zone}: ingen prognose-skillelinje, ingen skjulte dage, ingen NaN`);
       ok(two.includes(`>${w.u}/kWh</span>`) && !/kr\/kWh|øre|døgn/.test(two), `${zone}: enheden er ${w.u}/kWh`);
       const aria = (two.match(/role="img" tabindex="0" aria-label="([^"]*)"/) || [])[1] || '';
@@ -386,7 +388,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     }
     ok(cks.join() === 'dk,no,sv,fi,nl,de,fr,pl,it' && Object.values(pctx.PRIS_COUNTRIES).every(c => cks.includes(c.cc)), 'landenavnene dækker Danmark og hvert landeside-cc');
     // The words differ between the languages — a copy-pasted Norwegian table would pass every check above.
-    ok(new Set(cl.map(l => X[l].pick)).size === 8 && new Set(cl.map(l => X[l].privacy)).size === 8 && new Set(cl.map(l => X[l].land)).size >= 7 && cl.every(l => new Set(Object.values(X[l].cn)).size === 9), 'vælger-, privatlivs- og landeord er forskellige på de otte sprog');
+    ok(new Set(cl.map(l => X[l].place)).size === 8 && new Set(cl.map(l => X[l].privacy)).size === 8 && new Set(cl.map(l => X[l].land)).size >= 7 && cl.every(l => new Set(Object.values(X[l].cn)).size === 9), 'vælger-, privatlivs- og landeord er forskellige på de otte sprog');
     const html = pg => pctx.chromeHTML(pg);
     for (const pg of Object.keys(pctx.PRIS_COUNTRIES)) {
       const c = html(pg), C = pctx.PRIS_COUNTRIES[pg], x = X[C.lang];
@@ -404,25 +406,33 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     }
   }
 
-  // ── The country picker (the globe in the header): one template for the Danish pages and the eight languages ──
+  // ── The place dialog (the one chip in the header): one template for the Danish pages and the eight languages ──
   {
     const X = pctx.CHROME_I18N, HREFS = '/dk1,/no/strompris,/sv/elpris,/fi/sahkon-hinta,/nl/stroomprijs,/de/strompreis,/fr/prix-electricite,/pl/ceny-pradu,/it/prezzo-luce';
     const NAMES = 'Danmark Dansk,Norge Norsk,Sverige Svenska,Suomi Suomi,Nederland Nederlands,Deutschland Deutsch,France Français,Polska Polski,Italia Italiano';
     const links = d => [...d.matchAll(/<a href="([^"]+)"( aria-current="page")?><b>([^<]+)<\/b><span>([^<]+)<\/span><\/a>/g)];
-    const da = pctx.pickerHTML('da', 'dk');
-    ok(INDEX.includes(da.dialog) && INDEX.slice(INDEX.indexOf('<header class="site-nav">'), INDEX.indexOf('</header>')).includes(da.btn), 'den danske vælger i index.html er pickerHTML(da, dk), tegn for tegn');
-    ok(links(da.dialog).map(m => m[1]).join() === HREFS && links(da.dialog).map(m => m[3] + ' ' + m[4]).join() === NAMES && links(da.dialog).filter(m => m[2]).map(m => m[1]).join() === '/dk1', 'dansk vælger: ni lande med eget navn og sprog, Danmark markeret');
-    ok(da.dialog.includes('>Vælg land</h2>') && da.dialog.includes('>Norden</p>') && da.dialog.includes('>Resten af Europa</p>') && da.btn.includes('aria-label="Vælg land"'), 'dansk vælger: overskrift, grupper og knapnavn på dansk');
-    const picks = new Set(['Vælg land']);
+    const header = INDEX.slice(INDEX.indexOf('<header class="site-nav">'), INDEX.indexOf('</header>'));
+    const da = pctx.placeHTML('da', 'dk');
+    ok(INDEX.includes(da.dialog) && header.includes(da.btn), 'den danske stedsvælger i index.html er placeHTML(da, dk), tegn for tegn');
+    ok(!/countryDialog|countryBtn|openCountryDialog/.test(INDEX.replace(/<script[\s\S]*?<\/script>/g, '') + header), 'ingen globus og ingen separat landevælger tilbage på de danske sider');
+    ok(links(da.dialog).map(m => m[1]).join() === HREFS && links(da.dialog).map(m => m[3] + ' ' + m[4]).join() === NAMES && links(da.dialog).filter(m => m[2]).map(m => m[1]).join() === '/dk1', 'dansk stedsvælger: ni lande med eget navn og sprog, Danmark markeret');
+    ok(da.dialog.includes('>Hvor er du?</h2>') && da.dialog.includes('>Norden</p>') && da.dialog.includes('>Resten af Europa</p>') && da.btn.includes('aria-label="Hvor er du?"') && da.dialog.includes('>Vis priser</button>'), 'dansk stedsvælger: overskrift, grupper, knapper og chipnavn på dansk');
+    ok((da.dialog.match(/<details class="pl-step" name="place"/g) || []).length === 2 && /<details class="pl-step" name="place" open><summary><span class="pl-t"><span class="pl-k">Netselskab<\/span>/.test(da.dialog) && da.dialog.includes('id="netDlgDK1"') && da.dialog.includes('id="netDlgDK2"') && da.dialog.includes('id="gpsBtn"'), 'dansk stedsvælger: to trin (Land, Netselskab), netselskab-trinnet åbent, netlister og positionsopslag på plads');
+    ok(!/data-zone/.test(da.dialog) && da.dialog.includes('href="/norden"') && da.dialog.includes('href="/privatliv"') && da.dialog.includes('href="/om-elpriser"'), 'dansk stedsvælger: ingen zoner, men Norden-oversigten og privatliv/om');
+    const titles = new Set(['Hvor er du?']);
+    const ZN = { 'no/strompris': 'no1,no2,no3,no4,no5', 'sv/elpris': 'se1,se2,se3,se4' };
     for (const pg of Object.keys(pctx.PRIS_COUNTRIES)) {
-      const C = pctx.PRIS_COUNTRIES[pg], x = X[C.lang], P = pctx.pickerHTML(C.lang, C.cc), l = links(P.dialog);
-      picks.add(x.pick);
-      ok(l.map(m => m[1]).join() === HREFS && l.map(m => m[3] + ' ' + m[4]).join() === NAMES, `${pg}: vælgeren viser de ni lande med deres egne navne, ens på alle sprog`);
-      ok(l.filter(m => m[2]).map(m => m[1]).join() === '/' + pg, `${pg}: præcis sidens eget land er aria-current i vælgeren`);
-      ok(P.dialog.includes(`id="countryDialogTitle">${x.pick}</h2>`) && P.dialog.includes(`<p class="pd-gt">${x.g0}</p>`) && P.dialog.includes(`<p class="pd-gt">${x.g1}</p>`) && P.dialog.includes(`aria-label="${x.close}"`) && P.btn.includes(`aria-label="${x.pick}"`), `${pg}: vælgerens ord er på ${C.lang}`);
-      ok(!/hreflang|\$\{|undefined|NaN/.test(P.dialog + P.btn) && pctx.chromeHTML(pg).btn === P.btn && pctx.chromeHTML(pg).picker === P.dialog, `${pg}: ingen hreflang-klynge eller skabelonrester, og chromeHTML bruger den samme vælger`);
+      const C = pctx.PRIS_COUNTRIES[pg], x = X[C.lang], P = pctx.placeHTML(C.lang, C.cc, pg), l = links(P.dialog);
+      titles.add(x.place);
+      ok(l.map(m => m[1]).join() === HREFS && l.map(m => m[3] + ' ' + m[4]).join() === NAMES, `${pg}: landetrinnet viser de ni lande med deres egne navne, ens på alle sprog`);
+      ok(l.filter(m => m[2]).map(m => m[1]).join() === '/' + pg, `${pg}: præcis sidens eget land er aria-current i landetrinnet`);
+      ok(P.dialog.includes(`id="netDialogTitle">${x.place}</h2>`) && P.dialog.includes(`<p class="pd-gt">${x.g0}</p>`) && P.dialog.includes(`<p class="pd-gt">${x.g1}</p>`) && P.dialog.includes(`aria-label="${x.close}"`) && P.btn.includes(`aria-label="${x.place}"`) && P.dialog.includes(`>${x.show}</button>`) && P.dialog.includes(`<span class="pl-k">${x.ctry}</span>`), `${pg}: stedsvælgerens ord er på ${C.lang}`);
+      const zs = [...P.dialog.matchAll(/data-zone="([^"]+)"/g)].map(m => m[1]).join();
+      ok(zs === (ZN[pg] || '') && (C.zones.length > 1 ? new RegExp(`<span class="pl-k">${x.area}</span>`).test(P.dialog) && (P.dialog.match(/aria-current="true"/g) || []).length === 1 : P.dialog.includes(`<span class="pl-v">${x.one}</span>`) && !/<details[^>]*open/.test(P.dialog)), `${pg}: ${C.zones.length > 1 ? 'zonerne som links, standardzonen markeret' : 'ét prisområde uden valg'}`, zs);
+      ok(!/gpsBtn|netDlgDK|Netselskab/.test(P.dialog), `${pg}: ingen danske netselskaber og intet positionsopslag`);
+      ok(!/hreflang|\$\{|undefined|NaN/.test(P.dialog + P.btn) && pctx.chromeHTML(pg).btn === P.btn && pctx.chromeHTML(pg).place === P.dialog, `${pg}: ingen hreflang-klynge eller skabelonrester, og chromeHTML bruger den samme stedsvælger`);
     }
-    ok(picks.size === 9, 'vælgerens overskrift er forskellig på dansk og de otte sprog', [...picks].join());
+    ok(titles.size === 8, 'stedsvælgerens overskrift er forskellig på de otte sprog (norsk bokmål og dansk deler den)', [...titles].join());
   }
 
   // ── /prognose: the SAME screen with a configuration (PRIS_FC) ──────────────────────────────────────────────
@@ -463,10 +473,10 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   ok(/<div class="k">Dyrest tir 20\.<\/div><div class="v">5,50 <small>kr · kl\. 19/.test(dear6.slice(dear6.indexOf('pris-tiles pp7'))) && !/Dyrest tir 20\./.test(dear6.slice(dear6.indexOf('pris-tiles pp5'), dear6.indexOf('pris-tiles pp7'))),
      'dag syv tæller kun i 7 døgn-feltet');
   // The day list: seven rows, no more; the Usikkerhed column is a pure function of the row's place.
-  ok((f7.match(/<tr class="r\d+"><th scope="row">/g) || []).length === 7 && (f7.match(/<tr class="r2">/g) || []).length === 2 && (f7.match(/<tr class="r5">/g) || []).length === 3 && (f7.match(/<tr class="r7">/g) || []).length === 2 && !/class="r10"/.test(f7),
-     'dagslisten har syv rækker: 2 i alle perioder, 3 fra 5 døgn, 2 kun i 7 døgn, ingen ekstra');
+  ok(nrows(tb(f7, 2)) === 3 && nrows(tb(f7, 5)) === 6 && nrows(tb(f7, 7)) === 7 && !/class="r10"/.test(f7),
+     'dagslisten: 3 rækker i 2 døgn, 6 i 5 døgn, 7 i 7 døgn, ingen ekstra');
   ok(/<th scope="col">Type<\/th><th scope="col">Usikkerhed<\/th><\/tr>/.test(f7), 'Usikkerhed er kolonnen efter Type');
-  const rows = f7.slice(f7.indexOf('<tbody>')).split('<tr class=').slice(1);
+  const rows = tb(f7, 7).split('<tr>').slice(1);
   ok(rows.map(r => r.match(/<td[^>]*>([^<]*)<\/td><\/tr>/)[1]).join() === '—,Lav,Lav,Middel,Middel,Middel,Høj' && rows.map(r => r.match(/<td class="(?:real|fc)">([^<]*)<\/td>/)[1]).join() === 'Børspris,Børspris,Prognose,Prognose,Prognose,Prognose,Prognose',
      'Usikkerhed: — Lav Lav Middel Middel Middel Høj; Type er stadig Børspris/Prognose', rows.map(r => r.match(/<td[^>]*>([^<]*)<\/td><\/tr>/)[1]).join());
   ok(!/10 (døgn|dage)|\b10 d/.test(f7) && !/Usikkerhed/.test(pris(feed, D0, 21, o)) && !/pp7|data-pris-period="7"|class="r7"/.test(pris(feed, D0, 21, o)),
@@ -481,11 +491,13 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     .replace(/<section class="pris-card pp7"[\s\S]*?<\/section>/, '')
     .replace(/<section class="pris-days pris-sum pp\d"[\s\S]*?<\/section>/g, '')
     .replace(/<div class="pris-tiles pp7">(?:<div class="pris-tile">.*?<\/div><\/div>)+<\/div>/, '')
-    .replace('<th scope="col">Usikkerhed</th>', '').replace(/<td>(?:—|Lav|Middel|Høj)<\/td><\/tr>/g, '</tr>').replace(/<tr class="r7">/g, '<tr class="r10">');
-  ok(stripped === common, 'tager man det /prognose tilføjer væk, er skærmen tegn for tegn den fælles', stripped === common ? '' : `${stripped.length} vs ${common.length}`);
+    .replace('<th scope="col">Usikkerhed</th>', '').replace(/<td>(?:—|Lav|Middel|Høj)<\/td><\/tr>/g, '</tr>').replace(/<tbody class="pp7">[^]*?<\/tbody>/, '');
+  // the common screen keeps the day beyond its last window as a hidden row for crawlers; /prognose's last window (7 døgn) holds that day itself
+  const commonNoHidden = common.replace(/<tr class="r10">[^]*?<\/tr>/g, '');
+  ok(stripped === commonNoHidden, 'tager man det /prognose tilføjer væk, er skærmen tegn for tegn den fælles', stripped === commonNoHidden ? '' : `${stripped.length} vs ${commonNoHidden.length}`);
   // Fewer days than seven: the card draws the days it has; nothing crashes.
   const f4 = pris(feed.slice(0, 4), D0, 21, FO);
-  ok((f4.slice(f4.indexOf('pris-card pp7'), f4.indexOf('pris-tiles pp2')).match(/<span class="pc[ "]/g) || []).length === 81 && !/NaN|undefined|Infinity/.test(f4) && (f4.match(/<tr class="r\d+"><th/g) || []).length === 4, 'med fire døgn tegnes fire døgn og ingen NaN');
+  ok((f4.slice(f4.indexOf('pris-card pp7'), f4.indexOf('pris-tiles pp2')).match(/<span class="pc[ "]/g) || []).length === 81 && !/NaN|undefined|Infinity/.test(f4) && nrows(tb(f4, 7)) === 4, 'med fire døgn tegnes fire døgn og ingen NaN');
   ok(Object.values(pctx.PRIS_I18N).every(l => /^7 /.test(l.p7)) && pctx.PRIS_I18N.da.p7 === '7 døgn', 'p7 findes på alle fire sprog');
 
   // ── prisSummary: "Ugen i korte træk" — bullets from the days already drawn ──

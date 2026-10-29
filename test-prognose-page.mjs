@@ -98,8 +98,10 @@ const c7 = h.slice(h.indexOf('pris-card pp7'), h.indexOf('pris-tiles pp2'));
 const nowH = +new Intl.DateTimeFormat('en-GB', { ...cph, hour: '2-digit', hourCycle: 'h23' }).format(new Date());
 ok((c7.match(/<span class="pc[ "]/g) || []).length === 168 - (nowH > 0 ? nowH - Math.min(6, nowH) : 0), '/prognose: 7 døgn starter seks timer før nu og når til udgangen af døgn syv', String((c7.match(/<span class="pc[ "]/g) || []).length));
 ok(/aria-label="Elpris lige nu — DK1 Vest"/.test(h) && /<p class="pris-ct">Næste 7 døgn<\/p>/.test(h), '/prognose: skærmen navngiver området, og kortet hedder Næste 7 døgn');
-const rows = h.slice(h.indexOf('<tbody>'), h.indexOf('</tbody>')).split('<tr class=').slice(1);
-ok(rows.length === 7, '/prognose: dagslisten har syv rækker i HTML\'en', String(rows.length));
+// One <tbody> per period; 7 døgn is the one this page opens on.
+const tb7 = h.slice(h.indexOf('<tbody class="pp7">'), h.indexOf('</tbody>', h.indexOf('<tbody class="pp7">')));
+const rows = tb7.split('<tr>').slice(1);
+ok(rows.length === 7 && (h.match(/<tbody class="pp\d">/g) || []).length === 3, '/prognose: dagslisten har syv rækker for 7 døgn (og et legeme for hver af de tre perioder)', String(rows.length));
 ok(/<th scope="col">Type<\/th><th scope="col">Usikkerhed<\/th>/.test(h) && rows.map(x => x.match(/<td[^>]*>([^<]*)<\/td><\/tr>/)[1]).join() === '—,Lav,Lav,Middel,Middel,Middel,Høj', '/prognose: kolonnen Usikkerhed er — Lav Lav Middel Middel Middel Høj');
 ok(rows[0].includes('class="real">Børspris') && rows[1].includes('class="fc">Prognose'), '/prognose: Type er Børspris for i dag og Prognose for resten');
 // The fixture has ten days; days 8-10 must not be anywhere: not a bar's tip, not a row.

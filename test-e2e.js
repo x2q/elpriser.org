@@ -93,6 +93,8 @@ async function startServer() {
   // six hours of the window has none) with their left edge in %.
   const win = (days, have = 10) => { const h = hourDk(), back = Math.min(6, h), st = h - back; let n = h > 0 ? back + days * 24 : days * 24; if (h > 0 && days > 2) n = Math.min(n, have * 24 - st); return { st, n, back }; };
   const winDays = w => { const out = []; for (let i = Math.floor(w.st / 24); i * 24 < w.st + w.n; i++) { const vs = Math.max(i * 24, w.st), ve = Math.min(i * 24 + 24, w.st + w.n); if (ve - vs >= 6) out.push({ i, left: ((vs + ve) / 2 - w.st) / w.n * 100 }); } return out; };
+  // Opens one row of the place dialog (rows are <details name="place">: opening one closes the other); a row that is already open stays open.
+  const openStep = async (label) => { const st = page.locator('#netDialog details.pl-step', { has: page.locator('summary .pl-k', { hasText: new RegExp('^' + label + '$') }) }); if (!(await st.evaluate(d => d.open))) await st.locator('summary').click(); };
   const fixturePrice = (mode, gln, h) => {
     const k = mode === 'spot_inkl' ? 0.4 : gln ? 1.3 : 1;
     return +((1.5 + Math.sin(h / 24 * 6.28) * 0.8 + (h >= 17 && h <= 20 ? 1 : 0)) * k).toFixed(4);
@@ -324,7 +326,7 @@ async function startServer() {
     await page.evaluate(() => localStorage.clear());
     await page.locator('main[data-page="start"] [data-area-row] button').click();
     await page.waitForSelector('#netDialog[open]');
-    assert.equal((await page.locator('#netDialogTitle').textContent()).trim(), 'Netselskab og indstillinger');
+    assert.equal((await page.locator('#netDialogTitle').textContent()).trim(), 'Hvor er du?');
     // 16 nets plus one "Uden netselskab" per area.
     assert.equal(await page.locator('#netDialog .pd-links a[data-net]:not([data-net=""])').count(), 16, 'the dialog lists every net');
     await page.locator('#netDlgDK1 a:has-text("Trefor")').first().click();
@@ -646,18 +648,19 @@ async function startServer() {
     await page.goto(BASE + '/dk1');
     await page.waitForSelector('.pp2 .pris-plot');
     const rows = () => page.locator('.pris-week tbody tr:visible').count();
-    assert.equal(await rows(), 2);
+    // One <tbody> per period, over the hours that period's chart shows: 2 døgn reaches into day three, 5 døgn into day six (from hour 1 on).
+    assert.equal(await rows(), hourDk() > 0 ? 3 : 2);
     assert.equal(await page.locator('.pris-tiles.pp2').isVisible(), true);
     assert.equal(await page.locator('.pris-tiles.pp5').isVisible(), false);
     await page.locator('.pris-period [data-pris-period="5"]').click();
-    assert.equal(await rows(), 5);
+    assert.equal(await rows(), hourDk() > 0 ? 6 : 5);
     const names = (await page.locator('.pris-week tbody tr:visible th').allTextContents()).map(t => t.trim());
     assert.deepEqual(names.slice(0, 2).map(t => t.replace(/\d.*$/, '')), ['I dag', 'I morgen']);
     const d2 = dayAfter(2);
     assert.ok(names[2].startsWith(d2.wd), names[2]);
     assert.ok(names[2].includes(`${d2.d}. ${d2.m}`), names[2]);
     assert.deepEqual((await page.locator('.pris-week tbody tr:visible td:last-child').allTextContents()).map(t => t.trim()),
-      ['Børspris', 'Børspris', 'Prognose', 'Prognose', 'Prognose']);
+      ['Børspris', 'Børspris', ...Array(hourDk() > 0 ? 4 : 3).fill('Prognose')]);
     // Same price every day in the fixture, so the cheapest/dearest hour is today (now or later) —
     // the tile wording must be i dag / i aften / i morgen, never a date, in these cases.
     const keys = (await page.locator('.pris-tiles.pp5 .k').allTextContents()).map(t => t.trim());
@@ -782,12 +785,12 @@ async function startServer() {
     await page.evaluate(() => localStorage.clear());
   });
 
-  await test('net chip: opens "Netselskab og indstillinger", and a net chosen there opens its page', async () => {
+  await test('net chip: opens the place dialog ("Hvor er du?"), and a net chosen there opens its page', async () => {
     await page.goto(BASE + '/');
     await page.evaluate(() => localStorage.clear());
     await page.locator('#netChip').click();
     await page.waitForSelector('#netDialog[open]');
-    assert.equal((await page.locator('#netDialogTitle').textContent()).trim(), 'Netselskab og indstillinger');
+    assert.equal((await page.locator('#netDialogTitle').textContent()).trim(), 'Hvor er du?');
     assert.equal(await page.locator('#netDialog #gpsBtn').count(), 1, 'the position lookup lives in the dialog');
     await page.locator('#netDlgDK2 a:has-text("Radius")').click();
     await page.waitForURL(u => u.pathname === '/dk2/radius');
@@ -1095,8 +1098,8 @@ async function startServer() {
     await page.goto(BASE + '/prognose');
     await page.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
     const want = {
-      2: { card: 'Næste 2 døgn', bars: 48 + Math.min(6, hourDk()), rows: 2, unc: ['—', 'Lav'], tile: 'pp2' },
-      5: { card: 'Næste 5 døgn', bars: win(5, 7).n, rows: 5, unc: ['—', 'Lav', 'Lav', 'Middel', 'Middel'], tile: 'pp5' },
+      2: { card: 'Næste 2 døgn', bars: 48 + Math.min(6, hourDk()), rows: hourDk() > 0 ? 3 : 2, unc: ['—', 'Lav', 'Lav'].slice(0, hourDk() > 0 ? 3 : 2), tile: 'pp2' },
+      5: { card: 'Næste 5 døgn', bars: win(5, 7).n, rows: hourDk() > 0 ? 6 : 5, unc: ['—', 'Lav', 'Lav', 'Middel', 'Middel', 'Middel'].slice(0, hourDk() > 0 ? 6 : 5), tile: 'pp5' },
       7: { card: 'Næste 7 døgn', bars: win(7, 7).n, rows: 7, unc: ['—', 'Lav', 'Lav', 'Middel', 'Middel', 'Middel', 'Høj'], tile: 'pp7' },
     };
     const seen = [];
@@ -1254,6 +1257,7 @@ async function startServer() {
     assert.ok(forecastRequests.includes('DK1|inkl_alt|'), forecastRequests.join(', '));
     // The dialog's other links still leave the page: Norge is a page of its own.
     await page.locator('#netChip').click();
+    await openStep('Land');
     await page.locator('#netDialog a[href="/no/strompris"]').click();
     await page.waitForURL(u => u.pathname === '/no/strompris');
     await page.evaluate(() => localStorage.clear());
@@ -1582,7 +1586,7 @@ async function startServer() {
       const t = await page.evaluate(() => document.querySelector('main[data-page="zone"]').innerText);
       assert.ok(!/\b10 (døgn|dager|dygn|vrk|dagen)/i.test(t), `${url} mentions 10 days`);
       assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pc[data-tip]').count(), win(5, 5).n);
-      assert.equal(await page.locator('main[data-page="zone"] .pris-week tbody tr').count(), 5);
+      assert.equal(await page.locator('main[data-page="zone"] .pris-week tbody:visible tr').count(), 5);
       assert.ok((await page.locator('main[data-page="zone"] .pris-card.pp5 .pris-ct').textContent()).endsWith(five));
     }
   });
@@ -1662,8 +1666,8 @@ async function startServer() {
     await page.waitForSelector('main[data-page="start"].active');
     const foot = await page.locator('footer .sf-all .sf-nets > div:last-child a').evaluateAll(a => a.map(x => x.getAttribute('href')));
     assert.deepEqual(foot, ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce']);
-    const dlg = await page.locator('#netDialog .pd-links:not([id])').last().evaluate(el => [...el.querySelectorAll('a')].map(a => [a.getAttribute('href'), a.textContent]));
-    assert.deepEqual(dlg, [['/norden', 'Norden'], ['/no/strompris', 'Norge'], ['/sv/elpris', 'Sverige'], ['/fi/sahkon-hinta', 'Finland'], ['/nl/stroomprijs', 'Nederland'], ['/de/strompreis', 'Tyskland'], ['/fr/prix-electricite', 'Frankrig'], ['/pl/ceny-pradu', 'Polen'], ['/it/prezzo-luce', 'Italien']], 'the net dialog lists the same ten');
+    const dlg = await page.locator('#netDialog .pl-panel').first().evaluate(el => [...el.querySelectorAll('a')].map(a => [a.getAttribute('href'), a.textContent.replace(/(Dansk|Norsk|Svenska|Suomi|Nederlands|Deutsch|Français|Polski|Italiano)$/, '').replace(/^Norden .*/, 'Norden')]));
+    assert.deepEqual(dlg, [['/dk1', 'Danmark'], ['/no/strompris', 'Norge'], ['/sv/elpris', 'Sverige'], ['/fi/sahkon-hinta', 'Suomi'], ['/nl/stroomprijs', 'Nederland'], ['/de/strompreis', 'Deutschland'], ['/fr/prix-electricite', 'France'], ['/pl/ceny-pradu', 'Polska'], ['/it/prezzo-luce', 'Italia'], ['/norden', 'Norden']], 'the net dialog lists the same ten');
     for (const url of ['/', '/dk1', '/automation', '/om-elpriser', '/blog', '/blog/groennest-og-dyrest', '/tariffer', '/api', '/no/strompris', '/nl/stroomprijs', '/norden']) {
       await page.goto(BASE + url);
       await page.waitForSelector('main.active');
@@ -1685,19 +1689,19 @@ async function startServer() {
     await ctx2.close();
   });
 
-  // ── 9b. The country pages' chrome: header (logo and the country globe) and footer in the page's own language ──────────────────────
+  // ── 9b. The country pages' chrome: header (logo and the place chip) and footer in the page's own language ──────────────────────
   // server.js hands the browser the whole index.html, so this is the client side of the localisation (the same
   // chromeHTML the server renders from; test-zone-pages.mjs covers the server's HTML through the real function).
   const CHROME = {
-    '/no/strompris':   { lang: 'nb', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederland', 'Tyskland', 'Frankrike', 'Polen', 'Italia'], cur: 'Norge', pick: 'Velg land', land: 'Land', privacy: 'Personvern (på dansk)' },
-    '/sv/elpris':      { lang: 'sv', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederländerna', 'Tyskland', 'Frankrike', 'Polen', 'Italien'], cur: 'Sverige', pick: 'Välj land', land: 'Länder', privacy: 'Integritet (på danska)' },
-    '/fi/sahkon-hinta': { lang: 'fi', nav: ['Tanska', 'Norja', 'Ruotsi', 'Suomi', 'Alankomaat', 'Saksa', 'Ranska', 'Puola', 'Italia'], cur: 'Suomi', pick: 'Valitse maa', land: 'Maat', privacy: 'Tietosuoja (tanskaksi)' },
-    '/nl/stroomprijs': { lang: 'nl', nav: ['Denemarken', 'Noorwegen', 'Zweden', 'Finland', 'Nederland', 'Duitsland', 'Frankrijk', 'Polen', 'Italië'], cur: 'Nederland', pick: 'Kies een land', land: 'Landen', privacy: 'Privacy (in het Deens)' },
+    '/no/strompris':   { lang: 'nb', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederland', 'Tyskland', 'Frankrike', 'Polen', 'Italia'], cur: 'Norge', place: 'Hvor er du?', land: 'Land', privacy: 'Personvern (på dansk)' },
+    '/sv/elpris':      { lang: 'sv', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederländerna', 'Tyskland', 'Frankrike', 'Polen', 'Italien'], cur: 'Sverige', place: 'Var är du?', land: 'Länder', privacy: 'Integritet (på danska)' },
+    '/fi/sahkon-hinta': { lang: 'fi', nav: ['Tanska', 'Norja', 'Ruotsi', 'Suomi', 'Alankomaat', 'Saksa', 'Ranska', 'Puola', 'Italia'], cur: 'Suomi', place: 'Missä olet?', land: 'Maat', privacy: 'Tietosuoja (tanskaksi)' },
+    '/nl/stroomprijs': { lang: 'nl', nav: ['Denemarken', 'Noorwegen', 'Zweden', 'Finland', 'Nederland', 'Duitsland', 'Frankrijk', 'Polen', 'Italië'], cur: 'Nederland', place: 'Waar ben je?', land: 'Landen', privacy: 'Privacy (in het Deens)' },
     // The four EU pages (actual prices only): the footer's data line is the CC BY 4.0 credit to Bundesnetzagentur | SMARD.de plus the note that the data were changed.
-    '/de/strompreis': { lang: 'de', act: 1, nav: ['Dänemark', 'Norwegen', 'Schweden', 'Finnland', 'Niederlande', 'Deutschland', 'Frankreich', 'Polen', 'Italien'], cur: 'Deutschland', pick: 'Land wählen', land: 'Länder', privacy: 'Datenschutz (auf Dänisch)' },
-    '/fr/prix-electricite': { lang: 'fr', act: 1, nav: ['Danemark', 'Norvège', 'Suède', 'Finlande', 'Pays-Bas', 'Allemagne', 'France', 'Pologne', 'Italie'], cur: 'France', pick: 'Choisir un pays', land: 'Pays', privacy: 'Confidentialité (en danois)' },
-    '/pl/ceny-pradu': { lang: 'pl', act: 1, nav: ['Dania', 'Norwegia', 'Szwecja', 'Finlandia', 'Holandia', 'Niemcy', 'Francja', 'Polska', 'Włochy'], cur: 'Polska', pick: 'Wybierz kraj', land: 'Kraje', privacy: 'Prywatność (po duńsku)' },
-    '/it/prezzo-luce': { lang: 'it', act: 1, nav: ['Danimarca', 'Norvegia', 'Svezia', 'Finlandia', 'Paesi Bassi', 'Germania', 'Francia', 'Polonia', 'Italia'], cur: 'Italia', pick: 'Scegli il paese', land: 'Paesi', privacy: 'Privacy (in danese)' },
+    '/de/strompreis': { lang: 'de', act: 1, nav: ['Dänemark', 'Norwegen', 'Schweden', 'Finnland', 'Niederlande', 'Deutschland', 'Frankreich', 'Polen', 'Italien'], cur: 'Deutschland', place: 'Wo bist du?', land: 'Länder', privacy: 'Datenschutz (auf Dänisch)' },
+    '/fr/prix-electricite': { lang: 'fr', act: 1, nav: ['Danemark', 'Norvège', 'Suède', 'Finlande', 'Pays-Bas', 'Allemagne', 'France', 'Pologne', 'Italie'], cur: 'France', place: 'Où êtes-vous ?', land: 'Pays', privacy: 'Confidentialité (en danois)' },
+    '/pl/ceny-pradu': { lang: 'pl', act: 1, nav: ['Dania', 'Norwegia', 'Szwecja', 'Finlandia', 'Holandia', 'Niemcy', 'Francja', 'Polska', 'Włochy'], cur: 'Polska', place: 'Gdzie jesteś?', land: 'Kraje', privacy: 'Prywatność (po duńsku)' },
+    '/it/prezzo-luce': { lang: 'it', act: 1, nav: ['Danimarca', 'Norvegia', 'Svezia', 'Finlandia', 'Paesi Bassi', 'Germania', 'Francia', 'Polonia', 'Italia'], cur: 'Italia', place: 'Dove sei?', land: 'Paesi', privacy: 'Privacy (in danese)' },
   };
   const DANISH_CHROME = /Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Mobilnavigation|Privatliv|Åbne datasæt|Alle guides|Forstå din elpris|Tariffer|Prognose$/m;
   const chromeState = p => p.evaluate(() => {
@@ -1705,10 +1709,10 @@ async function startServer() {
     const links = [...document.querySelectorAll('.site-nav .site-links a')];
     return {
       lang: document.documentElement.lang, scroll: [document.documentElement.scrollWidth, innerWidth],
-      navText: links.map(a => a.textContent), globe: r(q('#countryBtn')), logoBox: r(q('.site-logo')),
+      navText: links.map(a => a.textContent), chipBox: r(q('#netChip')), logoBox: r(q('.site-logo')),
       logo: q('.site-logo')?.textContent.trim(), logoHref: q('.site-logo')?.getAttribute('href'),
       chip: !!q('#netChip'), app: !!q('.app-btn'), tabbar: !!q('#tabBar'), dialog: !!q('#netDialog'), actions: [...document.querySelectorAll('.site-actions > *')].map(x => x.id),
-      picker: { title: q('#countryDialogTitle')?.textContent, links: [...document.querySelectorAll('#countryDialog .cd-list a')].map(a => [a.querySelector('b').textContent, a.querySelector('span').textContent, a.getAttribute('href'), a.getAttribute('aria-current')]), label: q('#countryBtn')?.getAttribute('aria-label') },
+      picker: { title: q('#netDialogTitle')?.textContent, links: [...document.querySelectorAll('#netDialog .cd-list a')].map(a => [a.querySelector('b').textContent, a.querySelector('span').textContent, a.getAttribute('href'), a.getAttribute('aria-current')]), label: q('#netChip')?.getAttribute('aria-label') },
       headText: q('.site-nav').innerText, footText: q('footer').innerText,
       footHeading: q('footer .sf-h')?.textContent, footLinks: [...document.querySelectorAll('footer .sf-chips a')].map(a => [a.textContent, a.getAttribute('href'), a.getAttribute('aria-current')]),
       privacy: (a => a && [a.textContent, a.getAttribute('href'), a.getAttribute('hreflang')])(q('footer .sf-legal a[href="/privatliv"]')),
@@ -1719,7 +1723,7 @@ async function startServer() {
   });
   for (const [url, w] of Object.entries(CHROME)) {
     for (const [vw, vh] of [[1280, 800], [390, 844]]) {
-      await test(`${url} at ${vw} px: header and footer are ${w.lang} — globe instead of a menu, no net chip/app button/tab bar/net dialog, slim footer, no overflow`, async () => {
+      await test(`${url} at ${vw} px: header and footer are ${w.lang} — the place chip instead of a menu, no app button/tab bar, slim footer, no overflow`, async () => {
         const c = await browser.newContext({ viewport: { width: vw, height: vh }, bypassCSP: true, ...(vw < 600 ? { isMobile: true, hasTouch: true } : {}) });
         await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
         await c.route('**/api/nordic*', nordicRoute);
@@ -1728,13 +1732,13 @@ async function startServer() {
         await p.waitForSelector('main[data-page="zone"] .pris');
         const s = await chromeState(p);
         assert.equal(s.lang, w.lang);
-        assert.deepEqual(s.navText, [], 'no row of country links in the header: the globe is the country navigation');
-        assert.equal(s.picker.title, w.pick); assert.equal(s.logo, 'Elpriser'); assert.equal(s.logoHref, '/');
-        assert.ok(Math.abs((s.globe.t + s.globe.h / 2) - (s.logoBox.t + s.logoBox.h / 2)) < 4 && s.navBottom < 80, `the header is one row: logo ${JSON.stringify(s.logoBox)}, globe ${JSON.stringify(s.globe)}, height ${s.navBottom}`);
-        assert.deepEqual([s.chip, s.app, s.tabbar, s.dialog], [false, false, false, false], 'no Danish net chip, app button, tab bar or net dialog');
-        assert.deepEqual(s.actions, ['countryBtn'], 'the action row holds the country picker button and nothing Danish');
+        assert.deepEqual(s.navText, [], 'no row of country links in the header: the place chip is the country navigation');
+        assert.equal(s.picker.title, w.place); assert.equal(s.logo, 'Elpriser'); assert.equal(s.logoHref, '/');
+        assert.ok(Math.abs((s.chipBox.t + s.chipBox.h / 2) - (s.logoBox.t + s.logoBox.h / 2)) < 4 && s.navBottom < 80, `the header is one row: logo ${JSON.stringify(s.logoBox)}, chip ${JSON.stringify(s.chipBox)}, height ${s.navBottom}`);
+        assert.deepEqual([s.chip, s.app, s.tabbar, s.dialog], [true, false, false, true], 'the place chip and its dialog, but no app button or tab bar');
+        assert.deepEqual(s.actions, ['netChip'], 'the action row holds the place chip and nothing Danish');
         // The picker: the nine countries by their own names, in this page's language for its heading, this page's country marked.
-        assert.equal(s.picker.links.length, 9); assert.equal(s.picker.title, s.picker.label);
+        assert.equal(s.picker.links.length, 9); assert.equal(s.picker.title, s.picker.label, 'the dialog\'s heading is the chip\'s name');
         assert.deepEqual(s.picker.links.filter(x => x[3]).map(x => x[2]), [url], 'the page\'s own country is marked');
         assert.ok(s.picker.links.some(x => x[0] === 'Danmark' && x[1] === 'Dansk' && x[2] === '/dk1'));
         assert.ok(!/Smart hjem|Hent appen|DK1 ·/.test(s.headText), `header text: ${s.headText}`);
@@ -1747,7 +1751,7 @@ async function startServer() {
         if (w.act) { assert.match(s.footText, /© Elpriser\.org — .*Bundesnetzagentur \| SMARD\.de \(Energy-Charts\.info\), CC BY 4\.0 — .*elpriser\.org.*Hugging Face/s); assert.ok(!/Energi Data Service|ENTSO/.test(s.footText), 'the EU pages credit neither Energi Data Service nor ENTSO-E'); }
         else assert.match(s.footText, /© Elpriser\.org — .*ENTSO-E.*Energi Data Service.*Hugging Face/s);
         assert.equal(s.scroll[0], s.scroll[1], `horizontal page scroll ${s.scroll.join(' vs ')}`);
-        assert.ok(s.globe.r <= vw + 1 && s.globe.l >= -1, 'the globe is inside the viewport');
+        assert.ok(s.chipBox.r <= vw + 1 && s.chipBox.l >= -1, 'the place chip is inside the viewport');
         if (vw < 600) assert.equal(s.bodyPad, '0px', 'the Danish tab bar\'s room at the bottom is gone');
         // the Pris screen is still there and was not disturbed by the chrome swap
         assert.ok(await p.locator('main[data-page="zone"] .pris-now').count() === 1);
@@ -1762,10 +1766,10 @@ async function startServer() {
     await page.locator('footer .sf-chips a', { hasText: /^Sverige$/ }).click();
     await page.waitForFunction(() => location.pathname === '/sv/elpris' && document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'se3');
     assert.deepEqual((await chromeState(page)).footLinks.filter(x => x[2]).map(x => x[0]), ['Sverige']);
-    assert.equal((await chromeState(page)).picker.title, 'Välj land', 'the new page has the Swedish chrome, not the Norwegian one');
+    assert.equal((await chromeState(page)).picker.title, 'Var är du?', 'the new page has the Swedish chrome, not the Norwegian one');
     await page.locator('footer .sf-chips a', { hasText: /^Nederländerna$/ }).click();
     await page.waitForFunction(() => location.pathname === '/nl/stroomprijs' && document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'nl');
-    assert.equal((await chromeState(page)).picker.title, 'Kies een land');
+    assert.equal((await chromeState(page)).picker.title, 'Waar ben je?');
     await page.locator('footer .sf-chips a', { hasText: /^Denemarken$/ }).click();
     await page.waitForFunction(() => location.pathname === '/dk1');
     await page.waitForSelector('main[data-page="prices"].active');
@@ -1775,37 +1779,61 @@ async function startServer() {
     assert.ok(await page.evaluate(() => !document.documentElement.classList.contains('xc')));
     // And the other way: the Danish net dialog links Nederland.
     await page.locator('#netChip').click();
+    await openStep('Land');
     await page.locator('#netDialog a[href="/nl/stroomprijs"]').click();
     await page.waitForFunction(() => location.pathname === '/nl/stroomprijs');
   });
 
-  await test('country picker: the globe opens the nine countries by their own names (this one marked), in the page\'s language; a country leads to its page and back', async () => {
+  await test('place dialog: the one chip opens Land and (on a Danish page) the net, in the page\'s language; a country leads to its page and back', async () => {
     await page.goto(BASE + '/');
-    const rows = () => page.evaluate(() => [...document.querySelectorAll('#countryDialog .cd-list a')].map(a => [a.querySelector('b').textContent, a.querySelector('span').textContent, a.getAttribute('aria-current')]));
-    assert.equal(await page.locator('#countryDialog[open]').count(), 0, 'closed until the globe is pressed');
-    await page.locator('header.site-nav #countryBtn').click();
-    await page.waitForSelector('#countryDialog[open]');
-    assert.equal((await page.locator('#countryDialogTitle').textContent()), 'Vælg land');
+    const rows = () => page.evaluate(() => [...document.querySelectorAll('#netDialog .cd-list a')].map(a => [a.querySelector('b').textContent, a.querySelector('span').textContent, a.getAttribute('aria-current')]));
+    assert.equal(await page.locator('#netDialog[open]').count(), 0, 'closed until the chip is pressed');
+    assert.equal(await page.locator('header.site-nav #countryBtn').count(), 0, 'no globe any more');
+    await page.locator('header.site-nav #netChip').click();
+    await page.waitForSelector('#netDialog[open]');
+    assert.equal((await page.locator('#netDialogTitle').textContent()), 'Hvor er du?');
+    assert.deepEqual(await page.locator('#netDialog details.pl-step > summary .pl-k').allTextContents(), ['Land', 'Netselskab']);
+    assert.deepEqual(await page.locator('#netDialog details.pl-step[open] > summary .pl-k').allTextContents(), ['Netselskab'], 'the net row is the one open');
+    assert.equal(await page.locator('#plValLand').textContent(), 'Danmark');
     assert.deepEqual((await rows()).map(r => r[0]), ['Danmark', 'Norge', 'Sverige', 'Suomi', 'Nederland', 'Deutschland', 'France', 'Polska', 'Italia']);
     assert.deepEqual((await rows()).filter(r => r[2]).map(r => r[0]), ['Danmark'], 'the Danish site marks Danmark');
     assert.deepEqual((await rows())[2].slice(0, 2), ['Sverige', 'Svenska'], 'the language sits under the country');
+    // Opening Land closes the net row (one row at a time) and shows the countries.
+    await openStep('Land');
+    assert.equal(await page.locator('#netDialog details.pl-step[open] > summary .pl-k').allTextContents().then(x => x.join()), 'Land');
+    assert.equal(await page.locator('#netDialog .cd-list a', { hasText: 'Sverige' }).isVisible(), true);
     await page.keyboard.press('Escape');
-    assert.equal(await page.locator('#countryDialog[open]').count(), 0, 'Escape closes it');
-    await page.locator('#countryBtn').click();
+    assert.equal(await page.locator('#netDialog[open]').count(), 0, 'Escape closes it');
+    await page.locator('#netChip').click();
     await page.mouse.click(4, 4);
-    assert.equal(await page.locator('#countryDialog[open]').count(), 0, 'a click on the backdrop closes it');
-    await page.locator('#countryBtn').click();
-    await page.locator('#countryDialog a', { hasText: 'Sverige' }).click();
+    assert.equal(await page.locator('#netDialog[open]').count(), 0, 'a click on the backdrop closes it');
+    await page.locator('#netChip').click();
+    await openStep('Land');
+    await page.locator('#netDialog .cd-list a', { hasText: 'Sverige' }).click();
     await page.waitForFunction(() => location.pathname === '/sv/elpris' && document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'se3');
-    assert.equal(await page.locator('#countryBtn').getAttribute('aria-label'), 'Välj land');
-    await page.locator('#countryBtn').click();
-    await page.waitForSelector('#countryDialog[open]');
-    assert.equal(await page.locator('#countryDialogTitle').textContent(), 'Välj land');
+    assert.equal(await page.locator('#netChip').getAttribute('aria-label'), 'Var är du?');
+    assert.equal((await page.locator('#netChipLong').textContent()), 'Sverige · SE3', 'the chip says country and zone');
+    await page.locator('#netChip').click();
+    await page.waitForSelector('#netDialog[open]');
+    assert.equal(await page.locator('#netDialogTitle').textContent(), 'Var är du?');
+    assert.deepEqual(await page.locator('#netDialog details.pl-step[open] > summary .pl-k').allTextContents(), ['Elområde'], 'the zone row is the one open');
+    assert.equal(await page.locator('#plValArea').textContent(), 'SE3 · Stockholm');
     assert.deepEqual((await rows()).filter(r => r[2]).map(r => r[0]), ['Sverige'], 'the Swedish page marks Sverige');
-    await page.locator('#countryDialog a', { hasText: 'Danmark' }).click();
+    // A zone chosen in the dialog selects it on the page: the tab, the chip and the dialog follow, the address keeps the hash.
+    await page.locator('#netDialog [data-zone="se4"]').click();
+    await page.waitForFunction(() => location.hash === '#se4' && document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'se4');
+    assert.equal(await page.locator('#netDialog[open]').count(), 0, 'choosing a zone closes the dialog');
+    assert.equal((await page.locator('#netChipLong').textContent()), 'Sverige · SE4');
+    assert.equal(await page.locator('#zTabs [aria-selected="true"]').getAttribute('data-zone'), 'se4', 'the tab follows');
+    await page.locator('#netChip').click();
+    assert.equal(await page.locator('#plValArea').textContent(), 'SE4 · Malmö');
+    assert.deepEqual(await page.locator('#netDialog [data-zone][aria-current]').evaluateAll(a => a.map(x => x.dataset.zone)), ['se4']);
+    await openStep('Land');
+    await page.locator('#netDialog .cd-list a', { hasText: 'Danmark' }).click();
     await page.waitForFunction(() => location.pathname === '/dk1');
     await page.waitForSelector('main[data-page="prices"].active');
-    assert.equal(await page.locator('header.site-nav #countryBtn').getAttribute('aria-label'), 'Vælg land', 'the Danish chrome is back with its globe');
+    assert.equal(await page.locator('header.site-nav #netChip').getAttribute('aria-label'), 'Hvor er du?', 'the Danish chrome is back with its chip');
+    assert.equal(await page.locator('#plValNet').textContent(), await page.locator('#netChipLong').textContent(), 'the net row says what the chip says');
   });
 
   await test('tab switching still works with the localised chrome, and the chrome survives it unchanged', async () => {
@@ -1862,7 +1890,7 @@ async function startServer() {
     await page.locator('main[data-page="zone"] [data-pris-period="5"]').click();
     assert.equal(await page.locator('main[data-page="zone"] .pris').getAttribute('data-period'), '5');
     assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pc[data-tip]').count(), win(5, 5).n);
-    assert.equal(await page.locator('main[data-page="zone"] .pris-week tbody tr').count(), 5);
+    assert.equal(await page.locator('main[data-page="zone"] .pris-week tbody:visible tr').count(), 5);
     assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pris-ct').textContent(), 'Komende 5 dagen');
     await page.locator('main[data-page="zone"] [data-pris-period="2"]').click();
     assert.equal(await page.locator('main[data-page="zone"] .pris').getAttribute('data-period'), '2');

@@ -133,7 +133,7 @@ for (const c of CITIES) {
   // Crawl hygiene: no templated href, no empty link.
   ok(!/href="[^"]*(\$\{|undefined|\[object)/.test(r.main) && !/href=""/.test(r.main), `${p}: ingen skabelon- eller tomme links`);
   // Cached under its own versioned key; a second request does not ask the feed again.
-  ok([...store.keys()].some(k => k === `https://cache.local/city-ssr-v7${p}`), `${p}: egen versioneret cache-nøgle`, [...store.keys()].join(' '));
+  ok([...store.keys()].some(k => k === `https://cache.local/city-ssr-v8${p}`), `${p}: egen versioneret cache-nøgle`, [...store.keys()].join(' '));
   const again = await get(p);
   ok(again.page === h && upstream.length === 1, `${p}: andet svar kommer fra cachen`);
 }

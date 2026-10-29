@@ -106,7 +106,8 @@ for (const [p, w] of Object.entries(PAGES)) {
   // Five days at most: 120 bars in the five-day card, five rows in the day list, no hidden sixth to tenth day.
   const five = h.slice(h.indexOf('pris-card pp5'), h.indexOf('pris-tiles pp2'));
   ok((five.match(/<span class="pc[ "]/g) || []).length === 120 - (NOW_H > 0 ? NOW_H - Math.min(6, NOW_H) : 0), `${p}: 5 døgn er fem døgn fra seks timer før nu`, String((five.match(/<span class="pc[ "]/g) || []).length));
-  ok((h.match(/<tr class="r\d+">/g) || []).length === 5 && !/class="r10"/.test(h), `${p}: dagslisten har fem rækker og ingen skjult dag seks-ti`);
+  // One <tbody> per period over the hours its chart shows: 2 døgn reaches into day three (from hour 1 on), 5 døgn is the five days there are.
+  ok((h.match(/<tr><th scope="row">/g) || []).length === (NOW_H > 0 ? 3 : 2) + 5 && !/class="r10"/.test(h), `${p}: dagslisten har tre (to) rækker for 2 døgn og fem for 5 døgn, ingen skjult dag seks-ti`);
   ok(!TEN.test(h), `${p}: ingen tekst om 10 døgn`, (h.match(TEN) || [])[0]);
   // The tab row.
   ok((h.match(/role="tab" id="zt-/g) || []).length === w.tabs, `${p}: ${w.tabs} zone-faner`);
@@ -122,10 +123,10 @@ for (const [p, w] of Object.entries(PAGES)) {
   {
     const hd = h.slice(h.indexOf('<header'), h.indexOf('</header>')), ft = h.slice(h.indexOf('<footer'), h.indexOf('</footer>')), X = chromeI18n[w.lang];
     ok(/<html lang="[a-z]+" class="xc">/.test(h) && /<a href="\/" class="site-logo" aria-label="[^"]+">[\s\S]*<\/svg><\/span>Elpriser<\/a>/.test(hd), `${p}: logoet viser ordmærket Elpriser og linker til /`);
-    ok(!/class="site-links"|<nav/.test(hd) && /id="countryBtn"/.test(hd), `${p}: headeren har globussen og ingen landerække`);
-    ok(hd.includes(`aria-label="${X.home}"`) && hd.includes(`aria-label="${X.pick}"`), `${p}: logoets og vælgerens navne på ${w.lang}`);
-    ok(!/id="netChip|class="chip-btn(?! cd-btn)|app-btn|Hent appen|Smart hjem|>Om<|Hovedmenu|href="\/automation"|href="\/om-elpriser"|href="\/download"/.test(hd), `${p}: ingen netchip, ingen app-knap, ingen dansk menu i headeren`);
-    ok(!/class="tabbar|Mobilnavigation|id="netDialog|Netselskab og indstillinger|id="netChip/.test(h.replace(/<!--[\s\S]*?-->/g, '')), `${p}: ingen dansk mobilbar, ingen netdialog og ingen netchip`);
+    ok(!/class="site-links"|<nav|countryBtn/.test(hd) && /id="netChip"/.test(hd) && !/Vestdanmark|DK1|Netselskab|netselskab/.test(hd), `${p}: headeren har stedschippen, ingen globus og ingen landerække`);
+    ok(hd.includes(`aria-label="${X.home}"`) && hd.includes(`aria-label="${X.place}"`), `${p}: logoets og vælgerens navne på ${w.lang}`);
+    ok(!/app-btn|Hent appen|Smart hjem|>Om<|Hovedmenu|href="\/automation"|href="\/om-elpriser"|href="\/download"/.test(hd), `${p}: ingen netchip, ingen app-knap, ingen dansk menu i headeren`);
+    ok(!/class="tabbar|Mobilnavigation|Netselskab og indstillinger|id="gpsBtn|netDlgDK/.test(h.replace(/<!--[\s\S]*?-->/g, '')) && (h.match(/<dialog id="netDialog"/g) || []).length === 1 && h.includes(`id="netDialogTitle">${X.place}</h2>`), `${p}: ingen dansk mobilbar og ingen danske netselskaber, men stedsdialogen på ${w.lang}`);
     ok((h.match(/<footer\b/g) || []).length === 1 && ft.includes('class="sf sf-x"') && ft.includes(`id="sfLand">${X.land}<`) && ft.includes(X.privacy) && !/Privatliv|Hent appen|Hent til|Netselskab|Alle guides|Tariffer|Prognose<|Forstå din elpris|Åbne datasæt|class="sf-apps|class="sf-all|<details/.test(ft), `${p}: sidefoden er den slanke på ${w.lang}`);
     ok(ft.includes('&copy; Elpriser.org') && ft.includes(X.src) && ft.includes(X.open) && /href="\/privatliv" hreflang="da"/.test(ft), `${p}: ophavsret, kilder og privatlivslink på ${w.lang}`);
     ok(!/href="\/(automation|om-elpriser|download|tariffer|prognose|blog|api|shelly-tariff|norden)"/.test(hd + ft) && !/href="\/(dk[12]|elpris)\/[a-z]/.test(hd + ft), `${p}: header og fod linker ingen danske undersider, kun landesiderne og /privatliv`);
@@ -161,7 +162,7 @@ for (const [p, w] of Object.entries(PAGES)) {
 }
 // The Danish pages' chrome is the fixture, byte for byte: header, phone tab bar, footer and net dialog.
 // The fixture is index.html's chrome as it was before the country pages got their own, plus the one intended change:
-// Nederland among the other price areas (footer and net dialog), and the country picker's globe button in the header.
+// Nederland among the other price areas (footer), and the place chip and place dialog (Land, then net) that replaced the net chip, the net dialog and the country picker.
 {
   const FIX = fs.readFileSync(path.join(ROOT, 'tests/fixtures/chrome-da.html'), 'utf8');
   const part = n => FIX.split(`<!--@@${n}@@-->\n`)[1].split('\n<!--@@')[0].replace(/\n$/, '');
@@ -240,7 +241,7 @@ for (const [p, w] of Object.entries(ACT)) {
   ok(!/data-pris-period|pris-period|role="tab" aria-selected="(true|false)" data-pris/.test(h), `${p}: ingen periodeknap`);
   ok(h.includes(`aria-label="${w.card}"`) && h.includes(`<p class="pris-ct">${w.card}</p>`) && !h.includes('pris-card pp5') && !h.includes('pris-card pp7'), `${p}: ét kort, "${w.card}"`);
   ok(!/class="pris-fc/.test(h) && !/<td class="fc">/.test(h) && (h.match(/<td class="real">/g) || []).length === 2 && (h.match(new RegExp(`<td class="real">${w.kind}</td>`, 'g')) || []).length === 2, `${p}: ingen prognose-skillelinje, to rækker med typen "${w.kind}"`);
-  ok((h.match(/<tr class="r\d+">/g) || []).length === 2 && !/class="r5"|class="r10"/.test(h), `${p}: dagslisten har to rækker (i dag og i morgen)`);
+  ok((h.match(/<tr><th scope="row">/g) || []).length === 2 && !/class="r10"/.test(h), `${p}: dagslisten har to rækker (i dag og i morgen)`);
   const bars = (h.slice(h.indexOf('pris-card pp2'), h.indexOf('pris-tiles pp2')).match(/<span class="pc[ "]/g) || []).length;
   ok(bars === 48, `${p}: 48 søjler for to døgn`, String(bars));
   ok(!FORECAST.test(main) && !FORECAST.test(desc) && !FORECAST.test(title) && !FORECAST.test(ld), `${p}: ingen prognose-ord i indhold, titel, beskrivelse eller JSON-LD`, (main.match(FORECAST) || [])[0]);
@@ -259,7 +260,7 @@ for (const [p, w] of Object.entries(ACT)) {
   const nav = [...ft.matchAll(/<li><a href="([^"]+)"([^>]*)>([^<]+)<\/a><\/li>/g)];
   ok(!/class="site-links"/.test(hd) && nav.length === 9 && nav.map(m => m[3]).join() === X9.map(c => X.cn[c]).join() && nav.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === p, `${p}: headeren har ingen landerække; fodens landeliste har ni lande på ${w.lang}, den aktuelle er aria-current`, nav.map(m => m[3]).join());
   ok(ft.includes(`&copy; Elpriser.org &mdash; ${X.src} ${CREDIT} &mdash; ${CHANGED[w.lang]}. ${X.open}`) && !/Energi Data Service|energidataservice|ENTSO/.test(ft + hd) && ft.includes(X.privacy), `${p}: fodens kilde er Bundesnetzagentur | SMARD.de (CC BY 4.0, med licenslink) og siger at dataene er ændret — hverken ENTSO-E eller Energi Data Service`, ft.slice(ft.indexOf('sf-legal')));
-  ok(!/id="netChip|class="tabbar|id="netDialog|Hent appen|Smart hjem/.test(h.replace(/<!--[\s\S]*?-->/g, '')), `${p}: ingen dansk chrome`);
+  ok(!/class="tabbar|id="gpsBtn|netDlgDK|Hent appen|Smart hjem/.test(h.replace(/<!--[\s\S]*?-->/g, '')), `${p}: ingen dansk chrome`);
   ok(upstream.length === 1 && upstream.every(x => x.startsWith('/api/nordic?zone=')), `${p}: serveren henter præcis landets zone`, upstream.join(' '));
   const n = upstream.length, again = await get(p);
   ok(again.page === h && upstream.length === n && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v\\d+${p}$`).test(k)), `${p}: andet svar kommer fra cachen, under egen versioneret nøgle`);
@@ -267,7 +268,7 @@ for (const [p, w] of Object.entries(ACT)) {
   store.clear(); noTomorrow = true;
   const one = (await get(p)).page.replace(/<!--[\s\S]*?-->/g, ''), om = one.slice(one.indexOf('<main'), one.indexOf('</main>'));
   const oneBars = (om.slice(om.indexOf('pris-card pp2'), om.indexOf('pris-tiles pp2')).match(/<span class="pc[ "]/g) || []).length;
-  ok(om.includes(`<p class="pris-ct">${w.one}</p>`) && !om.includes(`<p class="pris-ct">${w.card}</p>`) && oneBars === 24 && (om.match(/<tr class="r\d+">/g) || []).length === 1, `${p}: uden i morgen: titlen er "${w.one}", 24 søjler og én række`, `${oneBars}`);
+  ok(om.includes(`<p class="pris-ct">${w.one}</p>`) && !om.includes(`<p class="pris-ct">${w.card}</p>`) && oneBars === 24 && (om.match(/<tr><th scope="row">/g) || []).length === 1, `${p}: uden i morgen: titlen er "${w.one}", 24 søjler og én række`, `${oneBars}`);
   ok(!/NaN|undefined/.test(om) && !FORECAST.test(om) && /avg|Ø|moy|śr|media/.test(om) && !new RegExp(`${PRISTOM[w.lang]}`).test(om), `${p}: uden i morgen: ingen i-morgen-tal i tekstblokken, ingen NaN`, (om.match(new RegExp(PRISTOM[w.lang])) || [])[0]);
   noTomorrow = false;
 }

@@ -979,7 +979,7 @@ test('Pris screen: the numbers stay as text, and every class its server-drawn ma
   // style.css and silently does nothing. The screen has its own classes, hand-written in the <style> block —
   // including the seven-day card, its tiles and its day rows.
   const style = INDEX.slice(INDEX.indexOf('<style>'), INDEX.indexOf('</style>'));
-  for (const cls of ['.pp7 .pris-cols', '.pp7 .pb', '.pp7 .pd', '[data-period="7"] .pp2', '[data-period="7"] .pp5', '[data-period="2"] .pp7', '[data-period="5"] .pp7', '.r7', '.r10', '.pris-week', '.pris-tiles'])
+  for (const cls of ['.pp7 .pris-cols', '.pp7 .pb', '.pp7 .pd', '[data-period="7"] .pp2', '[data-period="7"] .pp5', '[data-period="2"] .pp7', '[data-period="5"] .pp7', '.r10', '.pris-week', '.pris-tiles'])
     assert.ok(style.includes(cls), `${cls} is not hand-written in the <style> block`);
 });
 
@@ -1645,18 +1645,19 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // v73: the Pris screen gained the PRIS_FC configuration (7 døgn, Usikkerhed) and /prognose draws it; three sentences that linked to /prognose say 7 døgn.
   // v74: the footer and the net dialog list Nederland (/nl/stroomprijs); the country pages swap the chrome for their own (CHROME_I18N).
   // v75: the footer and the net dialog list Tyskland, Frankrig, Polen and Italien.
-  assert.ok(/homepage-ssr-v76/.test(ROUTES), 'homepage-ssr-v76');
+  // v77: one place chip and one place dialog (Land, then net or price zone) replace the globe, the net chip's dialog and the country picker.
+  assert.ok(/homepage-ssr-v77/.test(ROUTES), 'homepage-ssr-v77');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
   // (v8: the shared Pris block changed with PRIS_FC.)
   // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
   // (v10: the four EU price pages joined, the Pris block gained PRIS_ACT and the footer the four links.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v11'/.test(ROUTES), 'zone-ssr-v11');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v12'/.test(ROUTES), 'zone-ssr-v12');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v7'/.test(ROUTES), 'city-ssr-v7');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v8'/.test(ROUTES), 'city-ssr-v8');
   // /prognose shares the header and footer too (v4: the four EU country links).
-  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v5'/.test(ROUTES), 'prognose-ssr-v5');
+  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v6'/.test(ROUTES), 'prognose-ssr-v6');
 });
 
 
@@ -1914,7 +1915,7 @@ test('header: "Hent appen" is a plain link to /download — the dialog, its scri
   assert.ok(INDEX.indexOf('class="app-btn"') < INDEX.indexOf('</header>'), 'it sits in the header');
   // The net dialog uses the same helpers and the same .pris-dialog CSS: both must survive.
   assert.ok(/function openDlg\(/.test(INDEX) && /<dialog id="netDialog"/.test(INDEX) && /\.pris-dialog\{/.test(INDEX), 'the net dialog is untouched');
-  assert.deepEqual([...INDEX.replace(/<script[\s\S]*?<\/script>/g, '').matchAll(/<dialog id="(\w+)"/g)].map(x => x[1]), ['infoModal', 'netDialog', 'countryDialog'], 'the app dialog is gone; the info modal, the net dialog and the country picker remain');
+  assert.deepEqual([...INDEX.replace(/<script[\s\S]*?<\/script>/g, '').matchAll(/<dialog id="(\w+)"/g)].map(x => x[1]), ['infoModal', 'netDialog'], 'the app dialog is gone; the info modal and the place dialog (net dialog and country picker in one) remain');
   assert.ok(/<meta name="apple-itunes-app" content="app-id=6820474476">/.test(INDEX.slice(0, INDEX.indexOf('</head>'))), 'the Smart App Banner meta is in the shared head, so every page — /download too — carries it');
   // Page views follow the other pages' convention: a GA page_view with the clean path, no bespoke event.
   assert.ok(/pv\('Hent appen','\/download'\)/.test(INDEX), 'page_view for /download');

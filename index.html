@@ -359,11 +359,21 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     background:var(--p-card);color:var(--p-ink);box-shadow:0 24px 60px rgba(0,0,0,.3)}
   .pris-dialog::backdrop{background:rgba(14,21,48,.5);backdrop-filter:blur(3px)}
   /* The country picker: country names big, their language beneath, the page's own country on a tint. */
-  .cd-btn{width:40px;padding:0;justify-content:center}
-  @media (max-width:640px){.cd-btn{width:36px}}
-  .pris-dialog.cd{max-width:52rem}
-  .cd-body{display:grid;gap:1.5rem;padding:.25rem 1.25rem 1.5rem}
-  .cd-list{list-style:none;margin:.2rem 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(9rem,1fr));gap:.25rem}
+  /* The place dialog: two rows (Land, then net or price zone) that open to their choices, one at a time (<details name="place">). */
+  .pl-step{border:1px solid var(--p-chip-line);border-radius:18px;background:var(--p-card);overflow:hidden}
+  .pl-step>summary{list-style:none;display:flex;align-items:center;gap:.75rem;min-height:64px;padding:.5rem 1rem;cursor:pointer}
+  .pl-step>summary::-webkit-details-marker{display:none}
+  .pl-step>summary::after{content:'';flex:none;margin-left:auto;width:9px;height:9px;border-right:2px solid var(--p-muted);border-bottom:2px solid var(--p-muted);transform:rotate(45deg);transition:transform .15s}
+  .pl-step[open]>summary::after{transform:rotate(-135deg)}
+  .pl-step>summary:focus-visible{outline:2px solid var(--p-brand);outline-offset:-2px}
+  .pl-static{padding:.5rem 1rem;min-height:64px;display:flex;align-items:center}
+  .pl-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .pl-k{font-size:.75rem;font-weight:700;color:var(--p-muted)}
+  .pl-v{font-size:1.0625rem;font-weight:800;color:var(--p-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pl-panel{display:flex;flex-direction:column;gap:1rem;padding:.25rem 1rem 1rem}
+  .pl-go{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;border:0;border-radius:26px;background:var(--p-btn);color:var(--p-btn-ink);font:inherit;font-size:1rem;font-weight:800;cursor:pointer}
+  .pl-go:focus-visible{outline:2px solid var(--p-brand);outline-offset:2px}
+  .cd-list{list-style:none;margin:.2rem 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(8rem,1fr));gap:.25rem}
   .cd-list a{display:block;min-height:44px;padding:.6rem .85rem;border-radius:12px;color:var(--p-ink);text-decoration:none}
   .cd-list a:hover,.cd-list a[aria-current]{background:var(--p-seg)}
   .cd-list a:focus-visible{outline:2px solid var(--p-brand);outline-offset:2px}
@@ -554,7 +564,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .pris-week small{display:block;font-size:11px;font-weight:600;color:var(--p-muted)}
   .pris-week td.real{color:var(--p-brand)}.pris-week td.fc{color:var(--p-muted)}
   .pris[data-period="2"] .pp5,.pris[data-period="2"] .pp7,.pris[data-period="5"] .pp2,.pris[data-period="5"] .pp7,.pris[data-period="7"] .pp2,.pris[data-period="7"] .pp5{display:none}
-  .pris[data-period="2"] .r5,.pris[data-period="2"] .r7,.pris[data-period="5"] .r7,.pris .r10{display:none}
+  .pris .r10{display:none}
   @media (max-width:420px){.pris-week th,.pris-week td{padding:9px 3px}.pris-week{font-size:12px}}
 
   /* Wide: hero card left, period + chart card + tiles right (the A-Desktop mock) */
@@ -666,11 +676,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <a href="/om-elpriser" data-nav="om">Om</a>
     </nav>
     <div class="site-actions">
-      <button type="button" class="chip-btn cd-btn" id="countryBtn" onclick="openCountryDialog()" aria-haspopup="dialog" aria-label="Vælg land"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.6 2.7 4 5.9 4 9.5s-1.4 6.8-4 9.5c-2.6-2.7-4-5.9-4-9.5s1.4-6.8 4-9.5z"/></svg></button>
-      <button type="button" class="chip-btn" id="netChip" onclick="openNetDialog()" aria-haspopup="dialog" aria-label="Netselskab og indstillinger">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-        <span><span class="nc-long" id="netChipLong">DK1 · Vestdanmark</span><span class="nc-short" id="netChipShort">DK1 · Vest</span></span>
-      </button>
+      <button type="button" class="chip-btn" id="netChip" onclick="openNetDialog()" aria-haspopup="dialog" aria-label="Hvor er du?"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span><span class="nc-long" id="netChipLong">DK1 · Vestdanmark</span><span class="nc-short" id="netChipShort">DK1 · Vest</span></span></button>
       <a href="/download" class="app-btn">Hent appen</a>
     </div>
   </div>
@@ -2642,33 +2648,10 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
   </div>
 </footer>
 
-<!-- ═══════ Netselskab og indstillinger — opened by the net chip in the header.
-     Outside every <main>, so it exists on every page. The position lookup lives
-     here, with the net lists; the ids are the ones detectLocation() drives. ═══════ -->
-<dialog id="netDialog" class="pris-dialog" aria-labelledby="netDialogTitle">
-  <div class="pd-head">
-    <h2 id="netDialogTitle">Netselskab og indstillinger</h2>
-    <button type="button" class="pd-x" onclick="closeNetDialog()" aria-label="Luk"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-  </div>
-  <div class="pd-body">
-    <div class="text-center mt-8">
-      <button id="gpsBtn" onclick="detectLocation()" class="gps-light">
-        <svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span id="gpsText">Find dit netselskab automatisk</span>
-      </button>
-      <div id="gpsForget" style="display:none" class="mt-2">
-        <button type="button" onclick="forgetNetPick()" class="text-xs text-gray-400 dark:text-gray-500 underline hover:text-gray-600 dark:hover:text-gray-300">Glem mit netselskab</button>
-      </div>
-    </div>
-    <div><p class="pd-gt">Vestdanmark · DK1</p><div class="pd-links" id="netDlgDK1"></div></div>
-    <div><p class="pd-gt">Østdanmark · DK2</p><div class="pd-links" id="netDlgDK2"></div></div>
-    <div><p class="pd-gt">Andre prisområder</p><div class="pd-links"><a href="/norden">Norden</a><a href="/no/strompris">Norge</a><a href="/sv/elpris">Sverige</a><a href="/fi/sahkon-hinta">Finland</a><a href="/nl/stroomprijs">Nederland</a><a href="/de/strompreis">Tyskland</a><a href="/fr/prix-electricite">Frankrig</a><a href="/pl/ceny-pradu">Polen</a><a href="/it/prezzo-luce">Italien</a></div></div>
-    <p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p>
-  </div>
-</dialog>
-
-<!-- The country picker (pickerHTML('da','dk'); a country page swaps in its own language) -->
-<dialog id="countryDialog" class="pris-dialog cd" aria-labelledby="countryDialogTitle"><div class="pd-head"><h2 id="countryDialogTitle">Vælg land</h2><button type="button" class="pd-x" onclick="closeDlg('countryDialog')" aria-label="Luk"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><div class="cd-body"><section><p class="pd-gt">Norden</p><ul class="cd-list"><li><a href="/dk1" aria-current="page"><b>Danmark</b><span>Dansk</span></a></li><li><a href="/no/strompris"><b>Norge</b><span>Norsk</span></a></li><li><a href="/sv/elpris"><b>Sverige</b><span>Svenska</span></a></li><li><a href="/fi/sahkon-hinta"><b>Suomi</b><span>Suomi</span></a></li></ul></section><section><p class="pd-gt">Resten af Europa</p><ul class="cd-list"><li><a href="/nl/stroomprijs"><b>Nederland</b><span>Nederlands</span></a></li><li><a href="/de/strompreis"><b>Deutschland</b><span>Deutsch</span></a></li><li><a href="/fr/prix-electricite"><b>France</b><span>Français</span></a></li><li><a href="/pl/ceny-pradu"><b>Polska</b><span>Polski</span></a></li><li><a href="/it/prezzo-luce"><b>Italia</b><span>Italiano</span></a></li></ul></section></div></dialog>
+<!-- ═══════ The place dialog — opened by the one chip in the header (placeHTML('da','dk'); a country page swaps in its own language).
+     Outside every <main>, so it exists on every page. The net lists are built by buildNetDialog() and the position lookup
+     (detectLocation) drives #gpsBtn/#gpsText/#gpsForget; the ids are theirs. ═══════ -->
+<dialog id="netDialog" class="pris-dialog" aria-labelledby="netDialogTitle"><div class="pd-head"><h2 id="netDialogTitle">Hvor er du?</h2><button type="button" class="pd-x" onclick="closeNetDialog()" aria-label="Luk"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><div class="pd-body"><details class="pl-step" name="place"><summary><span class="pl-t"><span class="pl-k">Land</span><span class="pl-v" id="plValLand">Danmark</span></span></summary><div class="pl-panel"><section><p class="pd-gt">Norden</p><ul class="cd-list"><li><a href="/dk1" aria-current="page"><b>Danmark</b><span>Dansk</span></a></li><li><a href="/no/strompris"><b>Norge</b><span>Norsk</span></a></li><li><a href="/sv/elpris"><b>Sverige</b><span>Svenska</span></a></li><li><a href="/fi/sahkon-hinta"><b>Suomi</b><span>Suomi</span></a></li></ul></section><section><p class="pd-gt">Resten af Europa</p><ul class="cd-list"><li><a href="/nl/stroomprijs"><b>Nederland</b><span>Nederlands</span></a></li><li><a href="/de/strompreis"><b>Deutschland</b><span>Deutsch</span></a></li><li><a href="/fr/prix-electricite"><b>France</b><span>Français</span></a></li><li><a href="/pl/ceny-pradu"><b>Polska</b><span>Polski</span></a></li><li><a href="/it/prezzo-luce"><b>Italia</b><span>Italiano</span></a></li></ul></section><p class="pd-foot"><a href="/norden">Norden · alle 13 prisområder</a></p></div></details><details class="pl-step" name="place" open><summary><span class="pl-t"><span class="pl-k">Netselskab</span><span class="pl-v" id="plValNet">DK1 · Vestdanmark</span></span></summary><div class="pl-panel"><div class="text-center mt-8"><button id="gpsBtn" onclick="detectLocation()" class="gps-light"><svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span id="gpsText">Find dit netselskab automatisk</span></button><div id="gpsForget" style="display:none" class="mt-2"><button type="button" onclick="forgetNetPick()" class="text-xs text-gray-400 dark:text-gray-500 underline hover:text-gray-600 dark:hover:text-gray-300">Glem mit netselskab</button></div></div><div><p class="pd-gt">Vestdanmark · DK1</p><div class="pd-links" id="netDlgDK1"></div></div><div><p class="pd-gt">Østdanmark · DK2</p><div class="pd-links" id="netDlgDK2"></div></div></div></details><button type="button" class="pl-go" onclick="closeNetDialog()">Vis priser</button><p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p></div></dialog>
 
 <script>
 const NETS={DK1:[
@@ -2913,7 +2896,6 @@ function closeDlg(id){
 }
 function openNetDialog(){track('net_dialog_open');markNetDialog();openDlg('netDialog');}
 function closeNetDialog(){closeDlg('netDialog');}
-function openCountryDialog(){openDlg('countryDialog');}
 // On /prognose the dialog chooses what the page shows instead of leaving it: the screen is the forecast for the area and
 // net picked here (the choice is remembered like any other net pick). Everywhere else its links are ordinary links.
 document.addEventListener('click',e=>{
@@ -2931,12 +2913,27 @@ document.addEventListener('click',e=>{
 document.addEventListener('click',e=>{
   if(e.target instanceof HTMLDialogElement&&e.target.classList.contains('pris-dialog'))closeDlg(e.target.id);
 });
-/** The net chip: "N1 · Vestdanmark" (phone: "N1 · Vest"), or "DK1 · Vest" with no net. */
+/** The place chip: "N1 · Vestdanmark" (phone: "N1 · Vest"), or "DK1 · Vest" with no net; the dialog's Netselskab row says the same. */
 function updateNetChip(area,netName){
   const vest=area==='DK2'?'Øst':'Vest',long=area==='DK2'?'Østdanmark':'Vestdanmark',pre=netName||area;
-  const a=document.getElementById('netChipLong'),b=document.getElementById('netChipShort');
+  const a=document.getElementById('netChipLong'),b=document.getElementById('netChipShort'),v=document.getElementById('plValNet');
   if(a)a.textContent=`${pre} · ${long}`;
   if(b)b.textContent=`${pre} · ${vest}`;
+  if(v)v.textContent=`${pre} · ${long}`;
+}
+/** The place chip and the dialog's Prisområde row for zone `k` of country page `pg`: "Norge · NO2", "NO2 · Kristiansand", the zone marked. */
+function updateZonePlace(pg,k){
+  const C=PRIS_COUNTRIES[pg],z=ZONES[k],own=PRIS_PICK.filter(c=>c[0]===C.cc)[0][1];
+  const a=document.getElementById('netChipLong'),b=document.getElementById('netChipShort'),v=document.getElementById('plValArea');
+  const t=C.zones.length>1?own+' · '+z.name:own;
+  if(a)a.textContent=t;
+  if(b)b.textContent=t;
+  if(v)v.textContent=z.name+' · '+z.city;
+  document.querySelectorAll('#netDialog [data-zone]').forEach(x=>{
+    const on=x.dataset.zone===k;
+    x.classList.toggle('on',on);
+    if(on)x.setAttribute('aria-current','true');else x.removeAttribute('aria-current');
+  });
 }
 /** The net lists in the dialog: one link per net, the current one marked. */
 function buildNetDialog(){
@@ -3712,37 +3709,37 @@ var PRIS_COUNTRIES={
  *  four. `cn`: the country names in this language, keyed by CHROME_I18N's `cc`; `privacy` says that the
  *  policy is in Danish. */
 var CHROME_I18N={
-  nb:{home:'elpriser.org forside',land:'Land',pick:'Velg land',g0:'Norden',g1:'Resten av Europa',close:'Lukk',
+  nb:{home:'elpriser.org forside',land:'Land',place:'Hvor er du?',ctry:'Land',area:'Prisområde',one:'Ett prisområde',show:'Vis priser',g0:'Norden',g1:'Resten av Europa',close:'Lukk',
     cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederland',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italia'},
     privacy:'Personvern (på dansk)',src:'Data fra',and:'og',open:'Åpne datasett på'},
-  sv:{home:'elpriser.org startsida',land:'Länder',pick:'Välj land',g0:'Norden',g1:'Övriga Europa',close:'Stäng',
+  sv:{home:'elpriser.org startsida',land:'Länder',place:'Var är du?',ctry:'Land',area:'Elområde',one:'Ett elområde',show:'Visa priser',g0:'Norden',g1:'Övriga Europa',close:'Stäng',
     cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederländerna',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italien'},
     privacy:'Integritet (på danska)',src:'Data från',and:'och',open:'Öppna datamängder på'},
-  fi:{home:'elpriser.org etusivu',land:'Maat',pick:'Valitse maa',g0:'Pohjoismaat',g1:'Muu Eurooppa',close:'Sulje',
+  fi:{home:'elpriser.org etusivu',land:'Maat',place:'Missä olet?',ctry:'Maa',area:'Hinta-alue',one:'Yksi hinta-alue',show:'Näytä hinnat',g0:'Pohjoismaat',g1:'Muu Eurooppa',close:'Sulje',
     cn:{dk:'Tanska',no:'Norja',sv:'Ruotsi',fi:'Suomi',nl:'Alankomaat',de:'Saksa',fr:'Ranska',pl:'Puola',it:'Italia'},
     privacy:'Tietosuoja (tanskaksi)',src:'Tietolähteet:',and:'ja',open:'Avoimet aineistot:'},
-  nl:{home:'elpriser.org startpagina',land:'Landen',pick:'Kies een land',g0:'Noordse landen',g1:'Rest van Europa',close:'Sluiten',
+  nl:{home:'elpriser.org startpagina',land:'Landen',place:'Waar ben je?',ctry:'Land',area:'Biedzone',one:'Eén biedzone',show:'Toon prijzen',g0:'Noordse landen',g1:'Rest van Europa',close:'Sluiten',
     cn:{dk:'Denemarken',no:'Noorwegen',sv:'Zweden',fi:'Finland',nl:'Nederland',de:'Duitsland',fr:'Frankrijk',pl:'Polen',it:'Italië'},
     privacy:'Privacy (in het Deens)',src:'Gegevens van',and:'en',open:'Open datasets op'},
-  de:{home:'elpriser.org Startseite',land:'Länder',pick:'Land wählen',g0:'Nordische Länder',g1:'Übriges Europa',close:'Schließen',
+  de:{home:'elpriser.org Startseite',land:'Länder',place:'Wo bist du?',ctry:'Land',area:'Preiszone',one:'Eine Preiszone',show:'Preise anzeigen',g0:'Nordische Länder',g1:'Übriges Europa',close:'Schließen',
     cn:{dk:'Dänemark',no:'Norwegen',sv:'Schweden',fi:'Finnland',nl:'Niederlande',de:'Deutschland',fr:'Frankreich',pl:'Polen',it:'Italien'},
     privacy:'Datenschutz (auf Dänisch)',src:'Quelle:',and:'und',open:'Offene Datensätze auf',
     chg:'Änderung: Stundenmittel von elpriser.org berechnet'},
-  fr:{home:'elpriser.org accueil',land:'Pays',pick:'Choisir un pays',g0:'Pays nordiques',g1:'Reste de l’Europe',close:'Fermer',
+  fr:{home:'elpriser.org accueil',land:'Pays',place:'Où êtes-vous ?',ctry:'Pays',area:'Zone de prix',one:'Une seule zone de prix',show:'Afficher les prix',g0:'Pays nordiques',g1:'Reste de l’Europe',close:'Fermer',
     cn:{dk:'Danemark',no:'Norvège',sv:'Suède',fi:'Finlande',nl:'Pays-Bas',de:'Allemagne',fr:'France',pl:'Pologne',it:'Italie'},
     privacy:'Confidentialité (en danois)',src:'Source\u00a0:',and:'et',open:'Jeux de données ouverts sur',
     chg:'Modifié\u00a0: moyennes horaires calculées par elpriser.org'},
-  pl:{home:'elpriser.org – strona główna',land:'Kraje',pick:'Wybierz kraj',g0:'Kraje nordyckie',g1:'Reszta Europy',close:'Zamknij',
+  pl:{home:'elpriser.org – strona główna',land:'Kraje',place:'Gdzie jesteś?',ctry:'Kraj',area:'Strefa cenowa',one:'Jedna strefa cenowa',show:'Pokaż ceny',g0:'Kraje nordyckie',g1:'Reszta Europy',close:'Zamknij',
     cn:{dk:'Dania',no:'Norwegia',sv:'Szwecja',fi:'Finlandia',nl:'Holandia',de:'Niemcy',fr:'Francja',pl:'Polska',it:'Włochy'},
     privacy:'Prywatność (po duńsku)',src:'Źródło:',and:'i',open:'Otwarte zbiory danych na',
     chg:'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org'},
-  it:{home:'elpriser.org pagina iniziale',land:'Paesi',pick:'Scegli il paese',g0:'Paesi nordici',g1:'Resto d’Europa',close:'Chiudi',
+  it:{home:'elpriser.org pagina iniziale',land:'Paesi',place:'Dove sei?',ctry:'Paese',area:'Zona di prezzo',one:'Una sola zona di prezzo',show:'Mostra i prezzi',g0:'Paesi nordici',g1:'Resto d’Europa',close:'Chiudi',
     cn:{dk:'Danimarca',no:'Norvegia',sv:'Svezia',fi:'Finlandia',nl:'Paesi Bassi',de:'Germania',fr:'Francia',pl:'Polonia',it:'Italia'},
     privacy:'Privacy (in danese)',src:'Fonte:',and:'e',open:'Dataset aperti su',
     chg:'Modifiche: medie orarie calcolate da elpriser.org'}
 };
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
- *  first, then PRIS_COUNTRIES in order), the page's own marked aria-current; the header has the globe (pickerHTML) instead. No net chip, no app button,
+ *  first, then PRIS_COUNTRIES in order), the page's own marked aria-current; the header has the place chip (placeHTML) instead. No net chip, no app button,
  *  no Danish menu — those describe the Danish site. `home` is the logo's accessible name. The footer's data
  *  line names ENTSO-E and Energi Data Service on the Nordic pages; on an `act` page it is prisCredit() — the CC BY 4.0
  *  attribution — and `chg`, the note that the site changed the data. */
@@ -3751,8 +3748,8 @@ function chromeHTML(pg){
   for(p in PRIS_COUNTRIES)items.push({cc:PRIS_COUNTRIES[p].cc,href:'/'+p,cur:p===pg});
   var a=function(it,cls){return '<a href="'+it.href+'"'+(it.cur?(cls?' class="'+cls+'"':'')+' aria-current="page"':'')+'>'+X.cn[it.cc]+'</a>';};
   var lk=function(href,t){return '<a href="'+href+'" target="_blank" rel="noopener">'+t+'</a>';};
-  var P=pickerHTML(PRIS_COUNTRIES[pg].lang,PRIS_COUNTRIES[pg].cc);
-  return {home:X.home,btn:P.btn,picker:P.dialog,
+  var P=placeHTML(PRIS_COUNTRIES[pg].lang,PRIS_COUNTRIES[pg].cc,pg);
+  return {home:X.home,btn:P.btn,place:P.dialog,
     foot:'<footer class="sf sf-x" data-pg="'+pg+'"><div class="sf-in"><nav class="sf-col" aria-labelledby="sfLand"><p class="sf-h" id="sfLand">'+X.land+'</p>'
       +'<ul class="sf-chips">'+items.map(function(it){return '<li>'+a(it,'')+'</li>';}).join('')+'</ul></nav>'
       +'<p class="sf-legal">&copy; Elpriser.org &mdash; '+X.src+' '+(PRIS_COUNTRIES[pg].act?prisCredit()+' &mdash; '+X.chg
@@ -3760,17 +3757,20 @@ function chromeHTML(pg){
       +'. '+X.open+' '+lk('https://huggingface.co/Elpriser','Hugging Face')+'. <a href="/privatliv" hreflang="da">'+X.privacy+'</a></p></div></footer>'};
 }
 
-/** The country picker, like the one on tesla.com: a globe in the header opens a dialog listing every country the site has
- *  prices for, each by its own name and language, the page's own country marked. The names are the countries' own (not
- *  translated), so the dialog differs between pages only in its heading words (PICK_DA, CHROME_I18N). The Danish pages carry
- *  this markup as plain HTML in index.html (test-forecast-chart.mjs keeps it equal to pickerHTML('da','dk')); a country page
- *  gets its own from chromeHTML. `cur` is the page's `cc`. Returns the header button and the dialog. */
-var PICK_DA={pick:'Vælg land',g0:'Norden',g1:'Resten af Europa',close:'Luk'};
+/** The place dialog, behind the ONE chip in the header ("N1 · Vestdanmark", "Norge · NO2"): where am I? Two steps, as native
+ *  <details name="place"> rows that show the current choice: Land, then what the country lets you choose — on a Danish page the net (the two
+ *  area lists, each starting with "Uden netselskab", so the area is picked there too), in a country with several price zones its zones,
+ *  elsewhere nothing (one area). Every choice is a plain link. The Danish pages carry this markup as plain HTML in index.html
+ *  (test-forecast-chart.mjs keeps it equal to placeHTML('da','dk')); buildNetDialog fills the net lists and detectLocation drives the
+ *  position lookup, hence the ids. A country page gets its own, in its language, from chromeHTML. `pg` is the country page (null: Danish).
+ *  Returns the header chip and the dialog. */
+var PLACE_DA={place:'Hvor er du?',ctry:'Land',area:'Prisområde',net:'Netselskab',one:'Ét prisområde',show:'Vis priser',g0:'Norden',g1:'Resten af Europa',close:'Luk'};
 var PRIS_PICK=[['dk','Danmark','Dansk',0],['no','Norge','Norsk',0],['sv','Sverige','Svenska',0],['fi','Suomi','Suomi',0],
   ['nl','Nederland','Nederlands',1],['de','Deutschland','Deutsch',1],['fr','France','Français',1],['pl','Polska','Polski',1],['it','Italia','Italiano',1]];
-function pickerHTML(lang,cur){
-  var X=lang==='da'?PICK_DA:CHROME_I18N[lang],g,i,p,out='';
+function placeHTML(lang,cur,pg){
+  var da=lang==='da',X=da?PLACE_DA:CHROME_I18N[lang],g,i,p,out='',own='',C=pg?PRIS_COUNTRIES[pg]:null;
   var href=function(cc){if(cc==='dk')return '/dk1';for(p in PRIS_COUNTRIES)if(PRIS_COUNTRIES[p].cc===cc)return '/'+p;return '/';};
+  for(i=0;i<PRIS_PICK.length;i++)if(PRIS_PICK[i][0]===cur)own=PRIS_PICK[i][1];
   for(g=0;g<2;g++){
     out+='<section><p class="pd-gt">'+X['g'+g]+'</p><ul class="cd-list">';
     for(i=0;i<PRIS_PICK.length;i++){
@@ -3780,11 +3780,32 @@ function pickerHTML(lang,cur){
     }
     out+='</ul></section>';
   }
+  var step=function(open,k,v,id,body){
+    return '<details class="pl-step" name="place"'+(open?' open':'')+'><summary><span class="pl-t"><span class="pl-k">'+k+'</span><span class="pl-v" id="'+id+'">'+v+'</span></span></summary><div class="pl-panel">'+body+'</div></details>';};
+  var land=step(false,X.ctry,own,'plValLand',out+(da?'<p class="pd-foot"><a href="/norden">Norden · alle 13 prisområder</a></p>':''));
+  var area,long,short,foot='';
+  if(da){
+    long='DK1 · Vestdanmark';short='DK1 · Vest';
+    area=step(true,X.net,long,'plValNet',
+      '<div class="text-center mt-8"><button id="gpsBtn" onclick="detectLocation()" class="gps-light"><svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span id="gpsText">Find dit netselskab automatisk</span></button>'
+      +'<div id="gpsForget" style="display:none" class="mt-2"><button type="button" onclick="forgetNetPick()" class="text-xs text-gray-400 dark:text-gray-500 underline hover:text-gray-600 dark:hover:text-gray-300">Glem mit netselskab</button></div></div>'
+      +'<div><p class="pd-gt">Vestdanmark · DK1</p><div class="pd-links" id="netDlgDK1"></div></div><div><p class="pd-gt">Østdanmark · DK2</p><div class="pd-links" id="netDlgDK2"></div></div>');
+    foot='<p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p>';
+  }else if(C.zones.length>1){
+    var z0=ZONES[C.def];
+    long=short=own+' · '+z0.name;
+    area=step(true,X.area,z0.name+' · '+z0.city,'plValArea','<div class="pd-links">'+C.zones.map(function(k){
+      var to='/'+pg+'#'+k;
+      return '<a href="'+to+'" data-zone="'+k+'"'+(k===C.def?' class="on" aria-current="true"':'')+'>'+ZONES[k].name+' · '+ZONES[k].city+'</a>';}).join('')+'</div>');
+  }else{
+    long=short=own;
+    area='<div class="pl-step pl-static"><span class="pl-t"><span class="pl-k">'+X.area+'</span><span class="pl-v">'+X.one+'</span></span></div>';
+  }
   return {
-    btn:'<button type="button" class="chip-btn cd-btn" id="countryBtn" onclick="openCountryDialog()" aria-haspopup="dialog" aria-label="'+X.pick+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.6 2.7 4 5.9 4 9.5s-1.4 6.8-4 9.5c-2.6-2.7-4-5.9-4-9.5s1.4-6.8 4-9.5z"/></svg></button>',
-    dialog:'<dialog id="countryDialog" class="pris-dialog cd" aria-labelledby="countryDialogTitle"><div class="pd-head"><h2 id="countryDialogTitle">'+X.pick+'</h2>'
-      +'<button type="button" class="pd-x" onclick="closeDlg(\'countryDialog\')" aria-label="'+X.close+'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>'
-      +'<div class="cd-body">'+out+'</div></dialog>'
+    btn:'<button type="button" class="chip-btn" id="netChip" onclick="openNetDialog()" aria-haspopup="dialog" aria-label="'+X.place+'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span><span class="nc-long" id="netChipLong">'+long+'</span><span class="nc-short" id="netChipShort">'+short+'</span></span></button>',
+    dialog:'<dialog id="netDialog" class="pris-dialog" aria-labelledby="netDialogTitle"><div class="pd-head"><h2 id="netDialogTitle">'+X.place+'</h2>'
+      +'<button type="button" class="pd-x" onclick="closeNetDialog()" aria-label="'+X.close+'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>'
+      +'<div class="pd-body">'+land+area+'<button type="button" class="pl-go" onclick="closeNetDialog()">'+X.show+'</button>'+foot+'</div></dialog>'
   };
 }
 
@@ -4131,34 +4152,45 @@ function prisFlat(rows){
   return out;
 }
 
-/** Per-day range and cheapest hour, as text; with cfg.unc a last column says how sure the
- *  forecast is for that day (prisUncertainty). */
-function prisDayRows(all,C,cfg){
-  var L=C.L,rows='',last=cfg.periods[cfg.periods.length-1];
-  for(var i=0;i<all.length;i++){
-    var d=all[i],lo=null,hi=null,loH=0;
-    for(var h=0;h<24;h++){
-      var v=d.ps[h];
-      if(v==null)continue;
-      if(lo==null||v<lo){lo=v;loH=h;}
-      if(hi==null||v>hi)hi=v;
-    }
-    if(lo==null)continue;
-    var dt=prisDate(d.date,L);
-    var name=i===0?prisCap(L.today):i===1?prisCap(L.tomorrow):prisCap(dt.wd);
-    // r2: shown in every period, r5: from 5 døgn, r7: only in 7 døgn, r10: the days beyond the
-    // longest period, kept in the markup as text for crawlers and never shown on this screen.
-    rows+='<tr class="'+(i<2?'r2':i<5?'r5':i<last?'r'+last:'r10')+'"><th scope="row">'+name+'<small>'+dt.d+L.dot+' '+dt.m+'</small></th>'
+/** Per-day range and cheapest hour, as text, over the hours the period's chart shows (`wins[p]`: its first hour and length, counted
+ *  from today 00:00): today from six hours before now, the last day only as far as the chart reaches. One <tbody> per period, the
+ *  active one shown; the days after the longest period's window are kept as hidden full-day rows (r10) for crawlers. With cfg.unc a
+ *  last column says how sure the forecast is for that day (prisUncertainty). */
+function prisDayRows(all,C,cfg,wins){
+  var L=C.L,body='',last=cfg.periods[cfg.periods.length-1],any=false;
+  var row=function(i,d,lo,hi,loH,cls){
+    var dt=prisDate(d.date,L),name=i===0?prisCap(L.today):i===1?prisCap(L.tomorrow):prisCap(dt.wd);
+    return '<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+name+'<small>'+dt.d+L.dot+' '+dt.m+'</small></th>'
       +'<td>'+prisNum(lo,C.d)+'–'+prisNum(hi,C.d)+'</td>'
       +'<td>'+prisAt(L,loH,(loH+1)%24)+'</td>'
       +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?L.actual:L.fc)+'</td>'
-      +(cfg.unc?'<td>'+prisUncertainty(i)+'</td>':'')+'</tr>';
-  }
-  if(!rows)return '';
+      +(cfg.unc?'<td>'+prisUncertainty(i)+'</td>':'')+'</tr>';};
+  var span=function(i,from,to){
+    var d=all[i],lo=null,hi=null,loH=0;
+    for(var h=0;h<24;h++){
+      var a=i*24+h,v=d.ps[h];
+      if(v==null||a<from||a>=to)continue;
+      if(lo==null||v<lo){lo=v;loH=h;}
+      if(hi==null||v>hi)hi=v;
+    }
+    return lo==null?null:{lo:lo,hi:hi,loH:loH};};
+  cfg.periods.forEach(function(p){
+    var w=wins[p],end=w.st+w.len,rows='',i,s;
+    for(i=Math.floor(w.st/24);i*24<end&&i<all.length;i++){
+      s=span(i,w.st,end);
+      if(s){rows+=row(i,all[i],s.lo,s.hi,s.loH,'');any=true;}
+    }
+    if(p===last)for(i=Math.ceil(end/24);i<all.length;i++){
+      s=span(i,0,24*all.length);
+      if(s)rows+=row(i,all[i],s.lo,s.hi,s.loH,'r10');
+    }
+    body+='<tbody class="pp'+p+'">'+rows+'</tbody>';
+  });
+  if(!any)return '';
   return '<section class="pris-days" aria-label="'+L.byDay+'"><p class="pris-dt">'+L.byDay+'</p>'
     +'<table class="pris-week"><thead><tr><th scope="col">'+L.day+'</th><th scope="col">'+L.range+', '+C.u+'/kWh</th>'
     +'<th scope="col">'+prisCap(L.lo)+'</th><th scope="col">'+L.type+'</th>'+(cfg.unc?'<th scope="col">Usikkerhed</th>':'')
-    +'</tr></thead><tbody>'+rows+'</tbody></table></section>';
+    +'</tr></thead>'+body+'</table></section>';
 }
 
 /** "Ugen i korte træk": a few bullets about the first `p` days of the screen, for the page whose cfg carries
@@ -4276,7 +4308,7 @@ function prisHTML(days,todayStr,nowHour,o){
   var an=all.length>=2?2:1,actT=C.act?(an===2?L.act2:L.act1):'';
   // One card and one pair of tiles per period. 2 døgn: hourly labels, bars coloured against
   // today; every longer period: a label per day and a divider at each midnight.
-  var cards='',tiles='';
+  var cards='',tiles='',wins={};
   cfg.periods.forEach(function(p){
     var t=C.act?actT:L.next+' '+L['p'+p],n=C.act?an:p===2?2:all.length?Math.min(p,all.length):p;
     // 2 døgn counts 48 hours on from the current hour (with the six hours before it, dimmed), not today and tomorrow; an
@@ -4284,6 +4316,7 @@ function prisHTML(days,todayStr,nowHour,o){
     // Every longer period starts at the same place (the hour six before now) and runs p days on, as far as the data goes.
     var win=!C.act&&nowSlot>0,back=win?Math.min(6,nowSlot):0,st=win?nowSlot-back:0,len=win?back+p*24:0;
     if(win&&p>2)len=Math.min(len,all.length*24-st);
+    wins[p]={st:win?st:0,len:win?len:n*24};
     cards+='<section class="pris-card pp'+p+'" aria-label="'+t+'">'+head(t)
       +prisChart(all.slice(0,win?Math.ceil((st+len)/24):n),n,p===2?{ref:td||[],nowSlot:nowSlot,start:st,len:len,title:C.act?L.hourly+', '+actT.toLowerCase():ttl+L.p2,C:C}
         :{nowSlot:nowSlot,start:st,len:len,xDays:true,seps:true,title:ttl+L['p'+p],C:C})+'</section>';
@@ -4292,7 +4325,7 @@ function prisHTML(days,todayStr,nowHour,o){
   return '<div class="pris" data-period="'+period+'" data-view="'+view+'" data-key="'+prisEsc(o.key||'')
     +'" data-hour="'+nowHour+'" data-date="'+todayStr+'">'+hero
     +'<div class="pris-right">'+tabs+cards+tiles+'</div>'
-    +cfg.periods.map(function(p){return prisSummary(all,p,cfg,C);}).join('')+prisDayRows(all,C,cfg)+'</div>';
+    +cfg.periods.map(function(p){return prisSummary(all,p,cfg,C);}).join('')+prisDayRows(all,C,cfg,wins)+'</div>';
 }
 
 // ── The country pages and /norden: everything around the screen ──
@@ -5295,7 +5328,7 @@ function localiseChrome(pg){
     el.replaceWith(t.content.firstElementChild);
   };
   put('.site-links','');
-  put('.site-actions','<div class="site-actions">'+c.btn+'</div>');put('#tabBar','');put('#netDialog','');put('#countryDialog',c.picker);
+  put('.site-actions','<div class="site-actions">'+c.btn+'</div>');put('#tabBar','');put('#netDialog',c.place);
   const ft=document.querySelector('footer.sf');
   if(ft&&ft.dataset.pg!==pg)put('footer.sf',c.foot);
 }
@@ -5315,6 +5348,7 @@ function openZonePage(pg){
 async function showZone(k){
   const id=++ZP.load,mount=prisMount(),box=document.getElementById('zTabs'),panel=document.getElementById('zPanel');
   ZP.sel=k;
+  updateZonePlace(ZP.page,k);
   if(!box.firstElementChild)box.innerHTML=prisZoneTabs(ZP.page,k);
   box.querySelectorAll('[role="tab"]').forEach(a=>{const on=a.dataset.zone===k;a.setAttribute('aria-selected',String(on));a.tabIndex=on?0:-1;});
   const cur0=box.querySelector('[aria-selected="true"]');if(cur0)setTimeout(()=>cur0.scrollIntoView({block:'nearest',inline:'nearest'}));   // the row scrolls sideways on a phone; after route() has shown the page
@@ -5340,10 +5374,11 @@ function pickZone(k){
   showZone(k);
 }
 document.addEventListener('click',e=>{
-  const a=e.target.closest?e.target.closest('#zTabs [data-zone],#zList [data-zone]'):null;
+  const a=e.target.closest?e.target.closest('#zTabs [data-zone],#zList [data-zone],#netDialog [data-zone]'):null;
   if(!a)return;
   e.preventDefault();
   pickZone(a.dataset.zone);
+  if(a.closest('#netDialog'))closeNetDialog();
   if(a.closest('#zList'))document.getElementById('zTabs').scrollIntoView({block:'start'});
 });
 document.addEventListener('keydown',e=>{
