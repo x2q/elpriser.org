@@ -53,8 +53,6 @@ const SAME_AS_DANISH = {
     date_long: TEMPLATE,
     tooltip: TEMPLATE,
     chart_summary_tile: TEMPLATE,
-    picker_group_dk1: 'place names: Jylland, Fyn',
-    picker_group_dk2: 'place names: Sjælland, Lolland, Falster',
   },
   sv: {
     part_spot_actual: 'proper noun: Nord Pool',

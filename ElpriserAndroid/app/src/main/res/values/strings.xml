@@ -12,10 +12,10 @@
     <!-- Navigation og overskrifter -->
     <string name="nav_price">Pris</string>
     <string name="nav_smart">Smart hjem</string>
-    <string name="open_settings_label">Åbn netselskab og indstillinger</string>
+    <string name="open_settings_label">Vælg sted og netselskab</string>
     <string name="settings_back_label">Tilbage til Pris</string>
-    <string name="settings_title">Netselskab og indstillinger</string>
-    <string name="settings_subtitle">Netselskab, prisvisning og udseende</string>
+    <string name="settings_title">Indstillinger</string>
+    <string name="settings_subtitle">Prisvisning og udseende</string>
 
     <!-- Pris-skærmen -->
     <string name="error_no_prices_today">Ingen priser for i dag endnu.</string>
@@ -126,17 +126,6 @@
     <string name="state_collapsed">Foldet sammen</string>
 
     <!-- Indstillinger -->
-    <string name="settings_net_label">Netselskab</string>
-    <string name="settings_no_net">Intet netselskab valgt</string>
-    <string name="settings_net_gps">Fundet med din position · gemt på telefonen</string>
-    <string name="settings_net_manual">Valgt af dig · gemt på telefonen</string>
-    <string name="settings_net_none_hint">Priserne vises uden nettarif</string>
-    <string name="settings_area_label">Prisområde</string>
-    <string name="settings_privacy_note">Vi spørger kun om din position, når du trykker. Vi gemmer svaret — netselskabet — og aldrig koordinaterne.</string>
-    <string name="action_change">Skift</string>
-    <string name="action_find_net">Find mit netselskab</string>
-    <string name="action_find_net_again">Find mit netselskab igen</string>
-    <string name="action_forget">Glem</string>
     <string name="view_total_title">Samlet pris med netselskab</string>
     <string name="view_total_sub">Spot, nettarif, afgifter og moms</string>
     <string name="view_nonet_title">Uden netselskab</string>
@@ -182,36 +171,27 @@
 
     <!-- Find netselskab (første start og skift) -->
     <string name="welcome_skip">Spring over</string>
-    <string name="welcome_cancel">Annullér</string>
     <string name="welcome_title">Find dit netselskab</string>
     <string name="welcome_body">Din elregning afhænger af, hvem der ejer ledningerne til dit hus. Med din position finder vi netselskabet, så priserne i appen er dem, du faktisk betaler.</string>
-    <string name="welcome_point_1">Vi spørger kun, når du trykker på knappen — aldrig i baggrunden.</string>
-    <string name="welcome_point_2">Positionen bruges én gang. Vi gemmer netselskabet, ikke koordinaterne.</string>
-    <string name="welcome_point_3">Du kan altid skifte eller glemme netselskabet under Indstillinger.</string>
-    <string name="welcome_pick_myself">Vælg selv på listen</string>
     <string name="searching_title">Finder dit netselskab …</string>
     <string name="searching_hint">Det tager et øjeblik. Positionen bliver ikke gemt.</string>
-    <string name="found_label">Vi fandt</string>
-    <string name="found_area">Prisområde %1$s · netselskab for din adresse</string>
-    <string name="found_saved_title">Hvad bliver gemt</string>
-    <string name="found_saved_net">Netselskab: %1$s (prisområde %2$s)</string>
-    <string name="found_saved_local">Gemmes kun på denne telefon</string>
-    <string name="found_saved_not">Din position — hverken koordinater eller adresse</string>
-    <string name="found_wrong_hint">Står netselskabet forkert? Positionen kan være upræcis tæt på en grænse mellem to netselskaber — så vælg det på listen.</string>
-    <string name="found_use">Brug %1$s</string>
-    <string name="found_not_mine">Det er ikke mit netselskab</string>
-    <string name="picker_title">Vælg netselskab</string>
-    <string name="picker_subtitle">Står på din elregning</string>
     <string name="picker_search_hint">Søg netselskab</string>
-    <string name="picker_locate">Ved du det ikke? Find det med din position</string>
-    <string name="picker_group_dk1">DK1 · Jylland og Fyn</string>
-    <string name="picker_group_dk2">DK2 · Sjælland, Lolland og Falster</string>
     <string name="picker_no_match">Ingen netselskaber matcher “%1$s”.</string>
-    <string name="picker_save">Gem %1$s som mit netselskab</string>
-    <string name="picker_choose">Vælg et netselskab</string>
     <string name="note_no_position">Vi kunne ikke finde din position. Vælg dit netselskab på listen i stedet.</string>
     <string name="note_outside_denmark">Din position ligger uden for Danmark. Vælg dit netselskab på listen.</string>
     <string name="note_no_net">Vi kunne ikke finde netselskabet for din position. Vælg det på listen — det står på din elregning.</string>
     <string name="note_lookup_failed">Opslaget lykkedes ikke. Vælg dit netselskab på listen, eller prøv igen senere.</string>
     <string name="note_denied">Positionen blev ikke delt. Vælg dit netselskab på listen — så virker appen på samme måde.</string>
+    <string name="place_title">Hvor er du?</string>
+    <string name="place_close">Luk</string>
+    <string name="place_use_position">Brug min position</string>
+    <string name="place_position_note">Finder dit netselskab ud fra din position. Positionen bruges kun én gang og gemmes aldrig.</string>
+    <string name="place_forget">Glem mit netselskab</string>
+    <string name="place_group_dk">Danmark</string>
+    <string name="place_west">Vestdanmark</string>
+    <string name="place_east">Østdanmark</string>
+    <string name="place_net_note">Med et netselskab inkluderer prisen nettarif, afgifter og moms som på din regning.</string>
+    <string name="place_others">Andre lande</string>
+    <string name="place_nordics">Norden og resten af Europa</string>
+    <string name="place_settings">Indstillinger</string>
 </resources>

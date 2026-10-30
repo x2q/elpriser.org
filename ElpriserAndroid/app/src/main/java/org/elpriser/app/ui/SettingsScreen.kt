@@ -43,34 +43,6 @@ fun SettingsScreen(vm: AppViewModel, wide: Boolean) {
     val tx = rememberStrings()
     fun open(url: String) = ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
 
-    val netCard: @Composable () -> Unit = {
-        val net = s.net
-        AppCard {
-            SectionLabel(tx.get(R.string.settings_net_label))
-            Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(48.dp).clip(CircleShape).background(t.brandSoft), contentAlignment = Alignment.Center) { Icon(Ic.Pin, t.brand, 24.dp) }
-                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                    Text(if (net != null) "${net.name} · ${areaLabel(tx, net.area)}" else tx.get(R.string.settings_no_net), fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
-                    Text(
-                        if (net != null) tx.get(if (s.netHow == "gps") R.string.settings_net_gps else R.string.settings_net_manual) else tx.get(R.string.settings_net_none_hint),
-                        fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = t.text2,
-                    )
-                }
-                SoftButton(tx.get(R.string.action_change), { vm.openPicker() })
-            }
-            Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(Modifier.weight(1f)) { PrimaryButton(tx.get(if (net != null) R.string.action_find_net_again else R.string.action_find_net), { vm.openWelcome() }, height = 46.dp) }
-                if (net != null) SoftButton(tx.get(R.string.action_forget), { vm.forget() }, bg = t.badSoft, fg = t.bad, modifier = Modifier.height(46.dp))
-            }
-            if (net == null) {
-                SectionLabel(tx.get(R.string.settings_area_label), Modifier.padding(top = 14.dp, bottom = 6.dp))
-                Segmented(listOf(areaLabel(tx, "DK1"), areaLabel(tx, "DK2")), if (s.area == "DK1") 0 else 1, { s.updateArea(if (it == 0) "DK1" else "DK2"); vm.refresh(true) })
-            }
-            Text(tx.get(R.string.settings_privacy_note),
-                Modifier.padding(top = 10.dp), fontSize = 12.5.sp, lineHeight = 18.sp, color = t.text2)
-        }
-    }
-
     val viewCard: @Composable () -> Unit = {
         val defs = listOf(
             tx.get(R.string.view_total_title) to tx.get(R.string.view_total_sub),
@@ -131,12 +103,12 @@ fun SettingsScreen(vm: AppViewModel, wide: Boolean) {
         }
         if (wide) {
             Row(Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                Column(Modifier.width(520.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { netCard(); aboutCard() }
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { viewCard(); lookCard() }
+                Column(Modifier.width(520.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { viewCard() }
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { lookCard(); aboutCard() }
             }
         } else {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                netCard(); viewCard(); lookCard(); aboutCard()
+                viewCard(); lookCard(); aboutCard()
             }
         }
     }

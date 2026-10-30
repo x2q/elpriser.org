@@ -59,7 +59,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.elpriser.app.AppViewModel
 import org.elpriser.app.R
-import org.elpriser.app.Tab
 import org.elpriser.app.data.Clock
 import org.elpriser.app.data.Day
 import kotlin.math.abs
@@ -224,7 +223,7 @@ private fun PriceHeader(vm: AppViewModel, wide: Boolean) {
         }
         // Selve chippen er 36 dp høj; trykfladen er 44 dp.
         Box(
-            Modifier.height(44.dp).clickable(role = Role.Button, onClickLabel = tx.get(R.string.open_settings_label)) { vm.tab = Tab.Settings },
+            Modifier.height(44.dp).clickable(role = Role.Button, onClickLabel = tx.get(R.string.open_settings_label)) { vm.openPlace() },
             contentAlignment = Alignment.Center,
         ) {
             Row(

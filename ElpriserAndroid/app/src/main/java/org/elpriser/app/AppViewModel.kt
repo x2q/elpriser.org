@@ -23,20 +23,17 @@ import org.elpriser.app.data.Settings
 /** Pris og Smart hjem er de to faner; Indstillinger åbnes fra net-chippen og er ikke en fane. */
 enum class Tab { Pris, Smart, Settings }
 
-/** Første-start- og netselskabsflowet, der ligger oven på appen. */
+/** Stedslisten ("Hvor er du?"), der ligger oven på appen: ved første start og fra net-chippen. */
 sealed interface Step {
-    data object Welcome : Step
-    data object Searching : Step
-    class Found(val net: Net) : Step
-    /** [note] er et tekst-id (eller null), så beskeden følger appens sprog. */
-    class Picker(@StringRes val note: Int?) : Step
+    /** [note] er et tekst-id (eller null), så beskeden følger appens sprog; [searching] mens positionen slås op. */
+    class Place(@StringRes val note: Int? = null, val searching: Boolean = false) : Step
 }
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     val settings = Settings(app)
 
     var tab by mutableStateOf(Tab.Pris)
-    var step by mutableStateOf<Step?>(if (settings.onboarded) null else Step.Welcome)
+    var step by mutableStateOf<Step?>(if (settings.onboarded) null else Step.Place())
         private set
 
     var loading by mutableStateOf(false)
@@ -87,9 +84,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ── netselskab og position ─────────────────────────────────────────────
 
-    fun openWelcome() { step = Step.Welcome }
-    fun openPicker(@StringRes note: Int? = null) { step = Step.Picker(note) }
-    fun closeStep() { step = null }
+    fun openPlace(@StringRes note: Int? = null) { step = Step.Place(note) }
+    fun closeStep() { if (settings.onboarded) step = null else skip() }
 
     fun skip() {
         settings.skipOnboarding()
@@ -102,35 +98,40 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         refresh(true)
     }
 
+    /** "Uden netselskab": prisområdet alene. */
+    fun chooseArea(area: String) {
+        settings.forgetNet()
+        settings.updateArea(area)
+        step = null
+        refresh(true)
+    }
+
     fun forget() {
         settings.forgetNet()
         refresh(true)
     }
 
-    /** Henter positionen én gang og finder netselskabet. Koordinaterne bruges kun til opslaget. */
+    /** Henter positionen én gang og vælger netselskabet. Koordinaterne bruges kun til opslaget. */
     fun detect(context: Context) {
-        step = Step.Searching
+        step = Step.Place(searching = true)
         viewModelScope.launch {
             val loc = Position.current(context)
             if (loc == null) {
-                step = Step.Picker(R.string.note_no_position)
+                step = Step.Place(R.string.note_no_position)
                 return@launch
             }
             try {
                 val r = Api.lookup(loc.latitude, loc.longitude)
                 val net = Nets.match(r.name)
-                step = when {
-                    net != null -> Step.Found(net)
-                    r.error == "outside_denmark" -> Step.Picker(R.string.note_outside_denmark)
-                    else -> Step.Picker(R.string.note_no_net)
-                }
+                if (net != null) choose(net, "gps")
+                else step = Step.Place(if (r.error == "outside_denmark") R.string.note_outside_denmark else R.string.note_no_net)
             } catch (e: Exception) {
-                step = Step.Picker(R.string.note_lookup_failed)
+                step = Step.Place(R.string.note_lookup_failed)
             }
         }
     }
 
     fun positionDenied() {
-        step = Step.Picker(R.string.note_denied)
+        step = Step.Place(R.string.note_denied)
     }
 }

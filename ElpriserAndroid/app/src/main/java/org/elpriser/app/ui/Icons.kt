@@ -30,6 +30,7 @@ object Ic {
     const val Back = "M19 12H5M12 19l-7-7 7-7"
     const val Search = "M4 11a7 7 0 1 0 14 0a7 7 0 1 0 -14 0M20 20l-4-4"
     const val Down = "M6 9l6 6 6-6"
+    const val Next = "M9 5l7 7-7 7"
     const val Heat = "M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"
     const val Car = "M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0zM12 17v5"
     const val Drop = "M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z"
