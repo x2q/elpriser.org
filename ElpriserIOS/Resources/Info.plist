@@ -25,7 +25,7 @@
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Elpriser bruger din position én gang, når du trykker på “Find mit netselskab”, til at finde dit netselskab. Positionen gemmes aldrig — kun netselskabets navn.</string>
+	<string>Elpriser bruger din position én gang, når du trykker på “Brug min position”, til at finde dit netselskab. Positionen gemmes aldrig — kun netselskabets navn.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Manrope-Regular.ttf</string>

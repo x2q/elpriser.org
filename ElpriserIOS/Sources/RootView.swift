@@ -1,8 +1,5 @@
 import SwiftUI
 
-/// Skærme uden for fanerne.
-enum Route: Hashable { case settings }
-
 /// Giver skærmene besked, om der er plads til to paneler (iPad og store iPhones i landscape).
 struct Adaptive<Content: View>: View {
     @ViewBuilder var content: (Bool) -> Content
@@ -14,15 +11,6 @@ struct Adaptive<Content: View>: View {
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var phase
-    /// Kun til skærmbilleder (-debugTab settings): åbner "Netselskab og indstillinger" direkte i Pris-fanens stak.
-    @State private var prisPath: [Route] = {
-        #if DEBUG
-        return UserDefaults.standard.string(forKey: "debugTab") == "settings" ? [.settings] : []
-        #else
-        return []
-        #endif
-    }()
-
     var body: some View {
         tabs
     }
@@ -38,8 +26,8 @@ struct RootView: View {
         }
         .tint(T.brandSolid)
         .preferredColorScheme(scheme)
-        .fullScreenCover(isPresented: Binding(get: { model.step != nil }, set: { if !$0 { model.closeStep() } })) {
-            FlowHost().environment(model).preferredColorScheme(scheme)
+        .sheet(isPresented: Binding(get: { model.placeOpen }, set: { if !$0 { model.closePlace() } })) {
+            PlaceSheet().environment(model).preferredColorScheme(scheme).presentationSizing(.form)
         }
         .task { model.refresh() }
         #if DEBUG
@@ -65,7 +53,7 @@ struct RootView: View {
             SideRail(selected: $m.tab)
             ZStack {
                 switch model.tab {
-                case .pris: NavigationStack(path: $prisPath) { PrisScreen().routes() }
+                case .pris: NavigationStack { PrisScreen().toolbar(.hidden, for: .navigationBar) }
                 case .smartHjem: NavigationStack { AutomationScreen().toolbar(.hidden, for: .navigationBar) }
                 }
             }
@@ -79,7 +67,7 @@ struct RootView: View {
         @Bindable var m = model
         return TabView(selection: $m.tab) {
             Tab("Pris", systemImage: "bolt", value: AppTab.pris) {
-                NavigationStack(path: $prisPath) { PrisScreen().routes() }
+                NavigationStack { PrisScreen().toolbar(.hidden, for: .navigationBar) }
             }
             Tab("Smart hjem", systemImage: "slider.horizontal.3", value: AppTab.smartHjem) {
                 NavigationStack { AutomationScreen().toolbar(.hidden, for: .navigationBar) }
@@ -89,13 +77,5 @@ struct RootView: View {
 
     private var scheme: ColorScheme? {
         switch model.settings.theme { case "light": .light; case "dark": .dark; default: nil }
-    }
-}
-
-extension View {
-    /// Skjult navigationslinje på hovedskærmen; indstillingerne skubbes ind med sin egen.
-    func routes() -> some View {
-        self.toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: Route.self) { _ in SettingsScreen() }
     }
 }

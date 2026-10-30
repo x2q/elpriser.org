@@ -22,7 +22,6 @@
 		5AA1D37EB5BF420D7D0E9C28 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26EDF56625B0D18A58DBBBFB /* Components.swift */; };
 		5AB5295F7DBD5E92AD374D8A /* ElpriserApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C1B68BF4CE26810998F12 /* ElpriserApp.swift */; };
 		5FF1C34B530F233B527A4F09 /* PositionFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16DDB4C03F208F45BBD9C78F /* PositionFinder.swift */; };
-		6DA635596A73DDAFBA0397D0 /* FlowViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3480C4E02FF1E6233316CA51 /* FlowViews.swift */; };
 		7EC09C6617FEC7DF3E00DBF2 /* PrisScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9090C1529CA47655796ACC /* PrisScreen.swift */; };
 		80B6169C935ABEFDA126D60B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 9D3EF2BA24B75A83BB44F18B /* PrivacyInfo.xcprivacy */; };
 		867993E3EA0F0E0748A78BF1 /* SideRail.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8769A2AAA47103E3A24B1F6 /* SideRail.swift */; };
@@ -31,9 +30,12 @@
 		9F10449DE487713F8140484D /* BreakdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C8EF30FEDE7390C142470F /* BreakdownTests.swift */; };
 		AC66A3FB193ADBEE3BBD4078 /* PrisLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6BBFE10F3618BD65438A3A1 /* PrisLogic.swift */; };
 		B28B090D1276231CAA19C0AE /* Manrope-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EE806A861F959B78C5209974 /* Manrope-SemiBold.ttf */; };
+		B8155B5102F651D434F5E3E0 /* PlaceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B990222EEEAAA11F67F79470 /* PlaceSheet.swift */; };
 		B9A71EFB6188DA40EB28FC76 /* Manrope-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CF6308EF906FA984651F9D8D /* Manrope-Medium.ttf */; };
+		C1196992E07D4888A212B6C7 /* PlaceLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6635AD8CC1552A203FD460E3 /* PlaceLogicTests.swift */; };
 		EB73C53D059980D99FD22E12 /* BreakdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138D8934A24A02C3D3558E15 /* BreakdownView.swift */; };
 		F20459218D6C20BE212A65E9 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BA379703921B8B52E7A017 /* Models.swift */; };
+		F51EC5EE925691D046AF30DD /* PlaceLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7301F1A1A2D45197755427A4 /* PlaceLogic.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,19 +55,21 @@
 		204D1733B1B18A449F11A1F1 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		26EDF56625B0D18A58DBBBFB /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		2FF88DD5797EF12AB34969DA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
-		3480C4E02FF1E6233316CA51 /* FlowViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowViews.swift; sourceTree = "<group>"; };
 		3D6E5BFC81A4F27463032FB8 /* Manrope-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Bold.ttf"; sourceTree = "<group>"; };
 		4953B2B40682C6BBCE0E47DE /* Manrope-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-ExtraBold.ttf"; sourceTree = "<group>"; };
 		55BA379703921B8B52E7A017 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		55C8EF30FEDE7390C142470F /* BreakdownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakdownTests.swift; sourceTree = "<group>"; };
 		5D66E273760FB843CBE6C2C4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6635AD8CC1552A203FD460E3 /* PlaceLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceLogicTests.swift; sourceTree = "<group>"; };
 		6975334731F7C708B1271A90 /* PrisLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrisLogicTests.swift; sourceTree = "<group>"; };
 		6A0B84831207BC11D4231A5D /* Manrope-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Regular.ttf"; sourceTree = "<group>"; };
+		7301F1A1A2D45197755427A4 /* PlaceLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceLogic.swift; sourceTree = "<group>"; };
 		769138C3213A541E2B3C043C /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		85C2F7685A6040B8334198A8 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		98356D215B7AF4BC0982A5DD /* ContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractTests.swift; sourceTree = "<group>"; };
 		9D3EF2BA24B75A83BB44F18B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A81FE4CF78994273B13EC4E0 /* AutomationScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationScreen.swift; sourceTree = "<group>"; };
+		B990222EEEAAA11F67F79470 /* PlaceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceSheet.swift; sourceTree = "<group>"; };
 		C445F043FFD3C41CF8EB07D4 /* Api.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Api.swift; sourceTree = "<group>"; };
 		C6BBFE10F3618BD65438A3A1 /* PrisLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrisLogic.swift; sourceTree = "<group>"; };
 		CE9090C1529CA47655796ACC /* PrisScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrisScreen.swift; sourceTree = "<group>"; };
@@ -98,8 +102,9 @@
 				138D8934A24A02C3D3558E15 /* BreakdownView.swift */,
 				26EDF56625B0D18A58DBBBFB /* Components.swift */,
 				069C1B68BF4CE26810998F12 /* ElpriserApp.swift */,
-				3480C4E02FF1E6233316CA51 /* FlowViews.swift */,
 				55BA379703921B8B52E7A017 /* Models.swift */,
+				7301F1A1A2D45197755427A4 /* PlaceLogic.swift */,
+				B990222EEEAAA11F67F79470 /* PlaceSheet.swift */,
 				16DDB4C03F208F45BBD9C78F /* PositionFinder.swift */,
 				FC66EA68E8E258BE36DD7CAC /* PriceChart.swift */,
 				C6BBFE10F3618BD65438A3A1 /* PrisLogic.swift */,
@@ -140,6 +145,7 @@
 			children = (
 				55C8EF30FEDE7390C142470F /* BreakdownTests.swift */,
 				98356D215B7AF4BC0982A5DD /* ContractTests.swift */,
+				6635AD8CC1552A203FD460E3 /* PlaceLogicTests.swift */,
 				6975334731F7C708B1271A90 /* PrisLogicTests.swift */,
 			);
 			path = Tests;
@@ -262,8 +268,9 @@
 				EB73C53D059980D99FD22E12 /* BreakdownView.swift in Sources */,
 				5AA1D37EB5BF420D7D0E9C28 /* Components.swift in Sources */,
 				5AB5295F7DBD5E92AD374D8A /* ElpriserApp.swift in Sources */,
-				6DA635596A73DDAFBA0397D0 /* FlowViews.swift in Sources */,
 				F20459218D6C20BE212A65E9 /* Models.swift in Sources */,
+				F51EC5EE925691D046AF30DD /* PlaceLogic.swift in Sources */,
+				B8155B5102F651D434F5E3E0 /* PlaceSheet.swift in Sources */,
 				5FF1C34B530F233B527A4F09 /* PositionFinder.swift in Sources */,
 				28C5E936F9A4022ED4AE170E /* PriceChart.swift in Sources */,
 				AC66A3FB193ADBEE3BBD4078 /* PrisLogic.swift in Sources */,
@@ -282,6 +289,7 @@
 			files = (
 				9F10449DE487713F8140484D /* BreakdownTests.swift in Sources */,
 				070BEEC5A7E4520F5503AF13 /* ContractTests.swift in Sources */,
+				C1196992E07D4888A212B6C7 /* PlaceLogicTests.swift in Sources */,
 				9429981CBF6F48D133FE6E9F /* PrisLogicTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

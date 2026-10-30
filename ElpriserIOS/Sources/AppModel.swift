@@ -4,14 +4,6 @@ import Observation
 /// De to hovedpunkter: Pris og Smart hjem. Indstillinger åbnes fra netselskabsknappen på Pris.
 enum AppTab: Hashable { case pris, smartHjem }
 
-/// Første-start- og netselskabsflowet, der ligger oven på appen.
-enum Step: Equatable {
-    case welcome
-    case searching
-    case found(Net)
-    case picker(String?)
-}
-
 @MainActor
 @Observable
 final class AppModel {
@@ -21,7 +13,12 @@ final class AppModel {
     var tab: AppTab = .pris
     /// Periode på Pris: 2 døgn eller 5 døgn.
     var period: PricePeriod = .two
-    var step: Step?
+    /// Stedsarket ("Hvor er du?"): åbner af sig selv ved første start og fra stedsknappen på Pris.
+    var placeOpen = false
+    /// Besked øverst i arket, når positionen ikke gav et netselskab.
+    var placeNote: String?
+    /// Positionen slås op lige nu.
+    private(set) var locating = false
 
     private(set) var loading = false
     private(set) var error: String?
@@ -32,12 +29,15 @@ final class AppModel {
     private var loadedKey = ""
 
     init() {
-        step = settings.onboarded ? nil : .welcome
+        placeOpen = !settings.onboarded
         #if DEBUG
         // Kun til skærmbilleder: -debugTab 0|1 (0 = Pris, 1 = Smart hjem; "automation"/"smart" duer også),
-        // -debugPeriod 2|5 (10 er et gammelt navn for 5 døgn) (periodevælgeren på Pris). "settings" åbnes i RootView.
+        // -debugPeriod 2|5 (10 er et gammelt navn for 5 døgn) (periodevælgeren på Pris).
+        // place|dk1|dk2|search|note|settings åbner stedsarket (på rod, et område, en søgning, med en note, på Indstillinger); søgeordet er -debugPlaceQuery.
         switch UserDefaults.standard.string(forKey: "debugTab") {
         case "1", "automation", "smart", "smarthjem": tab = .smartHjem
+        case "place", "dk1", "dk2", "search", "settings": placeOpen = true
+        case "note": placeOpen = true; placeNote = PlaceNote.noPosition
         default: break
         }
         if let p = PricePeriod(stored: UserDefaults.standard.string(forKey: "debugPeriod")) { period = p }
@@ -92,18 +92,29 @@ final class AppModel {
 
     // MARK: netselskab og position
 
-    func openWelcome() { step = .welcome }
-    func openPicker(_ note: String? = nil) { step = .picker(note) }
-    func closeStep() { step = nil }
+    func openPlace() { placeNote = nil; placeOpen = true }
 
-    func skip() {
-        settings.skipOnboarding()
-        step = nil
+    /// Lukker arket. Første gang tæller også som "spring over": så åbner det ikke af sig selv igen.
+    func closePlace() {
+        if !settings.onboarded { settings.skipOnboarding() }
+        placeOpen = false
+        placeNote = nil
     }
 
     func choose(_ net: Net, how: String) {
         settings.saveNet(net, how: how)
-        step = nil
+        placeOpen = false
+        placeNote = nil
+        refresh(force: true)
+    }
+
+    /// "Uden netselskab" i et område: priser uden nettarif for DK1 eller DK2.
+    func chooseWithoutNet(area: String) {
+        settings.forgetNet()
+        settings.updateArea(area)
+        settings.skipOnboarding()
+        placeOpen = false
+        placeNote = nil
         refresh(force: true)
     }
 
@@ -113,25 +124,21 @@ final class AppModel {
     }
 
     /// Spørger om tilladelse (kun nu, hvor brugeren har trykket), finder positionen én gang og slår netselskabet op.
-    /// Koordinaterne bruges kun til opslaget.
+    /// Koordinaterne bruges kun til opslaget. Et fund vælges straks; ellers bliver arket stående med en note.
     func detect() {
-        step = .searching
+        guard !locating else { return }
+        locating = true
+        placeNote = nil
         Task {
-            guard let loc = await finder.current() else {
-                step = .picker("Vi kunne ikke finde din position. Vælg dit netselskab på listen i stedet.")
-                return
-            }
+            defer { locating = false }
+            guard let loc = await finder.current() else { placeNote = PlaceNote.noPosition; return }
             do {
                 let r = try await Api.lookup(lat: loc.coordinate.latitude, lng: loc.coordinate.longitude)
-                if let net = Nets.match(r.name) {
-                    step = .found(net)
-                } else if r.error == "outside_denmark" {
-                    step = .picker("Din position ligger uden for Danmark. Vælg dit netselskab på listen.")
-                } else {
-                    step = .picker("Vi kunne ikke finde netselskabet for din position. Vælg det på listen — det står på din elregning.")
-                }
+                if let net = Nets.match(r.name) { choose(net, how: "gps") }
+                else if r.error == "outside_denmark" { placeNote = PlaceNote.outside }
+                else { placeNote = PlaceNote.noNet }
             } catch {
-                step = .picker("Opslaget lykkedes ikke. Vælg dit netselskab på listen, eller prøv igen senere.")
+                placeNote = PlaceNote.failed
             }
         }
     }

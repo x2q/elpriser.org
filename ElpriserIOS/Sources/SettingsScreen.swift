@@ -10,49 +10,20 @@ struct SettingsScreen: View {
             VStack(spacing: 0) {
                 if wide {
                     HStack(alignment: .top, spacing: 20) {
-                        ScrollView { VStack(spacing: 12) { netCard(s); aboutCard() }.padding(.bottom, 20) }.frame(width: 520)
-                        ScrollView { VStack(spacing: 12) { viewCard(s); lookCard(s) }.padding(.bottom, 20) }
+                        ScrollView { VStack(spacing: 12) { viewCard(s); aboutCard() }.padding(.bottom, 20) }.frame(width: 520)
+                        ScrollView { VStack(spacing: 12) { lookCard(s) }.padding(.bottom, 20) }
                     }
                     .padding(.horizontal, 20)
                 } else {
-                    ScrollView { VStack(spacing: 10) { netCard(s); viewCard(s); lookCard(s); aboutCard() }.padding(.horizontal, 16).padding(.bottom, 16) }
+                    ScrollView { VStack(spacing: 10) { viewCard(s); lookCard(s); aboutCard() }.padding(.horizontal, 16).padding(.bottom, 16) }
                 }
             }
         }
         .background(T.bg)
-        // Åbnes fra netselskabsknappen på Pris, så den har en almindelig navigationslinje med tilbage-knap.
-        .navigationTitle("Netselskab og indstillinger")
+        // Åbnes fra stedsarket, så den har en almindelig navigationslinje med tilbage-knap.
+        .navigationTitle("Indstillinger")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
-    }
-
-    private func netCard(_ s: Settings) -> some View {
-        let net = s.net
-        return VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(text: "Netselskab")
-            HStack(spacing: 12) {
-                Image(systemName: "mappin.and.ellipse").font(.app(22, .semibold)).foregroundStyle(T.brand)
-                    .frame(width: 48, height: 48).background(T.brandSoft, in: Circle())
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(net.map { "\($0.name) · \($0.areaLabel)" } ?? "Intet netselskab valgt").font(.app(17, .heavy))
-                    Text(net != nil ? (s.netHow == "gps" ? "Fundet med din position · gemt på enheden" : "Valgt af dig · gemt på enheden") : "Priserne vises uden nettarif")
-                        .font(.app(12.5, .semibold)).foregroundStyle(T.text2)
-                }
-                Spacer()
-                SoftButton(title: "Skift") { vm.openPicker() }
-            }
-            HStack(spacing: 8) {
-                PrimaryButton(title: net != nil ? "Find mit netselskab igen" : "Find mit netselskab", height: 46) { vm.openWelcome() }
-                if net != nil { SoftButton(title: "Glem", bg: T.badSoft, fg: T.bad, height: 46) { vm.forget() } }
-            }
-            if net == nil {
-                SectionLabel(text: "Prisområde")
-                Segmented(options: ["DK1 Vest", "DK2 Øst"], selected: s.area == "DK1" ? 0 : 1) { s.updateArea($0 == 0 ? "DK1" : "DK2") }
-            }
-            Text("Vi spørger kun om din position, når du trykker. Vi gemmer svaret — netselskabet — og aldrig koordinaterne.")
-                .font(.app(12.5)).lineSpacing(3).foregroundStyle(T.text2)
-        }
-        .card()
     }
 
     private func viewCard(_ s: Settings) -> some View {

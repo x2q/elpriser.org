@@ -154,7 +154,7 @@ private struct PrisHeader: View {
                 Text("Elpriser").font(.app(tablet ? 20 : 17, .heavy)).tracking(-0.3)
             }
             Spacer(minLength: 8)
-            NavigationLink(value: Route.settings) {
+            Button { vm.openPlace() } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "mappin.and.ellipse").font(.app(tablet ? 14 : 13, .bold)).foregroundStyle(T.brandSolid)
                     Text(label).font(.app(tablet ? 14 : 13, .bold)).foregroundStyle(T.text).lineLimit(1)
@@ -166,7 +166,7 @@ private struct PrisHeader: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Netselskab og indstillinger, \(label)")
+            .accessibilityLabel("Hvor er du? \(label)")
         }
     }
 }
