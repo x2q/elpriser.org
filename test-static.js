@@ -531,7 +531,7 @@ test('/prognose: the canonical Pris screen with PRIS_FC, a head above it, two te
   assert.ok(/url\.pathname === '\/prognose'\) opts\.prognose = true/.test(ROUTES) && /renderCachedPage\(context, url\.pathname, page, opts, PROGNOSE_SSR_VERSION\)/.test(ROUTES) && /PROGNOSE_SSR_VERSION = 'prognose-ssr-v\d+'/.test(ROUTES), '/prognose is not served through its own cached render');
   // The browser: the route loads the screen like the front page, the header chip's dialog changes the page instead of leaving it.
   assert.ok(/h==='prognose'\)\{[^\n]*syncFcHead\(\);loadPris\(\);return;\}/.test(INDEX), 'the /prognose route does not load the Pris screen');
-  assert.ok(/#netDialog \.pd-links a\[data-net\]/.test(INDEX) && /\[data-page="prognose"\]\.active/.test(INDEX), 'the net dialog does not stay on /prognose');
+  assert.ok(/#netDialog a\[data-net\]/.test(INDEX) && /\[data-page="prognose"\]\.active/.test(INDEX), 'the net dialog does not stay on /prognose');
   assert.ok(/function prisCfg\(\)\{[^}]*PRIS_FC:PRIS_STD/.test(INDEX) && /cfg:prisCfg\(\)/.test(INDEX), 'the client does not hand the page\'s config to prisHTML');
 });
 
@@ -1192,15 +1192,6 @@ test('css: heading-binding rule — .prose-article section gap ≥ 2rem', () => 
   assert.ok(parseFloat(article[1]) >= 2, `prose-article gap is ${article[1]}rem, should be ≥ 2rem`);
 });
 
-test('design: GPS button has generous top margin (regression: was mt-7 = cramped)', () => {
-  // The button now sits in a centred wrapper that carries the spacing, so the
-  // margin is asserted on the wrapper rather than on the button itself.
-  const wrap = INDEX.match(/<div class="text-center mt-(\d+)">\s*<button id="gpsBtn"/);
-  assert.ok(wrap, 'gpsBtn is no longer inside a centred wrapper with a top margin');
-  assert.ok(parseInt(wrap[1], 10) >= 8,
-    `the GPS wrapper uses mt-${wrap[1]} — should be mt-8 or larger for breathing room`);
-});
-
 test('design: GPS button is a single <button> (not a bar + separate button)', () => {
   // Previously was <div id="gpsBar"> wrapping a small "Find mig" button.
   // Merged for clarity — one clickable affordance.
@@ -1646,18 +1637,18 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // v74: the footer and the net dialog list Nederland (/nl/stroomprijs); the country pages swap the chrome for their own (CHROME_I18N).
   // v75: the footer and the net dialog list Tyskland, Frankrig, Polen and Italien.
   // v77: one place chip and one place dialog (Land, then net or price zone) replace the globe, the net chip's dialog and the country picker.
-  assert.ok(/homepage-ssr-v77/.test(ROUTES), 'homepage-ssr-v77');
+  assert.ok(/homepage-ssr-v78/.test(ROUTES), 'homepage-ssr-v78');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
   // (v8: the shared Pris block changed with PRIS_FC.)
   // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
   // (v10: the four EU price pages joined, the Pris block gained PRIS_ACT and the footer the four links.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v12'/.test(ROUTES), 'zone-ssr-v12');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v13'/.test(ROUTES), 'zone-ssr-v13');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v8'/.test(ROUTES), 'city-ssr-v8');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v9'/.test(ROUTES), 'city-ssr-v9');
   // /prognose shares the header and footer too (v4: the four EU country links).
-  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v6'/.test(ROUTES), 'prognose-ssr-v6');
+  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v7'/.test(ROUTES), 'prognose-ssr-v7');
 });
 
 

@@ -93,9 +93,7 @@ async function startServer() {
   // six hours of the window has none) with their left edge in %.
   const win = (days, have = 10) => { const h = hourDk(), back = Math.min(6, h), st = h - back; let n = h > 0 ? back + days * 24 : days * 24; if (h > 0 && days > 2) n = Math.min(n, have * 24 - st); return { st, n, back }; };
   const winDays = w => { const out = []; for (let i = Math.floor(w.st / 24); i * 24 < w.st + w.n; i++) { const vs = Math.max(i * 24, w.st), ve = Math.min(i * 24 + 24, w.st + w.n); if (ve - vs >= 6) out.push({ i, left: ((vs + ve) / 2 - w.st) / w.n * 100 }); } return out; };
-  // Opens one row of the place dialog (rows are <details name="place">: opening one closes the other); a row that is already open stays open.
-  const openStep = async (label) => { const st = page.locator('#netDialog details.pl-step', { has: page.locator('summary .pl-k', { hasText: new RegExp('^' + label + '$') }) }); if (!(await st.evaluate(d => d.open))) await st.locator('summary').click(); };
-  // Picks zone `k` in the place dialog (the Prisområde row is the open one on a page with several zones).
+  // Picks zone `k` in the place dialog (the zones are the country's own group on its list).
   const pickZoneInDialog = async (k) => { await page.locator('#netChip').click(); await page.locator(`#netDialog [data-zone="${k}"]`).click(); };
   const fixturePrice = (mode, gln, h) => {
     const k = mode === 'spot_inkl' ? 0.4 : gln ? 1.3 : 1;
@@ -286,13 +284,13 @@ async function startServer() {
       'onclick missing detectLocation()');
   });
 
-  await test('start: GPS button label reads "Find dit netselskab automatisk"', async () => {
+  await test('start: GPS button label reads "Brug min position"', async () => {
     // A net chosen earlier in the run is remembered (that is the point), so the
     // button would offer it instead. Start from a visitor who has chosen nothing.
     await page.evaluate(() => localStorage.clear());
     await page.goto(BASE + '/');
     const txt = (await page.locator('#gpsText').textContent()).trim();
-    assert.equal(txt, 'Find dit netselskab automatisk');
+    assert.equal(txt, 'Brug min position');
   });
 
   await test('start: after visiting a net page the button offers that net', async () => {
@@ -330,7 +328,9 @@ async function startServer() {
     await page.waitForSelector('#netDialog[open]');
     assert.equal((await page.locator('#netDialogTitle').textContent()).trim(), 'Hvor er du?');
     // 16 nets plus one "Uden netselskab" per area.
-    assert.equal(await page.locator('#netDialog .pd-links a[data-net]:not([data-net=""])').count(), 16, 'the dialog lists every net');
+    assert.equal(await page.locator('#netDialog a[data-net]:not([data-net=""])').count(), 16, 'the dialog lists every net');
+    assert.equal(await page.locator('#netDlgDK1').isVisible(), false, 'the net lists are one level down');
+    await page.locator('#netDialog [data-go="dk1"]').click();
     await page.locator('#netDlgDK1 a:has-text("Trefor")').first().click();
     await page.waitForURL(u => u.pathname === '/dk1/trefor');
     await page.evaluate(() => localStorage.clear());
@@ -794,6 +794,7 @@ async function startServer() {
     await page.waitForSelector('#netDialog[open]');
     assert.equal((await page.locator('#netDialogTitle').textContent()).trim(), 'Hvor er du?');
     assert.equal(await page.locator('#netDialog #gpsBtn').count(), 1, 'the position lookup lives in the dialog');
+    await page.locator('#netDialog [data-go="dk2"]').click();
     await page.locator('#netDlgDK2 a:has-text("Radius")').click();
     await page.waitForURL(u => u.pathname === '/dk2/radius');
     await page.waitForSelector('.pris .pris-now');
@@ -1155,11 +1156,13 @@ async function startServer() {
     const dk1 = (await sumView())[0].items.join('|');
     await page.locator('#netChip').click();
     await page.waitForSelector('#netDialog[open]');
+    await page.locator('#netDialog [data-go="dk2"]').click();
     await page.locator('#netDlgDK2 a', { hasText: /^Radius$/ }).click();
     await page.waitForFunction(() => document.querySelector('main[data-page="prognose"] .pris')?.dataset.key === 'DK2|din|radius');
     const radius = (await sumView())[0].items.join('|');
     assert.notEqual(radius, dk1, 'the summary follows area and net (the numbers are Radius\'s all-in prices)');
     await page.locator('#netChip').click();
+    await page.locator('#netDialog [data-go="dk1"]').click();
     await page.locator('#netDlgDK1 a[data-net=""]').click();
     await page.waitForFunction(() => document.querySelector('main[data-page="prognose"] .pris')?.dataset.key === 'DK1|din|');
     assert.equal((await sumView())[0].items.join('|'), dk1, 'back to DK1: the same summary again');
@@ -1231,6 +1234,7 @@ async function startServer() {
     forecastRequests.length = 0;
     await page.locator('#netChip').click();
     await page.waitForSelector('#netDialog[open]');
+    await page.locator('#netDialog [data-go="dk2"]').click();
     await page.locator('#netDlgDK2 a', { hasText: /^Radius$/ }).click();
     await page.waitForFunction(() => document.querySelector('main[data-page="prognose"] .pris')?.dataset.key === 'DK2|din|radius');
     assert.equal(await page.evaluate(() => location.pathname), '/prognose', 'the address stays');
@@ -1252,6 +1256,7 @@ async function startServer() {
     // "Uden netselskab" in DK1: the area's own price.
     forecastRequests.length = 0;
     await page.locator('#netChip').click();
+    await page.locator('#netDialog [data-go="dk1"]').click();
     await page.locator('#netDlgDK1 a[data-net=""]').click();
     await page.waitForFunction(() => document.querySelector('main[data-page="prognose"] .pris')?.dataset.key === 'DK1|din|');
     assert.equal((await page.locator('#fcWhere').textContent()).trim(), 'DK1 Vest');
@@ -1259,7 +1264,6 @@ async function startServer() {
     assert.ok(forecastRequests.includes('DK1|inkl_alt|'), forecastRequests.join(', '));
     // The dialog's other links still leave the page: Norge is a page of its own.
     await page.locator('#netChip').click();
-    await openStep('Land');
     await page.locator('#netDialog a[href="/no/strompris"]').click();
     await page.waitForURL(u => u.pathname === '/no/strompris');
     await page.evaluate(() => localStorage.clear());
@@ -1508,7 +1512,7 @@ async function startServer() {
     const z = await zoneNow();
     assert.deepEqual(z.sel, ['no1']); assert.equal(z.key, 'no1'); assert.equal(z.lang, 'nb');
     assert.equal(await page.locator('#zTabs').count(), 0, 'no tab row on the page');
-    assert.deepEqual(await page.locator('#netDialog [data-zone]').evaluateAll(a => a.map(x => x.textContent)), ['NO1 · Oslo', 'NO2 · Kristiansand', 'NO3 · Trondheim', 'NO4 · Tromsø', 'NO5 · Bergen']);
+    assert.deepEqual(await page.locator('#netDialog [data-zone]').evaluateAll(a => a.map(x => x.textContent)), ['NO1Oslo', 'NO2Kristiansand', 'NO3Trondheim', 'NO4Tromsø', 'NO5Bergen']);
     assert.equal(await page.locator('#netChipLong').textContent(), 'Norge · NO1');
     assert.equal(await page.locator('main[data-page="zone"] .pris-u').textContent(), 'øre/kWh');
     assert.match(await page.locator('main[data-page="zone"] .pris-label').textContent(), /^Strømpris akkurat nå/);
@@ -1650,8 +1654,9 @@ async function startServer() {
     await page.waitForSelector('main[data-page="start"].active');
     const foot = await page.locator('footer .sf-all .sf-nets > div:last-child a').evaluateAll(a => a.map(x => x.getAttribute('href')));
     assert.deepEqual(foot, ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce']);
-    const dlg = await page.locator('#netDialog .pl-panel').first().evaluate(el => [...el.querySelectorAll('a')].map(a => [a.getAttribute('href'), a.textContent.replace(/(Dansk|Norsk|Svenska|Suomi|Nederlands|Deutsch|Français|Polski|Italiano)$/, '').replace(/^Norden .*/, 'Norden')]));
-    assert.deepEqual(dlg, [['/dk1', 'Danmark'], ['/no/strompris', 'Norge'], ['/sv/elpris', 'Sverige'], ['/fi/sahkon-hinta', 'Suomi'], ['/nl/stroomprijs', 'Nederland'], ['/de/strompreis', 'Deutschland'], ['/fr/prix-electricite', 'France'], ['/pl/ceny-pradu', 'Polska'], ['/it/prezzo-luce', 'Italia'], ['/norden', 'Norden']], 'the net dialog lists the same ten');
+    const dlg = await page.locator('#plMain section:last-of-type .pl-grp').evaluate(el => [...el.querySelectorAll('a')].map(a => [a.getAttribute('href'), a.textContent]));
+    assert.deepEqual(dlg, [['/no/strompris', 'Norge'], ['/sv/elpris', 'Sverige'], ['/fi/sahkon-hinta', 'Suomi'], ['/nl/stroomprijs', 'Nederland'], ['/de/strompreis', 'Deutschland'], ['/fr/prix-electricite', 'France'], ['/pl/ceny-pradu', 'Polska'], ['/it/prezzo-luce', 'Italia']], 'the net dialog lists the other eight (Danmark has its own group)');
+    assert.equal(await page.locator('#plMain a[href="/norden"]').count(), 1, 'and links the Norden overview');
     for (const url of ['/', '/dk1', '/automation', '/om-elpriser', '/blog', '/blog/groennest-og-dyrest', '/tariffer', '/api', '/no/strompris', '/nl/stroomprijs', '/norden']) {
       await page.goto(BASE + url);
       await page.waitForSelector('main.active');
@@ -1697,7 +1702,7 @@ async function startServer() {
       navText: links.map(a => a.textContent), chipBox: r(q('#netChip')), logoBox: r(q('.site-logo')),
       logo: q('.site-logo')?.textContent.trim(), logoHref: q('.site-logo')?.getAttribute('href'),
       chip: !!q('#netChip'), app: !!q('.app-btn'), tabbar: !!q('#tabBar'), dialog: !!q('#netDialog'), actions: [...document.querySelectorAll('.site-actions > *')].map(x => x.id),
-      picker: { title: q('#netDialogTitle')?.textContent, links: [...document.querySelectorAll('#netDialog .cd-list a')].map(a => [a.querySelector('b').textContent, a.querySelector('span').textContent, a.getAttribute('href'), a.getAttribute('aria-current')]), label: q('#netChip')?.getAttribute('aria-label') },
+      picker: { title: q('#netDialogTitle')?.textContent, links: [...document.querySelectorAll('#plMain section:last-of-type .pl-grp a')].map(a => [a.textContent, '', a.getAttribute('href'), a.getAttribute('aria-current')]), label: q('#netChip')?.getAttribute('aria-label') },
       headText: q('.site-nav').innerText, footText: q('footer').innerText,
       footHeading: q('footer .sf-h')?.textContent, footLinks: [...document.querySelectorAll('footer .sf-chips a')].map(a => [a.textContent, a.getAttribute('href'), a.getAttribute('aria-current')]),
       privacy: (a => a && [a.textContent, a.getAttribute('href'), a.getAttribute('hreflang')])(q('footer .sf-legal a[href="/privatliv"]')),
@@ -1723,9 +1728,10 @@ async function startServer() {
         assert.deepEqual([s.chip, s.app, s.tabbar, s.dialog], [true, false, false, true], 'the place chip and its dialog, but no app button or tab bar');
         assert.deepEqual(s.actions, ['netChip'], 'the action row holds the place chip and nothing Danish');
         // The picker: the nine countries by their own names, in this page's language for its heading, this page's country marked.
-        assert.equal(s.picker.links.length, 9); assert.equal(s.picker.title, s.picker.label, 'the dialog\'s heading is the chip\'s name');
-        assert.deepEqual(s.picker.links.filter(x => x[3]).map(x => x[2]), [url], 'the page\'s own country is marked');
-        assert.ok(s.picker.links.some(x => x[0] === 'Danmark' && x[1] === 'Dansk' && x[2] === '/dk1'));
+        const multi = ['/no/strompris', '/sv/elpris'].includes(url);   // its own country is the zone group, not a row of the list
+        assert.equal(s.picker.links.length, multi ? 8 : 9); assert.equal(s.picker.title, s.picker.label, 'the dialog\'s heading is the chip\'s name');
+        assert.deepEqual(s.picker.links.filter(x => x[3]).map(x => x[2]), multi ? [] : [url], 'the page\'s own country is marked');
+        assert.ok(s.picker.links.some(x => x[0] === 'Danmark' && x[2] === '/dk1'));
         assert.ok(!/Smart hjem|Hent appen|DK1 ·/.test(s.headText), `header text: ${s.headText}`);
         assert.ok(!DANISH_CHROME.test(s.footText), `footer text: ${s.footText}`);
         assert.equal(s.footers, 1); assert.equal(s.details, 0, 'a slim footer: no disclosure of net companies');
@@ -1764,61 +1770,82 @@ async function startServer() {
     assert.ok(await page.evaluate(() => !document.documentElement.classList.contains('xc')));
     // And the other way: the Danish net dialog links Nederland.
     await page.locator('#netChip').click();
-    await openStep('Land');
     await page.locator('#netDialog a[href="/nl/stroomprijs"]').click();
     await page.waitForFunction(() => location.pathname === '/nl/stroomprijs');
   });
 
-  await test('place dialog: the one chip opens Land and (on a Danish page) the net, in the page\'s language; a country leads to its page and back', async () => {
+  await test('place dialog: one iOS-style list from the one chip; Danmark drills into the nets, a country leads to its page and back, search finds', async () => {
     await page.goto(BASE + '/');
-    const rows = () => page.evaluate(() => [...document.querySelectorAll('#netDialog .cd-list a')].map(a => [a.querySelector('b').textContent, a.querySelector('span').textContent, a.getAttribute('aria-current')]));
+    await page.evaluate(() => localStorage.clear());
+    await page.goto(BASE + '/');
+    const others = () => page.locator('#plMain section:last-of-type .pl-grp a').allTextContents();
     assert.equal(await page.locator('#netDialog[open]').count(), 0, 'closed until the chip is pressed');
     assert.equal(await page.locator('header.site-nav #countryBtn').count(), 0, 'no globe any more');
     await page.locator('header.site-nav #netChip').click();
     await page.waitForSelector('#netDialog[open]');
     assert.equal((await page.locator('#netDialogTitle').textContent()), 'Hvor er du?');
-    assert.deepEqual(await page.locator('#netDialog details.pl-step > summary .pl-k').allTextContents(), ['Land', 'Netselskab']);
-    assert.deepEqual(await page.locator('#netDialog details.pl-step[open] > summary .pl-k').allTextContents(), ['Netselskab'], 'the net row is the one open');
-    assert.equal(await page.locator('#plValLand').textContent(), 'Danmark');
-    assert.deepEqual((await rows()).map(r => r[0]), ['Danmark', 'Norge', 'Sverige', 'Suomi', 'Nederland', 'Deutschland', 'France', 'Polska', 'Italia']);
-    assert.deepEqual((await rows()).filter(r => r[2]).map(r => r[0]), ['Danmark'], 'the Danish site marks Danmark');
-    assert.deepEqual((await rows())[2].slice(0, 2), ['Sverige', 'Svenska'], 'the language sits under the country');
-    // Opening Land closes the net row (one row at a time) and shows the countries.
-    await openStep('Land');
-    assert.equal(await page.locator('#netDialog details.pl-step[open] > summary .pl-k').allTextContents().then(x => x.join()), 'Land');
-    assert.equal(await page.locator('#netDialog .cd-list a', { hasText: 'Sverige' }).isVisible(), true);
+    assert.equal(await page.locator('#netDialog details').count(), 0, 'no accordion: one list');
+    assert.equal((await page.locator('#gpsText').textContent()).trim(), 'Brug min position');
+    assert.equal(await page.locator('#plBack').evaluate(b => getComputedStyle(b).visibility), 'hidden', 'no back button on the list itself');
+    assert.deepEqual(await page.locator('#plMain .pd-gt').allTextContents(), ['Danmark', 'Andre lande']);
+    assert.deepEqual(await others(), ['Norge', 'Sverige', 'Suomi', 'Nederland', 'Deutschland', 'France', 'Polska', 'Italia']);
+    assert.equal(await page.locator('#plDK1').textContent(), 'Uden netselskab', 'the Danmark rows say the current net');
+    assert.equal(await page.locator('#plDK2').textContent(), '');
+    // A chevron row opens its own screen: title and back button follow, back returns.
+    await page.locator('#netDialog [data-go="dk2"]').click();
+    assert.equal(await page.locator('#netDialogTitle').textContent(), 'Østdanmark');
+    assert.equal(await page.locator('#plMain').isVisible(), false);
+    assert.deepEqual(await page.locator('#netDlgDK2 a').allTextContents(), ['Uden netselskab', 'Cerius', 'Trefor Øst', 'Radius']);
+    await page.locator('#plBack').click();
+    assert.equal(await page.locator('#netDialogTitle').textContent(), 'Hvor er du?');
+    assert.equal(await page.locator('#plMain').isVisible(), true);
+    // Search: one flat list across the dialog, a net result says its area, no hits says so, and a pick works as in its own screen.
+    await page.locator('#plQ').fill('rad');
+    assert.deepEqual(await page.locator('#plRes a').allTextContents(), ['RadiusØstdanmark']);
+    assert.equal(await page.locator('#plMain').isVisible(), false);
+    await page.locator('#plQ').fill('norg');
+    assert.deepEqual(await page.locator('#plRes a').allTextContents(), ['Norge']);
+    await page.locator('#plQ').fill('zzz');
+    assert.equal(await page.locator('#plNone').isVisible(), true);
+    await page.locator('#plQ').fill('');
+    assert.equal(await page.locator('#plMain').isVisible(), true, 'an empty search is the list again');
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#netDialog[open]').count(), 0, 'Escape closes it');
     await page.locator('#netChip').click();
     await page.mouse.click(4, 4);
     assert.equal(await page.locator('#netDialog[open]').count(), 0, 'a click on the backdrop closes it');
     await page.locator('#netChip').click();
-    await openStep('Land');
-    await page.locator('#netDialog .cd-list a', { hasText: 'Sverige' }).click();
+    await page.locator('#plQ').fill('radius');
+    await page.locator('#plRes a').click();
+    await page.waitForURL(u => u.pathname === '/dk2/radius');
+    assert.equal((await page.locator('#netChipLong').textContent()).trim(), 'Radius · Østdanmark');
+    await page.locator('#netChip').click();
+    assert.equal(await page.locator('#plDK2').textContent(), 'Radius', 'the area rows follow the chip');
+    assert.equal(await page.locator('#plDK1').textContent(), '');
+    assert.equal(await page.locator('#netDialogTitle').textContent(), 'Hvor er du?', 'reopened on the list');
+    await page.locator('#netDialog a[href="/sv/elpris"]').click();
     await page.waitForFunction(() => location.pathname === '/sv/elpris' && document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'se3');
     assert.equal(await page.locator('#netChip').getAttribute('aria-label'), 'Var är du?');
     assert.equal((await page.locator('#netChipLong').textContent()), 'Sverige · SE3', 'the chip says country and zone');
     await page.locator('#netChip').click();
     await page.waitForSelector('#netDialog[open]');
     assert.equal(await page.locator('#netDialogTitle').textContent(), 'Var är du?');
-    assert.deepEqual(await page.locator('#netDialog details.pl-step[open] > summary .pl-k').allTextContents(), ['Elområde'], 'the zone row is the one open');
-    assert.equal(await page.locator('#plValArea').textContent(), 'SE3 · Stockholm');
-    assert.deepEqual((await rows()).filter(r => r[2]).map(r => r[0]), ['Sverige'], 'the Swedish page marks Sverige');
-    // A zone chosen in the dialog selects it on the page: the tab, the chip and the dialog follow, the address keeps the hash.
+    assert.deepEqual(await page.locator('#plMain .pd-gt').allTextContents(), ['Sverige', 'Andra länder'], 'its own zones first, the other countries after');
+    assert.deepEqual(await page.locator('#netDialog [data-zone]').allTextContents(), ['SE1Luleå', 'SE2Sundsvall', 'SE3Stockholm', 'SE4Malmö']);
+    assert.deepEqual(await page.locator('#netDialog [data-zone][aria-current]').evaluateAll(a => a.map(x => x.dataset.zone)), ['se3']);
+    assert.equal(await page.locator('#plMain a[aria-current="page"]').count(), 0, 'the country list has no row for the page\'s own country');
+    // A zone chosen in the dialog selects it on the page: the chip and the dialog follow, the address keeps the hash.
     await page.locator('#netDialog [data-zone="se4"]').click();
     await page.waitForFunction(() => location.hash === '#se4' && document.querySelector('[data-page="zone"] .pris')?.dataset.key === 'se4');
     assert.equal(await page.locator('#netDialog[open]').count(), 0, 'choosing a zone closes the dialog');
     assert.equal((await page.locator('#netChipLong').textContent()), 'Sverige · SE4');
     assert.equal(await page.locator('#zTabs').count(), 0, 'there is no tab row to follow');
     await page.locator('#netChip').click();
-    assert.equal(await page.locator('#plValArea').textContent(), 'SE4 · Malmö');
     assert.deepEqual(await page.locator('#netDialog [data-zone][aria-current]').evaluateAll(a => a.map(x => x.dataset.zone)), ['se4']);
-    await openStep('Land');
-    await page.locator('#netDialog .cd-list a', { hasText: 'Danmark' }).click();
+    await page.locator('#netDialog #plMain a', { hasText: 'Danmark' }).click();
     await page.waitForFunction(() => location.pathname === '/dk1');
     await page.waitForSelector('main[data-page="prices"].active');
     assert.equal(await page.locator('header.site-nav #netChip').getAttribute('aria-label'), 'Hvor er du?', 'the Danish chrome is back with its chip');
-    assert.equal(await page.locator('#plValNet').textContent(), await page.locator('#netChipLong').textContent(), 'the net row says what the chip says');
   });
 
   await test('zone switching still works with the localised chrome, and the chrome survives it unchanged', async () => {
@@ -2134,7 +2161,8 @@ async function startServer() {
     assert.equal(await dlg.evaluate(d => d.open), false);
     await page.getByRole('button', { name: 'Er dit netselskab et andet? Skift' }).click();
     assert.equal(await dlg.evaluate(d => d.open), true, 'the existing dialog opens');
-    assert.deepEqual(await page.locator('#netDialog .pd-links a.on').allTextContents(), ['N1'], 'the city\'s main net is the marked one');
+    assert.deepEqual(await page.locator('#netDlgDK1 a.on').allTextContents(), ['N1'], 'the city\'s main net is the marked one');
+    await page.locator('#netDialog [data-go="dk1"]').click();
     await page.locator('#netDlgDK1 a', { hasText: /^Trefor$/ }).click();
     await page.waitForSelector('main[data-page="prices"].active');
     assert.equal(await page.evaluate(() => location.pathname), '/dk1/trefor');

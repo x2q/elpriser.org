@@ -1114,31 +1114,31 @@ var PRIS_COUNTRIES={
  *  four. `cn`: the country names in this language, keyed by CHROME_I18N's `cc`; `privacy` says that the
  *  policy is in Danish. */
 var CHROME_I18N={
-  nb:{home:'elpriser.org forside',land:'Land',place:'Hvor er du?',ctry:'Land',area:'Prisområde',one:'Ett prisområde',show:'Vis priser',g0:'Norden',g1:'Resten av Europa',close:'Lukk',
+  nb:{home:'elpriser.org forside',land:'Land',place:'Hvor er du?',area:'Prisområde',oth:'Andre land',back:'Tilbake',find:'Søk',none:'Ingen resultater',close:'Lukk',
     cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederland',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italia'},
     privacy:'Personvern (på dansk)',src:'Data fra',and:'og',open:'Åpne datasett på'},
-  sv:{home:'elpriser.org startsida',land:'Länder',place:'Var är du?',ctry:'Land',area:'Elområde',one:'Ett elområde',show:'Visa priser',g0:'Norden',g1:'Övriga Europa',close:'Stäng',
+  sv:{home:'elpriser.org startsida',land:'Länder',place:'Var är du?',area:'Elområde',oth:'Andra länder',back:'Tillbaka',find:'Sök',none:'Inga resultat',close:'Stäng',
     cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederländerna',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italien'},
     privacy:'Integritet (på danska)',src:'Data från',and:'och',open:'Öppna datamängder på'},
-  fi:{home:'elpriser.org etusivu',land:'Maat',place:'Missä olet?',ctry:'Maa',area:'Hinta-alue',one:'Yksi hinta-alue',show:'Näytä hinnat',g0:'Pohjoismaat',g1:'Muu Eurooppa',close:'Sulje',
+  fi:{home:'elpriser.org etusivu',land:'Maat',place:'Missä olet?',area:'Hinta-alue',oth:'Muut maat',back:'Takaisin',find:'Haku',none:'Ei tuloksia',close:'Sulje',
     cn:{dk:'Tanska',no:'Norja',sv:'Ruotsi',fi:'Suomi',nl:'Alankomaat',de:'Saksa',fr:'Ranska',pl:'Puola',it:'Italia'},
     privacy:'Tietosuoja (tanskaksi)',src:'Tietolähteet:',and:'ja',open:'Avoimet aineistot:'},
-  nl:{home:'elpriser.org startpagina',land:'Landen',place:'Waar ben je?',ctry:'Land',area:'Biedzone',one:'Eén biedzone',show:'Toon prijzen',g0:'Noordse landen',g1:'Rest van Europa',close:'Sluiten',
+  nl:{home:'elpriser.org startpagina',land:'Landen',place:'Waar ben je?',area:'Biedzone',oth:'Andere landen',back:'Terug',find:'Zoeken',none:'Geen resultaten',close:'Sluiten',
     cn:{dk:'Denemarken',no:'Noorwegen',sv:'Zweden',fi:'Finland',nl:'Nederland',de:'Duitsland',fr:'Frankrijk',pl:'Polen',it:'Italië'},
     privacy:'Privacy (in het Deens)',src:'Gegevens van',and:'en',open:'Open datasets op'},
-  de:{home:'elpriser.org Startseite',land:'Länder',place:'Wo bist du?',ctry:'Land',area:'Preiszone',one:'Eine Preiszone',show:'Preise anzeigen',g0:'Nordische Länder',g1:'Übriges Europa',close:'Schließen',
+  de:{home:'elpriser.org Startseite',land:'Länder',place:'Wo bist du?',area:'Preiszone',oth:'Andere Länder',back:'Zurück',find:'Suchen',none:'Keine Ergebnisse',close:'Schließen',
     cn:{dk:'Dänemark',no:'Norwegen',sv:'Schweden',fi:'Finnland',nl:'Niederlande',de:'Deutschland',fr:'Frankreich',pl:'Polen',it:'Italien'},
     privacy:'Datenschutz (auf Dänisch)',src:'Quelle:',and:'und',open:'Offene Datensätze auf',
     chg:'Änderung: Stundenmittel von elpriser.org berechnet'},
-  fr:{home:'elpriser.org accueil',land:'Pays',place:'Où êtes-vous ?',ctry:'Pays',area:'Zone de prix',one:'Une seule zone de prix',show:'Afficher les prix',g0:'Pays nordiques',g1:'Reste de l’Europe',close:'Fermer',
+  fr:{home:'elpriser.org accueil',land:'Pays',place:'Où êtes-vous ?',area:'Zone de prix',oth:'Autres pays',back:'Retour',find:'Rechercher',none:'Aucun résultat',close:'Fermer',
     cn:{dk:'Danemark',no:'Norvège',sv:'Suède',fi:'Finlande',nl:'Pays-Bas',de:'Allemagne',fr:'France',pl:'Pologne',it:'Italie'},
     privacy:'Confidentialité (en danois)',src:'Source\u00a0:',and:'et',open:'Jeux de données ouverts sur',
     chg:'Modifié\u00a0: moyennes horaires calculées par elpriser.org'},
-  pl:{home:'elpriser.org – strona główna',land:'Kraje',place:'Gdzie jesteś?',ctry:'Kraj',area:'Strefa cenowa',one:'Jedna strefa cenowa',show:'Pokaż ceny',g0:'Kraje nordyckie',g1:'Reszta Europy',close:'Zamknij',
+  pl:{home:'elpriser.org – strona główna',land:'Kraje',place:'Gdzie jesteś?',area:'Strefa cenowa',oth:'Inne kraje',back:'Wstecz',find:'Szukaj',none:'Brak wyników',close:'Zamknij',
     cn:{dk:'Dania',no:'Norwegia',sv:'Szwecja',fi:'Finlandia',nl:'Holandia',de:'Niemcy',fr:'Francja',pl:'Polska',it:'Włochy'},
     privacy:'Prywatność (po duńsku)',src:'Źródło:',and:'i',open:'Otwarte zbiory danych na',
     chg:'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org'},
-  it:{home:'elpriser.org pagina iniziale',land:'Paesi',place:'Dove sei?',ctry:'Paese',area:'Zona di prezzo',one:'Una sola zona di prezzo',show:'Mostra i prezzi',g0:'Paesi nordici',g1:'Resto d’Europa',close:'Chiudi',
+  it:{home:'elpriser.org pagina iniziale',land:'Paesi',place:'Dove sei?',area:'Zona di prezzo',oth:'Altri paesi',back:'Indietro',find:'Cerca',none:'Nessun risultato',close:'Chiudi',
     cn:{dk:'Danimarca',no:'Norvegia',sv:'Svezia',fi:'Finlandia',nl:'Paesi Bassi',de:'Germania',fr:'Francia',pl:'Polonia',it:'Italia'},
     privacy:'Privacy (in danese)',src:'Fonte:',and:'e',open:'Dataset aperti su',
     chg:'Modifiche: medie orarie calcolate da elpriser.org'}
@@ -1162,55 +1162,52 @@ function chromeHTML(pg){
       +'. '+X.open+' '+lk('https://huggingface.co/Elpriser','Hugging Face')+'. <a href="/privatliv" hreflang="da">'+X.privacy+'</a></p></div></footer>'};
 }
 
-/** The place dialog, behind the ONE chip in the header ("N1 · Vestdanmark", "Norge · NO2"): where am I? Two steps, as native
- *  <details name="place"> rows that show the current choice: Land, then what the country lets you choose — on a Danish page the net (the two
- *  area lists, each starting with "Uden netselskab", so the area is picked there too), in a country with several price zones its zones,
- *  elsewhere nothing (one area). Every choice is a plain link. The Danish pages carry this markup as plain HTML in index.html
- *  (test-forecast-chart.mjs keeps it equal to placeHTML('da','dk')); buildNetDialog fills the net lists and detectLocation drives the
- *  position lookup, hence the ids. A country page gets its own, in its language, from chromeHTML. `pg` is the country page (null: Danish).
- *  Returns the header chip and the dialog. */
-var PLACE_DA={place:'Hvor er du?',ctry:'Land',area:'Prisområde',net:'Netselskab',one:'Ét prisområde',show:'Vis priser',g0:'Norden',g1:'Resten af Europa',close:'Luk'};
-var PRIS_PICK=[['dk','Danmark','Dansk',0],['no','Norge','Norsk',0],['sv','Sverige','Svenska',0],['fi','Suomi','Suomi',0],
-  ['nl','Nederland','Nederlands',1],['de','Deutschland','Deutsch',1],['fr','France','Français',1],['pl','Polska','Polski',1],['it','Italia','Italiano',1]];
+/** The place dialog, behind the ONE chip in the header ("N1 · Vestdanmark", "Norge · NO2"): where am I? A quiet iOS-style list. On a Danish
+ *  page: "Brug min position" (the position lookup, Danish nets only), the Danmark group (Vestdanmark ›, Østdanmark › drill into the net
+ *  lists, each starting with "Uden netselskab", so the area is picked there too) and the other countries; on a country with several price
+ *  zones its own group lists the zones; a country with one area is just a row. The current choice is a check mark, a row with › opens a
+ *  screen of its own ([data-scr], shown by plShow), a search field filters every link. Every choice is a plain link. The Danish pages carry
+ *  this markup as plain HTML in index.html (test-forecast-chart.mjs keeps it equal to placeHTML('da','dk')); buildNetDialog fills the net
+ *  lists and detectLocation drives the position lookup, hence the ids. A country page gets its own, in its language, from chromeHTML. `pg`
+ *  is the country page (null: Danish). Returns the header chip and the dialog. */
+var PLACE_DA={place:'Hvor er du?',area:'Prisområde',oth:'Andre lande',back:'Tilbage',find:'Søg',none:'Ingen resultater',close:'Luk'};
+var PRIS_PICK=[['dk','Danmark'],['no','Norge'],['sv','Sverige'],['fi','Suomi'],['nl','Nederland'],['de','Deutschland'],['fr','France'],['pl','Polska'],['it','Italia']];
 function placeHTML(lang,cur,pg){
-  var da=lang==='da',X=da?PLACE_DA:CHROME_I18N[lang],g,i,p,out='',own='',C=pg?PRIS_COUNTRIES[pg]:null;
+  var da=lang==='da',X=da?PLACE_DA:CHROME_I18N[lang],i,p,own='',C=pg?PRIS_COUNTRIES[pg]:null;
   var href=function(cc){if(cc==='dk')return '/dk1';for(p in PRIS_COUNTRIES)if(PRIS_COUNTRIES[p].cc===cc)return '/'+p;return '/';};
   for(i=0;i<PRIS_PICK.length;i++)if(PRIS_PICK[i][0]===cur)own=PRIS_PICK[i][1];
-  for(g=0;g<2;g++){
-    out+='<section><p class="pd-gt">'+X['g'+g]+'</p><ul class="cd-list">';
-    for(i=0;i<PRIS_PICK.length;i++){
-      var c=PRIS_PICK[i];
-      if(c[3]!==g)continue;
-      out+='<li><a href="'+href(c[0])+'"'+(c[0]===cur?' aria-current="page"':'')+'><b>'+c[1]+'</b><span>'+c[2]+'</span></a></li>';
-    }
-    out+='</ul></section>';
+  var sec=function(title,rows){return '<section>'+(title?'<p class="pd-gt">'+title+'</p>':'')+'<div class="pl-grp">'+rows+'</div></section>';};
+  var go=function(s,label,id,v){return '<button type="button" data-go="'+s+'">'+label+'<small id="'+id+'">'+v+'</small></button>';};
+  var scr=function(s,t,body){return '<div class="pl-scr" data-scr="'+s+'" data-t="'+t+'"'+(s?' hidden':'')+'>'+body+'</div>';};
+  var others='',scrs='',head='',long,short,foot='';
+  var multi=!da&&C.zones.length>1;
+  for(i=0;i<PRIS_PICK.length;i++){
+    var c=PRIS_PICK[i];
+    if(c[0]===cur&&(da||multi))continue;
+    others+='<a href="'+href(c[0])+'"'+(c[0]===cur?' aria-current="page"':'')+'>'+c[1]+'</a>';
   }
-  var step=function(open,k,v,id,body){
-    return '<details class="pl-step" name="place"'+(open?' open':'')+'><summary><span class="pl-t"><span class="pl-k">'+k+'</span><span class="pl-v" id="'+id+'">'+v+'</span></span></summary><div class="pl-panel">'+body+'</div></details>';};
-  var land=step(false,X.ctry,own,'plValLand',out+(da?'<p class="pd-foot"><a href="/norden">Norden · alle 13 prisområder</a></p>':''));
-  var area,long,short,foot='';
   if(da){
     long='DK1 · Vestdanmark';short='DK1 · Vest';
-    area=step(true,X.net,long,'plValNet',
-      '<div class="text-center mt-8"><button id="gpsBtn" onclick="detectLocation()" class="gps-light"><svg id="gpsIconSvg" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span id="gpsText">Find dit netselskab automatisk</span></button>'
-      +'<div id="gpsForget" style="display:none" class="mt-2"><button type="button" onclick="forgetNetPick()" class="text-xs text-gray-400 dark:text-gray-500 underline hover:text-gray-600 dark:hover:text-gray-300">Glem mit netselskab</button></div></div>'
-      +'<div><p class="pd-gt">Vestdanmark · DK1</p><div class="pd-links" id="netDlgDK1"></div></div><div><p class="pd-gt">Østdanmark · DK2</p><div class="pd-links" id="netDlgDK2"></div></div>');
-    foot='<p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p>';
-  }else if(C.zones.length>1){
+    head=sec('',
+        '<button id="gpsBtn" onclick="detectLocation()" type="button"><svg id="gpsIconSvg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11 21 3l-8 18-2-8z"/></svg><span id="gpsText">Brug min position</span></button>')
+      +'<p class="pd-foot">Finder dit netselskab ud fra din position. Positionen bruges kun én gang og gemmes aldrig. <span id="gpsForget" style="display:none"><button type="button" onclick="forgetNetPick()">Glem mit netselskab</button></span></p>'
+      +sec('Danmark',go('dk1','Vestdanmark','plDK1','Uden netselskab')+go('dk2','Østdanmark','plDK2',''));
+    var nets='<p class="pd-foot">Med et netselskab inkluderer prisen nettarif, afgifter og moms som på din regning.</p>';
+    scrs=scr('dk1','Vestdanmark','<div class="pl-grp" id="netDlgDK1"></div>'+nets)+scr('dk2','Østdanmark','<div class="pl-grp" id="netDlgDK2"></div>'+nets);
+    foot='<p class="pd-foot"><a href="/norden">Norden · alle 13 prisområder</a></p><p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p>';
+  }else if(multi){
     var z0=ZONES[C.def];
     long=short=own+' · '+z0.name;
-    area=step(true,X.area,z0.name+' · '+z0.city,'plValArea','<div class="pd-links">'+C.zones.map(function(k){
+    head=sec(own,C.zones.map(function(k){
       var to='/'+pg+'#'+k;
-      return '<a href="'+to+'" data-zone="'+k+'"'+(k===C.def?' class="on" aria-current="true"':'')+'>'+ZONES[k].name+' · '+ZONES[k].city+'</a>';}).join('')+'</div>');
-  }else{
-    long=short=own;
-    area='<div class="pl-step pl-static"><span class="pl-t"><span class="pl-k">'+X.area+'</span><span class="pl-v">'+X.one+'</span></span></div>';
-  }
+      return '<a href="'+to+'" data-zone="'+k+'"'+(k===C.def?' class="on" aria-current="true"':'')+'>'+ZONES[k].name+'<small>'+ZONES[k].city+'</small></a>';}).join(''));
+  }else long=short=own;
+  var main=head+sec(X.oth,others)+foot;
   return {
     btn:'<button type="button" class="chip-btn" id="netChip" onclick="openNetDialog()" aria-haspopup="dialog" aria-label="'+X.place+'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span><span class="nc-long" id="netChipLong">'+long+'</span><span class="nc-short" id="netChipShort">'+short+'</span></span></button>',
-    dialog:'<dialog id="netDialog" class="pris-dialog" aria-labelledby="netDialogTitle"><div class="pd-head"><h2 id="netDialogTitle">'+X.place+'</h2>'
-      +'<button type="button" class="pd-x" onclick="closeNetDialog()" aria-label="'+X.close+'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>'
-      +'<div class="pd-body">'+land+area+'<button type="button" class="pl-go" onclick="closeNetDialog()">'+X.show+'</button>'+foot+'</div></dialog>'
+    dialog:'<dialog id="netDialog" class="pris-dialog" aria-labelledby="netDialogTitle"><div class="pd-head"><button type="button" class="pd-back" id="plBack" onclick="plShow(\'\')" hidden><svg width="10" height="17" viewBox="0 0 10 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 1.5 2 8.5l6.5 7"/></svg>'+X.back+'</button><h2 id="netDialogTitle">'+X.place+'</h2>'
+      +'<button type="button" class="pd-x" onclick="closeNetDialog()">'+X.close+'</button></div>'
+      +'<div class="pd-body">'+scr('',X.place,'<input type="search" id="plQ" class="pl-q" oninput="plFind()" placeholder="'+X.find+'" aria-label="'+X.find+'" autocomplete="off"><div class="pl-sec" id="plMain">'+main+'</div><div class="pl-grp" id="plRes" hidden></div><p class="pd-foot" id="plNone" hidden>'+X.none+'</p>')+scrs+'</div></dialog>'
   };
 }
 
@@ -2031,7 +2028,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v77');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v78');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -2080,9 +2077,9 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v12';
-const CITY_SSR_VERSION = 'city-ssr-v8';
-const PROGNOSE_SSR_VERSION = 'prognose-ssr-v6';
+const ZONE_SSR_VERSION = 'zone-ssr-v13';
+const CITY_SSR_VERSION = 'city-ssr-v9';
+const PROGNOSE_SSR_VERSION = 'prognose-ssr-v7';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);

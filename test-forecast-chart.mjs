@@ -406,28 +406,29 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
 
   // ── The place dialog (the one chip in the header): one template for the Danish pages and the eight languages ──
   {
-    const X = pctx.CHROME_I18N, HREFS = '/dk1,/no/strompris,/sv/elpris,/fi/sahkon-hinta,/nl/stroomprijs,/de/strompreis,/fr/prix-electricite,/pl/ceny-pradu,/it/prezzo-luce';
-    const NAMES = 'Danmark Dansk,Norge Norsk,Sverige Svenska,Suomi Suomi,Nederland Nederlands,Deutschland Deutsch,France Français,Polska Polski,Italia Italiano';
-    const links = d => [...d.matchAll(/<a href="([^"]+)"( aria-current="page")?><b>([^<]+)<\/b><span>([^<]+)<\/span><\/a>/g)];
+    const X = pctx.CHROME_I18N, ALL = ['/dk1', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce'];
+    const NAMES = { '/dk1': 'Danmark', '/no/strompris': 'Norge', '/sv/elpris': 'Sverige', '/fi/sahkon-hinta': 'Suomi', '/nl/stroomprijs': 'Nederland', '/de/strompreis': 'Deutschland', '/fr/prix-electricite': 'France', '/pl/ceny-pradu': 'Polska', '/it/prezzo-luce': 'Italia' };
+    const links = d => [...d.matchAll(/<a href="(\/[^"#]+)"( aria-current="page")?>([^<]+)<\/a>/g)].filter(m => ALL.includes(m[1]));
     const header = INDEX.slice(INDEX.indexOf('<header class="site-nav">'), INDEX.indexOf('</header>'));
     const da = pctx.placeHTML('da', 'dk');
     ok(INDEX.includes(da.dialog) && header.includes(da.btn), 'den danske stedsvælger i index.html er placeHTML(da, dk), tegn for tegn');
     ok(!/countryDialog|countryBtn|openCountryDialog/.test(INDEX.replace(/<script[\s\S]*?<\/script>/g, '') + header), 'ingen globus og ingen separat landevælger tilbage på de danske sider');
-    ok(links(da.dialog).map(m => m[1]).join() === HREFS && links(da.dialog).map(m => m[3] + ' ' + m[4]).join() === NAMES && links(da.dialog).filter(m => m[2]).map(m => m[1]).join() === '/dk1', 'dansk stedsvælger: ni lande med eget navn og sprog, Danmark markeret');
-    ok(da.dialog.includes('>Hvor er du?</h2>') && da.dialog.includes('>Norden</p>') && da.dialog.includes('>Resten af Europa</p>') && da.btn.includes('aria-label="Hvor er du?"') && da.dialog.includes('>Vis priser</button>'), 'dansk stedsvælger: overskrift, grupper, knapper og chipnavn på dansk');
-    ok((da.dialog.match(/<details class="pl-step" name="place"/g) || []).length === 2 && /<details class="pl-step" name="place" open><summary><span class="pl-t"><span class="pl-k">Netselskab<\/span>/.test(da.dialog) && da.dialog.includes('id="netDlgDK1"') && da.dialog.includes('id="netDlgDK2"') && da.dialog.includes('id="gpsBtn"'), 'dansk stedsvælger: to trin (Land, Netselskab), netselskab-trinnet åbent, netlister og positionsopslag på plads');
-    ok(!/data-zone/.test(da.dialog) && da.dialog.includes('href="/norden"') && da.dialog.includes('href="/privatliv"') && da.dialog.includes('href="/om-elpriser"'), 'dansk stedsvælger: ingen zoner, men Norden-oversigten og privatliv/om');
+    ok(links(da.dialog).map(m => m[1]).join() === ALL.slice(1).join() && links(da.dialog).map(m => m[3]).join() === ALL.slice(1).map(h => NAMES[h]).join() && !links(da.dialog).some(m => m[2]), 'dansk stedsvælger: de otte andre lande med eget navn, Danmark har sin egen gruppe');
+    ok(da.dialog.includes('>Hvor er du?</h2>') && da.dialog.includes('>Danmark</p>') && da.dialog.includes('>Andre lande</p>') && da.dialog.includes('placeholder="Søg"') && da.dialog.includes('>Luk</button>') && da.btn.includes('aria-label="Hvor er du?"'), 'dansk stedsvælger: overskrift, grupper, søgefelt, luk-knap og chipnavn på dansk');
+    ok(!/<details|pl-step|Vis priser/.test(da.dialog) && /<button type="button" data-go="dk1">Vestdanmark<small id="plDK1">Uden netselskab<\/small><\/button><button type="button" data-go="dk2">Østdanmark<small id="plDK2"><\/small><\/button>/.test(da.dialog) && /data-scr="dk1" data-t="Vestdanmark" hidden><div class="pl-grp" id="netDlgDK1">/.test(da.dialog) && /data-scr="dk2" data-t="Østdanmark" hidden><div class="pl-grp" id="netDlgDK2">/.test(da.dialog) && /<button id="gpsBtn" onclick="detectLocation\(\)" type="button">[\s\S]*<span id="gpsText">Brug min position<\/span>/.test(da.dialog) && da.dialog.includes('id="gpsForget"'), 'dansk stedsvælger: positionsrække først, Vest- og Østdanmark som rækker med › til hver sin netliste (skjult skærm), én liste i stedet for trin');
+    ok(!/data-zone/.test(da.dialog) && da.dialog.includes('href="/norden"') && da.dialog.includes('href="/privatliv"') && da.dialog.includes('href="/om-elpriser"') && da.dialog.includes('id="plQ"') && da.dialog.includes('id="plRes" hidden'), 'dansk stedsvælger: ingen zoner, men Norden-oversigten, privatliv/om og søgefeltet med sit resultatfelt');
     const titles = new Set(['Hvor er du?']);
     const ZN = { 'no/strompris': 'no1,no2,no3,no4,no5', 'sv/elpris': 'se1,se2,se3,se4' };
     for (const pg of Object.keys(pctx.PRIS_COUNTRIES)) {
-      const C = pctx.PRIS_COUNTRIES[pg], x = X[C.lang], P = pctx.placeHTML(C.lang, C.cc, pg), l = links(P.dialog);
+      const C = pctx.PRIS_COUNTRIES[pg], x = X[C.lang], P = pctx.placeHTML(C.lang, C.cc, pg), l = links(P.dialog), multi = C.zones.length > 1;
       titles.add(x.place);
-      ok(l.map(m => m[1]).join() === HREFS && l.map(m => m[3] + ' ' + m[4]).join() === NAMES, `${pg}: landetrinnet viser de ni lande med deres egne navne, ens på alle sprog`);
-      ok(l.filter(m => m[2]).map(m => m[1]).join() === '/' + pg, `${pg}: præcis sidens eget land er aria-current i landetrinnet`);
-      ok(P.dialog.includes(`id="netDialogTitle">${x.place}</h2>`) && P.dialog.includes(`<p class="pd-gt">${x.g0}</p>`) && P.dialog.includes(`<p class="pd-gt">${x.g1}</p>`) && P.dialog.includes(`aria-label="${x.close}"`) && P.btn.includes(`aria-label="${x.place}"`) && P.dialog.includes(`>${x.show}</button>`) && P.dialog.includes(`<span class="pl-k">${x.ctry}</span>`), `${pg}: stedsvælgerens ord er på ${C.lang}`);
+      const want = multi ? ALL.filter(h => h !== '/' + pg) : ALL;
+      ok(l.map(m => m[1]).join() === want.join() && l.map(m => m[3]).join() === want.map(h => NAMES[h]).join(), `${pg}: landerækkerne er ${multi ? 'de otte andre lande' : 'alle ni lande'} med deres egne navne, ens på alle sprog`);
+      ok(l.filter(m => m[2]).map(m => m[1]).join() === (multi ? '' : '/' + pg), `${pg}: ${multi ? 'sidens eget land har sin egen zonegruppe' : 'præcis sidens eget land er aria-current i landelisten'}`);
+      ok(P.dialog.includes(`id="netDialogTitle">${x.place}</h2>`) && P.dialog.includes(`<p class="pd-gt">${x.oth}</p>`) && P.dialog.includes(`>${x.close}</button>`) && P.dialog.includes(`placeholder="${x.find}"`) && P.dialog.includes(`${x.back}</button>`) && P.dialog.includes(`>${x.none}</p>`) && P.btn.includes(`aria-label="${x.place}"`), `${pg}: stedsvælgerens ord er på ${C.lang}`);
       const zs = [...P.dialog.matchAll(/data-zone="([^"]+)"/g)].map(m => m[1]).join();
-      ok(zs === (ZN[pg] || '') && (C.zones.length > 1 ? new RegExp(`<span class="pl-k">${x.area}</span>`).test(P.dialog) && (P.dialog.match(/aria-current="true"/g) || []).length === 1 : P.dialog.includes(`<span class="pl-v">${x.one}</span>`) && !/<details[^>]*open/.test(P.dialog)), `${pg}: ${C.zones.length > 1 ? 'zonerne som links, standardzonen markeret' : 'ét prisområde uden valg'}`, zs);
-      ok(!/gpsBtn|netDlgDK|Netselskab/.test(P.dialog), `${pg}: ingen danske netselskaber og intet positionsopslag`);
+      ok(zs === (ZN[pg] || '') && (multi ? P.dialog.includes(`<p class="pd-gt">${pctx.PRIS_PICK.filter(c => c[0] === C.cc)[0][1]}</p>`) && (P.dialog.match(/aria-current="true"/g) || []).length === 1 : !/data-go|aria-current="true"/.test(P.dialog)), `${pg}: ${multi ? 'zonerne som links, standardzonen markeret' : 'ét prisområde uden valg'}`, zs);
+      ok(!/gpsBtn|netDlgDK|Netselskab|data-go|details/.test(P.dialog), `${pg}: ingen danske netselskaber, intet positionsopslag og ingen drill-in`);
       ok(!/hreflang|\$\{|undefined|NaN/.test(P.dialog + P.btn) && pctx.chromeHTML(pg).btn === P.btn && pctx.chromeHTML(pg).place === P.dialog, `${pg}: ingen hreflang-klynge eller skabelonrester, og chromeHTML bruger den samme stedsvælger`);
     }
     ok(titles.size === 8, 'stedsvælgerens overskrift er forskellig på de otte sprog (norsk bokmål og dansk deler den)', [...titles].join());
