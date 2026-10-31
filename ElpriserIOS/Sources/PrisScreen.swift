@@ -70,14 +70,14 @@ struct PrisScreen: View {
                                     HeroCard(summary: summary, weekday: weekdayToday(today), caption: caption, compact: leftW < 400)
                                     Tiles(summary: summary, tablet: true)
                                 }
-                                .frame(width: leftW)
+                                .frame(width: leftW, height: h, alignment: .top)
                                 VStack(spacing: 20) {
                                     PeriodPill(wide: true)
                                     ChartCard(spec: chart, tablet: true, selected: $selected, fill: true, caption: caption)
                                 }
-                                .frame(maxWidth: .infinity)
+                                .frame(maxWidth: .infinity, minHeight: h - extra, maxHeight: h - extra, alignment: .top)
                             }
-                            .frame(height: h)
+                            .frame(height: h, alignment: .top)
                         }
                         .padding(.horizontal, pad).padding(.bottom, 20)
                     }
