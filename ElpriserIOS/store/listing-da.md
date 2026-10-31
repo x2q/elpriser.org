@@ -2,7 +2,7 @@
 
 **Navn (maks. 30):** Elpriser – time for time
 **Undertitel (maks. 30):** Elprisen med dit netselskab
-**Promoveringstekst (maks. 170):** Se elprisen lige nu, time for time og 5 døgn frem — med nettarif, afgifter og moms for dit netselskab. Find det med et tryk, og planlæg efter de billigste timer.
+**Promoveringstekst (maks. 170):** Se elprisen lige nu, time for time og 5 døgn frem — med nettarif, afgifter og moms for dit netselskab. Find dit netselskab let, og planlæg efter de billigste timer.
 **Nøgleord (maks. 100):** elpris,strøm,spotpris,nettarif,netselskab,elafgift,prognose,billig strøm,tariffer,elbil,varmepumpe
 **Support-URL:** https://elpriser.org
 **Marketing-URL:** https://elpriser.org
@@ -16,7 +16,7 @@ Elpriser viser, hvad strømmen koster lige nu – time for time – og hvornår 
 
 • Prisen lige nu: se timeprisen, om den er billig, middel eller dyr, og hvilken time de næste 24 timer der er billigst.
 • Din rigtige pris: vælg dit netselskab, så prisen inkluderer nettarif, Energinets tariffer, elafgift og moms – ligesom på din regning. Du kan også se ren spotpris.
-• Find netselskabet automatisk: tryk på knappen, og appen finder netselskabet ud fra din position. Positionen bruges kun én gang og gemmes aldrig – kun netselskabets navn gemmes på din enhed.
+• Find dit netselskab: søg efter det, vælg Vestdanmark eller Østdanmark og find det på listen, eller tryk "Brug min position". Positionen bruges kun én gang og gemmes aldrig – kun netselskabets navn gemmes på din enhed.
 • 2 eller 5 døgn frem: faktiske børspriser og en åben modelprognose.
 • Time for time: se, hvordan prisen er sammensat – spotpris, nettarif, afgifter og moms.
 • Smart hjem: se de billigste timer til varmepumpe, elbil og vandvarmer og hvor meget du sparer – og kopiér planen til Home Assistant eller Shelly.
@@ -26,5 +26,5 @@ Ingen reklamer. Ingen konto. Priserne kommer fra Energi Data Service (Energinet)
 
 Elpriser er en uafhængig tjeneste og er ikke tilknyttet Energinet eller dit netselskab. Priserne er vejledende; din faktiske afregning kan afvige.
 
-**Review-noter:** Appen kræver ingen login. Positionen bruges kun, når man trykker "Find mit netselskab" (første start eller Mere → Indstillinger), til at finde netselskabet; kun netselskabets navn gemmes. "Vælg selv på listen" virker uden position.
-**Hvad er nyt (1.0.0):** Første udgivelse.
+**Review-noter:** Appen kræver ingen login. Positionen bruges kun, når man trykker "Brug min position" i "Hvor er du?"-arket, til at finde netselskabet; kun netselskabets navn gemmes. Man kan også vælge Vestdanmark/Østdanmark og et netselskab på listen eller søge, uden position.
+**Hvad er nyt (1.0.5):** Rettet: på iPad skifter grafen ikke længere højde, når du folder prisopdelingen ud. Nye skærmbilleder.

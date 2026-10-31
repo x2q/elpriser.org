@@ -1,7 +1,7 @@
 """Genererer App Store-produktsidens header og søgeresultat-asset (5244 x 2950 px).
 
 Kurven på headeren er dagens rigtige N1-priser fra elpriser.org/api; søgeresultat-
-assetet bruger appens egne skærmbilleder (store/screenshots/iphone-6.3).
+assetet bruger appens egne skærmbilleder (store/raw).
 Alt vigtigt ligger i den midterste del af billedet, fordi App Store beskærer kanterne.
 Kør:  python3 -I store/make_assets.py
 """
@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONT = os.path.join(HERE, "..", "..", "ElpriserAndroid", "app", "src", "main", "res", "font", "manrope.ttf")
-SHOTS = os.path.join(HERE, "screenshots", "iphone-6.3")
+SHOTS = os.path.join(HERE, "raw")
 W, H = 5244, 2950
 BOLT = [(294, 60), (150, 290), (232, 290), (206, 452), (374, 206), (278, 206), (304, 100)]
 C1, C2 = (27, 87, 245), (25, 51, 143)
@@ -109,7 +109,7 @@ def search():
     d.text((W // 2, 520), "Elprisen time for time", font=font(300, 800), fill="white", anchor="mm")
     d.text((W // 2, 800), "Med dit netselskab · 5 døgn frem · til iPhone og iPad", font=font(105, 500), fill=(205, 220, 255), anchor="mm")
     ph = 1700
-    shots = ["02_nu.png", "03_prognose.png", "04_time.png"]
+    shots = ["phone-1-nu.png", "phone-3-5dage.png", "phone-5-smart.png"]
     gap = 170
     ims = [phone(s, ph) for s in shots]
     total = sum(i.width for i in ims) + gap * (len(ims) - 1)

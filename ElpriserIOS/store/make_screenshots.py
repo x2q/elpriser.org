@@ -1,6 +1,7 @@
 """Samler App Store-skærmbillederne: appens egne skærmbilleder (store/raw) i en enhedsramme på blå baggrund med dansk overskrift.
 
-iPhone 6.9" (1320 x 2868) og iPad 13" (2752 x 2064, liggende) skrives til store/screenshots/.
+iPhone 6.9" (1320 x 2868, nedskaleret til 6.3" = 1206 x 2622, som App Store Connect tager) og iPad 13" (2752 x 2064, liggende)
+skrives til store/screenshots/.
 De rå billeder tages i simulatoren med -debugTab / -debugBreakdown / -debugPeriod (se AppModel.swift og PrisScreen.swift)
 og med statuslinjen sat til 9:41 (xcrun simctl status_bar <enhed> override --time 9:41 ...).
 Telefonbillederne beskæres, så fanebjælken ikke ligger oven på indholdet.
@@ -101,14 +102,15 @@ def compose(size, colors, title, sub, dev, top, title_px, sub_px, title_y, sub_y
 
 
 def main():
-    for sub in ("iphone-6.9", "ipad-13"):
+    for sub in ("iphone-6.9", "iphone-6.3", "ipad-13"):
         os.makedirs(os.path.join(OUT, sub), exist_ok=True)
         for f in os.listdir(os.path.join(OUT, sub)):
             os.remove(os.path.join(OUT, sub, f))
     for raw, name, title, sub, colors in PHONE:
         dev = device(os.path.join(RAW, raw + ".png"), 1135, 22, 165, True, 0.90)
-        compose((1320, 2868), colors, title, sub, dev, 640, 112, 54, 150, 150 + 112 * (title.count("\n") + 1) + 70 + 20 * title.count("\n")).save(
-            os.path.join(OUT, "iphone-6.9", name + ".png"))
+        img = compose((1320, 2868), colors, title, sub, dev, 640, 112, 54, 150, 150 + 112 * (title.count("\n") + 1) + 70 + 20 * title.count("\n"))
+        img.save(os.path.join(OUT, "iphone-6.9", name + ".png"))
+        img.resize((1206, 2622), Image.LANCZOS).save(os.path.join(OUT, "iphone-6.3", name + ".png"))
     for raw, name, title, sub, colors in PAD:
         dev = device(os.path.join(RAW, raw + ".png"), 2280, 30, 70, False, 1.0)
         compose((2752, 2064), colors, title, sub, dev, 420, 120, 58, 100, 275).save(os.path.join(OUT, "ipad-13", name + ".png"))
