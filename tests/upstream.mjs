@@ -21,7 +21,14 @@ const dkFmt = new Intl.DateTimeFormat('sv-SE', {
 });
 const toDK = d => dkFmt.format(d).replace(' ', 'T');
 const iso = d => d.toISOString().slice(0, 19);
-const dayStr = d => d.toISOString().slice(0, 10);
+/** The instant at which the Danish day `n` days after the Danish date of `ms` begins. Prices are published per Danish day,
+ *  so "tomorrow is not out yet" must cut at Danish midnight; cutting at UTC midnight leaks the first Danish hour of tomorrow
+ *  (00:00 CET is 23:00 UTC) into an answer that is meant to lack it — which only shows when the machine runs in UTC, like CI. */
+const dkDayStart = (ms, n) => {
+  const t = Date.parse(toDK(new Date(ms)).slice(0, 10) + 'T00:00:00Z') + n * 86_400_000;   // that Danish date, read as UTC
+  const off = at => Date.parse(toDK(new Date(at)) + 'Z') - at;                            // Copenhagen's offset at an instant
+  return t - off(t - off(t));
+};
 
 /** DKK/MWh for one hour: a morning bump, an evening peak, a slow drift by date. */
 export function spotAt(date) {
@@ -61,7 +68,7 @@ export const upstreamState = { tomorrowPublished: true };
 
 /** Hourly day-ahead rows for [start, end), published up to the end of tomorrow (or of today, until tomorrow is out). */
 function priceRows(dataset, area, start, end) {
-  const lastPublished = Date.parse(dayStr(new Date(Date.now() + 86_400_000)) + 'T00:00:00Z') + (upstreamState.tomorrowPublished ? 86_400_000 : 0);
+  const lastPublished = dkDayStart(Date.now(), upstreamState.tomorrowPublished ? 2 : 1);
   const rows = [];
   for (let t = Date.parse(start + 'T00:00:00Z'); t < Date.parse(end + 'T00:00:00Z') && t < lastPublished; t += 3_600_000) {
     const d = new Date(t), dkk = spotAt(d);
