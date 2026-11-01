@@ -1,5 +1,7 @@
 import { activateDataPage, stripInactiveMains, promoteSectionTitle } from './_spa.js';
 import { CITIES } from './_cities.js';
+import { cityLocation } from './_city-location.js';
+import { netLocation, netSourceNote, netAreasGeoJSON } from './_net-location.js';
 
 const OG_IMAGE = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
@@ -839,6 +841,14 @@ export async function onRequest(context) {
   // the Python scripts, the test files and wrangler.toml over HTTPS. The build
   // no longer ships those, and this makes a stray file unreachable rather than
   // merely unlinked. Keep in step with the exclude list in _routes.json.
+  // The net companies' areas as GeoJSON (Energistyrelsen's licence boundaries, simplified; see _net-location.js).
+  if (url.pathname === '/net-areas.geojson' || /^\/net-areas\/[a-z0-9-]+\.geojson$/.test(url.pathname)) {
+    const slug = url.pathname === '/net-areas.geojson' ? null : url.pathname.slice('/net-areas/'.length, -'.geojson'.length);
+    const gj = netAreasGeoJSON([...NETS.DK1, ...NETS.DK2], slug);
+    if (!gj) return notFound();
+    return new Response(JSON.stringify(gj), { headers: {
+      'Content-Type': 'application/geo+json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=86400' } });
+  }
   if (STATIC_ASSETS.has(url.pathname)) return context.next();
   return notFound();
 }
@@ -2007,7 +2017,9 @@ async function buildPricesIntro(context, area, net, fcPromise) {
     }
     // The cities (pilot pages) whose most common net company this is, and those where it serves a good
     // part of the addresses we looked up (CITY_LINK_SHARE) — Aarhus is Konstant's, but 40 % Dinel's.
-    const towns = CITIES.filter(c => c.area === area && c.nets.some((x, i) => x.slug === net.slug && (i === 0 || x.share >= CITY_LINK_SHARE)));
+    const towns = netTowns(area, net);
+    const srcNote = netSourceNote(net.slug);
+    if (srcNote) ps.push(srcNote);
     if (towns.length) ps.push(`Byer i området: ${towns.map(c => `<a href="/elpris/${c.slug}" class="text-brand-500 underline">${c.name}</a>`).join(', ')}.`);
   } else {
     ps.push(`${area} dækker ${region}. Priserne fastsættes dagen i forvejen på elbørsen Nord Pool og opdateres her time for time — vælg dit netselskab øverst på siden for den præcise pris inkl. din lokale nettarif.`);
@@ -2063,6 +2075,11 @@ async function buildTariffFacts(context) {
 /** A net company's page lists a city under "Byer i området" when it is the city's main net company or has at
  *  least this share of the addresses we looked up there (so Aalborg's 6 % Nord Energi is not a "Nord Energi city"). */
 const CITY_LINK_SHARE = 0.25;
+/** The pilot cities a net company serves: the one it is the main net company of, and those where it served a good part
+ *  of the sampled addresses. Used for the page's "Byer i området" line and for its spatialCoverage. */
+function netTowns(area, net) {
+  return CITIES.filter(c => c.area === area && c.nets.some((x, i) => x.slug === net.slug && (i === 0 || x.share >= CITY_LINK_SHARE)));
+}
 /** The NETS entry of a city's main net company. */
 function cityNet(c) {
   return NETS[c.area].find(n => n.slug === c.nets[0].slug);
@@ -2208,7 +2225,7 @@ async function renderHomepage(context) {
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
 const ZONE_SSR_VERSION = 'zone-ssr-v13';
-const CITY_SSR_VERSION = 'city-ssr-v9';
+const CITY_SSR_VERSION = 'city-ssr-v10';
 const PROGNOSE_SSR_VERSION = 'prognose-ssr-v8';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
@@ -2379,6 +2396,11 @@ async function renderSPA(context, pathname, meta, opts = {}) {
     const fcP = fetchNetForecast(context, area, net);
     const [intro, fc] = await Promise.all([buildPricesIntro(context, area, net, fcP), fcP]);
     html = html.replace('<!--SSR_PRICES_INTRO-->', intro);
+    // A net company page says which place it covers (netLocation); the area pages /dk1 and /dk2 say nothing more.
+    if (net) {
+      const ld = netLocation(area, net, netTowns(area, net), AREA_REGION[area], pageUrl, meta);
+      html = html.replace('</head>', () => `  <script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>\n</head>`);
+    }
     if (fc) html = html.replace('<!--SSR_PRIS-->', prisScreen(fc, area, net));
     html = withNetChip(html, net ? net.name : area, area);
   }
@@ -2393,10 +2415,13 @@ async function renderSPA(context, pathname, meta, opts = {}) {
     if (fc) html = html.replace('<!--SSR_PRIS-->', () => prisScreen(fc, c.area, net));
     html = html.replace('<main data-page="city"', `<main data-page="city" data-area="${c.area}" data-net="${net.slug}"`);
     html = withNetChip(html, net.name, c.area);
+    // The location data is one variant per city (cityLocation, CITY_LOCATION in _cities.js): the page says where it is.
+    const loc = cityLocation(c, net, pageUrl);
     const page = { '@context': 'https://schema.org', '@type': 'WebPage', name: meta.title, description: meta.description,
       url: pageUrl, inLanguage: 'da', isPartOf: { '@type': 'WebSite', name: 'elpriser.org', url: 'https://elpriser.org' },
-      about: { '@type': 'City', name: c.name, containedInPlace: { '@type': 'Country', name: 'Danmark' } } };
-    html = html.replace('</head>', `  <script type="application/ld+json">${JSON.stringify(page).replace(/</g, '\\u003c')}</script>\n</head>`);
+      about: loc.about, ...loc.pageExtra };
+    const lds = [page, ...loc.extraLd].map(j => `  <script type="application/ld+json">${JSON.stringify(j).replace(/</g, '\\u003c')}</script>`).join('\n');
+    html = html.replace('</head>', () => `${loc.headMeta ? '  ' + loc.headMeta + '\n' : ''}${lds}\n</head>`);
     if (opts.done) opts.done.full = !!fc;
   }
   if (opts.zonePage || opts.norden) {

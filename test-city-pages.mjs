@@ -5,8 +5,9 @@
  *
  * They exist to find out whether location-specific pages rank for local searches, so what these tests guard
  * is that each one is an honest page and not a doorway page:
- *  - 200, one h1, <html lang="da">, canonical, BreadcrumbList and a WebPage about a City — and NO Dataset,
- *    spatialCoverage or FAQPage (Search Console flagged spatialCoverage on /api);
+ *  - 200, one h1, <html lang="da">, canonical, BreadcrumbList and a WebPage about a City — and never FAQPage or
+ *    PriceSpecification; Dataset, spatialCoverage and geo meta only in the experiment arms that test them
+ *    (CITY_LOCATION; shape in test-city-location.mjs);
  *  - the Pris screen is drawn for the city's main net company, and the text states only facts that come from
  *    the table of sampled addresses or from the forecast response (tariff profile, cheapest and dearest hour);
  *  - titles and descriptions fit a results page and are unique; the text of every page is unique;
@@ -22,7 +23,7 @@ import { pathToFileURL } from 'node:url';
 const ROOT = import.meta.dirname;
 const INDEX = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const { onRequest } = await import(pathToFileURL(path.join(ROOT, 'functions/[[path]].js')).href);
-const { CITIES } = await import(pathToFileURL(path.join(ROOT, 'functions/_cities.js')).href);
+const { CITIES, CITY_LOCATION } = await import(pathToFileURL(path.join(ROOT, 'functions/_cities.js')).href);
 
 let pass = 0; const fails = [];
 const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d : ''}`); };
@@ -95,13 +96,20 @@ for (const c of CITIES) {
   const lds = [...raw.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => m[1]);
   let parsed = []; try { parsed = lds.map(x => JSON.parse(x)); } catch (e) { fails.push(`${p}: JSON-LD kan ikke læses: ${e.message}`); }
   // The shared head carries WebApplication and WebSite on every page; the city adds BreadcrumbList and WebPage and nothing else.
+  // The location experiment (CITY_LOCATION): the dataset arm adds a Dataset, no other arm adds a type.
+  const arm = CITY_LOCATION[c.slug].arm;
   const types = parsed.map(x => x['@type']).sort().join(',');
-  ok(types === 'BreadcrumbList,WebApplication,WebPage,WebSite', `${p}: JSON-LD er den fælles WebApplication/WebSite plus BreadcrumbList og WebPage`, types);
+  ok(types === (arm === 'dataset' ? 'BreadcrumbList,Dataset,WebApplication,WebPage,WebSite' : 'BreadcrumbList,WebApplication,WebPage,WebSite'), `${p}: JSON-LD er den fælles WebApplication/WebSite plus BreadcrumbList og WebPage${arm === 'dataset' ? ' og Dataset' : ''}`, types);
   const web = parsed.find(x => x['@type'] === 'WebPage') || {}, crumbs = parsed.find(x => x['@type'] === 'BreadcrumbList') || {};
   ok(web.inLanguage === 'da' && web.url === 'https://elpriser.org' + p && web.about && web.about['@type'] === 'City' && web.about.name === c.name
     && web.about.containedInPlace && web.about.containedInPlace['@type'] === 'Country' && web.about.containedInPlace.name === 'Danmark', `${p}: WebPage om en City i Danmark`, JSON.stringify(web.about));
   ok((crumbs.itemListElement || []).map(x => x.name).join('>') === `Elpriser>${c.name}`, `${p}: brødkrummer Elpriser › ${c.name}`, JSON.stringify(crumbs.itemListElement));
-  ok(!/"Dataset"|spatialCoverage|FAQPage|"Question"|PriceSpecification/.test(raw.replace(/<script(?![^>]*ld\+json)[\s\S]*?<\/script>/g, '')), `${p}: ingen Dataset, spatialCoverage, FAQPage eller PriceSpecification`);
+  // Never FAQ or PriceSpecification; Dataset and spatialCoverage only in the arms that test them; geo meta tags only in the geo arm.
+  const ldText = raw.replace(/<script(?![^>]*ld\+json)[\s\S]*?<\/script>/g, '');
+  ok(!/FAQPage|"Question"|PriceSpecification/.test(ldText), `${p}: ingen FAQPage eller PriceSpecification`);
+  ok(/"Dataset"/.test(ldText) === (arm === 'dataset') && /spatialCoverage/.test(ldText) === (arm === 'dataset' || arm === 'coverage'), `${p}: Dataset og spatialCoverage kun i de varianter, der tester dem (${arm})`);
+  ok(/name="geo\.region"/.test(raw) === (arm === 'geo') && /name="ICBM"/.test(raw) === (arm === 'geo'), `${p}: geo-meta kun i geo-varianten (${arm})`);
+  if (arm !== 'base') ok(web.about.geo && web.about.geo.latitude === CITY_LOCATION[c.slug].lat && web.about.geo.longitude === CITY_LOCATION[c.slug].lng && /^https:\/\/www\.wikidata\.org\/wiki\/Q\d+$/.test(web.about.sameAs[0]), `${p}: byen er et Place med koordinater og Wikidata-id`, JSON.stringify(web.about));
   // The Pris screen, drawn for the main net's all-in price; the chip says the same.
   ok(h.includes('<div class="pris" data-period="2"') && h.includes(`data-key="${c.area}|din|${main.slug}"`), `${p}: Pris-skærmen er tegnet for ${main.name} (Din pris)`);
   ok(new RegExp(`aria-label="Elpris lige nu — ${c.area === 'DK1' ? 'DK1 Vest' : 'DK2 Øst'} · ${main.name}"`).test(h), `${p}: skærmen navngiver prisområde og netselskab`);
@@ -133,7 +141,7 @@ for (const c of CITIES) {
   // Crawl hygiene: no templated href, no empty link.
   ok(!/href="[^"]*(\$\{|undefined|\[object)/.test(r.main) && !/href=""/.test(r.main), `${p}: ingen skabelon- eller tomme links`);
   // Cached under its own versioned key; a second request does not ask the feed again.
-  ok([...store.keys()].some(k => k === `https://cache.local/city-ssr-v9${p}`), `${p}: egen versioneret cache-nøgle`, [...store.keys()].join(' '));
+  ok([...store.keys()].some(k => k === `https://cache.local/city-ssr-v10${p}`), `${p}: egen versioneret cache-nøgle`, [...store.keys()].join(' '));
   const again = await get(p);
   ok(again.page === h && upstream.length === 1, `${p}: andet svar kommer fra cachen`);
 }

@@ -1646,7 +1646,7 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v9'/.test(ROUTES), 'city-ssr-v9');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v10'/.test(ROUTES), 'city-ssr-v10');
   // /prognose shares the header and footer too (v4: the four EU country links).
   assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v8'/.test(ROUTES), 'prognose-ssr-v8');
 });
@@ -2015,7 +2015,9 @@ test('cities: the generator writes data and API figures only — no ten-day hori
   }
   assert.ok(/main\.share < 0\.75/.test(gen), 'the net-varies-by-address threshold is 0.75');
   assert.ok(/Math\.min\(5, all\.length\)/.test(gen), 'the outlook is at most five days');
-  assert.ok(/'@type': 'City'/.test(render) && /containedInPlace: \{ '@type': 'Country', name: 'Danmark' \}/.test(render) && /inLanguage: 'da'/.test(render), 'WebPage about a City in Danmark, in Danish');
+  assert.ok(/about: loc\.about/.test(render) && /cityLocation\(c, net, pageUrl\)/.test(render) && /inLanguage: 'da'/.test(render), 'WebPage in Danish, about the city from cityLocation');
+  const locSrc = fs.readFileSync(path.join(__dirname, 'functions/_city-location.js'), 'utf8');
+  assert.ok(/'@type': 'City'/.test(locSrc) && /containedInPlace: DENMARK/.test(locSrc) && /const DENMARK = \{ '@type': 'Country', name: 'Danmark' \}/.test(locSrc), 'the control is a City in Danmark');
   assert.ok(/onclick="openNetDialog\(\)"/.test(gen) && /Er dit netselskab et andet\? Skift/.test(gen), 'the button that opens the existing net chooser');
   assert.ok(/href="\/om-elpriser"|'\/om-elpriser'/.test(gen), 'links the explainer');
   assert.ok(/<h1 class="page-title">Elpris i \$\{c\.name\} i dag — time for time<\/h1>/.test(gen), 'the h1');

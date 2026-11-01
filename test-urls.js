@@ -171,6 +171,14 @@ async function main() {
     try { JSON.parse(r.body); } catch { check(false, `api ${p}`, 'ugyldig JSON'); }
   });
 
+  // Energistyrelsens netområder as GeoJSON (the hasMap target of the net pages' map variant): all sixteen, one, and 404.
+  {
+    const all = await get('/net-areas.geojson'), one = await get('/net-areas/radius.geojson'), none = await get('/net-areas/ukendt.geojson');
+    let n = 0, src = false; try { const j = JSON.parse(all.body); n = j.features.length; src = /Energistyrelsen/.test(j.attribution); } catch { /* counted below */ }
+    check(all.status === 200 && /geo\+json/.test(all.type) && n === 16 && src, '/net-areas.geojson: 16 net companies med kildeangivelse', `status ${all.status}, ${n} features`);
+    check(one.status === 200 && JSON.parse(one.body).features.length === 1 && none.status === 404, '/net-areas/radius.geojson: ét selskab; ukendt selskab giver 404', `${one.status}/${none.status}`);
+  }
+
   console.log('\n5. NORMALISERING — dubletter må ikke svare 200');
   const redirects = [
     ['/dk1/', '/dk1'], ['/no/strompris/', '/no/strompris'], ['/tariffer/', '/tariffer'],
@@ -383,6 +391,7 @@ async function main() {
   console.log('\n9b. BYSIDER — /elpris/<by> (pilot)');
   // The ten pages are written by the function from functions/_cities.js (read here as data) and the live forecast.
   const CITY_TABLE = require('node:vm').runInNewContext('(' + require('node:fs').readFileSync(require('node:path').join(__dirname, 'functions', '_cities.js'), 'utf8').match(/export const CITIES = (\[[\s\S]*?\n\]);/)[1] + ')');
+  const CITY_LOC = require('node:vm').runInNewContext('(' + require('node:fs').readFileSync(require('node:path').join(__dirname, 'functions', '_cities.js'), 'utf8').match(/export const CITY_LOCATION = (\{[\s\S]*?\n\});/)[1] + ')');
   const cityLd = body => [...body.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => { try { return JSON.parse(m[1]); } catch { return { '@type': 'INVALID' }; } });
   const cityTexts = new Set();
   check(CITY_TABLE.length === 10, 'byer: tabellen har ti byer', String(CITY_TABLE.length));
@@ -402,7 +411,8 @@ async function main() {
     check(/Er dit netselskab et andet\? Skift<\/button>/.test(page) && /href="\/om-elpriser"/.test(page), `${p}: knappen til netvælgeren og linket til /om-elpriser`);
     check(!/\b10 (døgn|dage)|10-dag/i.test(t) && !/\bNaN\b|\bundefined\b|\[object /.test(page) && (page.match(/data-pris-period="/g) || []).length === 2, `${p}: kun 2 og 5 døgn, ingen NaN`);
     const ld = cityLd(r.body), lt = ld.map(j => j['@type']);
-    check(lt.includes('BreadcrumbList') && !lt.some(x => ['Dataset', 'FAQPage', 'INVALID'].includes(x)) && !/spatialCoverage/.test(r.body.replace(/<script(?![^>]*ld\+json)[\s\S]*?<\/script>/g, '')), `${p}: brødkrummer, ingen Dataset/FAQ/spatialCoverage`, lt.join(','));
+    const arm = CITY_LOC[c.slug].arm, ldBody = r.body.replace(/<script(?![^>]*ld\+json)[\s\S]*?<\/script>/g, '');
+    check(lt.includes('BreadcrumbList') && !lt.some(x => ['FAQPage', 'INVALID'].includes(x)) && lt.includes('Dataset') === (arm === 'dataset') && /spatialCoverage/.test(ldBody) === (arm === 'dataset' || arm === 'coverage') && /name="geo\.region"/.test(r.body) === (arm === 'geo'), `${p}: brødkrummer, ingen FAQ; Dataset/spatialCoverage/geo-meta kun i varianten ${arm}`, lt.join(','));
     const web = ld.find(j => j['@type'] === 'WebPage');
     check(web && web.about && web.about['@type'] === 'City' && web.about.name === c.name && web.about.containedInPlace.name === 'Danmark' && web.inLanguage === 'da', `${p}: WebPage om byen`);
     if (c.nets[0].share < 0.75) check(t.includes('afhænger af adressen'), `${p}: siger at netselskabet afhænger af adressen`);
