@@ -2,6 +2,7 @@ package org.elpriser.app.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.elpriser.app.BuildConfig
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -10,7 +11,8 @@ import java.net.URLEncoder
 /** Klient til elpriser.org's åbne API. */
 object Api {
     private const val BASE = "https://elpriser.org/api"
-    private const val UA = "ElpriserAndroid/1.0 (+https://elpriser.org)"
+    /** Versionen står i User-Agent, så serveren kan tælle kald pr. version (ingen id, se functions/_usage.js). */
+    private val UA = "ElpriserAndroid/${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) (+https://elpriser.org)"
 
     private suspend fun get(path: String, params: Map<String, String>): JSONObject = withContext(Dispatchers.IO) {
         val q = params.entries.joinToString("&") { "${it.key}=${URLEncoder.encode(it.value, "UTF-8")}" }

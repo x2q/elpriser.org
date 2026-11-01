@@ -1488,13 +1488,13 @@ test('api etiquette: generated snippets poll rarely — Shelly fetches the day p
     assert.ok(+m[1] >= 300, `scan_interval: ${m[1]} is faster than every 5 minutes`);
   }
   const num = name => { const m = INDEX.match(new RegExp(`var ${name} = ([0-9* ]+);`)); assert.ok(m, `${name} missing`); return eval(m[1]); };
-  assert.ok(/var API = "\$\{scheduleUrl\}";/.test(INDEX), 'the Shelly script must fetch /api/schedule, not /api/now');
+  assert.ok(/var API = "\$\{scheduleUrl\}&client=shelly-script-\d+";/.test(INDEX), 'the Shelly script must fetch /api/schedule, not /api/now');
   assert.ok(/const scheduleUrl=apiUrl\.replace\('\/api\/now\?','\/api\/schedule\?'\)/.test(INDEX), 'schedule URL derivation');
   assert.ok(num('PLAN_MAX_AGE_MS') >= 20 * 3600 * 1000, 'plan is re-fetched more often than daily');
   // Home Assistant: the REST sensor reads the day's plan on a long interval; the
   // hourly decision is a template on the plan, not another request.
   const ha = INDEX.slice(INDEX.indexOf('const haCode='), INDEX.indexOf('// Option 2') > 0 ? INDEX.indexOf('# ── Option 2') : INDEX.indexOf('const flexHaId'));
-  assert.ok(/resource: "\$\{scheduleUrl\}"/.test(ha), 'HA sensor must read /api/schedule');
+  assert.ok(/resource: "\$\{scheduleUrl\}&client=ha-plan-\d+"/.test(ha), 'HA sensor must read /api/schedule');
   const interval = ha.match(/scan_interval:\s*(\d+)/);
   assert.ok(interval && +interval[1] >= 21600, `HA plan sensor polls every ${interval && interval[1]} s`);
   assert.ok(/binary_sensor:/.test(ha) && /s\[now\(\)\.hour\]\.on/.test(ha), 'the hourly state is a template on the plan');

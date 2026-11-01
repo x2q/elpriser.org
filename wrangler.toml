@@ -10,6 +10,12 @@ compatibility_flags = ["nodejs_compat"]
 binding = "PRICE_CACHE"
 id = "126700e66e8d4a19b289b0e8afdaff69"
 
+# Anonymous usage counts per client and version (apps, Shelly, Home Assistant).
+# Write-only from the Function; read with `npm run clients`. See functions/_usage.js.
+[[analytics_engine_datasets]]
+binding = "USAGE"
+dataset = "elpriser_usage"
+
 # Regulerbar kapacitet reported by opted-in Shelly and Home Assistant devices.
 # Schema in migrations/. Relational rather than KV because the whole point is
 # aggregation — kW available by area, category and hour — which KV cannot query.

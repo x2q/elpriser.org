@@ -11,7 +11,11 @@ enum Api {
     private static let session: URLSession = {
         let c = URLSessionConfiguration.default
         c.timeoutIntervalForRequest = 25
-        c.httpAdditionalHeaders = ["User-Agent": "ElpriserIOS/1.0 (+https://elpriser.org)", "Accept": "application/json"]
+        // Versionen står i User-Agent, så serveren kan tælle kald pr. version (ingen id, se functions/_usage.js).
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = info?["CFBundleVersion"] as? String ?? "0"
+        c.httpAdditionalHeaders = ["User-Agent": "ElpriserIOS/\(version) (\(build)) (+https://elpriser.org)", "Accept": "application/json"]
         return URLSession(configuration: c)
     }()
 

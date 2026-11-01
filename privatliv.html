@@ -25,10 +25,10 @@
 <main>
   <p class="muted"><a href="/">← elpriser.org</a></p>
   <h1>Privatlivspolitik</h1>
-  <p class="muted">Gælder Elpriser-appen til Android og hjemmesiden elpriser.org. Senest opdateret 7. oktober 2026.</p>
+  <p class="muted">Gælder Elpriser-appen til Android og hjemmesiden elpriser.org. Senest opdateret 1. november 2026.</p>
 
   <div class="card">
-    <strong>Kort fortalt:</strong> Vi har ingen brugerkonti, ingen reklamer og ingen analyseværktøjer. Appen spørger kun om din position, når du selv trykker på “Find mit netselskab”. Positionen bruges én gang til at finde dit netselskab og gemmes aldrig — hverken i appen eller hos os. Kun netselskabets navn gemmes, på din egen enhed.
+    <strong>Kort fortalt:</strong> Vi har ingen brugerkonti, ingen reklamer og ingen analyseværktøjer fra tredjepart; vi tæller kun anonymt, hvor mange kald der kommer fra hvilken version af appen. Appen spørger kun om din position, når du selv trykker på “Find mit netselskab”. Positionen bruges én gang til at finde dit netselskab og gemmes aldrig — hverken i appen eller hos os. Kun netselskabets navn gemmes, på din egen enhed.
   </div>
 
   <h2>Hvem er ansvarlig?</h2>
@@ -48,6 +48,7 @@
 
   <h2>Hvad serveren ser</h2>
   <p>Når appen henter priser, modtager vores server (hostet af Cloudflare) en almindelig forespørgsel med din IP-adresse, som i netværkets tekniske logs bruges til drift og misbrugsbeskyttelse. Forespørgslen indeholder prisområde og netselskab (så vi kan beregne dine priser), men ikke dit navn, din e-mail eller et enheds-id. Vi bruger ikke oplysningerne til profilering eller reklame og videregiver dem ikke.</p>
+  <p>Appen (og de scripts til Shelly og Home Assistant, som vi udleverer på elpriser.org/automation) oplyser sit versionsnummer i forespørgslen. Vores server tæller anonymt, hvor mange kald der kommer fra hvilken platform og version, til hvilket prisområde og med hvilken strategi, og om kaldet lykkedes. Tællingen indeholder ikke IP-adresse, enheds-id, netselskab eller position og kan ikke føres tilbage til en person eller en enhed. Vi bruger den til at se, hvilke versioner der er i brug, og om noget fejler.</p>
 
   <h2>Tredjeparter</h2>
   <ul>

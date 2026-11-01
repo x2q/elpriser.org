@@ -4871,7 +4871,7 @@ sensor:
   - platform: rest
     name: "${entityId}_plan"          # entity: sensor.${entityId}_plan
     unique_id: ${entityId}_plan
-    resource: "${scheduleUrl}"
+    resource: "${scheduleUrl}&client=ha-plan-2"   # client= fortæller kun, hvilken version af denne YAML der bruges
     value_template: "{{ value_json.date }}"
     json_attributes:
       - schedule
@@ -4994,7 +4994,7 @@ automation:
 // døgnet ÉN gang, husker den (også efter genstart) og afgør selv, hvad der skal
 // ske hver time — uden at spørge elpriser.org igen. Det er ca. ét kald i døgnet
 // i stedet for flere hundrede.
-var API = "${scheduleUrl}";
+var API = "${scheduleUrl}&client=shelly-script-2";  // client= fortæller kun, hvilken version af dette script der bruges
 var OUTPUT_ID = 0;  // Shelly output nummer (0 = første relæ)
 var TICK_MS = 60000;                      // lokalt tjek hvert minut — bruger intet netværk
 var PLAN_MAX_AGE_MS = 23 * 3600 * 1000;   // en plan er friskere end dette; ellers hentes en ny
