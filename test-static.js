@@ -1648,7 +1648,7 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // (v6: the four EU country links.)
   assert.ok(/CITY_SSR_VERSION = 'city-ssr-v9'/.test(ROUTES), 'city-ssr-v9');
   // /prognose shares the header and footer too (v4: the four EU country links).
-  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v7'/.test(ROUTES), 'prognose-ssr-v7');
+  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v8'/.test(ROUTES), 'prognose-ssr-v8');
 });
 
 

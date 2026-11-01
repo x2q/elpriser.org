@@ -76,11 +76,11 @@ ok(mains.length === 1 && mains[0].startsWith('<main data-page="prognose" class="
 // Structured data parses: the shared WebApplication and WebSite, the breadcrumb, and this page's FAQ — nothing invented.
 const lds = [...raw.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => m[1]);
 let parsed = []; try { parsed = lds.map(x => JSON.parse(x)); } catch (e) { fails.push(`/prognose: JSON-LD kan ikke læses: ${e.message}`); }
-ok(parsed.map(x => x['@type']).sort().join() === 'BreadcrumbList,FAQPage,WebApplication,WebSite', '/prognose: JSON-LD er WebApplication, WebSite, BreadcrumbList og FAQPage', parsed.map(x => x['@type']).join());
+ok(parsed.map(x => x['@type']).sort().join() === 'BreadcrumbList,FAQPage,WebApplication,WebPage,WebSite', '/prognose: JSON-LD er WebApplication, WebSite, WebPage (med dateModified), BreadcrumbList og FAQPage', parsed.map(x => x['@type']).join());
 ok(!TEN.test(lds.join(' ')), '/prognose: ingen 10 døgn i JSON-LD');
 const faq = parsed.find(x => x['@type'] === 'FAQPage') || { mainEntity: [] };
 const visibleQ = [...h.matchAll(/<summary[^>]*>([^<]*)<svg/g)].map(m => m[1]);
-ok(faq.mainEntity.length === 3 && faq.mainEntity.map(q => q.name).join('|') === visibleQ.join('|'), '/prognose: FAQPage-spørgsmålene er de synlige', visibleQ.join('|'));
+ok(faq.mainEntity.length === 5 && faq.mainEntity.map(q => q.name).join('|') === visibleQ.join('|'), '/prognose: FAQPage-spørgsmålene (tre faste, to levende) er de synlige', visibleQ.join('|'));
 ok((parsed.find(x => x['@type'] === 'BreadcrumbList').itemListElement || []).map(x => x.name).join('>') === 'Elpriser>Elpriser prognose 7 dage', '/prognose: brødkrummer Elpriser › Elpriser prognose 7 dage');
 
 // ── The head above the screen ─────────────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ ok(txt(h.match(/<p class="mt-2 text-sm[^"]*">Nu og[\s\S]*?<\/p>/)[0]) === 'Nu og
 // ── The screen, drawn for DK1, Din pris, no net, seven days ───────────────────────────────────
 ok(h.includes('<div class="pris" data-period="7" data-view="din" data-key="DK1|din|"'), '/prognose: Pris-skærmen er tegnet for DK1, Din pris, uden netselskab, på 7 døgn');
 ok(!h.includes('<!--SSR_PRIS-->'), '/prognose: pladsholderen er erstattet');
-ok(upstream.filter(u => u.startsWith('/api/forecast')).join() === '/api/forecast?area=DK1&mode=inkl_alt', '/prognose: ét kald til prognosen, DK1 inkl alt som på forsiden', upstream.join());
+ok(upstream.filter(u => u.startsWith('/api/forecast')).sort().join() === '/api/forecast?area=DK1&mode=inkl_alt,/api/forecast?area=DK2&mode=inkl_alt', '/prognose: ét kald pr. område til prognosen, DK1 og DK2 inkl alt som på forsiden', upstream.join());
 ok([...h.matchAll(/<button type="button" role="tab" aria-selected="(\w+)" data-pris-period="(\d)">([^<]*)</g)].map(m => `${m[2]}:${m[1]}:${m[3]}`).join('|') === '2:false:2 døgn|5:false:5 døgn|7:true:7 døgn', '/prognose: pillen er 2 døgn | 5 døgn | 7 døgn med 7 valgt');
 const c7 = h.slice(h.indexOf('pris-card pp7'), h.indexOf('pris-tiles pp2'));
 // From six hours before now (the whole first day at hour 0) to the end of the seven days the feed has.
@@ -151,6 +151,44 @@ ok(/Billigste dag: (i dag|i morgen|\S+) \(\d,\d\d–\d,\d\d kr\/kWh\)/.test(sev)
 ok(!/NaN|undefined|Infinity|null/.test(sev + txt(sums[0][4]) + txt(sums[1][4])) && !TEN.test(txt(sums.map(m => m[0]).join(' '))) && !/\d\s*%/.test(txt(sums.map(m => m[0]).join(' '))), '/prognose: resuméerne har ingen NaN/undefined, ingen "10 døgn" og ingen procenttal');
 ok(h.indexOf('pris-tiles pp7') < h.indexOf('pris-sum pp2') && h.indexOf('pris-sum pp7') < h.indexOf('class="pris-days"'), '/prognose: resuméet står under diagrammet/flisen og over "Dag for dag"');
 ok(/<p class="pris-dt">Ugen i korte træk<\/p>/.test(h) && !/class="pris-sum/.test(bare(home.page) + bare(dk1.page)), '/ og /dk1: intet resumé');
+
+// ── The forecast in words: an answer block, live FAQ questions and dateModified, from the same days as the screen ──
+const answer = (h.match(/<section class="pris-answer[^>]*id="fcAnswer"[^>]*>([\s\S]*?)<\/section>/) || [])[1] || '';
+const at = txt(answer);
+ok(h.indexOf('id="fcAnswer"') > h.indexOf('<h1 ') && h.indexOf('id="fcAnswer"') < h.indexOf('<div class="pris"'), '/prognose: svarsætningen står under h1 og leadet og over Pris-skærmen');
+ok(/^Prognose for de næste 7 døgn: Elprisen i Vestdanmark \(DK1\) ligger mellem \d,\d\d og \d,\d\d kr\/kWh, billigst (i dag|i morgen|\S+) kl\. \d\d–\d\d og dyrest (i dag|i morgen|\S+) kl\. \d\d–\d\d\. I Østdanmark \(DK2\) ligger den mellem \d,\d\d og \d,\d\d kr\/kWh, billigst /.test(at), '/prognose: svarsætningen har 7 døgn, DK1 og DK2 med interval, billigste og dyreste time', at);
+ok(/Priserne er inkl\. Energinets tariffer, elafgift og moms, men uden netselskabets nettarif\. Faktiske børspriser til og med i dag; resten er prognose\./.test(at), '/prognose: svarsætningen siger, hvad prisen indeholder og hvor længe det er faktiske priser', at);
+ok(!/NaN|undefined|null|Infinity/.test(at) && !TEN.test(at) && /<time datetime="[^"]+">/.test(answer) && /Prognosen er lavet <time/.test(answer), '/prognose: svarsætningen har ingen NaN/10 døgn og siger synligt, hvornår prognosen er lavet', answer);
+// The numbers are the screen's: the range in the sentence is the DK1 feed's cheapest and dearest hour over its first seven days.
+const f1 = forecast('DK1', 'inkl_alt').days.slice(0, 7).flatMap(d => d.prices.map(p => p.price));
+const kr = v => v.toFixed(2).replace('.', ',');
+ok(at.includes(`mellem ${kr(Math.min(...f1))} og ${kr(Math.max(...f1))} kr/kWh`), '/prognose: DK1-intervallet i sætningen er feedets laveste og højeste pris over de første 7 døgn', `${kr(Math.min(...f1))}–${kr(Math.max(...f1))}`);
+const live = faq && faq.mainEntity ? faq.mainEntity.slice(0, 2) : [];
+ok(live.map(q => q.name).join('|') === 'Hvad bliver elprisen i morgen?|Hvad bliver elprisen den næste uge?', '/prognose: de to levende spørgsmål står først i FAQPage', live.map(q => q.name).join('|'));
+ok(/^I morgen \(\S+ den \d+\. \S+\) ligger elprisen i Vestdanmark \(DK1\) mellem \d,\d\d og \d,\d\d kr\/kWh, billigst kl\. \d\d–\d\d og dyrest kl\. \d\d–\d\d, og i Østdanmark/.test(live[0] && live[0].acceptedAnswer.text), '/prognose: svaret på "i morgen" nævner ikke dagen igen i hver time', live[0] && live[0].acceptedAnswer.text);
+ok(live.every(q => h.includes(`<div class="px-5 pb-4 text-gray-600 dark:text-gray-400 leading-relaxed">${q.acceptedAnswer.text}</div>`)), '/prognose: FAQPage-svarene til de levende spørgsmål står ordret på siden');
+ok(/^I morgen /.test(live[0].acceptedAnswer.text) && /Det er en prognose; de faktiske børspriser offentliggøres omkring kl\. 13\./.test(live[0].acceptedAnswer.text), '/prognose: i morgen er en prognose i fixturen og svaret siger det');
+const wp = parsed.find(x => x['@type'] === 'WebPage');
+ok(wp && wp.url === 'https://elpriser.org/prognose' && wp.inLanguage === 'da' && wp.dateModified && !isNaN(Date.parse(wp.dateModified)), '/prognose: WebPage-data med url, sprog og læsbar dateModified', JSON.stringify(wp));
+ok(!/SSR_FC_ANSWER|SSR_FC_FAQ/.test(raw), '/prognose: ingen pladsholdere i svaret');
+// DK2 down: the page still answers for DK1 (and does not say anything about DK2), and DK1 down: no answer and no cached render.
+store.clear(); upstream = [];
+const realFetch = globalThis.fetch;
+globalThis.fetch = async u => String(u).includes('area=DK2') ? new Response('{}', { status: 503 }) : realFetch(u);
+const noDk2 = await get('/prognose');
+const a2 = txt((noDk2.page.match(/id="fcAnswer"[^>]*>([\s\S]*?)<\/section>/) || [])[1] || '');
+ok(/Vestdanmark \(DK1\) ligger mellem/.test(a2) && !/DK2/.test(a2) && !/NaN|undefined/.test(a2), '/prognose: uden DK2-feed svarer siden kun for DK1', a2);
+globalThis.fetch = realFetch;
+store.clear(); downFeed = true;
+const none = await get('/prognose');
+ok(!/id="fcAnswer"/.test(none.page) && !/SSR_FC_/.test(none.body) && store.size === 0, '/prognose: uden feed ingen svarsætning, ingen pladsholder og intet i cachen');
+downFeed = false;
+// /dk1 and /dk2: the area's own sentence with a link to /prognose; the net pages and the front page have none.
+const dkp = txt((dk1.page.match(/<header class="max-w-2xl[\s\S]*?<\/header>/) || [''])[0]);
+ok(/Prognose for de næste 7 døgn: elprisen i Vestdanmark \(DK1\) ligger mellem \d,\d\d og \d,\d\d kr\/kWh, billigst (i dag|i morgen|\S+) kl\. \d\d–\d\d og dyrest/.test(dkp) && dk1.page.includes('<a href="/prognose" class="text-brand-500 underline">Se hele prognosen time for time</a>'), '/dk1: sætningen om DK1s prognose med link til /prognose', dkp);
+const dk2 = await get('/dk2');
+ok(/elprisen i Østdanmark \(DK2\) ligger mellem/.test(txt((dk2.page.match(/<header class="max-w-2xl[\s\S]*?<\/header>/) || [''])[0])), '/dk2: sætningen om DK2s prognose');
+ok(!/Prognose for de næste/.test(home.page), '/: forsiden har ikke prognosesætningen');
 
 console.log(`${pass} beståede, ${fails.length} fejl`);
 fails.forEach(f => console.log('  ✗ ' + f));

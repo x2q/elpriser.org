@@ -1430,6 +1430,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <p class="page-eyebrow">Forventede elpriser · <span id="fcWhere">DK1 Vest</span></p>
     <h1 class="page-title">Elprisprognose</h1>
     <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Nu og <span id="fcPeriodDays">7</span> døgn frem, time for time: faktiske børspriser, så langt de er afregnet, og en prognose for resten. Jo længere frem, jo mere usikker er den.</p>
+    <!--SSR_FC_ANSWER-->
   </div>
   <div class="pris-page" data-pris-mount><!--SSR_PRIS--></div>
   <div class="max-w-3xl mx-auto px-2 sm:px-4 pt-6 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -1443,6 +1444,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <section class="mt-10">
       <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Ofte stillede spørgsmål om elprisprognosen</h2>
       <div class="space-y-3 text-sm">
+        <!--SSR_FC_FAQ-->
         <details class="group faq">
           <summary class="px-5 py-3 font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">Hvornår kommer morgendagens elpriser?<svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></summary>
           <div class="px-5 pb-4 text-gray-600 dark:text-gray-400 leading-relaxed">Morgendagens spotpriser fastsættes i day-ahead-auktionen på elbørsen Nord Pool og offentliggøres dagligt omkring kl. 13. Indtil da viser prognosen de forventede priser — og skifter automatisk til de faktiske børspriser, så snart de findes.</div>

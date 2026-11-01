@@ -1841,13 +1841,139 @@ function priceNowText(mode, hh, price, area, net){
   return '';
 }
 
+// ═══ The forecast in words (server only) ═══
+// A search engine or an answer engine wants one dated sentence with the numbers in it, not a chart and a list of
+// bullets, so /prognose, /dk1 and /dk2 carry one, written from the very days the Pris screen draws (prisDays) and
+// from nothing else — the feed's "inkl_alt" without a net company, i.e. Energinet's tariffs, elafgift and moms but
+// not the local nettarif, and the sentence says so. It is not in the browser's copy of the screen: the browser
+// redraws the screen for the visitor's own area and net, the sentence stays the same for both areas.
+const FC_WHERE = { DK1: 'Vestdanmark (DK1)', DK2: 'Østdanmark (DK2)' };
+const FC_INCL = 'inkl. Energinets tariffer, elafgift og moms, men uden netselskabets nettarif';
+
+/** The days of `fc` (at most `max`, from today, no holes) with their lowest and highest hourly price, the hour of
+ *  each, the day mean and whether the day is settled. Days without a single price are left out. */
+function forecastFacts(fc, todayDk, max) {
+  const out = [];
+  prisDays((fc && fc.days) || [], todayDk, max).forEach((d, i) => {
+    let lo = null, hi = null, loH = 0, hiH = 0, sum = 0, n = 0;
+    d.ps.forEach((v, h) => {
+      if (typeof v !== 'number' || !isFinite(v)) return;
+      sum += v; n++;
+      if (lo == null || v < lo) { lo = v; loH = h; }
+      if (hi == null || v > hi) { hi = v; hiH = h; }
+    });
+    if (n) out.push({ i, date: d.date, real: d.real, lo, loH, hi, hiH, avg: sum / n });
+  });
+  return out;
+}
+const fcDay = (x) => x.i === 0 ? 'i dag' : x.i === 1 ? 'i morgen' : PRIS_I18N.da.wd[new Date(x.date + 'T12:00:00Z').getUTCDay()];
+const fcHour = (h) => `kl. ${prisHH(h)}–${prisHH((h + 1) % 24)}`;
+/** The cheapest and the dearest hour across `days`; a tie goes to the earlier day. */
+function fcExtremes(days) {
+  let lo = days[0], hi = days[0];
+  for (const x of days) { if (x.lo < lo.lo) lo = x; if (x.hi > hi.hi) hi = x; }
+  return { lo, hi };
+}
+/** "mellem 1,45 og 3,11 kr/kWh, billigst lørdag kl. 04–05 og dyrest i morgen kl. 18–19" for the `days` given. */
+function fcClause(days) {
+  const { lo, hi } = fcExtremes(days);
+  if (lo.lo === hi.hi) return `${prisNum(lo.lo, 2)} kr/kWh hele perioden`;
+  // One day is named already by the sentence around it, so its hours are not given a day again.
+  const one = days.length === 1;
+  return `mellem ${prisNum(lo.lo, 2)} og ${prisNum(hi.hi, 2)} kr/kWh, billigst ${one ? '' : fcDay(lo) + ' '}${fcHour(lo.loH)} og dyrest ${one ? '' : fcDay(hi) + ' '}${fcHour(hi.hiH)}`;
+}
+/** The last day of the unbroken run of settled days from today, or null when today is not settled. */
+function fcSettledThrough(days) {
+  let last = null;
+  for (const x of days) { if (!x.real) break; last = x; }
+  return last;
+}
+/** "Faktiske børspriser til og med i morgen; resten er prognose." */
+function fcSettledText(days) {
+  const last = fcSettledThrough(days);
+  if (!last) return 'Alle priser er prognose.';
+  if (last.i === days.length - 1) return 'Alle priser er faktiske børspriser.';
+  return `Faktiske børspriser til og med ${fcDay(last)}; resten er prognose.`;
+}
+/** When the model run behind the days was made, in Danish: "1. november kl. 14:13" — the date alone when the feed has no clock time. */
+function fcMade(fc) {
+  const m = fc && fc.model, iso = m && m.generatedAt, day = (m && m.generated) || (fc && fc.generated);
+  const d = iso ? new Date(iso) : null;
+  if (d && !isNaN(d)) {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Copenhagen', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(d).map(x => [x.type, x.value]));
+    return { iso: d.toISOString(), text: `${+p.day}. ${DA_MONTHS[+p.month - 1]} kl. ${p.hour}:${p.minute}` };
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(day || '')) { const x = new Date(day + 'T12:00:00Z'); return { iso: day, text: `${x.getUTCDate()}. ${DA_MONTHS[x.getUTCMonth()]}` }; }
+  return null;
+}
+
+/** The answer block on /prognose: one dated sentence for both areas, then when the forecast was made. '' without data. */
+function prognoseAnswerHTML(fc1, fc2, todayDk) {
+  const d1 = forecastFacts(fc1, todayDk, 7), d2 = forecastFacts(fc2, todayDk, 7);
+  if (!d1.length) return '';
+  const lead = d1.length > 1 ? `Prognose for de næste ${d1.length} døgn:` : 'Prognose for i dag:';
+  let s = `<strong>${lead}</strong> Elprisen i ${FC_WHERE.DK1} ligger ${fcClause(d1)}`;
+  s += d2.length ? `. I ${FC_WHERE.DK2} ligger den ${fcClause(d2)}.` : '.';
+  s += ` Priserne er ${FC_INCL}. ${fcSettledText(d1)}`;
+  const made = fcMade(fc1);
+  return `<section class="pris-answer mt-3" id="fcAnswer" aria-label="Prognosen kort fortalt">`
+    + `<p class="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">${s}</p>`
+    + (made ? `<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Prognosen er lavet <time datetime="${made.iso}">${made.text}</time> og opdateres dagligt.</p>` : '')
+    + `</section>`;
+}
+
+/** The live questions of the /prognose FAQ, as {q, a} with plain-text answers (the page and its FAQPage data say the same). */
+function prognoseFaq(fc1, fc2, todayDk) {
+  const d1 = forecastFacts(fc1, todayDk, 7), d2 = forecastFacts(fc2, todayDk, 7);
+  const out = [];
+  const tm1 = d1.find(x => x.i === 1), tm2 = d2.find(x => x.i === 1);
+  if (tm1) {
+    const dt = new Date(tm1.date + 'T12:00:00Z');
+    const settled = tm1.real && (!tm2 || tm2.real) ? 'Det er faktiske børspriser fra Nord Pool.'
+      : !tm1.real && (!tm2 || !tm2.real) ? 'Det er en prognose; de faktiske børspriser offentliggøres omkring kl. 13.' : '';
+    out.push({ q: 'Hvad bliver elprisen i morgen?',
+      a: `I morgen (${PRIS_I18N.da.wd[dt.getUTCDay()]} den ${dt.getUTCDate()}. ${DA_MONTHS[dt.getUTCMonth()]}) ligger elprisen i ${FC_WHERE.DK1} ${fcClause([tm1])}`
+        + (tm2 ? `, og i ${FC_WHERE.DK2} ${fcClause([tm2])}` : '') + `. Priserne er ${FC_INCL}. ${settled}`.trimEnd() });
+  }
+  if (d1.length > 2) {
+    out.push({ q: 'Hvad bliver elprisen den næste uge?',
+      a: `I de næste ${d1.length} døgn ligger elprisen i ${FC_WHERE.DK1} ${fcClause(d1)}`
+        + (d2.length ? `, og i ${FC_WHERE.DK2} ${fcClause(d2)}` : '') + `. Priserne er ${FC_INCL}. ${fcSettledText(d1)} Jo længere frem, jo mere usikker er prognosen.` });
+  }
+  return out;
+}
+const FAQ_CHEVRON = '<svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>';
+function faqDetailsHTML(items) {
+  return items.map(x => `<details class="group faq">
+          <summary class="px-5 py-3 font-medium text-gray-800 dark:text-gray-200 cursor-pointer select-none list-none flex items-center justify-between">${prisEsc(x.q)}${FAQ_CHEVRON}</summary>
+          <div class="px-5 pb-4 text-gray-600 dark:text-gray-400 leading-relaxed">${prisEsc(x.a)}</div>
+        </details>`).join('\n        ');
+}
+/** The page's own FAQPage data with the live questions in front of the static ones; the page unchanged if it cannot be read. */
+function withLiveFaqLd(html, items) {
+  return html.replace(/<script type="application\/ld\+json">(\s*\{[^<]*?"@type":\s*"FAQPage"[^<]*?)<\/script>/, (whole, body) => {
+    try {
+      const ld = JSON.parse(body);
+      ld.mainEntity = items.map(x => ({ '@type': 'Question', name: x.q, acceptedAnswer: { '@type': 'Answer', text: x.a } })).concat(ld.mainEntity);
+      return `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`;
+    } catch { return whole; }
+  });
+}
+/** One sentence for /dk1 and /dk2: the area's own forecast, with a link to the whole page. '' without data. */
+function areaForecastSentence(fc, area, todayDk) {
+  const d = forecastFacts(fc, todayDk, 7);
+  if (d.length < 2) return '';
+  return `Prognose for de næste ${d.length} døgn: elprisen i ${FC_WHERE[area]} ligger ${fcClause(d)} (${FC_INCL}). ${fcSettledText(d)} `
+    + `<a href="/prognose" class="text-brand-500 underline">Se hele prognosen time for time</a>.`;
+}
+
 /**
  * SSR intro for the 18 price pages: a real H1, a dated answer sentence with
  * the live price, per-net coverage prose + current tariff rates, and a
  * PriceSpecification JSON-LD block. This is what makes each price URL carry
  * unique, quotable content for crawlers and answer engines.
  */
-async function buildPricesIntro(context, area, net) {
+async function buildPricesIntro(context, area, net, fcPromise) {
   const origin = new URL(context.request.url).origin;
   const fmt = (p) => p == null ? null : p.toFixed(2).replace('.', ',');
   const areaLabel = AREA_LABEL[area];
@@ -1858,9 +1984,10 @@ async function buildPricesIntro(context, area, net) {
   const mode = net ? 'net_inkl_alt' : 'inkl_alt';
   const glnQ = net ? `&gln=${net.gln}` : '';
 
-  const [now, tariff] = await Promise.all([
+  const [now, tariff, fc] = await Promise.all([
     fetch(`${origin}/api/now?area=${area}&mode=${mode}${glnQ}`).then(r => r.ok ? r.json() : null).catch(() => null),
     net ? fetch(`${origin}/api/raw/tariff?gln=${net.gln}`).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null),
+    net ? null : fcPromise,
   ]);
 
   const h1 = net
@@ -1884,6 +2011,9 @@ async function buildPricesIntro(context, area, net) {
     if (towns.length) ps.push(`Byer i området: ${towns.map(c => `<a href="/elpris/${c.slug}" class="text-brand-500 underline">${c.name}</a>`).join(', ')}.`);
   } else {
     ps.push(`${area} dækker ${region}. Priserne fastsættes dagen i forvejen på elbørsen Nord Pool og opdateres her time for time — vælg dit netselskab øverst på siden for den præcise pris inkl. din lokale nettarif.`);
+    // The area's forecast in one dated sentence (the net pages have their own all-in price and no such sentence).
+    const fcs = fc && areaForecastSentence(fc, area, danishClock().todayDk);
+    if (fcs) ps.push(fcs);
   }
 
   const jsonLd = (now && now.price != null) ? `<script type="application/ld+json">
@@ -2079,7 +2209,7 @@ async function renderHomepage(context) {
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
 const ZONE_SSR_VERSION = 'zone-ssr-v13';
 const CITY_SSR_VERSION = 'city-ssr-v9';
-const PROGNOSE_SSR_VERSION = 'prognose-ssr-v7';
+const PROGNOSE_SSR_VERSION = 'prognose-ssr-v8';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);
@@ -2246,10 +2376,8 @@ async function renderSPA(context, pathname, meta, opts = {}) {
     const { area, net } = opts.pricesIntro;
     // The Pris screen for the URL's own view — Din pris, which is the net
     // company's all-in price on a net page and the area's otherwise.
-    const [intro, fc] = await Promise.all([
-      buildPricesIntro(context, area, net),
-      fetchNetForecast(context, area, net),
-    ]);
+    const fcP = fetchNetForecast(context, area, net);
+    const [intro, fc] = await Promise.all([buildPricesIntro(context, area, net, fcP), fcP]);
     html = html.replace('<!--SSR_PRICES_INTRO-->', intro);
     if (fc) html = html.replace('<!--SSR_PRIS-->', prisScreen(fc, area, net));
     html = withNetChip(html, net ? net.name : area, area);
@@ -2307,8 +2435,22 @@ async function renderSPA(context, pathname, meta, opts = {}) {
     // net company chosen, seven days) by the same prisScreen the price pages use; the page head,
     // the two text blocks and the FAQ are in the template. The browser redraws it from the visitor's
     // own area and net, exactly as on the front page.
-    const fc = await fetchNetForecast(context, 'DK1', null);
+    const [fc, fc2] = await Promise.all([fetchNetForecast(context, 'DK1', null), fetchNetForecast(context, 'DK2', null)]);
     if (fc) html = html.replace('<!--SSR_PRIS-->', () => prisScreen(fc, 'DK1', null, PRIS_FC));
+    // The forecast in words, for both areas, from the same days; the questions and FAQPage data say the same, and
+    // the page says when the model run was made (visibly and as dateModified). Without a feed the places stay empty.
+    const { todayDk } = danishClock();
+    const faq = fc ? prognoseFaq(fc, fc2, todayDk) : [];
+    html = html.replace('<!--SSR_FC_ANSWER-->', () => (fc ? prognoseAnswerHTML(fc, fc2, todayDk) : ''))
+      .replace('<!--SSR_FC_FAQ-->', () => faqDetailsHTML(faq));
+    if (fc) {
+      html = withLiveFaqLd(html, faq);
+      const made = fcMade(fc);
+      const page = { '@context': 'https://schema.org', '@type': 'WebPage', name: meta.title, description: meta.description,
+        url: pageUrl, inLanguage: 'da', isPartOf: { '@type': 'WebSite', name: 'elpriser.org', url: 'https://elpriser.org' },
+        dateModified: made ? made.iso : new Date().toISOString() };
+      html = html.replace('</head>', () => `  <script type="application/ld+json">${JSON.stringify(page).replace(/</g, '\\u003c')}</script>\n</head>`);
+    }
     if (opts.done) opts.done.full = !!fc;
   }
   // The foreign-area pages are served in their country's language, so the document has
