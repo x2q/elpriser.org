@@ -347,7 +347,7 @@ async function main() {
   // no net chip, app button, Danish menu, tab bar or net dialog.
   for (const [p, lang, unit] of [['/no/strompris', 'nb', 'øre'], ['/sv/elpris', 'sv', 'öre'], ['/fi/sahkon-hinta', 'fi', 'snt'], ['/nl/stroomprijs', 'nl', 'cent'],
       ['/de/strompreis', 'de', 'ct'], ['/fr/prix-electricite', 'fr', 'c€'], ['/pl/ceny-pradu', 'pl', 'gr'], ['/it/prezzo-luce', 'it', 'c€'],
-      ['/at/strompreis', 'de', 'ct'], ['/ch/strompreis', 'de', 'ct'], ['/be/stroomprijs', 'nl', 'cent'], ['/be/prix-electricite', 'fr', 'c€'], ['/ie/electricity-price', 'en', 'c'], ['/cz/ceny-elektriny', 'cs', 'ct'], ['/hr/cijena-struje', 'hr', 'c'], ['/rs/cena-struje', 'sr-Latn', 'c€'], ['/norden', 'da', null]]) {
+      ['/at/strompreis', 'de', 'ct'], ['/ch/strompreis', 'de', 'ct'], ['/be/stroomprijs', 'nl', 'cent'], ['/be/prix-electricite', 'fr', 'c€'], ['/ie/electricity-price', 'en', 'c'], ['/cz/ceny-elektriny', 'cs', 'ct'], ['/hr/cijena-struje', 'hr', 'c'], ['/rs/cena-struje', 'sr-Latn', 'c€'], ['/me/cijena-struje', 'sr-ME', 'c'], ['/norden', 'da', null]]) {
     const r = p === '/sv/elpris' ? se3 : await get(p);
     const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<dialog[\s\S]*?<\/dialog>/g, '');
     const title = one(r.body, /<title>([^<]*)<\/title>/), desc = one(r.body, /<meta name="description" content="([^"]*)"/);
@@ -367,8 +367,8 @@ async function main() {
   // wording, the source, the licence and the note that the data were changed. They need the Spark job (scripts/eu_prices) to have written KV:
   // without data the page still answers 200 but has no screen.
   const llmsTxt = (await get('/llms.txt')).body;
-  for (const [p, lang] of [['/de/strompreis', 'de'], ['/fr/prix-electricite', 'fr'], ['/pl/ceny-pradu', 'pl'], ['/it/prezzo-luce', 'it'], ['/at/strompreis', 'de'], ['/ch/strompreis', 'de'], ['/be/stroomprijs', 'nl'], ['/be/prix-electricite', 'fr'], ['/ie/electricity-price', 'en'], ['/cz/ceny-elektriny', 'cs'], ['/hr/cijena-struje', 'hr'], ['/rs/cena-struje', 'sr-Latn']]) {
-    const r = await get(p), entsoe = ['/ie/electricity-price', '/hr/cijena-struje', '/rs/cena-struje'].includes(p);
+  for (const [p, lang] of [['/de/strompreis', 'de'], ['/fr/prix-electricite', 'fr'], ['/pl/ceny-pradu', 'pl'], ['/it/prezzo-luce', 'it'], ['/at/strompreis', 'de'], ['/ch/strompreis', 'de'], ['/be/stroomprijs', 'nl'], ['/be/prix-electricite', 'fr'], ['/ie/electricity-price', 'en'], ['/cz/ceny-elektriny', 'cs'], ['/hr/cijena-struje', 'hr'], ['/rs/cena-struje', 'sr-Latn'], ['/me/cijena-struje', 'sr-ME']]) {
+    const r = await get(p), entsoe = ['/ie/electricity-price', '/hr/cijena-struje', '/rs/cena-struje', '/me/cijena-struje'].includes(p);
     const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<!--[\s\S]*?-->/g, '');
     const main = page.slice(page.indexOf('<main'), page.indexOf('</main>'));
     check(/<div class="pris" data-period="2"/.test(main) && !/data-pris-period|pris-period/.test(main), `${p}: Pris-skærmen er tegnet, uden periodeknap`, 'kører Spark-jobbet (eu-prices-*)?');
@@ -388,7 +388,7 @@ async function main() {
     check(/Ireland and Northern Ireland trade as one market/.test(ie.body) && /ENTSO-E Transparency Platform/.test(ie.body) && /"sameAs":"https:\/\/www\.wikidata\.org\/wiki\/Q26"/.test(ie.body), '/ie/electricity-price: siger at SEM er Irland og Nordirland, krediterer ENTSO-E og har spatialCoverage med begge');
     const be = [await get('/be/stroomprijs'), await get('/be/prix-electricite')];
     check(/<html lang="nl"/.test(be[0].body) && /<html lang="fr"/.test(be[1].body) && be[0].body.includes('data-key="be"') && be[1].body.includes('data-key="be"'), '/be/…: to sider, hollandsk og fransk, af den ene zone be');
-    for (const z of ['de', 'fr', 'pl', 'it-n', 'at', 'ch', 'be', 'ie', 'cz', 'hr', 'rs']) {
+    for (const z of ['de', 'fr', 'pl', 'it-n', 'at', 'ch', 'be', 'ie', 'cz', 'hr', 'rs', 'me']) {
       const a = await get('/api/nordic?zone=' + z);
       let j = {}; try { j = JSON.parse(a.body); } catch {}
       // 200 once the Spark job has written the key; a 404 "no prices available" before that.
