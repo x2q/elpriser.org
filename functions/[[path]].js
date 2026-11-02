@@ -2748,7 +2748,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v82');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v83');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -2797,9 +2797,9 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v18';
-const CITY_SSR_VERSION = 'city-ssr-v14';
-const PROGNOSE_SSR_VERSION = 'prognose-ssr-v12';
+const ZONE_SSR_VERSION = 'zone-ssr-v19';
+const CITY_SSR_VERSION = 'city-ssr-v15';
+const PROGNOSE_SSR_VERSION = 'prognose-ssr-v13';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);

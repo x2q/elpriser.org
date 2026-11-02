@@ -1742,20 +1742,20 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // v75: the footer and the net dialog list Tyskland, Frankrig, Polen and Italien.
   // v77: one place chip and one place dialog (Land, then net or price zone) replace the globe, the net chip's dialog and the country picker.
   // v81: the footer and the place dialog list the countries of PRIS_COUNTRIES (Østrig, Schweiz, Belgien, Irland joined).
-  assert.ok(/homepage-ssr-v82/.test(ROUTES), 'homepage-ssr-v82');
+  assert.ok(/homepage-ssr-v83/.test(ROUTES), 'homepage-ssr-v83');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
   // (v8: the shared Pris block changed with PRIS_FC.)
   // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
   // (v10: the four EU price pages joined, the Pris block gained PRIS_ACT and the footer the four links.)
   // (v17: per-country i18n (prisPageL), Austria, Switzerland, Belgium and Ireland joined.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v18'/.test(ROUTES), 'zone-ssr-v18');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v19'/.test(ROUTES), 'zone-ssr-v19');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
   // (v13: the four new country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v14'/.test(ROUTES), 'city-ssr-v14');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v15'/.test(ROUTES), 'city-ssr-v15');
   // /prognose shares the header and footer too (v4: the four EU country links).
-  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v12'/.test(ROUTES), 'prognose-ssr-v12');
+  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v13'/.test(ROUTES), 'prognose-ssr-v13');
 });
 
 
@@ -2131,6 +2131,39 @@ test('cities: the generator writes data and API figures only — no ten-day hori
 });
 
 
+
+// ─── Google Play banner for Android visitors (Apple's is the apple-itunes-app meta, tested above) ───
+const BANNER_SRC = (INDEX.match(/<script>\n\/\/ Google Play banner for Android visitors[\s\S]*?<\/script>/) || [''])[0].replace(/^<script>|<\/script>$/g, '');
+test('app banner: one script, a text in every language a page can have, Android only', () => {
+  assert.ok(BANNER_SRC.length > 500 && INDEX.split('Google Play banner for Android visitors').length === 2, 'one banner script in index.html');
+  const langs = new Set(['da', ...Object.values(PRIS.PRIS_COUNTRIES).map(C => C.lang)]);
+  const T = require('node:vm').runInNewContext('(function(){' + BANNER_SRC.match(/var T=\{[\s\S]*?\n  \};/)[0] + ' return T;})()');
+  for (const l of langs) assert.ok(T[l] && T[l].length === 3 && T[l].every(s => s && s.length > 1), `banner text for ${l}`);
+  assert.ok(/\/Android\/i\.test\(navigator\.userAgent\)/.test(BANNER_SRC) && /display-mode: standalone/.test(BANNER_SRC) && /\^\\\/download/.test(BANNER_SRC), 'Android only, not in the installed web app, not on /download');
+  assert.ok(/play\.google\.com\/store\/apps\/details\?id=org\.elpriser\.app&hl=/.test(BANNER_SRC), 'links to the Play listing in the page language');
+  assert.ok(!/gtag|fetch\(|XMLHttpRequest|sendBeacon/.test(BANNER_SRC), 'no tracking or network call of its own');
+});
+test('app banner: shows on Android in the page language, not on iPhone, not on /download, not when closed', () => {
+  const run = (ua, pathname, lang, closedAt) => {
+    const made = [], kv = {}; if (closedAt) kv.appBannerClosed = String(closedAt);
+    const el = () => ({ style: {}, children: [], setAttribute() {}, appendChild(c) { this.children.push(c); }, remove() {}, offsetHeight: 56 });
+    const body = el(), doc = { readyState: 'complete', documentElement: { lang, classList: { contains: () => false } }, body,
+      getElementById: () => null, createElement: () => { const e = el(); made.push(e); return e; }, addEventListener() {} };
+    body.appendChild = c => made.push({ appended: c });
+    require('node:vm').runInNewContext(BANNER_SRC, { navigator: { userAgent: ua }, location: { pathname }, document: doc, matchMedia: () => ({ matches: false }),
+      localStorage: { getItem: k => kv[k] || null, setItem: (k, v) => { kv[k] = v; } }, Date, encodeURIComponent, setTimeout });
+    return { shown: made.some(m => m.appended), links: made.filter(e => e.href).map(e => e.href), texts: made.map(e => e.textContent).filter(Boolean) };
+  };
+  const A = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/126 Mobile Safari/537.36', I = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile Safari/604.1';
+  const de = run(A, '/de/strompreise', 'de');
+  assert.ok(de.shown && de.texts.includes('Kostenlose App – Strompreise Stunde für Stunde') && de.links[0].includes('&hl=de'), 'Android, German page: German text and hl=de');
+  assert.ok(run(A, '/', 'da').texts.includes('Hent'), 'Danish page');
+  assert.ok(run(A, '/rs/cena-struje', 'sr-Latn').links[0].includes('&hl=sr'), 'Serbian page links hl=sr');
+  assert.ok(!run(I, '/', 'da').shown, 'not on iPhone (Safari has its own banner)');
+  assert.ok(!run(A, '/download', 'da').shown, 'not on /download');
+  assert.ok(!run(A, '/', 'da', Date.now() - 864e5).shown, 'not within 30 days of closing it');
+  assert.ok(run(A, '/', 'da', Date.now() - 31 * 864e5).shown, 'again after 30 days');
+});
 
 console.log('\n⚡ Static integrity tests\n' + '─'.repeat(50));
 for (const r of results) {
