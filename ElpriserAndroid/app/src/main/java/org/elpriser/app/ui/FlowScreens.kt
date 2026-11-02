@@ -140,13 +140,13 @@ private fun Place(vm: AppViewModel, step: Step.Place) {
                     Row(Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(22.dp)).background(t.surface2).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Ic.Search, t.text2, 18.dp, stroke = 2.2f)
                         Box(Modifier.padding(start = 10.dp).weight(1f)) {
-                            if (q.isEmpty()) Text(tx.get(R.string.picker_search_hint), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = t.text2)
+                            if (q.isEmpty()) Text(tx.get(R.string.place_search_hint), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = t.text2)
                             BasicTextField(q, { q = it }, singleLine = true, cursorBrush = SolidColor(t.brandSolid),
                                 textStyle = TextStyle(fontFamily = Manrope, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = t.text), modifier = Modifier.fillMaxWidth())
                         }
                     }
                     if (searching) {
-                        if (found.isEmpty()) Foot(tx.get(R.string.picker_no_match, q.trim()))
+                        if (found.isEmpty()) Foot(tx.get(R.string.place_no_match, q.trim()))
                         else Group { found.forEachIndexed { i, n -> PlaceRow(n.name, detail = areaLabel(tx, n.area), check = s.net?.gln == n.gln, sep = i > 0) { vm.choose(n, "manual") } } }
                     } else {
                         Group {
@@ -165,7 +165,7 @@ private fun Place(vm: AppViewModel, step: Step.Place) {
                             PlaceRow(tx.get(R.string.place_east), detail = detail("DK2"), chevron = true, sep = true) { area = "DK2" }
                         }
                         Head(tx.get(R.string.place_others))
-                        Group { PlaceRow(tx.get(R.string.place_nordics), chevron = true) { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://elpriser.org/norden"))) } }
+                        Group { PlaceRow(tx.get(R.string.place_all_countries), chevron = true) { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://elpriser.org/norden"))) } }
                         Box(Modifier.height(10.dp))
                         Group { PlaceRow(tx.get(R.string.place_settings), icon = Ic.Sliders, chevron = true) { vm.closeStep(); vm.tab = Tab.Settings } }
                     }

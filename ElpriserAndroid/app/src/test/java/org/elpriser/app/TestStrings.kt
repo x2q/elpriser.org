@@ -7,7 +7,7 @@ import java.util.Locale
 import javax.xml.parsers.DocumentBuilderFactory
 
 /**
- * The app's own texts for the JVM tests, read from the strings.xml the app ships — so there is exactly one Danish wording.
+ * The app's own texts for the JVM tests, read from the values-da/strings.xml the app ships — so there is exactly one Danish wording.
  * The logic functions ask for texts by resource id; the ids are mapped to names through the generated R class.
  * Placeholders are formatted with String.format in the file's locale, as Resources.getString does on a device.
  * Android's resource escapes (\n, \', \", \\, \@, \?, \uXXXX) are undone; whitespace handling is the plain trim only,
@@ -89,6 +89,6 @@ class XmlStrings(file: File, private val locale: Locale) : Strings {
 }
 
 object TestStrings {
-    /** Danish: the default values/strings.xml. Gradle runs unit tests with the module directory (app/) as working directory. */
-    val da: Strings by lazy { XmlStrings(File("src/main/res/values/strings.xml"), Locale("da", "DK")) }
+    /** Danish: values-da/strings.xml (English is the default values/ set since the Europe release). Gradle runs unit tests with the module directory (app/) as working directory. */
+    val da: Strings by lazy { XmlStrings(File("src/main/res/values-da/strings.xml"), Locale("da", "DK")) }
 }

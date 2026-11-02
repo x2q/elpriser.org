@@ -1,0 +1,113 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "nn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "no" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription" : {
+      "comment" : "iOS permission dialog text (NSLocationWhenInUseUsageDescription). Must say why the position is needed and that it is not stored.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser bruger din position én gang, når du trykker på “Brug min position”, til at finde dit netselskab. Positionen gemmes aldrig — kun netselskabets navn."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser uses your position once, when you tap “Use my position”, to find your grid company. The position is never stored — only the name of the grid company."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser gebruikt je locatie één keer, wanneer je op “Gebruik mijn locatie” tikt, om je netbeheerder te vinden. De locatie wordt nooit opgeslagen — alleen de naam van de netbeheerder."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser använder din position en gång, när du trycker på ”Använd min position”, för att hitta ditt nätbolag. Positionen sparas aldrig – bara nätbolagets namn."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser bruker posisjonen din én gang, når du trykker «Bruk posisjonen min», for å finne nettselskapet ditt. Posisjonen lagres aldri – bare navnet på nettselskapet."
+          }
+        },
+        "nn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser bruker posisjonen din én gang, når du trykker «Bruk posisjonen min», for å finne nettselskapet ditt. Posisjonen lagres aldri – bare navnet på nettselskapet."
+          }
+        },
+        "no" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser bruker posisjonen din én gang, når du trykker «Bruk posisjonen min», for å finne nettselskapet ditt. Posisjonen lagres aldri – bare navnet på nettselskapet."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser käyttää sijaintiasi kerran, kun napautat “Käytä sijaintiani”, löytääkseen verkkoyhtiösi. Sijaintia ei koskaan tallenneta – vain verkkoyhtiön nimi."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

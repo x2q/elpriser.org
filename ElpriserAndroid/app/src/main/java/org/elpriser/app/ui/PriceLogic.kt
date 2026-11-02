@@ -95,8 +95,14 @@ fun cheaperSentence(tx: Strings, vals: List<Double>, now: Int): String {
     var best = now
     for (i in now + 1 until end) if (vals[i] < vals[best]) best = i
     return if (best == now || cents(vals[best]) >= cents(vals[now])) tx.get(R.string.cheaper_none)
-    else tx.get(R.string.cheaper_later, dayWord(tx, best), pad(best % 24), fmt(vals[best]))
+    else tx.get(R.string.cheaper_later, dayWord(tx, best), pad(best % 24), amountKr(tx, vals[best]))
 }
+
+/** Prisen med enhed, som tekster og bobler vil have den: "3,90 kr/kWh". */
+fun priceWithUnit(tx: Strings, v: Double) = "${fmt(v)} ${tx.get(R.string.unit_price)}"
+
+/** Et beløb i kroner: "3,90 kr". */
+fun amountKr(tx: Strings, v: Double) = "${fmt(v)} ${tx.get(R.string.unit_kr)}"
 
 /** En af de to nøgletal-felter: etiket, pris og klokkeslæt. */
 class Extreme(val label: String, val price: Double, val hour: Int)
@@ -143,7 +149,7 @@ fun tooltipText(tx: Strings, days: List<Day>, vals: List<Double>, i: Int): Strin
         1 -> tx.get(R.string.day_tomorrow_cap)
         else -> "${dayShort(tx, d)} ${dayMonth(tx, d)}"
     }
-    return tx.get(R.string.tooltip, whenText, pad(i % 24), fmt(vals[i]))
+    return tx.get(R.string.tooltip, whenText, pad(i % 24), priceWithUnit(tx, vals[i]))
 }
 
 /** Placering (0..1 langs aksen) og tekst for vandrette akseetiketter. */
@@ -279,7 +285,7 @@ fun breakdownOf(
     val heading =
         if (headingWhen.isEmpty()) tx.get(R.string.breakdown_heading_now, pad(hour))
         else tx.get(R.string.breakdown_heading_when, headingWhen, pad(hour))
-    return Breakdown(rows, total, tx.get(R.string.price_kwh, fmt(price)), heading)
+    return Breakdown(rows, total, priceWithUnit(tx, price), heading)
 }
 
 /** Dagsordene i overskriften for en valgt time: samme ord som boblen, men med småt ("i dag", "i morgen", "søn 18. okt"). */

@@ -1,23 +1,24 @@
 #!/usr/bin/env node
 /**
- * The Android app's translations: nb, sv, fi and nl next to the Danish default.
+ * The Android app's translations: every language in i18n/languages.json that ships, next to English (the default res/values/) and Danish.
  * Run: npm run test:android-strings   (hermetic: reads files only, no Gradle, no Android SDK; part of test:unit)
  *
- * Danish (res/values/strings.xml) is the source. What this guards, because nothing else notices before a user does:
- *  (a) every translation has exactly the same string / plurals / string-array names as the default (and none of the
- *      translatable="false" ones), the same plural forms and the same number of array items;
+ * The files are GENERATED from the catalogue in i18n/ (scripts/i18n/build.mjs; test-i18n.mjs checks that they are current).
+ * Danish (res/values-da/strings.xml) is the source text; English is res/values/. What this guards, because nothing else notices before a user does:
+ *  (a) every translation has exactly the same string / plurals / string-array names as Danish (and none of the
+ *      translatable="false" ones), the plural forms its language needs and the same number of array items;
  *  (b) each translation uses the same placeholders (%1$s, %2$d, ...) as the default, every placeholder is positional,
  *      a literal percent sign is written %%, and apostrophes are escaped (an unescaped one breaks the resource compile);
  *  (c) no translation is empty, and none is identical to the Danish text when that is longer than 12 characters
  *      (a string somebody forgot to translate) unless it is in SAME_AS_DANISH below, with a reason;
- *  (d) res/xml/locale_config.xml lists exactly da, nb, sv, fi, nl (the picker), matching the values-* folders (plus the
+ *  (d) res/xml/locale_config.xml lists exactly the shipped languages (the picker), matching the values-* folders (plus the
  *      nn/no aliases, which must be copies of nb), the manifest
  *      attribute and the resourceConfigurations in build.gradle.kts;
  *  (e) a few Danish-only words do not occur in the foreign files ('lige nu', 'døgn', 'netselskab', 'afgifter'),
  *      except where the language really has the word (nb: 'døgn');
  *  (f) no user-visible string literal is hard-coded in the Kotlin sources (they must come from strings.xml through
  *      tx.get / tx.plural / tx.array), and every R.string / R.plurals / R.array the Kotlin sources use exists
- *      (catches a typo here, without compiling) and every default string is used by something.
+ *      (catches a typo here, without compiling) and every Android string is used by something.
  *
  * Set ELPRISER_ANDROID_DIR to point the test at another copy of ElpriserAndroid/ (used to mutation-check this test).
  */
@@ -30,9 +31,15 @@ const ROOT = import.meta.dirname;
 const ANDROID = process.env.ELPRISER_ANDROID_DIR || path.join(ROOT, 'ElpriserAndroid');
 const RES = path.join(ANDROID, 'app/src/main/res');
 const KOTLIN = path.join(ANDROID, 'app/src/main/java');
-const LANGS = ['nb', 'sv', 'fi', 'nl'];
-const EXPECTED_LOCALES = ['da', 'nb', 'sv', 'fi', 'nl'];
-// Android does not fall back from Nynorsk (nn) or the legacy Norwegian code (no) to nb, so those users would get Danish.
+import { loadCatalogue, shipped, androidFolder, resourceConfigurations } from './scripts/i18n/build.mjs';
+
+const CAT = loadCatalogue();
+const SHIPPED = shipped(CAT);
+const PLURALS = Object.fromEntries(CAT.langs.map(l => [l.code, l]));
+// Every shipped language except Danish (the source) and English (checked against Danish too, but it has no values-en folder).
+const LANGS = SHIPPED.map(l => l.code).filter(c => c !== 'da');
+const EXPECTED_LOCALES = [...SHIPPED.map(l => l.code), ...SHIPPED.filter(l => l.latin).map(l => l.latin)];
+// Android does not fall back from Nynorsk (nn) or the legacy Norwegian code (no) to nb, so those users would get English.
 // values-nn/ and values-no/ are byte-identical copies of values-nb/ and are NOT in the per-app language picker.
 const NB_ALIASES = ['nn', 'no'];
 
@@ -122,7 +129,7 @@ export function parseResources(xml, label = 'file') {
 }
 
 function load(lang) {
-  const dir = lang === 'da' ? 'values' : `values-${lang}`;
+  const dir = lang === 'en' ? 'values' : androidFolder(lang);
   const file = path.join(RES, dir, 'strings.xml');
   assert.ok(fs.existsSync(file), `missing ${path.relative(ANDROID, file)}`);
   const r = parseResources(fs.readFileSync(file, 'utf8'), `${dir}/strings.xml`);
@@ -145,6 +152,7 @@ function placeholders(text) {
 }
 
 const da = load('da');
+const enDefault = load('en');
 const tr = Object.fromEntries(LANGS.map(l => [l, load(l)]));
 
 /* ── (a) the same names ───────────────────────────────────────────────────────────────── */
@@ -158,11 +166,12 @@ for (const lang of LANGS) {
       assert.deepEqual(got.filter(k => !want.includes(k)), [], `values-${lang} has ${kind} the default lacks`);
       assert.deepEqual(want.filter(k => !got.includes(k)), [], `values-${lang} lacks ${kind} the default has (untranslated)`);
     }
-    for (const n of da.nonTranslatable) {
+    for (const n of enDefault.nonTranslatable) {
       assert.ok(!(n in t.strings), `values-${lang} redefines the non-translatable string "${n}"`);
     }
     for (const [k, forms] of Object.entries(da.plurals)) {
-      assert.deepEqual(Object.keys(t.plurals[k] || {}).sort(), Object.keys(forms).sort(), `values-${lang} plurals "${k}": different quantity forms`);
+      const need = [...PLURALS[lang].plural, ...(PLURALS[lang].fillMany && !PLURALS[lang].plural.includes('many') ? ['many'] : [])];
+      assert.deepEqual(Object.keys(t.plurals[k] || {}).sort(), need.sort(), `values-${lang} plurals "${k}": the quantity forms ${lang} needs are ${need.join(', ')}`);
     }
     for (const [k, items] of Object.entries(da.arrays)) {
       assert.equal((t.arrays[k] || []).length, items.length, `values-${lang} string-array "${k}": ${items.length} items expected`);
@@ -218,11 +227,12 @@ for (const lang of LANGS) {
     for (const [id, text] of entries(t)) {
       if (!want.has(id) || text.length <= 12 || text !== want.get(id)) continue;
       const base = id.replace(/\[.*\]$/, '');
-      if (SAME_AS_DANISH[lang][base]) continue;
+      if ((SAME_AS_DANISH[lang] || {})[base]) continue;
+      if (text.replace(/%\d+\$[sd]|%%/g, '').replace(/[^\p{L}]/gu, '').length <= 4) continue; // placeholders and a short abbreviation only
       same.push(`${id}: "${text}"`);
     }
     assert.deepEqual(same, [], `values-${lang}: identical to the Danish text (translate it, or list it in SAME_AS_DANISH with a reason if the languages really agree)`);
-    for (const k of Object.keys(SAME_AS_DANISH[lang])) {
+    for (const k of Object.keys(SAME_AS_DANISH[lang] || {})) {
       assert.ok(k in da.strings && k in t.strings, `SAME_AS_DANISH.${lang}.${k} is not a string in the files (stale allowlist entry)`);
       assert.equal(t.strings[k], da.strings[k], `SAME_AS_DANISH.${lang}.${k} is no longer identical to the Danish text: remove it from the allowlist`);
     }
@@ -231,19 +241,20 @@ for (const lang of LANGS) {
 
 /* ── (d) locale list ──────────────────────────────────────────────────────────────────── */
 
-test('(d) locale_config.xml lists exactly da, nb, sv, fi, nl — and the folders, manifest and Gradle agree', () => {
+test('(d) locale_config.xml lists exactly the shipped languages — and the folders, manifest and Gradle agree', () => {
   const cfg = fs.readFileSync(path.join(RES, 'xml/locale_config.xml'), 'utf8').replace(/<!--[\s\S]*?-->/g, '');
   const listed = [...cfg.matchAll(/<locale\s+android:name="([^"]+)"\s*\/>/g)].map(m => m[1]);
-  assert.deepEqual([...listed].sort(), [...EXPECTED_LOCALES].sort(), 'locale_config.xml must list exactly da, nb, sv, fi, nl (once each)');
+  assert.deepEqual([...listed].sort(), [...EXPECTED_LOCALES].sort(), 'locale_config.xml must list exactly the shipped languages of i18n/languages.json (once each)');
   const folders = fs.readdirSync(RES).filter(d => /^values-/.test(d) && fs.existsSync(path.join(RES, d, 'strings.xml'))).map(d => d.slice('values-'.length));
-  assert.deepEqual(folders.sort(), [...LANGS, ...NB_ALIASES].sort(), 'res/values-* folders with a strings.xml must be exactly nb, sv, fi, nl plus the aliases nn, no');
+  const wantFolders = [...EXPECTED_LOCALES.filter(c => c !== 'en').map(c => androidFolder(c).slice('values-'.length)), ...NB_ALIASES];
+  assert.deepEqual(folders.sort(), wantFolders.sort(), 'res/values-* folders with a strings.xml must be exactly the shipped languages (English is res/values/) plus the aliases nn, no');
   const manifest = fs.readFileSync(path.join(ANDROID, 'app/src/main/AndroidManifest.xml'), 'utf8');
   assert.match(manifest, /android:localeConfig="@xml\/locale_config"/, 'the manifest <application> must set android:localeConfig="@xml/locale_config"');
   const gradle = fs.readFileSync(path.join(ANDROID, 'app/build.gradle.kts'), 'utf8');
   const cfgLine = /resourceConfigurations\s*\+?=\s*listOf\(([^)]*)\)|localeFilters\s*\+?=\s*listOf\(([^)]*)\)/.exec(gradle);
   assert.ok(cfgLine, 'build.gradle.kts must restrict the bundled languages (resourceConfigurations / localeFilters)');
   const filtered = [...(cfgLine[1] || cfgLine[2]).matchAll(/"([^"]+)"/g)].map(m => m[1]);
-  assert.deepEqual([...filtered].sort(), [...EXPECTED_LOCALES, ...NB_ALIASES].sort(), 'the Gradle language filter must list the five languages plus the aliases nn and no (otherwise they are stripped from the bundle)');
+  assert.deepEqual([...filtered].sort(), [...resourceConfigurations(CAT)].sort(), 'the Gradle language filter must list the shipped languages plus the aliases nn and no (otherwise they are stripped from the bundle)');
 });
 
 test('(d2) values-nn and values-no are byte-identical copies of values-nb (Nynorsk and legacy "no" fall back to Bokmål, not Danish)', () => {
@@ -364,7 +375,7 @@ export function findHardcoded(file, src) {
   const positions = literals.map(l => l.start);
   const byPos = new Map(literals.map(l => [l.start, l]));
   // 1. Danish letters in any literal
-  for (const lit of literals) if (/[æøåÆØÅ]/.test(visibleText(lit.text))) flag(lit, 'Danish letters; texts belong in res/values/strings.xml');
+  for (const lit of literals) if (/[æøåÆØÅ]/.test(visibleText(lit.text))) flag(lit, 'Danish letters; texts belong in the i18n/ catalogue');
   // 2. literals that are direct arguments of a text-showing call (not inside a lambda, a nested call or a comparison), or assigned to an accessibility label
   for (const m of code.matchAll(UI_CALLS)) {
     let paren = 1, brace = 0, j = m.index + m[0].length;
@@ -396,11 +407,16 @@ export function findHardcoded(file, src) {
   return problems;
 }
 
+/* Texts of the Europe release (country and zone selection) that the catalogue has before the Kotlin code uses them. The Android zone work
+ * deletes this list; until then it is the only way the catalogue can lead the code without this test going red. */
+const NOT_USED_YET = new Set(['settings_subtitle_zone', 'unit_ct_kwh', 'unit_ct', 'caption_zone', 'about_sources_eu', 'welcome_zone_title', 'welcome_zone_body',
+  'place_countries', 'place_your_country', 'place_zone_title', 'place_zone_note', 'note_zone_de_lu', 'note_zone_it_n']);
+
 const kt = kotlinFiles(KOTLIN).map(f => [f, fs.readFileSync(f, 'utf8')]);
 
 test('(f) no hard-coded user-visible text in the Kotlin sources', () => {
   const problems = kt.flatMap(([f, src]) => findHardcoded(f, src));
-  assert.deepEqual(problems, [], 'Hard-coded UI text found. Put it in app/src/main/res/values/strings.xml (and the four translations), show it with tx.get(R.string.name) / tx.plural / tx.array '
+  assert.deepEqual(problems, [], 'Hard-coded UI text found. Put it in the catalogue (i18n/strings/*.json via i18n/keys.json, then node scripts/i18n/build.mjs), show it with tx.get(R.string.name) / tx.plural / tx.array '
     + '(see ui/Strings.kt), or — only for data that is not UI text — add it to HARDCODED_ALLOWLIST in test-android-strings.mjs with a reason.');
 });
 
@@ -410,17 +426,18 @@ test('(f) every R.string / R.plurals / R.array used in Kotlin exists in the defa
     const { code } = scanKotlin(src);
     for (const m of code.matchAll(/\bR\.(string|plurals|array)\.(\w+)/g)) used[m[1]].add(m[2]);
   }
-  const have = { string: new Set([...Object.keys(da.strings), ...da.nonTranslatable]), plurals: new Set(Object.keys(da.plurals)), array: new Set(Object.keys(da.arrays)) };
+  const have = { string: new Set([...Object.keys(enDefault.strings), ...enDefault.nonTranslatable]), plurals: new Set(Object.keys(enDefault.plurals)), array: new Set(Object.keys(enDefault.arrays)) };
   const missing = [];
   for (const k of Object.keys(used)) for (const n of used[k]) if (!have[k].has(n)) missing.push(`R.${k}.${n}`);
   assert.deepEqual(missing, [], 'Kotlin refers to resources that strings.xml does not define');
   const unused = [];
-  for (const k of Object.keys(have)) for (const n of have[k]) if (!used[k].has(n)) unused.push(`${k}:${n}`);
+  for (const k of Object.keys(have)) for (const n of have[k]) if (!used[k].has(n) && !(k === 'string' && NOT_USED_YET.has(n))) unused.push(`${k}:${n}`);
+  for (const n of NOT_USED_YET) assert.ok(!used.string.has(n), `NOT_USED_YET lists ${n}, but the Kotlin sources use it now: remove it from the list`);
   assert.deepEqual(unused, [], 'strings.xml defines texts nothing uses (delete them, or use them)');
 });
 
 test('the Android main manifest uses string resources for its label', () => {
   const manifest = fs.readFileSync(path.join(ANDROID, 'app/src/main/AndroidManifest.xml'), 'utf8');
   assert.match(manifest, /android:label="@string\/app_name"/);
-  assert.ok(da.nonTranslatable.includes('app_name'), 'app_name is the brand and must stay translatable="false"');
+  assert.ok(enDefault.nonTranslatable.includes('app_name'), 'app_name is the brand and must stay translatable="false"');
 });

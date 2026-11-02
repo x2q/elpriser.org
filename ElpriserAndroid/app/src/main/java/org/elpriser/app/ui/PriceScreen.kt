@@ -151,8 +151,8 @@ fun PriceScreen(vm: AppViewModel, wide: Boolean) {
 
         val summary = buildString {
             append(periodTitle(tx, shownPeriod)).append(". ")
-            cheapest?.let { append(tx.get(R.string.chart_summary_tile, it.label, fmt(it.price), pad(it.hour))).append(' ') }
-            priciest?.let { append(tx.get(R.string.chart_summary_tile, it.label, fmt(it.price), pad(it.hour))).append(' ') }
+            cheapest?.let { append(tx.get(R.string.chart_summary_tile, it.label, amountKr(tx, it.price), pad(it.hour))).append(' ') }
+            priciest?.let { append(tx.get(R.string.chart_summary_tile, it.label, amountKr(tx, it.price), pad(it.hour))).append(' ') }
             append(tx.get(R.string.chart_hint))
         }
 
@@ -575,7 +575,7 @@ private fun StatCard(e: Extreme, wide: Boolean, modifier: Modifier) {
         Text(e.label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = t.text2)
         Row(verticalAlignment = Alignment.Bottom) {
             Text(fmt(e.price), color = t.text, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, style = TextStyle(fontFeatureSettings = FigureFeatures))
-            Text(tx.get(R.string.stat_price_hour, pad(e.hour)), Modifier.padding(start = 4.dp, bottom = 2.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = t.text2)
+            Text(tx.get(R.string.stat_price_hour, tx.get(R.string.unit_kr), pad(e.hour)), Modifier.padding(start = 4.dp, bottom = 2.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = t.text2)
         }
     }
 }

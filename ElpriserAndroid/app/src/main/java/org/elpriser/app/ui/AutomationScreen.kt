@@ -137,7 +137,7 @@ private fun DeviceCard(d: Device, hours: Set<Int>, prices: List<Double>, avg: Do
                 Stepper("+", tx.get(R.string.stepper_more)) { onChange(d.copy(hours = (d.hours + 1).coerceAtMost(12))) }
             }
             Box(Modifier.weight(1f))
-            Text(tx.get(R.string.device_avg_save, fmt(avg), fmt(save)), fontSize = 12.5.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold, color = t.text2, textAlign = TextAlign.End)
+            Text(tx.get(R.string.device_avg_save, priceWithUnit(tx, avg), amountKr(tx, save)), fontSize = 12.5.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold, color = t.text2, textAlign = TextAlign.End)
         }
         Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             prices.indices.forEach { h ->

@@ -26,7 +26,7 @@ android {
         // androidResources.localeFilters, which was not in the cached 8.7 API); res/xml/locale_config.xml lists the five
         // languages shown in the per-app language picker. nn and no are fallbacks only: Android does not map Nynorsk or the
         // legacy 'no' code to nb, so values-nn/ and values-no/ are copies of values-nb/ (tested to stay identical).
-        resourceConfigurations += listOf("da", "nb", "nn", "no", "sv", "fi", "nl")
+        resourceConfigurations += listOf("da", "en", "nl", "sv", "nb", "nn", "no", "fi")
     }
 
     signingConfigs {
@@ -65,7 +65,7 @@ android {
             // calls the test task up to date when only that file changed.
             it.inputs.file(rootProject.file("../tests/golden/app-contract.json")).withPropertyName("goldenContract")
             // The unit tests read the Danish texts from this file; its text changes do not change any class, so declare it.
-            it.inputs.file("src/main/res/values/strings.xml").withPropertyName("danishStrings")
+            it.inputs.file("src/main/res/values-da/strings.xml").withPropertyName("danishStrings")
         }
     }
 }
