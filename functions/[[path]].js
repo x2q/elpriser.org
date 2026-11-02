@@ -1098,7 +1098,17 @@ var PRIS_I18N={
     byDay:'Ден по ден',day:'Ден',range:'Диапазон',type:'Вид',none:'Цените не можаха да бъдат заредени в момента.',
     cap:'Борсова цена на пазара ден напред без ДДС, данъци и мрежови такси',
     avg:'ср.',
-    act1:'Днес',act2:'Днес и утре',cheapRest:'Най-евтиният час до края на деня'}
+    act1:'Днес',act2:'Днес и утре',cheapRest:'Най-евтиният час до края на деня'},
+  el:{wd:['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'],ws:['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'],
+    mon:['Ιαν','Φεβ','Μαρ','Απρ','Μαΐ','Ιουν','Ιουλ','Αυγ','Σεπ','Οκτ','Νοε','Δεκ'],dot:'',hs:':00',hh:1,
+    now:'Τιμή ρεύματος τώρα',hourly:'Τιμή ρεύματος ανά ώρα',at:'ώρα',today:'σήμερα',tomorrow:'αύριο',evening:'απόψε',
+    verdict:['Χαμηλή τιμή τώρα','Μέση τιμή τώρα','Υψηλή τιμή τώρα'],tier:['Χαμηλή','Μέση','Υψηλή'],
+    cheaper:'Φθηνότερα',cheapest24:'Φθηνότερη ώρα στις επόμενες 24 ώρες',lo:'φθηνότερη ώρα',hi:'ακριβότερη ώρα',
+    next:'Επόμενες',p2:'2 ημέρες',p5:'5 ημέρες',p7:'7 ημέρες',period:'Περίοδος',fc:'Τιμή στην αγορά επόμενης ημέρας',actual:'Τιμή στην αγορά επόμενης ημέρας',
+    byDay:'Ανά ημέρα',day:'Ημέρα',range:'Εύρος',type:'Τύπος',none:'Δεν ήταν δυνατή η φόρτωση των τιμών αυτή τη στιγμή.',
+    cap:'Χονδρική τιμή της αγοράς επόμενης ημέρας, χωρίς ΦΠΑ, φόρους και χρεώσεις δικτύου',
+    avg:'μ.ό.',
+    act1:'Σήμερα',act2:'Σήμερα και αύριο',cheapRest:'Φθηνότερη ώρα για το υπόλοιπο της ημέρας'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1133,7 +1143,8 @@ var ZONES={
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
   cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   ro:{name:'RO',city:'România',lang:'ro',cur:'EUR',rate:1,sub:'c€',src:'entsoe',shift:1},
-  bg:{name:'BG',city:'България',lang:'bg',cur:'EUR',rate:1,sub:'евроц.',src:'entsoe',shift:1}
+  bg:{name:'BG',city:'България',lang:'bg',cur:'EUR',rate:1,sub:'евроц.',src:'entsoe',shift:1},
+  gr:{name:'GR',city:'Ελλάδα',lang:'el',cur:'EUR',rate:1,sub:'c€',src:'entsoe',shift:1}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1263,7 +1274,14 @@ var PRIS_COUNTRIES={
     tx:{h1:'Цена на тока в България: днес и утре',
       zonesH:'Цена на тока в България',
       note:'Средните часови стойности на 15-минутните цени са изчислени от elpriser.org (данните са променени спрямо оригинала). От 1 януари 2026 г. България е в еврозоната; цените са в евроцента за kWh. Източник:',
-      cap:'Борсова цена на пазара ден напред в евроцента, без ДДС, данъци и мрежови такси'}}
+      cap:'Борсова цена на пазара ден напред в евроцента, без ДДС, данъци и мрежови такси'}},
+  'gr/timi-revmatos':{lang:'el',cc:'gr',zones:['gr'],def:'gr',act:1,
+    name:'Ελλάδα',da:'Grækenland',loc:'el_GR',qid:'Q41',
+    title:'Τιμή ρεύματος σήμερα και αύριο – χονδρική τιμή στην Ελλάδα',
+    desc:'Χονδρική τιμή ρεύματος (αγορά επόμενης ημέρας) στην Ελλάδα ανά ώρα, σήμερα και αύριο, σε c€/kWh, χωρίς ΦΠΑ, φόρους και χρεώσεις. Πηγή: ENTSO-E',
+    tx:{h1:'Τιμή ρεύματος στην Ελλάδα: σήμερα και αύριο',
+      zonesH:'Τιμή ρεύματος στην Ελλάδα',
+      note:'Οι ωριαίοι μέσοι όροι των τιμών των 15 λεπτών υπολογίστηκαν από το elpriser.org (τα δεδομένα έχουν τροποποιηθεί σε σχέση με το πρωτότυπο). Οι τιμές είναι σε ευρώ, εκφρασμένες σε λεπτά του ευρώ ανά kWh. Πηγή:'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1351,13 +1369,17 @@ var CHROME_I18N={
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
     chg:'Změna: hodinové průměry vypočítal elpriser.org'},
   ro:{home:'elpriser.org – pagina principală',land:'Țări',place:'Unde vă aflați?',area:'Zonă de preț',oth:'Alte țări',back:'Înapoi',find:'Căutare',none:'Niciun rezultat',close:'Închide',
-    cn:{dk:'Danemarca',no:'Norvegia',sv:'Suedia',fi:'Finlanda',nl:'Țările de Jos',de:'Germania',fr:'Franța',pl:'Polonia',it:'Italia',at:'Austria',ch:'Elveția',be:'Belgia',ie:'Irlanda',cz:'Cehia',ro:'România',bg:'Bulgaria'},
+    cn:{dk:'Danemarca',no:'Norvegia',sv:'Suedia',fi:'Finlanda',nl:'Țările de Jos',de:'Germania',fr:'Franța',pl:'Polonia',it:'Italia',at:'Austria',ch:'Elveția',be:'Belgia',ie:'Irlanda',cz:'Cehia',ro:'România',bg:'Bulgaria',gr:'Grecia'},
     privacy:'Confidențialitate (în daneză)',src:'Sursa:',and:'și',open:'Seturi de date deschise pe',
     chg:'Modificare: mediile orare calculate de elpriser.org'},
   bg:{home:'elpriser.org – начална страница',land:'Държави',place:'Къде се намирате?',area:'Ценова зона',oth:'Други държави',back:'Назад',find:'Търсене',none:'Няма резултати',close:'Затвори',
-    cn:{dk:'Дания',no:'Норвегия',sv:'Швеция',fi:'Финландия',nl:'Нидерландия',de:'Германия',fr:'Франция',pl:'Полша',it:'Италия',at:'Австрия',ch:'Швейцария',be:'Белгия',ie:'Ирландия',cz:'Чехия',ro:'Румъния',bg:'България'},
+    cn:{dk:'Дания',no:'Норвегия',sv:'Швеция',fi:'Финландия',nl:'Нидерландия',de:'Германия',fr:'Франция',pl:'Полша',it:'Италия',at:'Австрия',ch:'Швейцария',be:'Белгия',ie:'Ирландия',cz:'Чехия',ro:'Румъния',bg:'България',gr:'Гърция'},
     privacy:'Поверителност (на датски)',src:'Източник:',and:'и',open:'Отворени набори от данни в',
-    chg:'Промяна: средните часови стойности са изчислени от elpriser.org'}
+    chg:'Промяна: средните часови стойности са изчислени от elpriser.org'},
+  el:{home:'elpriser.org – αρχική σελίδα',land:'Χώρες',place:'Πού βρίσκεστε;',area:'Ζώνη τιμών',oth:'Άλλες χώρες',back:'Πίσω',find:'Αναζήτηση',none:'Κανένα αποτέλεσμα',close:'Κλείσιμο',
+    cn:{dk:'Δανία',no:'Νορβηγία',sv:'Σουηδία',fi:'Φινλανδία',nl:'Κάτω Χώρες',de:'Γερμανία',fr:'Γαλλία',pl:'Πολωνία',it:'Ιταλία',at:'Αυστρία',ch:'Ελβετία',be:'Βέλγιο',ie:'Ιρλανδία',cz:'Τσεχία',ro:'Ρουμανία',bg:'Βουλγαρία',gr:'Ελλάδα'},
+    privacy:'Απόρρητο (στα δανικά)',src:'Πηγή:',and:'και',open:'Ανοιχτά σύνολα δεδομένων στο',
+    chg:'Τροποποίηση: οι ωριαίοι μέσοι όροι υπολογίστηκαν από το elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
