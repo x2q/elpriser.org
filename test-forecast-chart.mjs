@@ -268,7 +268,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     ok(keys.every(k => shape(L[lang][k]) === shape(L.da[k])), `${lang}: samme form på hver nøgle`, keys.filter(k => shape(L[lang][k]) !== shape(L.da[k])).join(','));
     const flat = keys.flatMap(k => [].concat(L[lang][k]));
     const empty = Object.entries(L[lang]).filter(([k, v]) => v === '').map(([k]) => k);
-    ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (['sv', 'nl', 'fr', 'pl', 'it', 'en'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl, it og en; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
+    ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (['sv', 'nl', 'fr', 'pl', 'it', 'en', 'sq'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl, it og en; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
     ok(L[lang].wd.length === 7 && L[lang].ws.length === 7 && L[lang].mon.length === 12 && L[lang].verdict.length === 3 && L[lang].tier.length === 3, `${lang}: 7 ugedage, 12 måneder, 3 niveauer`);
   }
   ok(langs.every(l => !/\b10\b/.test(JSON.stringify(L[l]))), 'ingen sprog nævner 10 døgn');
@@ -279,6 +279,8 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const NOTEWORD = { de: [/berechnet/, /verändert/], fr: [/calculées/, /modifiées/], pl: [/przeliczone/, /zmienione/], it: [/calcolate/, /modificati/], en: [/calculated/, /changed/], cs: [/vypočítal/, /upraveny/], nl: [/berekend/, /gewijzigd/] };
   // North Macedonia (Cyrillic): no forecast word (прогноз, предвиду, предвидување), the VAT word ДДВ, the change note's own words. \b is ASCII-only in JS, so none of these use it.
   FCWORD.mk = /прогноз|предвид|предикц/i; CAPWORD.mk = [/без/, /ДДВ/]; NOTEWORD.mk = [/пресметува/, /изменети/];
+  // Albania: no forecast word (parashikim, prognozë), the VAT word TVSH, the change note's own words.
+  FCWORD.sq = /parashikim|prognoz|projeksion/i; CAPWORD.sq = [/pa /, /TVSH/]; NOTEWORD.sq = [/llogaritur/, /ndryshuar/];
   for (const l of ACT_ONLY) {
     const all = Object.values(L[l]).flat().join(' | ');
     ok(!DANISH.test(all), `${l}: ingen danske ord i tabellen`, (all.match(DANISH) || [])[0]);

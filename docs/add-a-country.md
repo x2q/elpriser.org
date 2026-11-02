@@ -121,7 +121,7 @@ time (a language whose preposition changes with the number — Czech v/ve — is
 | `ee` `lv` `lt` | Estonia, Latvia, Lithuania | et, lv, lt | entsoe | +1 | Q191, Q211, Q37 | `/ee/elektri-hind`, `/lv/elektribas-cena`, `/lt/elektros-kaina` |
 | `me` | Montenegro | sr-ME or sr | entsoe | CET | Q236 | `/me/cijena-struje` |
 | `mk` | North Macedonia | mk | entsoe | CET | Q221 | `/mk/cena-na-struja` — **done** |
-| `al` | Albania | sq | entsoe | CET | Q222 | `/al/cmimi-i-energjise` |
+| `al` | Albania | sq | entsoe | CET | Q222 | `/al/cmimi-i-energjise` — **done** |
 | `it-cn` … | Italy's other zones | it | — | CET | Q38 | not served by `/api/nordic` yet (Energy-Charts allows internal use only for them): needs a data layer first |
 
 Wikidata items verified against their English labels on 2026-11-02 (Czechia's English label there is still "Czech Republic"). The ENTSO-E re-use terms are

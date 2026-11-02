@@ -1088,7 +1088,17 @@ var PRIS_I18N={
     byDay:'Ден по ден',day:'Ден',range:'Распон',type:'Вид',none:'Цените не може да се вчитаат во моментов.',
     cap:'Берзанска цена за ден напред без ДДВ, даноци и мрежни надоместоци',
     avg:'просек',
-    act1:'Денес',act2:'Денес и утре',cheapRest:'Најевтин час до крајот на денот'}
+    act1:'Денес',act2:'Денес и утре',cheapRest:'Најевтин час до крајот на денот'},
+  sq:{wd:['e diel','e hënë','e martë','e mërkurë','e enjte','e premte','e shtunë'],ws:['die','hën','mar','mër','enj','pre','sht'],
+    mon:['jan','shk','mar','pri','maj','qer','kor','gsh','sht','tet','nën','dhj'],dot:'',hs:':00',hh:1,
+    now:'Çmimi i energjisë tani',hourly:'Çmimi i energjisë çdo orë',at:'në orën',today:'sot',tomorrow:'nesër',evening:'sonte',
+    verdict:['Çmim i ulët tani','Çmim mesatar tani','Çmim i lartë tani'],tier:['I ulët','Mesatar','I lartë'],
+    cheaper:'Më lirë',cheapest24:'Ora më e lirë në 24 orët e ardhshme',lo:'ora më e lirë',hi:'ora më e shtrenjtë',
+    next:'Të ardhshmet',p2:'2 ditë',p5:'5 ditë',p7:'7 ditë',period:'Periudha',fc:'Çmimi i ditës në avancë',actual:'Çmimi i ditës në avancë',
+    byDay:'Ditë pas dite',day:'Dita',range:'Diapazoni',type:'Lloji',none:'Çmimet nuk mund të ngarkohen për momentin.',
+    cap:'Çmimi i borsës për ditën në avancë pa TVSH, taksa dhe tarifa rrjeti',
+    avg:'mes.',
+    act1:'Sot',act2:'Sot dhe nesër',cheapRest:'Ora më e lirë deri në fund të ditës'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1122,7 +1132,8 @@ var ZONES={
   be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
   cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
-  mk:{name:'MK',city:'Северна Македонија',lang:'mk',cur:'EUR',rate:1,sub:'ц',src:'entsoe'}
+  mk:{name:'MK',city:'Северна Македонија',lang:'mk',cur:'EUR',rate:1,sub:'ц',src:'entsoe'},
+  al:{name:'AL',city:'Shqipëria',lang:'sq',cur:'EUR',rate:1,sub:'c',src:'entsoe'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1243,7 +1254,14 @@ var PRIS_COUNTRIES={
     desc:'Берзанска цена на струјата (пазар за ден напред) во Северна Македонија по часови, денес и утре, во ц/kWh, без ДДВ и даноци. Извор: ENTSO-E',
     tx:{h1:'Цена на струја во Северна Македонија: денес и утре',
       zonesH:'Цена на струја во Северна Македонија',
-      note:'Часовните просеци од цените на секои 15 минути ги пресметува elpriser.org (податоците се изменети во однос на оригиналот). Цените се во евроценти, а не во денари. Извор:'}}
+      note:'Часовните просеци од цените на секои 15 минути ги пресметува elpriser.org (податоците се изменети во однос на оригиналот). Цените се во евроценти, а не во денари. Извор:'}},
+  'al/cmimi-i-energjise':{lang:'sq',cc:'al',zones:['al'],def:'al',act:1,
+    name:'Shqipëria',da:'Albanien',loc:'sq_AL',qid:'Q222',
+    title:'Çmimi i energjisë sot dhe nesër në Shqipëri',
+    desc:'Çmimi i borsës së energjisë elektrike (dita në avancë) në Shqipëri sipas orës, sot dhe nesër, në c/kWh, pa TVSH dhe taksa. Burimi: ENTSO-E',
+    tx:{h1:'Çmimi i energjisë në Shqipëri: sot dhe nesër',
+      zonesH:'Çmimi i energjisë në Shqipëri',
+      note:'Mesataret orare të çmimeve çdo 15 minuta janë llogaritur nga elpriser.org (të dhënat janë ndryshuar në krahasim me origjinalin). Çmimet janë në cent euro, jo në lekë. Burimi:'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1331,9 +1349,13 @@ var CHROME_I18N={
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
     chg:'Změna: hodinové průměry vypočítal elpriser.org'},
   mk:{home:'elpriser.org – почетна страница',land:'Земји',place:'Каде сте?',area:'Ценовна зона',oth:'Други земји',back:'Назад',find:'Пребарај',none:'Нема резултати',close:'Затвори',
-    cn:{dk:'Данска',no:'Норвешка',sv:'Шведска',fi:'Финска',nl:'Холандија',de:'Германија',fr:'Франција',pl:'Полска',it:'Италија',at:'Австрија',ch:'Швајцарија',be:'Белгија',ie:'Ирска',cz:'Чешка',mk:'Северна Македонија'},
+    cn:{dk:'Данска',no:'Норвешка',sv:'Шведска',fi:'Финска',nl:'Холандија',de:'Германија',fr:'Франција',pl:'Полска',it:'Италија',at:'Австрија',ch:'Швајцарија',be:'Белгија',ie:'Ирска',cz:'Чешка',mk:'Северна Македонија',al:'Албанија'},
     privacy:'Приватност (на дански)',src:'Извор:',and:'и',open:'Отворени збирки на податоци на',
-    chg:'Измена: часовните просеци ги пресметува elpriser.org'}
+    chg:'Измена: часовните просеци ги пресметува elpriser.org'},
+  sq:{home:'elpriser.org – faqja kryesore',land:'Vendet',place:'Ku jeni?',area:'Zona e çmimit',oth:'Vende të tjera',back:'Prapa',find:'Kërko',none:'Asnjë rezultat',close:'Mbyll',
+    cn:{dk:'Danimarka',no:'Norvegjia',sv:'Suedia',fi:'Finlanda',nl:'Holanda',de:'Gjermania',fr:'Franca',pl:'Polonia',it:'Italia',at:'Austria',ch:'Zvicra',be:'Belgjika',ie:'Irlanda',cz:'Çekia',mk:'Maqedonia e Veriut',al:'Shqipëria'},
+    privacy:'Privatësia (në danisht)',src:'Burimi:',and:'dhe',open:'Të dhëna të hapura në',
+    chg:'Ndryshim: mesataret orare të llogaritura nga elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
