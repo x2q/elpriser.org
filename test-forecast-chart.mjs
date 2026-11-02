@@ -279,6 +279,8 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const NOTEWORD = { de: [/berechnet/, /verändert/], fr: [/calculées/, /modifiées/], pl: [/przeliczone/, /zmienione/], it: [/calcolate/, /modificati/], en: [/calculated/, /changed/], cs: [/vypočítal/, /upraveny/], nl: [/berekend/, /gewijzigd/] };
 // Estonian (et): its own words for the three checks below, one line per language so parallel additions merge.
 Object.assign(FCWORD, { et: /prognoo|ennustus|prognoos/i }); Object.assign(CAPWORD, { et: [/ei sisalda/, /käibemaksu/] }); Object.assign(NOTEWORD, { et: [/arvutas/, /muudetud/] });
+// Latvian (lv)
+Object.assign(FCWORD, { lv: /prognoz|paredz/i }); Object.assign(CAPWORD, { lv: [/bez/, /PVN/] }); Object.assign(NOTEWORD, { lv: [/aprēķinājis/, /mainīti/] });
   for (const l of ACT_ONLY) {
     const all = Object.values(L[l]).flat().join(' | ');
     ok(!DANISH.test(all), `${l}: ingen danske ord i tabellen`, (all.match(DANISH) || [])[0]);
