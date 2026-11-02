@@ -52,3 +52,11 @@ No widget, notification, Live Activity or background fetch exists in either app,
 ## 5. Data sources, attribution
 
 Prices outside Denmark: Energy-Charts.info (Bundesnetzagentur | SMARD.de, **CC BY 4.0**, changed: hourly means) for AT BE CH CZ DE FR HU IT-North PL SI, ENTSO-E Transparency Platform for the rest. The about card shows the attribution whenever the selected zone is not Danish (`about_sources_eu`).
+
+## 6. Result of the Europe work (this branch)
+
+* One text catalogue (`i18n/`) generates the Android resources and the iOS String Catalog; 26 languages (da en de fr nl it pl sv nb fi cs hu sl es pt sk el ro bg hr sr et lv lt mk sq, Serbian also in Latin; nn/no fall back to nb). Tier 1 (the first ten) is enforced complete by `test-i18n.mjs`; the other 16 are complete too but unreviewed by native speakers (`i18n/review/`); mk and sq are low confidence.
+* English is the fallback language on both platforms (Android `values/`, iOS development language).
+* 38 price zones in 30 countries in both apps from one contract (`tests/golden/zones.mjs`, checked against the API, the web and both apps' tables). Zone prices come from `/api/nordic`; Denmark keeps `/api/forecast` and the net-company flow, unchanged.
+* Tests: Android 109 JVM tests, iOS 153 XCTest cases, root gate green. Not covered: a real device or emulator run of the location lookup, VoiceOver/TalkBack output in the new languages, tablets/landscape outside what was looked at.
+* Store: `docs/store/` has the listing of every language and `europe-release-checklist.md` with the countries and the manual steps. Nothing was uploaded or submitted.
