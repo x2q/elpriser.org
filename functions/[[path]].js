@@ -299,7 +299,7 @@ Send a User-Agent header: Cloudflare answers 403 to Python's default \`Python-ur
 - \`GET /api/schedule?area=DK1&strategy=cheapest_n&hours=6\` — The N cheapest hours of the day
 - \`GET /api/forecast?area=DK1&mode=inkl_alt\` — Hourly price forecast, today and the next 9 days (settled prices where published, \`type: actual\`). \`mode=net_inkl_alt&gln=…\` adds that grid company's nettarif as in force on each day's own date, so it equals /api/prices on a published day. \`min\`/\`max\` are P10/P90 widened to 80 % backtested coverage on model days; \`model.generatedAt\` names the run.
 - \`GET /api/forecast/archive?area=DK1[&issued=2026-10-06]\` — Past forecast runs (400 days, from 2026-10-06): list the run dates, or fetch one as it was issued (raw spot, DKK/MWh excl. VAT), to measure error by horizon
-- \`GET /api/nordic?zone=se3\` — Same for any of the 13 Nordic/NL bidding zones (dk1, dk2, no1–no5, se1–se4, fi, nl), in EUR/MWh, with the ECB rate to the local currency in \`zoneInfo\`. Also 27 EU zones, settled prices only and no forecast, in EUR/MWh (Poland's \`zoneInfo\` carries the PLN rate): \`de\`, \`fr\`, \`pl\`, \`it-n\` (Northern Italy), \`at\`, \`be\`, \`ch\`, \`cz\`, \`hu\` and \`si\` from Bundesnetzagentur | SMARD.de via Energy-Charts.info, CC BY 4.0, and \`es\`, \`pt\`, \`sk\`, \`gr\`, \`ro\`, \`bg\`, \`hr\`, \`rs\`, \`ee\`, \`lv\`, \`lt\`, \`me\`, \`mk\`, \`al\` and \`xk\` (Kosovo) from the ENTSO-E Transparency Platform, and \`ie\` (Ireland and Northern Ireland, the all-island market) from the SEMOpx day-ahead auction results; all hourly means of the 15- or 30-minute prices (a change of the data); tomorrow is absent until it is published, about 13:00 CET. \`gb\` (Great Britain) is different: it is the Market Index Price (within-day) in GBP/MWh from Elexon BMRS (Contains BMRS data © Elexon Limited copyright and database right), not a day-ahead price, and has no tomorrow
+- \`GET /api/nordic?zone=se3\` — Same for any of the 13 Nordic/NL bidding zones (dk1, dk2, no1–no5, se1–se4, fi, nl), in EUR/MWh, with the ECB rate to the local currency in \`zoneInfo\`. Also 27 EU zones in EUR/MWh (settled prices; for 25 of them, all but \`xk\` and \`gb\`, up to seven forecast days follow from elpriser.org's own statistical model — \`type: forecast\`, with P10/P90 in \`min_eur_mwh\`/\`max_eur_mwh\` — which is NOT an official forecast, ranks the cheapest hours better than it hits the price level, and is replaced by the settled price; \`accuracy\` in the answer states the back-tested error per horizon) (Poland's \`zoneInfo\` carries the PLN rate): \`de\`, \`fr\`, \`pl\`, \`it-n\` (Northern Italy), \`at\`, \`be\`, \`ch\`, \`cz\`, \`hu\` and \`si\` from Bundesnetzagentur | SMARD.de via Energy-Charts.info, CC BY 4.0, and \`es\`, \`pt\`, \`sk\`, \`gr\`, \`ro\`, \`bg\`, \`hr\`, \`rs\`, \`ee\`, \`lv\`, \`lt\`, \`me\`, \`mk\`, \`al\` and \`xk\` (Kosovo) from the ENTSO-E Transparency Platform, and \`ie\` (Ireland and Northern Ireland, the all-island market) from the SEMOpx day-ahead auction results; all hourly means of the 15- or 30-minute prices (a change of the data); tomorrow is absent until it is published, about 13:00 CET. \`gb\` (Great Britain) is different: it is the Market Index Price (within-day) in GBP/MWh from Elexon BMRS (Contains BMRS data © Elexon Limited copyright and database right), not a day-ahead price, and has no tomorrow
 - \`GET /api/shelly/tariff?area=DK1&mode=inkl_alt\` — Tibber-compatible 24h JSON
 - \`GET /api/raw/prices?area=DK1&start=YYYY-MM-DD&end=YYYY-MM-DD\` — Raw DayAheadPrices records
 - \`GET /api/raw/tariff?gln=5790000704842\` — Single net company's Nettarif C (24 values)
@@ -952,8 +952,9 @@ ${JSON.stringify({
 // view; /no/strompris, /sv/elpris and /fi/sahkon-hinta call it with `zone` (a key of ZONES) and get
 // the same markup in that zone's language (PRIS_I18N), in its sub-unit (øre, öre,
 // snt), spot price only. zoneToPrisDays turns an /api/nordic response into the
-// days[] the screen draws and keeps the first five days, so nothing on those
-// pages can show the feed's longer horizon.
+// days[] the screen draws and keeps the first five days (the Nordic pages: nothing there
+// can show the feed's longer horizon), or up to eight when the page asks for them: an EU zone
+// that publishes a forecast (PRIS_EUF, chosen from the DATA by prisZoneCfg) shows today and seven days.
 //
 // Deterministic on purpose: weekday and month names come from the table below
 // rather than toLocaleDateString, whose output depends on the ICU build and would
@@ -974,7 +975,14 @@ var PRIS_I18N={
     next:'Næste',p2:'2 døgn',p5:'5 døgn',p7:'7 døgn',period:'Periode',fc:'Prognose',actual:'Børspris',
     byDay:'Dag for dag',day:'Dag',range:'Spænd',type:'Type',none:'Priserne kunne ikke hentes lige nu.',
     cap:'Spotpris uden moms, afgifter og nettarif',
-    avg:'gns.',model:'Se modellen på Hugging Face'},
+    avg:'gns.',model:'Se modellen på Hugging Face',
+    fcn:'Prognosedage er elpriser.orgs egen statistiske model, ikke en officiel prognose. Den er bedst til at udpege dagens billigste timer og langt mere usikker på prisniveauet: siden priserne steg kraftigt i september 2026 har den ikke været bedre end en simpel metode på niveauet. De afgjorte børspriser erstatter altid prognosen.',
+    fcb:'P10–P90-bånd',
+    fcl:'Lav sikkerhed',
+    fca:'Test på historiske data, D+{h}: middelfejl {mae} EUR/MWh, {g} % under en simpel metode ({r} % siden 1. sept. 2026).',
+    fcae:'Test på historiske data, D+{h}: middelfejl {mae} EUR/MWh (en simpel metode: {base} EUR/MWh).',
+    fcr:'Den udpeger de billigste timer {r} % bedre end en simpel metode.',
+    fcc:'I testen lå {c} % af timerne inden for båndet.'},
   nb:{wd:['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'],ws:['søn','man','tir','ons','tor','fre','lør'],
     mon:['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'],dot:'.',
     now:'Strømpris akkurat nå',hourly:'Strømpris time for time',at:'kl.',today:'i dag',tomorrow:'i morgen',evening:'i kveld',
@@ -983,7 +991,14 @@ var PRIS_I18N={
     next:'Neste',p2:'2 døgn',p5:'5 døgn',p7:'7 døgn',period:'Periode',fc:'Prognose',actual:'Børspris',
     byDay:'Dag for dag',day:'Dag',range:'Spenn',type:'Type',none:'Prisene kunne ikke hentes akkurat nå.',
     cap:'Spotpris uten mva, avgifter og nettleie',
-    avg:'snitt',model:'Se modellen på Hugging Face'},
+    avg:'snitt',model:'Se modellen på Hugging Face',
+    fcn:'Prognosedagene er elpriser.orgs egen statistiske modell, ikke en offisiell prognose. Den er best til å peke ut dagens billigste timer og mye mer usikker på prisnivået: siden prisene steg kraftig i september 2026 har den ikke vært bedre enn en enkel metode på nivået. De avgjorte børsprisene erstatter alltid prognosen.',
+    fcb:'P10–P90-bånd',
+    fcl:'Lav sikkerhet',
+    fca:'Test på historiske data, D+{h}: gjennomsnittlig feil {mae} EUR/MWh, {g} % under en enkel metode ({r} % siden 1. sept. 2026).',
+    fcae:'Test på historiske data, D+{h}: gjennomsnittlig feil {mae} EUR/MWh (en enkel metode: {base} EUR/MWh).',
+    fcr:'Den peker ut de billigste timene {r} % bedre enn en enkel metode.',
+    fcc:'I testen lå {c} % av timene innenfor båndet.'},
   sv:{wd:['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'],ws:['sön','mån','tis','ons','tors','fre','lör'],
     mon:['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'],dot:'',
     now:'Elpris just nu',hourly:'Elpris timme för timme',at:'kl.',today:'idag',tomorrow:'imorgon',evening:'ikväll',
@@ -992,7 +1007,14 @@ var PRIS_I18N={
     next:'Kommande',p2:'2 dygn',p5:'5 dygn',p7:'7 dygn',period:'Period',fc:'Prognos',actual:'Börspris',
     byDay:'Dag för dag',day:'Dag',range:'Spann',type:'Typ',none:'Priserna kunde inte hämtas just nu.',
     cap:'Spotpris utan moms, skatter och nätavgift',
-    avg:'snitt',model:'Se modellen på Hugging Face'},
+    avg:'snitt',model:'Se modellen på Hugging Face',
+    fcn:'Prognosdagarna kommer från elpriser.orgs egen statistiska modell och är inte en officiell prognos. Den är bäst på att peka ut dygnets billigaste timmar och mycket osäkrare på prisnivån: sedan priserna steg kraftigt i september 2026 har den inte varit bättre än en enkel metod på nivån. De fastställda börspriserna ersätter alltid prognosen.',
+    fcb:'P10–P90-band',
+    fcl:'Låg säkerhet',
+    fca:'Test på historiska data, D+{h}: genomsnittligt fel {mae} EUR/MWh, {g} % under en enkel metod ({r} % sedan 1 sept. 2026).',
+    fcae:'Test på historiska data, D+{h}: genomsnittligt fel {mae} EUR/MWh (en enkel metod: {base} EUR/MWh).',
+    fcr:'Den pekar ut de billigaste timmarna {r} % bättre än en enkel metod.',
+    fcc:'I testet låg {c} % av timmarna inom bandet.'},
   fi:{wd:['sunnuntai','maanantai','tiistai','keskiviikko','torstai','perjantai','lauantai'],ws:['su','ma','ti','ke','to','pe','la'],
     mon:['tammik.','helmik.','maalisk.','huhtik.','toukok.','kesäk.','heinäk.','elok.','syysk.','lokak.','marrask.','jouluk.'],dot:'.',
     now:'Sähkön hinta juuri nyt',hourly:'Sähkön hinta tunneittain',at:'klo',today:'tänään',tomorrow:'huomenna',evening:'illalla',
@@ -1001,7 +1023,14 @@ var PRIS_I18N={
     next:'Seuraavat',p2:'2 vrk',p5:'5 vrk',p7:'7 vrk',period:'Jakso',fc:'Ennuste',actual:'Pörssihinta',
     byDay:'Päivä päivältä',day:'Päivä',range:'Vaihteluväli',type:'Tyyppi',none:'Hintoja ei voitu hakea juuri nyt.',
     cap:'Pörssihinta ilman arvonlisäveroa, veroja ja siirtomaksua',
-    avg:'keskihinta',model:'Katso malli Hugging Facessa'},
+    avg:'keskihinta',model:'Katso malli Hugging Facessa',
+    fcn:'Ennustepäivät ovat elpriser.orgin oman tilastollisen mallin tulosta, eivät virallinen ennuste. Malli osaa parhaiten osoittaa vuorokauden halvimmat tunnit ja on paljon epävarmempi hintatasosta: kun hinnat nousivat jyrkästi syyskuussa 2026, se ei ole ollut tasossa yksinkertaista menetelmää parempi. Lopulliset pörssihinnat korvaavat ennusteen aina.',
+    fcb:'P10–P90-vaihteluväli',
+    fcl:'Heikko luotettavuus',
+    fca:'Testi historiatiedoilla, D+{h}: keskivirhe {mae} EUR/MWh, {g} % pienempi kuin yksinkertaisella menetelmällä ({r} % 1.9.2026 alkaen).',
+    fcae:'Testi historiatiedoilla, D+{h}: keskivirhe {mae} EUR/MWh (yksinkertainen menetelmä: {base} EUR/MWh).',
+    fcr:'Se osoittaa halvimmat tunnit {r} % paremmin kuin yksinkertainen menetelmä.',
+    fcc:'Testissä {c} % tunneista osui vaihteluvälin sisään.'},
   nl:{wd:['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'],ws:['zo','ma','di','wo','do','vr','za'],
     mon:['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],dot:'',
     now:'Stroomprijs nu',hourly:'Stroomprijs per uur',at:'om',today:'vandaag',tomorrow:'morgen',evening:'vanavond',
@@ -1011,10 +1040,20 @@ var PRIS_I18N={
     byDay:'Dag voor dag',day:'Dag',range:'Bereik',type:'Type',none:'De prijzen konden nu niet worden opgehaald.',
     cap:'Spotprijs zonder btw, belastingen en netkosten',
     avg:'gem.',model:'Bekijk het model op Hugging Face',
-    act1:'Vandaag',act2:'Vandaag en morgen',cheapRest:'Goedkoopste uur van de rest van de dag'},
-  // The EU price pages (PRIS_COUNTRIES `act`) show ACTUAL day-ahead prices only (PRIS_ACT): no forecast, so `fc` is the same
-  // word as `actual`, and the table of a language used by such a page carries three more keys: act1 / act2, the card title for one
-  // and for two days, and cheapRest, the sentence when only today is known. Optional keys: `hs`, a suffix after the hour or
+    act1:'Vandaag',act2:'Vandaag en morgen',cheapRest:'Goedkoopste uur van de rest van de dag',
+    fcn:'De prognosedagen komen uit het eigen statistische model van elpriser.org en zijn geen officiële prognose. Het model is het best in het aanwijzen van de goedkoopste uren van de dag en veel onzekerder over het prijsniveau: sinds de prijzen in september 2026 sterk stegen is het op het niveau niet beter dan een eenvoudige methode. De vastgestelde day-ahead-prijzen vervangen de prognose altijd.',
+    fcb:'P10–P90-band',
+    fcl:'Lage betrouwbaarheid',
+    fca:'Test op historische data, D+{h}: gemiddelde fout {mae} EUR/MWh, {g} % lager dan bij een eenvoudige methode ({r} % sinds 1 sept. 2026).',
+    fcae:'Test op historische data, D+{h}: gemiddelde fout {mae} EUR/MWh (een eenvoudige methode: {base} EUR/MWh).',
+    fcr:'Het wijst de goedkoopste uren {r} % beter aan dan een eenvoudige methode.',
+    fcc:'In de test viel {c} % van de uren binnen de band.'},
+  // The EU price pages (PRIS_COUNTRIES `act`) show settled day-ahead prices and, when their zone has one, a forecast (PRIS_EUF): `fc` is the
+  // word "forecast" in every language, `actual` the day-ahead price. The table of a language used by such a page carries three more
+  // keys: act1 / act2, the card title for one and for two days, and cheapRest, the sentence when only today is known (PRIS_ACT).
+  // Every table carries the forecast texts fcn (the honest note), fcb (the band's name), fcl (low confidence) and fca / fcae / fcr / fcc
+  // (the accuracy line: {h} the horizon, {mae} {base} errors in EUR/MWh, {g} {r} percentages, {c} the measured share of hours inside the
+  // band) - they are used by the pages that draw PRIS_EUF only. Optional keys: `hs`, a suffix after the hour or
   // range (" Uhr", " h", ":00"), and with `hh` after EACH hour ("at 13:00–14:00"); `at` may be '' (no word before the hour:
   // Czech); `dec`, the decimal mark when it is not a comma ("." in English). prisAt() and prisNum() put it together. The
   // data are changed by the site (hourly means of 15-minute prices): the `note` of each page says so, then names the source
@@ -1024,221 +1063,375 @@ var PRIS_I18N={
     now:'Strompreis jetzt',hourly:'Strompreis stündlich',at:'um',today:'heute',tomorrow:'morgen',evening:'heute Abend',
     verdict:['Jetzt günstig','Jetzt mittel','Jetzt teuer'],tier:['Günstig','Mittel','Teuer'],
     cheaper:'Günstiger',cheapest24:'Günstigste Stunde der nächsten 24 Stunden',lo:'günstigste Stunde',hi:'teuerste Stunde',
-    next:'Nächste',p2:'2 Tage',p5:'5 Tage',p7:'7 Tage',period:'Zeitraum',fc:'Day-Ahead-Preis',actual:'Day-Ahead-Preis',
+    next:'Nächste',p2:'2 Tage',p5:'5 Tage',p7:'7 Tage',period:'Zeitraum',fc:'Prognose',actual:'Day-Ahead-Preis',
     byDay:'Tag für Tag',day:'Tag',range:'Spanne',type:'Art',none:'Die Preise konnten gerade nicht geladen werden.',
     cap:'Börsenstrompreis (Day-Ahead) ohne MwSt., Steuern, Abgaben und Netzentgelte',
     avg:'Ø',
-    act1:'Heute',act2:'Heute und morgen',cheapRest:'Günstigste Stunde des restlichen Tages'},
+    act1:'Heute',act2:'Heute und morgen',cheapRest:'Günstigste Stunde des restlichen Tages',
+    fcn:'Die Prognosetage stammen aus dem eigenen statistischen Modell von elpriser.org und sind keine amtliche Vorhersage. Es erkennt am besten, welche Stunden eines Tages am günstigsten sind, und ist beim Preisniveau deutlich unsicherer: Seit dem starken Preisanstieg im September 2026 war es beim Niveau nicht besser als eine einfache Methode. Die festgestellten Day-Ahead-Preise ersetzen die Prognose immer.',
+    fcb:'P10–P90-Spanne',
+    fcl:'Geringe Zuverlässigkeit',
+    fca:'Rückblick-Test, D+{h}: mittlerer Fehler {mae} EUR/MWh, {g} % unter einer einfachen Methode ({r} % seit 1.9.2026).',
+    fcae:'Rückblick-Test, D+{h}: mittlerer Fehler {mae} EUR/MWh (eine einfache Methode: {base} EUR/MWh).',
+    fcr:'Die günstigsten Stunden erkennt es {r} % besser als eine einfache Methode.',
+    fcc:'Im Test lagen {c} % der Stunden innerhalb der Spanne.'},
   fr:{wd:['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'],ws:['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'],
     mon:['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'],dot:'',hs:' h',
     now:'Prix de l’électricité maintenant',hourly:'Prix de l’électricité heure par heure',at:'à',today:'aujourd’hui',tomorrow:'demain',evening:'ce soir',
     verdict:['Bas en ce moment','Moyen en ce moment','Élevé en ce moment'],tier:['Bas','Moyen','Élevé'],
     cheaper:'Moins cher',cheapest24:'Heure la moins chère des 24 prochaines heures',lo:'heure la moins chère',hi:'heure la plus chère',
-    next:'Prochains',p2:'2 jours',p5:'5 jours',p7:'7 jours',period:'Période',fc:'Prix day-ahead',actual:'Prix day-ahead',
+    next:'Prochains',p2:'2 jours',p5:'5 jours',p7:'7 jours',period:'Période',fc:'Prévision',actual:'Prix day-ahead',
     byDay:'Jour par jour',day:'Jour',range:'Fourchette',type:'Type',none:'Les prix n’ont pas pu être chargés pour le moment.',
     cap:'Prix spot day-ahead hors TVA, taxes et frais de réseau',
     avg:'moy.',
-    act1:'Aujourd’hui',act2:'Aujourd’hui et demain',cheapRest:'Heure la moins chère du reste de la journée'},
+    act1:'Aujourd’hui',act2:'Aujourd’hui et demain',cheapRest:'Heure la moins chère du reste de la journée',
+    fcn:'Les jours de prévision viennent du modèle statistique propre à elpriser.org et ne constituent pas une prévision officielle. Il repère surtout bien les heures les moins chères de la journée et reste bien moins sûr sur le niveau des prix : depuis la forte hausse de septembre 2026, il n’a pas fait mieux qu’une méthode simple sur le niveau. Les prix day-ahead définitifs remplacent toujours la prévision.',
+    fcb:'fourchette P10–P90',
+    fcl:'Faible confiance',
+    fca:'Test sur données passées, D+{h} : erreur moyenne {mae} EUR/MWh, {g} % de moins qu’une méthode simple ({r} % depuis le 1er sept. 2026).',
+    fcae:'Test sur données passées, D+{h} : erreur moyenne {mae} EUR/MWh (méthode simple : {base} EUR/MWh).',
+    fcr:'Il repère les heures les moins chères {r} % mieux qu’une méthode simple.',
+    fcc:'Lors du test, {c} % des heures sont tombées dans la fourchette.'},
   pl:{wd:['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'],ws:['niedz.','pon.','wt.','śr.','czw.','pt.','sob.'],
     mon:['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'],dot:'',
     now:'Cena prądu teraz',hourly:'Cena prądu godzina po godzinie',at:'godz.',today:'dziś',tomorrow:'jutro',evening:'dziś wieczorem',
     verdict:['Tanio teraz','Średnio teraz','Drogo teraz'],tier:['Tanio','Średnio','Drogo'],
     cheaper:'Taniej',cheapest24:'Najtańsza godzina w ciągu najbliższych 24 godzin',lo:'najtańsza godzina',hi:'najdroższa godzina',
-    next:'Najbliższe',p2:'2 dni',p5:'5 dni',p7:'7 dni',period:'Okres',fc:'Cena RDN',actual:'Cena RDN',
+    next:'Najbliższe',p2:'2 dni',p5:'5 dni',p7:'7 dni',period:'Okres',fc:'Prognoza',actual:'Cena RDN',
     byDay:'Dzień po dniu',day:'Dzień',range:'Zakres',type:'Rodzaj',none:'Nie udało się teraz pobrać cen.',
     cap:'Cena giełdowa na rynku dnia następnego (RDN) bez VAT, podatków i opłat sieciowych',
     avg:'śr.',
-    act1:'Dziś',act2:'Dziś i jutro',cheapRest:'Najtańsza godzina do końca dnia'},
+    act1:'Dziś',act2:'Dziś i jutro',cheapRest:'Najtańsza godzina do końca dnia',
+    fcn:'Dni prognozy pochodzą z własnego modelu statystycznego elpriser.org i nie są oficjalną prognozą. Model najlepiej wskazuje najtańsze godziny doby, a znacznie mniej pewnie ocenia poziom cen: od gwałtownego wzrostu cen we wrześniu 2026 r. nie był na tym poziomie lepszy od prostej metody. Ustalone ceny RDN zawsze zastępują prognozę.',
+    fcb:'przedział P10–P90',
+    fcl:'Niska pewność',
+    fca:'Test na danych historycznych, D+{h}: średni błąd {mae} EUR/MWh, o {g} % niższy niż w prostej metodzie ({r} % od 1 wrz. 2026).',
+    fcae:'Test na danych historycznych, D+{h}: średni błąd {mae} EUR/MWh (prosta metoda: {base} EUR/MWh).',
+    fcr:'Najtańsze godziny wskazuje o {r} % lepiej niż prosta metoda.',
+    fcc:'W teście {c} % godzin mieściło się w przedziale.'},
   it:{wd:['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'],ws:['dom','lun','mar','mer','gio','ven','sab'],
     mon:['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'],dot:'',
     now:'Prezzo della luce adesso',hourly:'Prezzo della luce ora per ora',at:'alle',today:'oggi',tomorrow:'domani',evening:'stasera',
     verdict:['Basso adesso','Medio adesso','Alto adesso'],tier:['Basso','Medio','Alto'],
     cheaper:'Più basso',cheapest24:'Ora più economica delle prossime 24 ore',lo:'ora più economica',hi:'ora più cara',
-    next:'Prossimi',p2:'2 giorni',p5:'5 giorni',p7:'7 giorni',period:'Periodo',fc:'Prezzo day-ahead',actual:'Prezzo day-ahead',
+    next:'Prossimi',p2:'2 giorni',p5:'5 giorni',p7:'7 giorni',period:'Periodo',fc:'Previsione',actual:'Prezzo day-ahead',
     byDay:'Giorno per giorno',day:'Giorno',range:'Intervallo',type:'Tipo',none:'Non è stato possibile caricare i prezzi in questo momento.',
     cap:'Prezzo day-ahead al netto di IVA, imposte e costi di rete',
     avg:'media',
-    act1:'Oggi',act2:'Oggi e domani',cheapRest:'Ora più economica del resto della giornata'},
+    act1:'Oggi',act2:'Oggi e domani',cheapRest:'Ora più economica del resto della giornata',
+    fcn:'I giorni di previsione provengono dal modello statistico di elpriser.org e non sono una previsione ufficiale. È più bravo a indicare le ore più economiche della giornata ed è molto meno sicuro sul livello dei prezzi: dopo il forte rialzo di settembre 2026 non è stato migliore di un metodo semplice sul livello. I prezzi day-ahead definitivi sostituiscono sempre la previsione.',
+    fcb:'intervallo P10–P90',
+    fcl:'Bassa affidabilità',
+    fca:'Test sui dati storici, D+{h}: errore medio {mae} EUR/MWh, {g} % in meno di un metodo semplice ({r} % dal 1° set. 2026).',
+    fcae:'Test sui dati storici, D+{h}: errore medio {mae} EUR/MWh (metodo semplice: {base} EUR/MWh).',
+    fcr:'Individua le ore più economiche il {r} % meglio di un metodo semplice.',
+    fcc:'Nel test il {c} % delle ore è rientrato nell’intervallo.'},
   en:{wd:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],ws:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
     mon:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],dot:'',hs:':00',hh:1,dec:'.',
     now:'Electricity price now',hourly:'Electricity price by the hour',at:'at',today:'today',tomorrow:'tomorrow',evening:'this evening',
     verdict:['Cheap right now','Average right now','Expensive right now'],tier:['Cheap','Average','Expensive'],
     cheaper:'Cheaper',cheapest24:'Cheapest hour in the next 24 hours',lo:'cheapest hour',hi:'most expensive hour',
-    next:'Next',p2:'2 days',p5:'5 days',p7:'7 days',period:'Period',fc:'Day-ahead price',actual:'Day-ahead price',
+    next:'Next',p2:'2 days',p5:'5 days',p7:'7 days',period:'Period',fc:'Forecast',actual:'Day-ahead price',
     byDay:'Day by day',day:'Day',range:'Range',type:'Type',none:'The prices could not be loaded right now.',
     cap:'Wholesale day-ahead price excluding VAT, taxes, levies and network charges',
     avg:'avg.',
-    act1:'Today',act2:'Today and tomorrow',cheapRest:'Cheapest hour of the rest of the day'},
+    act1:'Today',act2:'Today and tomorrow',cheapRest:'Cheapest hour of the rest of the day',
+    fcn:'Forecast days come from elpriser.org’s own statistical model, not an official forecast. It is best at picking out the cheapest hours of a day and much less sure of the price level: since prices rose sharply in September 2026 it has been no better than a simple method at the level. Settled day-ahead prices always replace the forecast.',
+    fcb:'P10–P90 range',
+    fcl:'Low confidence',
+    fca:'Back-test, D+{h}: mean error {mae} EUR/MWh, {g} % lower than a simple method ({r} % since 1 Sept 2026).',
+    fcae:'Back-test, D+{h}: mean error {mae} EUR/MWh (a simple method: {base} EUR/MWh).',
+    fcr:'It ranks the cheapest hours {r} % better than a simple method.',
+    fcc:'In the back-test {c} % of the hours fell inside the range.'},
   cs:{wd:['neděle','pondělí','úterý','středa','čtvrtek','pátek','sobota'],ws:['ne','po','út','st','čt','pá','so'],
     mon:['led','úno','bře','dub','kvě','čvn','čvc','srp','zář','říj','lis','pro'],dot:'.',hs:':00',hh:1,
     now:'Cena elektřiny právě teď',hourly:'Cena elektřiny po hodinách',at:'',today:'dnes',tomorrow:'zítra',evening:'dnes večer',
     verdict:['Nízká cena právě teď','Průměrná cena právě teď','Vysoká cena právě teď'],tier:['Nízká','Průměrná','Vysoká'],
     cheaper:'Levněji',cheapest24:'Nejlevnější hodina v příštích 24 hodinách',lo:'nejlevnější hodina',hi:'nejdražší hodina',
-    next:'Příštích',p2:'2 dny',p5:'5 dní',p7:'7 dní',period:'Období',fc:'Cena na denním trhu',actual:'Cena na denním trhu',
+    next:'Příštích',p2:'2 dny',p5:'5 dní',p7:'7 dní',period:'Období',fc:'Předpověď',actual:'Cena na denním trhu',
     byDay:'Den po dni',day:'Den',range:'Rozpětí',type:'Typ',none:'Ceny se teď nepodařilo načíst.',
     cap:'Burzovní cena z denního trhu bez DPH, daní a poplatků za distribuci',
     avg:'prům.',
-    act1:'Dnes',act2:'Dnes a zítra',cheapRest:'Nejlevnější hodina do konce dne'},
+    act1:'Dnes',act2:'Dnes a zítra',cheapRest:'Nejlevnější hodina do konce dne',
+    fcn:'Dny s předpovědí pocházejí z vlastního statistického modelu elpriser.org, nejde o oficiální předpověď. Nejlépe určuje nejlevnější hodiny dne a o cenové hladině si je mnohem méně jistý: od prudkého růstu cen v září 2026 nebyl na úrovni lepší než jednoduchá metoda. Zjištěné ceny na denním trhu předpověď vždy nahradí.',
+    fcb:'rozpětí P10–P90',
+    fcl:'Nízká jistota',
+    fca:'Test na historických datech, D+{h}: střední chyba {mae} EUR/MWh, o {g} % nižší než u jednoduché metody ({r} % od 1. 9. 2026).',
+    fcae:'Test na historických datech, D+{h}: střední chyba {mae} EUR/MWh (jednoduchá metoda: {base} EUR/MWh).',
+    fcr:'Nejlevnější hodiny určuje o {r} % lépe než jednoduchá metoda.',
+    fcc:'V testu leželo {c} % hodin uvnitř rozpětí.'},
   es:{wd:['domingo','lunes','martes','miércoles','jueves','viernes','sábado'],ws:['dom','lun','mar','mié','jue','vie','sáb'],
     mon:['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'],dot:'',hs:':00',hh:1,
     now:'Precio de la luz ahora',hourly:'Precio de la luz por horas',at:'',today:'hoy',tomorrow:'mañana',evening:'esta noche',
     verdict:['Precio bajo ahora','Precio medio ahora','Precio alto ahora'],tier:['Bajo','Medio','Alto'],
     cheaper:'Más barato',cheapest24:'Hora más barata de las próximas 24 horas',lo:'hora más barata',hi:'hora más cara',
-    next:'Próximas',p2:'2 días',p5:'5 días',p7:'7 días',period:'Periodo',fc:'Precio del mercado diario',actual:'Precio del mercado diario',
+    next:'Próximas',p2:'2 días',p5:'5 días',p7:'7 días',period:'Periodo',fc:'Previsión',actual:'Precio del mercado diario',
     byDay:'Día a día',day:'Día',range:'Rango',type:'Tipo',none:'No se han podido cargar los precios en este momento.',
     cap:'Precio mayorista del mercado diario sin IVA, impuestos, peajes ni cargos',
     avg:'media',
-    act1:'Hoy',act2:'Hoy y mañana',cheapRest:'Hora más barata del resto del día'},
+    act1:'Hoy',act2:'Hoy y mañana',cheapRest:'Hora más barata del resto del día',
+    fcn:'Los días de previsión proceden del modelo estadístico propio de elpriser.org y no son una previsión oficial. Acierta mejor qué horas del día serán más baratas y es mucho menos fiable en el nivel de precios: desde la fuerte subida de septiembre de 2026 no ha sido mejor que un método simple en el nivel. Los precios definitivos del mercado diario sustituyen siempre a la previsión.',
+    fcb:'rango P10–P90',
+    fcl:'Baja confianza',
+    fca:'Prueba con datos históricos, D+{h}: error medio {mae} EUR/MWh, un {g} % menor que con un método simple ({r} % desde el 1 sept. 2026).',
+    fcae:'Prueba con datos históricos, D+{h}: error medio {mae} EUR/MWh (método simple: {base} EUR/MWh).',
+    fcr:'Acierta las horas más baratas un {r} % mejor que un método simple.',
+    fcc:'En la prueba, el {c} % de las horas cayó dentro del rango.'},
   pt:{wd:['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'],ws:['dom','seg','ter','qua','qui','sex','sáb'],
     mon:['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'],dot:'',hs:':00',hh:1,
     now:'Preço da eletricidade agora',hourly:'Preço da eletricidade hora a hora',at:'',today:'hoje',tomorrow:'amanhã',evening:'hoje à noite',
     verdict:['Preço baixo agora','Preço médio agora','Preço alto agora'],tier:['Baixo','Médio','Alto'],
     cheaper:'Mais barato',cheapest24:'Hora mais barata das próximas 24 horas',lo:'hora mais barata',hi:'hora mais cara',
-    next:'Próximas',p2:'2 dias',p5:'5 dias',p7:'7 dias',period:'Período',fc:'Preço do mercado diário',actual:'Preço do mercado diário',
+    next:'Próximas',p2:'2 dias',p5:'5 dias',p7:'7 dias',period:'Período',fc:'Previsão',actual:'Preço do mercado diário',
     byDay:'Dia a dia',day:'Dia',range:'Intervalo',type:'Tipo',none:'Não foi possível carregar os preços neste momento.',
     cap:'Preço grossista do mercado diário sem IVA, impostos, taxas nem tarifas de acesso às redes',
     avg:'média',
-    act1:'Hoje',act2:'Hoje e amanhã',cheapRest:'Hora mais barata do resto do dia'},
+    act1:'Hoje',act2:'Hoje e amanhã',cheapRest:'Hora mais barata do resto do dia',
+    fcn:'Os dias de previsão vêm do modelo estatístico próprio da elpriser.org e não são uma previsão oficial. Acerta melhor quais são as horas mais baratas do dia e é muito menos fiável no nível dos preços: desde a forte subida de setembro de 2026 não foi melhor do que um método simples no nível. Os preços definitivos do mercado diário substituem sempre a previsão.',
+    fcb:'intervalo P10–P90',
+    fcl:'Baixa confiança',
+    fca:'Teste com dados históricos, D+{h}: erro médio {mae} EUR/MWh, {g} % abaixo de um método simples ({r} % desde 1 set. 2026).',
+    fcae:'Teste com dados históricos, D+{h}: erro médio {mae} EUR/MWh (método simples: {base} EUR/MWh).',
+    fcr:'Identifica as horas mais baratas {r} % melhor do que um método simples.',
+    fcc:'No teste, {c} % das horas ficaram dentro do intervalo.'},
   sk:{wd:['nedeľa','pondelok','utorok','streda','štvrtok','piatok','sobota'],ws:['ne','po','ut','st','št','pi','so'],
     mon:['jan.','feb.','mar.','apr.','máj','jún','júl','aug.','sep.','okt.','nov.','dec.'],dot:'.',hs:':00',hh:1,
     now:'Cena elektriny práve teraz',hourly:'Cena elektriny po hodinách',at:'',today:'dnes',tomorrow:'zajtra',evening:'dnes večer',
     verdict:['Nízka cena práve teraz','Priemerná cena práve teraz','Vysoká cena práve teraz'],tier:['Nízka','Priemerná','Vysoká'],
     cheaper:'Lacnejšie',cheapest24:'Najlacnejšia hodina v nasledujúcich 24 hodinách',lo:'najlacnejšia hodina',hi:'najdrahšia hodina',
-    next:'Nasledujúcich',p2:'2 dni',p5:'5 dní',p7:'7 dní',period:'Obdobie',fc:'Cena na dennom trhu',actual:'Cena na dennom trhu',
+    next:'Nasledujúcich',p2:'2 dni',p5:'5 dní',p7:'7 dní',period:'Obdobie',fc:'Predpoveď',actual:'Cena na dennom trhu',
     byDay:'Deň po dni',day:'Deň',range:'Rozpätie',type:'Typ',none:'Ceny sa teraz nepodarilo načítať.',
     cap:'Burzová cena z denného trhu bez DPH, daní a poplatkov za distribúciu',
     avg:'priem.',
-    act1:'Dnes',act2:'Dnes a zajtra',cheapRest:'Najlacnejšia hodina do konca dňa'},
+    act1:'Dnes',act2:'Dnes a zajtra',cheapRest:'Najlacnejšia hodina do konca dňa',
+    fcn:'Dni s predpoveďou pochádzajú z vlastného štatistického modelu elpriser.org, nejde o oficiálnu predpoveď. Najlepšie určuje najlacnejšie hodiny dňa a o cenovej úrovni si je oveľa menej istý: od prudkého rastu cien v septembri 2026 nebol na úrovni lepší než jednoduchá metóda. Zistené ceny na dennom trhu predpoveď vždy nahradia.',
+    fcb:'rozpätie P10–P90',
+    fcl:'Nízka istota',
+    fca:'Test na historických dátach, D+{h}: stredná chyba {mae} EUR/MWh, o {g} % nižšia než pri jednoduchej metóde ({r} % od 1. 9. 2026).',
+    fcae:'Test na historických dátach, D+{h}: stredná chyba {mae} EUR/MWh (jednoduchá metóda: {base} EUR/MWh).',
+    fcr:'Najlacnejšie hodiny určuje o {r} % lepšie než jednoduchá metóda.',
+    fcc:'V teste ležalo {c} % hodín vnútri rozpätia.'},
   hu:{wd:['vasárnap','hétfő','kedd','szerda','csütörtök','péntek','szombat'],ws:['v','h','k','sze','cs','p','szo'],
     mon:['jan.','febr.','márc.','ápr.','máj.','jún.','júl.','aug.','szept.','okt.','nov.','dec.'],dot:'.',mf:1,hs:':00',hh:1,
     now:'Áramár most',hourly:'Áramár óránként',at:'',today:'ma',tomorrow:'holnap',evening:'ma este',
     verdict:['Most olcsó','Most átlagos','Most drága'],tier:['Olcsó','Átlagos','Drága'],
     cheaper:'Olcsóbb',cheapest24:'A legolcsóbb óra a következő 24 órában',lo:'legolcsóbb óra',hi:'legdrágább óra',
-    next:'Következő',p2:'2 nap',p5:'5 nap',p7:'7 nap',period:'Időszak',fc:'Másnapi piaci ár',actual:'Másnapi piaci ár',
+    next:'Következő',p2:'2 nap',p5:'5 nap',p7:'7 nap',period:'Időszak',fc:'Előrejelzés',actual:'Másnapi piaci ár',
     byDay:'Napról napra',day:'Nap',range:'Tartomány',type:'Típus',none:'Az árakat most nem sikerült betölteni.',
     cap:'Tőzsdei másnapi ár áfa, adók és hálózati díjak nélkül',
     avg:'átl.',
-    act1:'Ma',act2:'Ma és holnap',cheapRest:'A nap hátralévő részének legolcsóbb órája'},
+    act1:'Ma',act2:'Ma és holnap',cheapRest:'A nap hátralévő részének legolcsóbb órája',
+    fcn:'Az előrejelzett napok az elpriser.org saját statisztikai modelljéből származnak, nem hivatalos előrejelzések. A modell a nap legolcsóbb óráit jelöli ki a legjobban, az árszintben viszont sokkal bizonytalanabb: a 2026. szeptemberi erős áremelkedés óta szinten nem volt jobb egy egyszerű módszernél. A véglegesített másnapi árak mindig felváltják az előrejelzést.',
+    fcb:'P10–P90 sáv',
+    fcl:'Alacsony megbízhatóság',
+    fca:'Visszatesztelés, D+{h}: átlagos hiba {mae} EUR/MWh, {g} %-kal kisebb, mint egy egyszerű módszeré ({r} % 2026. szept. 1. óta).',
+    fcae:'Visszatesztelés, D+{h}: átlagos hiba {mae} EUR/MWh (egyszerű módszer: {base} EUR/MWh).',
+    fcr:'A legolcsóbb órákat {r} %-kal jobban jelöli ki egy egyszerű módszernél.',
+    fcc:'A tesztben az órák {c} %-a a sávon belül maradt.'},
   sl:{wd:['nedelja','ponedeljek','torek','sreda','četrtek','petek','sobota'],ws:['ned','pon','tor','sre','čet','pet','sob'],
     mon:['jan.','feb.','mar.','apr.','maj','jun.','jul.','avg.','sep.','okt.','nov.','dec.'],dot:'.',hs:':00',hh:1,
     now:'Cena elektrike zdaj',hourly:'Cena elektrike po urah',at:'',today:'danes',tomorrow:'jutri',evening:'danes zvečer',
     verdict:['Nizka cena zdaj','Povprečna cena zdaj','Visoka cena zdaj'],tier:['Nizka','Povprečna','Visoka'],
     cheaper:'Ceneje',cheapest24:'Najcenejša ura v naslednjih 24 urah',lo:'najcenejša ura',hi:'najdražja ura',
-    next:'Naslednjih',p2:'2 dni',p5:'5 dni',p7:'7 dni',period:'Obdobje',fc:'Cena na trgu za dan vnaprej',actual:'Cena na trgu za dan vnaprej',
+    next:'Naslednjih',p2:'2 dni',p5:'5 dni',p7:'7 dni',period:'Obdobje',fc:'Napoved',actual:'Cena na trgu za dan vnaprej',
     byDay:'Dan za dnem',day:'Dan',range:'Razpon',type:'Vrsta',none:'Cen trenutno ni bilo mogoče naložiti.',
     cap:'Veleprodajna cena na trgu za dan vnaprej brez DDV, davkov in omrežnine',
     avg:'povp.',
-    act1:'Danes',act2:'Danes in jutri',cheapRest:'Najcenejša ura do konca dneva'},
+    act1:'Danes',act2:'Danes in jutri',cheapRest:'Najcenejša ura do konca dneva',
+    fcn:'Dnevi napovedi izhajajo iz lastnega statističnega modela elpriser.org in niso uradna napoved. Najbolje določi najcenejše ure dneva, pri ravni cen pa je precej manj zanesljiv: od močnega dviga cen septembra 2026 na ravni ni bil boljši od preproste metode. Dokončne cene na trgu za dan vnaprej napoved vedno nadomestijo.',
+    fcb:'razpon P10–P90',
+    fcl:'Nizka zanesljivost',
+    fca:'Preizkus na preteklih podatkih, D+{h}: povprečna napaka {mae} EUR/MWh, {g} % manj kot pri preprosti metodi ({r} % od 1. 9. 2026).',
+    fcae:'Preizkus na preteklih podatkih, D+{h}: povprečna napaka {mae} EUR/MWh (preprosta metoda: {base} EUR/MWh).',
+    fcr:'Najcenejše ure določi {r} % bolje kot preprosta metoda.',
+    fcc:'V preizkusu je bilo {c} % ur znotraj razpona.'},
   ro:{wd:['duminică','luni','marți','miercuri','joi','vineri','sâmbătă'],ws:['dum','lun','mar','mie','joi','vin','sâm'],
     mon:['ian.','feb.','mar.','apr.','mai','iun.','iul.','aug.','sept.','oct.','nov.','dec.'],dot:'',hs:':00',hh:1,
     now:'Prețul energiei acum',hourly:'Prețul energiei oră cu oră',at:'la',today:'azi',tomorrow:'mâine',evening:'diseară',
     verdict:['Preț scăzut acum','Preț mediu acum','Preț ridicat acum'],tier:['Scăzut','Mediu','Ridicat'],
     cheaper:'Mai ieftin',cheapest24:'Cea mai ieftină oră din următoarele 24 de ore',lo:'cea mai ieftină oră',hi:'cea mai scumpă oră',
-    next:'Următoarele',p2:'2 zile',p5:'5 zile',p7:'7 zile',period:'Perioadă',fc:'Preț pe piața zilei următoare',actual:'Preț pe piața zilei următoare',
+    next:'Următoarele',p2:'2 zile',p5:'5 zile',p7:'7 zile',period:'Perioadă',fc:'Prognoză',actual:'Preț pe piața zilei următoare',
     byDay:'Zi cu zi',day:'Zi',range:'Interval',type:'Tip',none:'Prețurile nu au putut fi încărcate acum.',
     cap:'Prețul angro pe piața zilei următoare, fără TVA, taxe și tarife de rețea',
     avg:'medie',
-    act1:'Azi',act2:'Azi și mâine',cheapRest:'Cea mai ieftină oră din restul zilei'},
+    act1:'Azi',act2:'Azi și mâine',cheapRest:'Cea mai ieftină oră din restul zilei',
+    fcn:'Zilele de prognoză provin din modelul statistic propriu al elpriser.org și nu sunt o prognoză oficială. Indică cel mai bine orele cele mai ieftine ale zilei și este mult mai nesigur în privința nivelului prețurilor: de la creșterea puternică din septembrie 2026 nu a fost mai bun decât o metodă simplă la nivel. Prețurile definitive de pe piața pentru ziua următoare înlocuiesc întotdeauna prognoza.',
+    fcb:'interval P10–P90',
+    fcl:'Încredere scăzută',
+    fca:'Test pe date istorice, D+{h}: eroare medie {mae} EUR/MWh, cu {g} % mai mică decât la o metodă simplă ({r} % din 1 sept. 2026).',
+    fcae:'Test pe date istorice, D+{h}: eroare medie {mae} EUR/MWh (metodă simplă: {base} EUR/MWh).',
+    fcr:'Alege orele cele mai ieftine cu {r} % mai bine decât o metodă simplă.',
+    fcc:'În test, {c} % dintre ore s-au aflat în interval.'},
   bg:{wd:['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'],ws:['нд','пн','вт','ср','чт','пт','сб'],
     mon:['яну','фев','март','апр','май','юни','юли','авг','сеп','окт','ное','дек'],dot:'',hs:':00',hh:1,
     now:'Цена на тока сега',hourly:'Цена на тока по часове',at:'',today:'днес',tomorrow:'утре',evening:'тази вечер',
     verdict:['Ниска цена сега','Средна цена сега','Висока цена сега'],tier:['Ниска','Средна','Висока'],
     cheaper:'По-евтино',cheapest24:'Най-евтиният час в следващите 24 часа',lo:'най-евтиният час',hi:'най-скъпият час',
-    next:'Следващите',p2:'2 дни',p5:'5 дни',p7:'7 дни',period:'Период',fc:'Цена на пазара ден напред',actual:'Цена на пазара ден напред',
+    next:'Следващите',p2:'2 дни',p5:'5 дни',p7:'7 дни',period:'Период',fc:'Прогноза',actual:'Цена на пазара ден напред',
     byDay:'Ден по ден',day:'Ден',range:'Диапазон',type:'Вид',none:'Цените не можаха да бъдат заредени в момента.',
     cap:'Борсова цена на пазара ден напред без ДДС, данъци и мрежови такси',
     avg:'ср.',
-    act1:'Днес',act2:'Днес и утре',cheapRest:'Най-евтиният час до края на деня'},
+    act1:'Днес',act2:'Днес и утре',cheapRest:'Най-евтиният час до края на деня',
+    fcn:'Дните с прогноза идват от собствения статистически модел на elpriser.org и не са официална прогноза. Най-добре определя кои са най-евтините часове на деня и е много по-несигурен за равнището на цените: след рязкото поскъпване през септември 2026 г. по равнище не е бил по-добър от прост метод. Окончателните цени на пазара ден напред винаги заместват прогнозата.',
+    fcb:'диапазон P10–P90',
+    fcl:'Ниска надеждност',
+    fca:'Тест с исторически данни, D+{h}: средна грешка {mae} EUR/MWh, с {g} % по-малка от тази на прост метод ({r} % от 1 септ. 2026 г.).',
+    fcae:'Тест с исторически данни, D+{h}: средна грешка {mae} EUR/MWh (прост метод: {base} EUR/MWh).',
+    fcr:'Определя най-евтините часове с {r} % по-добре от прост метод.',
+    fcc:'При теста {c} % от часовете попаднаха в диапазона.'},
   el:{wd:['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'],ws:['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'],
     mon:['Ιαν','Φεβ','Μαρ','Απρ','Μαΐ','Ιουν','Ιουλ','Αυγ','Σεπ','Οκτ','Νοε','Δεκ'],dot:'',hs:':00',hh:1,
     now:'Τιμή ρεύματος τώρα',hourly:'Τιμή ρεύματος ανά ώρα',at:'ώρα',today:'σήμερα',tomorrow:'αύριο',evening:'απόψε',
     verdict:['Χαμηλή τιμή τώρα','Μέση τιμή τώρα','Υψηλή τιμή τώρα'],tier:['Χαμηλή','Μέση','Υψηλή'],
     cheaper:'Φθηνότερα',cheapest24:'Φθηνότερη ώρα στις επόμενες 24 ώρες',lo:'φθηνότερη ώρα',hi:'ακριβότερη ώρα',
-    next:'Επόμενες',p2:'2 ημέρες',p5:'5 ημέρες',p7:'7 ημέρες',period:'Περίοδος',fc:'Τιμή στην αγορά επόμενης ημέρας',actual:'Τιμή στην αγορά επόμενης ημέρας',
+    next:'Επόμενες',p2:'2 ημέρες',p5:'5 ημέρες',p7:'7 ημέρες',period:'Περίοδος',fc:'Πρόβλεψη',actual:'Τιμή στην αγορά επόμενης ημέρας',
     byDay:'Ανά ημέρα',day:'Ημέρα',range:'Εύρος',type:'Τύπος',none:'Δεν ήταν δυνατή η φόρτωση των τιμών αυτή τη στιγμή.',
     cap:'Χονδρική τιμή της αγοράς επόμενης ημέρας, χωρίς ΦΠΑ, φόρους και χρεώσεις δικτύου',
     avg:'μ.ό.',
-    act1:'Σήμερα',act2:'Σήμερα και αύριο',cheapRest:'Φθηνότερη ώρα για το υπόλοιπο της ημέρας'},
+    act1:'Σήμερα',act2:'Σήμερα και αύριο',cheapRest:'Φθηνότερη ώρα για το υπόλοιπο της ημέρας',
+    fcn:'Οι ημέρες πρόβλεψης προέρχονται από το ίδιο το στατιστικό μοντέλο της elpriser.org και δεν αποτελούν επίσημη πρόβλεψη. Εντοπίζει καλύτερα τις φθηνότερες ώρες της ημέρας και είναι πολύ λιγότερο βέβαιο για το επίπεδο των τιμών: μετά τη μεγάλη άνοδο του Σεπτεμβρίου 2026 δεν ήταν καλύτερο από μια απλή μέθοδο ως προς το επίπεδο. Οι οριστικές τιμές της αγοράς επόμενης ημέρας αντικαθιστούν πάντα την πρόβλεψη.',
+    fcb:'εύρος P10–P90',
+    fcl:'Χαμηλή βεβαιότητα',
+    fca:'Δοκιμή σε ιστορικά δεδομένα, D+{h}: μέσο σφάλμα {mae} EUR/MWh, κατά {g} % χαμηλότερο από μια απλή μέθοδο ({r} % από 1 Σεπτ. 2026).',
+    fcae:'Δοκιμή σε ιστορικά δεδομένα, D+{h}: μέσο σφάλμα {mae} EUR/MWh (απλή μέθοδος: {base} EUR/MWh).',
+    fcr:'Εντοπίζει τις φθηνότερες ώρες κατά {r} % καλύτερα από μια απλή μέθοδο.',
+    fcc:'Στη δοκιμή, το {c} % των ωρών έπεσε μέσα στο εύρος.'},
   hr:{wd:['nedjelja','ponedjeljak','utorak','srijeda','četvrtak','petak','subota'],ws:['ned','pon','uto','sri','čet','pet','sub'],
     mon:['sij','velj','ožu','tra','svi','lip','srp','kol','ruj','lis','stu','pro'],dot:'.',hs:':00',hh:1,
     now:'Cijena struje trenutno',hourly:'Cijena struje po satima',at:'',today:'danas',tomorrow:'sutra',evening:'večeras',
     verdict:['Niska cijena trenutno','Prosječna cijena trenutno','Visoka cijena trenutno'],tier:['Niska','Prosječna','Visoka'],
     cheaper:'Jeftinije',cheapest24:'Najjeftiniji sat u sljedeća 24 sata',lo:'najjeftiniji sat',hi:'najskuplji sat',
-    next:'Sljedećih',p2:'2 dana',p5:'5 dana',p7:'7 dana',period:'Razdoblje',fc:'Cijena na tržištu dan unaprijed',actual:'Cijena na tržištu dan unaprijed',
+    next:'Sljedećih',p2:'2 dana',p5:'5 dana',p7:'7 dana',period:'Razdoblje',fc:'Prognoza',actual:'Cijena na tržištu dan unaprijed',
     byDay:'Dan po dan',day:'Dan',range:'Raspon',type:'Vrsta',none:'Cijene trenutno nije moguće učitati.',
     cap:'Burzovna cijena na tržištu dan unaprijed bez PDV-a, poreza i mrežarine',
     avg:'prosj.',
-    act1:'Danas',act2:'Danas i sutra',cheapRest:'Najjeftiniji sat do kraja dana'},
+    act1:'Danas',act2:'Danas i sutra',cheapRest:'Najjeftiniji sat do kraja dana',
+    fcn:'Dani prognoze potječu iz vlastitog statističkog modela elpriser.org i nisu službena prognoza. Najbolje određuje najjeftinije sate u danu, a puno je nesigurniji u razini cijena: od snažnog rasta cijena u rujnu 2026. po razini nije bio bolji od jednostavne metode. Utvrđene cijene na tržištu dan unaprijed uvijek zamjenjuju prognozu.',
+    fcb:'raspon P10–P90',
+    fcl:'Niska pouzdanost',
+    fca:'Test na povijesnim podacima, D+{h}: prosječna pogreška {mae} EUR/MWh, {g} % manja nego kod jednostavne metode ({r} % od 1. 9. 2026.).',
+    fcae:'Test na povijesnim podacima, D+{h}: prosječna pogreška {mae} EUR/MWh (jednostavna metoda: {base} EUR/MWh).',
+    fcr:'Najjeftinije sate određuje {r} % bolje od jednostavne metode.',
+    fcc:'U testu je {c} % sati bilo unutar raspona.'},
   'sr-Latn':{wd:['nedelja','ponedeljak','utorak','sreda','četvrtak','petak','subota'],ws:['ned','pon','uto','sre','čet','pet','sub'],
     mon:['jan','feb','mar','apr','maj','jun','jul','avg','sep','okt','nov','dec'],dot:'.',hs:':00',hh:1,
     now:'Cena struje trenutno',hourly:'Cena struje po satima',at:'',today:'danas',tomorrow:'sutra',evening:'večeras',
     verdict:['Niska cena trenutno','Prosečna cena trenutno','Visoka cena trenutno'],tier:['Niska','Prosečna','Visoka'],
     cheaper:'Jeftinije',cheapest24:'Najjeftiniji sat u narednih 24 sata',lo:'najjeftiniji sat',hi:'najskuplji sat',
-    next:'Narednih',p2:'2 dana',p5:'5 dana',p7:'7 dana',period:'Period',fc:'Cena na tržištu za dan unapred',actual:'Cena na tržištu za dan unapred',
+    next:'Narednih',p2:'2 dana',p5:'5 dana',p7:'7 dana',period:'Period',fc:'Prognoza',actual:'Cena na tržištu za dan unapred',
     byDay:'Dan po dan',day:'Dan',range:'Raspon',type:'Vrsta',none:'Cene trenutno nije moguće učitati.',
     cap:'Berzanska cena na tržištu za dan unapred bez PDV-a, poreza i naknada za mrežu',
     avg:'pros.',
-    act1:'Danas',act2:'Danas i sutra',cheapRest:'Najjeftiniji sat do kraja dana'},
+    act1:'Danas',act2:'Danas i sutra',cheapRest:'Najjeftiniji sat do kraja dana',
+    fcn:'Dani prognoze potiču iz sopstvenog statističkog modela elpriser.org i nisu zvanična prognoza. Najbolje određuje najjeftinije sate u danu, a mnogo je nesigurniji u pogledu nivoa cena: od snažnog rasta cena u septembru 2026. po nivou nije bio bolji od jednostavnog metoda. Utvrđene cene na tržištu za dan unapred uvek zamenjuju prognozu.',
+    fcb:'opseg P10–P90',
+    fcl:'Mala pouzdanost',
+    fca:'Test na istorijskim podacima, D+{h}: prosečna greška {mae} EUR/MWh, {g} % manja nego kod jednostavnog metoda ({r} % od 1. 9. 2026).',
+    fcae:'Test na istorijskim podacima, D+{h}: prosečna greška {mae} EUR/MWh (jednostavan metod: {base} EUR/MWh).',
+    fcr:'Najjeftinije sate određuje {r} % bolje od jednostavnog metoda.',
+    fcc:'U testu je {c} % sati bilo unutar opsega.'},
   'sr-ME':{wd:['nedjelja','ponedjeljak','utorak','srijeda','četvrtak','petak','subota'],ws:['ned','pon','uto','sri','čet','pet','sub'],
     mon:['jan','feb','mar','apr','maj','jun','jul','avg','sep','okt','nov','dec'],dot:'.',hs:':00',hh:1,
     now:'Cijena struje trenutno',hourly:'Cijena struje po satima',at:'',today:'danas',tomorrow:'sjutra',evening:'večeras',
     verdict:['Niska cijena trenutno','Prosječna cijena trenutno','Visoka cijena trenutno'],tier:['Niska','Prosječna','Visoka'],
     cheaper:'Jeftinije',cheapest24:'Najjeftiniji sat u narednih 24 sata',lo:'najjeftiniji sat',hi:'najskuplji sat',
-    next:'Narednih',p2:'2 dana',p5:'5 dana',p7:'7 dana',period:'Period',fc:'Cijena na tržištu za dan unaprijed',actual:'Cijena na tržištu za dan unaprijed',
+    next:'Narednih',p2:'2 dana',p5:'5 dana',p7:'7 dana',period:'Period',fc:'Prognoza',actual:'Cijena na tržištu za dan unaprijed',
     byDay:'Dan po dan',day:'Dan',range:'Raspon',type:'Vrsta',none:'Cijene trenutno nije moguće učitati.',
     cap:'Berzanska cijena na tržištu za dan unaprijed bez PDV-a, poreza i naknada za mrežu',
     avg:'prosj.',
-    act1:'Danas',act2:'Danas i sjutra',cheapRest:'Najjeftiniji sat do kraja dana'},
+    act1:'Danas',act2:'Danas i sjutra',cheapRest:'Najjeftiniji sat do kraja dana',
+    fcn:'Dani prognoze potiču iz vlastitog statističkog modela elpriser.org i nijesu zvanična prognoza. Najbolje određuje najjeftinije sate u danu, a mnogo je nesigurniji u pogledu nivoa cijena: od snažnog rasta cijena u septembru 2026. po nivou nije bio bolji od jednostavnog metoda. Utvrđene cijene na tržištu za dan unaprijed uvijek zamjenjuju prognozu.',
+    fcb:'opseg P10–P90',
+    fcl:'Mala pouzdanost',
+    fca:'Test na istorijskim podacima, D+{h}: prosječna greška {mae} EUR/MWh, {g} % manja nego kod jednostavnog metoda ({r} % od 1. 9. 2026).',
+    fcae:'Test na istorijskim podacima, D+{h}: prosječna greška {mae} EUR/MWh (jednostavan metod: {base} EUR/MWh).',
+    fcr:'Najjeftinije sate određuje {r} % bolje od jednostavnog metoda.',
+    fcc:'U testu je {c} % sati bilo unutar opsega.'},
   et:{wd:['pühapäev','esmaspäev','teisipäev','kolmapäev','neljapäev','reede','laupäev'],ws:['P','E','T','K','N','R','L'],
     mon:['jaan','veebr','märts','apr','mai','juuni','juuli','aug','sept','okt','nov','dets'],dot:'.',hs:':00',hh:1,
     now:'Elektri hind praegu',hourly:'Elektri hind tundide kaupa',at:'kell',today:'täna',tomorrow:'homme',evening:'täna õhtul',
     verdict:['Odav praegu','Keskmine praegu','Kallis praegu'],tier:['Odav','Keskmine','Kallis'],
     cheaper:'Odavam',cheapest24:'Odavaim tund järgmise 24 tunni jooksul',lo:'odavaim tund',hi:'kalleim tund',
-    next:'Järgmised',p2:'2 päeva',p5:'5 päeva',p7:'7 päeva',period:'Periood',fc:'Päev-ette hind',actual:'Päev-ette hind',
+    next:'Järgmised',p2:'2 päeva',p5:'5 päeva',p7:'7 päeva',period:'Periood',fc:'Prognoos',actual:'Päev-ette hind',
     byDay:'Päev päeva haaval',day:'Päev',range:'Vahemik',type:'Liik',none:'Hindu ei õnnestunud praegu laadida.',
     cap:'Päev-ette börsihind, mis ei sisalda käibemaksu, makse ega võrgutasusid',
     avg:'keskm.',
-    act1:'Täna',act2:'Täna ja homme',cheapRest:'Päeva ülejäänud osa odavaim tund'},
+    act1:'Täna',act2:'Täna ja homme',cheapRest:'Päeva ülejäänud osa odavaim tund',
+    fcn:'Prognoosipäevad pärinevad elpriser.org oma statistilisest mudelist ega ole ametlik prognoos. Mudel leiab kõige paremini päeva odavaimad tunnid ja on hinnataseme osas palju ebakindlam: pärast hinnatõusu 2026. aasta septembris pole see tasemelt olnud lihtsast meetodist parem. Kinnitatud päev-ette hinnad asendavad prognoosi alati.',
+    fcb:'P10–P90 vahemik',
+    fcl:'Madal kindlus',
+    fca:'Test ajalooliste andmetega, D+{h}: keskmine viga {mae} EUR/MWh, {g} % väiksem kui lihtsal meetodil ({r} % alates 1. sept. 2026).',
+    fcae:'Test ajalooliste andmetega, D+{h}: keskmine viga {mae} EUR/MWh (lihtne meetod: {base} EUR/MWh).',
+    fcr:'Odavaimad tunnid leiab see {r} % paremini kui lihtne meetod.',
+    fcc:'Testis jäi {c} % tundidest vahemikku.'},
   lv:{wd:['svētdiena','pirmdiena','otrdiena','trešdiena','ceturtdiena','piektdiena','sestdiena'],ws:['Sv','P','O','T','C','Pk','S'],
     mon:['janv.','febr.','marts','apr.','maijs','jūn.','jūl.','aug.','sept.','okt.','nov.','dec.'],dot:'.',hs:':00',hh:1,
     now:'Elektrības cena tagad',hourly:'Elektrības cena pa stundām',at:'plkst.',today:'šodien',tomorrow:'rīt',evening:'šovakar',
     verdict:['Zema cena tagad','Vidēja cena tagad','Augsta cena tagad'],tier:['Zema','Vidēja','Augsta'],
     cheaper:'Lētāk',cheapest24:'Lētākā stunda tuvāko 24 stundu laikā',lo:'lētākā stunda',hi:'dārgākā stunda',
-    next:'Nākamās',p2:'2 dienas',p5:'5 dienas',p7:'7 dienas',period:'Periods',fc:'Dienas tirgus cena',actual:'Dienas tirgus cena',
+    next:'Nākamās',p2:'2 dienas',p5:'5 dienas',p7:'7 dienas',period:'Periods',fc:'Prognoze',actual:'Dienas tirgus cena',
     byDay:'Diena pa dienai',day:'Diena',range:'Diapazons',type:'Veids',none:'Cenas šobrīd neizdevās ielādēt.',
     cap:'Dienas tirgus cena biržā bez PVN, nodokļiem un tīkla maksas',
     avg:'vid.',
-    act1:'Šodien',act2:'Šodien un rīt',cheapRest:'Lētākā stunda atlikušajā dienas daļā'},
+    act1:'Šodien',act2:'Šodien un rīt',cheapRest:'Lētākā stunda atlikušajā dienas daļā',
+    fcn:'Prognozes dienas nāk no elpriser.org paša statistiskā modeļa, un tā nav oficiāla prognoze. Modelis vislabāk atrod dienas lētākās stundas un ir daudz mazāk drošs par cenu līmeni: kopš straujā cenu kāpuma 2026. gada septembrī līmeņa ziņā tas nav bijis labāks par vienkāršu metodi. Apstiprinātās nākamās dienas tirgus cenas vienmēr aizstāj prognozi.',
+    fcb:'P10–P90 diapazons',
+    fcl:'Zema pārliecība',
+    fca:'Tests ar vēsturiskiem datiem, D+{h}: vidējā kļūda {mae} EUR/MWh, par {g} % mazāka nekā vienkāršai metodei ({r} % kopš 2026. g. 1. sept.).',
+    fcae:'Tests ar vēsturiskiem datiem, D+{h}: vidējā kļūda {mae} EUR/MWh (vienkārša metode: {base} EUR/MWh).',
+    fcr:'Lētākās stundas tas atrod par {r} % labāk nekā vienkārša metode.',
+    fcc:'Testā {c} % stundu iekļuva diapazonā.'},
   lt:{wd:['sekmadienis','pirmadienis','antradienis','trečiadienis','ketvirtadienis','penktadienis','šeštadienis'],ws:['Sk','Pr','An','Tr','Kt','Pn','Št'],
     mon:['saus.','vas.','kov.','bal.','geg.','birž.','liep.','rugp.','rugs.','spal.','lapkr.','gruod.'],dot:'',hs:':00',hh:1,
     now:'Elektros kaina dabar',hourly:'Elektros kaina pagal valandas',at:'',today:'šiandien',tomorrow:'rytoj',evening:'šį vakarą',
     verdict:['Žema kaina dabar','Vidutinė kaina dabar','Aukšta kaina dabar'],tier:['Žema','Vidutinė','Aukšta'],
     cheaper:'Pigiau',cheapest24:'Pigiausia valanda per artimiausias 24 valandas',lo:'pigiausia valanda',hi:'brangiausia valanda',
-    next:'Artimiausios',p2:'2 dienos',p5:'5 dienos',p7:'7 dienos',period:'Laikotarpis',fc:'Kaina prieš parą',actual:'Kaina prieš parą',
+    next:'Artimiausios',p2:'2 dienos',p5:'5 dienos',p7:'7 dienos',period:'Laikotarpis',fc:'Prognozė',actual:'Kaina prieš parą',
     byDay:'Diena po dienos',day:'Diena',range:'Intervalas',type:'Rūšis',none:'Šiuo metu nepavyko įkelti kainų.',
     cap:'Biržos kaina prieš parą be PVM, mokesčių ir tinklo mokesčių',
     avg:'vid.',
-    act1:'Šiandien',act2:'Šiandien ir rytoj',cheapRest:'Pigiausia likusios dienos valanda'},
+    act1:'Šiandien',act2:'Šiandien ir rytoj',cheapRest:'Pigiausia likusios dienos valanda',
+    fcn:'Prognozės dienos gaunamos iš paties elpriser.org statistinio modelio ir nėra oficiali prognozė. Modelis geriausiai nurodo pigiausias paros valandas, o dėl kainų lygio yra daug mažiau tikras: nuo staigaus kainų šuolio 2026 m. rugsėjį pagal lygį jis nebuvo geresnis už paprastą metodą. Nustatytos kainos prieš parą visada pakeičia prognozę.',
+    fcb:'P10–P90 intervalas',
+    fcl:'Mažas patikimumas',
+    fca:'Bandymas su istoriniais duomenimis, D+{h}: vidutinė paklaida {mae} EUR/MWh, {g} % mažesnė nei paprasto metodo ({r} % nuo 2026-09-01).',
+    fcae:'Bandymas su istoriniais duomenimis, D+{h}: vidutinė paklaida {mae} EUR/MWh (paprastas metodas: {base} EUR/MWh).',
+    fcr:'Pigiausias valandas jis nurodo {r} % geriau nei paprastas metodas.',
+    fcc:'Bandyme {c} % valandų pateko į intervalą.'},
   mk:{wd:['недела','понеделник','вторник','среда','четврток','петок','сабота'],ws:['нед','пон','вто','сре','чет','пет','саб'],
     mon:['јан','фев','мар','апр','мај','јун','јул','авг','сеп','окт','ное','дек'],dot:'.',hs:':00',hh:1,
     now:'Цена на струја сега',hourly:'Цена на струја по часови',at:'во',today:'денес',tomorrow:'утре',evening:'денес навечер',
     verdict:['Ниска цена сега','Просечна цена сега','Висока цена сега'],tier:['Ниска','Просечна','Висока'],
     cheaper:'Поевтино',cheapest24:'Најевтин час во следните 24 часа',lo:'најевтин час',hi:'најскап час',
-    next:'Следни',p2:'2 дена',p5:'5 дена',p7:'7 дена',period:'Период',fc:'Цена за ден напред',actual:'Цена за ден напред',
+    next:'Следни',p2:'2 дена',p5:'5 дена',p7:'7 дена',period:'Период',fc:'Прогноза',actual:'Цена за ден напред',
     byDay:'Ден по ден',day:'Ден',range:'Распон',type:'Вид',none:'Цените не може да се вчитаат во моментов.',
     cap:'Берзанска цена за ден напред без ДДВ, даноци и мрежни надоместоци',
     avg:'просек',
-    act1:'Денес',act2:'Денес и утре',cheapRest:'Најевтин час до крајот на денот'},
+    act1:'Денес',act2:'Денес и утре',cheapRest:'Најевтин час до крајот на денот',
+    fcn:'Деновите со прогноза доаѓаат од сопствениот статистички модел на elpriser.org и не се официјална прогноза. Најдобро ги одредува најевтините часови во денот, а многу е понесигурен за нивото на цените: од силниот раст на цените во септември 2026 година по ниво не бил подобар од едноставен метод. Утврдените цени на пазарот за ден однапред секогаш ја заменуваат прогнозата.',
+    fcb:'опсег P10–P90',
+    fcl:'Ниска сигурност',
+    fca:'Тест врз историски податоци, D+{h}: просечна грешка {mae} EUR/MWh, за {g} % помала отколку кај едноставен метод ({r} % од 1 септ. 2026).',
+    fcae:'Тест врз историски податоци, D+{h}: просечна грешка {mae} EUR/MWh (едноставен метод: {base} EUR/MWh).',
+    fcr:'Најевтините часови ги одредува за {r} % подобро од едноставен метод.',
+    fcc:'Во тестот {c} % од часовите паднаа во опсегот.'},
   sq:{wd:['e diel','e hënë','e martë','e mërkurë','e enjte','e premte','e shtunë'],ws:['die','hën','mar','mër','enj','pre','sht'],
     mon:['jan','shk','mar','pri','maj','qer','kor','gsh','sht','tet','nën','dhj'],dot:'',hs:':00',hh:1,
     now:'Çmimi i energjisë tani',hourly:'Çmimi i energjisë çdo orë',at:'në orën',today:'sot',tomorrow:'nesër',evening:'sonte',
     verdict:['Çmim i ulët tani','Çmim mesatar tani','Çmim i lartë tani'],tier:['I ulët','Mesatar','I lartë'],
     cheaper:'Më lirë',cheapest24:'Ora më e lirë në 24 orët e ardhshme',lo:'ora më e lirë',hi:'ora më e shtrenjtë',
-    next:'Të ardhshmet',p2:'2 ditë',p5:'5 ditë',p7:'7 ditë',period:'Periudha',fc:'Çmimi i ditës në avancë',actual:'Çmimi i ditës në avancë',
+    next:'Të ardhshmet',p2:'2 ditë',p5:'5 ditë',p7:'7 ditë',period:'Periudha',fc:'Parashikim',actual:'Çmimi i ditës në avancë',
     byDay:'Ditë pas dite',day:'Dita',range:'Diapazoni',type:'Lloji',none:'Çmimet nuk mund të ngarkohen për momentin.',
     cap:'Çmimi i borsës për ditën në avancë pa TVSH, taksa dhe tarifa rrjeti',
     avg:'mes.',
-    act1:'Sot',act2:'Sot dhe nesër',cheapRest:'Ora më e lirë deri në fund të ditës'}
+    act1:'Sot',act2:'Sot dhe nesër',cheapRest:'Ora më e lirë deri në fund të ditës',
+    fcn:'Ditët e parashikimit vijnë nga modeli statistikor i vetë elpriser.org dhe nuk janë parashikim zyrtar. Ai i dallon më mirë orët më të lira të ditës dhe është shumë më pak i sigurt për nivelin e çmimeve: pas rritjes së fortë të shtatorit 2026 nuk ka qenë më i mirë se një metodë e thjeshtë në nivel. Çmimet përfundimtare të tregut të ditës në avancë e zëvendësojnë gjithmonë parashikimin.',
+    fcb:'diapazoni P10–P90',
+    fcl:'Besueshmëri e ulët',
+    fca:'Provë me të dhëna historike, D+{h}: gabim mesatar {mae} EUR/MWh, {g} % më i vogël se me një metodë të thjeshtë ({r} % nga 1 sht. 2026).',
+    fcae:'Provë me të dhëna historike, D+{h}: gabim mesatar {mae} EUR/MWh (metodë e thjeshtë: {base} EUR/MWh).',
+    fcr:'I zgjedh orët më të lira {r} % më mirë se një metodë e thjeshtë.',
+    fcc:'Në provë, {c} % e orëve ranë brenda diapazonit.'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1539,7 +1732,7 @@ var PRIS_COUNTRIES={
     desc:'Market Index Price (within-day) for Great Britain, hour by hour for today, in p/kWh, excl. VAT and charges. Not the day-ahead price. Source: Elexon BMRS',
     tx:{h1:'Electricity price in Great Britain: today, within-day market index',
       zonesH:'Electricity price in Great Britain',
-      now:'Latest Market Index Price (within-day)',verdict:['Cheap hour today','Average hour today','Expensive hour today'],fc:'Market Index Price (within-day)',actual:'Market Index Price (within-day)',
+      now:'Latest Market Index Price (within-day)',verdict:['Cheap hour today','Average hour today','Expensive hour today'],actual:'Market Index Price (within-day)',
       cap:'Market Index Price (within-day) excluding VAT, taxes, levies and network charges. This is not the day-ahead auction price',
       note:'The Market Index Price (within-day) is the volume-weighted price of the within-day wholesale trades of each half hour (EPEX SPOT UK and N2EX, as reported to Elexon). It is not the day-ahead auction price, which is not free data for Great Britain, and there is no tomorrow: an hour is shown once both of its half hours have traded. Hourly means of the half-hourly prices, calculated by elpriser.org (changed from the original data). Great Britain only: Northern Ireland trades in the all-island market (see Ireland). Prices are in pence. Source:'}}
 };
@@ -1799,12 +1992,28 @@ function prisDate(date,L){
  *  column "Usikkerhed" in the day list. */
 var PRIS_STD={periods:[2,5],def:2,days:10,unc:false};
 var PRIS_FC={periods:[2,5,7],def:7,days:7,unc:true,summary:true};
-/** The EU price pages (PRIS_COUNTRIES `act`): today and tomorrow, settled day-ahead prices only. One period, so the
- *  period pill is not drawn at all; the card says "today and tomorrow" (or "today" while tomorrow is not published),
- *  and nothing on the screen can say forecast. */
+/** The EU price pages (PRIS_COUNTRIES `act`) while their zone has NO forecast (Great Britain, Kosovo, or a run that went stale): today and
+ *  tomorrow, settled day-ahead prices only. One period, so the period pill is not drawn at all; the card says "today and tomorrow" (or
+ *  "today" while tomorrow is not published), and nothing on the screen can say forecast. */
 var PRIS_ACT={periods:[2],def:2,days:2,unc:false,act:true};
-/** The screen configuration of country page `pg`. */
+/** The same pages when the zone's answer carries forecast days (elpriser.org's own model, /api/nordic): 2, 5 and 7 døgn like the Nordic
+ *  pages, today and seven days (`zd`: how many days zoneToPrisDays keeps), the P10-P90 band on the forecast hours, the accuracy line and
+ *  the honest note (`eu`). */
+var PRIS_EUF={periods:[2,5,7],def:2,days:8,zd:8,unc:false,eu:true};
+/** The screen configuration of country page `pg` before its data are known. */
 function prisCountryCfg(pg){return PRIS_COUNTRIES[pg].act?PRIS_ACT:PRIS_STD;}
+/** Does an /api/nordic answer carry at least one forecast day with prices? */
+function prisHasFc(raw){
+  var d=(raw&&raw.days)||[];
+  for(var i=0;i<d.length;i++)if(d[i]&&d[i].type==='forecast'&&d[i].prices&&d[i].prices.length)return true;
+  return false;
+}
+/** The configuration of country page `pg` for the answer `raw`: an actual-prices page whose zone has forecast days draws PRIS_EUF, one
+ *  without them PRIS_ACT, exactly as before. Decided from the data, never from the zone's name. */
+function prisZoneCfg(pg,raw){
+  var c=prisCountryCfg(pg);
+  return c===PRIS_ACT&&prisHasFc(raw)?PRIS_EUF:c;
+}
 
 /** The period pill's value: one of cfg.periods. The pill used to read "3–10 døgn" and its
  *  value was 10, so 10, "10" and "3–10" — anything an old link, a stored setting or a test
@@ -1830,15 +2039,24 @@ function prisUncertainty(i){
  *  zone's sub-unit per kWh (÷ 10 × rate) at the ECB rate the response carries
  *  (`info`, the response's zoneInfo), falling back to ZONES. Days before
  *  `todayStr` are dropped — the feed opens on yesterday — and only the FIRST
- *  FIVE days are kept: the feed carries ten, this site shows two and five. */
-function zoneToPrisDays(raw,info,todayStr){
+ *  `max` days are kept: five by default (the feed carries ten, the Nordic pages show two and
+ *  five), eight for an EU zone with a forecast (cfg.zd). A forecast day keeps its `horizon`
+ *  (hz) and each of its hours the P10/P90 band (lo, hi) converted like the price. */
+function zoneToPrisDays(raw,info,todayStr,max){
   var rate=(info&&info.rate>0&&info.rate)||(ZONES[raw&&raw.zone]||{}).rate||1;
   var src=(raw&&raw.days)||[],out=[];
-  for(var k=0;k<src.length&&out.length<5;k++){
+  max=Math.min(max||5,8);
+  var num=function(v){return typeof v==='number'&&isFinite(v);};
+  for(var k=0;k<src.length&&out.length<max;k++){
     var d=src[k];
     if(!d||!d.date||!d.prices||(todayStr&&d.date<todayStr))continue;
-    out.push({date:d.date,type:d.type,prices:d.prices.map(function(p){
-      return p&&p.eur_mwh!=null?{hour:p.hour,price:p.eur_mwh*rate/10}:null;})});
+    var fcd=d.type==='forecast',day={date:d.date,type:d.type,prices:d.prices.map(function(p){
+      if(!(p&&p.eur_mwh!=null))return null;
+      var q={hour:p.hour,price:p.eur_mwh*rate/10};
+      if(fcd&&num(p.min_eur_mwh)&&num(p.max_eur_mwh)){q.lo=p.min_eur_mwh*rate/10;q.hi=p.max_eur_mwh*rate/10;}
+      return q;})};
+    if(fcd&&num(d.horizon))day.hz=d.horizon;
+    out.push(day);
   }
   return out;
 }
@@ -1856,13 +2074,20 @@ function prisDays(days,todayStr,max){
     var n=dayNo(d.date);
     if(n<0)continue;
     if(n!==out.length)break;
-    var ps=[];
+    var ps=[],bl=null,bh=null;
     for(var h=0;h<24;h++)ps.push(null);
     for(var j=0;j<d.prices.length;j++){
       var p=d.prices[j];
       if(!p||p.price==null)continue;
       var hr=p.hour!=null?p.hour:j;
-      if(hr>=0&&hr<24)ps[hr]=p.price;
+      if(hr>=0&&hr<24){
+        ps[hr]=p.price;
+        // The P10-P90 band of a forecast hour (zoneToPrisDays), kept beside the price.
+        if(p.lo!=null&&p.hi!=null){
+          if(!bl){bl=[];bh=[];for(var b=0;b<24;b++){bl.push(null);bh.push(null);}}
+          bl[hr]=p.lo;bh[hr]=p.hi;
+        }
+      }
     }
     // The nettarif per hour (net modes only), kept only when all 24 are real numbers.
     var gt=null;
@@ -1874,7 +2099,10 @@ function prisDays(days,todayStr,max){
         gt.push(gv);
       }
     }
-    out.push({date:d.date,real:d.type==='actual',ps:ps,gt:gt});
+    var row={date:d.date,real:d.type==='actual',ps:ps,gt:gt};
+    if(bl){row.lo=bl;row.hi=bh;}
+    if(d.hz!=null)row.hz=d.hz;
+    out.push(row);
   }
   return out;
 }
@@ -2056,8 +2284,12 @@ function prisSwitch(view,cls,spotLabel){
  *  days read "I dag" / "I morgen", later ones "søn 17. okt". */
 function prisChart(rows,nDays,o){
   var C=o.C,L=C.L,n=o.len||nDays*24,st=o.start||0,vals=[],i;
-  for(i=0;i<rows.length;i++)for(var h0=0;h0<24;h0++)if(rows[i].ps[h0]!=null&&i*24+h0>=st&&i*24+h0<st+n)vals.push(rows[i].ps[h0]);
-  var ax=prisAxis(vals,C.sc),span=ax.hi-ax.lo;
+  var ext=[];   // the P10 and P90 of the visible forecast hours: the axis must hold them, the tiers (vals) go by the median
+  for(i=0;i<rows.length;i++)for(var h0=0;h0<24;h0++)if(rows[i].ps[h0]!=null&&i*24+h0>=st&&i*24+h0<st+n){
+    vals.push(rows[i].ps[h0]);
+    if(C.band&&!rows[i].real&&rows[i].lo&&rows[i].lo[h0]!=null){ext.push(rows[i].lo[h0]);ext.push(rows[i].hi[h0]);}
+  }
+  var ax=prisAxis(ext.length?vals.concat(ext):vals,C.sc),span=ax.hi-ax.lo;
   var ref=o.ref||vals;
   var y=function(v){return (v-ax.lo)/span*100;};
   var grid='',yl='';
@@ -2076,6 +2308,15 @@ function prisChart(rows,nDays,o){
     var dn=Math.floor(a/24);
     var tip=(dn===0?prisCap(L.today):dn===1?prisCap(L.tomorrow):dt.ws+' '+prisDM(dt,L))
       +' '+prisAt(L,h)+' · '+prisNum(p,C.d,L)+' '+C.u+'/kWh';
+    // A forecast hour with a band (an EU zone): the P10-P90 block is the picture, the median a thin line across it, both in the tier's colour.
+    if(C.band&&!r.real&&r.lo&&r.lo[h]!=null){
+      var bt=prisTier(p,ref),yb=y(r.lo[h]),yh=y(r.hi[h]);
+      tip+=' ('+L.fc+', P10–P90 '+prisNum(r.lo[h],C.d,L)+'–'+prisNum(r.hi[h],C.d,L)+')';
+      cols+='<span class="pc fx'+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pbd t'+bt+'" style="bottom:'+yb.toFixed(1)
+        +'%;height:'+Math.max(yh-yb,0.8).toFixed(1)+'%"></i><i class="pb pm t'+bt+'" style="bottom:calc('+y(p).toFixed(1)+'% - 1px)"></i>'
+        +(a===o.nowSlot?'<b class="pd" style="bottom:calc('+yh.toFixed(1)+'% + 3px)"></b>':'')+'</span>';
+      continue;
+    }
     cols+='<span class="pc'+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
       +'" style="bottom:'+base.toFixed(1)+'%;height:'+ht.toFixed(1)+'%"></i>'
       +(a===o.nowSlot?'<b class="pd" style="bottom:calc('+(base+ht).toFixed(1)+'% + 3px)"></b>':'')+'</span>';
@@ -2125,7 +2366,7 @@ function prisDayRows(all,C,cfg,wins){
     return '<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+name+'<small>'+prisDM(dt,L)+'</small></th>'
       +'<td>'+prisNum(lo,C.d,L)+'–'+prisNum(hi,C.d,L)+'</td>'
       +'<td>'+prisAt(L,loH,(loH+1)%24)+'</td>'
-      +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?L.actual:L.fc)+'</td>'
+      +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?L.actual:L.fc)+(!d.real&&C.acc&&C.acc[d.hz]&&C.acc[d.hz].low===true?'<small class="pris-low">'+L.fcl+'</small>':'')+'</td>'
       +(cfg.unc?'<td>'+prisUncertainty(i)+'</td>':'')+'</tr>';};
   var span=function(i,from,to){
     var d=all[i],lo=null,hi=null,loH=0;
@@ -2231,6 +2472,32 @@ function prisSummary(all,p,cfg,C){
     +li.map(function(x){return '<li><strong>'+x[0]+':</strong> '+x[1]+'</li>';}).join('')+'</ul></section>';
 }
 
+/** Fills {name} places of a language's text with the numbers of the accuracy block. */
+function prisFill(t,m){return String(t).replace(/\{(\w+)\}/g,function(_,k){return m[k]==null?'':m[k];});}
+/** A percentage with the language's own minus sign for a loss ("−3"). */
+function prisPct(x){var n=Math.round(x*100);return n<0?'\u2212'+(-n):String(n);}
+/** What the model has been worth at horizon `hz` in this zone, as one short line of MEASURED numbers (accuracy.byHorizon[hz] of the answer):
+ *  the band legend, the mean error against the simple level-and-shape method, how much better it picks the cheapest hours (only when that
+ *  was at least 5 %), the share of hours that really fell inside the band (as measured, never a promised 80 %) and, where the back-test
+ *  says so, the low-confidence label. A zone that quotes EUR (accuracy.showEur: EE, LV, LT) gets no percentages. '' without an entry. */
+function prisFcLine(all,end,C){
+  if(!C.band)return '';
+  var L=C.L,d=null,i,band=false;
+  for(i=0;i<end&&i<all.length;i++)if(!all[i].real){d=all[i];if(all[i].lo)band=true;}
+  if(!d)return '';
+  var A=C.acc&&C.acc[d.hz],parts=[],eur=C.accAll&&C.accAll.showEur===true,num=function(v){return typeof v==='number'&&isFinite(v);};
+  if(band)parts.push('<span class="pris-bl"><i></i>'+L.fcb+'</span>');
+  if(A&&num(A.mae)){
+    var mae=prisNum(A.mae,A.mae>=100?0:1,L);
+    if(eur&&num(A.baseMae))parts.push(prisFill(L.fcae,{h:d.hz,mae:mae,base:prisNum(A.baseMae,A.baseMae>=100?0:1,L)}));
+    else if(!eur&&num(A.gain))parts.push(prisFill(L.fca,{h:d.hz,mae:mae,g:prisPct(A.gain),r:num(A.gainRecent)?prisPct(A.gainRecent):'–'}));
+    if(!eur&&A.rankOk===true&&num(A.rankGain))parts.push(prisFill(L.fcr,{r:prisPct(A.rankGain)}));
+    if(num(A.coverage))parts.push(prisFill(L.fcc,{c:Math.round(A.coverage*100)}));
+    if(A.low===true)parts.push('<b class="pris-low">'+L.fcl+'</b>');
+  }
+  return parts.length?'<p class="pris-fca">'+parts.join(' ')+'</p>':'';
+}
+
 /** The whole screen. `o`: {view:'din'|'spot', period:2|5|7 as the page's cfg offers (legacy 10 reads as its longest), cfg:PRIS_STD (default) or PRIS_FC, net:name|null, where:'DK1 Vest', key,
  *  charges:{sys,trans,afg,vat} from the same response (without it the caption stays plain), open:true to draw the breakdown unfolded,
  *  zone:key of ZONES for a foreign area — its language, its unit, spot only, no switch}. */
@@ -2239,6 +2506,8 @@ function prisHTML(days,todayStr,nowHour,o){
   var cfg=o.cfg||PRIS_STD,view=o.view==='spot'?'spot':'din',period=prisPeriod(o.period,cfg);
   var all=prisDays(days||[],todayStr,cfg.days),C=prisCtx(o,all),L=C.L;
   C.act=!!cfg.act;   // an actual-prices page: no forecast wording, a title that follows how many days there are
+  C.band=!!cfg.eu;   // an EU zone with a forecast: the P10-P90 band, the accuracy line and the note
+  C.acc=(o.acc&&o.acc.byHorizon)||null;C.accAll=o.acc||null;
   var today=all.length?all[0]:null;
   var nowP=today?today.ps[nowHour]:null,heroHour=nowHour;
   // A zone whose current hour is never priced yet (ZONES `last`, Great Britain's within-day index) shows its latest priced hour, with that hour's own time.
@@ -2282,14 +2551,15 @@ function prisHTML(days,todayStr,nowHour,o){
     var win=!C.act&&nowSlot>0,back=win?Math.min(6,nowSlot):0,st=win?nowSlot-back:0,len=win?back+p*24:0;
     if(win&&p>2)len=Math.min(len,all.length*24-st);
     wins[p]={st:win?st:0,len:win?len:n*24};
+    var shown=all.slice(0,win?Math.ceil((st+len)/24):n);
     cards+='<section class="pris-card pp'+p+'" aria-label="'+t+'">'+head(t)
-      +prisChart(all.slice(0,win?Math.ceil((st+len)/24):n),n,p===2?{ref:td||[],nowSlot:nowSlot,start:st,len:len,title:C.act?L.hourly+', '+actT.toLowerCase():ttl+L.p2,C:C}
-        :{nowSlot:nowSlot,start:st,len:len,xDays:true,seps:true,title:ttl+L['p'+p],C:C})+'</section>';
+      +prisChart(shown,n,p===2?{ref:td||[],nowSlot:nowSlot,start:st,len:len,title:C.act?L.hourly+', '+actT.toLowerCase():ttl+L.p2,C:C}
+        :{nowSlot:nowSlot,start:st,len:len,xDays:true,seps:true,title:ttl+L['p'+p],C:C})+prisFcLine(all,shown.length,C)+'</section>';
     tiles+=prisTiles(all,nowHour,p,'pp'+p,C);
   });
   return '<div class="pris" data-period="'+period+'" data-view="'+view+'" data-key="'+prisEsc(o.key||'')
     +'" data-hour="'+nowHour+'" data-date="'+todayStr+'">'+hero
-    +'<div class="pris-right">'+tabs+cards+tiles+'</div>'
+    +'<div class="pris-right">'+tabs+cards+tiles+(C.band&&all.some(function(d){return !d.real;})?'<p class="pris-fcn">'+L.fcn+'</p>':'')+'</div>'
     +cfg.periods.map(function(p){return prisSummary(all,p,cfg,C);}).join('')+prisDayRows(all,C,cfg,wins)+'</div>';
 }
 
@@ -2322,7 +2592,8 @@ function prisZoneList(pg,raws,todayStr,nowHour){
       +(v[0]==null&&v[1]==null?'':': '+[part(L.today,v[0]),part(L.tomorrow,v[1])].filter(Boolean).join(', '))+'</li>';
   });
   return '<section class="zl" data-date="'+todayStr+'"><h2>'+L.zonesH+'</h2><ul>'+rows+'</ul>'
-    +'<p class="zl-n">'+L.cap+'. '+L.note+' '+(C.act?prisCredit(ZONES[C.def].src):'<a href="https://huggingface.co/Elpriser/nordic-price-forecast" rel="noopener">'+L.model+'</a>')+'.</p></section>';
+    +'<p class="zl-n">'+L.cap+'. '+L.note+' '+(C.act?prisCredit(ZONES[C.def].src):'<a href="https://huggingface.co/Elpriser/nordic-price-forecast" rel="noopener">'+L.model+'</a>')+'.'
+    +(C.act&&C.zones.some(function(k){return prisHasFc(raws[k]);})?' '+L.fcn:'')+'</p></section>';
 }
 
 /** /norden: one row per area in DKK/kWh excl. VAT and taxes — the price now, the average of
@@ -2381,7 +2652,7 @@ function llmsEuropeBullet() {
     + (semopx.length ? `; ${and(semopx)}: SEMOpx (resultaterne af day-ahead-auktionen)` : '')
     + (elexon.length ? `; ${and(elexon)}: Elexon BMRS, Contains BMRS data \u00a9 Elexon Limited copyright and database right ${new Date().getUTCFullYear()}` : '');
   const gb = elexon.length ? ` ${and(elexon)} er undtagelsen: siden viser Market Index Price (within-day), altså ikke day-ahead-prisen, kun for i dag og i pund.` : '';
-  return `- [Elpriser i Europa](https://elpriser.org/de/strompreis): Spotpriser (day-ahead) i ${byCc.size} europæiske lande, time for time for i dag og i morgen på landets eget sprog.${gb} Kun faktiske børspriser — ingen prognose — uden moms, afgifter og nettariffer, så det er ikke, hvad en kunde betaler. ${kilde}; vi har ændret dataene (timegennemsnit af kvarters- eller halvtimespriserne, for Polen desuden omregnet til grosze med Den Europæiske Centralbanks referencekurs): ${list.length > 1 ? list.slice(0, -1).join(', ') + ' og ' + list[list.length - 1] : list[0]}.`;
+  return `- [Elpriser i Europa](https://elpriser.org/de/strompreis): Spotpriser (day-ahead) i ${byCc.size} europæiske lande, time for time for i dag og i morgen på landets eget sprog.${gb} Faktiske børspriser og for de fleste lande desuden en prognose op til en uge frem fra elpriser.orgs egen statistiske model (ikke en officiel prognose; den er bedre til at udpege de billigste timer end til at ramme prisniveauet, og de faktiske priser erstatter den) — uden moms, afgifter og nettariffer, så det er ikke, hvad en kunde betaler. ${kilde}; vi har ændret dataene (timegennemsnit af kvarters- eller halvtimespriserne, for Polen desuden omregnet til grosze med Den Europæiske Centralbanks referencekurs): ${list.length > 1 ? list.slice(0, -1).join(', ') + ' og ' + list[list.length - 1] : list[0]}.`;
 }
 const fillLlms = txt => txt.replace('{{EUROPE_PAGES}}', () => llmsEuropeBullet());
 
@@ -2780,7 +3051,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v84');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v85');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -2829,9 +3100,9 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v20';
-const CITY_SSR_VERSION = 'city-ssr-v16';
-const PROGNOSE_SSR_VERSION = 'prognose-ssr-v14';
+const ZONE_SSR_VERSION = 'zone-ssr-v21';
+const CITY_SSR_VERSION = 'city-ssr-v17';
+const PROGNOSE_SSR_VERSION = 'prognose-ssr-v15';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);
@@ -3039,8 +3310,10 @@ async function renderSPA(context, pathname, meta, opts = {}) {
       // The zone's own clock (Dublin is an hour behind Copenhagen): its days are its local days.
       const L = prisPageL(pg), raw = raws[C.def], zn = prisZoneNow(C.def, todayDk, nowH);
       html = html.replace('id="zH1">&nbsp;<', `id="zH1">${L.h1}<`);
-      if (raw) html = html.replace('<!--SSR_PRIS-->', prisHTML(zoneToPrisDays(raw, raw.zoneInfo, zn.date), zn.date, zn.hour,
-        { zone: C.def, pg, period: 2, cfg: prisCountryCfg(pg), key: C.def, where: `${ZONES[C.def].name} ${prisCity(pg, C.def)}` }));
+      // Forecast mode is decided by the answer: a zone whose days include forecast days draws PRIS_EUF (eight days, band, accuracy), any other PRIS_ACT.
+      const cfg = raw && prisZoneCfg(pg, raw);
+      if (raw) html = html.replace('<!--SSR_PRIS-->', () => prisHTML(zoneToPrisDays(raw, raw.zoneInfo, zn.date, cfg.zd), zn.date, zn.hour,
+        { zone: C.def, pg, period: 2, cfg, acc: raw.accuracy, key: C.def, where: `${ZONES[C.def].name} ${prisCity(pg, C.def)}` }));
       html = html.replace('<!--SSR_ZONE_LIST-->', prisZoneList(pg, raws, todayDk, nowH));
       html = withCountryChrome(html, pg);
     } else {

@@ -1,0 +1,12 @@
+{
+  "_note": "SYNTHETIC: the documented AGSI+ response shape (agsi.gie.eu/api) with made-up numbers. The live endpoint needs a registered API key, which this project does not hold, so the parser is verified against this fixture only.",
+  "last_page": 1,
+  "total": 3,
+  "dataset": "storage",
+  "gas_day": "2026-11-01",
+  "data": [
+    {"name": "Europe", "code": "eu", "gasDayStart": "2026-11-01", "gasInStorage": "1012.5", "full": "91.45", "trend": "-0.11", "injection": "1.2", "withdrawal": "3.4", "workingGasVolume": "1107.1", "status": "E"},
+    {"name": "Europe", "code": "eu", "gasDayStart": "2026-10-31", "gasInStorage": "1013.7", "full": "91.56", "trend": "-0.05", "injection": "1.5", "withdrawal": "3.1", "workingGasVolume": "1107.1", "status": "C"},
+    {"name": "Europe", "code": "eu", "gasDayStart": "2026-10-30", "gasInStorage": "1014.2", "full": "-", "trend": "0.0", "injection": "1.6", "withdrawal": "3.0", "workingGasVolume": "1107.1", "status": "C"}
+  ]
+}

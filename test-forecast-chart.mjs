@@ -304,13 +304,14 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     ok(L[lang].wd.length === 7 && L[lang].ws.length === 7 && L[lang].mon.length === 12 && L[lang].verdict.length === 3 && L[lang].tier.length === 3, `${lang}: 7 ugedage, 12 måneder, 3 niveauer`);
   }
   ok(langs.every(l => !/\b10\b/.test(JSON.stringify(L[l]))), 'ingen sprog nævner 10 døgn');
-  // The languages that serve actual-price pages only: no Danish words, no forecast word (every day on those pages is settled), and words of their own.
-  const DANISH = /\b(lige nu|døgn|børspris|billig|dyr|næste|prognose|spotpris|uden moms|afgifter|nettarif|i dag|i morgen|dag for dag|spænd|kl\.)\b/i;
+  // The languages that serve EU price pages only: no Danish words, the language's own word for "forecast" (fc, now different from `actual`: an EU zone
+  // may publish a forecast, PRIS_EUF), and words of their own.
+  const DANISH = /\b(lige nu|døgn|børspris|billig|dyr|næste|spotpris|uden moms|afgifter|nettarif|i dag|i morgen|dag for dag|spænd|kl\.)\b/i;
   for (const l of ACT_ONLY) {
     const all = Object.values(L[l]).flat().join(' | ');
     ok(!DANISH.test(all), `${l}: ingen danske ord i tabellen`, (all.match(DANISH) || [])[0]);
-    ok(!FCWORD[l].test(all) && !/prognos|forecast|ennuste/i.test(all), `${l}: intet ord for prognose i tabellen (siderne viser kun faktiske priser)`, (all.match(FCWORD[l]) || [])[0]);
-    ok(L[l].fc === L[l].actual && L[l].p2 !== L.da.p2 && L[l].cap !== L.da.cap && !/ENTSO/i.test(all), `${l}: fc er samme ord som actual, egne ord, og kilden nævnes ikke i tabellen`);
+    ok(FCWORD[l].test(L[l].fc) && L[l].fc !== L[l].actual, `${l}: fc er sprogets eget ord for prognose og ikke det samme som actual`, L[l].fc);
+    ok(L[l].p2 !== L.da.p2 && L[l].cap !== L.da.cap && !/ENTSO/i.test(all), `${l}: egne ord, og kilden nævnes ikke i tabellen`);
   }
   // Each page of actual prices says, in ITS words: the data are changed by elpriser.org, the basis excludes VAT, and which country it is.
   for (const [pg, C] of Object.entries(CT)) if (C.act) {
@@ -409,6 +410,86 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     const zl = pctx.prisZoneList('it/prezzo-luce', Object.fromEntries(pctx.PRIS_COUNTRIES['it/prezzo-luce'].zones.map(k => [k, raws(k)])), D0);
     ok((zl.match(/<li>/g) || []).length === 1 && zl.includes('<a href="https://www.smard.de" target="_blank" rel="noopener">Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</p>') && !/huggingface|entsoe|ENTSO/i.test(zl) && /Fonte:/.test(zl) && /dati modificati/.test(zl), 'IT: én zone i tekstblokken; kilden er Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket, og noten siger at dataene er ændret (ikke modellen, ikke ENTSO-E)');
     ok(/huggingface/.test(pctx.prisZoneList('no/strompris', Object.fromEntries(pctx.PRIS_COUNTRIES['no/strompris'].zones.map(k => [k, eu(k, 2, 10)])), D0)), 'NO: tekstblokken peger stadig på modellen');
+  }
+  // ── The EU pages WITH a forecast (PRIS_EUF): chosen from the data; eight days, 2/5/7, the P10-P90 band, the accuracy line, the honest note ──
+  {
+    const accHz = h => ({ mae: 20 + h, baseMae: 30 + h, gain: 0.3 - 0.02 * h, gainRecent: 0.2, bias: -5, baseBias: -6, regret: 3, baseRegret: 4, rankGain: 0.25, rankOk: true, coverage: 0.76, low: h === 7 });
+    const accuracy = showEur => ({ version: 2, period: '2025-04-01..2026-11-02', baseline: 'level+shape', recent: '2026-09-01', fuel: true, showEur, byHorizon: Object.fromEntries([2, 3, 4, 5, 6, 7].map(h => [String(h), accHz(h)])) });
+    const euF = (zone, { nSettled = 2, nFc = 6, band = true, showEur = false } = {}) => ({ zone, zoneInfo: { rate: 1, currency: 'EUR' }, trainedThrough: '2026-10-13', model: 'eu-ens-v2', forecastGenerated: D0,
+      accuracy: accuracy(showEur), days: Array.from({ length: nSettled + nFc }, (_, i) => { const fc = i >= nSettled; return { date: nextDate(i), type: fc ? 'forecast' : 'actual', ...(fc ? { horizon: i - nSettled + 2 } : {}),
+        prices: M.map((v, h) => { const p = Math.round((100 + v * 10 + i * 3) * 100) / 100; return fc && band ? { hour: h, eur_mwh: p, min_eur_mwh: p - 20, max_eur_mwh: p + 30 } : { hour: h, eur_mwh: p }; }) }; }) });
+    const pgOf = zone => Object.keys(CT).find(k => CT[k].zones.includes(zone));
+    const drawF = (raw, hour = 21, period = 2) => { const pg = pgOf(raw.zone), cfg = pctx.prisZoneCfg(pg, raw);
+      return pris(pctx.zoneToPrisDays(raw, raw.zoneInfo, D0, cfg.zd), D0, hour, { zone: raw.zone, pg, key: raw.zone, period, cfg, acc: raw.accuracy, where: raw.zone }); };
+    const card = (h, p) => h.slice(h.indexOf(`pris-card pp${p}`), h.indexOf('</section>', h.indexOf(`pris-card pp${p}`)));
+    const fcaOf = c => (c.match(/<p class="pris-fca">([^]*?)<\/p>/) || [])[1] || '';
+    // The configuration follows the DATA: forecast days give PRIS_EUF on an `act` page, none give PRIS_ACT, a Nordic page never changes.
+    ok(pctx.prisZoneCfg('de/strompreis', euF('de')) === pctx.PRIS_EUF && pctx.prisZoneCfg('de/strompreis', euF('de', { nFc: 0 })) === pctx.PRIS_ACT && pctx.prisZoneCfg('de/strompreis', null) === pctx.PRIS_ACT && pctx.prisZoneCfg('de/strompreis', { days: [] }) === pctx.PRIS_ACT, 'prisZoneCfg: prognosedøgn i svaret giver PRIS_EUF, ingen giver PRIS_ACT');
+    ok(pctx.prisZoneCfg('no/strompris', euF('no1')) === pctx.PRIS_STD && pctx.prisCountryCfg('de/strompreis') === pctx.PRIS_ACT && pctx.PRIS_EUF.periods.join() === '2,5,7' && pctx.PRIS_EUF.def === 2 && pctx.PRIS_EUF.days === 8 && pctx.PRIS_EUF.zd === 8, 'en nordisk side får aldrig PRIS_EUF; PRIS_EUF er 2/5/7 døgn og otte dage');
+    // The adapter: five days by default (Nordic), eight when the page asks, never more; horizon and band come through for forecast days only.
+    const r8 = euF('de'), d8 = pctx.zoneToPrisDays(r8, r8.zoneInfo, D0, 8);
+    ok(pctx.zoneToPrisDays(r8, r8.zoneInfo, D0).length === 5 && d8.length === 8 && pctx.zoneToPrisDays(r8, r8.zoneInfo, D0, 20).length === 8 && d8[0].date === D0 && d8[7].date === nextDate(7), 'adapteren: fem døgn som standard, otte når siden beder om det, aldrig flere');
+    ok(d8.slice(0, 2).every(d => !('hz' in d) && d.prices.every(p => !('lo' in p))) && d8.slice(2).every((d, i) => d.hz === i + 2 && d.prices.every(p => Math.abs(p.hi - p.price - 3) < 1e-9 && Math.abs(p.price - p.lo - 2) < 1e-9)), 'horisonten og båndet (÷ 10 × kurs) følger kun med på prognosedøgn');
+    const dPl = pctx.zoneToPrisDays({ zone: 'pl', zoneInfo: { rate: 4 }, days: [{ date: D0, type: 'forecast', horizon: 2, prices: [{ hour: 0, eur_mwh: 100, min_eur_mwh: 80, max_eur_mwh: 130 }, { hour: 1, eur_mwh: 100, min_eur_mwh: null, max_eur_mwh: 130 }] }] }, { rate: 4 }, D0, 8)[0];
+    ok(Math.abs(dPl.prices[0].lo - 32) < 1e-9 && Math.abs(dPl.prices[0].hi - 52) < 1e-9 && !('lo' in dPl.prices[1]), 'PL: båndet omregnes som prisen; et halvt bånd (min null) bliver ikke et bånd');
+    const days8 = pctx.days(d8, D0);
+    ok(days8.length === 8 && days8[0].lo === undefined && days8[2].lo.length === 24 && days8[2].hz === 2 && days8[7].hz === 7, 'prisDays: otte døgn med bånd og horisont på prognosedøgnene');
+
+    const h = drawF(euF('de'));
+    const tabs = [...h.matchAll(/<button type="button" role="tab"[^>]*>([^<]*)</g)].map(m => m[1]);
+    ok(tabs.join('|') === '2 Tage|5 Tage|7 Tage' && /<div class="pris" data-period="2"/.test(h), 'DE med prognose: periodepille 2/5/7 med 2 som start');
+    const hAct = drawF(euF('de', { nFc: 0 }));
+    ok(!/pris-period/.test(hAct) && !/pris-fca|pris-fcn|pbd|pris-fc"/.test(hAct), 'DE uden prognose: ingen pille, ingen note, intet bånd, ingen prognose-skillelinje (som før)');
+    ok(/<section class="pris-card pp7" aria-label="Nächste 7 Tage">/.test(h) && /<section class="pris-card pp5"/.test(h) && !/Heute und morgen/.test(h), 'korttitlerne er Nächste 2/5/7 Tage, ikke Heute und morgen');
+    // Bars: 8 days at 7 døgn; the band only on forecast hours.
+    const c2 = card(h, 2), c5 = card(h, 5), c7 = card(h, 7);
+    ok((c7.match(/<span class="pc[ "]/g) || []).length === 6 + 168 && (c5.match(/<span class="pc[ "]/g) || []).length === 6 + 120, '7 døgn: 6 timer før nu plus 168, 5 døgn: 6 plus 120');
+    ok((c2.match(/class="pbd t/g) || []).length === 21 && (c7.match(/class="pbd t/g) || []).length === 141 && (c7.match(/class="pb pm t/g) || []).length === 141, 'båndet og medianstregen er kun på prognosetimerne (21 i 2 døgn, 141 i 7 døgn)');
+    ok(/data-tip="[^"]*\(Prognose, P10–P90 [\d,]+–[\d,]+\)"/.test(c7) && /<i class="pb t\d" style="bottom:[\d.]+%;height:/.test(c7), 'tooltip på en prognosetime nævner Prognose og P10–P90 med tal; afgjorte timer er almindelige søjler');
+    ok(/<span class="pris-fc mid" style="left:[\d.]+%"><i><\/i>Prognose<\/span>/.test(c7), 'skillelinjen hedder Prognose på tysk');
+    // The y axis holds the band: the highest P90 (about 130 + 30) lifts it above the highest median.
+    const yTop = x => Math.max(...[...x.slice(x.indexOf('pris-yl')).matchAll(/<span style="top:[\d.]+%">(\d+)<\/span>/g)].slice(0, 12).map(m => +m[1]));
+    const noBand = drawF(euF('de', { band: false }));
+    ok(yTop(card(h, 7)) > yTop(card(noBand, 7)), 'aksen rummer P90 (ikke kun medianen)', `${yTop(card(h, 7))} vs ${yTop(card(noBand, 7))}`);
+    ok(!/pbd/.test(noBand) && /<i class="pb t\d" style="bottom:[\d.]+%;height:/.test(card(noBand, 7)) && /<td class="fc">Prognose<\/td>/.test(noBand), 'prognosedøgn uden bånd i svaret: almindelige søjler, intet bånd, typen Prognose');
+    // The day list: 'Prognose' on the forecast days, the low-confidence label on horizon 7 only.
+    const rows7 = tb(h, 7);
+    ok(nrows(rows7) === 8 && (rows7.match(/<td class="fc">/g) || []).length === 6 && (rows7.match(/<td class="real">Day-Ahead-Preis<\/td>/g) || []).length === 2, 'dagslisten: 8 rækker, 6 med typen Prognose og 2 afgjorte');
+    ok((h.match(/<small class="pris-low">Geringe Zuverlässigkeit<\/small>/g) || []).length === 1 && /<td class="fc">Prognose<small class="pris-low">/.test(rows7), 'lav sikkerhed står kun på horisont 7 i dagslisten');
+    // The accuracy line: measured numbers from the answer, per period's last forecast day.
+    const l7 = fcaOf(c7), l2 = fcaOf(c2);
+    ok(l7.includes('<span class="pris-bl"><i></i>P10–P90-Spanne</span>') && l7.includes('D+7: mittlerer Fehler 27,0 EUR/MWh, 16 % unter einer einfachen Methode (20 % seit 1.9.2026).') && l7.includes('Die günstigsten Stunden erkennt es 25 % besser') && l7.includes('Im Test lagen 76 % der Stunden innerhalb der Spanne.') && l7.includes('<b class="pris-low">Geringe Zuverlässigkeit</b>'), '7 døgn: linjen har band-etiket, D+7, fejl 27,0, 16 % og 20 % siden 1.9., ranking 25 %, målt dækning 76 % og lav sikkerhed', l7);
+    ok(l2.includes('D+2: mittlerer Fehler 22,0 EUR/MWh, 26 % unter') && !/pris-low/.test(l2) && !/80 ?%/.test(l2 + l7), '2 døgn: horisont 2 uden lav sikkerhed; aldrig 80 %');
+    // A rank gain under 5 % is never claimed; a coverage that is not a number is left out; a loss since September has its minus.
+    const rawNoRank = euF('de'); rawNoRank.accuracy.byHorizon['7'].rankOk = false; rawNoRank.accuracy.byHorizon['7'].coverage = null; rawNoRank.accuracy.byHorizon['7'].gainRecent = -0.034;
+    const lN = fcaOf(card(drawF(rawNoRank), 7));
+    ok(!/Die günstigsten Stunden/.test(lN) && !/Im Test lagen/.test(lN) && lN.includes('(−3 % seit 1.9.2026)'), 'rankOk falsk: ingen påstand om billigste timer; ingen dækning uden tal; et tab siden september står med minus');
+    // EUR instead of per cent for EE / LV / LT.
+    const ee = drawF(euF('ee', { showEur: true })), le = fcaOf(card(ee, 7));
+    ok(/keskmine viga 27,0 EUR\/MWh \(lihtne meetod: 37,0 EUR\/MWh\)/.test(le) && !/16 %|20 %|25 %/.test(le) && /76 %/.test(le) && /<b class="pris-low">Madal kindlus<\/b>/.test(le), 'EE (showEur): fejl i EUR/MWh mod den simple metode, ingen procent-forbedring, ingen rank-procent, målt dækning');
+    // The honest note: in the markup, once, under the cards; absent without a forecast and on the Nordic pages.
+    ok((h.match(/<p class="pris-fcn">/g) || []).length === 1 && h.includes('<p class="pris-fcn">' + pctx.PRIS_I18N.de.fcn + '</p>'), 'noten står én gang i markup');
+    const nordicFeed = euF('no3'); nordicFeed.zoneInfo.rate = 10;
+    const nh = pris(pctx.zoneToPrisDays(nordicFeed, nordicFeed.zoneInfo, D0), D0, 21, { zone: 'no3', key: 'no3', period: 2, acc: nordicFeed.accuracy });
+    ok(!/pbd|pris-fca|pris-fcn|pris-low/.test(nh) && (nh.match(/role="tab"/g) || []).length === 2 && nrows(tb(nh, 5)) === 5, 'en nordisk side er uændret: ingen bånd, ingen linje, ingen note, to perioder, fem dage');
+    // Every language of an EU page: the forecast word, the note, the band's name, 3 periods, no NaN/undefined/template rests, no fuel words.
+    const FUEL = /\b(gas|mibgas|eex|eua|ttf|carbon|fuel|brændstof)\b/i;
+    for (const [pg, C] of Object.entries(CT)) if (C.act) {
+      const raw = euF(C.def, { showEur: ['ee', 'lv', 'lt'].includes(C.def) }), cfg = pctx.prisZoneCfg(pg, raw), PL = pctx.prisPageL(pg);
+      const out = pris(pctx.zoneToPrisDays(raw, raw.zoneInfo, D0, cfg.zd), D0, 21, { zone: C.def, pg, key: C.def, period: 2, cfg, acc: raw.accuracy, where: C.def });
+      const tabsN = (out.match(/role="tab"/g) || []).length, tip = out.match(/data-tip="[^"]*\(([^"]*)P10–P90 [^"]*\)"/);
+      ok(tabsN === 3 && out.includes(`<p class="pris-fcn">${PL.fcn}</p>`) && out.includes(`<td class="fc">${PL.fc}`) && out.includes(PL.fcb) && !/NaN|undefined|Infinity|\{[a-z]+\}/.test(out) && !FUEL.test(out) && tip && tip[1].startsWith(PL.fc), `${pg}: prognose-skærmen på ${C.lang}: tre perioder, noten, ordet ${PL.fc}, bånd-etiketten, ingen NaN, ingen skabelon-rester, ingen brændstofsord`);
+      const zl = pctx.prisZoneList(pg, { [C.def]: raw }, D0), zl0 = pctx.prisZoneList(pg, { [C.def]: euF(C.def, { nFc: 0 }) }, D0);
+      ok(zl.includes(PL.fcn) && !zl0.includes(PL.fcn) && !FUEL.test(zl), `${pg}: tekstblokken har noten kun når zonen har en prognose`);
+    }
+    // The forecast texts of the 27 language tables: all there, filled in the right places, short, no fuel words.
+    for (const l of langs) {
+      const T = L[l];
+      ok(['fcn', 'fcb', 'fcl', 'fca', 'fcae', 'fcr', 'fcc'].every(k => typeof T[k] === 'string' && T[k].length > 5) && T.fcn.length < 420 && !/[{}]/.test(T.fcn + T.fcb + T.fcl)
+        && ['{h}', '{mae}', '{g}', '{r}'].every(x => T.fca.includes(x)) && T.fcae.includes('{base}') && T.fcr.includes('{r}') && T.fcc.includes('{c}') && !/\{(?!h\}|mae\}|g\}|r\}|base\}|c\})/.test(T.fca + T.fcae + T.fcr + T.fcc)
+        && !FUEL.test([T.fcn, T.fcb, T.fcl, T.fca, T.fcae, T.fcr, T.fcc].join(' ')) && !/80 ?%/.test([T.fcn, T.fca, T.fcae, T.fcr, T.fcc].join(' ')), `${l}: prognosetekster: alle nøgler, skabelonerne har deres pladser, ingen brændstofsord, aldrig 80 %`);
+    }
+    ok(new Set(langs.map(l => L[l].fcn)).size === langs.length && langs.length === 27, 'alle 27 sprog har hver deres tekst til noten');
   }
   // The country pages' pieces.
   ok(!('prisZoneTabs' in pctx) && !/zoneTabs/.test(JSON.stringify(Object.values(pctx.PRIS_I18N))), 'ingen zonefaner: funktionen og de otte sprogs fanetekster er væk (zonen vælges i stedsdialogen)');

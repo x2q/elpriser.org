@@ -1,8 +1,11 @@
 # Adding a country price page (and, if needed, a new language)
 
 A country page (`/cz/ceny-elektriny`, `/ie/electricity-price`, …) is the canonical Pris screen drawn from
-`/api/nordic?zone=<z>` in the page's own language: actual day-ahead prices, today and tomorrow, one period,
-no forecast. Everything lives in the **Pris block** — the text between `// ═══ Pris-skærmen (Design A: ét svar) ═══`
+`/api/nordic?zone=<z>` in the page's own language: actual day-ahead prices, today and tomorrow, one period. When the zone's answer
+also carries forecast days (elpriser.org's own model: `scripts/forecast_model/eu`, 25 of the EU zones), the SAME page draws the forecast
+screen (`PRIS_EUF`: 2/5/7 days, the P10–P90 band, the accuracy line and the honest note) — **decided from the data at render time**
+(`prisZoneCfg`), never from the zone's name, so a new country needs nothing for it: it shows the forecast as soon as the API serves one and
+stays on settled prices while it does not. Everything lives in the **Pris block** — the text between `// ═══ Pris-skærmen (Design A: ét svar) ═══`
 and `// ═══ /Pris-skærmen ═══` in `functions/[[path]].js`. **Edit it there**; `index.html` carries a byte-identical copy
 that `node scripts/sync-pris-block.mjs` writes for you (the gate fails when they differ).
 
@@ -74,7 +77,7 @@ place dialog are plain HTML in `index.html`; **derive them, never hand-edit**: `
 ## B. A new language
 
 Add **two entries** (they can be copied from `en` or `cs` and translated key by key; a test fails on a missing or empty key, a wrong shape,
-a Danish word or a forecast word). Then do A for the first page.
+a Danish word, a missing placeholder in the accuracy line or a word about gas, carbon or fuel). Then do A for the first page.
 
 ```js
 // PRIS_I18N — the words of the screen
@@ -84,10 +87,17 @@ a Danish word or a forecast word). Then do A for the first page.
     now:'…',hourly:'…',at:'' /* the word before the hour: "um", "at"; '' if the language has none */,today:'…',tomorrow:'…',evening:'… (tonight)',
     verdict:['cheap right now','average right now','expensive right now'],tier:['Cheap','Average','Expensive'],
     cheaper:'Cheaper' /* "Cheaper tomorrow 13:00 — 8,1 ct" */,cheapest24:'…',lo:'cheapest hour',hi:'most expensive hour',
-    next:'…',p2:'2 days',p5:'5 days',p7:'7 days' /* not shown on these pages but required */,period:'…',fc:'<day-ahead price>',actual:'<the same words as fc>',
+    next:'…',p2:'2 days',p5:'5 days',p7:'7 days' /* the period buttons of a page with a forecast */,period:'…',fc:'<the language\'s word for forecast>',actual:'<day-ahead price>',
     byDay:'…',day:'…',range:'…',type:'…',none:'The prices could not be loaded right now.',
     cap:'<wholesale day-ahead price excluding VAT, taxes and network charges>',avg:'<avg.>',
-    act1:'Today',act2:'Today and tomorrow',cheapRest:'Cheapest hour of the rest of the day'},
+    act1:'Today',act2:'Today and tomorrow',cheapRest:'Cheapest hour of the rest of the day',
+    // the forecast texts (a page whose zone has a forecast): fcn the honest note, fcb the name of the P10–P90 band, fcl 'low confidence', and the accuracy line,
+    // filled with MEASURED numbers from the answer's `accuracy`: {h} horizon (D+h), {mae} / {base} errors in EUR/MWh, {g} / {r} per cent (a loss has a minus), {c} the share of hours inside the band
+    fcn:'<elpriser.org\'s own statistical model, not an official forecast; best at picking the cheapest hours, much less sure of the price level (no better than a simple method since September 2026); settled prices always replace it>',
+    fcb:'<P10–P90 range>',fcl:'<Low confidence>',
+    fca:'<Back-test, D+{h}: mean error {mae} EUR/MWh, {g} % lower than a simple method ({r} % since 1 Sept 2026).>',
+    fcae:'<the same for the zones that quote EUR (EE, LV, LT): Back-test, D+{h}: mean error {mae} EUR/MWh (a simple method: {base} EUR/MWh).>',
+    fcr:'<It ranks the cheapest hours {r} % better than a simple method.>',fcc:'<In the back-test {c} % of the hours fell inside the range.>'},
 
 // CHROME_I18N — the words of the footer and the place dialog
   xx:{home:'elpriser.org <home page>',land:'Countries',place:'Where are you?',area:'Price zone',oth:'Other countries',back:'Back',find:'Search',none:'No results',close:'Close',
@@ -98,11 +108,12 @@ a Danish word or a forecast word). Then do A for the first page.
 
 Typography that is easy to get wrong: French wants a no-break space before `:` and `?` (` `); the hour is written the way the language writes a clock
 time (a language whose preposition changes with the number — Czech v/ve — is better off without one: `at:''`); weekday and month names are
-**lower case** unless the language capitalises them; `ws`/`mon` abbreviations are what a calendar in that language uses. Nothing may say "forecast",
-"model" or any number of days beyond today and tomorrow (the pages show settled prices only); nothing may say a currency other than the unit
-(prices are euro cent, with a note where the country uses another currency).
+**lower case** unless the language capitalises them; `ws`/`mon` abbreviations are what a calendar in that language uses. `fc` is the language's word for
+"forecast" and differs from `actual`. The forecast texts are the same in every language, short, and say the numbers are measured: never write "80 %" as a promise of
+the band (its measured coverage is a number of the answer), and never mention gas, carbon or other fuel inputs (their licences are unconfirmed; they are model inputs only).
+Nothing may say a currency other than the unit (prices are euro cent, with a note where the country uses another currency).
 
-A new language also needs, in `test-forecast-chart.mjs`, ONE row in `WORDS` (`fc`: its word for "forecast", which may not occur; `cap`: the words the caption must carry,
+A new language also needs, in `test-forecast-chart.mjs`, ONE row in `WORDS` (`fc`: its word for "forecast", which `fc` of its table must contain; `cap`: the words the caption must carry,
 `note`: the words of the change note; `nodot: 1` when its day mark is `''`, Romanian, Bulgarian, Greek, Lithuanian, Albanian: the check allows exactly one empty `dot` there; the
 suite fails with the language's name when the row is missing), one row each in `PRISNOTE`, `PRISCAP` and `CHANGED` of `test-zone-pages.mjs`, and one row in `CHROME_WORDS` of
 `test-e2e.js`. A zone on another clock than Copenhagen's needs only its `shift` in `ZONES`: the tests (`zoneToday`/`zoneHour` in `test-zone-pages.mjs`, `shiftOf` in `test-e2e.js`)
@@ -113,7 +124,9 @@ Basic Latin and Latin-1 only: Latin Extended (Czech, Polish, Romanian), Cyrillic
 
 - Do not translate a source or licence (`Bundesnetzagentur | SMARD.de`, `ENTSO-E Transparency Platform`, `CC BY 4.0`) and do not drop the change note: the licence
   requires saying that the hourly means are our change.
-- Do not convert to a national currency, add a forecast, a net company or a tariff: those are Danish-market features.
+- Do not convert to a national currency, add a net company or a tariff: those are Danish-market features. Do not hand-write a forecast claim into a country's
+  title, description or `tx`: they are static and must stay true for a zone that has no forecast; the screen and the text block add the forecast note themselves
+  (`fcn`) when the answer has forecast days.
 - Do not leave a `TODO` in the block (a test fails).
 - Do not hand-edit the Danish footer chips, the Danish place dialog or the copy of the block in `index.html`.
 - Merge conflicts in `PRIS_COUNTRIES`/`ZONES`/the language tables are append-only: keep both sides. For the two derived places, take either side and rerun the two scripts.

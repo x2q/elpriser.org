@@ -485,10 +485,12 @@ test('foreign-area pages: one section with the Pris screen and a text block (the
     assert.ok(!SRV.includes(gone) && !INDEX.includes(gone), `${gone} is still in the code`);
   for (const [i, why] of [['id="zEyebrow"', 'the old eyebrow'], ['id="zTitle"', 'the old title']]) assert.ok(!INDEX.includes(i), why);
   // The page draws the canonical screen, spot only, from the adapter — and the server does the same.
-  assert.ok(/prisHTML\(zoneToPrisDays\(raw,raw\.zoneInfo,zn\.date\),zn\.date,zn\.hour,\s*\{zone:k,/.test(INDEX), 'the client does not draw the zone through prisHTML + the adapter');
-  assert.ok(/prisHTML\(zoneToPrisDays\(raw, raw\.zoneInfo, zn\.date\), zn\.date, zn\.hour,\s*\{ zone: C\.def/.test(SRV), 'the server does not draw the zone through prisHTML + the adapter');
-  // The 10-day horizon never gets this far: the adapter keeps five days.
-  assert.ok(/out\.length<5/.test(INDEX.slice(INDEX.indexOf('function zoneToPrisDays('), INDEX.indexOf('function prisDays('))), 'the adapter does not stop at five days');
+  assert.ok(/prisHTML\(zoneToPrisDays\(raw,raw\.zoneInfo,zn\.date,cfg\.zd\),zn\.date,zn\.hour,\s*\{zone:k,/.test(INDEX) && /const cfg=prisZoneCfg\(ZP\.page,raw\);/.test(INDEX), 'the client does not draw the zone through prisHTML + the adapter, with the configuration the answer chose');
+  assert.ok(/prisHTML\(zoneToPrisDays\(raw, raw\.zoneInfo, zn\.date, cfg\.zd\), zn\.date, zn\.hour,\s*\{ zone: C\.def/.test(SRV) && /const cfg = raw && prisZoneCfg\(pg, raw\);/.test(SRV), 'the server does not draw the zone through prisHTML + the adapter, with the configuration the answer chose');
+  // The 10-day horizon never gets this far: the adapter keeps five days, and eight only for an EU zone with a forecast (cfg.zd of PRIS_EUF).
+  const adapter = INDEX.slice(INDEX.indexOf('function zoneToPrisDays('), INDEX.indexOf('function prisDays('));
+  assert.ok(/max=Math\.min\(max\|\|5,8\)/.test(adapter) && /out\.length<max/.test(adapter), 'the adapter does not stop at five days (eight at most)');
+  assert.ok(/var PRIS_EUF=\{periods:\[2,5,7\],def:2,days:8,zd:8,unc:false,eu:true\};/.test(INDEX) && !/zd:/.test(INDEX.match(/var PRIS_STD=[^\n]*/)[0] + INDEX.match(/var PRIS_ACT=[^\n]*/)[0]), 'only PRIS_EUF asks for eight days');
 });
 
 test('foreign-area pages: EUR is converted at the ECB rate the API returns; the fallbacks agree with the API', () => {
@@ -701,7 +703,7 @@ test('country pages: ONE chrome builder (chromeHTML) feeds the server render and
   for (const pg of PAGES) assert.ok(PRIS.PRIS_COUNTRIES[pg].loc.startsWith(PRIS.PRIS_COUNTRIES[pg].lang.split('-')[0] + '_'), `og:locale of ${pg}`);
 });
 
-test('EU price pages: actual prices only — one period, no forecast wording, the API zones, the licence attribution and the single source reader are wired as the tests below assume', () => {
+test('EU price pages: settled prices (one period) and, only where the answer has forecast days, PRIS_EUF — the API zones, the licence attribution and the single source reader are wired as the tests below assume', () => {
   const API = fs.readFileSync(path.join(ROOT, 'functions', 'api', '[[catchall]].js'), 'utf8');
   const block = INDEX.slice(INDEX.indexOf('// ═══ Pris-skærmen (Design A'), INDEX.indexOf('// ═══ /Pris-skærmen ═══'));
   // One configuration drives them: PRIS_ACT has one period, and a single period draws no pill at all.
@@ -712,8 +714,10 @@ test('EU price pages: actual prices only — one period, no forecast wording, th
   assert.deepEqual(acts.slice(0, 4), ['de/strompreis', 'fr/prix-electricite', 'pl/ceny-pradu', 'it/prezzo-luce']);
   assert.ok(['no/strompris', 'sv/elpris', 'fi/sahkon-hinta', 'nl/stroomprijs'].every(p => !acts.includes(p)), 'a Nordic forecast page is `act`');
   // Both runtimes draw the screen with the page's own configuration.
-  assert.ok(/cfg:prisCountryCfg\(ZP\.page\)/.test(INDEX), 'the browser does not use the page\'s cfg');
-  assert.ok(/cfg: prisCountryCfg\(pg\)/.test(ROUTES), 'the server does not use the page\'s cfg');
+  assert.ok(/cfg:cfg,acc:raw\.accuracy/.test(INDEX) && /prisZoneCfg\(ZP\.page,raw\)/.test(INDEX), 'the browser does not use the page\'s cfg');
+  assert.ok(/\{ zone: C\.def, pg, period: 2, cfg, acc: raw\.accuracy/.test(ROUTES), 'the server does not use the page\'s cfg');
+  // The configuration follows the DATA (forecast days in the answer), never the zone's name: no zone key appears in prisZoneCfg / prisHasFc.
+  assert.ok(!/['"](de|fr|pl|it-n|at|be|ch|cz|hu|si|es|pt|sk|gr|ro|bg|hr|rs|ee|lv|lt|me|mk|al|ie|gb|xk)['"]/.test(block.slice(block.indexOf('function prisHasFc('), block.indexOf('function zoneToPrisDays('))), 'prisZoneCfg decides by a zone name');
   // No leftover of the first Ireland attempt's own clock function and of the extra Italian zones (Energy-Charts: internal use only). Ireland itself is back,
   // on ENTSO-E, with the clock of its zone (ZONES `shift`) and the English table's `dec` / `hh`.
   for (const gone of ['prisClockIn', 'it-cn', 'it-cs', 'it-cal', 'it-sic', 'it-sar', "L.hm"])
@@ -736,7 +740,7 @@ test('EU price pages: actual prices only — one period, no forecast wording, th
   // Poland converts at the ECB's PLN rate: the API asks the ECB file for it and sanity-checks it; the page's fallback is the API's.
   assert.ok(/PLN: get\('PLN'\)/.test(API) && /rates\.PLN > 3 && rates\.PLN < 6/.test(API), 'the API does not read and check the ECB PLN rate');
   assert.equal((API.match(/PLN: ([\d.]+),/) || [])[1], (INDEX.match(/pl:\{name:'PL',city:'Polska',lang:'pl',cur:'PLN',rate:([\d.]+),/) || [])[1], 'the page\'s PLN fallback differs from the API\'s');
-  // Sitemap and llms.txt: every page of the table is listed (generated), below the Danish pages in priority; the served text (test-zone-pages) says "no forecast" and names the sources.
+  // Sitemap and llms.txt: every page of the table is listed (generated), below the Danish pages in priority; the served text (test-zone-pages) says there is a forecast for most countries (not official) and names the sources.
   assert.ok(/if \(p === '\/norden' \|\| prisIsPage\(p\.slice\(1\)\)\) return '0\.5';/.test(ROUTES), 'the country pages are not at foreign-page priority');
   assert.ok(ROUTES.includes('{{EUROPE_PAGES}}') && /body: \(\) => fillLlms\(LLMS_TXT\)/.test(ROUTES) && /fillLlms\(LLMS_FULL_TXT\)/.test(ROUTES) && !/\[Elpriser i Europa\]\(https:\/\/elpriser\.org\/de\/strompreis\): Spotpriser \(day-ahead\) i Tyskland/.test(ROUTES), 'llms.txt\'s Europe bullet is not generated from the table');
   const apiLine = ROUTES.slice(ROUTES.indexOf('GET /api/nordic?zone=se3'), ROUTES.indexOf('GET /api/shelly/tariff'));
@@ -1746,20 +1750,21 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // v77: one place chip and one place dialog (Land, then net or price zone) replace the globe, the net chip's dialog and the country picker.
   // v81: the footer and the place dialog list the countries of PRIS_COUNTRIES (Østrig, Schweiz, Belgien, Irland joined).
   // v84: the footer and the place dialog list the United Kingdom and Kosovo; Ireland's source is SEMOpx.
-  assert.ok(/homepage-ssr-v84/.test(ROUTES), 'homepage-ssr-v84');
+  // v85: the Pris screen draws PRIS_EUF (forecast days of the EU zones: band, accuracy line, note) and the llms text says so.
+  assert.ok(/homepage-ssr-v85/.test(ROUTES), 'homepage-ssr-v85');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
   // (v8: the shared Pris block changed with PRIS_FC.)
   // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
   // (v10: the four EU price pages joined, the Pris block gained PRIS_ACT and the footer the four links.)
   // (v17: per-country i18n (prisPageL), Austria, Switzerland, Belgium and Ireland joined.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v20'/.test(ROUTES), 'zone-ssr-v20');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v21'/.test(ROUTES), 'zone-ssr-v21');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
   // (v13: the four new country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v16'/.test(ROUTES), 'city-ssr-v16');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v17'/.test(ROUTES), 'city-ssr-v17');
   // /prognose shares the header and footer too (v4: the four EU country links).
-  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v14'/.test(ROUTES), 'prognose-ssr-v14');
+  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v15'/.test(ROUTES), 'prognose-ssr-v15');
 });
 
 
