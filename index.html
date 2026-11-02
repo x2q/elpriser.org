@@ -2647,6 +2647,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
             <li><a href="/cz/ceny-elektriny">Tjekkiet</a></li>
             <li><a href="/ee/elektri-hind">Estland</a></li>
             <li><a href="/lv/elektribas-cena">Letland</a></li>
+            <li><a href="/lt/elektros-kaina">Litauen</a></li>
           </ul>
         </div>
       </nav>
@@ -2658,7 +2659,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 <!-- ═══════ The place dialog — opened by the one chip in the header (placeHTML('da','dk'); a country page swaps in its own language).
      Outside every <main>, so it exists on every page. The net lists are built by buildNetDialog() and the position lookup
      (detectLocation) drives #gpsBtn/#gpsText/#gpsForget; the ids are theirs. ═══════ -->
-<dialog id="netDialog" class="pris-dialog" aria-labelledby="netDialogTitle"><div class="pd-head"><button type="button" class="pd-back" id="plBack" onclick="plShow('')" hidden><svg width="10" height="17" viewBox="0 0 10 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 1.5 2 8.5l6.5 7"/></svg>Tilbage</button><h2 id="netDialogTitle">Hvor er du?</h2><button type="button" class="pd-x" onclick="closeNetDialog()">Luk</button></div><div class="pd-body"><div class="pl-scr" data-scr="" data-t="Hvor er du?"><input type="search" id="plQ" class="pl-q" oninput="plFind()" placeholder="Søg" aria-label="Søg" autocomplete="off"><div class="pl-sec" id="plMain"><section><div class="pl-grp"><button id="gpsBtn" onclick="detectLocation()" type="button"><svg id="gpsIconSvg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11 21 3l-8 18-2-8z"/></svg><span id="gpsText">Brug min position</span></button></div></section><p class="pd-foot">Finder dit netselskab ud fra din position. Positionen bruges kun én gang og gemmes aldrig. <span id="gpsForget" style="display:none"><button type="button" onclick="forgetNetPick()">Glem mit netselskab</button></span></p><section><p class="pd-gt">Danmark</p><div class="pl-grp"><button type="button" data-go="dk1">Vestdanmark<small id="plDK1">Uden netselskab</small></button><button type="button" data-go="dk2">Østdanmark<small id="plDK2"></small></button></div></section><section><p class="pd-gt">Andre lande</p><div class="pl-grp"><a href="/no/strompris">Norge</a><a href="/sv/elpris">Sverige</a><a href="/fi/sahkon-hinta">Suomi</a><a href="/nl/stroomprijs">Nederland</a><a href="/de/strompreis">Deutschland</a><a href="/fr/prix-electricite">France</a><a href="/pl/ceny-pradu">Polska</a><a href="/it/prezzo-luce">Italia</a><a href="/at/strompreis">Österreich</a><a href="/ch/strompreis">Schweiz</a><a href="/be/stroomprijs">België · Belgique</a><a href="/ie/electricity-price">Ireland</a><a href="/cz/ceny-elektriny">Česko</a><a href="/ee/elektri-hind">Eesti</a><a href="/lv/elektribas-cena">Latvija</a></div></section><p class="pd-foot"><a href="/norden">Norden · alle 13 prisområder</a></p><p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p></div><div class="pl-grp" id="plRes" hidden></div><p class="pd-foot" id="plNone" hidden>Ingen resultater</p></div><div class="pl-scr" data-scr="dk1" data-t="Vestdanmark" hidden><div class="pl-grp" id="netDlgDK1"></div><p class="pd-foot">Med et netselskab inkluderer prisen nettarif, afgifter og moms som på din regning.</p></div><div class="pl-scr" data-scr="dk2" data-t="Østdanmark" hidden><div class="pl-grp" id="netDlgDK2"></div><p class="pd-foot">Med et netselskab inkluderer prisen nettarif, afgifter og moms som på din regning.</p></div></div></dialog>
+<dialog id="netDialog" class="pris-dialog" aria-labelledby="netDialogTitle"><div class="pd-head"><button type="button" class="pd-back" id="plBack" onclick="plShow('')" hidden><svg width="10" height="17" viewBox="0 0 10 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 1.5 2 8.5l6.5 7"/></svg>Tilbage</button><h2 id="netDialogTitle">Hvor er du?</h2><button type="button" class="pd-x" onclick="closeNetDialog()">Luk</button></div><div class="pd-body"><div class="pl-scr" data-scr="" data-t="Hvor er du?"><input type="search" id="plQ" class="pl-q" oninput="plFind()" placeholder="Søg" aria-label="Søg" autocomplete="off"><div class="pl-sec" id="plMain"><section><div class="pl-grp"><button id="gpsBtn" onclick="detectLocation()" type="button"><svg id="gpsIconSvg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11 21 3l-8 18-2-8z"/></svg><span id="gpsText">Brug min position</span></button></div></section><p class="pd-foot">Finder dit netselskab ud fra din position. Positionen bruges kun én gang og gemmes aldrig. <span id="gpsForget" style="display:none"><button type="button" onclick="forgetNetPick()">Glem mit netselskab</button></span></p><section><p class="pd-gt">Danmark</p><div class="pl-grp"><button type="button" data-go="dk1">Vestdanmark<small id="plDK1">Uden netselskab</small></button><button type="button" data-go="dk2">Østdanmark<small id="plDK2"></small></button></div></section><section><p class="pd-gt">Andre lande</p><div class="pl-grp"><a href="/no/strompris">Norge</a><a href="/sv/elpris">Sverige</a><a href="/fi/sahkon-hinta">Suomi</a><a href="/nl/stroomprijs">Nederland</a><a href="/de/strompreis">Deutschland</a><a href="/fr/prix-electricite">France</a><a href="/pl/ceny-pradu">Polska</a><a href="/it/prezzo-luce">Italia</a><a href="/at/strompreis">Österreich</a><a href="/ch/strompreis">Schweiz</a><a href="/be/stroomprijs">België · Belgique</a><a href="/ie/electricity-price">Ireland</a><a href="/cz/ceny-elektriny">Česko</a><a href="/ee/elektri-hind">Eesti</a><a href="/lv/elektribas-cena">Latvija</a><a href="/lt/elektros-kaina">Lietuva</a></div></section><p class="pd-foot"><a href="/norden">Norden · alle 13 prisområder</a></p><p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p></div><div class="pl-grp" id="plRes" hidden></div><p class="pd-foot" id="plNone" hidden>Ingen resultater</p></div><div class="pl-scr" data-scr="dk1" data-t="Vestdanmark" hidden><div class="pl-grp" id="netDlgDK1"></div><p class="pd-foot">Med et netselskab inkluderer prisen nettarif, afgifter og moms som på din regning.</p></div><div class="pl-scr" data-scr="dk2" data-t="Østdanmark" hidden><div class="pl-grp" id="netDlgDK2"></div><p class="pd-foot">Med et netselskab inkluderer prisen nettarif, afgifter og moms som på din regning.</p></div></div></dialog>
 
 <script>
 const NETS={DK1:[
@@ -3746,7 +3747,17 @@ var PRIS_I18N={
     byDay:'Diena pa dienai',day:'Diena',range:'Diapazons',type:'Veids',none:'Cenas šobrīd neizdevās ielādēt.',
     cap:'Dienas tirgus cena biržā bez PVN, nodokļiem un tīkla maksas',
     avg:'vid.',
-    act1:'Šodien',act2:'Šodien un rīt',cheapRest:'Lētākā stunda atlikušajā dienas daļā'}
+    act1:'Šodien',act2:'Šodien un rīt',cheapRest:'Lētākā stunda atlikušajā dienas daļā'},
+  lt:{wd:['sekmadienis','pirmadienis','antradienis','trečiadienis','ketvirtadienis','penktadienis','šeštadienis'],ws:['Sk','Pr','An','Tr','Kt','Pn','Št'],
+    mon:['saus.','vas.','kov.','bal.','geg.','birž.','liep.','rugp.','rugs.','spal.','lapkr.','gruod.'],dot:'',hs:':00',hh:1,
+    now:'Elektros kaina dabar',hourly:'Elektros kaina pagal valandas',at:'',today:'šiandien',tomorrow:'rytoj',evening:'šį vakarą',
+    verdict:['Žema kaina dabar','Vidutinė kaina dabar','Aukšta kaina dabar'],tier:['Žema','Vidutinė','Aukšta'],
+    cheaper:'Pigiau',cheapest24:'Pigiausia valanda per artimiausias 24 valandas',lo:'pigiausia valanda',hi:'brangiausia valanda',
+    next:'Artimiausios',p2:'2 dienos',p5:'5 dienos',p7:'7 dienos',period:'Laikotarpis',fc:'Kaina prieš parą',actual:'Kaina prieš parą',
+    byDay:'Diena po dienos',day:'Diena',range:'Intervalas',type:'Rūšis',none:'Šiuo metu nepavyko įkelti kainų.',
+    cap:'Biržos kaina prieš parą be PVM, mokesčių ir tinklo mokesčių',
+    avg:'vid.',
+    act1:'Šiandien',act2:'Šiandien ir rytoj',cheapRest:'Pigiausia likusios dienos valanda'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -3781,7 +3792,8 @@ var ZONES={
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
   cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   ee:{name:'EE',city:'Eesti',lang:'et',cur:'EUR',rate:1,sub:'senti',shift:1,src:'entsoe'},
-  lv:{name:'LV',city:'Latvija',lang:'lv',cur:'EUR',rate:1,sub:'c',shift:1,src:'entsoe'}
+  lv:{name:'LV',city:'Latvija',lang:'lv',cur:'EUR',rate:1,sub:'c',shift:1,src:'entsoe'},
+  lt:{name:'LT',city:'Lietuva',lang:'lt',cur:'EUR',rate:1,sub:'ct',shift:1,src:'entsoe'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -3909,7 +3921,14 @@ var PRIS_COUNTRIES={
     desc:'Elektrības dienas tirgus cena Latvijā pa stundām, šodien un rīt, c/kWh, bez PVN, nodokļiem un tīkla maksas. Avots: ENTSO-E',
     tx:{h1:'Elektrības cena Latvijā: šodien un rīt',
       zonesH:'Elektrības cena Latvijā',
-      note:'Stundu vidējās vērtības no 15 minūšu cenām aprēķinājis elpriser.org (dati salīdzinājumā ar oriģinālu mainīti). Cenas norādītas eirocentos par kWh. Avots:'}}
+      note:'Stundu vidējās vērtības no 15 minūšu cenām aprēķinājis elpriser.org (dati salīdzinājumā ar oriģinālu mainīti). Cenas norādītas eirocentos par kWh. Avots:'}},
+  'lt/elektros-kaina':{lang:'lt',cc:'lt',zones:['lt'],def:'lt',act:1,
+    name:'Lietuva',da:'Litauen',loc:'lt_LT',qid:'Q37',
+    title:'Elektros kaina šiandien ir rytoj – biržos kaina Lietuvoje',
+    desc:'Elektros kaina prieš parą Lietuvoje pagal valandas, šiandien ir rytoj, ct/kWh, be PVM, mokesčių ir tinklo mokesčių. Šaltinis: ENTSO-E',
+    tx:{h1:'Elektros kaina Lietuvoje: šiandien ir rytoj',
+      zonesH:'Elektros kaina Lietuvoje',
+      note:'Valandų vidurkius iš 15 minučių kainų apskaičiavo elpriser.org (duomenys, palyginti su originalu, pakeisti). Kainos nurodytos euro centais už kWh. Šaltinis:'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -3997,13 +4016,17 @@ var CHROME_I18N={
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
     chg:'Změna: hodinové průměry vypočítal elpriser.org'},
   et:{home:'elpriser.org avaleht',land:'Riigid',place:'Kus te asute?',area:'Hinnapiirkond',oth:'Muud riigid',back:'Tagasi',find:'Otsi',none:'Tulemusi ei leitud',close:'Sulge',
-    cn:{dk:'Taani',no:'Norra',sv:'Rootsi',fi:'Soome',nl:'Madalmaad',de:'Saksamaa',fr:'Prantsusmaa',pl:'Poola',it:'Itaalia',at:'Austria',ch:'Šveits',be:'Belgia',ie:'Iirimaa',cz:'Tšehhi',ee:'Eesti',lv:'Läti'},
+    cn:{dk:'Taani',no:'Norra',sv:'Rootsi',fi:'Soome',nl:'Madalmaad',de:'Saksamaa',fr:'Prantsusmaa',pl:'Poola',it:'Itaalia',at:'Austria',ch:'Šveits',be:'Belgia',ie:'Iirimaa',cz:'Tšehhi',ee:'Eesti',lv:'Läti',lt:'Leedu'},
     privacy:'Privaatsus (taani keeles)',src:'Allikas:',and:'ja',open:'Avatud andmestikud:',
     chg:'Muudatus: tunnikeskmised arvutas elpriser.org'},
   lv:{home:'elpriser.org – sākumlapa',land:'Valstis',place:'Kur jūs atrodaties?',area:'Cenu zona',oth:'Citas valstis',back:'Atpakaļ',find:'Meklēt',none:'Nav rezultātu',close:'Aizvērt',
-    cn:{dk:'Dānija',no:'Norvēģija',sv:'Zviedrija',fi:'Somija',nl:'Nīderlande',de:'Vācija',fr:'Francija',pl:'Polija',it:'Itālija',at:'Austrija',ch:'Šveice',be:'Beļģija',ie:'Īrija',cz:'Čehija',ee:'Igaunija',lv:'Latvija'},
+    cn:{dk:'Dānija',no:'Norvēģija',sv:'Zviedrija',fi:'Somija',nl:'Nīderlande',de:'Vācija',fr:'Francija',pl:'Polija',it:'Itālija',at:'Austrija',ch:'Šveice',be:'Beļģija',ie:'Īrija',cz:'Čehija',ee:'Igaunija',lv:'Latvija',lt:'Lietuva'},
     privacy:'Privātums (dāņu valodā)',src:'Avots:',and:'un',open:'Atvērtie datu kopumi vietnē',
-    chg:'Izmaiņas: stundu vidējās vērtības aprēķinājis elpriser.org'}
+    chg:'Izmaiņas: stundu vidējās vērtības aprēķinājis elpriser.org'},
+  lt:{home:'elpriser.org – pradžios puslapis',land:'Šalys',place:'Kur esate?',area:'Kainų zona',oth:'Kitos šalys',back:'Atgal',find:'Ieškoti',none:'Rezultatų nėra',close:'Uždaryti',
+    cn:{dk:'Danija',no:'Norvegija',sv:'Švedija',fi:'Suomija',nl:'Nyderlandai',de:'Vokietija',fr:'Prancūzija',pl:'Lenkija',it:'Italija',at:'Austrija',ch:'Šveicarija',be:'Belgija',ie:'Airija',cz:'Čekija',ee:'Estija',lv:'Latvija',lt:'Lietuva'},
+    privacy:'Privatumas (daniškai)',src:'Šaltinis:',and:'ir',open:'Atviri duomenų rinkiniai svetainėje',
+    chg:'Pakeitimas: valandų vidurkius apskaičiavo elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark

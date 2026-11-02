@@ -347,7 +347,7 @@ async function main() {
   // no net chip, app button, Danish menu, tab bar or net dialog.
   for (const [p, lang, unit] of [['/no/strompris', 'nb', 'øre'], ['/sv/elpris', 'sv', 'öre'], ['/fi/sahkon-hinta', 'fi', 'snt'], ['/nl/stroomprijs', 'nl', 'cent'],
       ['/de/strompreis', 'de', 'ct'], ['/fr/prix-electricite', 'fr', 'c€'], ['/pl/ceny-pradu', 'pl', 'gr'], ['/it/prezzo-luce', 'it', 'c€'],
-      ['/at/strompreis', 'de', 'ct'], ['/ch/strompreis', 'de', 'ct'], ['/be/stroomprijs', 'nl', 'cent'], ['/be/prix-electricite', 'fr', 'c€'], ['/ie/electricity-price', 'en', 'c'], ['/cz/ceny-elektriny', 'cs', 'ct'], ['/ee/elektri-hind', 'et', 'senti'], ['/lv/elektribas-cena', 'lv', 'c'], ['/norden', 'da', null]]) {
+      ['/at/strompreis', 'de', 'ct'], ['/ch/strompreis', 'de', 'ct'], ['/be/stroomprijs', 'nl', 'cent'], ['/be/prix-electricite', 'fr', 'c€'], ['/ie/electricity-price', 'en', 'c'], ['/cz/ceny-elektriny', 'cs', 'ct'], ['/ee/elektri-hind', 'et', 'senti'], ['/lv/elektribas-cena', 'lv', 'c'], ['/lt/elektros-kaina', 'lt', 'ct'], ['/norden', 'da', null]]) {
     const r = p === '/sv/elpris' ? se3 : await get(p);
     const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<dialog[\s\S]*?<\/dialog>/g, '');
     const title = one(r.body, /<title>([^<]*)<\/title>/), desc = one(r.body, /<meta name="description" content="([^"]*)"/);
@@ -367,8 +367,8 @@ async function main() {
   // wording, the source, the licence and the note that the data were changed. They need the Spark job (scripts/eu_prices) to have written KV:
   // without data the page still answers 200 but has no screen.
   const llmsTxt = (await get('/llms.txt')).body;
-  for (const [p, lang] of [['/de/strompreis', 'de'], ['/fr/prix-electricite', 'fr'], ['/pl/ceny-pradu', 'pl'], ['/it/prezzo-luce', 'it'], ['/at/strompreis', 'de'], ['/ch/strompreis', 'de'], ['/be/stroomprijs', 'nl'], ['/be/prix-electricite', 'fr'], ['/ie/electricity-price', 'en'], ['/cz/ceny-elektriny', 'cs'], ['/ee/elektri-hind', 'et'], ['/lv/elektribas-cena', 'lv']]) {
-    const r = await get(p), entsoe = ['/ie/electricity-price', '/ee/elektri-hind', '/lv/elektribas-cena'].includes(p);
+  for (const [p, lang] of [['/de/strompreis', 'de'], ['/fr/prix-electricite', 'fr'], ['/pl/ceny-pradu', 'pl'], ['/it/prezzo-luce', 'it'], ['/at/strompreis', 'de'], ['/ch/strompreis', 'de'], ['/be/stroomprijs', 'nl'], ['/be/prix-electricite', 'fr'], ['/ie/electricity-price', 'en'], ['/cz/ceny-elektriny', 'cs'], ['/ee/elektri-hind', 'et'], ['/lv/elektribas-cena', 'lv'], ['/lt/elektros-kaina', 'lt']]) {
+    const r = await get(p), entsoe = ['/ie/electricity-price', '/ee/elektri-hind', '/lv/elektribas-cena', '/lt/elektros-kaina'].includes(p);
     const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<!--[\s\S]*?-->/g, '');
     const main = page.slice(page.indexOf('<main'), page.indexOf('</main>'));
     check(/<div class="pris" data-period="2"/.test(main) && !/data-pris-period|pris-period/.test(main), `${p}: Pris-skærmen er tegnet, uden periodeknap`, 'kører Spark-jobbet (eu-prices-*)?');
@@ -378,7 +378,7 @@ async function main() {
       ? (main.includes('>ENTSO-E Transparency Platform</a>') && /ENTSO-E Transparency Platform/.test(foot) && !/SMARD|CC BY|Energi Data Service/.test(main + foot))
       : (main.includes('>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/"') && /Bundesnetzagentur \| SMARD\.de/.test(foot) && !/ENTSO|Energi Data Service/.test(main + foot)),
       `${p}: kilden er ${entsoe ? 'ENTSO-E Transparency Platform' : 'Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket'} — ikke den anden kilde og ikke EDS`);
-    check(/(Änderung|Modifié|Zmiany|Modifiche|Wijziging|Changed|Změna|Muudatus|Izmaiņas)/.test(page.slice(page.indexOf('<footer'))) && /elpriser\.org/.test(page.slice(page.indexOf('<footer'))), `${p}: fodens kildelinje siger at dataene er ændret`);
+    check(/(Änderung|Modifié|Zmiany|Modifiche|Wijziging|Changed|Změna|Muudatus|Izmaiņas|Pakeitimas)/.test(page.slice(page.indexOf('<footer'))) && /elpriser\.org/.test(page.slice(page.indexOf('<footer'))), `${p}: fodens kildelinje siger at dataene er ændret`);
     check(new RegExp(`"inLanguage":"${lang}"`).test(r.body) && new RegExp(`<link rel="canonical" href="https://elpriser.org${p}">`).test(r.body) && llmsTxt.includes(`https://elpriser.org${p})`), `${p}: inLanguage, canonical og llms.txt`);
   }
   {
@@ -388,7 +388,7 @@ async function main() {
     check(/Ireland and Northern Ireland trade as one market/.test(ie.body) && /ENTSO-E Transparency Platform/.test(ie.body) && /"sameAs":"https:\/\/www\.wikidata\.org\/wiki\/Q26"/.test(ie.body), '/ie/electricity-price: siger at SEM er Irland og Nordirland, krediterer ENTSO-E og har spatialCoverage med begge');
     const be = [await get('/be/stroomprijs'), await get('/be/prix-electricite')];
     check(/<html lang="nl"/.test(be[0].body) && /<html lang="fr"/.test(be[1].body) && be[0].body.includes('data-key="be"') && be[1].body.includes('data-key="be"'), '/be/…: to sider, hollandsk og fransk, af den ene zone be');
-    for (const z of ['de', 'fr', 'pl', 'it-n', 'at', 'ch', 'be', 'ie', 'cz', 'ee', 'lv']) {
+    for (const z of ['de', 'fr', 'pl', 'it-n', 'at', 'ch', 'be', 'ie', 'cz', 'ee', 'lv', 'lt']) {
       const a = await get('/api/nordic?zone=' + z);
       let j = {}; try { j = JSON.parse(a.body); } catch {}
       // 200 once the Spark job has written the key; a 404 "no prices available" before that.

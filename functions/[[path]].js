@@ -1098,7 +1098,17 @@ var PRIS_I18N={
     byDay:'Diena pa dienai',day:'Diena',range:'Diapazons',type:'Veids',none:'Cenas šobrīd neizdevās ielādēt.',
     cap:'Dienas tirgus cena biržā bez PVN, nodokļiem un tīkla maksas',
     avg:'vid.',
-    act1:'Šodien',act2:'Šodien un rīt',cheapRest:'Lētākā stunda atlikušajā dienas daļā'}
+    act1:'Šodien',act2:'Šodien un rīt',cheapRest:'Lētākā stunda atlikušajā dienas daļā'},
+  lt:{wd:['sekmadienis','pirmadienis','antradienis','trečiadienis','ketvirtadienis','penktadienis','šeštadienis'],ws:['Sk','Pr','An','Tr','Kt','Pn','Št'],
+    mon:['saus.','vas.','kov.','bal.','geg.','birž.','liep.','rugp.','rugs.','spal.','lapkr.','gruod.'],dot:'',hs:':00',hh:1,
+    now:'Elektros kaina dabar',hourly:'Elektros kaina pagal valandas',at:'',today:'šiandien',tomorrow:'rytoj',evening:'šį vakarą',
+    verdict:['Žema kaina dabar','Vidutinė kaina dabar','Aukšta kaina dabar'],tier:['Žema','Vidutinė','Aukšta'],
+    cheaper:'Pigiau',cheapest24:'Pigiausia valanda per artimiausias 24 valandas',lo:'pigiausia valanda',hi:'brangiausia valanda',
+    next:'Artimiausios',p2:'2 dienos',p5:'5 dienos',p7:'7 dienos',period:'Laikotarpis',fc:'Kaina prieš parą',actual:'Kaina prieš parą',
+    byDay:'Diena po dienos',day:'Diena',range:'Intervalas',type:'Rūšis',none:'Šiuo metu nepavyko įkelti kainų.',
+    cap:'Biržos kaina prieš parą be PVM, mokesčių ir tinklo mokesčių',
+    avg:'vid.',
+    act1:'Šiandien',act2:'Šiandien ir rytoj',cheapRest:'Pigiausia likusios dienos valanda'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1133,7 +1143,8 @@ var ZONES={
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
   cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   ee:{name:'EE',city:'Eesti',lang:'et',cur:'EUR',rate:1,sub:'senti',shift:1,src:'entsoe'},
-  lv:{name:'LV',city:'Latvija',lang:'lv',cur:'EUR',rate:1,sub:'c',shift:1,src:'entsoe'}
+  lv:{name:'LV',city:'Latvija',lang:'lv',cur:'EUR',rate:1,sub:'c',shift:1,src:'entsoe'},
+  lt:{name:'LT',city:'Lietuva',lang:'lt',cur:'EUR',rate:1,sub:'ct',shift:1,src:'entsoe'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1261,7 +1272,14 @@ var PRIS_COUNTRIES={
     desc:'Elektrības dienas tirgus cena Latvijā pa stundām, šodien un rīt, c/kWh, bez PVN, nodokļiem un tīkla maksas. Avots: ENTSO-E',
     tx:{h1:'Elektrības cena Latvijā: šodien un rīt',
       zonesH:'Elektrības cena Latvijā',
-      note:'Stundu vidējās vērtības no 15 minūšu cenām aprēķinājis elpriser.org (dati salīdzinājumā ar oriģinālu mainīti). Cenas norādītas eirocentos par kWh. Avots:'}}
+      note:'Stundu vidējās vērtības no 15 minūšu cenām aprēķinājis elpriser.org (dati salīdzinājumā ar oriģinālu mainīti). Cenas norādītas eirocentos par kWh. Avots:'}},
+  'lt/elektros-kaina':{lang:'lt',cc:'lt',zones:['lt'],def:'lt',act:1,
+    name:'Lietuva',da:'Litauen',loc:'lt_LT',qid:'Q37',
+    title:'Elektros kaina šiandien ir rytoj – biržos kaina Lietuvoje',
+    desc:'Elektros kaina prieš parą Lietuvoje pagal valandas, šiandien ir rytoj, ct/kWh, be PVM, mokesčių ir tinklo mokesčių. Šaltinis: ENTSO-E',
+    tx:{h1:'Elektros kaina Lietuvoje: šiandien ir rytoj',
+      zonesH:'Elektros kaina Lietuvoje',
+      note:'Valandų vidurkius iš 15 minučių kainų apskaičiavo elpriser.org (duomenys, palyginti su originalu, pakeisti). Kainos nurodytos euro centais už kWh. Šaltinis:'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1349,13 +1367,17 @@ var CHROME_I18N={
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
     chg:'Změna: hodinové průměry vypočítal elpriser.org'},
   et:{home:'elpriser.org avaleht',land:'Riigid',place:'Kus te asute?',area:'Hinnapiirkond',oth:'Muud riigid',back:'Tagasi',find:'Otsi',none:'Tulemusi ei leitud',close:'Sulge',
-    cn:{dk:'Taani',no:'Norra',sv:'Rootsi',fi:'Soome',nl:'Madalmaad',de:'Saksamaa',fr:'Prantsusmaa',pl:'Poola',it:'Itaalia',at:'Austria',ch:'Šveits',be:'Belgia',ie:'Iirimaa',cz:'Tšehhi',ee:'Eesti',lv:'Läti'},
+    cn:{dk:'Taani',no:'Norra',sv:'Rootsi',fi:'Soome',nl:'Madalmaad',de:'Saksamaa',fr:'Prantsusmaa',pl:'Poola',it:'Itaalia',at:'Austria',ch:'Šveits',be:'Belgia',ie:'Iirimaa',cz:'Tšehhi',ee:'Eesti',lv:'Läti',lt:'Leedu'},
     privacy:'Privaatsus (taani keeles)',src:'Allikas:',and:'ja',open:'Avatud andmestikud:',
     chg:'Muudatus: tunnikeskmised arvutas elpriser.org'},
   lv:{home:'elpriser.org – sākumlapa',land:'Valstis',place:'Kur jūs atrodaties?',area:'Cenu zona',oth:'Citas valstis',back:'Atpakaļ',find:'Meklēt',none:'Nav rezultātu',close:'Aizvērt',
-    cn:{dk:'Dānija',no:'Norvēģija',sv:'Zviedrija',fi:'Somija',nl:'Nīderlande',de:'Vācija',fr:'Francija',pl:'Polija',it:'Itālija',at:'Austrija',ch:'Šveice',be:'Beļģija',ie:'Īrija',cz:'Čehija',ee:'Igaunija',lv:'Latvija'},
+    cn:{dk:'Dānija',no:'Norvēģija',sv:'Zviedrija',fi:'Somija',nl:'Nīderlande',de:'Vācija',fr:'Francija',pl:'Polija',it:'Itālija',at:'Austrija',ch:'Šveice',be:'Beļģija',ie:'Īrija',cz:'Čehija',ee:'Igaunija',lv:'Latvija',lt:'Lietuva'},
     privacy:'Privātums (dāņu valodā)',src:'Avots:',and:'un',open:'Atvērtie datu kopumi vietnē',
-    chg:'Izmaiņas: stundu vidējās vērtības aprēķinājis elpriser.org'}
+    chg:'Izmaiņas: stundu vidējās vērtības aprēķinājis elpriser.org'},
+  lt:{home:'elpriser.org – pradžios puslapis',land:'Šalys',place:'Kur esate?',area:'Kainų zona',oth:'Kitos šalys',back:'Atgal',find:'Ieškoti',none:'Rezultatų nėra',close:'Uždaryti',
+    cn:{dk:'Danija',no:'Norvegija',sv:'Švedija',fi:'Suomija',nl:'Nyderlandai',de:'Vokietija',fr:'Prancūzija',pl:'Lenkija',it:'Italija',at:'Austrija',ch:'Šveicarija',be:'Belgija',ie:'Airija',cz:'Čekija',ee:'Estija',lv:'Latvija',lt:'Lietuva'},
+    privacy:'Privatumas (daniškai)',src:'Šaltinis:',and:'ir',open:'Atviri duomenų rinkiniai svetainėje',
+    chg:'Pakeitimas: valandų vidurkius apskaičiavo elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
