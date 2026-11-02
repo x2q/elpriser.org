@@ -1078,7 +1078,17 @@ var PRIS_I18N={
     byDay:'Den po dni',day:'Den',range:'Rozpětí',type:'Typ',none:'Ceny se teď nepodařilo načíst.',
     cap:'Burzovní cena z denního trhu bez DPH, daní a poplatků za distribuci',
     avg:'prům.',
-    act1:'Dnes',act2:'Dnes a zítra',cheapRest:'Nejlevnější hodina do konce dne'}
+    act1:'Dnes',act2:'Dnes a zítra',cheapRest:'Nejlevnější hodina do konce dne'},
+  ro:{wd:['duminică','luni','marți','miercuri','joi','vineri','sâmbătă'],ws:['dum','lun','mar','mie','joi','vin','sâm'],
+    mon:['ian.','feb.','mar.','apr.','mai','iun.','iul.','aug.','sept.','oct.','nov.','dec.'],dot:'',hs:':00',hh:1,
+    now:'Prețul energiei acum',hourly:'Prețul energiei oră cu oră',at:'la',today:'azi',tomorrow:'mâine',evening:'diseară',
+    verdict:['Preț scăzut acum','Preț mediu acum','Preț ridicat acum'],tier:['Scăzut','Mediu','Ridicat'],
+    cheaper:'Mai ieftin',cheapest24:'Cea mai ieftină oră din următoarele 24 de ore',lo:'cea mai ieftină oră',hi:'cea mai scumpă oră',
+    next:'Următoarele',p2:'2 zile',p5:'5 zile',p7:'7 zile',period:'Perioadă',fc:'Preț pe piața zilei următoare',actual:'Preț pe piața zilei următoare',
+    byDay:'Zi cu zi',day:'Zi',range:'Interval',type:'Tip',none:'Prețurile nu au putut fi încărcate acum.',
+    cap:'Prețul angro pe piața zilei următoare, fără TVA, taxe și tarife de rețea',
+    avg:'medie',
+    act1:'Azi',act2:'Azi și mâine',cheapRest:'Cea mai ieftină oră din restul zilei'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1111,7 +1121,8 @@ var ZONES={
   ch:{name:'CH',city:'Schweiz',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
-  cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'}
+  cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
+  ro:{name:'RO',city:'România',lang:'ro',cur:'EUR',rate:1,sub:'c€',src:'entsoe',shift:1}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1225,7 +1236,15 @@ var PRIS_COUNTRIES={
     tx:{h1:'Cena elektřiny v Česku: dnes a zítra',
       zonesH:'Cena elektřiny v Česku',
       note:'Hodinové průměry čtvrthodinových cen vypočítal elpriser.org (údaje jsou oproti originálu upraveny). Ceny jsou v eurocentech za kWh, nikoli v korunách. Zdroj:',
-      cap:'Burzovní cena z denního trhu v eurocentech, bez DPH, daní a poplatků za distribuci'}}
+      cap:'Burzovní cena z denního trhu v eurocentech, bez DPH, daní a poplatků za distribuci'}},
+  'ro/pretul-energiei':{lang:'ro',cc:'ro',zones:['ro'],def:'ro',act:1,
+    name:'România',da:'Rumænien',loc:'ro_RO',qid:'Q218',
+    title:'Prețul energiei azi și mâine – prețul bursier în România',
+    desc:'Prețul bursier al energiei (piața zilei următoare) în România, oră cu oră, azi și mâine, în c€/kWh, fără TVA, taxe și tarife de rețea. Sursa: ENTSO-E',
+    tx:{h1:'Prețul energiei în România: azi și mâine',
+      zonesH:'Prețul energiei în România',
+      note:'Mediile orare ale prețurilor la 15 minute, calculate de elpriser.org (date modificate față de original). Prețurile sunt în eurocenți pe kWh, nu în lei. Sursa:',
+      cap:'Prețul angro pe piața zilei următoare, în eurocenți, fără TVA, taxe și tarife de rețea'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1311,7 +1330,11 @@ var CHROME_I18N={
   cs:{home:'elpriser.org – úvodní stránka',land:'Země',place:'Kde jste?',area:'Cenová zóna',oth:'Další země',back:'Zpět',find:'Hledat',none:'Žádné výsledky',close:'Zavřít',
     cn:{dk:'Dánsko',no:'Norsko',sv:'Švédsko',fi:'Finsko',nl:'Nizozemsko',de:'Německo',fr:'Francie',pl:'Polsko',it:'Itálie',at:'Rakousko',ch:'Švýcarsko',be:'Belgie',ie:'Irsko',cz:'Česko'},
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
-    chg:'Změna: hodinové průměry vypočítal elpriser.org'}
+    chg:'Změna: hodinové průměry vypočítal elpriser.org'},
+  ro:{home:'elpriser.org – pagina principală',land:'Țări',place:'Unde vă aflați?',area:'Zonă de preț',oth:'Alte țări',back:'Înapoi',find:'Căutare',none:'Niciun rezultat',close:'Închide',
+    cn:{dk:'Danemarca',no:'Norvegia',sv:'Suedia',fi:'Finlanda',nl:'Țările de Jos',de:'Germania',fr:'Franța',pl:'Polonia',it:'Italia',at:'Austria',ch:'Elveția',be:'Belgia',ie:'Irlanda',cz:'Cehia',ro:'România'},
+    privacy:'Confidențialitate (în daneză)',src:'Sursa:',and:'și',open:'Seturi de date deschise pe',
+    chg:'Modificare: mediile orare calculate de elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
@@ -1988,7 +2011,7 @@ function llmsEuropeBullet() {
   const ec = act.filter(([, C]) => ZONES[C.def].src === 'ec').map(([, C]) => C.da).filter((d, i, a) => a.indexOf(d) === i);
   const entsoe = act.filter(([, C]) => ZONES[C.def].src === 'entsoe').map(([, C]) => C.da);
   const kilde = 'Kilde: Bundesnetzagentur | SMARD.de via Energy-Charts.info, licens CC BY 4.0'
-    + (src.has('entsoe') ? `; ${entsoe.join(' og ')}: ENTSO-E Transparency Platform` : '');
+    + (src.has('entsoe') ? `; ${entsoe.length > 1 ? entsoe.slice(0, -1).join(', ') + ' og ' + entsoe[entsoe.length - 1] : entsoe[0]}: ENTSO-E Transparency Platform` : '');
   return `- [Elpriser i Europa](https://elpriser.org/de/strompreis): Spotpriser (day-ahead) i ${byCc.size} europæiske lande, time for time for i dag og i morgen på landets eget sprog. Kun faktiske børspriser — ingen prognose — uden moms, afgifter og nettariffer, så det er ikke, hvad en kunde betaler. ${kilde}; vi har ændret dataene (timegennemsnit af kvarterspriserne, for Polen desuden omregnet til grosze med Den Europæiske Centralbanks referencekurs): ${list.length > 1 ? list.slice(0, -1).join(', ') + ' og ' + list[list.length - 1] : list[0]}.`;
 }
 const fillLlms = txt => txt.replace('{{EUROPE_PAGES}}', () => llmsEuropeBullet());
