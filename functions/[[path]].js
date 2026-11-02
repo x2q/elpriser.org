@@ -1088,7 +1088,17 @@ var PRIS_I18N={
     byDay:'Día a día',day:'Día',range:'Rango',type:'Tipo',none:'No se han podido cargar los precios en este momento.',
     cap:'Precio mayorista del mercado diario sin IVA, impuestos, peajes ni cargos',
     avg:'media',
-    act1:'Hoy',act2:'Hoy y mañana',cheapRest:'Hora más barata del resto del día'}
+    act1:'Hoy',act2:'Hoy y mañana',cheapRest:'Hora más barata del resto del día'},
+  pt:{wd:['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'],ws:['dom','seg','ter','qua','qui','sex','sáb'],
+    mon:['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'],dot:'',hs:':00',hh:1,
+    now:'Preço da eletricidade agora',hourly:'Preço da eletricidade hora a hora',at:'',today:'hoje',tomorrow:'amanhã',evening:'hoje à noite',
+    verdict:['Preço baixo agora','Preço médio agora','Preço alto agora'],tier:['Baixo','Médio','Alto'],
+    cheaper:'Mais barato',cheapest24:'Hora mais barata das próximas 24 horas',lo:'hora mais barata',hi:'hora mais cara',
+    next:'Próximas',p2:'2 dias',p5:'5 dias',p7:'7 dias',period:'Período',fc:'Preço do mercado diário',actual:'Preço do mercado diário',
+    byDay:'Dia a dia',day:'Dia',range:'Intervalo',type:'Tipo',none:'Não foi possível carregar os preços neste momento.',
+    cap:'Preço grossista do mercado diário sem IVA, impostos, taxas nem tarifas de acesso às redes',
+    avg:'média',
+    act1:'Hoje',act2:'Hoje e amanhã',cheapRest:'Hora mais barata do resto do dia'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1122,7 +1132,8 @@ var ZONES={
   be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
   cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
-  es:{name:'ES',city:'España',lang:'es',cur:'EUR',rate:1,sub:'c€',src:'entsoe'}
+  es:{name:'ES',city:'España',lang:'es',cur:'EUR',rate:1,sub:'c€',src:'entsoe'},
+  pt:{name:'PT',city:'Portugal',lang:'pt',cur:'EUR',rate:1,sub:'c€',shift:-1,src:'entsoe'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1243,7 +1254,14 @@ var PRIS_COUNTRIES={
     desc:'Precio de la luz en España (mercado diario), hora a hora, hoy y mañana, en c€/kWh, sin IVA, impuestos ni peajes. Fuente: ENTSO-E',
     tx:{h1:'Precio de la luz en España: hoy y mañana',
       zonesH:'Precio de la luz en España',
-      note:'Medias horarias de los precios de 15 minutos, calculadas por elpriser.org (datos modificados respecto a los originales). Los precios están en céntimos de euro por kWh. Fuente:'}}
+      note:'Medias horarias de los precios de 15 minutos, calculadas por elpriser.org (datos modificados respecto a los originales). Los precios están en céntimos de euro por kWh. Fuente:'}},
+  'pt/preco-eletricidade':{lang:'pt',cc:'pt',zones:['pt'],def:'pt',act:1,
+    name:'Portugal',da:'Portugal',loc:'pt_PT',qid:'Q45',
+    title:'Preço da eletricidade hoje e amanhã – mercado diário Portugal',
+    desc:'Preço da eletricidade em Portugal (mercado diário), hora a hora, hoje e amanhã, em c€/kWh, sem IVA, impostos nem tarifas de rede. Fonte: ENTSO-E',
+    tx:{h1:'Preço da eletricidade em Portugal: hoje e amanhã',
+      zonesH:'Preço da eletricidade em Portugal',
+      note:'Médias horárias dos preços de 15 minutos, calculadas por elpriser.org (dados alterados em relação aos originais). Os preços estão em cêntimos de euro por kWh. Fonte:'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1331,9 +1349,13 @@ var CHROME_I18N={
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
     chg:'Změna: hodinové průměry vypočítal elpriser.org'},
   es:{home:'elpriser.org – página de inicio',land:'Países',place:'¿Dónde estás?',area:'Zona de precio',oth:'Otros países',back:'Atrás',find:'Buscar',none:'Sin resultados',close:'Cerrar',
-    cn:{dk:'Dinamarca',no:'Noruega',sv:'Suecia',fi:'Finlandia',nl:'Países Bajos',de:'Alemania',fr:'Francia',pl:'Polonia',it:'Italia',at:'Austria',ch:'Suiza',be:'Bélgica',ie:'Irlanda',cz:'Chequia',es:'España'},
+    cn:{dk:'Dinamarca',no:'Noruega',sv:'Suecia',fi:'Finlandia',nl:'Países Bajos',de:'Alemania',fr:'Francia',pl:'Polonia',it:'Italia',at:'Austria',ch:'Suiza',be:'Bélgica',ie:'Irlanda',cz:'Chequia',es:'España',pt:'Portugal'},
     privacy:'Privacidad (en danés)',src:'Fuente:',and:'y',open:'Conjuntos de datos abiertos en',
-    chg:'Datos modificados: medias horarias calculadas por elpriser.org'}
+    chg:'Datos modificados: medias horarias calculadas por elpriser.org'},
+  pt:{home:'elpriser.org – página inicial',land:'Países',place:'Onde está?',area:'Zona de preço',oth:'Outros países',back:'Voltar',find:'Pesquisar',none:'Sem resultados',close:'Fechar',
+    cn:{dk:'Dinamarca',no:'Noruega',sv:'Suécia',fi:'Finlândia',nl:'Países Baixos',de:'Alemanha',fr:'França',pl:'Polónia',it:'Itália',at:'Áustria',ch:'Suíça',be:'Bélgica',ie:'Irlanda',cz:'Chéquia',es:'Espanha',pt:'Portugal'},
+    privacy:'Privacidade (em dinamarquês)',src:'Fonte:',and:'e',open:'Conjuntos de dados abertos em',
+    chg:'Dados alterados: médias horárias calculadas por elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark

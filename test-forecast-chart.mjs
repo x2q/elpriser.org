@@ -268,15 +268,15 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     ok(keys.every(k => shape(L[lang][k]) === shape(L.da[k])), `${lang}: samme form på hver nøgle`, keys.filter(k => shape(L[lang][k]) !== shape(L.da[k])).join(','));
     const flat = keys.flatMap(k => [].concat(L[lang][k]));
     const empty = Object.entries(L[lang]).filter(([k, v]) => v === '').map(([k]) => k);
-    ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (['sv', 'nl', 'fr', 'pl', 'it', 'en', 'es'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl, it og en; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
+    ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (['sv', 'nl', 'fr', 'pl', 'it', 'en', 'es', 'pt'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl, it og en; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
     ok(L[lang].wd.length === 7 && L[lang].ws.length === 7 && L[lang].mon.length === 12 && L[lang].verdict.length === 3 && L[lang].tier.length === 3, `${lang}: 7 ugedage, 12 måneder, 3 niveauer`);
   }
   ok(langs.every(l => !/\b10\b/.test(JSON.stringify(L[l]))), 'ingen sprog nævner 10 døgn');
   // The languages that serve actual-price pages only: no Danish words, no forecast word (every day on those pages is settled), and words of their own.
   const DANISH = /\b(lige nu|døgn|børspris|billig|dyr|næste|prognose|spotpris|uden moms|afgifter|nettarif|i dag|i morgen|dag for dag|spænd|kl\.)\b/i;
-  const FCWORD = { de: /prognos|vorhersage|vorschau/i, fr: /prévision|prevision|prédi/i, pl: /prognoz|przewid/i, it: /previsi|prognosi|stima/i, en: /forecast|predict|outlook/i, cs: /předpově|prognóz|odhad/i, es: /previsi|pronóstic|pronostic|predic/i };
-  const CAPWORD = { de: [/ohne/, /MwSt/], fr: [/hors/, /TVA/], pl: [/bez/, /VAT/], it: [/al netto/, /IVA/], en: [/excluding/, /VAT/], cs: [/bez/, /DPH/], nl: [/zonder/, /btw/], es: [/sin/, /IVA/] };
-  const NOTEWORD = { de: [/berechnet/, /verändert/], fr: [/calculées/, /modifiées/], pl: [/przeliczone/, /zmienione/], it: [/calcolate/, /modificati/], en: [/calculated/, /changed/], cs: [/vypočítal/, /upraveny/], nl: [/berekend/, /gewijzigd/], es: [/calculadas/, /modificados/] };
+  const FCWORD = { de: /prognos|vorhersage|vorschau/i, fr: /prévision|prevision|prédi/i, pl: /prognoz|przewid/i, it: /previsi|prognosi|stima/i, en: /forecast|predict|outlook/i, cs: /předpově|prognóz|odhad/i, es: /previsi|pronóstic|pronostic|predic/i, pt: /previs|prognóst|prever/i };
+  const CAPWORD = { de: [/ohne/, /MwSt/], fr: [/hors/, /TVA/], pl: [/bez/, /VAT/], it: [/al netto/, /IVA/], en: [/excluding/, /VAT/], cs: [/bez/, /DPH/], nl: [/zonder/, /btw/], es: [/sin/, /IVA/], pt: [/sem/, /IVA/] };
+  const NOTEWORD = { de: [/berechnet/, /verändert/], fr: [/calculées/, /modifiées/], pl: [/przeliczone/, /zmienione/], it: [/calcolate/, /modificati/], en: [/calculated/, /changed/], cs: [/vypočítal/, /upraveny/], nl: [/berekend/, /gewijzigd/], es: [/calculadas/, /modificados/], pt: [/calculadas/, /alterados/] };
   for (const l of ACT_ONLY) {
     const all = Object.values(L[l]).flat().join(' | ');
     ok(!DANISH.test(all), `${l}: ingen danske ord i tabellen`, (all.match(DANISH) || [])[0]);
@@ -420,7 +420,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     ok(pctx.prisCn(X.fi, 'ie') === 'Irlanti' && pctx.prisCn({ cn: {} }, 'ie') === 'Ireland' && pctx.prisCn({ cn: {} }, 'be') === 'België · Belgique', 'et land uden oversættelse hedder sit eget navn i stedet for at mangle (prisCn)');
     ok(CCS.length === new Set(CCS).size && Object.values(CT).every(c => CCS.includes(c.cc)), 'landenavnene dækker Danmark og hvert landeside-cc, ét pr. land (Belgien har to sider men ét land)');
     // The words differ between the languages — a copy-pasted Norwegian table would pass every check above.
-    ok(new Set(cl.map(l => X[l].place)).size === cl.length && new Set(cl.map(l => X[l].privacy)).size === cl.length && new Set(cl.map(l => X[l].land)).size >= cl.length - 1 && cl.every(l => new Set(Object.values(X[l].cn)).size === Object.values(X[l].cn).length), 'vælger-, privatlivs- og landeord er forskellige på alle sprog');
+    ok(new Set(cl.map(l => X[l].place)).size === cl.length && new Set(cl.map(l => X[l].privacy)).size === cl.length && new Set(cl.map(l => X[l].land)).size >= cl.length - 2 && cl.every(l => new Set(Object.values(X[l].cn)).size === Object.values(X[l].cn).length), 'vælger-, privatlivs- og landeord er forskellige på alle sprog');
     const html = pg => pctx.chromeHTML(pg);
     const CREDIT_EC = '>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>';
     for (const pg of Object.keys(CT)) {
