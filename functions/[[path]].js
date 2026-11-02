@@ -1078,7 +1078,17 @@ var PRIS_I18N={
     byDay:'Den po dni',day:'Den',range:'Rozpětí',type:'Typ',none:'Ceny se teď nepodařilo načíst.',
     cap:'Burzovní cena z denního trhu bez DPH, daní a poplatků za distribuci',
     avg:'prům.',
-    act1:'Dnes',act2:'Dnes a zítra',cheapRest:'Nejlevnější hodina do konce dne'}
+    act1:'Dnes',act2:'Dnes a zítra',cheapRest:'Nejlevnější hodina do konce dne'},
+  sk:{wd:['nedeľa','pondelok','utorok','streda','štvrtok','piatok','sobota'],ws:['ne','po','ut','st','št','pi','so'],
+    mon:['jan','feb','mar','apr','máj','jún','júl','aug','sep','okt','nov','dec'],dot:'.',hs:':00',hh:1,
+    now:'Cena elektriny práve teraz',hourly:'Cena elektriny po hodinách',at:'',today:'dnes',tomorrow:'zajtra',evening:'dnes večer',
+    verdict:['Nízka cena práve teraz','Priemerná cena práve teraz','Vysoká cena práve teraz'],tier:['Nízka','Priemerná','Vysoká'],
+    cheaper:'Lacnejšie',cheapest24:'Najlacnejšia hodina v nasledujúcich 24 hodinách',lo:'najlacnejšia hodina',hi:'najdrahšia hodina',
+    next:'Nasledujúcich',p2:'2 dni',p5:'5 dní',p7:'7 dní',period:'Obdobie',fc:'Cena na dennom trhu',actual:'Cena na dennom trhu',
+    byDay:'Deň po dni',day:'Deň',range:'Rozpätie',type:'Typ',none:'Ceny sa teraz nepodarilo načítať.',
+    cap:'Burzová cena z denného trhu bez DPH, daní a poplatkov za distribúciu',
+    avg:'priem.',
+    act1:'Dnes',act2:'Dnes a zajtra',cheapRest:'Najlacnejšia hodina do konca dňa'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1111,7 +1121,8 @@ var ZONES={
   ch:{name:'CH',city:'Schweiz',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
-  cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'}
+  cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
+  sk:{name:'SK',city:'Slovensko',lang:'sk',cur:'EUR',rate:1,sub:'c',src:'entsoe'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1225,7 +1236,15 @@ var PRIS_COUNTRIES={
     tx:{h1:'Cena elektřiny v Česku: dnes a zítra',
       zonesH:'Cena elektřiny v Česku',
       note:'Hodinové průměry čtvrthodinových cen vypočítal elpriser.org (údaje jsou oproti originálu upraveny). Ceny jsou v eurocentech za kWh, nikoli v korunách. Zdroj:',
-      cap:'Burzovní cena z denního trhu v eurocentech, bez DPH, daní a poplatků za distribuci'}}
+      cap:'Burzovní cena z denního trhu v eurocentech, bez DPH, daní a poplatků za distribuci'}},
+  'sk/ceny-elektriny':{lang:'sk',cc:'sk',zones:['sk'],def:'sk',act:1,
+    name:'Slovensko',da:'Slovakiet',loc:'sk_SK',qid:'Q214',
+    title:'Cena elektriny dnes a zajtra – burzová cena na Slovensku',
+    desc:'Burzová cena elektriny (denný trh) na Slovensku po hodinách, dnes a zajtra, v c/kWh, bez DPH, daní a poplatkov. Zdroj: ENTSO-E',
+    tx:{h1:'Cena elektriny na Slovensku: dnes a zajtra',
+      zonesH:'Cena elektriny na Slovensku',
+      note:'Hodinové priemery štvrťhodinových cien vypočítal elpriser.org (údaje sú oproti originálu upravené). Ceny sú v eurocentoch za kWh. Zdroj:',
+      cap:'Burzová cena z denného trhu v eurocentoch, bez DPH, daní a poplatkov za distribúciu'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1311,7 +1330,11 @@ var CHROME_I18N={
   cs:{home:'elpriser.org – úvodní stránka',land:'Země',place:'Kde jste?',area:'Cenová zóna',oth:'Další země',back:'Zpět',find:'Hledat',none:'Žádné výsledky',close:'Zavřít',
     cn:{dk:'Dánsko',no:'Norsko',sv:'Švédsko',fi:'Finsko',nl:'Nizozemsko',de:'Německo',fr:'Francie',pl:'Polsko',it:'Itálie',at:'Rakousko',ch:'Švýcarsko',be:'Belgie',ie:'Irsko',cz:'Česko'},
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
-    chg:'Změna: hodinové průměry vypočítal elpriser.org'}
+    chg:'Změna: hodinové průměry vypočítal elpriser.org'},
+  sk:{home:'elpriser.org – úvodná stránka',land:'Krajiny',place:'Kde ste?',area:'Cenová zóna',oth:'Ďalšie krajiny',back:'Späť',find:'Hľadať',none:'Žiadne výsledky',close:'Zavrieť',
+    cn:{dk:'Dánsko',no:'Nórsko',sv:'Švédsko',fi:'Fínsko',nl:'Holandsko',de:'Nemecko',fr:'Francúzsko',pl:'Poľsko',it:'Taliansko',at:'Rakúsko',ch:'Švajčiarsko',be:'Belgicko',ie:'Írsko',cz:'Česko',sk:'Slovensko'},
+    privacy:'Ochrana súkromia (po dánsky)',src:'Zdroj:',and:'a',open:'Otvorené súbory údajov na',
+    chg:'Zmena: hodinové priemery vypočítal elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
