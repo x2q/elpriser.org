@@ -5,9 +5,11 @@
 //   country   ISO 3166 code, as in the API's zoneInfo.country
 //   tz        IANA time zone: the API's days and hours are by the zone's own wall clock
 //   currency  zoneInfo.currency (the local currency; prices are published in EUR and converted with zoneInfo.rate)
-//   sub       the sub-unit the app shows per kWh: 'øre' (DKK, NOK), 'öre' (SEK), 'gr' (PLN) or 'ct' (EUR: the app writes the euro cent as its language does)
+//   sub       the sub-unit the app shows per kWh: 'øre' (DKK, NOK), 'öre' (SEK), 'gr' (PLN) 'p' (GBP: pence) or 'ct' (EUR: the app writes the euro cent as its language does)
 //   city      the place the zone is named for, only where a country has several zones (NO, SE); null otherwise
 //   forecast  true when the feed carries a model forecast after the settled days (the 13 Nordic zones and NL); false: settled day-ahead prices only
+//   apps      false: the API and the web serve the zone but the Android and iOS tables do not list it yet (test-golden.mjs compares their Zones files with the
+//             zones that are not `apps: false`); the app follow-up adds the rows, the country names and the language rules, and deletes the flag
 
 export const ZONES = [
   { key: 'dk1', country: 'DK', tz: 'Europe/Copenhagen', currency: 'DKK', sub: 'øre', city: null, forecast: true },
@@ -48,6 +50,11 @@ export const ZONES = [
   { key: 'me', country: 'ME', tz: 'Europe/Podgorica', currency: 'EUR', sub: 'ct', city: null, forecast: false },
   { key: 'mk', country: 'MK', tz: 'Europe/Skopje', currency: 'EUR', sub: 'ct', city: null, forecast: false },
   { key: 'al', country: 'AL', tz: 'Europe/Tirane', currency: 'EUR', sub: 'ct', city: null, forecast: false },
+  { key: 'xk', country: 'XK', tz: 'Europe/Belgrade', currency: 'EUR', sub: 'ct', city: null, forecast: false, apps: false },
+  // Great Britain: the Market Index Price (within-day) from Elexon BMRS, NOT a day-ahead price. Already in pounds: the feed's `eur_mwh` holds GBP/MWh
+  // and zoneInfo.rate is 1, so price * rate / 10 is pence per kWh. Today is never complete (an hour appears once both half hours have traded) and
+  // there is no tomorrow: a client that drops incomplete days (parseZone) would show nothing current for this zone.
+  { key: 'gb', country: 'GB', tz: 'Europe/London', currency: 'GBP', sub: 'p', city: null, forecast: false, apps: false },
 ];
 
 /** The zone a device gets before the user chooses: by the device's region, else by its language. Luxembourg shares DE-LU; Italy is offered as IT-North only. */

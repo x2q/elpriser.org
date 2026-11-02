@@ -7,6 +7,8 @@ only, A03 blocks expanded, hourly means by the zone's wall clock), written to KV
 /api/nordic reads for every EU zone. Actual prices only: no forecast and no model. A day that is not published yet
 (tomorrow before ~13:00 CET) is simply absent.
 
+Ireland (`ie`) is not here any more: build_semopx_prices.py writes eu-prices-ie from the SEMOpx day-ahead results.
+
 Credentials: ENTSOE_TOKEN (the Transparency Platform's security token) and the Cloudflare pair, from the environment or
 ~/.config/elpriser.env. The token is never logged or put in a URL that is logged.
 
@@ -16,7 +18,7 @@ Energy-Charts job that runs at 11:30 and 14:00:
     5 14 * * *   cd ~/elpriser-eu && python3 build_entsoe_prices.py >> entsoe_prices.log 2>&1
 
 Dry run (fetches and parses, prints what it would write, touches no KV and needs only ENTSOE_TOKEN):
-    python3 build_entsoe_prices.py --dry-run [--zones es,ie] [--date 2026-10-26]
+    python3 build_entsoe_prices.py --dry-run [--zones es,xk] [--date 2026-10-26]
 
 A zone that fails is logged and skipped and the job still exits 0 (a missing configuration exits 2, before anything is
 fetched). A KV write is skipped when the stored body is identical. KV keys live 3 days, as the Energy-Charts zones'.
@@ -54,10 +56,10 @@ ZONES = {
     "ee":  ("10Y1001A1001A39I",    "Europe/Tallinn"),
     "lv":  ("10YLV-1001A00074",    "Europe/Riga"),
     "lt":  ("10YLT-1001A0008Q",    "Europe/Vilnius"),
-    "ie":  ("10Y1001A1001A59C",    "Europe/Dublin"),
     "me":  ("10YCS-CG-TSO---S",    "Europe/Podgorica"),
     "mk":  ("10YMK-MEPSO----8",    "Europe/Skopje"),
     "al":  ("10YAL-KESH-----5",    "Europe/Tirane"),
+    "xk":  ("10Y1001C--00100H",    "Europe/Belgrade"),     # Kosovo: CET/CEST; tzdata has no zone of its own, Europe/Belgrade is the one it lists for XK
 }
 
 

@@ -30,8 +30,12 @@ place dialog are plain HTML in `index.html`; **derive them, never hand-edit**: `
 1. Check that `/api/nordic?zone=<z>` serves the zone (`EU_ZONES_ENERGY_CHARTS` or `EU_ZONES_ENTSOE` in `functions/api/[[catchall]].js`)
    and note the timezone of the zone's days (`scripts/eu_prices/build_*_prices.py`).
 2. Add the zone to `ZONES` (template below). `src` is `'ec'` (Energy-Charts: Bundesnetzagentur | SMARD.de, CC BY 4.0) or `'entsoe'`
-   (ENTSO-E Transparency Platform) — the same job that writes the zone; a test checks it. `shift` is the hours from Copenhagen to the zone's own
-   clock (Dublin −1, Athens +1, Lisbon −1; CET zones none) — the feed's days are the zone's local days.
+   (ENTSO-E Transparency Platform), `'semopx'` (SEMOpx day-ahead results: Ireland) or `'elexon'` (Elexon BMRS Market Index Price, within-day: Great Britain)
+   — the same job that writes the zone; a test checks it. `shift` is the hours from Copenhagen to the zone's own
+   clock (Dublin and London −1, Athens +1, Lisbon −1; CET zones none) — the feed's days are the zone's local days.
+   **Great Britain is the one page that is not a day-ahead price and not in euro**: `cur:'GBP',rate:1,sub:'p'` (the feed is already in pounds, `zoneInfo.rate` is 1), `last:1`
+   (the current hour is never priced yet, so the hero shows the latest priced hour with its own time), and its `tx` overrides `now`, `fc`, `actual`, `cap`, `verdict` and says in `note` that
+   the price is the within-day Market Index Price, not the day-ahead auction, with no tomorrow. Its credit is Elexon's licence sentence (`prisCredit('elexon')`).
 3. Add the page to `PRIS_COUNTRIES` (template below), **appended at the end**. Look up the Wikidata item and check its English label
    (`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=Q…&props=labels&languages=en&format=json`, with a `User-Agent`).
    Title ≤ 62 and description 80–155 characters (a test checks), the description names the source.
@@ -53,7 +57,7 @@ place dialog are plain HTML in `index.html`; **derive them, never hand-edit**: `
 
 ```js
 // ZONES — one line
-  xx:{name:'XX',city:'<the country in the page language>',lang:'<language code>',cur:'EUR',rate:1,sub:'<ct|c€|cent|…>',src:'ec' /* or 'entsoe' */,shift:0 /* only if not CET */},
+  xx:{name:'XX',city:'<the country in the page language>',lang:'<language code>',cur:'EUR',rate:1,sub:'<ct|c€|cent|…>',src:'ec' /* or 'entsoe', 'semopx', 'elexon' */,shift:0 /* only if not CET */},
 
 // PRIS_COUNTRIES — one entry, appended
   'xx/<slug>':{lang:'<language code>',cc:'xx',zones:['xx'],def:'xx',act:1,
@@ -133,9 +137,11 @@ Basic Latin and Latin-1 only: Latin Extended (Czech, Polish, Romanian), Cyrillic
 | `me` | Montenegro | sr-ME or sr | entsoe | CET | Q236 | `/me/cijena-struje` |
 | `mk` | North Macedonia | mk | entsoe | CET | Q221 | `/mk/cena-na-struja` — **done** |
 | `al` | Albania | sq | entsoe | CET | Q222 | `/al/cmimi-i-energjise` — **done** |
+| `xk` | Kosovo | sq | entsoe (hourly, EIC 10Y1001C--00100H) | CET | Q1246 | `/xk/cmimi-i-rrymes` — **done** |
+| `gb` | United Kingdom (Great Britain only) | en | elexon (within-day index, GBP, no tomorrow) | −1 (London) | Q145 | `/gb/electricity-price` — **done** |
 | `it-cn` … | Italy's other zones | it | — | CET | Q38 | not served by `/api/nordic` yet (Energy-Charts allows internal use only for them): needs a data layer first |
 
 Wikidata items verified against their English labels on 2026-11-02 (Czechia's English label there is still "Czech Republic"). The ENTSO-E re-use terms are
 accepted by the owner; the page names the platform and says the hourly means are our change. Ireland's `ie` is the all-island SEM (Ireland **and** Northern
-Ireland): see `_zone-location.js`. Portugal (`pt`) runs on the same clock as Ireland and can have a day of 23 priced hours: an hour without a price is drawn as an empty bar
+Ireland), read from the SEMOpx day-ahead results since 2026-11-02 (`build_semopx_prices.py`; it was ENTSO-E): see `_zone-location.js`, which also keeps `gb` out of Northern Ireland. Portugal (`pt`) runs on the same clock as Ireland and can have a day of 23 priced hours: an hour without a price is drawn as an empty bar
 (`test-zone-pages.mjs` covers it for Ireland).

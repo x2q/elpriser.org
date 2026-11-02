@@ -299,7 +299,7 @@ Send a User-Agent header: Cloudflare answers 403 to Python's default \`Python-ur
 - \`GET /api/schedule?area=DK1&strategy=cheapest_n&hours=6\` — The N cheapest hours of the day
 - \`GET /api/forecast?area=DK1&mode=inkl_alt\` — Hourly price forecast, today and the next 9 days (settled prices where published, \`type: actual\`). \`mode=net_inkl_alt&gln=…\` adds that grid company's nettarif as in force on each day's own date, so it equals /api/prices on a published day. \`min\`/\`max\` are P10/P90 widened to 80 % backtested coverage on model days; \`model.generatedAt\` names the run.
 - \`GET /api/forecast/archive?area=DK1[&issued=2026-10-06]\` — Past forecast runs (400 days, from 2026-10-06): list the run dates, or fetch one as it was issued (raw spot, DKK/MWh excl. VAT), to measure error by horizon
-- \`GET /api/nordic?zone=se3\` — Same for any of the 13 Nordic/NL bidding zones (dk1, dk2, no1–no5, se1–se4, fi, nl), in EUR/MWh, with the ECB rate to the local currency in \`zoneInfo\`. Also 25 EU zones, settled day-ahead prices only and no forecast, in EUR/MWh (Poland's \`zoneInfo\` carries the PLN rate): \`de\`, \`fr\`, \`pl\`, \`it-n\` (Northern Italy), \`at\`, \`be\`, \`ch\`, \`cz\`, \`hu\` and \`si\` from Bundesnetzagentur | SMARD.de via Energy-Charts.info, CC BY 4.0, and \`es\`, \`pt\`, \`sk\`, \`gr\`, \`ro\`, \`bg\`, \`hr\`, \`rs\`, \`ee\`, \`lv\`, \`lt\`, \`ie\` (Ireland and Northern Ireland), \`me\`, \`mk\` and \`al\` from the ENTSO-E Transparency Platform; all hourly means of the 15-minute prices (a change of the data); tomorrow is absent until it is published, about 13:00 CET
+- \`GET /api/nordic?zone=se3\` — Same for any of the 13 Nordic/NL bidding zones (dk1, dk2, no1–no5, se1–se4, fi, nl), in EUR/MWh, with the ECB rate to the local currency in \`zoneInfo\`. Also 27 EU zones, settled prices only and no forecast, in EUR/MWh (Poland's \`zoneInfo\` carries the PLN rate): \`de\`, \`fr\`, \`pl\`, \`it-n\` (Northern Italy), \`at\`, \`be\`, \`ch\`, \`cz\`, \`hu\` and \`si\` from Bundesnetzagentur | SMARD.de via Energy-Charts.info, CC BY 4.0, and \`es\`, \`pt\`, \`sk\`, \`gr\`, \`ro\`, \`bg\`, \`hr\`, \`rs\`, \`ee\`, \`lv\`, \`lt\`, \`me\`, \`mk\`, \`al\` and \`xk\` (Kosovo) from the ENTSO-E Transparency Platform, and \`ie\` (Ireland and Northern Ireland, the all-island market) from the SEMOpx day-ahead auction results; all hourly means of the 15- or 30-minute prices (a change of the data); tomorrow is absent until it is published, about 13:00 CET. \`gb\` (Great Britain) is different: it is the Market Index Price (within-day) in GBP/MWh from Elexon BMRS (Contains BMRS data © Elexon Limited copyright and database right), not a day-ahead price, and has no tomorrow
 - \`GET /api/shelly/tariff?area=DK1&mode=inkl_alt\` — Tibber-compatible 24h JSON
 - \`GET /api/raw/prices?area=DK1&start=YYYY-MM-DD&end=YYYY-MM-DD\` — Raw DayAheadPrices records
 - \`GET /api/raw/tariff?gln=5790000704842\` — Single net company's Nettarif C (24 values)
@@ -1246,7 +1246,8 @@ var PRIS_I18N={
  *  `lang` picks the PRIS_I18N table for a zone's own page (a page may read another language's table for the same zone: the
  *  French page of Belgium, PRIS_COUNTRIES). `shift`: hours from Copenhagen to the zone's own clock, when it is not the same
  *  (Dublin -1); the feed's days are the zone's local days. `src`: where an `act` zone's data come from, which prisCredit names:
- *  'ec' Energy-Charts (Bundesnetzagentur | SMARD.de, CC BY 4.0) or 'entsoe' (ENTSO-E Transparency Platform). */
+ *  'ec' Energy-Charts (Bundesnetzagentur | SMARD.de, CC BY 4.0), 'entsoe' (ENTSO-E Transparency Platform), 'semopx' (SEMOpx day-ahead auction
+ *  results, Ireland) or 'elexon' (Elexon BMRS Market Index Data, Great Britain: a within-day index, NOT a day-ahead price). */
 var ZONES={
   dk1:{name:'DK1',city:'Vestdanmark',lang:'da',cur:'DKK',rate:7.4755,sub:'øre'},
   dk2:{name:'DK2',city:'Østdanmark',lang:'da',cur:'DKK',rate:7.4755,sub:'øre'},
@@ -1270,7 +1271,7 @@ var ZONES={
   at:{name:'AT',city:'Österreich',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   ch:{name:'CH',city:'Schweiz',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
-  ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
+  ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'semopx'},
   cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   es:{name:'ES',city:'España',lang:'es',cur:'EUR',rate:1,sub:'c€',src:'entsoe'},
   pt:{name:'PT',city:'Portugal',lang:'pt',cur:'EUR',rate:1,sub:'c€',shift:-1,src:'entsoe'},
@@ -1287,7 +1288,12 @@ var ZONES={
   lv:{name:'LV',city:'Latvija',lang:'lv',cur:'EUR',rate:1,sub:'c',shift:1,src:'entsoe'},
   lt:{name:'LT',city:'Lietuva',lang:'lt',cur:'EUR',rate:1,sub:'ct',shift:1,src:'entsoe'},
   mk:{name:'MK',city:'Северна Македонија',lang:'mk',cur:'EUR',rate:1,sub:'ц',src:'entsoe'},
-  al:{name:'AL',city:'Shqipëria',lang:'sq',cur:'EUR',rate:1,sub:'c',src:'entsoe'}
+  al:{name:'AL',city:'Shqipëria',lang:'sq',cur:'EUR',rate:1,sub:'c',src:'entsoe'},
+  xk:{name:'XK',city:'Kosova',lang:'sq',cur:'EUR',rate:1,sub:'c',src:'entsoe'},
+  // Great Britain: the Market Index Price (within-day) in GBP, NOT a day-ahead price (Elexon BMRS). The feed is already in pounds: `rate` 1
+  // (the API's zoneInfo.rate is 1 too), so EUR/MWh-named `eur_mwh` / 10 = pence per kWh. London's clock is Dublin's. `last`: the current hour
+  // is never priced yet (an hour appears once both of its half hours have traded), so the hero shows the latest priced hour, with its own time.
+  gb:{name:'GB',city:'Great Britain',lang:'en',cur:'GBP',rate:1,sub:'p',shift:-1,src:'elexon',last:1}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1390,10 +1396,10 @@ var PRIS_COUNTRIES={
   'ie/electricity-price':{lang:'en',cc:'ie',zones:['ie'],def:'ie',act:1,
     name:'Ireland',da:'Irland',loc:'en_IE',qid:'Q27',
     title:'Electricity price today and tomorrow – Ireland (SEM)',
-    desc:'Day-ahead electricity price for Ireland and Northern Ireland (SEM), hour by hour, today and tomorrow, in c/kWh, excl. VAT and charges. Source: ENTSO-E',
+    desc:'Day-ahead electricity price for Ireland and Northern Ireland (SEM), hour by hour, today and tomorrow, in c/kWh, excl. VAT and charges. Source: SEMOpx',
     tx:{h1:'Electricity price in Ireland: today and tomorrow',
       zonesH:'Electricity price in Ireland',
-      note:'Hourly means of the 15-minute prices, calculated by elpriser.org (changed from the original data). Ireland and Northern Ireland trade as one market, the all-island Single Electricity Market (SEM). Prices are in euro cent. Source:'}},
+      note:'Hourly means of the 30-minute prices of the SEMOpx day-ahead auction, calculated by elpriser.org (changed from the original data). Ireland and Northern Ireland trade as one market, the all-island Single Electricity Market (SEM). Prices are in euro cent. Source:'}},
   'cz/ceny-elektriny':{lang:'cs',cc:'cz',zones:['cz'],def:'cz',act:1,
     name:'Česko',da:'Tjekkiet',loc:'cs_CZ',qid:'Q213',
     title:'Cena elektřiny dnes a zítra – burzovní cena v Česku',
@@ -1519,7 +1525,23 @@ var PRIS_COUNTRIES={
     desc:'Çmimi i borsës së energjisë elektrike (dita në avancë) në Shqipëri sipas orës, sot dhe nesër, në c/kWh, pa TVSH dhe taksa. Burimi: ENTSO-E',
     tx:{h1:'Çmimi i energjisë në Shqipëri: sot dhe nesër',
       zonesH:'Çmimi i energjisë në Shqipëri',
-      note:'Mesataret orare të çmimeve çdo 15 minuta janë llogaritur nga elpriser.org (të dhënat janë ndryshuar në krahasim me origjinalin). Çmimet janë në cent euro, jo në lekë. Burimi:'}}
+      note:'Mesataret orare të çmimeve çdo 15 minuta janë llogaritur nga elpriser.org (të dhënat janë ndryshuar në krahasim me origjinalin). Çmimet janë në cent euro, jo në lekë. Burimi:'}},
+  'xk/cmimi-i-rrymes':{lang:'sq',cc:'xk',zones:['xk'],def:'xk',act:1,
+    name:'Kosova',da:'Kosovo',loc:'sq_AL',qid:'Q1246',
+    title:'Çmimi i rrymës sot dhe nesër në Kosovë',
+    desc:'Çmimi i energjisë elektrike (dita në avancë) në Kosovë sipas orës, sot dhe nesër, në c/kWh, pa TVSH dhe taksa. Burimi: ENTSO-E',
+    tx:{h1:'Çmimi i rrymës në Kosovë: sot dhe nesër',
+      zonesH:'Çmimi i rrymës në Kosovë',
+      note:'Mesataret orare të çmimeve janë llogaritur nga elpriser.org (të dhënat janë ndryshuar në krahasim me origjinalin; kur burimi jep çmime më të shkurtra se një orë, merret mesatarja e tyre). Çmimet janë në cent euro. Burimi:'}},
+  'gb/electricity-price':{lang:'en',cc:'gb',zones:['gb'],def:'gb',act:1,
+    name:'United Kingdom',da:'Storbritannien',loc:'en_GB',qid:'Q145',
+    title:'Great Britain electricity price: within-day market index',
+    desc:'Market Index Price (within-day) for Great Britain, hour by hour for today, in p/kWh, excl. VAT and charges. Not the day-ahead price. Source: Elexon BMRS',
+    tx:{h1:'Electricity price in Great Britain: today, within-day market index',
+      zonesH:'Electricity price in Great Britain',
+      now:'Latest Market Index Price (within-day)',verdict:['Cheap hour today','Average hour today','Expensive hour today'],fc:'Market Index Price (within-day)',actual:'Market Index Price (within-day)',
+      cap:'Market Index Price (within-day) excluding VAT, taxes, levies and network charges. This is not the day-ahead auction price',
+      note:'The Market Index Price (within-day) is the volume-weighted price of the within-day wholesale trades of each half hour (EPEX SPOT UK and N2EX, as reported to Elexon). It is not the day-ahead auction price, which is not free data for Great Britain, and there is no tomorrow: an hour is shown once both of its half hours have traded. Hourly means of the half-hourly prices, calculated by elpriser.org (changed from the original data). Great Britain only: Northern Ireland trades in the all-island market (see Ireland). Prices are in pence. Source:'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1599,7 +1621,7 @@ var CHROME_I18N={
     privacy:'Privacy (in danese)',src:'Fonte:',and:'e',open:'Dataset aperti su',
     chg:'Modifiche: medie orarie calcolate da elpriser.org'},
   en:{home:'elpriser.org home page',land:'Countries',place:'Where are you?',area:'Price zone',oth:'Other countries',back:'Back',find:'Search',none:'No results',close:'Close',
-    cn:{dk:'Denmark',no:'Norway',sv:'Sweden',fi:'Finland',nl:'Netherlands',de:'Germany',fr:'France',pl:'Poland',it:'Italy',at:'Austria',ch:'Switzerland',be:'Belgium',ie:'Ireland',cz:'Czechia'},
+    cn:{dk:'Denmark',no:'Norway',sv:'Sweden',fi:'Finland',nl:'Netherlands',de:'Germany',fr:'France',pl:'Poland',it:'Italy',at:'Austria',ch:'Switzerland',be:'Belgium',ie:'Ireland',cz:'Czechia',gb:'United Kingdom',xk:'Kosovo'},
     privacy:'Privacy (in Danish)',src:'Source:',and:'and',open:'Open datasets on',
     chg:'Changed: hourly means calculated by elpriser.org'},
   cs:{home:'elpriser.org – úvodní stránka',land:'Země',place:'Kde jste?',area:'Cenová zóna',oth:'Další země',back:'Zpět',find:'Hledat',none:'Žádné výsledky',close:'Zavřít',
@@ -1667,7 +1689,7 @@ var CHROME_I18N={
     privacy:'Приватност (на дански)',src:'Извор:',and:'и',open:'Отворени збирки на податоци на',
     chg:'Измена: часовните просеци ги пресметува elpriser.org'},
   sq:{home:'elpriser.org – faqja kryesore',land:'Vendet',place:'Ku jeni?',area:'Zona e çmimit',oth:'Vende të tjera',back:'Prapa',find:'Kërko',none:'Asnjë rezultat',close:'Mbyll',
-    cn:{dk:'Danimarka',no:'Norvegjia',sv:'Suedia',fi:'Finlanda',nl:'Holanda',de:'Gjermania',fr:'Franca',pl:'Polonia',it:'Italia',at:'Austria',ch:'Zvicra',be:'Belgjika',ie:'Irlanda',cz:'Çekia',mk:'Maqedonia e Veriut',al:'Shqipëria'},
+    cn:{dk:'Danimarka',no:'Norvegjia',sv:'Suedia',fi:'Finlanda',nl:'Holanda',de:'Gjermania',fr:'Franca',pl:'Polonia',it:'Italia',at:'Austria',ch:'Zvicra',be:'Belgjika',ie:'Irlanda',cz:'Çekia',mk:'Maqedonia e Veriut',al:'Shqipëria',gb:'Mbretëria e Bashkuar',xk:'Kosova'},
     privacy:'Privatësia (në danisht)',src:'Burimi:',and:'dhe',open:'Të dhëna të hapura në',
     chg:'Ndryshim: mesataret orare të llogaritura nga elpriser.org'}
 };
@@ -1742,10 +1764,13 @@ function placeHTML(lang,cur,pg){
 
 /** The attribution of the data on an `act` page, by the zone's source (ZONES `src`). 'ec' (default): "Bundesnetzagentur | SMARD.de" (the
  *  licensor), Energy-Charts.info (the API it comes through) and the licence CC BY 4.0, each a link. 'entsoe': the ENTSO-E Transparency
- *  Platform. The footer and the text block both write it; the change the site makes is said beside it. */
+ *  Platform. 'semopx': SEMOpx. 'elexon': the BMRS attribution sentence. The footer and the text block both write it; the change the site makes is said beside it. */
 function prisCredit(src){
   var lk=function(href,t){return '<a href="'+href+'" target="_blank" rel="noopener">'+t+'</a>';};
   if(src==='entsoe')return lk('https://transparency.entsoe.eu','ENTSO-E Transparency Platform');
+  if(src==='semopx')return lk('https://www.semopx.com/market-data/market-results','SEMOpx');
+  // Elexon's licence prescribes this sentence (the caller adds the full stop) and a link to the licence where possible.
+  if(src==='elexon')return lk('https://www.elexon.co.uk/bsc/data/balancing-mechanism-reporting-agent/copyright-licence-bmrs-data/','Contains BMRS data \u00a9 Elexon Limited copyright and database right '+new Date().getUTCFullYear());
   return lk('https://www.smard.de','Bundesnetzagentur | SMARD.de')+' ('+lk('https://www.energy-charts.info','Energy-Charts.info')+'), '+lk('https://creativecommons.org/licenses/by/4.0/','CC BY 4.0');
 }
 
@@ -2215,7 +2240,10 @@ function prisHTML(days,todayStr,nowHour,o){
   var all=prisDays(days||[],todayStr,cfg.days),C=prisCtx(o,all),L=C.L;
   C.act=!!cfg.act;   // an actual-prices page: no forecast wording, a title that follows how many days there are
   var today=all.length?all[0]:null;
-  var nowP=today?today.ps[nowHour]:null;
+  var nowP=today?today.ps[nowHour]:null,heroHour=nowHour;
+  // A zone whose current hour is never priced yet (ZONES `last`, Great Britain's within-day index) shows its latest priced hour, with that hour's own time.
+  if(nowP==null&&today&&C.z&&ZONES[o.zone]&&ZONES[o.zone].last)
+    for(var lh=nowHour-1;lh>=0;lh--)if(today.ps[lh]!=null){nowP=today.ps[lh];heroHour=lh;break;}
   var td=today?[]:null,i;
   if(today)for(i=0;i<24;i++)if(today.ps[i]!=null)td.push(today.ps[i]);
   var verdict=nowP!=null?prisTier(nowP,td):1;
@@ -2224,7 +2252,7 @@ function prisHTML(days,todayStr,nowHour,o){
   var panel=today?prisPanel(all,0,nowHour,false,o):'';
   var wd=today?prisDate(todayStr,L).wd:'';
   var hero='<section class="pris-hero" aria-label="'+L.now+(o.where?' — '+prisEsc(o.where):'')+'">'
-    +'<p class="pris-label">'+L.now+' · '+(wd?'<span class="pris-wd">'+wd+' </span>':'')+prisAt(L,nowHour)+'</p>'
+    +'<p class="pris-label">'+L.now+' · '+(wd?'<span class="pris-wd">'+wd+' </span>':'')+prisAt(L,heroHour)+'</p>'
     +'<p class="pris-price"><span class="pris-now">'+(nowP!=null?prisNum(nowP,C.d,L):'—')+'</span><span class="pris-u">'+C.u+'/kWh</span></p>'
     +'<div class="pris-vrow">'
     +(nowP!=null?'<span class="pris-pill t'+verdict+'"><i></i>'+L.verdict[verdict]+'</span>':'')
@@ -2344,12 +2372,16 @@ function llmsEuropeBullet() {
     const [pg0, C0] = pages[0];
     return link(pg0, C0.da) + (LLMS_NOTE[C0.cc] ? ' ' + LLMS_NOTE[C0.cc] : '') + (pages.length > 1 ? ' (' + pages.map(([pg, C], i) => (i ? link(pg, LLMS_LANG[C.lang] || C.lang) : (LLMS_LANG[C.lang] || C.lang))).join(', ') + ')' : '');
   });
-  const src = new Set(act.map(([, C]) => ZONES[C.def].src));
-  const ec = act.filter(([, C]) => ZONES[C.def].src === 'ec').map(([, C]) => C.da).filter((d, i, a) => a.indexOf(d) === i);
-  const entsoe = act.filter(([, C]) => ZONES[C.def].src === 'entsoe').map(([, C]) => C.da);
+  const of = k => act.filter(([, C]) => ZONES[C.def].src === k).map(([, C]) => C.da).filter((d, i, a) => a.indexOf(d) === i);
+  const and = l => l.length > 1 ? l.slice(0, -1).join(', ') + ' og ' + l[l.length - 1] : l[0];
+  const entsoe = of('entsoe'), semopx = of('semopx'), elexon = of('elexon');
+  // Great Britain is the one page that is NOT a day-ahead price: the within-day Market Index Price (Elexon BMRS), in pounds, today only.
   const kilde = 'Kilde: Bundesnetzagentur | SMARD.de via Energy-Charts.info, licens CC BY 4.0'
-    + (src.has('entsoe') ? `; ${entsoe.length > 1 ? entsoe.slice(0, -1).join(', ') + ' og ' + entsoe[entsoe.length - 1] : entsoe[0]}: ENTSO-E Transparency Platform` : '');
-  return `- [Elpriser i Europa](https://elpriser.org/de/strompreis): Spotpriser (day-ahead) i ${byCc.size} europæiske lande, time for time for i dag og i morgen på landets eget sprog. Kun faktiske børspriser — ingen prognose — uden moms, afgifter og nettariffer, så det er ikke, hvad en kunde betaler. ${kilde}; vi har ændret dataene (timegennemsnit af kvarterspriserne, for Polen desuden omregnet til grosze med Den Europæiske Centralbanks referencekurs): ${list.length > 1 ? list.slice(0, -1).join(', ') + ' og ' + list[list.length - 1] : list[0]}.`;
+    + (entsoe.length ? `; ${and(entsoe)}: ENTSO-E Transparency Platform` : '')
+    + (semopx.length ? `; ${and(semopx)}: SEMOpx (resultaterne af day-ahead-auktionen)` : '')
+    + (elexon.length ? `; ${and(elexon)}: Elexon BMRS, Contains BMRS data \u00a9 Elexon Limited copyright and database right ${new Date().getUTCFullYear()}` : '');
+  const gb = elexon.length ? ` ${and(elexon)} er undtagelsen: siden viser Market Index Price (within-day), altså ikke day-ahead-prisen, kun for i dag og i pund.` : '';
+  return `- [Elpriser i Europa](https://elpriser.org/de/strompreis): Spotpriser (day-ahead) i ${byCc.size} europæiske lande, time for time for i dag og i morgen på landets eget sprog.${gb} Kun faktiske børspriser — ingen prognose — uden moms, afgifter og nettariffer, så det er ikke, hvad en kunde betaler. ${kilde}; vi har ændret dataene (timegennemsnit af kvarters- eller halvtimespriserne, for Polen desuden omregnet til grosze med Den Europæiske Centralbanks referencekurs): ${list.length > 1 ? list.slice(0, -1).join(', ') + ' og ' + list[list.length - 1] : list[0]}.`;
 }
 const fillLlms = txt => txt.replace('{{EUROPE_PAGES}}', () => llmsEuropeBullet());
 
@@ -2748,7 +2780,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v83');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v84');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -2797,9 +2829,9 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v19';
-const CITY_SSR_VERSION = 'city-ssr-v15';
-const PROGNOSE_SSR_VERSION = 'prognose-ssr-v13';
+const ZONE_SSR_VERSION = 'zone-ssr-v20';
+const CITY_SSR_VERSION = 'city-ssr-v16';
+const PROGNOSE_SSR_VERSION = 'prognose-ssr-v14';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);

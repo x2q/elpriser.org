@@ -1700,6 +1700,15 @@ async function startServer() {
   // Hand-pinned, per LANGUAGE (a second pair of eyes on the translation): the heading of the place dialog, the footer's country heading and the privacy link.
   // A new language adds one row; a missing row fails the run with the language's name. Everything else of a page (the country names, the links, the credit) is
   // derived from PRIS_COUNTRIES, PRIS_PICK and CHROME_I18N below.
+  // The credit of each data source as the pages write it: the text of the footer / text block, the text block's links, and the names no OTHER source's page may carry.
+  const YEAR = new Date().getUTCFullYear(), BMRS = `Contains BMRS data © Elexon Limited copyright and database right ${YEAR}`;
+  const CR = {
+    ec: { text: 'Bundesnetzagentur | SMARD.de (Energy-Charts.info), CC BY 4.0', list: /Bundesnetzagentur \| SMARD\.de \(Energy-Charts\.info\), CC BY 4\.0\.$/,
+      links: [['Bundesnetzagentur | SMARD.de', 'https://www.smard.de'], ['Energy-Charts.info', 'https://www.energy-charts.info'], ['CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/']], not: /Energi Data Service|ENTSO|SEMOpx|BMRS/ },
+    entsoe: { text: 'ENTSO-E Transparency Platform', list: /ENTSO-E Transparency Platform\.$/, links: [['ENTSO-E Transparency Platform', 'https://transparency.entsoe.eu']], not: /Energi Data Service|SMARD|CC BY|SEMOpx|BMRS/ },
+    semopx: { text: 'SEMOpx', list: /SEMOpx\.$/, links: [['SEMOpx', 'https://www.semopx.com/market-data/market-results']], not: /Energi Data Service|ENTSO|SMARD|CC BY|BMRS/ },
+    elexon: { text: BMRS, list: new RegExp(BMRS + '\\.$'), links: [[BMRS, 'https://www.elexon.co.uk/bsc/data/balancing-mechanism-reporting-agent/copyright-licence-bmrs-data/']], not: /Energi Data Service|ENTSO|SMARD|CC BY|SEMOpx/ },
+  };
   const CHROME_WORDS = {
     nb: { place: 'Hvor er du?', land: 'Land', privacy: 'Personvern (på dansk)' },
     sv: { place: 'Var är du?', land: 'Länder', privacy: 'Integritet (på danska)' },
@@ -1784,8 +1793,7 @@ async function startServer() {
         assert.deepEqual(s.footLinks.map(x => x[0]), w.nav); assert.deepEqual(s.footLinks.map(x => x[1]), w.hrefs);
         assert.deepEqual(s.footLinks.filter(x => x[2]).map(x => x[0]), [w.cur]);
         assert.deepEqual(s.privacy, [w.privacy, '/privatliv', 'da']);
-        if (w.act && w.src === 'entsoe') { assert.match(s.footText, /© Elpriser\.org — .*ENTSO-E Transparency Platform — .*elpriser\.org.*Hugging Face/s); assert.ok(!/Energi Data Service|SMARD|CC BY/.test(s.footText), 'the ENTSO-E pages credit ENTSO-E only'); }
-        else if (w.act) { assert.match(s.footText, /© Elpriser\.org — .*Bundesnetzagentur \| SMARD\.de \(Energy-Charts\.info\), CC BY 4\.0 — .*elpriser\.org.*Hugging Face/s); assert.ok(!/Energi Data Service|ENTSO/.test(s.footText), 'the Energy-Charts pages credit neither Energi Data Service nor ENTSO-E'); }
+        if (w.act) { assert.ok(s.footText.includes('© Elpriser.org — ') && s.footText.includes(CR[w.src].text + ' — ') && /elpriser\.org.*Hugging Face/s.test(s.footText), s.footText); assert.ok(!CR[w.src].not.test(s.footText), `the ${w.src} pages credit their own source only`); }
         else assert.match(s.footText, /© Elpriser\.org — .*ENTSO-E.*Energi Data Service.*Hugging Face/s);
         assert.equal(s.scroll[0], s.scroll[1], `horizontal page scroll ${s.scroll.join(' vs ')}`);
         assert.ok(s.chipBox.r <= vw + 1 && s.chipBox.l >= -1, 'the place chip is inside the viewport');
@@ -1975,7 +1983,7 @@ async function startServer() {
     '/ch/strompreis':       { lang: 'de', key: 'ch', unit: 'ct/kWh', h1: 'Strompreis in der Schweiz: heute und morgen', title: 'Strompreis aktuell und morgen – Börsenstrompreis Schweiz', card: 'Heute und morgen', one: 'Heute', kind: 'Day-Ahead-Preis', now: /^Strompreis jetzt · \w+ um \d\d Uhr$/, chg: 'Änderung: Stundenmittel von elpriser.org berechnet' },
     '/be/stroomprijs':      { lang: 'nl', key: 'be', unit: 'cent/kWh', h1: 'Stroomprijs in België: vandaag en morgen', title: 'Stroomprijs vandaag en morgen – beursprijs België', card: 'Vandaag en morgen', one: 'Vandaag', kind: 'Beursprijs', now: /^Stroomprijs nu · \w+ om \d\d$/, chg: 'Wijziging: uurgemiddelden berekend door elpriser.org' },
     '/be/prix-electricite': { lang: 'fr', key: 'be', unit: 'c€/kWh', h1: 'Prix de l’électricité en Belgique\u00a0: aujourd’hui et demain', title: 'Prix de l’électricité aujourd’hui et demain en Belgique', card: 'Aujourd’hui et demain', one: 'Aujourd’hui', kind: 'Prix day-ahead', now: /^Prix de l’électricité maintenant · \w+ à \d\d h$/, chg: 'Modifié\u00a0: moyennes horaires calculées par elpriser.org' },
-    '/ie/electricity-price': { lang: 'en', key: 'ie', unit: 'c/kWh', h1: 'Electricity price in Ireland: today and tomorrow', title: 'Electricity price today and tomorrow – Ireland (SEM)', card: 'Today and tomorrow', one: 'Today', kind: 'Day-ahead price', now: /^Electricity price now · \w+ at \d\d:00$/, chg: 'Changed: hourly means calculated by elpriser.org', src: 'entsoe' },
+    '/ie/electricity-price': { lang: 'en', key: 'ie', unit: 'c/kWh', h1: 'Electricity price in Ireland: today and tomorrow', title: 'Electricity price today and tomorrow – Ireland (SEM)', card: 'Today and tomorrow', one: 'Today', kind: 'Day-ahead price', now: /^Electricity price now · \w+ at \d\d:00$/, chg: 'Changed: hourly means calculated by elpriser.org', src: 'semopx' },
     '/cz/ceny-elektriny':   { lang: 'cs', key: 'cz', unit: 'ct/kWh', h1: 'Cena elektřiny v Česku: dnes a zítra', title: 'Cena elektřiny dnes a zítra – burzovní cena v Česku', card: 'Dnes a zítra', one: 'Dnes', kind: 'Cena na denním trhu', now: /^Cena elektřiny právě teď · \S+ \d\d:00$/, chg: 'Změna: hodinové průměry vypočítal elpriser.org' },
     '/es/precio-luz':       { lang: 'es', key: 'es', unit: 'c€/kWh', h1: 'Precio de la luz en España: hoy y mañana', title: 'Precio de la luz hoy y mañana – mercado diario en España', card: 'Hoy y mañana', one: 'Hoy', kind: 'Precio del mercado diario', now: /^Precio de la luz ahora · \S+ \d\d:00$/, chg: 'Datos modificados: medias horarias calculadas por elpriser.org', src: 'entsoe' },
     '/pt/preco-eletricidade': { lang: 'pt', key: 'pt', unit: 'c€/kWh', h1: 'Preço da eletricidade em Portugal: hoje e amanhã', title: 'Preço da eletricidade hoje e amanhã – mercado diário Portugal', card: 'Hoje e amanhã', one: 'Hoje', kind: 'Preço do mercado diário', now: /^Preço da eletricidade agora · \S+ \d\d:00$/, chg: 'Dados alterados: médias horárias calculadas por elpriser.org', src: 'entsoe' },
@@ -1993,16 +2001,19 @@ async function startServer() {
     '/lt/elektros-kaina':   { lang: 'lt', key: 'lt', unit: 'ct/kWh', h1: 'Elektros kaina Lietuvoje: šiandien ir rytoj', title: 'Elektros kaina šiandien ir rytoj – biržos kaina Lietuvoje', card: 'Šiandien ir rytoj', one: 'Šiandien', kind: 'Kaina prieš parą', now: /^Elektros kaina dabar · \S+ \d\d:00$/, chg: 'Pakeitimas: valandų vidurkius apskaičiavo elpriser.org', src: 'entsoe' },
     '/mk/cena-na-struja':   { lang: 'mk', key: 'mk', unit: 'ц/kWh', h1: 'Цена на струја во Северна Македонија: денес и утре', title: 'Цена на струја денес и утре во Северна Македонија', card: 'Денес и утре', one: 'Денес', kind: 'Цена за ден напред', now: /^Цена на струја сега · \S+ во \d\d:00$/, chg: 'Измена: часовните просеци ги пресметува elpriser.org', src: 'entsoe' },
     '/al/cmimi-i-energjise': { lang: 'sq', key: 'al', unit: 'c/kWh', h1: 'Çmimi i energjisë në Shqipëri: sot dhe nesër', title: 'Çmimi i energjisë sot dhe nesër në Shqipëri', card: 'Sot dhe nesër', one: 'Sot', kind: 'Çmimi i ditës në avancë', now: /^Çmimi i energjisë tani · e \S+ në orën \d\d:00$/, chg: 'Ndryshim: mesataret orare të llogaritura nga elpriser.org', src: 'entsoe' },
+    '/xk/cmimi-i-rrymes':   { lang: 'sq', key: 'xk', unit: 'c/kWh', h1: 'Çmimi i rrymës në Kosovë: sot dhe nesër', title: 'Çmimi i rrymës sot dhe nesër në Kosovë', card: 'Sot dhe nesër', one: 'Sot', kind: 'Çmimi i ditës në avancë', now: /^Çmimi i energjisë tani · e \S+ në orën \d\d:00$/, chg: 'Ndryshim: mesataret orare të llogaritura nga elpriser.org', src: 'entsoe' },
+    // Great Britain: NOT a day-ahead price (Elexon BMRS Market Index Price, within-day), in pence. The stub below serves it like any zone (all hours priced, three days).
+    '/gb/electricity-price': { lang: 'en', key: 'gb', unit: 'p/kWh', h1: 'Electricity price in Great Britain: today, within-day market index', title: 'Great Britain electricity price: within-day market index', card: 'Today and tomorrow', one: 'Today', kind: 'Market Index Price (within-day)', now: /^Latest Market Index Price \(within-day\) · \w+ at \d\d:00$/, chg: 'Changed: hourly means calculated by elpriser.org', src: 'elexon' },
   };
   const RXE = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   for (const p of ACT_PAGES) if (!EUP[p]) {
     const C = PB.PRIS_COUNTRIES[p.slice(1)], L = PB.prisPageL(p.slice(1));
     EUP[p] = { lang: C.lang, key: C.def, unit: PB.prisSub(p.slice(1), C.def) + '/kWh', h1: L.h1, title: C.title, card: L.act2, one: L.act1, kind: L.actual,
-      now: new RegExp('^' + RXE(L.now) + ' · '), chg: PB.CHROME_I18N[C.lang].chg, ...(PB.ZONES[C.def].src === 'entsoe' ? { src: 'entsoe' } : {}) };
+      now: new RegExp('^' + RXE(L.now) + ' · '), chg: PB.CHROME_I18N[C.lang].chg, src: PB.ZONES[C.def].src };
   }
   const FORECAST_WORDS = /prognos|vorhersage|prévision|previsi|prognoz|forecast|ennuste|pronóstic|previsão|predpoved|előrejelz|napoved|прогноз|πρόγνωση|πρόβλεψη|predvi[dđ]|prognoo|ennustus|paredz|numatom|parashikim|\bmodel/i;
   for (const [url, w] of Object.entries(EUP)) {
-    await test(`${url}: the Pris screen in ${w.lang}, one period (no pill), today and tomorrow, day-ahead type only, no forecast wording, the ${w.src === 'entsoe' ? 'ENTSO-E credit' : 'CC BY 4.0 credit'} and the change note`, async () => {
+    await test(`${url}: the Pris screen in ${w.lang}, one period (no pill), today and tomorrow, day-ahead type only (Great Britain: its own label), no forecast wording, the ${w.src} credit and the change note`, async () => {
       euDays = 3;
       await page.goto(BASE + url);
       await page.waitForSelector('main[data-page="zone"] .pris');
@@ -2023,20 +2034,15 @@ async function startServer() {
       assert.equal(await page.locator('#netDialog [data-zone]').count(), 0, 'one zone: no zone choice');
       const t = await page.evaluate(() => document.querySelector('main[data-page="zone"]').innerText);
       assert.ok(!FORECAST_WORDS.test(t) && !/NaN|undefined|\børe\b|\bsnt\b|døgn|dygn|vrk|Børspris/.test(t) && (w.src === 'entsoe' || !/ENTSO/.test(t)), t.slice(0, 400));
+      if (w.src === 'elexon') assert.ok(/not the day-ahead auction price/.test(t) && /there is no tomorrow/.test(t), 'Great Britain says what the price is: ' + t.slice(0, 300));
       if (w.lang === 'en') assert.ok(!/\d,\d/.test(t) && /\d\.\d/.test(t), 'English writes decimals with a point');
       // The licence: attribution to Bundesnetzagentur | SMARD.de (via Energy-Charts.info), the CC BY 4.0 link, and that the data were changed — in the text block and in the footer.
-      const list = await page.locator('#zList').textContent();
-      if (w.src === 'entsoe') {
-        assert.match(list, /ENTSO-E Transparency Platform\.$/);
-        assert.deepEqual(await page.locator('#zList .zl-n a').evaluateAll(a => a.map(x => [x.textContent, x.getAttribute('href')])), [['ENTSO-E Transparency Platform', 'https://transparency.entsoe.eu']]);
-      } else {
-        assert.match(list, /Bundesnetzagentur \| SMARD\.de \(Energy-Charts\.info\), CC BY 4\.0\.$/);
-        assert.deepEqual(await page.locator('#zList .zl-n a').evaluateAll(a => a.map(x => [x.textContent, x.getAttribute('href')])),
-          [['Bundesnetzagentur | SMARD.de', 'https://www.smard.de'], ['Energy-Charts.info', 'https://www.energy-charts.info'], ['CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/']]);
-      }
+      const list = await page.locator('#zList').textContent(), cr = CR[w.src || 'ec'];
+      assert.match(list, cr.list);
+      assert.deepEqual(await page.locator('#zList .zl-n a').evaluateAll(a => a.map(x => [x.textContent, x.getAttribute('href')])), cr.links);
       const foot = await page.locator('footer .sf-legal').textContent();
-      assert.ok(foot.includes((w.src === 'entsoe' ? 'ENTSO-E Transparency Platform' : 'Bundesnetzagentur | SMARD.de (Energy-Charts.info), CC BY 4.0') + ' — ' + w.chg), foot);
-      assert.ok(!/Energi Data Service/.test(foot + list) && (w.src === 'entsoe' ? !/SMARD|CC BY/.test(foot + list) : !/ENTSO/.test(foot + list)));
+      assert.ok(foot.includes(cr.text + ' — ' + w.chg), foot);
+      assert.ok(!cr.not.test(foot + list));
       const tip = await page.evaluate(() => document.querySelector('main[data-page="zone"] .pris-card.pp2 .pc[data-tip]').dataset.tip);
       assert.match(tip, /\d/);
     });
@@ -2064,7 +2070,7 @@ async function startServer() {
     assert.equal(await page.locator('a[href*="it-c"], a[href*="it-s"]').count(), 0);
   });
 
-  await test('/ie/electricity-price: one zone on Dublin\'s clock (an hour behind Copenhagen), a decimal POINT, "at 13:00", ENTSO-E — and an hour without a price is an empty bar, not NaN', async () => {
+  await test('/ie/electricity-price: one zone on Dublin\'s clock (an hour behind Copenhagen), a decimal POINT, "at 13:00", SEMOpx — and an hour without a price is an empty bar, not NaN', async () => {
     nordicRequests.length = 0;
     await page.goto(BASE + '/ie/electricity-price');
     await page.waitForSelector('main[data-page="zone"] .pris');

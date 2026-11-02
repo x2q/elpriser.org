@@ -985,17 +985,23 @@ const NORDIC_ZONE_INFO = {
   nl:  { name: 'NL Nederland',     country: 'NL', currency: 'EUR', rate: 1 },
 };
 
-// The EU price zones: ACTUAL day-ahead prices only, written into KV `eu-prices-<zone>` as hourly means of the 15-minute
-// prices (a change of the data, which the pages say) in the very shape of a Nordic zone (days of type 'actual', no
-// forecast), served here by the same code path: same zoneInfo, same cache headers, same 404 for a zone without data.
-// Two sources, two jobs in scripts/eu_prices/ (test-eu-prices.mjs pins that together they list exactly these zones):
+// The EU price zones (and Great Britain): written into KV `eu-prices-<zone>` as hourly means of the 15- or 30-minute prices (a change
+// of the data, which the pages say) in the very shape of a Nordic zone (days of type 'actual', no forecast), served here by the same
+// code path: same zoneInfo, same cache headers, same 404 for a zone without data. Four sources, four jobs in scripts/eu_prices/
+// (test-eu-prices.mjs pins that together they list exactly these zones):
 //   Energy-Charts.info, CC BY 4.0 from Bundesnetzagentur | SMARD.de (build_eu_prices.py): de fr pl it-n at be ch cz hu si
-//   ENTSO-E Transparency Platform, documentType A44 (build_entsoe_prices.py):  es pt sk gr ro bg hr rs ee lv lt ie me mk al
-// `it-n` is Italy's bidding zone IT-North only. Every zone is EUR/MWh, whatever the national currency: the platform and
-// Energy-Charts both publish EUR. A zone served here is not necessarily a page yet: the pages are listed in PRIS_COUNTRIES.
+//   ENTSO-E Transparency Platform, documentType A44 (build_entsoe_prices.py):  es pt sk gr ro bg hr rs ee lv lt me mk al xk
+//   Elexon BMRS Market Index Data (build_elexon_prices.py): gb. NOT a day-ahead price: the within-day market index, GBP/MWh, no tomorrow.
+//   SEMOpx day-ahead auction results (build_semopx_prices.py): ie (the all-island SEM; was ENTSO-E until 2026-11-02)
+// `it-n` is Italy's bidding zone IT-North only; `xk` is Kosovo; `gb` is Great Britain only (Northern Ireland trades in the SEM, `ie`).
+// Every zone is EUR/MWh, whatever the national currency, EXCEPT `gb`: GBP/MWh, because the source is in pounds. The day's price field
+// keeps the name `eur_mwh` for all of them (the apps read that name); `unit` and `zoneInfo.currency` say what it holds, and the
+// pence of Great Britain follow from `zoneInfo.rate` 1. A zone served here is not necessarily a page yet: the pages are listed in PRIS_COUNTRIES.
 const EU_ZONES_ENERGY_CHARTS = ['de','fr','pl','it-n','at','be','ch','cz','hu','si'];
-const EU_ZONES_ENTSOE = ['es','pt','sk','gr','ro','bg','hr','rs','ee','lv','lt','ie','me','mk','al'];
-const EU_ZONES = [...EU_ZONES_ENERGY_CHARTS, ...EU_ZONES_ENTSOE];
+const EU_ZONES_ENTSOE = ['es','pt','sk','gr','ro','bg','hr','rs','ee','lv','lt','me','mk','al','xk'];
+const EU_ZONES_ELEXON = ['gb'];
+const EU_ZONES_SEMOPX = ['ie'];
+const EU_ZONES = [...EU_ZONES_ENERGY_CHARTS, ...EU_ZONES_ENTSOE, ...EU_ZONES_ELEXON, ...EU_ZONES_SEMOPX];
 const EU_ZONE_INFO = {
   de:       { name: 'DE-LU Germany and Luxembourg',  country: 'DE', currency: 'EUR', rate: 1 },
   fr:       { name: 'FR France',                     country: 'FR', currency: 'EUR', rate: 1 },
@@ -1018,10 +1024,12 @@ const EU_ZONE_INFO = {
   ee:       { name: 'EE Estonia',                    country: 'EE', currency: 'EUR', rate: 1 },
   lv:       { name: 'LV Latvia',                     country: 'LV', currency: 'EUR', rate: 1 },
   lt:       { name: 'LT Lithuania',                  country: 'LT', currency: 'EUR', rate: 1 },
-  ie:       { name: 'IE Ireland (SEM)',              country: 'IE', currency: 'EUR', rate: 1 },
   me:       { name: 'ME Montenegro',                 country: 'ME', currency: 'EUR', rate: 1 },
   mk:       { name: 'MK North Macedonia',            country: 'MK', currency: 'EUR', rate: 1 },
   al:       { name: 'AL Albania',                    country: 'AL', currency: 'EUR', rate: 1 },
+  xk:       { name: 'XK Kosovo',                     country: 'XK', currency: 'EUR', rate: 1 },
+  gb:       { name: 'GB Great Britain',              country: 'GB', currency: 'GBP', rate: 1 },
+  ie:       { name: 'IE Ireland (SEM)',              country: 'IE', currency: 'EUR', rate: 1 },
 };
 
 /** The ECB's daily euro reference rates, edge-cached for six hours (the ECB
@@ -1260,12 +1268,21 @@ const OPENAPI_SPEC = {
           '`at` Austria, `be` Belgium, `ch` Switzerland, `cz` Czechia, `hu` Hungary and `si` Slovenia. Source: Bundesnetzagentur | SMARD.de via Energy-Charts.info,',
           'licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).',
           '`es` Spain, `pt` Portugal, `sk` Slovakia, `gr` Greece, `ro` Romania, `bg` Bulgaria, `hr` Croatia, `rs` Serbia, `ee` Estonia, `lv` Latvia, `lt` Lithuania,',
-          '`ie` Ireland (the all-island SEM), `me` Montenegro, `mk` North Macedonia and `al` Albania. Source: ENTSO-E Transparency Platform (day-ahead prices, article 12.1.d).',
+          '`me` Montenegro, `mk` North Macedonia, `al` Albania and `xk` Kosovo. Source: ENTSO-E Transparency Platform (day-ahead prices, article 12.1.d).',
+          '`ie` Ireland (the all-island Single Electricity Market, Ireland and Northern Ireland). Source: SEMOpx, the day-ahead auction results (its hourly',
+          'prices are the means of the market\'s 30-minute prices).',
           'Prices of the non-euro countries are in EUR/MWh as published; `zoneInfo.currency` is EUR for all of these.',
-          'The data were changed by elpriser.org: the 15-minute prices are aggregated to hourly means by the zone\'s local clock.',
+          'The data were changed by elpriser.org: the 15- or 30-minute prices are aggregated to hourly means by the zone\'s local clock.',
+          '',
+          '**Great Britain, `gb`: NOT a day-ahead price.** It is the Market Index Price (within-day): the volume-weighted price of the within-day wholesale trades',
+          'of each half hour (Market Index Data of the Balancing Mechanism Reporting Service, EPEX SPOT UK and N2EX), as hourly means by the London clock, an hour only once',
+          'both of its half hours are priced. There is no tomorrow. The price is in GBP/MWh: the day price field is still named `eur_mwh` (every client reads that name)',
+          'but holds pounds here, `unit` is `GBP/MWh` and `zoneInfo.currency` is `GBP` with `rate` 1, so `eur_mwh` * `rate` / 10 is pence per kWh like every other zone\'s sub-unit.',
+          'Contains BMRS data © Elexon Limited copyright and database right (licence: https://www.elexon.co.uk/bsc/data/balancing-mechanism-reporting-agent/copyright-licence-bmrs-data/).',
+          'Northern Ireland is not in `gb`: it trades in the SEM (`ie`).',
         ].join('\n'),
         parameters: [{ name: 'zone', in: 'query', schema: { type: 'string', enum: [...NORDIC_ZONES, ...EU_ZONES], default: 'dk1' }, description: 'The bidding zone. Unknown values answer 400.' }],
-        responses: { '200': { description: 'Days of hourly prices in EUR/MWh plus zoneInfo.' }, '400': { description: 'Unknown zone.' }, '404': { description: 'No data for that zone (yet).' } },
+        responses: { '200': { description: 'Days of hourly prices in EUR/MWh (GBP/MWh for `gb`) plus zoneInfo.' }, '400': { description: 'Unknown zone.' }, '404': { description: 'No data for that zone (yet).' } },
       },
     },
     '/api/shelly/tariff': {

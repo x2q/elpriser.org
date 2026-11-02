@@ -98,6 +98,19 @@ class RealResponses(unittest.TestCase):
         d = P.build_days(slots, "Europe/Dublin", ["2026-11-02", "2026-11-03"])
         self.assertEqual([x["date"] for x in d], ["2026-11-02", "2026-11-03"])
 
+    def test_kosovo_is_hourly_day_ahead_in_euro_for_three_days(self):
+        slots = E.parse_a44(fx("xk"))           # EIC 10Y1001C--00100H, fetched 2026-11-02 21:01Z: 1, 2 and 3 November
+        self.assertEqual((len(slots), {m for _, m, _ in slots}), (72, {60}))
+        d = P.build_days(slots, J.ZONES["xk"][1], ["2026-11-01", "2026-11-02", "2026-11-03"])
+        self.assertEqual([x["date"] for x in d], ["2026-11-01", "2026-11-02", "2026-11-03"])
+        self.assertTrue(all(p["eur_mwh"] is not None for x in d for p in x["prices"]))
+        p = E.build_payload("xk", fx("xk"), J.ZONES["xk"][1], ["2026-11-01", "2026-11-02", "2026-11-03"], "2026-11-02")
+        self.assertEqual((p["zone"], p["unit"]), ("xk", "EUR/MWh"))
+
+    def test_ireland_is_no_longer_a_zone_of_this_job(self):
+        self.assertNotIn("ie", J.ZONES)         # build_semopx_prices.py writes eu-prices-ie (the SEMOpx day-ahead results)
+        self.assertIn("xk", J.ZONES)
+
     def test_payload_shape_is_the_energy_charts_zones(self):
         p = E.build_payload("ie", fx("ie"), "Europe/Dublin", ["2026-11-02", "2026-11-03"], "2026-11-02")
         self.assertEqual(set(p), {"zone", "generated", "trainedThrough", "unit", "days"})
@@ -118,19 +131,19 @@ class Job(unittest.TestCase):
 
     def test_dry_run_of_one_zone_and_the_token_is_never_in_the_status(self):
         old = J.fetch_a44
-        J.fetch_a44 = lambda token, eic, s, e: fx("ie")
+        J.fetch_a44 = lambda token, eic, s, e: fx("xk")
         try:
-            line = J.run_zone("ie", datetime(2026, 11, 2, 12, tzinfo=timezone.utc), "SECRETTOKEN", None, True)
+            line = J.run_zone("xk", datetime(2026, 11, 2, 12, tzinfo=timezone.utc), "SECRETTOKEN", None, True)
         finally:
             J.fetch_a44 = old
-        self.assertIn("would write eu-prices-ie", line)
+        self.assertIn("would write eu-prices-xk", line)
         self.assertNotIn("SECRETTOKEN", line)
 
     def test_a_zone_without_prices_leaves_kv_alone(self):
         old = J.fetch_a44
         J.fetch_a44 = lambda token, eic, s, e: fx("nodata")
         try:
-            line = J.run_zone("ie", datetime(2026, 11, 2, 12, tzinfo=timezone.utc), "x", ("acc", "tok"), False)
+            line = J.run_zone("xk", datetime(2026, 11, 2, 12, tzinfo=timezone.utc), "x", ("acc", "tok"), False)
         finally:
             J.fetch_a44 = old
         self.assertIn("KV untouched", line)

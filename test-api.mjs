@@ -483,8 +483,8 @@ const feed = (zone, dates, type = 'actual', trained = null) => ({
   zone, generated: day(0), trainedThrough: trained, unit: 'EUR/MWh',
   days: dates.map((d, i) => ({ date: d, type, prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: 50 + h + i })) })),
 });
-// Energy-Charts (CC BY 4.0 from SMARD.de) and ENTSO-E (build_entsoe_prices.py); Italy's other zones (it-cn, it-cs, ...) are not served yet
-const EU = ['de', 'fr', 'pl', 'it-n', 'at', 'be', 'ch', 'cz', 'hu', 'si', 'es', 'pt', 'sk', 'gr', 'ro', 'bg', 'hr', 'rs', 'ee', 'lv', 'lt', 'ie', 'me', 'mk', 'al'];
+// Energy-Charts (CC BY 4.0 from SMARD.de), ENTSO-E (build_entsoe_prices.py), Elexon BMRS (gb, build_elexon_prices.py) and SEMOpx (ie, build_semopx_prices.py); Italy's other zones (it-cn, it-cs, ...) are not served yet
+const EU = ['de', 'fr', 'pl', 'it-n', 'at', 'be', 'ch', 'cz', 'hu', 'si', 'es', 'pt', 'sk', 'gr', 'ro', 'bg', 'hr', 'rs', 'ee', 'lv', 'lt', 'me', 'mk', 'al', 'xk', 'gb', 'ie'];
 
 test('/api/nordic: a Nordic zone is served exactly as before — the KV value plus zoneInfo with the ECB rate', async () => {
   // The EU zones share this handler; the Nordic answer must not change by a byte.
@@ -501,7 +501,7 @@ test('/api/nordic: a Nordic zone is served exactly as before — the KV value pl
   assert.equal((await (await createApi({ kv: makeKv({ 'nordic-forecast-dk1': feed('dk1', [day(0)]) }), ecb: ECB })).get('/api/nordic')).body.zone, 'dk1', 'no zone means dk1, as before');
 });
 
-test('/api/nordic: every EU zone (25 of them) is served from its own eu-prices key, with zoneInfo, and nothing but actual days', async () => {
+test('/api/nordic: every EU zone (27 of them) is served from its own eu-prices key, with zoneInfo, and nothing but actual days', async () => {
   const seed = Object.fromEntries(EU.map(z => [`eu-prices-${z}`, feed(z, [day(0), day(1)])]));
   for (const z of EU) {
     const kv = makeKv(seed), api = await createApi({ kv, ecb: ECB });
@@ -510,12 +510,12 @@ test('/api/nordic: every EU zone (25 of them) is served from its own eu-prices k
     assert.deepEqual(kv.ops.get, [`eu-prices-${z}`], `${z} reads exactly its own key`);
     assert.equal(r.body.zone, z);
     assert.equal(r.body.trainedThrough, null, `${z}: no model, so no training date`);
-    assert.equal(r.body.unit, 'EUR/MWh');
+    assert.equal(r.body.unit, 'EUR/MWh');    // the fixture's; the real gb payload says GBP/MWh (below)
     assert.ok(r.body.days.every(d => d.type === 'actual' && d.prices.length === 24), `${z}: actual days of 24 hours`);
     const info = r.body.zoneInfo;
     assert.deepEqual(Object.keys(info), ['name', 'country', 'currency', 'rate', 'rateDate', 'rateSource'], `${z}: zoneInfo has the Nordic shape`);
-    assert.equal(info.currency, z === 'pl' ? 'PLN' : 'EUR');
-    assert.equal(info.rate, z === 'pl' ? 4.3945 : 1, `${z}: rate`);
+    assert.equal(info.currency, z === 'pl' ? 'PLN' : z === 'gb' ? 'GBP' : 'EUR');
+    assert.equal(info.rate, z === 'pl' ? 4.3945 : 1, `${z}: rate (Great Britain's feed is already in pounds: 1)`);
     assert.equal(info.country, z === 'it-n' ? 'IT' : z.toUpperCase());
     assert.equal(info.rateSource, 'ECB');
     assert.equal(r.headers.get('cache-control'), 'public, max-age=1800, s-maxage=1800', `${z}: same caching as a Nordic zone`);
@@ -553,12 +553,12 @@ test('/api/nordic: a zone without data answers 404 exactly like a Nordic zone wi
 });
 
 test('/api/nordic: an unknown zone is rejected with 400 and the list of zones, and never reaches KV', async () => {
-  // Italy's other zones and the United Kingdom are not served: 400, not an empty 404.
-  for (const z of ['xx', 'it', 'it-x', 'gb', 'de-lu', 'nl2', '../x', 'eu-prices-de', 'ie-sem', 'it-cn', 'it-cs', 'it-s', 'it-cal', 'it-sic', 'it-sar']) {
+  // Italy's other zones and Northern Ireland are not served: 400, not an empty 404.
+  for (const z of ['xx', 'it', 'it-x', 'uk', 'gbr', 'gb-nir', 'ni', 'de-lu', 'nl2', '../x', 'eu-prices-de', 'ie-sem', 'it-cn', 'it-cs', 'it-s', 'it-cal', 'it-sic', 'it-sar']) {
     const kv = makeKv({}), api = await createApi({ kv, ecb: ECB });
     const r = await api.get(`/api/nordic?zone=${encodeURIComponent(z)}`);
     assert.equal(r.status, 400, z);
-    assert.match(r.body.error, /zone must be one of: .*no1.*de, fr, pl, it-n, at, be, ch, cz, hu, si, es, pt, sk, gr, ro, bg, hr, rs, ee, lv, lt, ie, me, mk, al$/);
+    assert.match(r.body.error, /zone must be one of: .*no1.*de, fr, pl, it-n, at, be, ch, cz, hu, si, es, pt, sk, gr, ro, bg, hr, rs, ee, lv, lt, me, mk, al, xk, gb, ie$/);
     assert.equal(kv.reads(), 0, `${z} must not cost a KV read`);
   }
   assert.equal((await (await createApi({ kv: makeKv({ 'eu-prices-de': feed('de', [day(0)]) }), ecb: ECB })).get('/api/nordic?zone=DE')).status, 200, 'the zone is case-insensitive like the Nordic ones');
@@ -580,14 +580,37 @@ test('/api/openapi.json documents /api/nordic with every zone, and says the EU z
   const op = spec.paths['/api/nordic'].get;
   const zones = op.parameters[0].schema.enum;
   for (const z of ['dk1', 'no5', 'se4', 'fi', 'nl', ...EU]) assert.ok(zones.includes(z), `${z} missing from the zone enum`);
-  assert.equal(zones.length, 13 + 25);
-  for (const z of ['it-cn', 'it-sar', 'gb']) assert.ok(!zones.includes(z), `${z} must not be offered`);
+  assert.equal(zones.length, 13 + 27);
+  for (const z of ['it-cn', 'it-sar', 'uk', 'gb-nir']) assert.ok(!zones.includes(z), `${z} must not be offered`);
   assert.match(op.description, /actual prices only, no forecast/);
   assert.match(op.description, /Bundesnetzagentur \| SMARD\.de via Energy-Charts\.info/);
   assert.match(op.description, /CC BY 4\.0/);
   assert.match(op.description, /changed by elpriser\.org/);
   assert.match(op.description, /ENTSO-E Transparency Platform \(day-ahead prices, article 12\.1\.d\)/);
+  assert.match(op.description, /`xk` Kosovo/);
+  assert.match(op.description, /`ie` Ireland[^\n]*Source: SEMOpx, the day-ahead auction results/);
+  // Great Britain is NOT a day-ahead price, is in pounds, and carries the licence's attribution.
+  assert.match(op.description, /`gb`: NOT a day-ahead price/);
+  assert.match(op.description, /Market Index Price \(within-day\)/);
+  assert.match(op.description, /GBP\/MWh/);
+  assert.match(op.description, /Contains BMRS data © Elexon Limited copyright and database right/);
+  assert.match(op.description, /Northern Ireland is not in `gb`/);
   assert.match(op.description, /excluding VAT, taxes and grid fees/);
+});
+
+test('/api/nordic?zone=gb: Great Britain is served in pounds — unit GBP/MWh, zoneInfo.currency GBP with rate 1 (so the sub-unit is pence), no ECB conversion, no tomorrow', async () => {
+  const f = { ...feed('gb', [day(-1), day(0)]), unit: 'GBP/MWh' };
+  const api = await createApi({ kv: makeKv({ 'eu-prices-gb': f }), ecb: ECB });
+  const r = await api.get('/api/nordic?zone=gb');
+  assert.equal(r.status, 200);
+  assert.equal(r.body.unit, 'GBP/MWh');
+  assert.equal(r.body.trainedThrough, null);
+  assert.deepEqual(r.body.zoneInfo, { name: 'GB Great Britain', country: 'GB', currency: 'GBP', rate: 1, rateDate: '2026-10-23', rateSource: 'ECB' });
+  assert.deepEqual(r.body.days.map(d => d.date), [day(-1), day(0)]);
+  // the same answer when the ECB file is unavailable: the rate is 1, not a missing number
+  const fb = await (await createApi({ kv: makeKv({ 'eu-prices-gb': f }) })).get('/api/nordic?zone=gb');
+  assert.equal(fb.body.zoneInfo.rate, 1);
+  assert.equal(fb.body.zoneInfo.currency, 'GBP');
 });
 
 // ── Tomorrow's prices around 13:00 (a page still said "Prognose" for tomorrow at 13:29 on 2026-10-26) ──

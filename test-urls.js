@@ -377,17 +377,22 @@ async function main() {
   // wording, the source, the licence and the note that the data were changed. They need the Spark job (scripts/eu_prices) to have written KV:
   // without data the page still answers 200 but has no screen.
   const llmsTxt = (await get('/llms.txt')).body;
-  for (const [p, lang, entsoe] of ACT_PAGES.map(([p, lang]) => [p, lang, PB.ZONES[PB.PRIS_COUNTRIES[p.slice(1)].def].src === 'entsoe'])) {
+  for (const [p, lang, src] of ACT_PAGES.map(([p, lang]) => [p, lang, PB.ZONES[PB.PRIS_COUNTRIES[p.slice(1)].def].src])) {
+    const entsoe = src === 'entsoe';
     const r = await get(p);
     const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<!--[\s\S]*?-->/g, '');
     const main = page.slice(page.indexOf('<main'), page.indexOf('</main>'));
     check(/<div class="pris" data-period="2"/.test(main) && !/data-pris-period|pris-period/.test(main), `${p}: Pris-skærmen er tegnet, uden periodeknap`, 'kører Spark-jobbet (eu-prices-*)?');
     check(!/prognos|vorhersage|prévision|previsi|prognoz|forecast|machine|hugging/i.test(main + one(r.body, /<title>([^<]*)<\/title>/) + one(r.body, /<meta name="description" content="([^"]*)"/)), `${p}: ingen prognose-ord`);
     const foot = page.slice(page.indexOf('<footer'));
-    check(entsoe
+    check(src === 'semopx'
+      ? (main.includes('>SEMOpx</a>') && /SEMOpx/.test(foot) && !/ENTSO|SMARD|CC BY|Energi Data Service|BMRS/.test(main + foot))
+      : src === 'elexon'
+      ? (/>Contains BMRS data © Elexon Limited copyright and database right \d{4}<\/a>/.test(main) && /Contains BMRS data © Elexon Limited/.test(foot) && main.includes('copyright-licence-bmrs-data/') && /not the day-ahead auction price/.test(main) && !/ENTSO|SMARD|CC BY|Energi Data Service|SEMOpx/.test(main + foot))
+      : entsoe
       ? (main.includes('>ENTSO-E Transparency Platform</a>') && /ENTSO-E Transparency Platform/.test(foot) && !/SMARD|CC BY|Energi Data Service/.test(main + foot))
       : (main.includes('>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/"') && /Bundesnetzagentur \| SMARD\.de/.test(foot) && !/ENTSO|Energi Data Service/.test(main + foot)),
-      `${p}: kilden er ${entsoe ? 'ENTSO-E Transparency Platform' : 'Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket'} — ikke den anden kilde og ikke EDS`);
+      `${p}: kilden er ${{ semopx: 'SEMOpx', elexon: 'Elexon BMRS (attributionssætningen)', entsoe: 'ENTSO-E Transparency Platform' }[src] || 'Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket'} — ikke en anden kilde og ikke EDS`);
     // The footer says the data were changed: the first word of the language's `chg` ("Änderung", "Modifié", "Muudatus" …), read from the table.
     const chgWord = PB.CHROME_I18N[lang].chg.split(/\s*[:：]/)[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     check(new RegExp(chgWord).test(page.slice(page.indexOf('<footer'))) && /elpriser\.org/.test(page.slice(page.indexOf('<footer'))), `${p}: fodens kildelinje siger at dataene er ændret`);
@@ -397,7 +402,7 @@ async function main() {
     const it = await get('/it/prezzo-luce');
     check(!/id="zt-/.test(it.body) && !/data-zone=/.test(one(it.body, /<dialog id="netDialog"([\s\S]*?)<\/dialog>/)) && /Nord/.test(one(it.body, /<title>([^<]*)<\/title>/)), '/it/prezzo-luce: én zone (Nord), ingen faner');
     const ie = await get('/ie/electricity-price');
-    check(/Ireland and Northern Ireland trade as one market/.test(ie.body) && /ENTSO-E Transparency Platform/.test(ie.body) && /"sameAs":"https:\/\/www\.wikidata\.org\/wiki\/Q26"/.test(ie.body), '/ie/electricity-price: siger at SEM er Irland og Nordirland, krediterer ENTSO-E og har spatialCoverage med begge');
+    check(/Ireland and Northern Ireland trade as one market/.test(ie.body) && />SEMOpx<\/a>/.test(ie.body) && !/ENTSO/.test(ie.body) && /"sameAs":"https:\/\/www\.wikidata\.org\/wiki\/Q26"/.test(ie.body), '/ie/electricity-price: siger at SEM er Irland og Nordirland, krediterer SEMOpx (ikke længere ENTSO-E) og har spatialCoverage med begge');
     const be = [await get('/be/stroomprijs'), await get('/be/prix-electricite')];
     check(/<html lang="nl"/.test(be[0].body) && /<html lang="fr"/.test(be[1].body) && be[0].body.includes('data-key="be"') && be[1].body.includes('data-key="be"'), '/be/…: to sider, hollandsk og fransk, af den ene zone be');
     // Every zone a page of actual prices draws (the table's own list), once each.
@@ -405,9 +410,9 @@ async function main() {
       const a = await get('/api/nordic?zone=' + z);
       let j = {}; try { j = JSON.parse(a.body); } catch {}
       // 200 once the Spark job has written the key; a 404 "no prices available" before that.
-      check(a.status === 200 ? (j.zone === z && j.trainedThrough === null && Array.isArray(j.days) && j.days.every(d => d.type === 'actual') && j.zoneInfo && j.zoneInfo.currency === (z === 'pl' ? 'PLN' : 'EUR')) : (a.status === 404 && /no prices available/.test(a.body)), `/api/nordic?zone=${z}: ${a.status === 200 ? 'faktiske døgn og zoneInfo' : '404 før jobbet har kørt'}`, String(a.status));
+      check(a.status === 200 ? (j.zone === z && j.trainedThrough === null && Array.isArray(j.days) && j.days.every(d => d.type === 'actual') && j.zoneInfo && j.zoneInfo.currency === (z === 'pl' ? 'PLN' : z === 'gb' ? 'GBP' : 'EUR') && j.unit === (z === 'gb' ? 'GBP/MWh' : 'EUR/MWh')) : (a.status === 404 && /no prices available/.test(a.body)), `/api/nordic?zone=${z}: ${a.status === 200 ? 'faktiske døgn og zoneInfo' : '404 før jobbet har kørt'}`, String(a.status));
     }
-    for (const z of ['xx', 'gb', 'it-cn']) check((await get('/api/nordic?zone=' + z)).status === 400, `/api/nordic?zone=${z}: 400`);
+    for (const z of ['xx', 'uk', 'it-cn']) check((await get('/api/nordic?zone=' + z)).status === 400, `/api/nordic?zone=${z}: 400`);
     // The 21 zones added 2026-11-02 (Energy-Charts and ENTSO-E jobs) answer with EUR/MWh days of 24 hours.
     for (const z of ['at', 'ch', 'es', 'ie', 'ro', 'lt']) { const r = await get('/api/nordic?zone=' + z); let j = {}; try { j = JSON.parse(r.body); } catch {} check(r.status === 200 && j.unit === 'EUR/MWh' && j.zoneInfo && j.zoneInfo.currency === 'EUR' && j.days && j.days.length >= 2 && j.days.every(d => d.prices.length === 24), `/api/nordic?zone=${z}: EU-zone med timepriser`, `status ${r.status}`); }
   }

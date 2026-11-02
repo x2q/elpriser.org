@@ -77,9 +77,9 @@ const apiList = name => ((apiSrc.match(new RegExp(`const ${name} = \\[([^\\]]*)\
 const apiInfo = Object.fromEntries([...apiSrc.matchAll(/^\s+'?([a-z0-9-]+)'?:\s+\{ name: '([^']+)',\s+country: '([A-Z]{2})', currency: '([A-Z]{3})'/gm)].map(m => [m[1], { name: m[2], country: m[3], currency: m[4] }]));
 
 test('the contract\'s zone table lists exactly the zones /api/nordic serves, with the API\'s country and currency', () => {
-  const served = [...apiList('NORDIC_ZONES'), ...apiList('EU_ZONES_ENERGY_CHARTS'), ...apiList('EU_ZONES_ENTSOE')];
+  const served = [...apiList('NORDIC_ZONES'), ...apiList('EU_ZONES_ENERGY_CHARTS'), ...apiList('EU_ZONES_ENTSOE'), ...apiList('EU_ZONES_ELEXON'), ...apiList('EU_ZONES_SEMOPX')];
   assert.deepEqual(golden.zones.map(z => z.key).sort(), [...served].sort());
-  assert.equal(served.length, 38, 'the API serves 13 Nordic/NL + 25 EU zones');
+  assert.equal(served.length, 40, 'the API serves 13 Nordic/NL + 27 EU zones (Kosovo and Great Britain joined)');
   for (const z of golden.zones) {
     const info = apiInfo[z.key];
     assert.ok(info, `${z.key}: no zoneInfo in the API`);
@@ -111,7 +111,7 @@ test('countries: every zone belongs to exactly one country; the default zone of 
   for (const z of [...Object.values(golden.regionZone), ...Object.values(golden.languageZone), golden.fallbackZone]) assert.ok(keys.has(z), z);
   const dk = golden.defaultZone.filter(c => c.region === 'DK' || c.language === 'da').map(c => c.expect);
   assert.ok(dk.every(z => z === 'dk1'), 'Denmark and Danish stay on DK1: the Danish experience is unchanged');
-  assert.equal(golden.countries.length, 30);
+  assert.equal(golden.countries.length, 32, '30 countries in the apps + Kosovo and the United Kingdom, which only the API and the web serve so far');
 });
 
 test('/api/nordic parsing: complete days only, EUR/MWh -> sub-unit per kWh at the response\'s rate (ECB fallback without one), band optional', () => {
@@ -144,12 +144,12 @@ test('the Android zone table (Zones.kt) equals the contract: key, country, time 
   const rows = zoneTable('ElpriserAndroid/app/src/main/java/org/elpriser/app/data/Zones.kt',
     /Zone\("([a-z0-9-]+)", "([A-Z]{2})", "([A-Za-z\/_]+)", "([A-Z]{3})", "([^"]+)", (?:"([^"]+)"|null)\)/g,
     m => ({ key: m[1], country: m[2], tz: m[3], currency: m[4], sub: m[5], city: m[6] ?? null }));
-  assert.deepEqual(rows, golden.zones.map(strip));
+  assert.deepEqual(rows, golden.zones.filter(z => z.apps !== false).map(strip));
 });
 
 test('the iOS zone table (Zones.swift) equals the contract: key, country, time zone, currency, sub-unit, city, in order', { skip: !fs.existsSync(swiftZones) && 'Zones.swift not written yet' }, () => {
   const rows = zoneTable('ElpriserIOS/Sources/Zones.swift',
     /Zone\(key: "([a-z0-9-]+)", country: "([A-Z]{2})", tz: "([A-Za-z\/_]+)", currency: "([A-Z]{3})", sub: "([^"]+)", city: (?:"([^"]+)"|nil)\)/g,
     m => ({ key: m[1], country: m[2], tz: m[3], currency: m[4], sub: m[5], city: m[6] ?? null }));
-  assert.deepEqual(rows, golden.zones.map(strip));
+  assert.deepEqual(rows, golden.zones.filter(z => z.apps !== false).map(strip));
 });

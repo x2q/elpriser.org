@@ -2291,6 +2291,26 @@
       "sub": "ct",
       "city": null,
       "forecast": false
+    },
+    {
+      "key": "xk",
+      "country": "XK",
+      "tz": "Europe/Belgrade",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false,
+      "apps": false
+    },
+    {
+      "key": "gb",
+      "country": "GB",
+      "tz": "Europe/London",
+      "currency": "GBP",
+      "sub": "p",
+      "city": null,
+      "forecast": false,
+      "apps": false
     }
   ],
   "countries": [
@@ -2480,6 +2500,18 @@
       "country": "AL",
       "zones": [
         "al"
+      ]
+    },
+    {
+      "country": "XK",
+      "zones": [
+        "xk"
+      ]
+    },
+    {
+      "country": "GB",
+      "zones": [
+        "gb"
       ]
     }
   ],

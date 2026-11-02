@@ -2661,6 +2661,8 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
             <li><a href="/lt/elektros-kaina">Litauen</a></li>
             <li><a href="/mk/cena-na-struja">Nordmakedonien</a></li>
             <li><a href="/al/cmimi-i-energjise">Albanien</a></li>
+            <li><a href="/xk/cmimi-i-rrymes">Kosovo</a></li>
+            <li><a href="/gb/electricity-price">Storbritannien</a></li>
           </ul>
         </div>
       </nav>
@@ -2672,7 +2674,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 <!-- ═══════ The place dialog — opened by the one chip in the header (placeHTML('da','dk'); a country page swaps in its own language).
      Outside every <main>, so it exists on every page. The net lists are built by buildNetDialog() and the position lookup
      (detectLocation) drives #gpsBtn/#gpsText/#gpsForget; the ids are theirs. ═══════ -->
-<dialog id="netDialog" class="pris-dialog" aria-labelledby="netDialogTitle"><div class="pd-head"><button type="button" class="pd-back" id="plBack" onclick="plShow('')" hidden><svg width="10" height="17" viewBox="0 0 10 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 1.5 2 8.5l6.5 7"/></svg>Tilbage</button><h2 id="netDialogTitle">Hvor er du?</h2><button type="button" class="pd-x" onclick="closeNetDialog()">Luk</button></div><div class="pd-body"><div class="pl-scr" data-scr="" data-t="Hvor er du?"><input type="search" id="plQ" class="pl-q" oninput="plFind()" placeholder="Søg" aria-label="Søg" autocomplete="off"><div class="pl-sec" id="plMain"><section><div class="pl-grp"><button id="gpsBtn" onclick="detectLocation()" type="button"><svg id="gpsIconSvg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11 21 3l-8 18-2-8z"/></svg><span id="gpsText">Brug min position</span></button></div></section><p class="pd-foot">Finder dit netselskab ud fra din position. Positionen bruges kun én gang og gemmes aldrig. <span id="gpsForget" style="display:none"><button type="button" onclick="forgetNetPick()">Glem mit netselskab</button></span></p><section><p class="pd-gt">Danmark</p><div class="pl-grp"><button type="button" data-go="dk1">Vestdanmark<small id="plDK1">Uden netselskab</small></button><button type="button" data-go="dk2">Østdanmark<small id="plDK2"></small></button></div></section><section><p class="pd-gt">Andre lande</p><div class="pl-grp"><a href="/no/strompris">Norge</a><a href="/sv/elpris">Sverige</a><a href="/fi/sahkon-hinta">Suomi</a><a href="/nl/stroomprijs">Nederland</a><a href="/de/strompreis">Deutschland</a><a href="/fr/prix-electricite">France</a><a href="/pl/ceny-pradu">Polska</a><a href="/it/prezzo-luce">Italia</a><a href="/at/strompreis">Österreich</a><a href="/ch/strompreis">Schweiz</a><a href="/be/stroomprijs">België · Belgique</a><a href="/ie/electricity-price">Ireland</a><a href="/cz/ceny-elektriny">Česko</a><a href="/es/precio-luz">España</a><a href="/pt/preco-eletricidade">Portugal</a><a href="/sk/ceny-elektriny">Slovensko</a><a href="/hu/aramar">Magyarország</a><a href="/si/cena-elektrike">Slovenija</a><a href="/ro/pretul-energiei">România</a><a href="/bg/tsena-na-toka">България</a><a href="/gr/timi-revmatos">Ελλάδα</a><a href="/hr/cijena-struje">Hrvatska</a><a href="/rs/cena-struje">Srbija</a><a href="/me/cijena-struje">Crna Gora</a><a href="/ee/elektri-hind">Eesti</a><a href="/lv/elektribas-cena">Latvija</a><a href="/lt/elektros-kaina">Lietuva</a><a href="/mk/cena-na-struja">Северна Македонија</a><a href="/al/cmimi-i-energjise">Shqipëria</a></div></section><p class="pd-foot"><a href="/norden">Norden · alle 13 prisområder</a></p><p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p></div><div class="pl-grp" id="plRes" hidden></div><p class="pd-foot" id="plNone" hidden>Ingen resultater</p></div><div class="pl-scr" data-scr="dk1" data-t="Vestdanmark" hidden><div class="pl-grp" id="netDlgDK1"></div><p class="pd-foot">Med et netselskab inkluderer prisen nettarif, afgifter og moms som på din regning.</p></div><div class="pl-scr" data-scr="dk2" data-t="Østdanmark" hidden><div class="pl-grp" id="netDlgDK2"></div><p class="pd-foot">Med et netselskab inkluderer prisen nettarif, afgifter og moms som på din regning.</p></div></div></dialog>
+<dialog id="netDialog" class="pris-dialog" aria-labelledby="netDialogTitle"><div class="pd-head"><button type="button" class="pd-back" id="plBack" onclick="plShow('')" hidden><svg width="10" height="17" viewBox="0 0 10 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 1.5 2 8.5l6.5 7"/></svg>Tilbage</button><h2 id="netDialogTitle">Hvor er du?</h2><button type="button" class="pd-x" onclick="closeNetDialog()">Luk</button></div><div class="pd-body"><div class="pl-scr" data-scr="" data-t="Hvor er du?"><input type="search" id="plQ" class="pl-q" oninput="plFind()" placeholder="Søg" aria-label="Søg" autocomplete="off"><div class="pl-sec" id="plMain"><section><div class="pl-grp"><button id="gpsBtn" onclick="detectLocation()" type="button"><svg id="gpsIconSvg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11 21 3l-8 18-2-8z"/></svg><span id="gpsText">Brug min position</span></button></div></section><p class="pd-foot">Finder dit netselskab ud fra din position. Positionen bruges kun én gang og gemmes aldrig. <span id="gpsForget" style="display:none"><button type="button" onclick="forgetNetPick()">Glem mit netselskab</button></span></p><section><p class="pd-gt">Danmark</p><div class="pl-grp"><button type="button" data-go="dk1">Vestdanmark<small id="plDK1">Uden netselskab</small></button><button type="button" data-go="dk2">Østdanmark<small id="plDK2"></small></button></div></section><section><p class="pd-gt">Andre lande</p><div class="pl-grp"><a href="/no/strompris">Norge</a><a href="/sv/elpris">Sverige</a><a href="/fi/sahkon-hinta">Suomi</a><a href="/nl/stroomprijs">Nederland</a><a href="/de/strompreis">Deutschland</a><a href="/fr/prix-electricite">France</a><a href="/pl/ceny-pradu">Polska</a><a href="/it/prezzo-luce">Italia</a><a href="/at/strompreis">Österreich</a><a href="/ch/strompreis">Schweiz</a><a href="/be/stroomprijs">België · Belgique</a><a href="/ie/electricity-price">Ireland</a><a href="/cz/ceny-elektriny">Česko</a><a href="/es/precio-luz">España</a><a href="/pt/preco-eletricidade">Portugal</a><a href="/sk/ceny-elektriny">Slovensko</a><a href="/hu/aramar">Magyarország</a><a href="/si/cena-elektrike">Slovenija</a><a href="/ro/pretul-energiei">România</a><a href="/bg/tsena-na-toka">България</a><a href="/gr/timi-revmatos">Ελλάδα</a><a href="/hr/cijena-struje">Hrvatska</a><a href="/rs/cena-struje">Srbija</a><a href="/me/cijena-struje">Crna Gora</a><a href="/ee/elektri-hind">Eesti</a><a href="/lv/elektribas-cena">Latvija</a><a href="/lt/elektros-kaina">Lietuva</a><a href="/mk/cena-na-struja">Северна Македонија</a><a href="/al/cmimi-i-energjise">Shqipëria</a><a href="/xk/cmimi-i-rrymes">Kosova</a><a href="/gb/electricity-price">United Kingdom</a></div></section><p class="pd-foot"><a href="/norden">Norden · alle 13 prisområder</a></p><p class="pd-foot"><a href="/privatliv">Privatliv</a> · <a href="/om-elpriser">Om elpriser</a> · Udseendet følger din enheds lyse eller mørke indstilling.</p></div><div class="pl-grp" id="plRes" hidden></div><p class="pd-foot" id="plNone" hidden>Ingen resultater</p></div><div class="pl-scr" data-scr="dk1" data-t="Vestdanmark" hidden><div class="pl-grp" id="netDlgDK1"></div><p class="pd-foot">Med et netselskab inkluderer prisen nettarif, afgifter og moms som på din regning.</p></div><div class="pl-scr" data-scr="dk2" data-t="Østdanmark" hidden><div class="pl-grp" id="netDlgDK2"></div><p class="pd-foot">Med et netselskab inkluderer prisen nettarif, afgifter og moms som på din regning.</p></div></div></dialog>
 
 <script>
 const NETS={DK1:[
@@ -3908,7 +3910,8 @@ var PRIS_I18N={
  *  `lang` picks the PRIS_I18N table for a zone's own page (a page may read another language's table for the same zone: the
  *  French page of Belgium, PRIS_COUNTRIES). `shift`: hours from Copenhagen to the zone's own clock, when it is not the same
  *  (Dublin -1); the feed's days are the zone's local days. `src`: where an `act` zone's data come from, which prisCredit names:
- *  'ec' Energy-Charts (Bundesnetzagentur | SMARD.de, CC BY 4.0) or 'entsoe' (ENTSO-E Transparency Platform). */
+ *  'ec' Energy-Charts (Bundesnetzagentur | SMARD.de, CC BY 4.0), 'entsoe' (ENTSO-E Transparency Platform), 'semopx' (SEMOpx day-ahead auction
+ *  results, Ireland) or 'elexon' (Elexon BMRS Market Index Data, Great Britain: a within-day index, NOT a day-ahead price). */
 var ZONES={
   dk1:{name:'DK1',city:'Vestdanmark',lang:'da',cur:'DKK',rate:7.4755,sub:'øre'},
   dk2:{name:'DK2',city:'Østdanmark',lang:'da',cur:'DKK',rate:7.4755,sub:'øre'},
@@ -3932,7 +3935,7 @@ var ZONES={
   at:{name:'AT',city:'Österreich',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   ch:{name:'CH',city:'Schweiz',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
-  ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
+  ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'semopx'},
   cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   es:{name:'ES',city:'España',lang:'es',cur:'EUR',rate:1,sub:'c€',src:'entsoe'},
   pt:{name:'PT',city:'Portugal',lang:'pt',cur:'EUR',rate:1,sub:'c€',shift:-1,src:'entsoe'},
@@ -3949,7 +3952,12 @@ var ZONES={
   lv:{name:'LV',city:'Latvija',lang:'lv',cur:'EUR',rate:1,sub:'c',shift:1,src:'entsoe'},
   lt:{name:'LT',city:'Lietuva',lang:'lt',cur:'EUR',rate:1,sub:'ct',shift:1,src:'entsoe'},
   mk:{name:'MK',city:'Северна Македонија',lang:'mk',cur:'EUR',rate:1,sub:'ц',src:'entsoe'},
-  al:{name:'AL',city:'Shqipëria',lang:'sq',cur:'EUR',rate:1,sub:'c',src:'entsoe'}
+  al:{name:'AL',city:'Shqipëria',lang:'sq',cur:'EUR',rate:1,sub:'c',src:'entsoe'},
+  xk:{name:'XK',city:'Kosova',lang:'sq',cur:'EUR',rate:1,sub:'c',src:'entsoe'},
+  // Great Britain: the Market Index Price (within-day) in GBP, NOT a day-ahead price (Elexon BMRS). The feed is already in pounds: `rate` 1
+  // (the API's zoneInfo.rate is 1 too), so EUR/MWh-named `eur_mwh` / 10 = pence per kWh. London's clock is Dublin's. `last`: the current hour
+  // is never priced yet (an hour appears once both of its half hours have traded), so the hero shows the latest priced hour, with its own time.
+  gb:{name:'GB',city:'Great Britain',lang:'en',cur:'GBP',rate:1,sub:'p',shift:-1,src:'elexon',last:1}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -4052,10 +4060,10 @@ var PRIS_COUNTRIES={
   'ie/electricity-price':{lang:'en',cc:'ie',zones:['ie'],def:'ie',act:1,
     name:'Ireland',da:'Irland',loc:'en_IE',qid:'Q27',
     title:'Electricity price today and tomorrow – Ireland (SEM)',
-    desc:'Day-ahead electricity price for Ireland and Northern Ireland (SEM), hour by hour, today and tomorrow, in c/kWh, excl. VAT and charges. Source: ENTSO-E',
+    desc:'Day-ahead electricity price for Ireland and Northern Ireland (SEM), hour by hour, today and tomorrow, in c/kWh, excl. VAT and charges. Source: SEMOpx',
     tx:{h1:'Electricity price in Ireland: today and tomorrow',
       zonesH:'Electricity price in Ireland',
-      note:'Hourly means of the 15-minute prices, calculated by elpriser.org (changed from the original data). Ireland and Northern Ireland trade as one market, the all-island Single Electricity Market (SEM). Prices are in euro cent. Source:'}},
+      note:'Hourly means of the 30-minute prices of the SEMOpx day-ahead auction, calculated by elpriser.org (changed from the original data). Ireland and Northern Ireland trade as one market, the all-island Single Electricity Market (SEM). Prices are in euro cent. Source:'}},
   'cz/ceny-elektriny':{lang:'cs',cc:'cz',zones:['cz'],def:'cz',act:1,
     name:'Česko',da:'Tjekkiet',loc:'cs_CZ',qid:'Q213',
     title:'Cena elektřiny dnes a zítra – burzovní cena v Česku',
@@ -4181,7 +4189,23 @@ var PRIS_COUNTRIES={
     desc:'Çmimi i borsës së energjisë elektrike (dita në avancë) në Shqipëri sipas orës, sot dhe nesër, në c/kWh, pa TVSH dhe taksa. Burimi: ENTSO-E',
     tx:{h1:'Çmimi i energjisë në Shqipëri: sot dhe nesër',
       zonesH:'Çmimi i energjisë në Shqipëri',
-      note:'Mesataret orare të çmimeve çdo 15 minuta janë llogaritur nga elpriser.org (të dhënat janë ndryshuar në krahasim me origjinalin). Çmimet janë në cent euro, jo në lekë. Burimi:'}}
+      note:'Mesataret orare të çmimeve çdo 15 minuta janë llogaritur nga elpriser.org (të dhënat janë ndryshuar në krahasim me origjinalin). Çmimet janë në cent euro, jo në lekë. Burimi:'}},
+  'xk/cmimi-i-rrymes':{lang:'sq',cc:'xk',zones:['xk'],def:'xk',act:1,
+    name:'Kosova',da:'Kosovo',loc:'sq_AL',qid:'Q1246',
+    title:'Çmimi i rrymës sot dhe nesër në Kosovë',
+    desc:'Çmimi i energjisë elektrike (dita në avancë) në Kosovë sipas orës, sot dhe nesër, në c/kWh, pa TVSH dhe taksa. Burimi: ENTSO-E',
+    tx:{h1:'Çmimi i rrymës në Kosovë: sot dhe nesër',
+      zonesH:'Çmimi i rrymës në Kosovë',
+      note:'Mesataret orare të çmimeve janë llogaritur nga elpriser.org (të dhënat janë ndryshuar në krahasim me origjinalin; kur burimi jep çmime më të shkurtra se një orë, merret mesatarja e tyre). Çmimet janë në cent euro. Burimi:'}},
+  'gb/electricity-price':{lang:'en',cc:'gb',zones:['gb'],def:'gb',act:1,
+    name:'United Kingdom',da:'Storbritannien',loc:'en_GB',qid:'Q145',
+    title:'Great Britain electricity price: within-day market index',
+    desc:'Market Index Price (within-day) for Great Britain, hour by hour for today, in p/kWh, excl. VAT and charges. Not the day-ahead price. Source: Elexon BMRS',
+    tx:{h1:'Electricity price in Great Britain: today, within-day market index',
+      zonesH:'Electricity price in Great Britain',
+      now:'Latest Market Index Price (within-day)',verdict:['Cheap hour today','Average hour today','Expensive hour today'],fc:'Market Index Price (within-day)',actual:'Market Index Price (within-day)',
+      cap:'Market Index Price (within-day) excluding VAT, taxes, levies and network charges. This is not the day-ahead auction price',
+      note:'The Market Index Price (within-day) is the volume-weighted price of the within-day wholesale trades of each half hour (EPEX SPOT UK and N2EX, as reported to Elexon). It is not the day-ahead auction price, which is not free data for Great Britain, and there is no tomorrow: an hour is shown once both of its half hours have traded. Hourly means of the half-hourly prices, calculated by elpriser.org (changed from the original data). Great Britain only: Northern Ireland trades in the all-island market (see Ireland). Prices are in pence. Source:'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -4261,7 +4285,7 @@ var CHROME_I18N={
     privacy:'Privacy (in danese)',src:'Fonte:',and:'e',open:'Dataset aperti su',
     chg:'Modifiche: medie orarie calcolate da elpriser.org'},
   en:{home:'elpriser.org home page',land:'Countries',place:'Where are you?',area:'Price zone',oth:'Other countries',back:'Back',find:'Search',none:'No results',close:'Close',
-    cn:{dk:'Denmark',no:'Norway',sv:'Sweden',fi:'Finland',nl:'Netherlands',de:'Germany',fr:'France',pl:'Poland',it:'Italy',at:'Austria',ch:'Switzerland',be:'Belgium',ie:'Ireland',cz:'Czechia'},
+    cn:{dk:'Denmark',no:'Norway',sv:'Sweden',fi:'Finland',nl:'Netherlands',de:'Germany',fr:'France',pl:'Poland',it:'Italy',at:'Austria',ch:'Switzerland',be:'Belgium',ie:'Ireland',cz:'Czechia',gb:'United Kingdom',xk:'Kosovo'},
     privacy:'Privacy (in Danish)',src:'Source:',and:'and',open:'Open datasets on',
     chg:'Changed: hourly means calculated by elpriser.org'},
   cs:{home:'elpriser.org – úvodní stránka',land:'Země',place:'Kde jste?',area:'Cenová zóna',oth:'Další země',back:'Zpět',find:'Hledat',none:'Žádné výsledky',close:'Zavřít',
@@ -4329,7 +4353,7 @@ var CHROME_I18N={
     privacy:'Приватност (на дански)',src:'Извор:',and:'и',open:'Отворени збирки на податоци на',
     chg:'Измена: часовните просеци ги пресметува elpriser.org'},
   sq:{home:'elpriser.org – faqja kryesore',land:'Vendet',place:'Ku jeni?',area:'Zona e çmimit',oth:'Vende të tjera',back:'Prapa',find:'Kërko',none:'Asnjë rezultat',close:'Mbyll',
-    cn:{dk:'Danimarka',no:'Norvegjia',sv:'Suedia',fi:'Finlanda',nl:'Holanda',de:'Gjermania',fr:'Franca',pl:'Polonia',it:'Italia',at:'Austria',ch:'Zvicra',be:'Belgjika',ie:'Irlanda',cz:'Çekia',mk:'Maqedonia e Veriut',al:'Shqipëria'},
+    cn:{dk:'Danimarka',no:'Norvegjia',sv:'Suedia',fi:'Finlanda',nl:'Holanda',de:'Gjermania',fr:'Franca',pl:'Polonia',it:'Italia',at:'Austria',ch:'Zvicra',be:'Belgjika',ie:'Irlanda',cz:'Çekia',mk:'Maqedonia e Veriut',al:'Shqipëria',gb:'Mbretëria e Bashkuar',xk:'Kosova'},
     privacy:'Privatësia (në danisht)',src:'Burimi:',and:'dhe',open:'Të dhëna të hapura në',
     chg:'Ndryshim: mesataret orare të llogaritura nga elpriser.org'}
 };
@@ -4404,10 +4428,13 @@ function placeHTML(lang,cur,pg){
 
 /** The attribution of the data on an `act` page, by the zone's source (ZONES `src`). 'ec' (default): "Bundesnetzagentur | SMARD.de" (the
  *  licensor), Energy-Charts.info (the API it comes through) and the licence CC BY 4.0, each a link. 'entsoe': the ENTSO-E Transparency
- *  Platform. The footer and the text block both write it; the change the site makes is said beside it. */
+ *  Platform. 'semopx': SEMOpx. 'elexon': the BMRS attribution sentence. The footer and the text block both write it; the change the site makes is said beside it. */
 function prisCredit(src){
   var lk=function(href,t){return '<a href="'+href+'" target="_blank" rel="noopener">'+t+'</a>';};
   if(src==='entsoe')return lk('https://transparency.entsoe.eu','ENTSO-E Transparency Platform');
+  if(src==='semopx')return lk('https://www.semopx.com/market-data/market-results','SEMOpx');
+  // Elexon's licence prescribes this sentence (the caller adds the full stop) and a link to the licence where possible.
+  if(src==='elexon')return lk('https://www.elexon.co.uk/bsc/data/balancing-mechanism-reporting-agent/copyright-licence-bmrs-data/','Contains BMRS data \u00a9 Elexon Limited copyright and database right '+new Date().getUTCFullYear());
   return lk('https://www.smard.de','Bundesnetzagentur | SMARD.de')+' ('+lk('https://www.energy-charts.info','Energy-Charts.info')+'), '+lk('https://creativecommons.org/licenses/by/4.0/','CC BY 4.0');
 }
 
@@ -4877,7 +4904,10 @@ function prisHTML(days,todayStr,nowHour,o){
   var all=prisDays(days||[],todayStr,cfg.days),C=prisCtx(o,all),L=C.L;
   C.act=!!cfg.act;   // an actual-prices page: no forecast wording, a title that follows how many days there are
   var today=all.length?all[0]:null;
-  var nowP=today?today.ps[nowHour]:null;
+  var nowP=today?today.ps[nowHour]:null,heroHour=nowHour;
+  // A zone whose current hour is never priced yet (ZONES `last`, Great Britain's within-day index) shows its latest priced hour, with that hour's own time.
+  if(nowP==null&&today&&C.z&&ZONES[o.zone]&&ZONES[o.zone].last)
+    for(var lh=nowHour-1;lh>=0;lh--)if(today.ps[lh]!=null){nowP=today.ps[lh];heroHour=lh;break;}
   var td=today?[]:null,i;
   if(today)for(i=0;i<24;i++)if(today.ps[i]!=null)td.push(today.ps[i]);
   var verdict=nowP!=null?prisTier(nowP,td):1;
@@ -4886,7 +4916,7 @@ function prisHTML(days,todayStr,nowHour,o){
   var panel=today?prisPanel(all,0,nowHour,false,o):'';
   var wd=today?prisDate(todayStr,L).wd:'';
   var hero='<section class="pris-hero" aria-label="'+L.now+(o.where?' — '+prisEsc(o.where):'')+'">'
-    +'<p class="pris-label">'+L.now+' · '+(wd?'<span class="pris-wd">'+wd+' </span>':'')+prisAt(L,nowHour)+'</p>'
+    +'<p class="pris-label">'+L.now+' · '+(wd?'<span class="pris-wd">'+wd+' </span>':'')+prisAt(L,heroHour)+'</p>'
     +'<p class="pris-price"><span class="pris-now">'+(nowP!=null?prisNum(nowP,C.d,L):'—')+'</span><span class="pris-u">'+C.u+'/kWh</span></p>'
     +'<div class="pris-vrow">'
     +(nowP!=null?'<span class="pris-pill t'+verdict+'"><i></i>'+L.verdict[verdict]+'</span>':'')

@@ -4,7 +4,7 @@
  * A Place, never a Country (schema.org accepts Text or Place there, and Google flagged Country on /api). The Place is the
  * country with its Wikidata entity; a country with several price areas lists them in containsPlace by the labels the
  * page itself uses (ZONES in [[path]].js: "NO1 Oslo"). Three zones are not their country and say so: DE-LU covers Germany
- * and Luxembourg, IE-SEM the Republic of Ireland and Northern Ireland, IT-Nord only the north of Italy. No coordinates and
+ * and Luxembourg, IE-SEM the Republic of Ireland and Northern Ireland, GB only Great Britain (inside the United Kingdom, without Northern Ireland), IT-Nord only the north of Italy. No coordinates and
  * no boundary — the page makes no claim about where a zone ends, and none is invented here.
  *
  * The Wikidata item of a country is the `qid` of its PRIS_COUNTRIES entry (checked against the item's English label when it
@@ -47,6 +47,10 @@ function countryPage(pg, ctx) {
   if (k === 'ie') {
     // The Single Electricity Market covers the Republic of Ireland and Northern Ireland.
     return { '@type': 'Place', name: `${L.area} ${ctx.ZONES.ie.name}`, containsPlace: [entity(ctx, name, 'ie'), entity(ctx, NORTHERN_IRELAND, 'gb-nir')] };
+  }
+  if (k === 'gb') {
+    // Great Britain's price zone is the island's market; Northern Ireland trades in the SEM (IE-SEM above), so the place is NOT the whole United Kingdom.
+    return { '@type': 'Place', name: `${L.area} ${ctx.ZONES.gb.name}`, containedInPlace: entity(ctx, name, 'gb') };
   }
   if (k === 'it-n') return { '@type': 'Place', name: NORTH_ITALY, containedInPlace: entity(ctx, name, 'it') };
   return entity(ctx, name, C.cc);
