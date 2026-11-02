@@ -70,12 +70,13 @@ func tOf(_ v: Double, _ vals: [Double]) -> Double {
     return (v - lo) / (hi - lo)
 }
 
-/// Dansk talformat: komma som decimaltegn og aldrig "-0,00".
+/// A number in the user's locale (decimal separator and minus sign: 3,90 / 3.90, and U+2212 where the language writes it),
+/// rounded as printf does and never "-0,00".
 func fmt(_ v: Double?, _ d: Int = 2) -> String {
     guard let v, !v.isNaN else { return "–" }
     var s = String(format: "%.\(d)f", v)
     if s.range(of: "^-0\\.?0*$", options: .regularExpression) != nil { s.removeFirst() }
-    return s.replacingOccurrences(of: ".", with: ",")
+    return L10n.localizeNumber(s)
 }
 
 func pad(_ h: Int) -> String { String(format: "%02d", h) }
@@ -100,14 +101,15 @@ struct Verdict { let kind: Int; let label: String }
 
 func verdict(_ price: Double, _ vals: [Double]) -> Verdict {
     let pct = Int((Double(vals.filter { $0 < price }.count) / Double(vals.count) * 100).rounded())
-    if pct <= 33 { return Verdict(kind: 0, label: "Billig lige nu") }
-    if pct <= 66 { return Verdict(kind: 1, label: "Middel lige nu") }
-    return Verdict(kind: 2, label: "Dyr lige nu")
+    if pct <= 33 { return Verdict(kind: 0, label: L10n.string("verdict_cheap")) }
+    if pct <= 66 { return Verdict(kind: 1, label: L10n.string("verdict_mid")) }
+    return Verdict(kind: 2, label: L10n.string("verdict_high"))
 }
 
-private let weekdays = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"]
-private let weekdaysShort = ["søn", "man", "tir", "ons", "tor", "fre", "lør"]
-private let months = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"]
+// Weekday and month names come from the catalogue (weekdays_long, weekdays_short, months_short), Sunday and January first.
+private func weekdayLong(_ i: Int) -> String { L10n.string("weekdays_long_\(i)") }
+private func weekdayShortName(_ i: Int) -> String { L10n.string("weekdays_short_\(i)") }
+private func monthShort(_ i: Int) -> String { L10n.string("months_short_\(i)") }
 
 private func parts(_ d: Day) -> (wd: Int, day: Int, month: Int) {
     let c = Clock.calendar.dateComponents([.weekday, .day, .month], from: d.localDate)
@@ -118,17 +120,23 @@ func cap(_ s: String) -> String { s.prefix(1).uppercased() + s.dropFirst() }
 
 func dayLabel(_ d: Day) -> String {
     let today = Clock.today()
-    if d.date == today { return "I dag" }
+    if d.date == today { return L10n.string("day_today_cap") }
     let tomorrow = Clock.format(Clock.calendar.date(byAdding: .day, value: 1, to: Clock.parse(today))!)
-    if d.date == tomorrow { return "I morgen" }
-    return cap(weekdays[parts(d).wd])
+    if d.date == tomorrow { return L10n.string("day_tomorrow_cap") }
+    return cap(weekdayLong(parts(d).wd))
 }
-func dayShort(_ d: Day) -> String { weekdaysShort[parts(d).wd] }
+func dayShort(_ d: Day) -> String { weekdayShortName(parts(d).wd) }
 func dayNum(_ d: Day) -> Int { parts(d).day }
-func dayMonth(_ d: Day) -> String { let p = parts(d); return "\(p.day). \(months[p.month])" }
-func dayLong(_ d: Day) -> String { let p = parts(d); return "\(cap(weekdays[p.wd])) \(p.day). \(months[p.month])" }
-/// Ugedagen med småt ("onsdag").
-func weekdayName(_ d: Day) -> String { weekdays[parts(d).wd] }
+/// "17. okt" (date_day_month).
+func dayMonth(_ d: Day) -> String { let p = parts(d); return L10n.string("date_day_month", p.day, monthShort(p.month)) }
+/// "Søndag 17. okt" (date_long).
+func dayLong(_ d: Day) -> String { let p = parts(d); return L10n.string("date_long", cap(weekdayLong(p.wd)), p.day, monthShort(p.month)) }
+/// The weekday as the catalogue writes it ("onsdag"; lower case where the language lower-cases weekdays).
+func weekdayName(_ d: Day) -> String { weekdayLong(parts(d).wd) }
+/// "søn 17." (day_short_date): the later days in the tiles.
+func dayShortDate(_ d: Day) -> String { let p = parts(d); return L10n.string("day_short_date", weekdayShortName(p.wd), p.day) }
+/// "ons 14" (day_short_num): the 5-day axis.
+func dayShortNum(_ d: Day) -> String { let p = parts(d); return L10n.string("day_short_num", weekdayShortName(p.wd), p.day) }
 
 extension Font {
     /// Manrope — samme skrift som Android-appen og designet. Fast størrelse, som `.system(size:)`, den afløser,

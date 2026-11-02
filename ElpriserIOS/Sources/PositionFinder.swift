@@ -17,6 +17,9 @@ final class PositionFinder: NSObject, CLLocationManagerDelegate {
         manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways
     }
 
+    /// The user has said no to the position (now or earlier): the sheet says so instead of "could not find".
+    var wasDenied: Bool { manager.authorizationStatus == .denied || manager.authorizationStatus == .restricted }
+
     /// Spørger om tilladelse første gang og returnerer så positionen — eller nil, hvis den afvises eller ikke kan findes.
     func current() async -> CLLocation? {
         if manager.authorizationStatus == .notDetermined {

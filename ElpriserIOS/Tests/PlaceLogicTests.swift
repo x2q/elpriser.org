@@ -2,7 +2,7 @@ import XCTest
 @testable import Elpriser
 
 /// Stedslisten ("Hvor er du?"): detaljer på områderækkerne, "Uden netselskab" og søgning.
-final class PlaceLogicTests: XCTestCase {
+final class PlaceLogicTests: DanishTestCase {
     private let n1 = Nets.all.first { $0.name == "N1" }!
     private let radius = Nets.all.first { $0.name == "Radius" }!
 
@@ -31,7 +31,8 @@ final class PlaceLogicTests: XCTestCase {
     func testSearchSpansBothAreasIgnoringCaseAndAccents() {
         XCTAssertEqual(placeSearch("trefor").map(\.name), ["Trefor", "Trefor Øst"])
         XCTAssertEqual(placeSearch("  RADIUS ").map(\.name), ["Radius"])
-        XCTAssertEqual(placeSearch("ELVÆRK").map(\.name), ["Elværk"])
+        // the net list has grown since this was written: Tarm Elværk and Hurup Elværk contain "elværk" too
+        XCTAssertEqual(placeSearch("ELVÆRK").map(\.name), ["Elværk", "Tarm Elværk", "Hurup Elværk"])
         XCTAssertEqual(placeSearch("trefor").map(\.area), ["DK1", "DK2"])
         XCTAssertEqual(placeSearch("ØST").map(\.name), ["Trefor Øst"])
     }
@@ -40,7 +41,7 @@ final class PlaceLogicTests: XCTestCase {
         XCTAssertTrue(placeSearch("").isEmpty)
         XCTAssertTrue(placeSearch("   ").isEmpty)
         XCTAssertTrue(placeSearch("zzz").isEmpty)
-        XCTAssertEqual(placeNoMatch(" zzz "), "Ingen netselskaber matcher “zzz”.")
+        XCTAssertEqual(placeNoMatch(" zzz "), "Ingen lande eller netselskaber matcher “zzz”.")
     }
 
     func testEveryNetIsReachableThroughItsArea() {

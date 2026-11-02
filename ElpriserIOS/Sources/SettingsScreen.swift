@@ -10,37 +10,37 @@ struct SettingsScreen: View {
             VStack(spacing: 0) {
                 if wide {
                     HStack(alignment: .top, spacing: 20) {
-                        ScrollView { VStack(spacing: 12) { viewCard(s); aboutCard() }.padding(.bottom, 20) }.frame(width: 520)
+                        ScrollView { VStack(spacing: 12) { if s.isDanish { viewCard(s) }; aboutCard(s) }.padding(.bottom, 20) }.frame(width: 520)
                         ScrollView { VStack(spacing: 12) { lookCard(s) }.padding(.bottom, 20) }
                     }
                     .padding(.horizontal, 20)
                 } else {
-                    ScrollView { VStack(spacing: 10) { viewCard(s); lookCard(s); aboutCard() }.padding(.horizontal, 16).padding(.bottom, 16) }
+                    ScrollView { VStack(spacing: 10) { if s.isDanish { viewCard(s) }; lookCard(s); aboutCard(s) }.padding(.horizontal, 16).padding(.bottom, 16) }
                 }
             }
         }
         .background(T.bg)
         // Åbnes fra stedsarket, så den har en almindelig navigationslinje med tilbage-knap.
-        .navigationTitle("Indstillinger")
+        .navigationTitle(L10n.string("settings_title"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
     }
 
     private func viewCard(_ s: Settings) -> some View {
         let defs = [
-            ("Samlet pris med netselskab", "Spot, nettarif, afgifter og moms"),
-            ("Uden netselskab", "Energinets tariffer, elafgift og moms"),
-            ("Spotpris inkl. moms", "Børsprisen, som den er"),
-            ("Spotpris ekskl. moms", "Til beregninger og fakturaer"),
+            (L10n.string("view_total_title"), L10n.string("view_total_sub")),
+            (L10n.string("view_nonet_title"), L10n.string("view_nonet_sub")),
+            (L10n.string("view_spot_incl_title"), L10n.string("view_spot_incl_sub")),
+            (L10n.string("view_spot_excl_title"), L10n.string("view_spot_excl_sub")),
         ]
         return VStack(alignment: .leading, spacing: 2) {
-            SectionLabel(text: "Prisvisning").padding(.horizontal, 8).padding(.top, 8)
+            SectionLabel(text: L10n.string("view_label")).padding(.horizontal, 8).padding(.top, 8)
             ForEach(defs.indices, id: \.self) { i in
                 Button { s.updateView(i) } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 0) {
                             Text(defs[i].0).font(.app(14.5, .bold)).foregroundStyle(T.text)
-                            Text(i == 0 && s.net == nil ? "\(defs[i].1) — vælg først et netselskab" : defs[i].1)
+                            Text(i == 0 && s.net == nil ? L10n.string("view_needs_net", defs[i].1) : defs[i].1)
                                 .font(.app(12, .semibold)).foregroundStyle(T.text2).multilineTextAlignment(.leading)
                         }
                         Spacer()
@@ -60,22 +60,27 @@ struct SettingsScreen: View {
 
     private func lookCard(_ s: Settings) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionLabel(text: "Udseende")
-            Segmented(options: ["System", "Lys", "Mørk"], selected: s.theme == "light" ? 1 : s.theme == "dark" ? 2 : 0) {
+            SectionLabel(text: L10n.string("settings_look_label"))
+            Segmented(options: [L10n.string("theme_system"), L10n.string("theme_light"), L10n.string("theme_dark")], selected: s.theme == "light" ? 1 : s.theme == "dark" ? 2 : 0) {
                 s.updateTheme(["system", "light", "dark"][$0])
             }
         }
         .card()
     }
 
-    private func aboutCard() -> some View {
+    private func aboutCard(_ s: Settings) -> some View {
         let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
         return VStack(alignment: .leading, spacing: 10) {
-            SectionLabel(text: "Om appen")
-            Text("Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra en åben model på Hugging Face · elpriser \(v)")
+            SectionLabel(text: L10n.string("settings_about_label"))
+            Text(L10n.string("about_text", v))
                 .font(.app(12.5, .medium)).lineSpacing(3).foregroundStyle(T.text2)
+            if !s.isDanish {
+                // Where the prices outside Denmark come from (the licence asks for the source to be named).
+                Text(L10n.string("about_sources_eu"))
+                    .font(.app(12.5, .medium)).lineSpacing(3).foregroundStyle(T.text2)
+            }
             HStack(spacing: 8) {
-                SoftButton(title: "Privatliv", bg: T.brandSoft, fg: T.brand) { openURL(URL(string: "https://elpriser.org/privatliv")!) }
+                SoftButton(title: L10n.string("action_privacy"), bg: T.brandSoft, fg: T.brand) { openURL(URL(string: "https://elpriser.org/privatliv")!) }
                 SoftButton(title: "elpriser.org", bg: T.brandSoft, fg: T.brand) { openURL(URL(string: "https://elpriser.org")!) }
             }
         }

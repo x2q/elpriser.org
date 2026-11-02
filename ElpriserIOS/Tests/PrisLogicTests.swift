@@ -3,7 +3,7 @@ import XCTest
 
 /// Pris-skærmens rene logik (Design A): niveau, akse, sætning, statistikfelter, søjler og tekster.
 /// Prøvedata er det samme døgnpar som designets skitse (DK1, N1, onsdag 14. okt.).
-final class PrisLogicTests: XCTestCase {
+final class PrisLogicTests: DanishTestCase {
     private let today = "2026-10-14"  // en onsdag
     private let t: [Double] = [1.32, 1.37, 1.35, 1.31, 1.30, 1.43, 1.78, 1.92, 2.11, 1.97, 1.86, 1.74, 1.52, 1.39, 1.44, 1.63, 1.98, 3.21, 3.68, 3.90, 3.67, 2.67, 2.43, 2.20]
     private let m: [Double] = [1.73, 1.69, 1.69, 1.69, 1.64, 1.63, 1.95, 2.23, 2.45, 2.18, 2.07, 1.84, 1.53, 1.38, 1.42, 1.63, 2.00, 3.03, 3.33, 3.34, 2.98, 2.15, 2.10, 2.09]
@@ -285,8 +285,9 @@ final class PrisLogicTests: XCTestCase {
 
     func testFiveDaySummaryNamesTheExtremeHourAndDay() throws {
         let c = try XCTUnwrap(prisChart(period: .five, days: ten(), today: today, now: 21))
-        XCTAssertTrue(c.summary.hasPrefix("Næste 5 døgn. Billigst 1,38 kr/kWh "), c.summary)
-        XCTAssertTrue(c.summary.contains("kl. "), c.summary)
+        // the catalogue's wording (shared with Android): "Billigst i morgen: 1,38 kr/kWh kl. 13."
+        XCTAssertTrue(c.summary.hasPrefix("Næste 5 døgn. Billigst i morgen: 1,38 kr/kWh kl. 13. Dyrest "), c.summary)
+        XCTAssertTrue(c.summary.hasSuffix("Tryk eller træk på grafen for at se prisen time for time."), c.summary)
     }
 
     func testFiveDayChartShowsWhatExistsWhenForecastIsMissing() throws {
@@ -408,9 +409,7 @@ final class PrisLogicTests: XCTestCase {
     }
 
     func testPriceModeMapsTheTwoSwitchOptions() {
-        let s = Settings()
-        let before = s.view
-        defer { s.updateView(before) }
+        let s = makeSettings()
         s.updateView(2)
         XCTAssertEqual(s.prisMode, "spot_inkl")
         XCTAssertTrue(s.prisIsSpot)

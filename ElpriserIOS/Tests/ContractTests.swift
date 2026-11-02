@@ -4,7 +4,7 @@ import XCTest
 /// Checks this app's copies of the shared logic against tests/golden/app-contract.json,
 /// the same file the web test and the Android test read. If one of them drifts, its own
 /// suite goes red instead of the apps quietly disagreeing about a price or a net.
-final class ContractTests: XCTestCase {
+final class ContractTests: DanishTestCase {
     private static let golden: [String: Any] = {
         // …/ElpriserIOS/Tests/ContractTests.swift → …/tests/golden/app-contract.json
         let url = URL(fileURLWithPath: #filePath)

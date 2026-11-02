@@ -12,6 +12,8 @@
 		091F45B8AC00FC57820DD97F /* Manrope-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4953B2B40682C6BBCE0E47DE /* Manrope-ExtraBold.ttf */; };
 		0E5A82713B5C72BB0053AA96 /* Manrope-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3D6E5BFC81A4F27463032FB8 /* Manrope-Bold.ttf */; };
 		15CCDC52BDDD3835C6C5590F /* AutomationScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81FE4CF78994273B13EC4E0 /* AutomationScreen.swift */; };
+		1C3F8A13FA8A6913C502F6D0 /* ZonesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46EF52671AE5F859EA4558AA /* ZonesTests.swift */; };
+		2204ACEF66820882EA75D41F /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 367C621C5FF0E7EB5E06AD63 /* L10n.swift */; };
 		22A35C23EF2857E016C0023E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F9AEB4CCD32B4F828818D38E /* Assets.xcassets */; };
 		26962E88476CD6BA1B417A07 /* Api.swift in Sources */ = {isa = PBXBuildFile; fileRef = C445F043FFD3C41CF8EB07D4 /* Api.swift */; };
 		27C40F05FFF9D189D9A0C436 /* Manrope-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6A0B84831207BC11D4231A5D /* Manrope-Regular.ttf */; };
@@ -19,21 +21,30 @@
 		28C5E936F9A4022ED4AE170E /* PriceChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC66EA68E8E258BE36DD7CAC /* PriceChart.swift */; };
 		37766E2CD2C2EBCF5D323B2A /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1FA340C8E3EBF989BC55FC1 /* Settings.swift */; };
 		3B8A80D572D489A0E7E6CC56 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204D1733B1B18A449F11A1F1 /* RootView.swift */; };
+		47AC135DF137FB2B479B3F32 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 038F65BC5058784E4EAD5278 /* Localizable.xcstrings */; };
 		5AA1D37EB5BF420D7D0E9C28 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26EDF56625B0D18A58DBBBFB /* Components.swift */; };
 		5AB5295F7DBD5E92AD374D8A /* ElpriserApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C1B68BF4CE26810998F12 /* ElpriserApp.swift */; };
 		5FF1C34B530F233B527A4F09 /* PositionFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16DDB4C03F208F45BBD9C78F /* PositionFinder.swift */; };
+		75527A0F11A834FB35E7F095 /* PlaceCountriesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6117AE48F9321CF916DFCB4D /* PlaceCountriesTests.swift */; };
+		7B8B8FD6FEF03385997305AB /* L10nTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B48325A504F7F2266E6944 /* L10nTests.swift */; };
 		7EC09C6617FEC7DF3E00DBF2 /* PrisScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9090C1529CA47655796ACC /* PrisScreen.swift */; };
+		7F0D24DFC6F70B7496D788F0 /* Zones.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF27324661C059450162D70 /* Zones.swift */; };
 		80B6169C935ABEFDA126D60B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 9D3EF2BA24B75A83BB44F18B /* PrivacyInfo.xcprivacy */; };
 		867993E3EA0F0E0748A78BF1 /* SideRail.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8769A2AAA47103E3A24B1F6 /* SideRail.swift */; };
 		899D5A3608836379BD041D61 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769138C3213A541E2B3C043C /* AppModel.swift */; };
+		8A1B0AD03FEA7D8FF39B3797 /* FormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 443C80265758D650918F6754 /* FormattingTests.swift */; };
 		9429981CBF6F48D133FE6E9F /* PrisLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6975334731F7C708B1271A90 /* PrisLogicTests.swift */; };
 		9F10449DE487713F8140484D /* BreakdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C8EF30FEDE7390C142470F /* BreakdownTests.swift */; };
+		A51DB5AF3624F2FA63E2D730 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0111D517549B24CF4EB0B5CE /* InfoPlist.xcstrings */; };
+		A5C7A284A580CA83622242BC /* PriceUnit.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD61997F8F0C4902B01D5CD6 /* PriceUnit.swift */; };
+		A7332CA9AD0E94BDBC5B1BA7 /* ZoneSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04B6D09C461F9FC6509335EB /* ZoneSettingsTests.swift */; };
 		AC66A3FB193ADBEE3BBD4078 /* PrisLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6BBFE10F3618BD65438A3A1 /* PrisLogic.swift */; };
 		B28B090D1276231CAA19C0AE /* Manrope-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EE806A861F959B78C5209974 /* Manrope-SemiBold.ttf */; };
 		B8155B5102F651D434F5E3E0 /* PlaceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B990222EEEAAA11F67F79470 /* PlaceSheet.swift */; };
 		B9A71EFB6188DA40EB28FC76 /* Manrope-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CF6308EF906FA984651F9D8D /* Manrope-Medium.ttf */; };
 		C1196992E07D4888A212B6C7 /* PlaceLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6635AD8CC1552A203FD460E3 /* PlaceLogicTests.swift */; };
 		EB73C53D059980D99FD22E12 /* BreakdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138D8934A24A02C3D3558E15 /* BreakdownView.swift */; };
+		EF5E7ADF09221CB46986C044 /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C6E12CA672D90D415D665C0 /* TestSupport.swift */; };
 		F20459218D6C20BE212A65E9 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BA379703921B8B52E7A017 /* Models.swift */; };
 		F51EC5EE925691D046AF30DD /* PlaceLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7301F1A1A2D45197755427A4 /* PlaceLogic.swift */; };
 /* End PBXBuildFile section */
@@ -49,22 +60,32 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0111D517549B24CF4EB0B5CE /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		038F65BC5058784E4EAD5278 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		04B6D09C461F9FC6509335EB /* ZoneSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoneSettingsTests.swift; sourceTree = "<group>"; };
 		069C1B68BF4CE26810998F12 /* ElpriserApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElpriserApp.swift; sourceTree = "<group>"; };
 		138D8934A24A02C3D3558E15 /* BreakdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakdownView.swift; sourceTree = "<group>"; };
 		16DDB4C03F208F45BBD9C78F /* PositionFinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionFinder.swift; sourceTree = "<group>"; };
 		204D1733B1B18A449F11A1F1 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		26EDF56625B0D18A58DBBBFB /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		2C6E12CA672D90D415D665C0 /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
 		2FF88DD5797EF12AB34969DA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		367C621C5FF0E7EB5E06AD63 /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
 		3D6E5BFC81A4F27463032FB8 /* Manrope-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Bold.ttf"; sourceTree = "<group>"; };
+		443C80265758D650918F6754 /* FormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattingTests.swift; sourceTree = "<group>"; };
+		46EF52671AE5F859EA4558AA /* ZonesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZonesTests.swift; sourceTree = "<group>"; };
 		4953B2B40682C6BBCE0E47DE /* Manrope-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-ExtraBold.ttf"; sourceTree = "<group>"; };
 		55BA379703921B8B52E7A017 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		55C8EF30FEDE7390C142470F /* BreakdownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakdownTests.swift; sourceTree = "<group>"; };
 		5D66E273760FB843CBE6C2C4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6117AE48F9321CF916DFCB4D /* PlaceCountriesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceCountriesTests.swift; sourceTree = "<group>"; };
 		6635AD8CC1552A203FD460E3 /* PlaceLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceLogicTests.swift; sourceTree = "<group>"; };
 		6975334731F7C708B1271A90 /* PrisLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrisLogicTests.swift; sourceTree = "<group>"; };
 		6A0B84831207BC11D4231A5D /* Manrope-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Regular.ttf"; sourceTree = "<group>"; };
 		7301F1A1A2D45197755427A4 /* PlaceLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceLogic.swift; sourceTree = "<group>"; };
 		769138C3213A541E2B3C043C /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		7BF27324661C059450162D70 /* Zones.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zones.swift; sourceTree = "<group>"; };
+		83B48325A504F7F2266E6944 /* L10nTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10nTests.swift; sourceTree = "<group>"; };
 		85C2F7685A6040B8334198A8 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		98356D215B7AF4BC0982A5DD /* ContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractTests.swift; sourceTree = "<group>"; };
 		9D3EF2BA24B75A83BB44F18B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -75,6 +96,7 @@
 		CE9090C1529CA47655796ACC /* PrisScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrisScreen.swift; sourceTree = "<group>"; };
 		CF2895F3B64B67D56DD28B8E /* ElpriserTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ElpriserTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF6308EF906FA984651F9D8D /* Manrope-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-Medium.ttf"; sourceTree = "<group>"; };
+		DD61997F8F0C4902B01D5CD6 /* PriceUnit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceUnit.swift; sourceTree = "<group>"; };
 		E1FA340C8E3EBF989BC55FC1 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		E8769A2AAA47103E3A24B1F6 /* SideRail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideRail.swift; sourceTree = "<group>"; };
 		EE806A861F959B78C5209974 /* Manrope-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Manrope-SemiBold.ttf"; sourceTree = "<group>"; };
@@ -102,11 +124,13 @@
 				138D8934A24A02C3D3558E15 /* BreakdownView.swift */,
 				26EDF56625B0D18A58DBBBFB /* Components.swift */,
 				069C1B68BF4CE26810998F12 /* ElpriserApp.swift */,
+				367C621C5FF0E7EB5E06AD63 /* L10n.swift */,
 				55BA379703921B8B52E7A017 /* Models.swift */,
 				7301F1A1A2D45197755427A4 /* PlaceLogic.swift */,
 				B990222EEEAAA11F67F79470 /* PlaceSheet.swift */,
 				16DDB4C03F208F45BBD9C78F /* PositionFinder.swift */,
 				FC66EA68E8E258BE36DD7CAC /* PriceChart.swift */,
+				DD61997F8F0C4902B01D5CD6 /* PriceUnit.swift */,
 				C6BBFE10F3618BD65438A3A1 /* PrisLogic.swift */,
 				CE9090C1529CA47655796ACC /* PrisScreen.swift */,
 				204D1733B1B18A449F11A1F1 /* RootView.swift */,
@@ -114,6 +138,7 @@
 				85C2F7685A6040B8334198A8 /* SettingsScreen.swift */,
 				E8769A2AAA47103E3A24B1F6 /* SideRail.swift */,
 				2FF88DD5797EF12AB34969DA /* Theme.swift */,
+				7BF27324661C059450162D70 /* Zones.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -145,8 +170,14 @@
 			children = (
 				55C8EF30FEDE7390C142470F /* BreakdownTests.swift */,
 				98356D215B7AF4BC0982A5DD /* ContractTests.swift */,
+				443C80265758D650918F6754 /* FormattingTests.swift */,
+				83B48325A504F7F2266E6944 /* L10nTests.swift */,
+				6117AE48F9321CF916DFCB4D /* PlaceCountriesTests.swift */,
 				6635AD8CC1552A203FD460E3 /* PlaceLogicTests.swift */,
 				6975334731F7C708B1271A90 /* PrisLogicTests.swift */,
+				2C6E12CA672D90D415D665C0 /* TestSupport.swift */,
+				04B6D09C461F9FC6509335EB /* ZoneSettingsTests.swift */,
+				46EF52671AE5F859EA4558AA /* ZonesTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -156,6 +187,8 @@
 			children = (
 				F9AEB4CCD32B4F828818D38E /* Assets.xcassets */,
 				5D66E273760FB843CBE6C2C4 /* Info.plist */,
+				0111D517549B24CF4EB0B5CE /* InfoPlist.xcstrings */,
+				038F65BC5058784E4EAD5278 /* Localizable.xcstrings */,
 				9D3EF2BA24B75A83BB44F18B /* PrivacyInfo.xcprivacy */,
 				84E67061ACBF545D2EC5611F /* Fonts */,
 			);
@@ -225,7 +258,35 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
+				bg,
+				cs,
+				da,
+				de,
+				el,
 				en,
+				es,
+				et,
+				fi,
+				fr,
+				hr,
+				hu,
+				it,
+				lt,
+				lv,
+				mk,
+				nb,
+				nl,
+				nn,
+				no,
+				pl,
+				pt,
+				ro,
+				sk,
+				sl,
+				sq,
+				sr,
+				"sr-Latn",
+				sv,
 			);
 			mainGroup = 7C2B4EF4DB35A6D91C54CE09;
 			minimizedProjectReferenceProxies = 1;
@@ -246,6 +307,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				22A35C23EF2857E016C0023E /* Assets.xcassets in Resources */,
+				A51DB5AF3624F2FA63E2D730 /* InfoPlist.xcstrings in Resources */,
+				47AC135DF137FB2B479B3F32 /* Localizable.xcstrings in Resources */,
 				0E5A82713B5C72BB0053AA96 /* Manrope-Bold.ttf in Resources */,
 				091F45B8AC00FC57820DD97F /* Manrope-ExtraBold.ttf in Resources */,
 				B9A71EFB6188DA40EB28FC76 /* Manrope-Medium.ttf in Resources */,
@@ -268,11 +331,13 @@
 				EB73C53D059980D99FD22E12 /* BreakdownView.swift in Sources */,
 				5AA1D37EB5BF420D7D0E9C28 /* Components.swift in Sources */,
 				5AB5295F7DBD5E92AD374D8A /* ElpriserApp.swift in Sources */,
+				2204ACEF66820882EA75D41F /* L10n.swift in Sources */,
 				F20459218D6C20BE212A65E9 /* Models.swift in Sources */,
 				F51EC5EE925691D046AF30DD /* PlaceLogic.swift in Sources */,
 				B8155B5102F651D434F5E3E0 /* PlaceSheet.swift in Sources */,
 				5FF1C34B530F233B527A4F09 /* PositionFinder.swift in Sources */,
 				28C5E936F9A4022ED4AE170E /* PriceChart.swift in Sources */,
+				A5C7A284A580CA83622242BC /* PriceUnit.swift in Sources */,
 				AC66A3FB193ADBEE3BBD4078 /* PrisLogic.swift in Sources */,
 				7EC09C6617FEC7DF3E00DBF2 /* PrisScreen.swift in Sources */,
 				3B8A80D572D489A0E7E6CC56 /* RootView.swift in Sources */,
@@ -280,6 +345,7 @@
 				075D0A017923CB44963697ED /* SettingsScreen.swift in Sources */,
 				867993E3EA0F0E0748A78BF1 /* SideRail.swift in Sources */,
 				28BAC5942EC23DEE59C5712D /* Theme.swift in Sources */,
+				7F0D24DFC6F70B7496D788F0 /* Zones.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -289,8 +355,14 @@
 			files = (
 				9F10449DE487713F8140484D /* BreakdownTests.swift in Sources */,
 				070BEEC5A7E4520F5503AF13 /* ContractTests.swift in Sources */,
+				8A1B0AD03FEA7D8FF39B3797 /* FormattingTests.swift in Sources */,
+				7B8B8FD6FEF03385997305AB /* L10nTests.swift in Sources */,
+				75527A0F11A834FB35E7F095 /* PlaceCountriesTests.swift in Sources */,
 				C1196992E07D4888A212B6C7 /* PlaceLogicTests.swift in Sources */,
 				9429981CBF6F48D133FE6E9F /* PrisLogicTests.swift in Sources */,
+				EF5E7ADF09221CB46986C044 /* TestSupport.swift in Sources */,
+				A7332CA9AD0E94BDBC5B1BA7 /* ZoneSettingsTests.swift in Sources */,
+				1C3F8A13FA8A6913C502F6D0 /* ZonesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

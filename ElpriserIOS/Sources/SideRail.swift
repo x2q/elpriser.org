@@ -9,10 +9,12 @@ struct SideRail: View {
         let tab: AppTab, title: String, symbol: String, key: KeyEquivalent
         var id: AppTab { tab }
     }
-    private let items = [
-        Item(tab: .pris, title: "Pris", symbol: "bolt", key: "1"),
-        Item(tab: .smartHjem, title: "Smart hjem", symbol: "slider.horizontal.3", key: "2"),
-    ]
+    private var items: [Item] {
+        [
+            Item(tab: .pris, title: L10n.string("nav_price"), symbol: "bolt", key: "1"),
+            Item(tab: .smartHjem, title: L10n.string("nav_smart"), symbol: "slider.horizontal.3", key: "2"),
+        ]
+    }
 
     var body: some View {
         VStack(spacing: 6) {
