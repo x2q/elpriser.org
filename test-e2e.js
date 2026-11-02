@@ -164,10 +164,10 @@ async function startServer() {
   // server.js has no /api/nordic either. The foreign-area pages draw from it, so answer it for all thirteen
   // zones with ten days from yesterday (like the live feed). The price encodes the zone, so a tab switch is visible:
   // EUR/MWh = 10 × (zone number) + the day's swing, at rate 10 → øre/kWh = EUR/MWh.
-  // The EU zones (indices 13 to 21: de fr pl it-n at ch be ie cz) answer like the EU job's KV values: yesterday, today and tomorrow, all `actual`,
+  // The EU zones (indices 13 to 22: de fr pl it-n at ch be ie cz ee) answer like the EU job's KV values: yesterday, today and tomorrow, all `actual`,
   // EUR rate 1 (Poland 4.4), no model; `euDays` is how many of those days are published (2: tomorrow is not).
   const ZN = ['dk1', 'dk2', 'no1', 'no2', 'no3', 'no4', 'no5', 'se1', 'se2', 'se3', 'se4', 'fi', 'nl',
-    'de', 'fr', 'pl', 'it-n', 'at', 'ch', 'be', 'ie', 'cz'];
+    'de', 'fr', 'pl', 'it-n', 'at', 'ch', 'be', 'ie', 'cz', 'ee'];
   const nordicRequests = [];
   let euDays = 3;
   const nordicRoute = route => {
@@ -177,8 +177,8 @@ async function startServer() {
     if (k < 0) return route.fulfill({ status: 400, json: { error: 'zone' } });
     const base = Date.parse(todayDk() + 'T12:00:00Z');
     if (k >= 13) {
-      // Ireland's days are Dublin's: an hour behind Copenhagen, so its date is the one an hour ago.
-      const b = Date.parse((zone === 'ie' ? new Intl.DateTimeFormat('en-CA', cph).format(new Date(Date.now() - 3600000)) : todayDk()) + 'T12:00:00Z');
+      // Ireland's days are Dublin's: an hour behind Copenhagen, so its date is the one an hour ago; Estonia's (Latvia's, Lithuania's) an hour ahead.
+      const b = Date.parse((zone === 'ie' ? new Intl.DateTimeFormat('en-CA', cph).format(new Date(Date.now() - 3600000)) : ['ee', 'lv', 'lt'].includes(zone) ? new Intl.DateTimeFormat('en-CA', cph).format(new Date(Date.now() + 3600000)) : todayDk()) + 'T12:00:00Z');
       return route.fulfill({ json: { zone, unit: 'EUR/MWh', trainedThrough: null, zoneInfo: { rate: zone === 'pl' ? 4.4 : 1, currency: zone === 'pl' ? 'PLN' : 'EUR' },
         days: Array.from({ length: euDays }, (_, i) => ({ date: new Date(b + (i - 1) * 86400000).toISOString().slice(0, 10), type: 'actual',
           prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: +(60 + (k - 13) * 10 + Math.sin(h / 24 * 6.28) * 25 + i).toFixed(2) })) })) } });
@@ -219,6 +219,7 @@ async function startServer() {
     ['/be/prix-electricite',                   'zone'],
     ['/ie/electricity-price',                  'zone'],
     ['/cz/ceny-elektriny',                     'zone'],
+    ['/ee/elektri-hind',                       'zone'],
     ['/norden',                        'norden'],
     ['/blog',                                    'blog'],
     ['/blog/elafgift-2028',                      'blog-elafgift-2028'],
@@ -264,7 +265,7 @@ async function startServer() {
   for (const url of ['/blog/elafgift-2028', '/blog/hvornaar-er-stroemmen-billigst',
                      '/blog/groennest-og-dyrest', '/blog/elafgift-og-spotpris', '/blog',
                      '/tariffer', '/automation', '/api',
-                     '/om-elpriser', '/download', '/prognose', '/dk1', '/dk2', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce', '/at/strompreis', '/ch/strompreis', '/be/stroomprijs', '/be/prix-electricite', '/ie/electricity-price', '/cz/ceny-elektriny', '/norden']) {
+                     '/om-elpriser', '/download', '/prognose', '/dk1', '/dk2', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce', '/at/strompreis', '/ch/strompreis', '/be/stroomprijs', '/be/prix-electricite', '/ie/electricity-price', '/cz/ceny-elektriny', '/ee/elektri-hind', '/norden']) {
     await test(`clean-URL: ${url} does NOT redirect to /#hash`, async () => {
       await page.goto(BASE + url);
       const state = await page.evaluate(() => ({
@@ -1660,9 +1661,9 @@ async function startServer() {
     await page.goto(BASE + '/');
     await page.waitForSelector('main[data-page="start"].active');
     const foot = await page.locator('footer .sf-all .sf-nets > div:last-child a').evaluateAll(a => a.map(x => x.getAttribute('href')));
-    assert.deepEqual(foot, ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce', '/at/strompreis', '/ch/strompreis', '/be/stroomprijs', '/ie/electricity-price', '/cz/ceny-elektriny']);
+    assert.deepEqual(foot, ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce', '/at/strompreis', '/ch/strompreis', '/be/stroomprijs', '/ie/electricity-price', '/cz/ceny-elektriny', '/ee/elektri-hind']);
     const dlg = await page.locator('#plMain section:last-of-type .pl-grp').evaluate(el => [...el.querySelectorAll('a')].map(a => [a.getAttribute('href'), a.textContent]));
-    assert.deepEqual(dlg, [['/no/strompris', 'Norge'], ['/sv/elpris', 'Sverige'], ['/fi/sahkon-hinta', 'Suomi'], ['/nl/stroomprijs', 'Nederland'], ['/de/strompreis', 'Deutschland'], ['/fr/prix-electricite', 'France'], ['/pl/ceny-pradu', 'Polska'], ['/it/prezzo-luce', 'Italia'], ['/at/strompreis', 'Österreich'], ['/ch/strompreis', 'Schweiz'], ['/be/stroomprijs', 'België · Belgique'], ['/ie/electricity-price', 'Ireland'], ['/cz/ceny-elektriny', 'Česko']], 'the net dialog lists the other thirteen (Danmark has its own group)');
+    assert.deepEqual(dlg, [['/no/strompris', 'Norge'], ['/sv/elpris', 'Sverige'], ['/fi/sahkon-hinta', 'Suomi'], ['/nl/stroomprijs', 'Nederland'], ['/de/strompreis', 'Deutschland'], ['/fr/prix-electricite', 'France'], ['/pl/ceny-pradu', 'Polska'], ['/it/prezzo-luce', 'Italia'], ['/at/strompreis', 'Österreich'], ['/ch/strompreis', 'Schweiz'], ['/be/stroomprijs', 'België · Belgique'], ['/ie/electricity-price', 'Ireland'], ['/cz/ceny-elektriny', 'Česko'], ['/ee/elektri-hind', 'Eesti']], 'the net dialog lists the other fourteen (Danmark has its own group)');
     assert.equal(await page.locator('#plMain a[href="/norden"]').count(), 1, 'and links the Norden overview');
     for (const url of ['/', '/dk1', '/automation', '/om-elpriser', '/blog', '/blog/groennest-og-dyrest', '/tariffer', '/api', '/no/strompris', '/nl/stroomprijs', '/norden']) {
       await page.goto(BASE + url);
@@ -1690,22 +1691,23 @@ async function startServer() {
   // server.js hands the browser the whole index.html, so this is the client side of the localisation (the same
   // chromeHTML the server renders from; test-zone-pages.mjs covers the server's HTML through the real function).
   const CHROME = {
-    '/no/strompris':   { lang: 'nb', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederland', 'Tyskland', 'Frankrike', 'Polen', 'Italia', 'Østerrike', 'Sveits', 'Belgia', 'Irland', 'Tsjekkia'], cur: 'Norge', place: 'Hvor er du?', land: 'Land', privacy: 'Personvern (på dansk)' },
-    '/sv/elpris':      { lang: 'sv', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederländerna', 'Tyskland', 'Frankrike', 'Polen', 'Italien', 'Österrike', 'Schweiz', 'Belgien', 'Irland', 'Tjeckien'], cur: 'Sverige', place: 'Var är du?', land: 'Länder', privacy: 'Integritet (på danska)' },
-    '/fi/sahkon-hinta': { lang: 'fi', nav: ['Tanska', 'Norja', 'Ruotsi', 'Suomi', 'Alankomaat', 'Saksa', 'Ranska', 'Puola', 'Italia', 'Itävalta', 'Sveitsi', 'Belgia', 'Irlanti', 'Tšekki'], cur: 'Suomi', place: 'Missä olet?', land: 'Maat', privacy: 'Tietosuoja (tanskaksi)' },
-    '/nl/stroomprijs': { lang: 'nl', nav: ['Denemarken', 'Noorwegen', 'Zweden', 'Finland', 'Nederland', 'Duitsland', 'Frankrijk', 'Polen', 'Italië', 'Oostenrijk', 'Zwitserland', 'België', 'Ierland', 'Tsjechië'], cur: 'Nederland', place: 'Waar ben je?', land: 'Landen', privacy: 'Privacy (in het Deens)' },
+    '/no/strompris':   { lang: 'nb', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederland', 'Tyskland', 'Frankrike', 'Polen', 'Italia', 'Østerrike', 'Sveits', 'Belgia', 'Irland', 'Tsjekkia', 'Eesti'], cur: 'Norge', place: 'Hvor er du?', land: 'Land', privacy: 'Personvern (på dansk)' },
+    '/sv/elpris':      { lang: 'sv', nav: ['Danmark', 'Norge', 'Sverige', 'Finland', 'Nederländerna', 'Tyskland', 'Frankrike', 'Polen', 'Italien', 'Österrike', 'Schweiz', 'Belgien', 'Irland', 'Tjeckien', 'Eesti'], cur: 'Sverige', place: 'Var är du?', land: 'Länder', privacy: 'Integritet (på danska)' },
+    '/fi/sahkon-hinta': { lang: 'fi', nav: ['Tanska', 'Norja', 'Ruotsi', 'Suomi', 'Alankomaat', 'Saksa', 'Ranska', 'Puola', 'Italia', 'Itävalta', 'Sveitsi', 'Belgia', 'Irlanti', 'Tšekki', 'Eesti'], cur: 'Suomi', place: 'Missä olet?', land: 'Maat', privacy: 'Tietosuoja (tanskaksi)' },
+    '/nl/stroomprijs': { lang: 'nl', nav: ['Denemarken', 'Noorwegen', 'Zweden', 'Finland', 'Nederland', 'Duitsland', 'Frankrijk', 'Polen', 'Italië', 'Oostenrijk', 'Zwitserland', 'België', 'Ierland', 'Tsjechië', 'Eesti'], cur: 'Nederland', place: 'Waar ben je?', land: 'Landen', privacy: 'Privacy (in het Deens)' },
     // The four EU pages (actual prices only): the footer's data line is the CC BY 4.0 credit to Bundesnetzagentur | SMARD.de plus the note that the data were changed.
-    '/de/strompreis': { lang: 'de', act: 1, nav: ['Dänemark', 'Norwegen', 'Schweden', 'Finnland', 'Niederlande', 'Deutschland', 'Frankreich', 'Polen', 'Italien', 'Österreich', 'Schweiz', 'Belgien', 'Irland', 'Tschechien'], cur: 'Deutschland', place: 'Wo bist du?', land: 'Länder', privacy: 'Datenschutz (auf Dänisch)' },
-    '/fr/prix-electricite': { lang: 'fr', act: 1, nav: ['Danemark', 'Norvège', 'Suède', 'Finlande', 'Pays-Bas', 'Allemagne', 'France', 'Pologne', 'Italie', 'Autriche', 'Suisse', 'Belgique', 'Irlande', 'Tchéquie'], cur: 'France', place: 'Où êtes-vous ?', land: 'Pays', privacy: 'Confidentialité (en danois)' },
-    '/pl/ceny-pradu': { lang: 'pl', act: 1, nav: ['Dania', 'Norwegia', 'Szwecja', 'Finlandia', 'Holandia', 'Niemcy', 'Francja', 'Polska', 'Włochy', 'Austria', 'Szwajcaria', 'Belgia', 'Irlandia', 'Czechy'], cur: 'Polska', place: 'Gdzie jesteś?', land: 'Kraje', privacy: 'Prywatność (po duńsku)' },
-    '/it/prezzo-luce': { lang: 'it', act: 1, nav: ['Danimarca', 'Norvegia', 'Svezia', 'Finlandia', 'Paesi Bassi', 'Germania', 'Francia', 'Polonia', 'Italia', 'Austria', 'Svizzera', 'Belgio', 'Irlanda', 'Repubblica Ceca'], cur: 'Italia', place: 'Dove sei?', land: 'Paesi', privacy: 'Privacy (in danese)' },
+    '/de/strompreis': { lang: 'de', act: 1, nav: ['Dänemark', 'Norwegen', 'Schweden', 'Finnland', 'Niederlande', 'Deutschland', 'Frankreich', 'Polen', 'Italien', 'Österreich', 'Schweiz', 'Belgien', 'Irland', 'Tschechien', 'Eesti'], cur: 'Deutschland', place: 'Wo bist du?', land: 'Länder', privacy: 'Datenschutz (auf Dänisch)' },
+    '/fr/prix-electricite': { lang: 'fr', act: 1, nav: ['Danemark', 'Norvège', 'Suède', 'Finlande', 'Pays-Bas', 'Allemagne', 'France', 'Pologne', 'Italie', 'Autriche', 'Suisse', 'Belgique', 'Irlande', 'Tchéquie', 'Eesti'], cur: 'France', place: 'Où êtes-vous ?', land: 'Pays', privacy: 'Confidentialité (en danois)' },
+    '/pl/ceny-pradu': { lang: 'pl', act: 1, nav: ['Dania', 'Norwegia', 'Szwecja', 'Finlandia', 'Holandia', 'Niemcy', 'Francja', 'Polska', 'Włochy', 'Austria', 'Szwajcaria', 'Belgia', 'Irlandia', 'Czechy', 'Eesti'], cur: 'Polska', place: 'Gdzie jesteś?', land: 'Kraje', privacy: 'Prywatność (po duńsku)' },
+    '/it/prezzo-luce': { lang: 'it', act: 1, nav: ['Danimarca', 'Norvegia', 'Svezia', 'Finlandia', 'Paesi Bassi', 'Germania', 'Francia', 'Polonia', 'Italia', 'Austria', 'Svizzera', 'Belgio', 'Irlanda', 'Repubblica Ceca', 'Eesti'], cur: 'Italia', place: 'Dove sei?', land: 'Paesi', privacy: 'Privacy (in danese)' },
     // Austria and Switzerland (German), Belgium (Dutch and French) and Ireland (English, ENTSO-E): the same chrome, their own country marked; the Belgian pages link Belgium to their own language's page.
-    '/at/strompreis': { lang: 'de', act: 1, nav: ['Dänemark', 'Norwegen', 'Schweden', 'Finnland', 'Niederlande', 'Deutschland', 'Frankreich', 'Polen', 'Italien', 'Österreich', 'Schweiz', 'Belgien', 'Irland', 'Tschechien'], cur: 'Österreich', place: 'Wo bist du?', land: 'Länder', privacy: 'Datenschutz (auf Dänisch)' },
-    '/ch/strompreis': { lang: 'de', act: 1, nav: ['Dänemark', 'Norwegen', 'Schweden', 'Finnland', 'Niederlande', 'Deutschland', 'Frankreich', 'Polen', 'Italien', 'Österreich', 'Schweiz', 'Belgien', 'Irland', 'Tschechien'], cur: 'Schweiz', place: 'Wo bist du?', land: 'Länder', privacy: 'Datenschutz (auf Dänisch)' },
-    '/be/stroomprijs': { lang: 'nl', act: 1, nav: ['Denemarken', 'Noorwegen', 'Zweden', 'Finland', 'Nederland', 'Duitsland', 'Frankrijk', 'Polen', 'Italië', 'Oostenrijk', 'Zwitserland', 'België', 'Ierland', 'Tsjechië'], cur: 'België', place: 'Waar ben je?', land: 'Landen', privacy: 'Privacy (in het Deens)' },
-    '/be/prix-electricite': { lang: 'fr', act: 1, be: '/be/prix-electricite', nav: ['Danemark', 'Norvège', 'Suède', 'Finlande', 'Pays-Bas', 'Allemagne', 'France', 'Pologne', 'Italie', 'Autriche', 'Suisse', 'Belgique', 'Irlande', 'Tchéquie'], cur: 'Belgique', place: 'Où êtes-vous ?', land: 'Pays', privacy: 'Confidentialité (en danois)' },
-    '/ie/electricity-price': { lang: 'en', act: 1, src: 'entsoe', nav: ['Denmark', 'Norway', 'Sweden', 'Finland', 'Netherlands', 'Germany', 'France', 'Poland', 'Italy', 'Austria', 'Switzerland', 'Belgium', 'Ireland', 'Czechia'], cur: 'Ireland', place: 'Where are you?', land: 'Countries', privacy: 'Privacy (in Danish)' },
-    '/cz/ceny-elektriny': { lang: 'cs', act: 1, nav: ['Dánsko', 'Norsko', 'Švédsko', 'Finsko', 'Nizozemsko', 'Německo', 'Francie', 'Polsko', 'Itálie', 'Rakousko', 'Švýcarsko', 'Belgie', 'Irsko', 'Česko'], cur: 'Česko', place: 'Kde jste?', land: 'Země', privacy: 'Ochrana soukromí (dánsky)' },
+    '/at/strompreis': { lang: 'de', act: 1, nav: ['Dänemark', 'Norwegen', 'Schweden', 'Finnland', 'Niederlande', 'Deutschland', 'Frankreich', 'Polen', 'Italien', 'Österreich', 'Schweiz', 'Belgien', 'Irland', 'Tschechien', 'Eesti'], cur: 'Österreich', place: 'Wo bist du?', land: 'Länder', privacy: 'Datenschutz (auf Dänisch)' },
+    '/ch/strompreis': { lang: 'de', act: 1, nav: ['Dänemark', 'Norwegen', 'Schweden', 'Finnland', 'Niederlande', 'Deutschland', 'Frankreich', 'Polen', 'Italien', 'Österreich', 'Schweiz', 'Belgien', 'Irland', 'Tschechien', 'Eesti'], cur: 'Schweiz', place: 'Wo bist du?', land: 'Länder', privacy: 'Datenschutz (auf Dänisch)' },
+    '/be/stroomprijs': { lang: 'nl', act: 1, nav: ['Denemarken', 'Noorwegen', 'Zweden', 'Finland', 'Nederland', 'Duitsland', 'Frankrijk', 'Polen', 'Italië', 'Oostenrijk', 'Zwitserland', 'België', 'Ierland', 'Tsjechië', 'Eesti'], cur: 'België', place: 'Waar ben je?', land: 'Landen', privacy: 'Privacy (in het Deens)' },
+    '/be/prix-electricite': { lang: 'fr', act: 1, be: '/be/prix-electricite', nav: ['Danemark', 'Norvège', 'Suède', 'Finlande', 'Pays-Bas', 'Allemagne', 'France', 'Pologne', 'Italie', 'Autriche', 'Suisse', 'Belgique', 'Irlande', 'Tchéquie', 'Eesti'], cur: 'Belgique', place: 'Où êtes-vous ?', land: 'Pays', privacy: 'Confidentialité (en danois)' },
+    '/ie/electricity-price': { lang: 'en', act: 1, src: 'entsoe', nav: ['Denmark', 'Norway', 'Sweden', 'Finland', 'Netherlands', 'Germany', 'France', 'Poland', 'Italy', 'Austria', 'Switzerland', 'Belgium', 'Ireland', 'Czechia', 'Eesti'], cur: 'Ireland', place: 'Where are you?', land: 'Countries', privacy: 'Privacy (in Danish)' },
+    '/cz/ceny-elektriny': { lang: 'cs', act: 1, nav: ['Dánsko', 'Norsko', 'Švédsko', 'Finsko', 'Nizozemsko', 'Německo', 'Francie', 'Polsko', 'Itálie', 'Rakousko', 'Švýcarsko', 'Belgie', 'Irsko', 'Česko', 'Eesti'], cur: 'Česko', place: 'Kde jste?', land: 'Země', privacy: 'Ochrana soukromí (dánsky)' },
+    '/ee/elektri-hind': { lang: 'et', act: 1, src: 'entsoe', nav: ['Taani', 'Norra', 'Rootsi', 'Soome', 'Madalmaad', 'Saksamaa', 'Prantsusmaa', 'Poola', 'Itaalia', 'Austria', 'Šveits', 'Belgia', 'Iirimaa', 'Tšehhi', 'Eesti'], cur: 'Eesti', place: 'Kus te asute?', land: 'Riigid', privacy: 'Privaatsus (taani keeles)' },
   };
   const DANISH_CHROME = /Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Mobilnavigation|Privatliv|Åbne datasæt|Alle guides|Forstå din elpris|Tariffer|Prognose$/m;
   const chromeState = p => p.evaluate(() => {
@@ -1741,16 +1743,16 @@ async function startServer() {
         assert.ok(Math.abs((s.chipBox.t + s.chipBox.h / 2) - (s.logoBox.t + s.logoBox.h / 2)) < 4 && s.navBottom < 80, `the header is one row: logo ${JSON.stringify(s.logoBox)}, chip ${JSON.stringify(s.chipBox)}, height ${s.navBottom}`);
         assert.deepEqual([s.chip, s.app, s.tabbar, s.dialog], [true, false, false, true], 'the place chip and its dialog, but no app button or tab bar');
         assert.deepEqual(s.actions, ['netChip'], 'the action row holds the place chip and nothing Danish');
-        // The picker: the fourteen countries by their own names, in this page's language for its heading, this page's country marked.
+        // The picker: the fifteen countries by their own names, in this page's language for its heading, this page's country marked.
         const multi = ['/no/strompris', '/sv/elpris'].includes(url);   // its own country is the zone group, not a row of the list
-        assert.equal(s.picker.links.length, multi ? 13 : 14); assert.equal(s.picker.title, s.picker.label, 'the dialog\'s heading is the chip\'s name');
+        assert.equal(s.picker.links.length, multi ? 14 : 15); assert.equal(s.picker.title, s.picker.label, 'the dialog\'s heading is the chip\'s name');
         assert.deepEqual(s.picker.links.filter(x => x[3]).map(x => x[2]), multi ? [] : [url], 'the page\'s own country is marked');
         assert.ok(s.picker.links.some(x => x[0] === 'Danmark' && x[2] === '/dk1'));
         assert.ok(!/Smart hjem|Hent appen|DK1 ·/.test(s.headText), `header text: ${s.headText}`);
         assert.ok(!DANISH_CHROME.test(s.footText), `footer text: ${s.footText}`);
         assert.equal(s.footers, 1); assert.equal(s.details, 0, 'a slim footer: no disclosure of net companies');
         assert.equal(s.footHeading, w.land);
-        assert.deepEqual(s.footLinks.map(x => x[0]), w.nav); assert.deepEqual(s.footLinks.map(x => x[1]), ['/dk1', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce', '/at/strompreis', '/ch/strompreis', w.be || '/be/stroomprijs', '/ie/electricity-price', '/cz/ceny-elektriny']);
+        assert.deepEqual(s.footLinks.map(x => x[0]), w.nav); assert.deepEqual(s.footLinks.map(x => x[1]), ['/dk1', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce', '/at/strompreis', '/ch/strompreis', w.be || '/be/stroomprijs', '/ie/electricity-price', '/cz/ceny-elektriny', '/ee/elektri-hind']);
         assert.deepEqual(s.footLinks.filter(x => x[2]).map(x => x[0]), [w.cur]);
         assert.deepEqual(s.privacy, [w.privacy, '/privatliv', 'da']);
         if (w.act && w.src === 'entsoe') { assert.match(s.footText, /© Elpriser\.org — .*ENTSO-E Transparency Platform — .*elpriser\.org.*Hugging Face/s); assert.ok(!/Energi Data Service|SMARD|CC BY/.test(s.footText), 'Ireland credits ENTSO-E only'); }
@@ -1931,7 +1933,7 @@ async function startServer() {
   });
 
 
-  // ── 9c. The ten EU pages: Germany, France, Poland, Northern Italy, Austria, Switzerland, Belgium (Dutch and French), Ireland, Czechia — actual day-ahead prices only ─────────────
+  // ── 9c. The ten EU pages: Germany, France, Poland, Northern Italy, Austria, Switzerland, Belgium (Dutch and French), Ireland, Czechia, Estonia — actual day-ahead prices only ─────────────
   const EUP = {
     '/de/strompreis':       { lang: 'de', key: 'de', unit: 'ct/kWh', h1: 'Strompreis in Deutschland: heute und morgen', title: 'Strompreis aktuell und morgen – Börsenstrompreis Deutschland', card: 'Heute und morgen', one: 'Heute', kind: 'Day-Ahead-Preis', now: /^Strompreis jetzt · (Sonn|Mon|Diens|Mittwoch|Donners|Frei|Sams)\w* um \d\d Uhr$/, chg: 'Änderung: Stundenmittel von elpriser.org berechnet' },
     '/fr/prix-electricite': { lang: 'fr', key: 'fr', unit: 'c€/kWh', h1: 'Prix de l’électricité en France : aujourd’hui et demain', title: 'Prix de l’électricité aujourd’hui et demain en France', card: 'Aujourd’hui et demain', one: 'Aujourd’hui', kind: 'Prix day-ahead', now: /^Prix de l’électricité maintenant · \w+ à \d\d h$/, chg: 'Modifié : moyennes horaires calculées par elpriser.org' },
@@ -1943,8 +1945,9 @@ async function startServer() {
     '/be/prix-electricite': { lang: 'fr', key: 'be', unit: 'c€/kWh', h1: 'Prix de l’électricité en Belgique\u00a0: aujourd’hui et demain', title: 'Prix de l’électricité aujourd’hui et demain en Belgique', card: 'Aujourd’hui et demain', one: 'Aujourd’hui', kind: 'Prix day-ahead', now: /^Prix de l’électricité maintenant · \w+ à \d\d h$/, chg: 'Modifié\u00a0: moyennes horaires calculées par elpriser.org' },
     '/ie/electricity-price': { lang: 'en', key: 'ie', unit: 'c/kWh', h1: 'Electricity price in Ireland: today and tomorrow', title: 'Electricity price today and tomorrow – Ireland (SEM)', card: 'Today and tomorrow', one: 'Today', kind: 'Day-ahead price', now: /^Electricity price now · \w+ at \d\d:00$/, chg: 'Changed: hourly means calculated by elpriser.org', src: 'entsoe' },
     '/cz/ceny-elektriny':   { lang: 'cs', key: 'cz', unit: 'ct/kWh', h1: 'Cena elektřiny v Česku: dnes a zítra', title: 'Cena elektřiny dnes a zítra – burzovní cena v Česku', card: 'Dnes a zítra', one: 'Dnes', kind: 'Cena na denním trhu', now: /^Cena elektřiny právě teď · \S+ \d\d:00$/, chg: 'Změna: hodinové průměry vypočítal elpriser.org' },
+    '/ee/elektri-hind':     { lang: 'et', key: 'ee', unit: 'senti/kWh', h1: 'Elektri hind Eestis: täna ja homme', title: 'Elektri hind täna ja homme – börsihind Eestis', card: 'Täna ja homme', one: 'Täna', kind: 'Päev-ette hind', now: /^Elektri hind praegu · \S+ kell \d\d:00$/, chg: 'Muudatus: tunnikeskmised arvutas elpriser.org', src: 'entsoe' },
   };
-  const FORECAST_WORDS = /prognos|vorhersage|prévision|previsi|prognoz|forecast|ennuste|\bmodel/i;
+  const FORECAST_WORDS = /prognos|vorhersage|prévision|previsi|prognoz|forecast|ennuste|prognoo|ennustus|\bmodel/i;
   for (const [url, w] of Object.entries(EUP)) {
     await test(`${url}: the Pris screen in ${w.lang}, one period (no pill), today and tomorrow, day-ahead type only, no forecast wording, the ${w.src === 'entsoe' ? 'ENTSO-E credit' : 'CC BY 4.0 credit'} and the change note`, async () => {
       euDays = 3;

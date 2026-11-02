@@ -1078,7 +1078,17 @@ var PRIS_I18N={
     byDay:'Den po dni',day:'Den',range:'Rozpětí',type:'Typ',none:'Ceny se teď nepodařilo načíst.',
     cap:'Burzovní cena z denního trhu bez DPH, daní a poplatků za distribuci',
     avg:'prům.',
-    act1:'Dnes',act2:'Dnes a zítra',cheapRest:'Nejlevnější hodina do konce dne'}
+    act1:'Dnes',act2:'Dnes a zítra',cheapRest:'Nejlevnější hodina do konce dne'},
+  et:{wd:['pühapäev','esmaspäev','teisipäev','kolmapäev','neljapäev','reede','laupäev'],ws:['P','E','T','K','N','R','L'],
+    mon:['jaan','veebr','märts','apr','mai','juuni','juuli','aug','sept','okt','nov','dets'],dot:'.',hs:':00',hh:1,
+    now:'Elektri hind praegu',hourly:'Elektri hind tundide kaupa',at:'kell',today:'täna',tomorrow:'homme',evening:'täna õhtul',
+    verdict:['Odav praegu','Keskmine praegu','Kallis praegu'],tier:['Odav','Keskmine','Kallis'],
+    cheaper:'Odavam',cheapest24:'Odavaim tund järgmise 24 tunni jooksul',lo:'odavaim tund',hi:'kalleim tund',
+    next:'Järgmised',p2:'2 päeva',p5:'5 päeva',p7:'7 päeva',period:'Periood',fc:'Päev-ette hind',actual:'Päev-ette hind',
+    byDay:'Päev päeva haaval',day:'Päev',range:'Vahemik',type:'Liik',none:'Hindu ei õnnestunud praegu laadida.',
+    cap:'Päev-ette börsihind, mis ei sisalda käibemaksu, makse ega võrgutasusid',
+    avg:'keskm.',
+    act1:'Täna',act2:'Täna ja homme',cheapRest:'Päeva ülejäänud osa odavaim tund'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1111,7 +1121,8 @@ var ZONES={
   ch:{name:'CH',city:'Schweiz',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
-  cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'}
+  cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
+  ee:{name:'EE',city:'Eesti',lang:'et',cur:'EUR',rate:1,sub:'senti',shift:1,src:'entsoe'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1225,7 +1236,14 @@ var PRIS_COUNTRIES={
     tx:{h1:'Cena elektřiny v Česku: dnes a zítra',
       zonesH:'Cena elektřiny v Česku',
       note:'Hodinové průměry čtvrthodinových cen vypočítal elpriser.org (údaje jsou oproti originálu upraveny). Ceny jsou v eurocentech za kWh, nikoli v korunách. Zdroj:',
-      cap:'Burzovní cena z denního trhu v eurocentech, bez DPH, daní a poplatků za distribuci'}}
+      cap:'Burzovní cena z denního trhu v eurocentech, bez DPH, daní a poplatků za distribuci'}},
+  'ee/elektri-hind':{lang:'et',cc:'ee',zones:['ee'],def:'ee',act:1,
+    name:'Eesti',da:'Estland',loc:'et_EE',qid:'Q191',
+    title:'Elektri hind täna ja homme – börsihind Eestis',
+    desc:'Elektri päev-ette börsihind Eestis tundide kaupa, täna ja homme, senti/kWh, käibemaksuta ja tasudeta. Allikas: ENTSO-E',
+    tx:{h1:'Elektri hind Eestis: täna ja homme',
+      zonesH:'Elektri hind Eestis',
+      note:'Tunnikeskmised 15-minutiliste hindade põhjal arvutas elpriser.org (andmeid on algallikaga võrreldes muudetud). Hinnad on eurosentides kilovatt-tunni kohta. Allikas:'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1311,7 +1329,11 @@ var CHROME_I18N={
   cs:{home:'elpriser.org – úvodní stránka',land:'Země',place:'Kde jste?',area:'Cenová zóna',oth:'Další země',back:'Zpět',find:'Hledat',none:'Žádné výsledky',close:'Zavřít',
     cn:{dk:'Dánsko',no:'Norsko',sv:'Švédsko',fi:'Finsko',nl:'Nizozemsko',de:'Německo',fr:'Francie',pl:'Polsko',it:'Itálie',at:'Rakousko',ch:'Švýcarsko',be:'Belgie',ie:'Irsko',cz:'Česko'},
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
-    chg:'Změna: hodinové průměry vypočítal elpriser.org'}
+    chg:'Změna: hodinové průměry vypočítal elpriser.org'},
+  et:{home:'elpriser.org avaleht',land:'Riigid',place:'Kus te asute?',area:'Hinnapiirkond',oth:'Muud riigid',back:'Tagasi',find:'Otsi',none:'Tulemusi ei leitud',close:'Sulge',
+    cn:{dk:'Taani',no:'Norra',sv:'Rootsi',fi:'Soome',nl:'Madalmaad',de:'Saksamaa',fr:'Prantsusmaa',pl:'Poola',it:'Itaalia',at:'Austria',ch:'Šveits',be:'Belgia',ie:'Iirimaa',cz:'Tšehhi',ee:'Eesti'},
+    privacy:'Privaatsus (taani keeles)',src:'Allikas:',and:'ja',open:'Avatud andmestikud:',
+    chg:'Muudatus: tunnikeskmised arvutas elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
@@ -1988,7 +2010,7 @@ function llmsEuropeBullet() {
   const ec = act.filter(([, C]) => ZONES[C.def].src === 'ec').map(([, C]) => C.da).filter((d, i, a) => a.indexOf(d) === i);
   const entsoe = act.filter(([, C]) => ZONES[C.def].src === 'entsoe').map(([, C]) => C.da);
   const kilde = 'Kilde: Bundesnetzagentur | SMARD.de via Energy-Charts.info, licens CC BY 4.0'
-    + (src.has('entsoe') ? `; ${entsoe.join(' og ')}: ENTSO-E Transparency Platform` : '');
+    + (src.has('entsoe') ? `; ${entsoe.length > 1 ? entsoe.slice(0, -1).join(', ') + ' og ' + entsoe[entsoe.length - 1] : entsoe[0]}: ENTSO-E Transparency Platform` : '');
   return `- [Elpriser i Europa](https://elpriser.org/de/strompreis): Spotpriser (day-ahead) i ${byCc.size} europæiske lande, time for time for i dag og i morgen på landets eget sprog. Kun faktiske børspriser — ingen prognose — uden moms, afgifter og nettariffer, så det er ikke, hvad en kunde betaler. ${kilde}; vi har ændret dataene (timegennemsnit af kvarterspriserne, for Polen desuden omregnet til grosze med Den Europæiske Centralbanks referencekurs): ${list.length > 1 ? list.slice(0, -1).join(', ') + ' og ' + list[list.length - 1] : list[0]}.`;
 }
 const fillLlms = txt => txt.replace('{{EUROPE_PAGES}}', () => llmsEuropeBullet());
