@@ -1,6 +1,6 @@
 {
   "_about": "The languages of the apps. 'da' is the source text, 'en' the fallback (Android values/, iOS development language). tier 1 must be complete once enforceTier1 is true (test-i18n.mjs); tier 2 is added as far as quality allows. 'ship' false keeps a language out of the build (locale_config, resourceConfigurations, CFBundleLocalizations) even when a file exists; a language that is not complete may only ship when its missing keys are meant to fall back to English. 'plural' lists the CLDR categories the language needs for the integer counts of the app (the generator copies 'other' into 'many' for languages where 'many' only covers fractions).",
-  "enforceTier1": false,
+  "enforceTier1": true,
   "source": "da",
   "fallback": "en",
   "languages": [
@@ -14,12 +14,12 @@
     { "code": "sv", "name": "Svenska", "tier": 1, "ship": true, "plural": ["one", "other"] },
     { "code": "nb", "name": "Norsk bokmål", "tier": 1, "ship": true, "plural": ["one", "other"], "aliases": ["nn", "no"] },
     { "code": "fi", "name": "Suomi", "tier": 1, "ship": true, "plural": ["one", "other"] },
-    { "code": "cs", "name": "Čeština", "tier": 2, "ship": true, "plural": ["one", "few", "many", "other"], "fillMany": true },
+    { "code": "cs", "name": "Čeština", "tier": 2, "ship": true, "plural": ["one", "few", "other"], "fillMany": true },
     { "code": "hu", "name": "Magyar", "tier": 2, "ship": true, "plural": ["one", "other"] },
     { "code": "sl", "name": "Slovenščina", "tier": 2, "ship": true, "plural": ["one", "two", "few", "other"] },
     { "code": "es", "name": "Español", "tier": 2, "ship": true, "plural": ["one", "other"], "fillMany": true },
     { "code": "pt", "name": "Português (Portugal)", "tier": 2, "ship": true, "plural": ["one", "other"], "fillMany": true },
-    { "code": "sk", "name": "Slovenčina", "tier": 2, "ship": true, "plural": ["one", "few", "many", "other"], "fillMany": true },
+    { "code": "sk", "name": "Slovenčina", "tier": 2, "ship": true, "plural": ["one", "few", "other"], "fillMany": true },
     { "code": "el", "name": "Ελληνικά", "tier": 2, "ship": true, "plural": ["one", "other"] },
     { "code": "ro", "name": "Română", "tier": 2, "ship": true, "plural": ["one", "few", "other"] },
     { "code": "bg", "name": "Български", "tier": 2, "ship": true, "plural": ["one", "other"] },

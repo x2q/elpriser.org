@@ -4,11 +4,32 @@
   "languages": [
     "da",
     "en",
+    "de",
+    "fr",
     "nl",
+    "it",
+    "pl",
     "sv",
     "nb",
     "nn",
     "no",
-    "fi"
+    "fi",
+    "cs",
+    "hu",
+    "sl",
+    "es",
+    "pt",
+    "sk",
+    "el",
+    "ro",
+    "bg",
+    "hr",
+    "sr",
+    "sr-Latn",
+    "et",
+    "lv",
+    "lt",
+    "mk",
+    "sq"
   ]
 }

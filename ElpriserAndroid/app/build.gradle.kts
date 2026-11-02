@@ -26,7 +26,7 @@ android {
         // androidResources.localeFilters, which was not in the cached 8.7 API); res/xml/locale_config.xml lists the five
         // languages shown in the per-app language picker. nn and no are fallbacks only: Android does not map Nynorsk or the
         // legacy 'no' code to nb, so values-nn/ and values-no/ are copies of values-nb/ (tested to stay identical).
-        resourceConfigurations += listOf("da", "en", "nl", "sv", "nb", "nn", "no", "fi")
+        resourceConfigurations += listOf("da", "en", "de", "fr", "nl", "it", "pl", "sv", "nb", "nn", "no", "fi", "cs", "hu", "sl", "es", "pt", "sk", "el", "ro", "bg", "hr", "sr", "b+sr+Latn", "et", "lv", "lt", "mk", "sq")
     }
 
     signingConfigs {
