@@ -402,7 +402,7 @@ async function main() {
     const it = await get('/it/prezzo-luce');
     check(!/id="zt-/.test(it.body) && !/data-zone=/.test(one(it.body, /<dialog id="netDialog"([\s\S]*?)<\/dialog>/)) && /Nord/.test(one(it.body, /<title>([^<]*)<\/title>/)), '/it/prezzo-luce: én zone (Nord), ingen faner');
     const ie = await get('/ie/electricity-price');
-    check(/Ireland and Northern Ireland trade as one market/.test(ie.body) && />SEMOpx<\/a>/.test(ie.body) && !/ENTSO/.test(ie.body) && /"sameAs":"https:\/\/www\.wikidata\.org\/wiki\/Q26"/.test(ie.body), '/ie/electricity-price: siger at SEM er Irland og Nordirland, krediterer SEMOpx (ikke længere ENTSO-E) og har spatialCoverage med begge');
+    check(/Ireland and Northern Ireland trade as one market/.test(ie.body) && />SEMOpx<\/a>/.test(ie.body) && !/ENTSO/.test(ie.body.replace(/<script[\s\S]*?<\/script>/g, '')) && /"sameAs":"https:\/\/www\.wikidata\.org\/wiki\/Q26"/.test(ie.body), '/ie/electricity-price: siger at SEM er Irland og Nordirland, krediterer SEMOpx (ikke længere ENTSO-E) og har spatialCoverage med begge');
     const be = [await get('/be/stroomprijs'), await get('/be/prix-electricite')];
     check(/<html lang="nl"/.test(be[0].body) && /<html lang="fr"/.test(be[1].body) && be[0].body.includes('data-key="be"') && be[1].body.includes('data-key="be"'), '/be/…: to sider, hollandsk og fransk, af den ene zone be');
     // Every zone a page of actual prices draws (the table's own list), once each.
