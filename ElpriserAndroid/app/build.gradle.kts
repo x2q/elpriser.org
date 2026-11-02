@@ -19,14 +19,14 @@ android {
         applicationId = "org.elpriser.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.0.3"
+        versionCode = 5
+        versionName = "1.1.0"
         // The app's own languages (Danish is the default values/ folder). Keeps library translations for other
         // locales out of the bundle. AGP 8.10 still has this property (deprecated in favour of
         // androidResources.localeFilters, which was not in the cached 8.7 API); res/xml/locale_config.xml lists the five
         // languages shown in the per-app language picker. nn and no are fallbacks only: Android does not map Nynorsk or the
         // legacy 'no' code to nb, so values-nn/ and values-no/ are copies of values-nb/ (tested to stay identical).
-        resourceConfigurations += listOf("da", "nb", "nn", "no", "sv", "fi", "nl")
+        resourceConfigurations += listOf("da", "en", "de", "fr", "nl", "it", "pl", "sv", "nb", "nn", "no", "fi", "cs", "hu", "sl", "es", "pt", "sk", "el", "ro", "bg", "hr", "sr", "b+sr+Latn", "et", "lv", "lt", "mk", "sq")
     }
 
     signingConfigs {
@@ -65,7 +65,9 @@ android {
             // calls the test task up to date when only that file changed.
             it.inputs.file(rootProject.file("../tests/golden/app-contract.json")).withPropertyName("goldenContract")
             // The unit tests read the Danish texts from this file; its text changes do not change any class, so declare it.
-            it.inputs.file("src/main/res/values/strings.xml").withPropertyName("danishStrings")
+            it.inputs.file("src/main/res/values-da/strings.xml").withPropertyName("danishStrings")
+            // The all-languages test reads every shipped strings.xml (default English, values-da and the other languages).
+            it.inputs.files(project.fileTree("src/main/res") { include("values*/strings.xml") }).withPropertyName("allStrings")
         }
     }
 }

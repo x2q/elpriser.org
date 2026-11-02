@@ -1,0 +1,365 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "nn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "no" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "sr-Latn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser"
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription" : {
+      "comment" : "iOS permission dialog text (NSLocationWhenInUseUsageDescription). Must say why the position is needed and that it is not stored.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser bruger din position én gang, når du trykker på “Brug min position”, til at finde dit netselskab. Positionen gemmes aldrig — kun netselskabets navn."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser uses your position once, when you tap “Use my position”, to find your grid company. The position is never stored — only the name of the grid company."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser verwendet den Standort einmal, wenn „Meinen Standort verwenden“ getippt wird, um den Netzbetreiber zu finden. Der Standort wird nie gespeichert – nur der Name des Netzbetreibers."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser utilise votre position une seule fois, lorsque vous appuyez sur « Utiliser ma position », pour trouver votre gestionnaire de réseau. La position n'est jamais enregistrée — seul le nom du gestionnaire l'est."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser gebruikt je locatie één keer, wanneer je op “Gebruik mijn locatie” tikt, om je netbeheerder te vinden. De locatie wordt nooit opgeslagen — alleen de naam van de netbeheerder."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser usa la posizione una sola volta, quando si tocca «Usa la mia posizione», per trovare il gestore di rete. La posizione non viene mai salvata, solo il nome del gestore."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser używa Twojej lokalizacji jednorazowo, po dotknięciu „Użyj mojej lokalizacji”, aby znaleźć operatora sieci. Lokalizacja nie jest nigdy zapisywana — tylko nazwa operatora sieci."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser använder din position en gång, när du trycker på ”Använd min position”, för att hitta ditt nätbolag. Positionen sparas aldrig – bara nätbolagets namn."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser bruker posisjonen din én gang, når du trykker «Bruk posisjonen min», for å finne nettselskapet ditt. Posisjonen lagres aldri – bare navnet på nettselskapet."
+          }
+        },
+        "nn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser bruker posisjonen din én gang, når du trykker «Bruk posisjonen min», for å finne nettselskapet ditt. Posisjonen lagres aldri – bare navnet på nettselskapet."
+          }
+        },
+        "no" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser bruker posisjonen din én gang, når du trykker «Bruk posisjonen min», for å finne nettselskapet ditt. Posisjonen lagres aldri – bare navnet på nettselskapet."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser käyttää sijaintiasi kerran, kun napautat “Käytä sijaintiani”, löytääkseen verkkoyhtiösi. Sijaintia ei koskaan tallenneta – vain verkkoyhtiön nimi."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser použije vaši polohu jednou, když klepnete na „Použít mou polohu“, aby našel vašeho distributora. Poloha se nikdy neukládá – pouze název distributora."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Az Elpriser egyszer használja a tartózkodási helyét, amikor a „Helyzetem használata” gombra koppint, hogy megtalálja a hálózatüzemeltetőjét. A helyzet soha nem kerül tárolásra – csak a hálózatüzemeltető neve."
+          }
+        },
+        "sl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser uporabi vašo lokacijo enkrat, ko tapnete „Uporabi mojo lokacijo“, da poišče vašega operaterja omrežja. Lokacija se nikoli ne shrani – shrani se le ime operaterja omrežja."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser usa tu ubicación una sola vez, cuando tocas “Usar mi ubicación”, para encontrar tu distribuidora. La ubicación nunca se guarda, solo el nombre de la distribuidora."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Elpriser usa a sua localização uma única vez, quando toca em “Usar a minha localização”, para encontrar o seu operador de rede. A localização nunca é guardada — apenas o nome do operador de rede."
+          }
+        },
+        "sk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser použije vašu polohu raz, keď ťuknete na „Použiť moju polohu“, aby našiel vášho distribútora. Poloha sa nikdy neukladá – iba názov distribútora."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Το Elpriser χρησιμοποιεί την τοποθεσία σας μία φορά, όταν πατάτε «Χρήση της τοποθεσίας μου», για να βρει τον διαχειριστή δικτύου σας. Η τοποθεσία δεν αποθηκεύεται ποτέ — μόνο το όνομα του διαχειριστή."
+          }
+        },
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser folosește locația ta o singură dată, când atingi „Folosește locația mea”, pentru a găsi operatorul tău de distribuție. Locația nu este salvată niciodată — doar numele operatorului."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser използва местоположението ви само веднъж, когато докоснете „Използване на местоположението ми“, за да намери вашия мрежов оператор. Местоположението никога не се запазва — само името на оператора."
+          }
+        },
+        "hr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser koristi vašu lokaciju jednom, kada dodirnete „Koristi moju lokaciju”, da bi pronašao vašeg operatora mreže. Lokacija se nikada ne sprema – sprema se samo naziv operatora mreže."
+          }
+        },
+        "sr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser користи вашу локацију једном, када додирнете „Користи моју локацију“, да би пронашао вашег оператора мреже. Локација се никада не чува – чува се само назив оператора мреже."
+          }
+        },
+        "sr-Latn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser koristi vašu lokaciju jednom, kada dodirnete „Koristi moju lokaciju“, da bi pronašao vašeg operatora mreže. Lokacija se nikada ne čuva – čuva se samo naziv operatora mreže."
+          }
+        },
+        "et" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser kasutab sinu asukohta üks kord, kui puudutad nuppu „Kasuta minu asukohta“, et leida sinu võrguettevõte. Asukohta ei salvestata kunagi — ainult võrguettevõtte nimi."
+          }
+        },
+        "lv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser izmanto jūsu atrašanās vietu vienu reizi, kad pieskaraties pogai „Izmantot manu atrašanās vietu”, lai atrastu jūsu tīkla operatoru. Atrašanās vieta nekad netiek saglabāta — tikai tīkla operatora nosaukums."
+          }
+        },
+        "lt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser naudoja jūsų buvimo vietą vieną kartą, kai paliečiate „Naudoti mano buvimo vietą“, kad rastų jūsų tinklo operatorių. Buvimo vieta niekada nesaugoma — tik tinklo operatoriaus pavadinimas."
+          }
+        },
+        "mk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser ја користи вашата локација само еднаш, кога ќе допрете „Користење на мојата локација“, за да го пронајде вашиот мрежен оператор. Локацијата никогаш не се зачувува — само името на операторот."
+          }
+        },
+        "sq" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elpriser e përdor vendndodhjen tuaj një herë, kur prekni «Përdorni vendndodhjen time», për të gjetur operatorin tuaj të rrjetit. Vendndodhja nuk ruhet kurrë — vetëm emri i operatorit të rrjetit."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

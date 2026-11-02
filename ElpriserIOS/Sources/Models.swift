@@ -7,7 +7,7 @@ struct Net: Identifiable, Hashable {
     let area: String
     let match: [String]
     var id: String { gln }
-    var areaLabel: String { area == "DK1" ? "DK1 Vest" : "DK2 Øst" }
+    var areaLabel: String { L10n.string(area == "DK1" ? "area_label_dk1" : "area_label_dk2") }
 }
 
 enum Nets {
@@ -97,23 +97,36 @@ struct LookupResult {
     let error: String?
 }
 
+/// The wall clock of the zone the app shows. The API's days and hours follow the zone's own clock (Copenhagen for DK1/DK2,
+/// Helsinki for FI, Lisbon for PT ...), so "today", "this hour" and the parsing of a day's date must too. The pure helpers take
+/// the zone and the instant explicitly (tests); the short forms use `zone` and now.
 enum Clock {
-    static let zone = TimeZone(identifier: "Europe/Copenhagen")!
-    static var calendar: Calendar {
+    static let copenhagen = TimeZone(identifier: "Europe/Copenhagen")!
+    /// The time zone of the price zone on screen. AppModel sets it whenever the zone changes; Denmark until then.
+    static var zone: TimeZone = copenhagen
+
+    static var calendar: Calendar { calendar(in: zone) }
+
+    /// Gregorian calendar on the zone's clock, in the locale of the numbers and dates (weekday numbers do not depend on it).
+    static func calendar(in tz: TimeZone) -> Calendar {
         var c = Calendar(identifier: .gregorian)
-        c.timeZone = zone
-        c.locale = Locale(identifier: "da_DK")
+        c.timeZone = tz
+        c.locale = L10n.locale
         return c
     }
-    static func today() -> String { format(Date()) }
-    static func hour() -> Int { calendar.component(.hour, from: Date()) }
-    static func format(_ d: Date) -> String {
-        let c = calendar.dateComponents([.year, .month, .day], from: d)
+
+    static func today(_ now: Date = Date(), in tz: TimeZone? = nil) -> String { format(now, in: tz) }
+    static func hour(_ now: Date = Date(), in tz: TimeZone? = nil) -> Int { calendar(in: tz ?? zone).component(.hour, from: now) }
+
+    static func format(_ d: Date, in tz: TimeZone? = nil) -> String {
+        let c = calendar(in: tz ?? zone).dateComponents([.year, .month, .day], from: d)
         return String(format: "%04d-%02d-%02d", c.year!, c.month!, c.day!)
     }
-    static func parse(_ s: String) -> Date {
+
+    /// A day's date ("2026-10-25") as noon on that day in the zone: noon is never a missing or doubled hour on a clock-change day.
+    static func parse(_ s: String, in tz: TimeZone? = nil) -> Date {
         let p = s.split(separator: "-").compactMap { Int($0) }
         guard p.count == 3 else { return Date() }
-        return calendar.date(from: DateComponents(year: p[0], month: p[1], day: p[2], hour: 12)) ?? Date()
+        return calendar(in: tz ?? zone).date(from: DateComponents(year: p[0], month: p[1], day: p[2], hour: 12)) ?? Date()
     }
 }

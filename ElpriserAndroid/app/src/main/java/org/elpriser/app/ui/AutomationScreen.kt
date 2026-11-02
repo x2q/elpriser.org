@@ -56,6 +56,8 @@ fun AutomationScreen(vm: AppViewModel, wide: Boolean) {
     val s = vm.settings
     val tx = rememberStrings()
     val today = vm.days().firstOrNull { it.date == Clock.today() }
+    // Prices are in kr/kWh in Denmark and in the zone's sub-unit elsewhere; amounts outside Denmark are written in the zone's currency.
+    val unit = PriceUnit.of(s.zone)
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(tx.get(R.string.nav_smart), tx.get(R.string.smart_subtitle))
         if (today == null) {
@@ -83,8 +85,9 @@ fun AutomationScreen(vm: AppViewModel, wide: Boolean) {
                 Column(Modifier.weight(1f)) {
                     Text(tx.get(R.string.savings_today).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, color = Color.White.copy(alpha = .85f))
                     Row(verticalAlignment = Alignment.Bottom) {
-                        Text(fmt(saveTotal), fontSize = 36.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1).sp, color = Color.White)
-                        Text(tx.get(R.string.unit_kr), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
+                        val (amount, amountUnit) = unit.savingParts(tx, saveTotal)
+                        Text(amount, fontSize = 36.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1).sp, color = Color.White, maxLines = 1)
+                        if (amountUnit != null) Text(amountUnit, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
                     }
                 }
                 Text(tx.plural(R.plurals.devices_active, active.size, active.size) + "\n" + tx.get(R.string.kwh_moved, fmt(kwhTotal, 1)),
@@ -93,7 +96,7 @@ fun AutomationScreen(vm: AppViewModel, wide: Boolean) {
         }
         val devices: @Composable () -> Unit = {
             plans.forEach { p ->
-                DeviceCard(p.d, p.hours, prices, p.avg, p.save, wide) { nd -> s.updateDevices(s.devices.map { if (it.key == nd.key) nd else it }) }
+                DeviceCard(p.d, p.hours, prices, p.avg, p.save, wide, unit) { nd -> s.updateDevices(s.devices.map { if (it.key == nd.key) nd else it }) }
             }
         }
         val export: @Composable () -> Unit = { ExportCard(vm, plans.filter { it.d.on }.map { it.d to it.hours }, today.date) }
@@ -115,7 +118,7 @@ fun AutomationScreen(vm: AppViewModel, wide: Boolean) {
 }
 
 @Composable
-private fun DeviceCard(d: Device, hours: Set<Int>, prices: List<Double>, avg: Double, save: Double, wide: Boolean, onChange: (Device) -> Unit) {
+private fun DeviceCard(d: Device, hours: Set<Int>, prices: List<Double>, avg: Double, save: Double, wide: Boolean, unit: PriceUnit, onChange: (Device) -> Unit) {
     val t = T
     val tx = rememberStrings()
     AppCard(Modifier.alpha(if (d.on) 1f else 0.72f), padding = androidx.compose.foundation.layout.PaddingValues(14.dp)) {
@@ -137,7 +140,7 @@ private fun DeviceCard(d: Device, hours: Set<Int>, prices: List<Double>, avg: Do
                 Stepper("+", tx.get(R.string.stepper_more)) { onChange(d.copy(hours = (d.hours + 1).coerceAtMost(12))) }
             }
             Box(Modifier.weight(1f))
-            Text(tx.get(R.string.device_avg_save, fmt(avg), fmt(save)), fontSize = 12.5.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold, color = t.text2, textAlign = TextAlign.End)
+            Text(tx.get(R.string.device_avg_save, unit.withUnit(tx, avg), unit.saving(tx, save)), fontSize = 12.5.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold, color = t.text2, textAlign = TextAlign.End)
         }
         Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             prices.indices.forEach { h ->
@@ -192,7 +195,9 @@ private fun ExportCard(vm: AppViewModel, plans: List<Pair<Device, Set<Int>>>, da
     var copied by remember { mutableStateOf(false) }
     val s = vm.settings
     val json = buildString {
-        append("{\n  \"area\": \"${s.effectiveArea}\", \"mode\": \"${s.mode}\", \"date\": \"$date\",\n  \"devices\": [\n")
+        // The keys are a fixed data format: "area" is the zone key upper-cased; outside Denmark the mode is plain "spot".
+        val mode = if (s.zone.isDanish) s.mode else "spot"
+        append("{\n  \"area\": \"${s.effectiveArea}\", \"mode\": \"$mode\", \"date\": \"$date\",\n  \"devices\": [\n")
         plans.forEachIndexed { i, (d, hrs) ->
             append("    { \"name\": \"${exportName(d.key)}\",\n      \"hours\": [${hrs.sorted().joinToString(", ")}] }${if (i < plans.size - 1) "," else ""}\n")
         }

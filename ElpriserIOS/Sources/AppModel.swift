@@ -7,7 +7,7 @@ enum AppTab: Hashable { case pris, smartHjem }
 @MainActor
 @Observable
 final class AppModel {
-    let settings = Settings()
+    let settings: Settings
     private let finder = PositionFinder()
 
     var tab: AppTab = .pris
@@ -16,38 +16,50 @@ final class AppModel {
     /// Stedsarket ("Hvor er du?"): åbner af sig selv ved første start og fra stedsknappen på Pris.
     var placeOpen = false
     /// Besked øverst i arket, når positionen ikke gav et netselskab.
-    var placeNote: String?
+    var placeNote: PlaceNote?
     /// Positionen slås op lige nu.
     private(set) var locating = false
 
     private(set) var loading = false
     private(set) var error: String?
-    /// Hentede serier pr. visning (mode).
+    /// Hentede serier pr. visning (mode); uden for Danmark kun "zone".
     private(set) var series: [String: Forecast] = [:]
     private(set) var co2: [String: [Int]] = [:]
     private var loadedAt = Date.distantPast
     private var loadedKey = ""
 
-    init() {
+    init(settings: Settings = Settings()) {
+        self.settings = settings
         placeOpen = !settings.onboarded
         #if DEBUG
         // Kun til skærmbilleder: -debugTab 0|1 (0 = Pris, 1 = Smart hjem; "automation"/"smart" duer også),
         // -debugPeriod 2|5 (10 er et gammelt navn for 5 døgn) (periodevælgeren på Pris).
         // place|dk1|dk2|search|note|settings åbner stedsarket (på rod, et område, en søgning, med en note, på Indstillinger); søgeordet er -debugPlaceQuery.
-        switch UserDefaults.standard.string(forKey: "debugTab") {
+        // -debugZone <key> (fx de, no2, se4) vælger en zone og lukker onboarding, som om brugeren havde valgt den.
+        let d = UserDefaults.standard
+        if let key = d.string(forKey: "debugZone"), let z = Zones.byKey(key) { settings.chooseZone(z); placeOpen = false }
+        switch d.string(forKey: "debugTab") {
         case "1", "automation", "smart", "smarthjem": tab = .smartHjem
-        case "place", "dk1", "dk2", "search", "settings": placeOpen = true
-        case "note": placeOpen = true; placeNote = PlaceNote.noPosition
+        case "place", "dk1", "dk2", "search", "settings", "countries", "norway": placeOpen = true
+        case "note": placeOpen = true; placeNote = .noPosition
         default: break
         }
-        if let p = PricePeriod(stored: UserDefaults.standard.string(forKey: "debugPeriod")) { period = p }
+        if let p = PricePeriod(stored: d.string(forKey: "debugPeriod")) { period = p }
         #endif
+        applyClock()
     }
 
-    /// Dage fra i dag og frem for en visning.
+    /// The zone on screen, and the clock that goes with it: "today" and "this hour" are the zone's own.
+    var zone: Zone { settings.zone }
+
+    private func applyClock() { Clock.zone = settings.zone.timeZone }
+
+    /// Dage fra i dag og frem for en visning. Uden for Danmark kun de sammenhængende dage fra i dag (`Api.daysFrom`).
     func days(_ mode: String? = nil) -> [Day] {
         let today = Clock.today()
-        return (series[mode ?? settings.mode]?.days ?? []).filter { $0.date >= today }
+        let all = series[mode ?? settings.mode]?.days ?? []
+        if !settings.isDanish { return Api.daysFrom(all, today: today) }
+        return all.filter { $0.date >= today }
     }
 
     /// Afgifterne i svaret for en visning (nil i et ældre svar uden `charges`).
@@ -61,36 +73,50 @@ final class AppModel {
     }
 
     func load(force: Bool = false) async {
-        let key = "\(settings.mode)|\(settings.effectiveArea)|\(settings.netGln ?? "-")"
+        applyClock()
+        let zone = settings.zone
+        let key = "\(settings.mode)|\(zone.key)|\(settings.netGln ?? "-")"
         if !force && key == loadedKey && Date().timeIntervalSince(loadedAt) < 20 * 60 && !series.isEmpty { return }
         loadedKey = key
-        let area = settings.effectiveArea
-        let gln = settings.netGln
-        var modes = [settings.mode, "inkl_alt", "spot_inkl"]
-        if gln != nil { modes.append("net_inkl_alt") }
-        modes = Array(NSOrderedSet(array: modes)) as! [String]
         loading = true
         error = nil
         do {
-            let results = try await withThrowingTaskGroup(of: (String, Forecast).self) { group -> [String: Forecast] in
-                for m in modes { group.addTask { (m, try await Api.forecast(area: area, mode: m, gln: gln)) } }
-                var out: [String: Forecast] = [:]
-                for try await (m, f) in group { out[m] = f }
-                return out
+            if zone.isDanish {
+                let area = settings.effectiveArea
+                let gln = settings.netGln
+                var modes = [settings.mode, "inkl_alt", "spot_inkl"]
+                if gln != nil { modes.append("net_inkl_alt") }
+                modes = Array(NSOrderedSet(array: modes)) as! [String]
+                let results = try await withThrowingTaskGroup(of: (String, Forecast).self) { group -> [String: Forecast] in
+                    for m in modes { group.addTask { (m, try await Api.forecast(area: area, mode: m, gln: gln)) } }
+                    var out: [String: Forecast] = [:]
+                    for try await (m, f) in group { out[m] = f }
+                    return out
+                }
+                guard zone == settings.zone else { return }
+                series = results
+                if let c = try? await Api.co2(area: area) { co2 = c }
+            } else {
+                let f = try await Api.zone(zone)
+                guard zone == settings.zone else { return }
+                series = ["zone": f]
+                co2 = [:]
             }
-            series = results
-            if let c = try? await Api.co2(area: area) { co2 = c }
             loadedAt = Date()
         } catch {
-            self.error = series.isEmpty
-                ? "Vi kunne ikke hente priserne. Tjek din forbindelse og prøv igen."
-                : "Viser de seneste priser — kunne ikke opdatere."
+            // A zone that answers 404 has no prices: nothing to show, nothing stale to fall back on.
+            if (error as? ApiError) == .status(404) {
+                series = [:]
+                self.error = L10n.string("error_no_prices_today")
+            } else {
+                self.error = series.isEmpty ? L10n.string("error_load_failed") : L10n.string("error_load_stale")
+            }
             loadedKey = ""
         }
         loading = false
     }
 
-    // MARK: netselskab og position
+    // MARK: netselskab, zone og position
 
     func openPlace() { placeNote = nil; placeOpen = true }
 
@@ -102,17 +128,33 @@ final class AppModel {
     }
 
     func choose(_ net: Net, how: String) {
+        let was = settings.zone
         settings.saveNet(net, how: how)
-        placeOpen = false
-        placeNote = nil
-        refresh(force: true)
+        changedZone(from: was)
     }
 
     /// "Uden netselskab" i et område: priser uden nettarif for DK1 eller DK2.
     func chooseWithoutNet(area: String) {
-        settings.forgetNet()
-        settings.updateArea(area)
-        settings.skipOnboarding()
+        let was = settings.zone
+        settings.chooseDanishArea(area)
+        changedZone(from: was)
+    }
+
+    /// A zone outside Denmark (or a Danish one without a grid company).
+    func chooseZone(_ zone: Zone) {
+        let was = settings.zone
+        settings.chooseZone(zone)
+        changedZone(from: was)
+    }
+
+    private func changedZone(from was: Zone) {
+        applyClock()
+        // Moving between Denmark and the rest, or between two zones outside Denmark: the old series must not show under the new
+        // zone's clock and chip while the answer is on its way. Inside Denmark the Danish screens keep what they had.
+        if !(was.isDanish && settings.zone.isDanish) {
+            series = [:]
+            co2 = [:]
+        }
         placeOpen = false
         placeNote = nil
         refresh(force: true)
@@ -131,14 +173,14 @@ final class AppModel {
         placeNote = nil
         Task {
             defer { locating = false }
-            guard let loc = await finder.current() else { placeNote = PlaceNote.noPosition; return }
+            guard let loc = await finder.current() else { placeNote = finder.wasDenied ? .denied : .noPosition; return }
             do {
                 let r = try await Api.lookup(lat: loc.coordinate.latitude, lng: loc.coordinate.longitude)
                 if let net = Nets.match(r.name) { choose(net, how: "gps") }
-                else if r.error == "outside_denmark" { placeNote = PlaceNote.outside }
-                else { placeNote = PlaceNote.noNet }
+                else if r.error == "outside_denmark" { placeNote = .outside }
+                else { placeNote = .noNet }
             } catch {
-                placeNote = PlaceNote.failed
+                placeNote = .failed
             }
         }
     }

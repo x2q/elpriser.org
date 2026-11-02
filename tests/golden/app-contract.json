@@ -1948,5 +1948,2240 @@
         159
       ]
     }
-  }
+  },
+  "zones": [
+    {
+      "key": "dk1",
+      "country": "DK",
+      "tz": "Europe/Copenhagen",
+      "currency": "DKK",
+      "sub": "øre",
+      "city": null,
+      "forecast": true
+    },
+    {
+      "key": "dk2",
+      "country": "DK",
+      "tz": "Europe/Copenhagen",
+      "currency": "DKK",
+      "sub": "øre",
+      "city": null,
+      "forecast": true
+    },
+    {
+      "key": "no1",
+      "country": "NO",
+      "tz": "Europe/Oslo",
+      "currency": "NOK",
+      "sub": "øre",
+      "city": "Oslo",
+      "forecast": true
+    },
+    {
+      "key": "no2",
+      "country": "NO",
+      "tz": "Europe/Oslo",
+      "currency": "NOK",
+      "sub": "øre",
+      "city": "Kristiansand",
+      "forecast": true
+    },
+    {
+      "key": "no3",
+      "country": "NO",
+      "tz": "Europe/Oslo",
+      "currency": "NOK",
+      "sub": "øre",
+      "city": "Trondheim",
+      "forecast": true
+    },
+    {
+      "key": "no4",
+      "country": "NO",
+      "tz": "Europe/Oslo",
+      "currency": "NOK",
+      "sub": "øre",
+      "city": "Tromsø",
+      "forecast": true
+    },
+    {
+      "key": "no5",
+      "country": "NO",
+      "tz": "Europe/Oslo",
+      "currency": "NOK",
+      "sub": "øre",
+      "city": "Bergen",
+      "forecast": true
+    },
+    {
+      "key": "se1",
+      "country": "SE",
+      "tz": "Europe/Stockholm",
+      "currency": "SEK",
+      "sub": "öre",
+      "city": "Luleå",
+      "forecast": true
+    },
+    {
+      "key": "se2",
+      "country": "SE",
+      "tz": "Europe/Stockholm",
+      "currency": "SEK",
+      "sub": "öre",
+      "city": "Sundsvall",
+      "forecast": true
+    },
+    {
+      "key": "se3",
+      "country": "SE",
+      "tz": "Europe/Stockholm",
+      "currency": "SEK",
+      "sub": "öre",
+      "city": "Stockholm",
+      "forecast": true
+    },
+    {
+      "key": "se4",
+      "country": "SE",
+      "tz": "Europe/Stockholm",
+      "currency": "SEK",
+      "sub": "öre",
+      "city": "Malmö",
+      "forecast": true
+    },
+    {
+      "key": "fi",
+      "country": "FI",
+      "tz": "Europe/Helsinki",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": true
+    },
+    {
+      "key": "nl",
+      "country": "NL",
+      "tz": "Europe/Amsterdam",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": true
+    },
+    {
+      "key": "de",
+      "country": "DE",
+      "tz": "Europe/Berlin",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "fr",
+      "country": "FR",
+      "tz": "Europe/Paris",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "pl",
+      "country": "PL",
+      "tz": "Europe/Warsaw",
+      "currency": "PLN",
+      "sub": "gr",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "it-n",
+      "country": "IT",
+      "tz": "Europe/Rome",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "at",
+      "country": "AT",
+      "tz": "Europe/Vienna",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "be",
+      "country": "BE",
+      "tz": "Europe/Brussels",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "ch",
+      "country": "CH",
+      "tz": "Europe/Zurich",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "cz",
+      "country": "CZ",
+      "tz": "Europe/Prague",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "hu",
+      "country": "HU",
+      "tz": "Europe/Budapest",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "si",
+      "country": "SI",
+      "tz": "Europe/Ljubljana",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "es",
+      "country": "ES",
+      "tz": "Europe/Madrid",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "pt",
+      "country": "PT",
+      "tz": "Europe/Lisbon",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "sk",
+      "country": "SK",
+      "tz": "Europe/Bratislava",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "gr",
+      "country": "GR",
+      "tz": "Europe/Athens",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "ro",
+      "country": "RO",
+      "tz": "Europe/Bucharest",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "bg",
+      "country": "BG",
+      "tz": "Europe/Sofia",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "hr",
+      "country": "HR",
+      "tz": "Europe/Zagreb",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "rs",
+      "country": "RS",
+      "tz": "Europe/Belgrade",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "ee",
+      "country": "EE",
+      "tz": "Europe/Tallinn",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "lv",
+      "country": "LV",
+      "tz": "Europe/Riga",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "lt",
+      "country": "LT",
+      "tz": "Europe/Vilnius",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "ie",
+      "country": "IE",
+      "tz": "Europe/Dublin",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "me",
+      "country": "ME",
+      "tz": "Europe/Podgorica",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "mk",
+      "country": "MK",
+      "tz": "Europe/Skopje",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    },
+    {
+      "key": "al",
+      "country": "AL",
+      "tz": "Europe/Tirane",
+      "currency": "EUR",
+      "sub": "ct",
+      "city": null,
+      "forecast": false
+    }
+  ],
+  "countries": [
+    {
+      "country": "DK",
+      "zones": [
+        "dk1",
+        "dk2"
+      ]
+    },
+    {
+      "country": "NO",
+      "zones": [
+        "no1",
+        "no2",
+        "no3",
+        "no4",
+        "no5"
+      ]
+    },
+    {
+      "country": "SE",
+      "zones": [
+        "se1",
+        "se2",
+        "se3",
+        "se4"
+      ]
+    },
+    {
+      "country": "FI",
+      "zones": [
+        "fi"
+      ]
+    },
+    {
+      "country": "NL",
+      "zones": [
+        "nl"
+      ]
+    },
+    {
+      "country": "DE",
+      "zones": [
+        "de"
+      ]
+    },
+    {
+      "country": "FR",
+      "zones": [
+        "fr"
+      ]
+    },
+    {
+      "country": "PL",
+      "zones": [
+        "pl"
+      ]
+    },
+    {
+      "country": "IT",
+      "zones": [
+        "it-n"
+      ]
+    },
+    {
+      "country": "AT",
+      "zones": [
+        "at"
+      ]
+    },
+    {
+      "country": "BE",
+      "zones": [
+        "be"
+      ]
+    },
+    {
+      "country": "CH",
+      "zones": [
+        "ch"
+      ]
+    },
+    {
+      "country": "CZ",
+      "zones": [
+        "cz"
+      ]
+    },
+    {
+      "country": "HU",
+      "zones": [
+        "hu"
+      ]
+    },
+    {
+      "country": "SI",
+      "zones": [
+        "si"
+      ]
+    },
+    {
+      "country": "ES",
+      "zones": [
+        "es"
+      ]
+    },
+    {
+      "country": "PT",
+      "zones": [
+        "pt"
+      ]
+    },
+    {
+      "country": "SK",
+      "zones": [
+        "sk"
+      ]
+    },
+    {
+      "country": "GR",
+      "zones": [
+        "gr"
+      ]
+    },
+    {
+      "country": "RO",
+      "zones": [
+        "ro"
+      ]
+    },
+    {
+      "country": "BG",
+      "zones": [
+        "bg"
+      ]
+    },
+    {
+      "country": "HR",
+      "zones": [
+        "hr"
+      ]
+    },
+    {
+      "country": "RS",
+      "zones": [
+        "rs"
+      ]
+    },
+    {
+      "country": "EE",
+      "zones": [
+        "ee"
+      ]
+    },
+    {
+      "country": "LV",
+      "zones": [
+        "lv"
+      ]
+    },
+    {
+      "country": "LT",
+      "zones": [
+        "lt"
+      ]
+    },
+    {
+      "country": "IE",
+      "zones": [
+        "ie"
+      ]
+    },
+    {
+      "country": "ME",
+      "zones": [
+        "me"
+      ]
+    },
+    {
+      "country": "MK",
+      "zones": [
+        "mk"
+      ]
+    },
+    {
+      "country": "AL",
+      "zones": [
+        "al"
+      ]
+    }
+  ],
+  "regionZone": {
+    "DK": "dk1",
+    "NO": "no1",
+    "SE": "se3",
+    "FI": "fi",
+    "NL": "nl",
+    "DE": "de",
+    "LU": "de",
+    "FR": "fr",
+    "PL": "pl",
+    "IT": "it-n",
+    "AT": "at",
+    "BE": "be",
+    "CH": "ch",
+    "CZ": "cz",
+    "HU": "hu",
+    "SI": "si",
+    "ES": "es",
+    "PT": "pt",
+    "SK": "sk",
+    "GR": "gr",
+    "RO": "ro",
+    "BG": "bg",
+    "HR": "hr",
+    "RS": "rs",
+    "EE": "ee",
+    "LV": "lv",
+    "LT": "lt",
+    "IE": "ie",
+    "ME": "me",
+    "MK": "mk",
+    "AL": "al"
+  },
+  "languageZone": {
+    "da": "dk1",
+    "nb": "no1",
+    "nn": "no1",
+    "no": "no1",
+    "sv": "se3",
+    "fi": "fi",
+    "nl": "nl",
+    "de": "de",
+    "fr": "fr",
+    "pl": "pl",
+    "it": "it-n",
+    "cs": "cz",
+    "hu": "hu",
+    "sl": "si",
+    "es": "es",
+    "pt": "pt",
+    "sk": "sk",
+    "el": "gr",
+    "ro": "ro",
+    "bg": "bg",
+    "hr": "hr",
+    "sr": "rs",
+    "et": "ee",
+    "lv": "lv",
+    "lt": "lt",
+    "mk": "mk",
+    "sq": "al"
+  },
+  "fallbackZone": "de",
+  "defaultZone": [
+    {
+      "region": "DK",
+      "language": "da",
+      "expect": "dk1"
+    },
+    {
+      "region": "DK",
+      "language": "en",
+      "expect": "dk1"
+    },
+    {
+      "region": "dk",
+      "language": "DA",
+      "expect": "dk1"
+    },
+    {
+      "region": "NO",
+      "language": "nb",
+      "expect": "no1"
+    },
+    {
+      "region": "SE",
+      "language": "sv",
+      "expect": "se3"
+    },
+    {
+      "region": "FI",
+      "language": "fi",
+      "expect": "fi"
+    },
+    {
+      "region": "NL",
+      "language": "nl",
+      "expect": "nl"
+    },
+    {
+      "region": "DE",
+      "language": "de",
+      "expect": "de"
+    },
+    {
+      "region": "LU",
+      "language": "fr",
+      "expect": "de"
+    },
+    {
+      "region": "LU",
+      "language": "de",
+      "expect": "de"
+    },
+    {
+      "region": "IT",
+      "language": "it",
+      "expect": "it-n"
+    },
+    {
+      "region": "AT",
+      "language": "de",
+      "expect": "at"
+    },
+    {
+      "region": "BE",
+      "language": "nl",
+      "expect": "be"
+    },
+    {
+      "region": "BE",
+      "language": "fr",
+      "expect": "be"
+    },
+    {
+      "region": "CH",
+      "language": "de",
+      "expect": "ch"
+    },
+    {
+      "region": "CH",
+      "language": "fr",
+      "expect": "ch"
+    },
+    {
+      "region": "CH",
+      "language": "it",
+      "expect": "ch"
+    },
+    {
+      "region": "ES",
+      "language": "es",
+      "expect": "es"
+    },
+    {
+      "region": "PT",
+      "language": "pt",
+      "expect": "pt"
+    },
+    {
+      "region": "GR",
+      "language": "el",
+      "expect": "gr"
+    },
+    {
+      "region": "HR",
+      "language": "hr",
+      "expect": "hr"
+    },
+    {
+      "region": "RS",
+      "language": "sr",
+      "expect": "rs"
+    },
+    {
+      "region": "",
+      "language": "da",
+      "expect": "dk1"
+    },
+    {
+      "region": "",
+      "language": "sv",
+      "expect": "se3"
+    },
+    {
+      "region": "",
+      "language": "nn",
+      "expect": "no1"
+    },
+    {
+      "region": "",
+      "language": "no",
+      "expect": "no1"
+    },
+    {
+      "region": "GB",
+      "language": "en",
+      "expect": "de"
+    },
+    {
+      "region": "US",
+      "language": "en",
+      "expect": "de"
+    },
+    {
+      "region": "",
+      "language": "",
+      "expect": "de"
+    },
+    {
+      "region": null,
+      "language": null,
+      "expect": "de"
+    },
+    {
+      "region": "JP",
+      "language": "ja",
+      "expect": "de"
+    },
+    {
+      "region": "BR",
+      "language": "pt",
+      "expect": "pt"
+    },
+    {
+      "region": "DK",
+      "language": "",
+      "expect": "dk1"
+    },
+    {
+      "region": "de",
+      "language": "de-AT",
+      "expect": "de"
+    },
+    {
+      "region": "",
+      "language": "pt-PT",
+      "expect": "pt"
+    },
+    {
+      "region": "",
+      "language": "SR-Latn",
+      "expect": "rs"
+    }
+  ],
+  "fxFallback": {
+    "EUR": 1,
+    "DKK": 7.4755,
+    "NOK": 10.84,
+    "SEK": 11.29,
+    "PLN": 4.39
+  },
+  "zoneResponses": [
+    {
+      "response": {
+        "zone": "no1",
+        "generated": "2026-10-10",
+        "trainedThrough": "2026-10-09",
+        "unit": "EUR/MWh",
+        "zoneInfo": {
+          "name": "NO1 Oslo",
+          "country": "NO",
+          "currency": "NOK",
+          "rate": 10.84,
+          "rateDate": "2026-10-09",
+          "rateSource": "ecb"
+        },
+        "days": [
+          {
+            "date": "2026-10-09",
+            "type": "actual",
+            "prices": [
+              {
+                "hour": 0,
+                "eur_mwh": 50
+              },
+              {
+                "hour": 1,
+                "eur_mwh": 51
+              },
+              {
+                "hour": 2,
+                "eur_mwh": 52
+              },
+              {
+                "hour": 3,
+                "eur_mwh": 53
+              },
+              {
+                "hour": 4,
+                "eur_mwh": 54
+              },
+              {
+                "hour": 5,
+                "eur_mwh": 55
+              },
+              {
+                "hour": 6,
+                "eur_mwh": 56
+              },
+              {
+                "hour": 7,
+                "eur_mwh": 57
+              },
+              {
+                "hour": 8,
+                "eur_mwh": 58
+              },
+              {
+                "hour": 9,
+                "eur_mwh": 59
+              },
+              {
+                "hour": 10,
+                "eur_mwh": 60
+              },
+              {
+                "hour": 11,
+                "eur_mwh": 61
+              },
+              {
+                "hour": 12,
+                "eur_mwh": 62
+              },
+              {
+                "hour": 13,
+                "eur_mwh": 63
+              },
+              {
+                "hour": 14,
+                "eur_mwh": 64
+              },
+              {
+                "hour": 15,
+                "eur_mwh": 65
+              },
+              {
+                "hour": 16,
+                "eur_mwh": 66
+              },
+              {
+                "hour": 17,
+                "eur_mwh": 67
+              },
+              {
+                "hour": 18,
+                "eur_mwh": 68
+              },
+              {
+                "hour": 19,
+                "eur_mwh": 69
+              },
+              {
+                "hour": 20,
+                "eur_mwh": 70
+              },
+              {
+                "hour": 21,
+                "eur_mwh": 71
+              },
+              {
+                "hour": 22,
+                "eur_mwh": 72
+              },
+              {
+                "hour": 23,
+                "eur_mwh": 73
+              }
+            ]
+          },
+          {
+            "date": "2026-10-10",
+            "type": "actual",
+            "prices": [
+              {
+                "hour": 0,
+                "eur_mwh": 60
+              },
+              {
+                "hour": 1,
+                "eur_mwh": 62
+              },
+              {
+                "hour": 2,
+                "eur_mwh": 64
+              },
+              {
+                "hour": 3,
+                "eur_mwh": 66
+              },
+              {
+                "hour": 4,
+                "eur_mwh": 68
+              },
+              {
+                "hour": 5,
+                "eur_mwh": 70
+              },
+              {
+                "hour": 6,
+                "eur_mwh": 72
+              },
+              {
+                "hour": 7,
+                "eur_mwh": 74
+              },
+              {
+                "hour": 8,
+                "eur_mwh": 76
+              },
+              {
+                "hour": 9,
+                "eur_mwh": 78
+              },
+              {
+                "hour": 10,
+                "eur_mwh": 80
+              },
+              {
+                "hour": 11,
+                "eur_mwh": 82
+              },
+              {
+                "hour": 12,
+                "eur_mwh": 84
+              },
+              {
+                "hour": 13,
+                "eur_mwh": 86
+              },
+              {
+                "hour": 14,
+                "eur_mwh": 88
+              },
+              {
+                "hour": 15,
+                "eur_mwh": 90
+              },
+              {
+                "hour": 16,
+                "eur_mwh": 92
+              },
+              {
+                "hour": 17,
+                "eur_mwh": 94
+              },
+              {
+                "hour": 18,
+                "eur_mwh": 96
+              },
+              {
+                "hour": 19,
+                "eur_mwh": 98
+              },
+              {
+                "hour": 20,
+                "eur_mwh": 100
+              },
+              {
+                "hour": 21,
+                "eur_mwh": 102
+              },
+              {
+                "hour": 22,
+                "eur_mwh": 104
+              },
+              {
+                "hour": 23,
+                "eur_mwh": 106
+              }
+            ]
+          },
+          {
+            "date": "2026-10-11",
+            "type": "forecast",
+            "prices": [
+              {
+                "hour": 0,
+                "eur_mwh": 70,
+                "min_eur_mwh": 60,
+                "max_eur_mwh": 85
+              },
+              {
+                "hour": 1,
+                "eur_mwh": 71,
+                "min_eur_mwh": 61,
+                "max_eur_mwh": 86
+              },
+              {
+                "hour": 2,
+                "eur_mwh": 72,
+                "min_eur_mwh": 62,
+                "max_eur_mwh": 87
+              },
+              {
+                "hour": 3,
+                "eur_mwh": 73,
+                "min_eur_mwh": 63,
+                "max_eur_mwh": 88
+              },
+              {
+                "hour": 4,
+                "eur_mwh": 74,
+                "min_eur_mwh": 64,
+                "max_eur_mwh": 89
+              },
+              {
+                "hour": 5,
+                "eur_mwh": 75,
+                "min_eur_mwh": 65,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 6,
+                "eur_mwh": 76,
+                "min_eur_mwh": 66,
+                "max_eur_mwh": 91
+              },
+              {
+                "hour": 7,
+                "eur_mwh": 77,
+                "min_eur_mwh": 67,
+                "max_eur_mwh": 92
+              },
+              {
+                "hour": 8,
+                "eur_mwh": 78,
+                "min_eur_mwh": 68,
+                "max_eur_mwh": 93
+              },
+              {
+                "hour": 9,
+                "eur_mwh": 79,
+                "min_eur_mwh": 69,
+                "max_eur_mwh": 94
+              },
+              {
+                "hour": 10,
+                "eur_mwh": 80,
+                "min_eur_mwh": 70,
+                "max_eur_mwh": 95
+              },
+              {
+                "hour": 11,
+                "eur_mwh": 81,
+                "min_eur_mwh": 71,
+                "max_eur_mwh": 96
+              },
+              {
+                "hour": 12,
+                "eur_mwh": 82,
+                "min_eur_mwh": 72,
+                "max_eur_mwh": 97
+              },
+              {
+                "hour": 13,
+                "eur_mwh": 83,
+                "min_eur_mwh": 73,
+                "max_eur_mwh": 98
+              },
+              {
+                "hour": 14,
+                "eur_mwh": 84,
+                "min_eur_mwh": 74,
+                "max_eur_mwh": 99
+              },
+              {
+                "hour": 15,
+                "eur_mwh": 85,
+                "min_eur_mwh": 75,
+                "max_eur_mwh": 100
+              },
+              {
+                "hour": 16,
+                "eur_mwh": 86,
+                "min_eur_mwh": 76,
+                "max_eur_mwh": 101
+              },
+              {
+                "hour": 17,
+                "eur_mwh": 87,
+                "min_eur_mwh": 77,
+                "max_eur_mwh": 102
+              },
+              {
+                "hour": 18,
+                "eur_mwh": 88,
+                "min_eur_mwh": 78,
+                "max_eur_mwh": 103
+              },
+              {
+                "hour": 19,
+                "eur_mwh": 89,
+                "min_eur_mwh": 79,
+                "max_eur_mwh": 104
+              },
+              {
+                "hour": 20,
+                "eur_mwh": 90,
+                "min_eur_mwh": 80,
+                "max_eur_mwh": 105
+              },
+              {
+                "hour": 21,
+                "eur_mwh": 91,
+                "min_eur_mwh": 81,
+                "max_eur_mwh": 106
+              },
+              {
+                "hour": 22,
+                "eur_mwh": 92,
+                "min_eur_mwh": 82,
+                "max_eur_mwh": 107
+              },
+              {
+                "hour": 23,
+                "eur_mwh": 93,
+                "min_eur_mwh": 83,
+                "max_eur_mwh": 108
+              }
+            ]
+          },
+          {
+            "date": "2026-10-12",
+            "type": "forecast",
+            "prices": [
+              {
+                "hour": 0,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 1,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 2,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 4,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 5,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 6,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 7,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 8,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 9,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 10,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 11,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 12,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 13,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 14,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 15,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 16,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 17,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 18,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 19,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 20,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 21,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 22,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 23,
+                "eur_mwh": 1
+              }
+            ]
+          },
+          {
+            "date": "2026-10-13",
+            "type": "forecast",
+            "prices": [
+              {
+                "hour": 0,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 1,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 2,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 3,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 4,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 5,
+                "eur_mwh": null
+              },
+              {
+                "hour": 6,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 7,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 8,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 9,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 10,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 11,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 12,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 13,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 14,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 15,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 16,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 17,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 18,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 19,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 20,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 21,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 22,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 23,
+                "eur_mwh": 1
+              },
+              {
+                "hour": 24,
+                "eur_mwh": 9
+              }
+            ]
+          },
+          {
+            "date": "2026-10-14",
+            "type": "forecast",
+            "prices": [
+              {
+                "hour": 0,
+                "eur_mwh": 40,
+                "min_eur_mwh": 30,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 1,
+                "eur_mwh": -6,
+                "min_eur_mwh": null,
+                "max_eur_mwh": null
+              },
+              {
+                "hour": 2,
+                "eur_mwh": 38,
+                "min_eur_mwh": 30,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 3,
+                "eur_mwh": -8,
+                "min_eur_mwh": null,
+                "max_eur_mwh": null
+              },
+              {
+                "hour": 4,
+                "eur_mwh": 36,
+                "min_eur_mwh": 30,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 5,
+                "eur_mwh": -10,
+                "min_eur_mwh": null,
+                "max_eur_mwh": null
+              },
+              {
+                "hour": 6,
+                "eur_mwh": 34,
+                "min_eur_mwh": 30,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 7,
+                "eur_mwh": -12,
+                "min_eur_mwh": null,
+                "max_eur_mwh": null
+              },
+              {
+                "hour": 8,
+                "eur_mwh": 32,
+                "min_eur_mwh": 30,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 9,
+                "eur_mwh": -14,
+                "min_eur_mwh": null,
+                "max_eur_mwh": null
+              },
+              {
+                "hour": 10,
+                "eur_mwh": 30,
+                "min_eur_mwh": 30,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 11,
+                "eur_mwh": -16,
+                "min_eur_mwh": null,
+                "max_eur_mwh": null
+              },
+              {
+                "hour": 12,
+                "eur_mwh": 28,
+                "min_eur_mwh": 30,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 13,
+                "eur_mwh": -18,
+                "min_eur_mwh": null,
+                "max_eur_mwh": null
+              },
+              {
+                "hour": 14,
+                "eur_mwh": 26,
+                "min_eur_mwh": 30,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 15,
+                "eur_mwh": -20,
+                "min_eur_mwh": null,
+                "max_eur_mwh": null
+              },
+              {
+                "hour": 16,
+                "eur_mwh": 24,
+                "min_eur_mwh": 30,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 17,
+                "eur_mwh": -22,
+                "min_eur_mwh": null,
+                "max_eur_mwh": null
+              },
+              {
+                "hour": 18,
+                "eur_mwh": 22,
+                "min_eur_mwh": 30,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 19,
+                "eur_mwh": -24,
+                "min_eur_mwh": null,
+                "max_eur_mwh": null
+              },
+              {
+                "hour": 20,
+                "eur_mwh": 20,
+                "min_eur_mwh": 30,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 21,
+                "eur_mwh": -26,
+                "min_eur_mwh": null,
+                "max_eur_mwh": null
+              },
+              {
+                "hour": 22,
+                "eur_mwh": 18,
+                "min_eur_mwh": 30,
+                "max_eur_mwh": 90
+              },
+              {
+                "hour": 23,
+                "eur_mwh": -28,
+                "min_eur_mwh": null,
+                "max_eur_mwh": null
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "zone": "no1",
+        "currency": "NOK",
+        "rate": 10.84,
+        "days": [
+          {
+            "date": "2026-10-09",
+            "actual": true,
+            "price": [
+              54.2,
+              55.284,
+              56.368,
+              57.452,
+              58.536,
+              59.62,
+              60.704,
+              61.788,
+              62.872,
+              63.956,
+              65.04,
+              66.124,
+              67.208,
+              68.292,
+              69.376,
+              70.46,
+              71.544,
+              72.628,
+              73.712,
+              74.796,
+              75.88,
+              76.964,
+              78.048,
+              79.132
+            ],
+            "lo": null,
+            "hi": null
+          },
+          {
+            "date": "2026-10-10",
+            "actual": true,
+            "price": [
+              65.04,
+              67.208,
+              69.376,
+              71.544,
+              73.712,
+              75.88,
+              78.048,
+              80.216,
+              82.384,
+              84.552,
+              86.72,
+              88.888,
+              91.056,
+              93.224,
+              95.392,
+              97.56,
+              99.728,
+              101.896,
+              104.064,
+              106.232,
+              108.4,
+              110.568,
+              112.736,
+              114.904
+            ],
+            "lo": null,
+            "hi": null
+          },
+          {
+            "date": "2026-10-11",
+            "actual": false,
+            "price": [
+              75.88,
+              76.964,
+              78.048,
+              79.132,
+              80.216,
+              81.3,
+              82.384,
+              83.468,
+              84.552,
+              85.636,
+              86.72,
+              87.804,
+              88.888,
+              89.972,
+              91.056,
+              92.14,
+              93.224,
+              94.308,
+              95.392,
+              96.476,
+              97.56,
+              98.644,
+              99.728,
+              100.812
+            ],
+            "lo": [
+              65.04,
+              66.124,
+              67.208,
+              68.292,
+              69.376,
+              70.46,
+              71.544,
+              72.628,
+              73.712,
+              74.796,
+              75.88,
+              76.964,
+              78.048,
+              79.132,
+              80.216,
+              81.3,
+              82.384,
+              83.468,
+              84.552,
+              85.636,
+              86.72,
+              87.804,
+              88.888,
+              89.972
+            ],
+            "hi": [
+              92.14,
+              93.224,
+              94.308,
+              95.392,
+              96.476,
+              97.56,
+              98.644,
+              99.728,
+              100.812,
+              101.896,
+              102.98,
+              104.064,
+              105.148,
+              106.232,
+              107.316,
+              108.4,
+              109.484,
+              110.568,
+              111.652,
+              112.736,
+              113.82,
+              114.904,
+              115.988,
+              117.072
+            ]
+          },
+          {
+            "date": "2026-10-14",
+            "actual": false,
+            "price": [
+              43.36,
+              -6.504,
+              41.192,
+              -8.672,
+              39.024,
+              -10.84,
+              36.856,
+              -13.008,
+              34.688,
+              -15.176,
+              32.52,
+              -17.344,
+              30.352,
+              -19.512,
+              28.184,
+              -21.68,
+              26.016,
+              -23.848,
+              23.848,
+              -26.016,
+              21.68,
+              -28.184,
+              19.512,
+              -30.352
+            ],
+            "lo": [
+              32.52,
+              null,
+              32.52,
+              null,
+              32.52,
+              null,
+              32.52,
+              null,
+              32.52,
+              null,
+              32.52,
+              null,
+              32.52,
+              null,
+              32.52,
+              null,
+              32.52,
+              null,
+              32.52,
+              null,
+              32.52,
+              null,
+              32.52,
+              null
+            ],
+            "hi": [
+              97.56,
+              null,
+              97.56,
+              null,
+              97.56,
+              null,
+              97.56,
+              null,
+              97.56,
+              null,
+              97.56,
+              null,
+              97.56,
+              null,
+              97.56,
+              null,
+              97.56,
+              null,
+              97.56,
+              null,
+              97.56,
+              null,
+              97.56,
+              null
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "response": {
+        "zone": "de",
+        "generated": "2026-10-10",
+        "trainedThrough": null,
+        "unit": "EUR/MWh",
+        "zoneInfo": {
+          "name": "DE-LU Germany and Luxembourg",
+          "country": "DE",
+          "currency": "EUR",
+          "rate": 1
+        },
+        "days": [
+          {
+            "date": "2026-10-10",
+            "type": "actual",
+            "prices": [
+              {
+                "hour": 0,
+                "eur_mwh": -12.5
+              },
+              {
+                "hour": 1,
+                "eur_mwh": -11.5
+              },
+              {
+                "hour": 2,
+                "eur_mwh": -10.5
+              },
+              {
+                "hour": 3,
+                "eur_mwh": -9.5
+              },
+              {
+                "hour": 4,
+                "eur_mwh": -8.5
+              },
+              {
+                "hour": 5,
+                "eur_mwh": -7.5
+              },
+              {
+                "hour": 6,
+                "eur_mwh": 89
+              },
+              {
+                "hour": 7,
+                "eur_mwh": 90.5
+              },
+              {
+                "hour": 8,
+                "eur_mwh": 92
+              },
+              {
+                "hour": 9,
+                "eur_mwh": 93.5
+              },
+              {
+                "hour": 10,
+                "eur_mwh": 95
+              },
+              {
+                "hour": 11,
+                "eur_mwh": 96.5
+              },
+              {
+                "hour": 12,
+                "eur_mwh": 98
+              },
+              {
+                "hour": 13,
+                "eur_mwh": 99.5
+              },
+              {
+                "hour": 14,
+                "eur_mwh": 101
+              },
+              {
+                "hour": 15,
+                "eur_mwh": 102.5
+              },
+              {
+                "hour": 16,
+                "eur_mwh": 104
+              },
+              {
+                "hour": 17,
+                "eur_mwh": 105.5
+              },
+              {
+                "hour": 18,
+                "eur_mwh": 107
+              },
+              {
+                "hour": 19,
+                "eur_mwh": 108.5
+              },
+              {
+                "hour": 20,
+                "eur_mwh": 110
+              },
+              {
+                "hour": 21,
+                "eur_mwh": 111.5
+              },
+              {
+                "hour": 22,
+                "eur_mwh": 113
+              },
+              {
+                "hour": 23,
+                "eur_mwh": 114.5
+              }
+            ]
+          },
+          {
+            "date": "2026-10-11",
+            "type": "actual",
+            "prices": [
+              {
+                "hour": 0,
+                "eur_mwh": 100
+              },
+              {
+                "hour": 1,
+                "eur_mwh": 99
+              },
+              {
+                "hour": 2,
+                "eur_mwh": 98
+              },
+              {
+                "hour": 3,
+                "eur_mwh": 97
+              },
+              {
+                "hour": 4,
+                "eur_mwh": 96
+              },
+              {
+                "hour": 5,
+                "eur_mwh": 95
+              },
+              {
+                "hour": 6,
+                "eur_mwh": 94
+              },
+              {
+                "hour": 7,
+                "eur_mwh": 93
+              },
+              {
+                "hour": 8,
+                "eur_mwh": 92
+              },
+              {
+                "hour": 9,
+                "eur_mwh": 91
+              },
+              {
+                "hour": 10,
+                "eur_mwh": 90
+              },
+              {
+                "hour": 11,
+                "eur_mwh": 89
+              },
+              {
+                "hour": 12,
+                "eur_mwh": 88
+              },
+              {
+                "hour": 13,
+                "eur_mwh": 87
+              },
+              {
+                "hour": 14,
+                "eur_mwh": 86
+              },
+              {
+                "hour": 15,
+                "eur_mwh": 85
+              },
+              {
+                "hour": 16,
+                "eur_mwh": 84
+              },
+              {
+                "hour": 17,
+                "eur_mwh": 83
+              },
+              {
+                "hour": 18,
+                "eur_mwh": 82
+              },
+              {
+                "hour": 19,
+                "eur_mwh": 81
+              },
+              {
+                "hour": 20,
+                "eur_mwh": 80
+              },
+              {
+                "hour": 21,
+                "eur_mwh": 79
+              },
+              {
+                "hour": 22,
+                "eur_mwh": 78
+              },
+              {
+                "hour": 23,
+                "eur_mwh": 77
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "zone": "de",
+        "currency": "EUR",
+        "rate": 1,
+        "days": [
+          {
+            "date": "2026-10-10",
+            "actual": true,
+            "price": [
+              -1.25,
+              -1.15,
+              -1.05,
+              -0.95,
+              -0.85,
+              -0.75,
+              8.9,
+              9.05,
+              9.2,
+              9.35,
+              9.5,
+              9.65,
+              9.8,
+              9.95,
+              10.1,
+              10.25,
+              10.4,
+              10.55,
+              10.7,
+              10.85,
+              11,
+              11.15,
+              11.3,
+              11.45
+            ],
+            "lo": null,
+            "hi": null
+          },
+          {
+            "date": "2026-10-11",
+            "actual": true,
+            "price": [
+              10,
+              9.9,
+              9.8,
+              9.7,
+              9.6,
+              9.5,
+              9.4,
+              9.3,
+              9.2,
+              9.1,
+              9,
+              8.9,
+              8.8,
+              8.7,
+              8.6,
+              8.5,
+              8.4,
+              8.3,
+              8.2,
+              8.1,
+              8,
+              7.9,
+              7.8,
+              7.7
+            ],
+            "lo": null,
+            "hi": null
+          }
+        ]
+      }
+    },
+    {
+      "response": {
+        "zone": "pl",
+        "generated": "2026-10-10",
+        "trainedThrough": null,
+        "unit": "EUR/MWh",
+        "zoneInfo": {
+          "name": "PL Poland",
+          "country": "PL",
+          "currency": "PLN"
+        },
+        "days": [
+          {
+            "date": "2026-10-10",
+            "type": "actual",
+            "prices": [
+              {
+                "hour": 0,
+                "eur_mwh": 90
+              },
+              {
+                "hour": 1,
+                "eur_mwh": 91
+              },
+              {
+                "hour": 2,
+                "eur_mwh": 92
+              },
+              {
+                "hour": 3,
+                "eur_mwh": 93
+              },
+              {
+                "hour": 4,
+                "eur_mwh": 94
+              },
+              {
+                "hour": 5,
+                "eur_mwh": 95
+              },
+              {
+                "hour": 6,
+                "eur_mwh": 96
+              },
+              {
+                "hour": 7,
+                "eur_mwh": 97
+              },
+              {
+                "hour": 8,
+                "eur_mwh": 98
+              },
+              {
+                "hour": 9,
+                "eur_mwh": 99
+              },
+              {
+                "hour": 10,
+                "eur_mwh": 100
+              },
+              {
+                "hour": 11,
+                "eur_mwh": 101
+              },
+              {
+                "hour": 12,
+                "eur_mwh": 102
+              },
+              {
+                "hour": 13,
+                "eur_mwh": 103
+              },
+              {
+                "hour": 14,
+                "eur_mwh": 104
+              },
+              {
+                "hour": 15,
+                "eur_mwh": 105
+              },
+              {
+                "hour": 16,
+                "eur_mwh": 106
+              },
+              {
+                "hour": 17,
+                "eur_mwh": 107
+              },
+              {
+                "hour": 18,
+                "eur_mwh": 108
+              },
+              {
+                "hour": 19,
+                "eur_mwh": 109
+              },
+              {
+                "hour": 20,
+                "eur_mwh": 110
+              },
+              {
+                "hour": 21,
+                "eur_mwh": 111
+              },
+              {
+                "hour": 22,
+                "eur_mwh": 112
+              },
+              {
+                "hour": 23,
+                "eur_mwh": 113
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "zone": "pl",
+        "currency": "PLN",
+        "rate": 4.39,
+        "days": [
+          {
+            "date": "2026-10-10",
+            "actual": true,
+            "price": [
+              39.51,
+              39.949,
+              40.388,
+              40.827,
+              41.266,
+              41.705,
+              42.144,
+              42.583,
+              43.022,
+              43.461,
+              43.9,
+              44.339,
+              44.778,
+              45.217,
+              45.656,
+              46.095,
+              46.534,
+              46.973,
+              47.412,
+              47.851,
+              48.29,
+              48.729,
+              49.168,
+              49.607
+            ],
+            "lo": null,
+            "hi": null
+          }
+        ]
+      }
+    }
+  ],
+  "zoneDays": [
+    {
+      "today": "2026-10-10",
+      "dates": [
+        "2026-10-09",
+        "2026-10-10",
+        "2026-10-11",
+        "2026-10-13"
+      ],
+      "expect": [
+        "2026-10-10",
+        "2026-10-11"
+      ]
+    },
+    {
+      "today": "2026-10-10",
+      "dates": [
+        "2026-10-09",
+        "2026-10-11"
+      ],
+      "expect": []
+    },
+    {
+      "today": "2026-10-10",
+      "dates": [
+        "2026-10-10"
+      ],
+      "expect": [
+        "2026-10-10"
+      ]
+    },
+    {
+      "today": "2026-10-10",
+      "dates": [
+        "2026-10-09"
+      ],
+      "expect": []
+    }
+  ]
 }

@@ -50,7 +50,7 @@ struct PriceBarChart: View {
         .frame(minHeight: plotHeight + topRow + bottomRow, maxHeight: flexible ? .infinity : plotHeight + topRow + bottomRow)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spec.summary)
-        .accessibilityValue(selected.flatMap { spec.bars.indices.contains($0) ? spec.bars[$0].tip : nil } ?? "")
+        .accessibilityValue(selected.flatMap { spec.bars.indices.contains($0) ? L10n.string("chart_selected", spec.bars[$0].tip) : nil } ?? "")
         .accessibilityAdjustableAction { dir in
             selected = stepSelection(current: selected, nowIndex: spec.nowIndex, count: spec.bars.count, forward: dir == .increment)
         }
@@ -85,7 +85,7 @@ struct PriceBarChart: View {
             let r = ctx.resolve(Text(axis.label(v)).font(labelFont).foregroundStyle(T.text2))
             ctx.draw(r, at: CGPoint(x: plot.minX - 6, y: y(v)), anchor: .trailing)
         }
-        ctx.draw(ctx.resolve(Text("kr/kWh").font(small).foregroundStyle(T.text2)),
+        ctx.draw(ctx.resolve(Text(spec.unit.perKwh).font(small).foregroundStyle(T.text2)),
                  at: CGPoint(x: 0, y: topRow - 8), anchor: .bottomLeading)
 
         // tynd skillelinje ved hver midnat i 5-døgnsvisningen
@@ -98,7 +98,7 @@ struct PriceBarChart: View {
 
         // prognosen: tynd skillelinje med navn
         if let f = spec.forecastFrom {
-            let label = ctx.resolve(Text("Prognose").font(small).foregroundStyle(T.text2))
+            let label = ctx.resolve(Text(L10n.string("forecast_label")).font(small).foregroundStyle(T.text2))
             if f > 0 && f < n {
                 var p = Path(); p.move(to: CGPoint(x: cx(Double(f)), y: plot.minY)); p.addLine(to: CGPoint(x: cx(Double(f)), y: plot.maxY))
                 ctx.stroke(p, with: .color(T.text2.opacity(0.55)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))

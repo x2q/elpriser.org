@@ -8,6 +8,9 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 
+/** A non-2xx answer; [code] tells a missing zone (404) from a failure. */
+class HttpException(val code: Int) : java.io.IOException("HTTP $code")
+
 /** Klient til elpriser.org's åbne API. */
 object Api {
     private const val BASE = "https://elpriser.org/api"
@@ -23,7 +26,7 @@ object Api {
             conn.setRequestProperty("User-Agent", UA)
             conn.setRequestProperty("Accept", "application/json")
             val code = conn.responseCode
-            if (code !in 200..299) throw java.io.IOException("HTTP $code")
+            if (code !in 200..299) throw HttpException(code)
             JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
         } finally {
             conn.disconnect()
@@ -35,6 +38,58 @@ object Api {
         val params = mutableMapOf("area" to area, "mode" to mode)
         if (gln != null && mode.startsWith("net_")) params["gln"] = gln
         return parseForecast(get("/forecast", params), area, mode)
+    }
+
+    /**
+     * The day-ahead prices of a zone outside the Danish grid-company flow (GET /api/nordic?zone=): settled days and, in the Nordic zones and
+     * NL, a model forecast after them. 404 means the zone has no data: an empty series, which the screens show as "no prices yet".
+     */
+    suspend fun zone(zone: Zone): Forecast {
+        val j = try {
+            get("/nordic", mapOf("zone" to zone.key))
+        } catch (e: HttpException) {
+            if (e.code == 404) return Forecast(zone.key, "zone", emptyList(), null, null)
+            throw e
+        }
+        return parseZone(j, zone)
+    }
+
+    /**
+     * What a client makes of /api/nordic (tests/golden/zones.mjs parseZone): complete days only (24 hours with a price), prices in the zone's
+     * sub-unit per kWh (EUR/MWh × rate / 10; rate = zoneInfo.rate when it is above 0, else the fallback table), the band from
+     * min_eur_mwh / max_eur_mwh when both are there, `actual` from the day's type. Rounded to six decimals so every platform compares exactly.
+     * Adskilt fra netværket, så det kan enhedstestes.
+     */
+    fun parseZone(j: JSONObject, zone: Zone): Forecast {
+        val info = j.optJSONObject("zoneInfo")
+        val currency = info?.optString("currency", "")?.takeIf { it.isNotEmpty() } ?: zone.currency
+        val given = info?.optDouble("rate", Double.NaN) ?: Double.NaN
+        val rate = if (given > 0) given else (Zones.FX_FALLBACK[currency] ?: 1.0)
+        fun r6(x: Double) = Math.round(x * 1e6) / 1e6
+        val days = j.optJSONArray("days")
+        val out = ArrayList<Day>()
+        for (i in 0 until (days?.length() ?: 0)) {
+            val d = days!!.getJSONObject(i)
+            val arr = d.optJSONArray("prices")
+            val price = MutableList(24) { Double.NaN }
+            val lo = MutableList(24) { Double.NaN }
+            val hi = MutableList(24) { Double.NaN }
+            var band = false
+            for (k in 0 until (arr?.length() ?: 0)) {
+                val p = arr!!.getJSONObject(k)
+                val h = p.optInt("hour", -1)
+                if (h !in 0..23 || p.isNull("eur_mwh")) continue
+                val eur = p.optDouble("eur_mwh", Double.NaN)
+                if (eur.isNaN()) continue
+                price[h] = r6(eur * rate / 10)
+                if (!p.isNull("min_eur_mwh") && !p.isNull("max_eur_mwh")) {
+                    lo[h] = r6(p.getDouble("min_eur_mwh") * rate / 10); hi[h] = r6(p.getDouble("max_eur_mwh") * rate / 10); band = true
+                }
+            }
+            if (price.any { it.isNaN() }) continue
+            out.add(Day(d.getString("date"), d.optString("type") == "actual", price, if (band) lo else null, if (band) hi else null))
+        }
+        return Forecast(zone.key, "zone", out, null, j.optString("generated").ifEmpty { null })
     }
 
     /** Kun hele døgn (24 timepriser) tæller; båndet P10/P90 er valgfrit. Adskilt fra netværket, så det kan enhedstestes. */

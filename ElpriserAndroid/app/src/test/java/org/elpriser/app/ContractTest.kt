@@ -24,6 +24,9 @@ import java.io.File
  * suite goes red instead of the apps quietly disagreeing about a price or a net.
  */
 class ContractTest {
+    // Numbers follow the locale; these tests pin the Danish wording and numbers.
+    @get:org.junit.Rule val locale = LocaleRule(DANISH)
+
     private val golden: JSONObject = run {
         // Gradle runs unit tests with the module directory (app/) as working directory.
         val f = File("../../tests/golden/app-contract.json")

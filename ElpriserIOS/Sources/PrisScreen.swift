@@ -41,16 +41,22 @@ struct PrisScreen: View {
 
     @ViewBuilder private func content(_ shape: Shape, _ size: CGSize) -> some View {
         let s = vm.settings
+        let zone = s.zone
+        let unit = zone.unit
         let days = vm.days(s.prisMode)
         let today = Clock.today(), now = Clock.hour()
-        let summary = prisSummary(days: days, today: today, now: now, period: vm.period)
-        let chart = prisChart(period: vm.period, days: days, today: today, now: now)
+        let summary = prisSummary(days: days, today: today, now: now, period: vm.period, unit: unit)
+        let chart = prisChart(period: vm.period, days: days, today: today, now: now, unit: unit)
         let tablet = shape != .phone
         let pad: CGFloat = shape == .phone ? 20 : 28
+        // Outside Denmark: the day-ahead price alone, so the caption is plain text (no breakdown) and may carry a zone note.
         let caption = CaptionModel(
-            text: priceCaption(spot: s.prisIsSpot, hasNet: s.net != nil),
-            breakdown: priceBreakdown(mode: s.prisMode, days: days, today: today, now: now, spec: chart, selected: selected,
-                                      charges: vm.charges(s.prisMode), netName: s.net?.name),
+            text: zone.isDanish ? priceCaption(spot: s.prisIsSpot, hasNet: s.net != nil) : zoneCaption(),
+            note: zone.noteKey.map { L10n.string($0) },
+            breakdown: zone.isDanish
+                ? priceBreakdown(mode: s.prisMode, days: days, today: today, now: now, spec: chart, selected: selected,
+                                 charges: vm.charges(s.prisMode), netName: s.net?.name)
+                : nil,
             open: $breakdownOpen, onBack: { selected = nil })
         // Opdelingen gør hero-kortet højere; den højde lægges til, så prisen ikke skrumper og grafen ikke trykkes sammen.
         let extra: CGFloat = breakdownOpen && caption.breakdown != nil ? (selected != nil ? 380 : 330) : 0
@@ -67,8 +73,8 @@ struct PrisScreen: View {
                             if let e = vm.error { ErrorCard(text: e, onRetry: { vm.refresh(force: true) }) }
                             HStack(alignment: .top, spacing: 24) {
                                 VStack(spacing: 16) {
-                                    HeroCard(summary: summary, weekday: weekdayToday(today), caption: caption, compact: leftW < 400)
-                                    Tiles(summary: summary, tablet: true)
+                                    HeroCard(summary: summary, unit: unit, weekday: weekdayToday(today), caption: caption, compact: leftW < 400)
+                                    Tiles(summary: summary, unit: unit, tablet: true)
                                 }
                                 .frame(width: leftW, height: h, alignment: .top)
                                 VStack(spacing: 20) {
@@ -88,15 +94,15 @@ struct PrisScreen: View {
                             if let e = vm.error { ErrorCard(text: e, onRetry: { vm.refresh(force: true) }) }
                             if size.width >= 760 {
                                 HStack(alignment: .top, spacing: 16) {
-                                    HeroCard(summary: summary, weekday: weekdayToday(today), caption: caption)
-                                    Tiles(summary: summary, tablet: true, vertical: true).frame(width: 260)
+                                    HeroCard(summary: summary, unit: unit, weekday: weekdayToday(today), caption: caption)
+                                    Tiles(summary: summary, unit: unit, tablet: true, vertical: true).frame(width: 260)
                                 }
                             } else {
-                                HeroCard(summary: summary, weekday: weekdayToday(today), caption: caption)
+                                HeroCard(summary: summary, unit: unit, weekday: weekdayToday(today), caption: caption)
                             }
                             PeriodPill(wide: true)
                             ChartCard(spec: chart, tablet: true, selected: $selected, fill: true, caption: caption)
-                            if size.width < 760 { Tiles(summary: summary, tablet: true) }
+                            if size.width < 760 { Tiles(summary: summary, unit: unit, tablet: true) }
                         }
                         .frame(height: max(size.height - 80, 820) + extra)
                         .padding(.horizontal, pad).padding(.bottom, 20)
@@ -106,10 +112,10 @@ struct PrisScreen: View {
                     ScrollView {
                         VStack(spacing: 20) {
                             if let e = vm.error { ErrorCard(text: e, onRetry: { vm.refresh(force: true) }) }
-                            HeroPlain(summary: summary)
+                            HeroPlain(summary: summary, unit: unit)
                             PeriodPill(wide: false)
                             ChartCard(spec: chart, tablet: false, selected: $selected, fill: false, caption: caption)
-                            Tiles(summary: summary, tablet: false)
+                            Tiles(summary: summary, unit: unit, tablet: false)
                         }
                         .padding(.horizontal, pad).padding(.bottom, 16)
                     }
@@ -121,7 +127,7 @@ struct PrisScreen: View {
                     Group {
                         vm.loading
                             ? AnyView(LoadingView())
-                            : AnyView(ErrorCard(text: vm.error ?? "Ingen priser for i dag endnu.", onRetry: { vm.refresh(force: true) }))
+                            : AnyView(ErrorCard(text: vm.error ?? L10n.string("error_no_prices_today"), onRetry: { vm.refresh(force: true) }))
                     }
                     .padding(.horizontal, pad)
                 }
@@ -143,7 +149,7 @@ private struct PrisHeader: View {
 
     var body: some View {
         let s = vm.settings
-        let label = netChipLabel(net: s.net, area: s.effectiveArea)
+        let label = zoneChipLabel(zone: s.zone, net: s.net)
         HStack {
             HStack(spacing: 10) {
                 if !tablet {
@@ -166,7 +172,8 @@ private struct PrisHeader: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Hvor er du? \(label)")
+            .accessibilityLabel(L10n.string("open_settings_label"))
+            .accessibilityValue(label)
         }
     }
 }
@@ -197,14 +204,15 @@ private func heroSentenceText(_ s: PrisSummary, size: CGFloat, color: Color) -> 
 /// Telefonens hero: ligger direkte på baggrunden, som i designet.
 private struct HeroPlain: View {
     let summary: PrisSummary
+    let unit: PriceUnit
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Elpris lige nu · kl. \(pad(summary.hour))").font(.app(13, .semibold)).foregroundStyle(T.text2)
+            Text(L10n.string("hero_label", pad(summary.hour))).font(.app(13, .semibold)).foregroundStyle(T.text2)
             HStack(alignment: .lastTextBaseline, spacing: 8) {
-                Text(fmt(summary.price)).font(.app(76, .heavy)).tracking(-3).monospacedDigit()
+                Text(unit.number(summary.price)).font(.app(76, .heavy)).tracking(-3).monospacedDigit()
                     .lineLimit(1).minimumScaleFactor(0.5)
-                Text("kr/kWh").font(.app(18, .bold)).foregroundStyle(T.text2)
+                Text(unit.perKwh).font(.app(18, .bold)).foregroundStyle(T.text2).lineLimit(1).minimumScaleFactor(0.6)
             }
             .accessibilityElement(children: .combine)
             ViewThatFits(in: .horizontal) {
@@ -224,7 +232,9 @@ private struct HeroPlain: View {
 
 /// Tabletternes hero-kort, med prisvalget og dets forklaring i kortet.
 private struct HeroCard: View {
+    @Environment(AppModel.self) private var vm
     let summary: PrisSummary
+    let unit: PriceUnit
     let weekday: String
     let caption: CaptionModel
     /// Smalt hero-kort (telefon på langs): mindre tal og luft.
@@ -232,18 +242,18 @@ private struct HeroCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 12 : 18) {
-            Text("Elpris lige nu · \(weekday) kl. \(pad(summary.hour))").font(.app(14, .semibold)).foregroundStyle(T.text2)
+            Text(L10n.string("hero_label_weekday", weekday, pad(summary.hour))).font(.app(14, .semibold)).foregroundStyle(T.text2)
             HStack(alignment: .lastTextBaseline, spacing: 10) {
-                Text(fmt(summary.price)).font(.app(compact ? 76 : 104, .heavy)).tracking(compact ? -3 : -5).monospacedDigit()
+                Text(unit.number(summary.price)).font(.app(compact ? 76 : 104, .heavy)).tracking(compact ? -3 : -5).monospacedDigit()
                     .lineLimit(1).minimumScaleFactor(0.5)
-                Text("kr/kWh").font(.app(compact ? 18 : 22, .bold)).foregroundStyle(T.text2)
+                Text(unit.perKwh).font(.app(compact ? 18 : 22, .bold)).foregroundStyle(T.text2).lineLimit(1).minimumScaleFactor(0.6)
             }
             .accessibilityElement(children: .combine)
             VerdictPill(tier: summary.tier, large: true)
             heroSentenceText(summary, size: compact ? 16 : 18, color: T.text3).lineSpacing(compact ? 3 : 5)
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: 8) {
-                ModeSwitch(large: true)
+                if vm.settings.isDanish { ModeSwitch(large: true) }
                 caption.view
             }
             .padding(.top, 4)
@@ -266,13 +276,13 @@ private struct ModeSwitch: View {
     var body: some View {
         let spot = vm.settings.prisIsSpot
         HStack(spacing: 3) {
-            seg("Din pris", on: !spot) { vm.settings.updateView(0) }
-            seg("Spotpris", on: spot) { vm.settings.updateView(2) }
+            seg(L10n.string("mode_net_price"), on: !spot) { vm.settings.updateView(0) }
+            seg(L10n.string("mode_spot_price"), on: spot) { vm.settings.updateView(2) }
         }
         .padding(3)
         .background(T.surface2, in: RoundedRectangle(cornerRadius: large ? 16 : 14, style: .continuous))
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Prisvisning")
+        .accessibilityLabel(L10n.string("view_label"))
     }
 
     private func seg(_ title: String, on: Bool, _ action: @escaping () -> Void) -> some View {
@@ -308,7 +318,7 @@ private struct PeriodPill: View {
         .shadow(color: .black.opacity(0.08), radius: 7, y: 2)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Periode")
+        .accessibilityLabel(L10n.string("period_label"))
     }
 
     private func tab(_ p: PricePeriod) -> some View {
@@ -323,7 +333,7 @@ private struct PeriodPill: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(p.pillTitle)
-        .accessibilityHint("Viser priserne for \(p.title.lowercased())")
+        .accessibilityHint(L10n.string("a11y_period_hint", p.title.lowercased(with: L10n.textLocale)))
         .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
     }
 }
@@ -355,7 +365,7 @@ private struct ChartCard: View {
                 HStack(spacing: 12) {
                     Text(title).font(.app(14, .heavy)).lineLimit(1)
                     Spacer(minLength: 8)
-                    ModeSwitch()
+                    if vm.settings.isDanish { ModeSwitch() }
                 }
                 caption.view
             }
@@ -363,7 +373,7 @@ private struct ChartCard: View {
                 PriceBarChart(spec: spec, selected: $selected,
                               plotHeight: tablet ? 240 : 160, flexible: fill, large: tablet)
             } else {
-                Text("Priserne for perioden er ikke hentet endnu.")
+                Text(L10n.string("error_period_missing"))
                     .font(.app(14, .semibold)).foregroundStyle(T.text2)
                     .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)
                     .frame(maxHeight: fill ? .infinity : nil)
@@ -379,9 +389,9 @@ private struct ChartCard: View {
 private struct Legend: View {
     var body: some View {
         HStack(spacing: 16) {
-            item("Billig", PriceTier.low.color)
-            item("Middel", PriceTier.mid.color)
-            item("Dyr", PriceTier.high.color)
+            item(L10n.string("legend_cheap"), PriceTier.low.color)
+            item(L10n.string("legend_mid"), PriceTier.mid.color)
+            item(L10n.string("legend_high"), PriceTier.high.color)
         }
         .accessibilityHidden(true)
     }
@@ -397,6 +407,7 @@ private struct Legend: View {
 
 private struct Tiles: View {
     let summary: PrisSummary
+    let unit: PriceUnit
     let tablet: Bool
     var vertical = false
 
@@ -412,8 +423,8 @@ private struct Tiles: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(e.label).font(.app(12, .bold)).foregroundStyle(T.text2)
             HStack(alignment: .lastTextBaseline, spacing: 4) {
-                Text(fmt(e.price)).font(.app(20, .heavy)).monospacedDigit()
-                Text("kr · kl. \(pad(e.hour))").font(.app(12, .bold)).foregroundStyle(T.text2)
+                Text(unit.number(e.price)).font(.app(20, .heavy)).monospacedDigit()
+                Text(L10n.string("stat_price_hour", unit.short, pad(e.hour))).font(.app(12, .bold)).foregroundStyle(T.text2)
             }
             .lineLimit(1).minimumScaleFactor(0.8)
         }
@@ -428,9 +439,10 @@ private struct Tiles: View {
 /// Det, teksten under Din pris | Spotpris skal bruge: selve teksten, opdelingen (nil uden `charges`) og om den er foldet ud.
 struct CaptionModel {
     let text: String
+    var note: String? = nil
     let breakdown: PriceBreakdown?
     let open: Binding<Bool>
     let onBack: () -> Void
 
-    var view: some View { CaptionDisclosure(caption: text, breakdown: breakdown, open: open, onBack: onBack) }
+    var view: some View { CaptionDisclosure(caption: text, note: note, breakdown: breakdown, open: open, onBack: onBack) }
 }

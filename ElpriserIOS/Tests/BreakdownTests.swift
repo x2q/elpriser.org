@@ -4,7 +4,7 @@ import XCTest
 /// Prisopbygningen (teksten under Din pris | Spotpris foldet ud): regnestykket, afrundingen, teksterne og valget af time.
 /// Håndregnet prøvedata: system 0,07, transmission 0,054, elafgift 0,008, nettarif 0,33 og spot 0,85 kr/kWh ekskl. moms
 /// giver (0,85 + 0,07 + 0,054 + 0,008 + 0,33) × 1,25 = 1,64 kr/kWh, med moms 0,328.
-final class BreakdownTests: XCTestCase {
+final class BreakdownTests: DanishTestCase {
     private let charges = Charges(sys: 0.07, trans: 0.054, afg: 0.008, vat: 0.25)
     private let today = "2026-10-14"  // en onsdag
 

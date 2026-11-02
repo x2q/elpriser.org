@@ -126,7 +126,7 @@ struct ErrorCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(text).font(.app(14.5, .semibold)).lineSpacing(3)
-            if let onRetry { SoftButton(title: "Prøv igen", bg: T.brandSoft, fg: T.brand, action: onRetry) }
+            if let onRetry { SoftButton(title: L10n.string("action_retry"), bg: T.brandSoft, fg: T.brand, action: onRetry) }
         }
         .card()
     }

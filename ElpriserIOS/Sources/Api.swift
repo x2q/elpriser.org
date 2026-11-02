@@ -1,5 +1,8 @@
 import Foundation
 
+/// A non-2xx answer. 404 from /api/nordic means the zone has no prices (yet).
+enum ApiError: Error, Equatable { case status(Int) }
+
 /// Klient til elpriser.org's åbne API (samme endpoints som Android-appen).
 enum Api {
     #if DEBUG
@@ -24,6 +27,7 @@ enum Api {
         comps.queryItems = params.sorted { $0.key < $1.key }.map { URLQueryItem(name: $0.key, value: $0.value) }
         let (data, resp) = try await session.data(from: comps.url!)
         guard let http = resp as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            if let http = resp as? HTTPURLResponse { throw ApiError.status(http.statusCode) }
             throw URLError(.badServerResponse)
         }
         guard let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw URLError(.cannotParseResponse) }
@@ -35,6 +39,63 @@ enum Api {
         var params = ["area": area, "mode": mode]
         if let gln, mode.hasPrefix("net_") { params["gln"] = gln }
         return parseForecast(try await get("/forecast", params), area: area, mode: mode)
+    }
+
+    /// A zone outside Denmark: the day-ahead price per hour (EUR/MWh) with the zone's currency rate, settled days first, then the
+    /// model forecast where the zone has one. Prices come back in the zone's sub-unit per kWh.
+    static func zone(_ zone: Zone) async throws -> Forecast {
+        parseZone(try await get("/nordic", ["zone": zone.key]), zone: zone)
+    }
+
+    /// /api/nordic -> Forecast. Only complete days count (24 hours with a price); prices are EUR/MWh x rate / 10, the zone's
+    /// sub-unit per kWh; the rate is zoneInfo.rate when it is above zero, else the ECB fallback for the currency; the band comes
+    /// from min_eur_mwh / max_eur_mwh when both are there; `actual` from the day's type. Same rules as tests/golden/zones.mjs.
+    static func parseZone(_ j: [String: Any], zone: Zone) -> Forecast {
+        let info = j["zoneInfo"] as? [String: Any]
+        let currency = (info?["currency"] as? String) ?? zone.currency
+        let given = (info?["rate"] as? NSNumber)?.doubleValue ?? 0
+        let rate = given > 0 ? given : (Zones.fxFallback[currency] ?? 1)
+        var out: [Day] = []
+        for d in (j["days"] as? [[String: Any]]) ?? [] {
+            guard let date = d["date"] as? String, let type = d["type"] as? String else { continue }
+            var price = [Double](repeating: .nan, count: 24)
+            var lo = [Double](repeating: .nan, count: 24)
+            var hi = [Double](repeating: .nan, count: 24)
+            var band = false
+            for p in (d["prices"] as? [[String: Any]]) ?? [] {
+                guard let h = (p["hour"] as? NSNumber)?.intValue, (0..<24).contains(h),
+                      let v = (p["eur_mwh"] as? NSNumber)?.doubleValue else { continue }
+                price[h] = v * rate / 10
+                if let a = (p["min_eur_mwh"] as? NSNumber)?.doubleValue, let b = (p["max_eur_mwh"] as? NSNumber)?.doubleValue {
+                    lo[h] = a * rate / 10; hi[h] = b * rate / 10; band = true
+                }
+            }
+            if price.contains(where: { $0.isNaN }) { continue }
+            out.append(Day(date: date, actual: type == "actual", price: price, lo: band ? lo : nil, hi: band ? hi : nil))
+        }
+        return Forecast(area: zone.key.uppercased(), mode: "zone", days: out, model: nil, charges: nil)
+    }
+
+    /// The days from `today` on, consecutive: the feed opens on yesterday, and a hole must not close up (that would put
+    /// "tomorrow" on the wrong date). No `today` in the feed gives nothing.
+    static func daysFrom(_ days: [Day], today: String) -> [Day] {
+        var out: [Day] = []
+        guard let base = dayNumber(today) else { return [] }
+        for d in days.filter({ $0.date >= today }).sorted(by: { $0.date < $1.date }) {
+            guard dayNumber(d.date) == base + out.count else { break }
+            out.append(d)
+        }
+        return out
+    }
+
+    /// Calendar days since 1970-01-01 of a "YYYY-MM-DD" date, independent of any time zone.
+    private static func dayNumber(_ s: String) -> Int? {
+        let p = s.split(separator: "-").compactMap { Int($0) }
+        guard p.count == 3 else { return nil }
+        var c = Calendar(identifier: .gregorian)
+        c.timeZone = TimeZone(identifier: "UTC")!
+        guard let d = c.date(from: DateComponents(year: p[0], month: p[1], day: p[2], hour: 12)) else { return nil }
+        return Int((d.timeIntervalSince1970 / 86400).rounded(.down))
     }
 
     /// Kun hele døgn (24 timepriser) tæller; båndet P10/P90 er valgfrit. Adskilt fra netværket, så det kan enhedstestes.

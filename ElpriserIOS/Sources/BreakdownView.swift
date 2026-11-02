@@ -16,6 +16,8 @@ extension BreakdownPart {
 /// af timens pris ud under sig; uden (fx et ældre svar uden afgifterne) er den bare tekst, uden vinkel.
 struct CaptionDisclosure: View {
     let caption: String
+    /// One more line under the caption outside Denmark (DE-LU, IT-North); nil elsewhere.
+    var note: String? = nil
     let breakdown: PriceBreakdown?
     @Binding var open: Bool
     /// "Tilbage til nu": slipper den valgte søjle.
@@ -41,8 +43,8 @@ struct CaptionDisclosure: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(caption)
-                .accessibilityValue(open ? "Udvidet" : "Skjult")
-                .accessibilityHint(open ? "Skjuler, hvordan prisen er sammensat" : "Viser, hvordan prisen er sammensat")
+                .accessibilityValue(L10n.string(open ? "state_expanded" : "state_collapsed"))
+                .accessibilityHint(L10n.string(open ? "breakdown_fold_in" : "breakdown_fold_out"))
                 if open {
                     BreakdownPanel(breakdown: breakdown, onBack: onBack)
                         .transition(reduceMotion ? .identity : .opacity.combined(with: .move(edge: .top)))
@@ -50,8 +52,11 @@ struct CaptionDisclosure: View {
                 }
             }
         } else {
-            Text(caption).font(.app(12, .semibold)).foregroundStyle(T.text2)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(caption).font(.app(12, .semibold)).foregroundStyle(T.text2)
+                if let note { Text(note).font(.app(12, .medium)).foregroundStyle(T.text2) }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
@@ -71,7 +76,7 @@ private struct BreakdownPanel: View {
                     Button(action: onBack) {
                         HStack(spacing: 5) {
                             Image(systemName: "arrow.uturn.backward").font(.system(size: 11, weight: .bold))
-                            Text("Tilbage til nu").font(.app(12, .bold))
+                            Text(L10n.string("breakdown_back_to_now")).font(.app(12, .bold))
                         }
                         .foregroundStyle(T.brand)
                         .frame(minHeight: 44, alignment: .leading)
@@ -96,13 +101,13 @@ private struct BreakdownPanel: View {
                 }
                 Rectangle().fill(T.hairline).frame(height: 1).accessibilityHidden(true)
                 HStack(alignment: .firstTextBaseline) {
-                    Text("I alt").font(.app(13, .heavy)).foregroundStyle(T.text)
+                    Text(L10n.string("part_total")).font(.app(13, .heavy)).foregroundStyle(T.text)
                     Spacer(minLength: 8)
                     Text(breakdown.totalText).font(.app(13, .heavy)).monospacedDigit().foregroundStyle(T.text)
                         .lineLimit(1).fixedSize()
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("I alt, \(breakdown.totalText)")
+                .accessibilityLabel(L10n.string("a11y_total", breakdown.totalText))
             }
         }
         .padding(14)

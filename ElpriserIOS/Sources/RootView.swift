@@ -44,6 +44,7 @@ struct RootView: View {
         .onChange(of: model.settings.mode) { _, _ in model.refresh() }
         .onChange(of: model.settings.netGln) { _, _ in model.refresh() }
         .onChange(of: model.settings.area) { _, _ in model.refresh() }
+        .onChange(of: model.settings.zone.key) { _, _ in model.refresh() }
     }
 
     /// iPad: skinne til venstre og indholdet til højre, som i Android-tabletudgaven.
@@ -66,10 +67,10 @@ struct RootView: View {
     private var compactLayout: some View {
         @Bindable var m = model
         return TabView(selection: $m.tab) {
-            Tab("Pris", systemImage: "bolt", value: AppTab.pris) {
+            Tab(L10n.string("nav_price"), systemImage: "bolt", value: AppTab.pris) {
                 NavigationStack { PrisScreen().toolbar(.hidden, for: .navigationBar) }
             }
-            Tab("Smart hjem", systemImage: "slider.horizontal.3", value: AppTab.smartHjem) {
+            Tab(L10n.string("nav_smart"), systemImage: "slider.horizontal.3", value: AppTab.smartHjem) {
                 NavigationStack { AutomationScreen().toolbar(.hidden, for: .navigationBar) }
             }
         }

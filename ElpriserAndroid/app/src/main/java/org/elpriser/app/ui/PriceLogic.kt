@@ -6,14 +6,18 @@ import org.elpriser.app.data.Day
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.pow
+import java.text.DecimalFormatSymbols
+import java.util.Locale
+import org.elpriser.app.data.Zone
 
 /*
  * Ren logik til Pris-skærmen (ingen Android-afhængigheder, så den kan enhedstestes).
  * Indeks 0 i en serie er kl. 00 i dag; indeks 24 er kl. 00 i morgen.
  */
 
-/** Pris afrundet til øre, som den vises. Bruges, så vi aldrig skriver "billigere" om to ens viste priser. */
-private fun cents(v: Double) = Math.round(v * 100)
+/** Pris afrundet, som den vises (øre i kr/kWh med to decimaler; zonens underenhed med én). Bruges, så vi aldrig skriver "billigere" om to ens viste priser. */
+private fun shown(v: Double, unit: PriceUnit) = Math.round(v * 10.0.pow(unit.decimals))
 
 /* ── Periode ─────────────────────────────────────────────────────────────────────────────
  * To valg: 0 = "2 døgn" (i dag + i morgen), 1 = "5 døgn" (i dag fra kl. 00 + de næste fire døgn = 120 timer).
@@ -89,14 +93,20 @@ fun dayWord(tx: Strings, index: Int, days: List<Day>? = null): String {
 }
 
 /** Sætningen under prisen: den billigste time de næste 24 timer, hvis den er billigere end nu. */
-fun cheaperSentence(tx: Strings, vals: List<Double>, now: Int): String {
+fun cheaperSentence(tx: Strings, vals: List<Double>, now: Int, unit: PriceUnit = PriceUnit.Kroner): String {
     if (now !in vals.indices) return ""
     val end = minOf(vals.size, now + 24)
     var best = now
     for (i in now + 1 until end) if (vals[i] < vals[best]) best = i
-    return if (best == now || cents(vals[best]) >= cents(vals[now])) tx.get(R.string.cheaper_none)
-    else tx.get(R.string.cheaper_later, dayWord(tx, best), pad(best % 24), fmt(vals[best]))
+    return if (best == now || shown(vals[best], unit) >= shown(vals[now], unit)) tx.get(R.string.cheaper_none)
+    else tx.get(R.string.cheaper_later, dayWord(tx, best), pad(best % 24), unit.amount(tx, vals[best]))
 }
+
+/** Prisen med enhed, som tekster og bobler vil have den: "3,90 kr/kWh". */
+fun priceWithUnit(tx: Strings, v: Double, unit: PriceUnit = PriceUnit.Kroner) = unit.withUnit(tx, v)
+
+/** Et beløb i kroner: "3,90 kr". */
+fun amountKr(tx: Strings, v: Double, unit: PriceUnit = PriceUnit.Kroner) = unit.amount(tx, v)
 
 /** En af de to nøgletal-felter: etiket, pris og klokkeslæt. */
 class Extreme(val label: String, val price: Double, val hour: Int)
@@ -136,14 +146,14 @@ fun axisFor(vals: List<Double>): Axis {
 }
 
 /** Teksten i boblen: "I dag kl. 19 · 3,90 kr/kWh", "I morgen kl. 13 · …", og fra døgn 3 "søn 17. okt kl. 13 · 0,51 kr/kWh". */
-fun tooltipText(tx: Strings, days: List<Day>, vals: List<Double>, i: Int): String {
+fun tooltipText(tx: Strings, days: List<Day>, vals: List<Double>, i: Int, unit: PriceUnit = PriceUnit.Kroner): String {
     val d = days[i / 24]
     val whenText = when (i / 24) {
         0 -> tx.get(R.string.day_today_cap)
         1 -> tx.get(R.string.day_tomorrow_cap)
         else -> "${dayShort(tx, d)} ${dayMonth(tx, d)}"
     }
-    return tx.get(R.string.tooltip, whenText, pad(i % 24), fmt(vals[i]))
+    return tx.get(R.string.tooltip, whenText, pad(i % 24), unit.withUnit(tx, vals[i]))
 }
 
 /** Placering (0..1 langs aksen) og tekst for vandrette akseetiketter. */
@@ -185,9 +195,17 @@ fun priceCaption(tx: Strings, mode: String) = tx.get(
         "net_inkl_alt" -> R.string.caption_net
         "inkl_alt" -> R.string.caption_system
         "spot_inkl" -> R.string.caption_spot_incl
+        "zone" -> R.string.caption_zone
         else -> R.string.caption_spot_excl
     },
 )
+
+/** The one-line note under the caption in the zones whose price is not what the country's name suggests (DE-LU, IT-North); null elsewhere. */
+fun zoneNote(tx: Strings, zone: Zone): String? = when (zone.key) {
+    "de" -> tx.get(R.string.note_zone_de_lu)
+    "it-n" -> tx.get(R.string.note_zone_it_n)
+    else -> null
+}
 
 fun areaShort(tx: Strings, area: String) = tx.get(if (area == "DK1") R.string.area_west else R.string.area_east)
 
@@ -215,11 +233,12 @@ class Breakdown(val rows: List<BreakdownRow>, val totalTenths: Long, val totalTe
     fun barWeights(): List<Float> = barWeights(rows)
 }
 
-/** 853 -> "85,3", -3 -> "-0,3", 0 -> "0,0". Aldrig "-0,0". */
-fun tenthsText(t: Long): String {
-    val sign = if (t < 0) "-" else ""
+/** 853 -> "85,3", -3 -> "-0,3", 0 -> "0,0" (decimal separator and minus sign of the locale). Aldrig "-0,0". */
+fun tenthsText(t: Long, locale: Locale = Locale.getDefault()): String {
+    val sym = DecimalFormatSymbols.getInstance(locale)
+    val sign = if (t < 0) sym.minusSign.toString() else ""
     val a = abs(t)
-    return "$sign${a / 10},${a % 10}"
+    return "$sign${a / 10}${sym.decimalSeparator}${a % 10}"
 }
 
 fun barWeights(rows: List<BreakdownRow>): List<Float> {
@@ -279,7 +298,7 @@ fun breakdownOf(
     val heading =
         if (headingWhen.isEmpty()) tx.get(R.string.breakdown_heading_now, pad(hour))
         else tx.get(R.string.breakdown_heading_when, headingWhen, pad(hour))
-    return Breakdown(rows, total, tx.get(R.string.price_kwh, fmt(price)), heading)
+    return Breakdown(rows, total, priceWithUnit(tx, price), heading)
 }
 
 /** Dagsordene i overskriften for en valgt time: samme ord som boblen, men med småt ("i dag", "i morgen", "søn 18. okt"). */

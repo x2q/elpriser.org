@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import org.elpriser.app.R
+import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 @Immutable
@@ -91,12 +92,21 @@ fun tOf(v: Double, vals: List<Double>): Double {
     return if (hi == lo) 0.0 else (v - lo) / (hi - lo)
 }
 
-/** Dansk talformat: komma som decimaltegn og aldrig "-0,00". */
-fun fmt(v: Double?, d: Int = 2): String {
+/**
+ * A number as the user's locale writes it: its decimal separator and minus sign (comma in Danish and German, point in English, the
+ * real minus U+2212 in Swedish and Norwegian …), and never "-0,00". Digits stay 0-9, which every shipped language uses.
+ */
+fun fmt(v: Double?, d: Int = 2, locale: Locale = Locale.getDefault()): String {
     if (v == null || v.isNaN()) return "–"
     var s = String.format(Locale.US, "%.${d}f", v)
     if (Regex("^-0\\.?0*$").matches(s)) s = s.substring(1)
-    return s.replace('.', ',')
+    return localizeNumber(s, locale)
+}
+
+/** Swaps the "." and "-" of a plain ASCII number for the locale's decimal separator and minus sign. */
+fun localizeNumber(s: String, locale: Locale = Locale.getDefault()): String {
+    val sym = DecimalFormatSymbols.getInstance(locale)
+    return s.replace('.', sym.decimalSeparator).replace('-', sym.minusSign)
 }
 
 fun pad(h: Int) = h.toString().padStart(2, '0')

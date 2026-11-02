@@ -19,10 +19,11 @@ struct AutomationScreen: View {
 
     var body: some View {
         let s = vm.settings
+        let unit = s.zone.unit
         let today = vm.days().first { $0.date == Clock.today() }
         Adaptive { wide in
             VStack(spacing: 0) {
-                ScreenHeader(title: "Smart hjem", subtitle: "Kør efter de billigste timer i dag")
+                ScreenHeader(title: L10n.string("nav_smart"), subtitle: L10n.string("smart_subtitle"))
                 if let today {
                     let prices = today.price
                     let dayAvg = prices.reduce(0, +) / 24
@@ -39,24 +40,30 @@ struct AutomationScreen: View {
 
                     let summary = HStack {
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("BESPARELSE I DAG").font(.app(12, .bold)).tracking(1).foregroundStyle(.white.opacity(0.85))
-                            HStack(alignment: .lastTextBaseline, spacing: 4) {
-                                Text(fmt(saveTotal)).font(.app(36, .bold)).tracking(-1)
-                                Text("kr").font(.app(16, .bold))
+                            Text(L10n.string("savings_today").uppercased(with: L10n.textLocale)).font(.app(12, .bold)).tracking(1).foregroundStyle(.white.opacity(0.85))
+                            if unit.isSubUnit {
+                                // Outside Denmark: the amount in the zone's currency, written as the locale writes it ("1,23 €").
+                                Text(unit.money(saveTotal)).font(.app(36, .bold)).tracking(-1).foregroundStyle(.white)
+                                    .lineLimit(1).minimumScaleFactor(0.6)
+                            } else {
+                                HStack(alignment: .lastTextBaseline, spacing: 4) {
+                                    Text(fmt(saveTotal)).font(.app(36, .bold)).tracking(-1)
+                                    Text(L10n.string("unit_kr")).font(.app(16, .bold))
+                                }
+                                .foregroundStyle(.white)
                             }
-                            .foregroundStyle(.white)
                         }
                         Spacer()
-                        Text("\(active.count) \(active.count == 1 ? "enhed aktiv" : "enheder aktive")\n\(fmt(kwhTotal, 1)) kWh flyttet")
+                        Text("\(L10n.plural("devices_active", active.count))\n\(L10n.string("kwh_moved", fmt(kwhTotal, 1)))")
                             .font(.app(13, .semibold)).lineSpacing(3).multilineTextAlignment(.trailing).foregroundStyle(.white)
                     }
                     .padding(.horizontal, 20).padding(.vertical, 16)
                     .background(T.brandSolid, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
 
                     let devices = VStack(spacing: 10) {
-                        ForEach(plans) { p in DeviceCard(plan: p, prices: prices, wide: wide) }
+                        ForEach(plans) { p in DeviceCard(plan: p, prices: prices, unit: unit, wide: wide) }
                     }
-                    let export = ExportCard(plans: active.map { ($0.d, $0.hours) }, date: today.date)
+                    let export = ExportCard(plans: active.map { ($0.d, $0.hours) }, date: today.date, zone: s.zone, mode: s.mode)
 
                     if wide {
                         HStack(alignment: .top, spacing: 20) {
@@ -69,7 +76,7 @@ struct AutomationScreen: View {
                             .refreshable { await vm.load(force: true) }
                     }
                 } else {
-                    ScrollView { Group { vm.loading ? AnyView(LoadingView()) : AnyView(ErrorCard(text: vm.error ?? "Ingen priser for i dag endnu.", onRetry: { vm.refresh(force: true) })) }.padding(16) }
+                    ScrollView { Group { vm.loading ? AnyView(LoadingView()) : AnyView(ErrorCard(text: vm.error ?? L10n.string("error_no_prices_today"), onRetry: { vm.refresh(force: true) })) }.padding(16) }
                 }
             }
         }
@@ -81,6 +88,7 @@ private struct DeviceCard: View {
     @Environment(AppModel.self) private var vm
     let plan: Plan
     let prices: [Double]
+    let unit: PriceUnit
     let wide: Bool
 
     private func change(_ nd: Device) {
@@ -95,10 +103,10 @@ private struct DeviceCard: View {
                     .frame(width: 44, height: 44).background(T.brandSoft, in: Circle())
                 VStack(alignment: .leading, spacing: 0) {
                     Text(d.name).font(.app(16, .heavy))
-                    Text("\(fmt(d.kw, 1)) kW · billigste timer").font(.app(12.5, .semibold)).foregroundStyle(T.text2)
+                    Text(L10n.string("device_power_line", fmt(d.kw, 1))).font(.app(12.5, .semibold)).foregroundStyle(T.text2)
                 }
                 Spacer()
-                Toggle("\(d.name) automatik", isOn: Binding(get: { d.on }, set: { v in var x = d; x.on = v; change(x) }))
+                Toggle(L10n.string("a11y_device_toggle", d.name), isOn: Binding(get: { d.on }, set: { v in var x = d; x.on = v; change(x) }))
                     .labelsHidden().tint(T.brandSolid)
             }
             HStack {
@@ -106,15 +114,17 @@ private struct DeviceCard: View {
                     Button { var x = d; x.hours = max(1, d.hours - 1); change(x) } label: {
                         Text("−").font(.app(22, .bold)).foregroundStyle(T.text).frame(width: 40, height: 40)
                     }
-                    Text("\(d.hours) \(d.hours == 1 ? "time" : "timer")").font(.app(14, .heavy)).frame(width: 78)
+                    .accessibilityLabel(L10n.string("stepper_less"))
+                    Text(L10n.plural("hours_count", d.hours)).font(.app(14, .heavy)).lineLimit(1).minimumScaleFactor(0.7).frame(width: 78)
                     Button { var x = d; x.hours = min(12, d.hours + 1); change(x) } label: {
                         Text("+").font(.app(22, .bold)).foregroundStyle(T.text).frame(width: 40, height: 40)
                     }
+                    .accessibilityLabel(L10n.string("stepper_more"))
                 }
                 .buttonStyle(.plain)
                 .padding(2).background(T.surface2, in: Capsule())
                 Spacer()
-                Text("gns. \(fmt(plan.avg)) kr/kWh\nspar \(fmt(plan.save)) kr")
+                Text(L10n.string("device_avg_save", unit.withUnit(plan.avg), unit.money(plan.save)))
                     .font(.app(12.5, .semibold)).lineSpacing(2).multilineTextAlignment(.trailing).foregroundStyle(T.text2)
             }
             .padding(.top, 8)
@@ -141,9 +151,9 @@ private struct PlanCard: View {
     let rows: [(Device, Set<Int>)]
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(text: "Dagens plan")
+            SectionLabel(text: L10n.string("plan_title"))
             HStack(spacing: 10) {
-                Text("Pris").font(.app(12.5, .bold)).foregroundStyle(T.text2).frame(width: 96, alignment: .leading)
+                Text(L10n.string("plan_row_price")).font(.app(12.5, .bold)).foregroundStyle(T.text2).frame(width: 96, alignment: .leading)
                 HStack(spacing: 1) { ForEach(0..<24, id: \.self) { h in RoundedRectangle(cornerRadius: 3).fill(ramp(tOf(prices[h], prices))).frame(height: 22) } }
             }
             .padding(.top, 4)
@@ -162,13 +172,21 @@ private struct ExportCard: View {
     @Environment(AppModel.self) private var vm
     let plans: [(Device, Set<Int>)]
     let date: String
+    let zone: Zone
+    let mode: String
     @State private var copied = false
 
+    /// The device names in the exported JSON are a fixed data format for Home Assistant / Shelly (as on Android): they do not follow the
+    /// app's language, so a user's automation does not break when the language changes.
+    private static func exportName(_ key: String) -> String {
+        switch key { case "heatpump": "varmepumpe"; case "car": "elbil"; default: "vandvarmer" }
+    }
+
     private var json: String {
-        let s = vm.settings
-        var out = "{\n  \"area\": \"\(s.effectiveArea)\", \"mode\": \"\(s.mode)\", \"date\": \"\(date)\",\n  \"devices\": [\n"
+        // Keys as ever: "area" is the zone key in capitals (DK1, DK2, NO1, DE ...), "mode" "spot" outside Denmark.
+        var out = "{\n  \"area\": \"\(zone.key.uppercased())\", \"mode\": \"\(zone.isDanish ? mode : "spot")\", \"date\": \"\(date)\",\n  \"devices\": [\n"
         for (i, p) in plans.enumerated() {
-            out += "    { \"name\": \"\(p.0.name.lowercased())\",\n      \"hours\": [\(p.1.sorted().map(String.init).joined(separator: ", "))] }\(i < plans.count - 1 ? "," : "")\n"
+            out += "    { \"name\": \"\(Self.exportName(p.0.key))\",\n      \"hours\": [\(p.1.sorted().map(String.init).joined(separator: ", "))] }\(i < plans.count - 1 ? "," : "")\n"
         }
         return out + "  ]\n}"
     }
@@ -177,11 +195,11 @@ private struct ExportCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Hent planen til Home Assistant").font(.app(14.5, .heavy))
-                    Text("eller Shelly — JSON med de valgte timer").font(.app(12, .semibold)).foregroundStyle(T.text2)
+                    Text(L10n.string("export_title")).font(.app(14.5, .heavy))
+                    Text(L10n.string("export_subtitle")).font(.app(12, .semibold)).foregroundStyle(T.text2)
                 }
                 Spacer()
-                SoftButton(title: copied ? "Kopieret" : "Kopiér", bg: T.brandSoft, fg: T.brand) {
+                SoftButton(title: L10n.string(copied ? "export_copied" : "export_copy"), bg: T.brandSoft, fg: T.brand) {
                     UIPasteboard.general.string = json
                     copied = true
                 }
