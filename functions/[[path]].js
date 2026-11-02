@@ -1088,7 +1088,17 @@ var PRIS_I18N={
     byDay:'Zi cu zi',day:'Zi',range:'Interval',type:'Tip',none:'Prețurile nu au putut fi încărcate acum.',
     cap:'Prețul angro pe piața zilei următoare, fără TVA, taxe și tarife de rețea',
     avg:'medie',
-    act1:'Azi',act2:'Azi și mâine',cheapRest:'Cea mai ieftină oră din restul zilei'}
+    act1:'Azi',act2:'Azi și mâine',cheapRest:'Cea mai ieftină oră din restul zilei'},
+  bg:{wd:['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'],ws:['нд','пн','вт','ср','чт','пт','сб'],
+    mon:['яну','фев','март','апр','май','юни','юли','авг','сеп','окт','ное','дек'],dot:'',hs:':00',hh:1,
+    now:'Цена на тока сега',hourly:'Цена на тока по часове',at:'',today:'днес',tomorrow:'утре',evening:'тази вечер',
+    verdict:['Ниска цена сега','Средна цена сега','Висока цена сега'],tier:['Ниска','Средна','Висока'],
+    cheaper:'По-евтино',cheapest24:'Най-евтиният час в следващите 24 часа',lo:'най-евтиният час',hi:'най-скъпият час',
+    next:'Следващите',p2:'2 дни',p5:'5 дни',p7:'7 дни',period:'Период',fc:'Цена на пазара ден напред',actual:'Цена на пазара ден напред',
+    byDay:'Ден по ден',day:'Ден',range:'Диапазон',type:'Вид',none:'Цените не можаха да бъдат заредени в момента.',
+    cap:'Борсова цена на пазара ден напред без ДДС, данъци и мрежови такси',
+    avg:'ср.',
+    act1:'Днес',act2:'Днес и утре',cheapRest:'Най-евтиният час до края на деня'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1122,7 +1132,8 @@ var ZONES={
   be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
   cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
-  ro:{name:'RO',city:'România',lang:'ro',cur:'EUR',rate:1,sub:'c€',src:'entsoe',shift:1}
+  ro:{name:'RO',city:'România',lang:'ro',cur:'EUR',rate:1,sub:'c€',src:'entsoe',shift:1},
+  bg:{name:'BG',city:'България',lang:'bg',cur:'EUR',rate:1,sub:'евроц.',src:'entsoe',shift:1}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1244,7 +1255,15 @@ var PRIS_COUNTRIES={
     tx:{h1:'Prețul energiei în România: azi și mâine',
       zonesH:'Prețul energiei în România',
       note:'Mediile orare ale prețurilor la 15 minute, calculate de elpriser.org (date modificate față de original). Prețurile sunt în eurocenți pe kWh, nu în lei. Sursa:',
-      cap:'Prețul angro pe piața zilei următoare, în eurocenți, fără TVA, taxe și tarife de rețea'}}
+      cap:'Prețul angro pe piața zilei următoare, în eurocenți, fără TVA, taxe și tarife de rețea'}},
+  'bg/tsena-na-toka':{lang:'bg',cc:'bg',zones:['bg'],def:'bg',act:1,
+    name:'България',da:'Bulgarien',loc:'bg_BG',qid:'Q219',
+    title:'Цена на тока днес и утре – борсова цена в България',
+    desc:'Борсова цена на тока (пазар ден напред) в България по часове, днес и утре, в евроцента за kWh, без ДДС, данъци и такси. Източник: ENTSO-E',
+    tx:{h1:'Цена на тока в България: днес и утре',
+      zonesH:'Цена на тока в България',
+      note:'Средните часови стойности на 15-минутните цени са изчислени от elpriser.org (данните са променени спрямо оригинала). От 1 януари 2026 г. България е в еврозоната; цените са в евроцента за kWh. Източник:',
+      cap:'Борсова цена на пазара ден напред в евроцента, без ДДС, данъци и мрежови такси'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1332,9 +1351,13 @@ var CHROME_I18N={
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
     chg:'Změna: hodinové průměry vypočítal elpriser.org'},
   ro:{home:'elpriser.org – pagina principală',land:'Țări',place:'Unde vă aflați?',area:'Zonă de preț',oth:'Alte țări',back:'Înapoi',find:'Căutare',none:'Niciun rezultat',close:'Închide',
-    cn:{dk:'Danemarca',no:'Norvegia',sv:'Suedia',fi:'Finlanda',nl:'Țările de Jos',de:'Germania',fr:'Franța',pl:'Polonia',it:'Italia',at:'Austria',ch:'Elveția',be:'Belgia',ie:'Irlanda',cz:'Cehia',ro:'România'},
+    cn:{dk:'Danemarca',no:'Norvegia',sv:'Suedia',fi:'Finlanda',nl:'Țările de Jos',de:'Germania',fr:'Franța',pl:'Polonia',it:'Italia',at:'Austria',ch:'Elveția',be:'Belgia',ie:'Irlanda',cz:'Cehia',ro:'România',bg:'Bulgaria'},
     privacy:'Confidențialitate (în daneză)',src:'Sursa:',and:'și',open:'Seturi de date deschise pe',
-    chg:'Modificare: mediile orare calculate de elpriser.org'}
+    chg:'Modificare: mediile orare calculate de elpriser.org'},
+  bg:{home:'elpriser.org – начална страница',land:'Държави',place:'Къде се намирате?',area:'Ценова зона',oth:'Други държави',back:'Назад',find:'Търсене',none:'Няма резултати',close:'Затвори',
+    cn:{dk:'Дания',no:'Норвегия',sv:'Швеция',fi:'Финландия',nl:'Нидерландия',de:'Германия',fr:'Франция',pl:'Полша',it:'Италия',at:'Австрия',ch:'Швейцария',be:'Белгия',ie:'Ирландия',cz:'Чехия',ro:'Румъния',bg:'България'},
+    privacy:'Поверителност (на датски)',src:'Източник:',and:'и',open:'Отворени набори от данни в',
+    chg:'Промяна: средните часови стойности са изчислени от elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
