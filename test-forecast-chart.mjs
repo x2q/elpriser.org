@@ -277,6 +277,8 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const FCWORD = { de: /prognos|vorhersage|vorschau/i, fr: /prévision|prevision|prédi/i, pl: /prognoz|przewid/i, it: /previsi|prognosi|stima/i, en: /forecast|predict|outlook/i, cs: /předpově|prognóz|odhad/i };
   const CAPWORD = { de: [/ohne/, /MwSt/], fr: [/hors/, /TVA/], pl: [/bez/, /VAT/], it: [/al netto/, /IVA/], en: [/excluding/, /VAT/], cs: [/bez/, /DPH/], nl: [/zonder/, /btw/] };
   const NOTEWORD = { de: [/berechnet/, /verändert/], fr: [/calculées/, /modifiées/], pl: [/przeliczone/, /zmienione/], it: [/calcolate/, /modificati/], en: [/calculated/, /changed/], cs: [/vypočítal/, /upraveny/], nl: [/berekend/, /gewijzigd/] };
+  // North Macedonia (Cyrillic): no forecast word (прогноз, предвиду, предвидување), the VAT word ДДВ, the change note's own words. \b is ASCII-only in JS, so none of these use it.
+  FCWORD.mk = /прогноз|предвид|предикц/i; CAPWORD.mk = [/без/, /ДДВ/]; NOTEWORD.mk = [/пресметува/, /изменети/];
   for (const l of ACT_ONLY) {
     const all = Object.values(L[l]).flat().join(' | ');
     ok(!DANISH.test(all), `${l}: ingen danske ord i tabellen`, (all.match(DANISH) || [])[0]);

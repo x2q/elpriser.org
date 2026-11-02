@@ -1078,7 +1078,17 @@ var PRIS_I18N={
     byDay:'Den po dni',day:'Den',range:'Rozpětí',type:'Typ',none:'Ceny se teď nepodařilo načíst.',
     cap:'Burzovní cena z denního trhu bez DPH, daní a poplatků za distribuci',
     avg:'prům.',
-    act1:'Dnes',act2:'Dnes a zítra',cheapRest:'Nejlevnější hodina do konce dne'}
+    act1:'Dnes',act2:'Dnes a zítra',cheapRest:'Nejlevnější hodina do konce dne'},
+  mk:{wd:['недела','понеделник','вторник','среда','четврток','петок','сабота'],ws:['нед','пон','вто','сре','чет','пет','саб'],
+    mon:['јан','фев','мар','апр','мај','јун','јул','авг','сеп','окт','ное','дек'],dot:'.',hs:':00',hh:1,
+    now:'Цена на струја сега',hourly:'Цена на струја по часови',at:'во',today:'денес',tomorrow:'утре',evening:'денес навечер',
+    verdict:['Ниска цена сега','Просечна цена сега','Висока цена сега'],tier:['Ниска','Просечна','Висока'],
+    cheaper:'Поевтино',cheapest24:'Најевтин час во следните 24 часа',lo:'најевтин час',hi:'најскап час',
+    next:'Следни',p2:'2 дена',p5:'5 дена',p7:'7 дена',period:'Период',fc:'Цена за ден напред',actual:'Цена за ден напред',
+    byDay:'Ден по ден',day:'Ден',range:'Распон',type:'Вид',none:'Цените не може да се вчитаат во моментов.',
+    cap:'Берзанска цена за ден напред без ДДВ, даноци и мрежни надоместоци',
+    avg:'просек',
+    act1:'Денес',act2:'Денес и утре',cheapRest:'Најевтин час до крајот на денот'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1111,7 +1121,8 @@ var ZONES={
   ch:{name:'CH',city:'Schweiz',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
-  cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'}
+  cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
+  mk:{name:'MK',city:'Северна Македонија',lang:'mk',cur:'EUR',rate:1,sub:'ц',src:'entsoe'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1225,7 +1236,14 @@ var PRIS_COUNTRIES={
     tx:{h1:'Cena elektřiny v Česku: dnes a zítra',
       zonesH:'Cena elektřiny v Česku',
       note:'Hodinové průměry čtvrthodinových cen vypočítal elpriser.org (údaje jsou oproti originálu upraveny). Ceny jsou v eurocentech za kWh, nikoli v korunách. Zdroj:',
-      cap:'Burzovní cena z denního trhu v eurocentech, bez DPH, daní a poplatků za distribuci'}}
+      cap:'Burzovní cena z denního trhu v eurocentech, bez DPH, daní a poplatků za distribuci'}},
+  'mk/cena-na-struja':{lang:'mk',cc:'mk',zones:['mk'],def:'mk',act:1,
+    name:'Северна Македонија',da:'Nordmakedonien',loc:'mk_MK',qid:'Q221',
+    title:'Цена на струја денес и утре во Северна Македонија',
+    desc:'Берзанска цена на струјата (пазар за ден напред) во Северна Македонија по часови, денес и утре, во ц/kWh, без ДДВ и даноци. Извор: ENTSO-E',
+    tx:{h1:'Цена на струја во Северна Македонија: денес и утре',
+      zonesH:'Цена на струја во Северна Македонија',
+      note:'Часовните просеци од цените на секои 15 минути ги пресметува elpriser.org (податоците се изменети во однос на оригиналот). Цените се во евроценти, а не во денари. Извор:'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1311,7 +1329,11 @@ var CHROME_I18N={
   cs:{home:'elpriser.org – úvodní stránka',land:'Země',place:'Kde jste?',area:'Cenová zóna',oth:'Další země',back:'Zpět',find:'Hledat',none:'Žádné výsledky',close:'Zavřít',
     cn:{dk:'Dánsko',no:'Norsko',sv:'Švédsko',fi:'Finsko',nl:'Nizozemsko',de:'Německo',fr:'Francie',pl:'Polsko',it:'Itálie',at:'Rakousko',ch:'Švýcarsko',be:'Belgie',ie:'Irsko',cz:'Česko'},
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
-    chg:'Změna: hodinové průměry vypočítal elpriser.org'}
+    chg:'Změna: hodinové průměry vypočítal elpriser.org'},
+  mk:{home:'elpriser.org – почетна страница',land:'Земји',place:'Каде сте?',area:'Ценовна зона',oth:'Други земји',back:'Назад',find:'Пребарај',none:'Нема резултати',close:'Затвори',
+    cn:{dk:'Данска',no:'Норвешка',sv:'Шведска',fi:'Финска',nl:'Холандија',de:'Германија',fr:'Франција',pl:'Полска',it:'Италија',at:'Австрија',ch:'Швајцарија',be:'Белгија',ie:'Ирска',cz:'Чешка',mk:'Северна Македонија'},
+    privacy:'Приватност (на дански)',src:'Извор:',and:'и',open:'Отворени збирки на податоци на',
+    chg:'Измена: часовните просеци ги пресметува elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
