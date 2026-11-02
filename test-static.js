@@ -699,10 +699,10 @@ test('EU price pages: actual prices only — one period, no forecast wording, th
   // /norden stays Nordic: it asks for its thirteen zones, never for "all of ZONES".
   assert.ok(/zoneRaws\(NORDEN_ZONES\)/.test(INDEX) && /C \? C\.zones : NORDEN_ZONES/.test(ROUTES) && !/Object\.keys\(ZONES\)/.test(INDEX + ROUTES), '/norden no longer fetches only its own zones');
   // The zones of the pages are the zones the API serves, in the keys the job writes.
-  const apiZones = (API.match(/const EU_ZONES = \[([^\]]*)\]/)[1].match(/'([a-z-]+)'/g) || []).map(x => x.replace(/'/g, ''));
+  const apiZones = ['EU_ZONES_ENERGY_CHARTS', 'EU_ZONES_ENTSOE'].flatMap(n => (API.match(new RegExp(`const ${n} = \\[([^\\]]*)\\]`))[1].match(/'([a-z-]+)'/g) || []).map(x => x.replace(/'/g, '')));
   const pageZones = [...block.matchAll(/zones:\[([^\]]*)\],def:'[a-z-]+',act:1/g)].flatMap(m => m[1].match(/'([a-z-]+)'/g).map(x => x.replace(/'/g, '')));
   assert.deepEqual(pageZones, ['de', 'fr', 'pl', 'it-n'], 'the pages\' zones');
-  assert.deepEqual([...pageZones].sort(), [...apiZones].sort(), 'the pages and /api/nordic disagree about the EU zones');
+  assert.ok(pageZones.every(z => apiZones.includes(z)), 'a page asks for a zone /api/nordic does not serve');   // the API serves more zones than there are pages yet
   for (const k of pageZones) assert.ok(new RegExp(`(^|[\\s,{])'?${k}'?:\\{name:'[^']+',city:'[^']+',lang:'(de|fr|pl|it)'`, 'm').test(block.slice(block.indexOf('var ZONES={'), block.indexOf('var NORDEN_ZONES'))), `ZONES lacks ${k}`);
   // Poland converts at the ECB's PLN rate: the API asks the ECB file for it and sanity-checks it; the page's fallback is the API's.
   assert.ok(/PLN: get\('PLN'\)/.test(API) && /rates\.PLN > 3 && rates\.PLN < 6/.test(API), 'the API does not read and check the ECB PLN rate');

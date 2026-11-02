@@ -19,38 +19,55 @@ import { spawnSync } from 'node:child_process';
 const ROOT = import.meta.dirname;
 const DIR = path.join(ROOT, 'scripts/eu_prices');
 
-test('python unit tests for the EU price job pass', () => {
-  const r = spawnSync('python3', [path.join(DIR, 'test_energy_charts_parse.py')], { encoding: 'utf8' });
+for (const f of ['test_energy_charts_parse.py', 'test_entsoe_parse.py']) test(`python unit tests: ${f} passes`, () => {
+  const r = spawnSync('python3', [path.join(DIR, f)], { encoding: 'utf8' });
   assert.equal(r.error, undefined, 'python3 is not available: ' + (r.error && r.error.message));
-  assert.equal(r.status, 0, 'test_energy_charts_parse.py failed:\n' + r.stdout + r.stderr);
+  assert.equal(r.status, 0, f + ' failed:\n' + r.stdout + r.stderr);
   assert.match(r.stderr, /Ran \d{2,} tests/, 'the Python suite ran suspiciously few tests');
 });
 
-test('the job writes exactly the keys /api/nordic reads, for exactly the zones the API serves — the four CC BY 4.0 zones', () => {
-  const job = fs.readFileSync(path.join(DIR, 'build_eu_prices.py'), 'utf8');
+const apiArray = (api, name) => ((api.match(new RegExp(`const ${name} = \\[([^\\]]*)\\]`)) || [])[1] || '').split(',').map(x => x.trim().replace(/'/g, '')).filter(Boolean);
+const readJob = f => fs.readFileSync(path.join(DIR, f), 'utf8');
+const zoneBlock = job => job.slice(job.indexOf('ZONES = {'), job.indexOf('\n}\n', job.indexOf('ZONES = {')));
+
+test('the two jobs write exactly the keys /api/nordic reads, for exactly the zones the API serves', () => {
+  const ec = readJob('build_eu_prices.py'), en = readJob('build_entsoe_prices.py');
   const api = fs.readFileSync(path.join(ROOT, 'functions/api/[[catchall]].js'), 'utf8');
-  const jobZones = [...job.slice(job.indexOf('ZONES = {'), job.indexOf('\n}\n', job.indexOf('ZONES = {'))).matchAll(/^\s+"([a-z-]+)":\s+\("([A-Za-z-]+)",/gm)].map(m => [m[1], m[2]]);
-  const apiZones = (api.match(/const EU_ZONES = \[([^\]]*)\]/) || [])[1].split(',').map(s => s.trim().replace(/'/g, ''));
-  assert.deepEqual(jobZones, [['de', 'DE-LU'], ['fr', 'FR'], ['pl', 'PL'], ['it-n', 'IT-North']], 'Energy-Charts licenses CC BY 4.0 for these bidding zones; the others are private/internal use only');
-  assert.deepEqual(jobZones.map(z => z[0]).sort(), [...apiZones].sort(), 'the job and /api/nordic disagree about the zones');
-  assert.ok(job.includes('f"eu-prices-{zone}"') && /`eu-prices-\$\{zone\}`/.test(api), 'the KV key differs between the job and the API');
-  assert.ok(/CLOUDFLARE_ACCOUNT_ID/.test(job) && /CLOUDFLARE_API_TOKEN/.test(job) && /os\.environ\.get\("CLOUDFLARE_API_TOKEN"\)/.test(job), 'the job does not read Cloudflare\'s credentials from the environment');
-  assert.ok(!/[0-9a-f]{32}/.test(job.replace(/KV_NAMESPACE\s*=\s*"[0-9a-f]{32}"/, '')), 'a 32-hex literal (a token?) sits in the job');
+  const ecZones = [...zoneBlock(ec).matchAll(/^\s+"([a-z-]+)":\s+\("([A-Za-z-]+)",/gm)].map(m => [m[1], m[2]]);
+  const enZones = [...zoneBlock(en).matchAll(/^\s+"([a-z-]+)":\s+\("(10Y[0-9A-Z-]{13})",/gm)].map(m => [m[1], m[2]]);
+  assert.deepEqual(ecZones, [['de', 'DE-LU'], ['fr', 'FR'], ['pl', 'PL'], ['it-n', 'IT-North'], ['at', 'AT'], ['be', 'BE'], ['ch', 'CH'], ['cz', 'CZ'], ['hu', 'HU'], ['si', 'SI']],
+    'Energy-Charts licenses CC BY 4.0 for these bidding zones (checked in the API\'s own license_info); its others are private/internal use only');
+  assert.deepEqual(ecZones.map(z => z[0]), apiArray(api, 'EU_ZONES_ENERGY_CHARTS'), 'the Energy-Charts job and /api/nordic disagree about the zones');
+  assert.deepEqual(enZones.map(z => z[0]), apiArray(api, 'EU_ZONES_ENTSOE'), 'the ENTSO-E job and /api/nordic disagree about the zones');
+  assert.equal(enZones.length, 15);
+  assert.ok(!ecZones.some(z => enZones.some(e => e[0] === z[0])), 'a zone is in both jobs');
+  assert.ok(/const EU_ZONES = \[\.\.\.EU_ZONES_ENERGY_CHARTS, \.\.\.EU_ZONES_ENTSOE\]/.test(api), 'EU_ZONES is the two lists');
+  for (const job of [ec, en]) {
+    assert.ok(job.includes('f"eu-prices-{zone}"') && /`eu-prices-\$\{zone\}`/.test(api), 'the KV key differs between a job and the API');
+    assert.ok(/CLOUDFLARE_ACCOUNT_ID/.test(job) && /CLOUDFLARE_API_TOKEN/.test(job), 'a job does not read Cloudflare\'s credentials from the environment');
+    assert.ok(!/[0-9a-f]{32}/.test(job.replace(/KV_NAMESPACE\s*=\s*"[0-9a-f]{32}"/, '')), 'a 32-hex literal (a token?) sits in a job');
+  }
+  assert.ok(/os\.environ\.get\("CLOUDFLARE_API_TOKEN"\)/.test(ec), 'the Energy-Charts job does not read Cloudflare\'s token from the environment');
+  assert.ok(/os\.environ\.get\("ENTSOE_TOKEN"\)/.test(en), 'the ENTSO-E job does not read its token from the environment');
 });
 
-test('the price source is read in ONE place: Energy-Charts, from build_eu_prices.py — and ENTSO-E is not used for these zones', () => {
-  const readers = [], entsoe = [];
+test('each price source is read in ONE place: Energy-Charts from build_eu_prices.py, ENTSO-E from build_entsoe_prices.py — and never from the Worker', () => {
+  const ecReaders = [], enReaders = [], enMentions = [];
   for (const dir of ['functions', 'scripts/eu_prices']) for (const f of fs.readdirSync(path.join(ROOT, dir), { recursive: true })) {
     const fp = path.join(ROOT, dir, String(f));
-    if (!fs.statSync(fp).isFile() || !/\.(js|py|mjs|json)$/.test(fp) || fp.includes('/fixtures/') || fp.includes('test_energy_charts_parse')) continue;
+    if (!fs.statSync(fp).isFile() || !/\.(js|py|mjs|json)$/.test(fp) || fp.includes('/fixtures/') || /test_[a-z_]+\.py$/.test(fp)) continue;
     const t = fs.readFileSync(fp, 'utf8');
-    if (t.includes('api.energy-charts.info') && /urlopen|fetch\(/.test(t)) readers.push(path.relative(ROOT, fp));
-    if (/web-api\.tp\.entsoe\.eu|ENTSOE_TOKEN|securityToken|A44/.test(t)) entsoe.push(path.relative(ROOT, fp));
+    if (t.includes('api.energy-charts.info') && /urlopen|fetch\(/.test(t)) ecReaders.push(path.relative(ROOT, fp));
+    if (t.includes('web-api.tp.entsoe.eu') && /urlopen|fetch\(/.test(t)) enReaders.push(path.relative(ROOT, fp));
+    if (/ENTSOE_TOKEN|securityToken/.test(t)) enMentions.push(path.relative(ROOT, fp));
   }
-  assert.deepEqual(readers, ['scripts/eu_prices/build_eu_prices.py'], 'the Energy-Charts API is read somewhere else than the one job');
-  assert.deepEqual(entsoe, [], 'ENTSO-E code or token handling is back in the EU price job');
-  const job = fs.readFileSync(path.join(DIR, 'build_eu_prices.py'), 'utf8');
-  assert.ok(/UA = "elpriser\.org\/1\.0 \(\+https:\/\/elpriser\.org; hello@elpriser\.org\)"/.test(job), 'the User-Agent the API owner can reach us by');
-  assert.ok(/PAUSE = 35/.test(job) && /Retry-After/.test(job), 'the job does not space its requests / honour Retry-After');
-  assert.ok(fs.readdirSync(DIR).every(f => !/entsoe/i.test(f)), 'an entsoe file is back');
+  assert.deepEqual(ecReaders, ['scripts/eu_prices/build_eu_prices.py'], 'the Energy-Charts API is read somewhere else than the one job');
+  assert.deepEqual(enReaders, ['scripts/eu_prices/build_entsoe_prices.py'], 'the ENTSO-E API is read somewhere else than the one job');
+  assert.deepEqual(enMentions, ['scripts/eu_prices/build_entsoe_prices.py'], 'the ENTSO-E token is handled somewhere else than the one job');
+  const ec = readJob('build_eu_prices.py'), en = readJob('build_entsoe_prices.py');
+  assert.ok(/UA = "elpriser\.org\/1\.0 \(\+https:\/\/elpriser\.org; hello@elpriser\.org\)"/.test(ec), 'the User-Agent the API owner can reach us by');
+  assert.ok(/PAUSE = 35/.test(ec) && /Retry-After/.test(ec), 'the Energy-Charts job does not space its requests / honour Retry-After');
+  assert.ok(/Retry-After/.test(en) && /B\.UA/.test(en), 'the ENTSO-E job does not honour Retry-After / send the User-Agent');
+  assert.ok(/raise RuntimeError\(f"ENTSO-E HTTP \{e\.code\}"\)\s+# never the URL/.test(en), 'an ENTSO-E error may carry the URL, and the URL carries the token');
+  assert.ok(/B\.log\([^\n]*\(token, cf_token\)\)/.test(en), 'the ENTSO-E job logs without masking the tokens');
 });

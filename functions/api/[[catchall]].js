@@ -985,19 +985,43 @@ const NORDIC_ZONE_INFO = {
   nl:  { name: 'NL Nederland',     country: 'NL', currency: 'EUR', rate: 1 },
 };
 
-// The four zones of the EU price pages (Germany, France, Poland, Northern Italy): ACTUAL day-ahead prices only, data CC BY 4.0
-// from Bundesnetzagentur | SMARD.de via Energy-Charts.info, written by scripts/eu_prices/build_eu_prices.py into KV
-// `eu-prices-<zone>` as hourly means of the 15-minute prices (a change of the data, which the pages say) in the very
-// shape of a Nordic zone (days of type 'actual', no forecast), served here by the same code path: same zoneInfo,
-// same cache headers, same 404 for a zone without data. `it-n` is Italy's bidding zone IT-North only. The job in
-// scripts/eu_prices/ must list exactly these zones (test-eu-prices.mjs). Only zones whose price data is CC BY 4.0
-// there may be added; the others of Energy-Charts' list are for private and internal use only.
-const EU_ZONES = ['de','fr','pl','it-n'];
+// The EU price zones: ACTUAL day-ahead prices only, written into KV `eu-prices-<zone>` as hourly means of the 15-minute
+// prices (a change of the data, which the pages say) in the very shape of a Nordic zone (days of type 'actual', no
+// forecast), served here by the same code path: same zoneInfo, same cache headers, same 404 for a zone without data.
+// Two sources, two jobs in scripts/eu_prices/ (test-eu-prices.mjs pins that together they list exactly these zones):
+//   Energy-Charts.info, CC BY 4.0 from Bundesnetzagentur | SMARD.de (build_eu_prices.py): de fr pl it-n at be ch cz hu si
+//   ENTSO-E Transparency Platform, documentType A44 (build_entsoe_prices.py):  es pt sk gr ro bg hr rs ee lv lt ie me mk al
+// `it-n` is Italy's bidding zone IT-North only. Every zone is EUR/MWh, whatever the national currency: the platform and
+// Energy-Charts both publish EUR. A zone served here is not necessarily a page yet: the pages are listed in PRIS_COUNTRIES.
+const EU_ZONES_ENERGY_CHARTS = ['de','fr','pl','it-n','at','be','ch','cz','hu','si'];
+const EU_ZONES_ENTSOE = ['es','pt','sk','gr','ro','bg','hr','rs','ee','lv','lt','ie','me','mk','al'];
+const EU_ZONES = [...EU_ZONES_ENERGY_CHARTS, ...EU_ZONES_ENTSOE];
 const EU_ZONE_INFO = {
   de:       { name: 'DE-LU Germany and Luxembourg',  country: 'DE', currency: 'EUR', rate: 1 },
   fr:       { name: 'FR France',                     country: 'FR', currency: 'EUR', rate: 1 },
   pl:       { name: 'PL Poland',                     country: 'PL', currency: 'PLN', rate: FX_FALLBACK.PLN },
   'it-n':   { name: 'IT-North',                      country: 'IT', currency: 'EUR', rate: 1 },
+  at:       { name: 'AT Austria',                    country: 'AT', currency: 'EUR', rate: 1 },
+  be:       { name: 'BE Belgium',                    country: 'BE', currency: 'EUR', rate: 1 },
+  ch:       { name: 'CH Switzerland',                country: 'CH', currency: 'EUR', rate: 1 },
+  cz:       { name: 'CZ Czechia',                    country: 'CZ', currency: 'EUR', rate: 1 },
+  hu:       { name: 'HU Hungary',                    country: 'HU', currency: 'EUR', rate: 1 },
+  si:       { name: 'SI Slovenia',                   country: 'SI', currency: 'EUR', rate: 1 },
+  es:       { name: 'ES Spain',                      country: 'ES', currency: 'EUR', rate: 1 },
+  pt:       { name: 'PT Portugal',                   country: 'PT', currency: 'EUR', rate: 1 },
+  sk:       { name: 'SK Slovakia',                   country: 'SK', currency: 'EUR', rate: 1 },
+  gr:       { name: 'GR Greece',                     country: 'GR', currency: 'EUR', rate: 1 },
+  ro:       { name: 'RO Romania',                    country: 'RO', currency: 'EUR', rate: 1 },
+  bg:       { name: 'BG Bulgaria',                   country: 'BG', currency: 'EUR', rate: 1 },
+  hr:       { name: 'HR Croatia',                    country: 'HR', currency: 'EUR', rate: 1 },
+  rs:       { name: 'RS Serbia',                     country: 'RS', currency: 'EUR', rate: 1 },
+  ee:       { name: 'EE Estonia',                    country: 'EE', currency: 'EUR', rate: 1 },
+  lv:       { name: 'LV Latvia',                     country: 'LV', currency: 'EUR', rate: 1 },
+  lt:       { name: 'LT Lithuania',                  country: 'LT', currency: 'EUR', rate: 1 },
+  ie:       { name: 'IE Ireland (SEM)',              country: 'IE', currency: 'EUR', rate: 1 },
+  me:       { name: 'ME Montenegro',                 country: 'ME', currency: 'EUR', rate: 1 },
+  mk:       { name: 'MK North Macedonia',            country: 'MK', currency: 'EUR', rate: 1 },
+  al:       { name: 'AL Albania',                    country: 'AL', currency: 'EUR', rate: 1 },
 };
 
 /** The ECB's daily euro reference rates, edge-cached for six hours (the ECB
@@ -1232,9 +1256,13 @@ const OPENAPI_SPEC = {
           'the rest a `forecast` from one open model (`trainedThrough` says how fresh its training data is).',
           '',
           '**EU zones, actual prices only, no forecast** (`trainedThrough` is null; every day is `actual`; tomorrow is absent until it is published, about 13:00 CET):',
-          '`de` Germany and Luxembourg (DE-LU), `fr` France, `pl` Poland (`zoneInfo.currency` PLN, so convert with `zoneInfo.rate`) and `it-n` Italy, bidding zone North only.',
-          'Source: Bundesnetzagentur | SMARD.de via Energy-Charts.info, licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). The data were changed by elpriser.org:',
-          'the 15-minute prices are aggregated to hourly means by the zone\'s local clock.',
+          '`de` Germany and Luxembourg (DE-LU), `fr` France, `pl` Poland (`zoneInfo.currency` PLN, so convert with `zoneInfo.rate`), `it-n` Italy, bidding zone North only,',
+          '`at` Austria, `be` Belgium, `ch` Switzerland, `cz` Czechia, `hu` Hungary and `si` Slovenia. Source: Bundesnetzagentur | SMARD.de via Energy-Charts.info,',
+          'licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).',
+          '`es` Spain, `pt` Portugal, `sk` Slovakia, `gr` Greece, `ro` Romania, `bg` Bulgaria, `hr` Croatia, `rs` Serbia, `ee` Estonia, `lv` Latvia, `lt` Lithuania,',
+          '`ie` Ireland (the all-island SEM), `me` Montenegro, `mk` North Macedonia and `al` Albania. Source: ENTSO-E Transparency Platform (day-ahead prices, article 12.1.d).',
+          'Prices of the non-euro countries are in EUR/MWh as published; `zoneInfo.currency` is EUR for all of these.',
+          'The data were changed by elpriser.org: the 15-minute prices are aggregated to hourly means by the zone\'s local clock.',
         ].join('\n'),
         parameters: [{ name: 'zone', in: 'query', schema: { type: 'string', enum: [...NORDIC_ZONES, ...EU_ZONES], default: 'dk1' }, description: 'The bidding zone. Unknown values answer 400.' }],
         responses: { '200': { description: 'Days of hourly prices in EUR/MWh plus zoneInfo.' }, '400': { description: 'Unknown zone.' }, '404': { description: 'No data for that zone (yet).' } },
@@ -1426,7 +1454,7 @@ async function handleApi(context) {
 
   // ── /api/nordic — 13-zone forecast (served before the DK1/DK2 area check,
   //    since its zones are Nordic bidding zones, not Danish price areas). The same handler serves
-  //    the eleven EU price zones (EU_ZONES: actual day-ahead prices only, KV `eu-prices-<zone>`). ───
+  //    the EU price zones (EU_ZONES: actual day-ahead prices only, KV `eu-prices-<zone>`). ───
   if (seg1 === 'nordic') {
     const zone = (q.get('zone') || 'dk1').toLowerCase();
     const eu = EU_ZONES.includes(zone);

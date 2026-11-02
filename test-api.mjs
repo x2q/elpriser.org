@@ -475,7 +475,7 @@ test('a changed price backup is still written (after the ten-minute window)', as
   assert.ok(kv.ops.put.length > before, 'new data was not stored');
 });
 
-// ── /api/nordic — the Nordic zones, and the eleven EU zones (actual prices only) ─────────────────────────────
+// ── /api/nordic — the Nordic zones, and the EU zones (actual prices only) ─────────────────────────────
 
 const ECB = { DKK: 7.4748, NOK: 10.4665, SEK: 11.131, PLN: 4.3945, date: '2026-10-23' };
 /** A KV value as the Spark jobs write it: days of 24 hours, EUR/MWh. `actual` days only for the EU job. */
@@ -483,7 +483,8 @@ const feed = (zone, dates, type = 'actual', trained = null) => ({
   zone, generated: day(0), trainedThrough: trained, unit: 'EUR/MWh',
   days: dates.map((d, i) => ({ date: d, type, prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: 50 + h + i })) })),
 });
-const EU = ['de', 'fr', 'pl', 'it-n'];   // the four zones Energy-Charts licenses CC BY 4.0; Ireland and Italy's other zones are not served
+// Energy-Charts (CC BY 4.0 from SMARD.de) and ENTSO-E (build_entsoe_prices.py); Italy's other zones (it-cn, it-cs, ...) are not served yet
+const EU = ['de', 'fr', 'pl', 'it-n', 'at', 'be', 'ch', 'cz', 'hu', 'si', 'es', 'pt', 'sk', 'gr', 'ro', 'bg', 'hr', 'rs', 'ee', 'lv', 'lt', 'ie', 'me', 'mk', 'al'];
 
 test('/api/nordic: a Nordic zone is served exactly as before — the KV value plus zoneInfo with the ECB rate', async () => {
   // The EU zones share this handler; the Nordic answer must not change by a byte.
@@ -500,7 +501,7 @@ test('/api/nordic: a Nordic zone is served exactly as before — the KV value pl
   assert.equal((await (await createApi({ kv: makeKv({ 'nordic-forecast-dk1': feed('dk1', [day(0)]) }), ecb: ECB })).get('/api/nordic')).body.zone, 'dk1', 'no zone means dk1, as before');
 });
 
-test('/api/nordic: every EU zone (de, fr, pl, it-n) is served from its own eu-prices key, with zoneInfo, and nothing but actual days', async () => {
+test('/api/nordic: every EU zone (25 of them) is served from its own eu-prices key, with zoneInfo, and nothing but actual days', async () => {
   const seed = Object.fromEntries(EU.map(z => [`eu-prices-${z}`, feed(z, [day(0), day(1)])]));
   for (const z of EU) {
     const kv = makeKv(seed), api = await createApi({ kv, ecb: ECB });
@@ -552,12 +553,12 @@ test('/api/nordic: a zone without data answers 404 exactly like a Nordic zone wi
 });
 
 test('/api/nordic: an unknown zone is rejected with 400 and the list of zones, and never reaches KV', async () => {
-  // Ireland and Italy's other zones are not served (their price data is not CC BY 4.0 at the source): 400, not an empty 404.
-  for (const z of ['xx', 'it', 'it-x', 'gb', 'de-lu', 'nl2', '../x', 'eu-prices-de', 'ie', 'it-cn', 'it-cs', 'it-s', 'it-cal', 'it-sic', 'it-sar']) {
+  // Italy's other zones and the United Kingdom are not served: 400, not an empty 404.
+  for (const z of ['xx', 'it', 'it-x', 'gb', 'de-lu', 'nl2', '../x', 'eu-prices-de', 'ie-sem', 'it-cn', 'it-cs', 'it-s', 'it-cal', 'it-sic', 'it-sar']) {
     const kv = makeKv({}), api = await createApi({ kv, ecb: ECB });
     const r = await api.get(`/api/nordic?zone=${encodeURIComponent(z)}`);
     assert.equal(r.status, 400, z);
-    assert.match(r.body.error, /zone must be one of: .*no1.*de, fr, pl, it-n$/);
+    assert.match(r.body.error, /zone must be one of: .*no1.*de, fr, pl, it-n, at, be, ch, cz, hu, si, es, pt, sk, gr, ro, bg, hr, rs, ee, lv, lt, ie, me, mk, al$/);
     assert.equal(kv.reads(), 0, `${z} must not cost a KV read`);
   }
   assert.equal((await (await createApi({ kv: makeKv({ 'eu-prices-de': feed('de', [day(0)]) }), ecb: ECB })).get('/api/nordic?zone=DE')).status, 200, 'the zone is case-insensitive like the Nordic ones');
@@ -579,13 +580,13 @@ test('/api/openapi.json documents /api/nordic with every zone, and says the EU z
   const op = spec.paths['/api/nordic'].get;
   const zones = op.parameters[0].schema.enum;
   for (const z of ['dk1', 'no5', 'se4', 'fi', 'nl', ...EU]) assert.ok(zones.includes(z), `${z} missing from the zone enum`);
-  assert.equal(zones.length, 13 + 4);
-  for (const z of ['ie', 'it-cn', 'it-sar']) assert.ok(!zones.includes(z), `${z} must not be offered`);
+  assert.equal(zones.length, 13 + 25);
+  for (const z of ['it-cn', 'it-sar', 'gb']) assert.ok(!zones.includes(z), `${z} must not be offered`);
   assert.match(op.description, /actual prices only, no forecast/);
   assert.match(op.description, /Bundesnetzagentur \| SMARD\.de via Energy-Charts\.info/);
   assert.match(op.description, /CC BY 4\.0/);
   assert.match(op.description, /changed by elpriser\.org/);
-  assert.doesNotMatch(op.description, /ENTSO-E/);
+  assert.match(op.description, /ENTSO-E Transparency Platform \(day-ahead prices, article 12\.1\.d\)/);
   assert.match(op.description, /excluding VAT, taxes and grid fees/);
 });
 

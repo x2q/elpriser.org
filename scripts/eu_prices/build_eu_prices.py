@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Day-ahead prices for Germany, France, Poland and Northern Italy from Energy-Charts (Bundesnetzagentur | SMARD.de,
+"""Day-ahead prices for Germany, France, Poland, Northern Italy, Austria, Belgium, Switzerland, Czechia, Hungary and
+Slovenia from Energy-Charts (Bundesnetzagentur | SMARD.de,
 CC BY 4.0) into Workers KV.
 
 For each zone: GET https://api.energy-charts.info/price for yesterday..tomorrow by the zone's own calendar, hourly means
@@ -56,6 +57,13 @@ ZONES = {
     "fr":   ("FR",       "Europe/Paris"),
     "pl":   ("PL",       "Europe/Warsaw"),
     "it-n": ("IT-North", "Europe/Rome"),
+    # Added 2026-11-02: the same CC BY 4.0 / SMARD.de licence in the API's own license_info for each of these.
+    "at":   ("AT",       "Europe/Vienna"),
+    "be":   ("BE",       "Europe/Brussels"),
+    "ch":   ("CH",       "Europe/Zurich"),
+    "cz":   ("CZ",       "Europe/Prague"),
+    "hu":   ("HU",       "Europe/Budapest"),
+    "si":   ("SI",       "Europe/Ljubljana"),
 }
 
 

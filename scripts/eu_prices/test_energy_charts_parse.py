@@ -213,7 +213,9 @@ class Job(unittest.TestCase):
         B.time.sleep = lambda s: None
 
     def test_zone_table_is_the_four_licensed_zones(self):
-        self.assertEqual(self.B.ZONES, {"de": ("DE-LU", "Europe/Berlin"), "fr": ("FR", "Europe/Paris"), "pl": ("PL", "Europe/Warsaw"), "it-n": ("IT-North", "Europe/Rome")})
+        self.assertEqual(self.B.ZONES, {"de": ("DE-LU", "Europe/Berlin"), "fr": ("FR", "Europe/Paris"), "pl": ("PL", "Europe/Warsaw"), "it-n": ("IT-North", "Europe/Rome"),
+                                        "at": ("AT", "Europe/Vienna"), "be": ("BE", "Europe/Brussels"), "ch": ("CH", "Europe/Zurich"),
+                                        "cz": ("CZ", "Europe/Prague"), "hu": ("HU", "Europe/Budapest"), "si": ("SI", "Europe/Ljubljana")})
 
     def test_one_request_per_zone_for_yesterday_to_tomorrow_by_the_zones_calendar(self):
         self.B.run_zone("de", self.now, ("a", "b"))
@@ -370,7 +372,7 @@ class FetchBehaviour(unittest.TestCase):
         B.load_env_file = lambda: None
         with contextlib.redirect_stdout(io.StringIO()):
             B.main(["--date", "2026-10-26"])
-        self.assertEqual(self.sleeps, [35, 35, 35], "one request per zone, 35 s apart (the API allows 2 a minute)")
+        self.assertEqual(self.sleeps, [35] * (len(self.B.ZONES) - 1), "one request per zone, 35 s apart (the API allows 2 a minute)")
 
 
 if __name__ == "__main__":
