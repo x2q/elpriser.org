@@ -94,6 +94,11 @@ time (a language whose preposition changes with the number — Czech v/ve — is
 "model" or any number of days beyond today and tomorrow (the pages show settled prices only); nothing may say a currency other than the unit
 (prices are euro cent, with a note where the country uses another currency).
 
+A new language also needs, in `test-forecast-chart.mjs`, a `FCWORD` entry (its word for "forecast": the loop reads `FCWORD[lang]` and throws without one) and, when
+its day mark is `''` (Romanian, Bulgarian, Greek: no dot after a day number), its code in the list that allows exactly one empty `dot`. A zone on a clock
+ahead of Copenhagen (+1) needs its code in `ZSHIFT` (`test-zone-pages.mjs`) and in the `{ ie: -1, … }` map of the e2e stub. The Pris font (`manrope.woff2`) has
+Basic Latin and Latin-1 only: Latin Extended (Czech, Polish, Romanian), Cyrillic and Greek fall back to the system font, which is how the pages look today.
+
 ## C. Do not
 
 - Do not translate a source or licence (`Bundesnetzagentur | SMARD.de`, `ENTSO-E Transparency Platform`, `CC BY 4.0`) and do not drop the change note: the licence
@@ -113,9 +118,9 @@ time (a language whose preposition changes with the number — Czech v/ve — is
 | `es` | Spain | es | entsoe | CET | Q29 | `/es/precio-luz` |
 | `pt` | Portugal | pt | entsoe | −1 (23-hour days possible) | Q45 | `/pt/preco-eletricidade` |
 | `sk` | Slovakia | sk | entsoe | CET | Q214 | `/sk/cena-elektriny` |
-| `gr` | Greece | el | entsoe | +1 | Q41 | `/gr/timi-revmatos` |
-| `ro` | Romania | ro | entsoe | +1 | Q218 | `/ro/pretul-energiei` |
-| `bg` | Bulgaria | bg | entsoe | +1 | Q219 | `/bg/tsena-na-tok` |
+| `gr` | Greece | el | entsoe | +1 | Q41 | `/gr/timi-revmatos` — **done** |
+| `ro` | Romania | ro | entsoe | +1 | Q218 | `/ro/pretul-energiei` — **done** |
+| `bg` | Bulgaria | bg | entsoe | +1 | Q219 | `/bg/tsena-na-toka` — **done** |
 | `hr` | Croatia | hr | entsoe | CET | Q224 | `/hr/cijena-struje` |
 | `rs` | Serbia | sr (Latin or Cyrillic: decide first) | entsoe | CET | Q403 | `/rs/cena-struje` |
 | `ee` `lv` `lt` | Estonia, Latvia, Lithuania | et, lv, lt | entsoe | +1 | Q191, Q211, Q37 | `/ee/elektri-hind`, `/lv/elektribas-cena`, `/lt/elektros-kaina` |
