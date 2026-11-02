@@ -626,7 +626,7 @@ test('foreign-area pages: every country page (PRIS_COUNTRIES) has its SEO entry 
     assert.ok(C.desc.length >= 80 && C.desc.length <= 155, `${pg} description is ${C.desc.length} characters`);
     assert.ok(!titles.has(C.title), `${pg} title is another page's`); titles.add(C.title);
     assert.ok(C.lang in PRIS.PRIS_I18N && C.lang in PRIS.CHROME_I18N, `${pg} lang ${C.lang} has no language table`);
-    assert.ok(new RegExp(`^${C.lang}_[A-Z]{2}$`).test(C.loc), `${pg} og:locale ${C.loc} does not belong to ${C.lang}`);
+    assert.ok(new RegExp(`^${C.lang.split('-')[0]}_[A-Z]{2}$`).test(C.loc), `${pg} og:locale ${C.loc} does not belong to ${C.lang}`);
     assert.ok(/^Q\d+$/.test(C.qid) && C.name && C.da && C.cc, `${pg} lacks qid, name, da or cc`);
     assert.ok(C.tx && C.tx.h1 && C.tx.zonesH && C.tx.note, `${pg} lacks its own h1, zonesH or note (tx)`);
     // 2 and 5 døgn only: none of the pages names the feed's longer horizon.
@@ -696,7 +696,7 @@ test('country pages: ONE chrome builder (chromeHTML) feeds the server render and
   assert.ok(/\.xc body\{padding-bottom:0\}/.test(INDEX) && !/\.xc \.site-links/.test(INDEX), 'phone styles for html.xc');
   // Every country page is wired the same way — from its PRIS_COUNTRIES entry (the next test pins that) — and og:locale comes from the entry (`loc`), not a table per language.
   assert.ok(SRV.includes('`$1${meta.loc}"`') && !/nb: 'nb_NO'/.test(SRV), 'og:locale is not read from the page\'s entry');
-  for (const pg of PAGES) assert.ok(PRIS.PRIS_COUNTRIES[pg].loc.startsWith(PRIS.PRIS_COUNTRIES[pg].lang + '_'), `og:locale of ${pg}`);
+  for (const pg of PAGES) assert.ok(PRIS.PRIS_COUNTRIES[pg].loc.startsWith(PRIS.PRIS_COUNTRIES[pg].lang.split('-')[0] + '_'), `og:locale of ${pg}`);
 });
 
 test('EU price pages: actual prices only — one period, no forecast wording, the API zones, the licence attribution and the single source reader are wired as the tests below assume', () => {

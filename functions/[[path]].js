@@ -1088,6 +1088,16 @@ var PRIS_I18N={
     byDay:'Dan po dan',day:'Dan',range:'Raspon',type:'Vrsta',none:'Cijene trenutno nije moguće učitati.',
     cap:'Burzovna cijena na tržištu dan unaprijed bez PDV-a, poreza i mrežarine',
     avg:'prosj.',
+    act1:'Danas',act2:'Danas i sutra',cheapRest:'Najjeftiniji sat do kraja dana'},
+  'sr-Latn':{wd:['nedelja','ponedeljak','utorak','sreda','četvrtak','petak','subota'],ws:['ned','pon','uto','sre','čet','pet','sub'],
+    mon:['jan','feb','mar','apr','maj','jun','jul','avg','sep','okt','nov','dec'],dot:'.',hs:':00',hh:1,
+    now:'Cena struje trenutno',hourly:'Cena struje po satima',at:'',today:'danas',tomorrow:'sutra',evening:'večeras',
+    verdict:['Niska cena trenutno','Prosečna cena trenutno','Visoka cena trenutno'],tier:['Niska','Prosečna','Visoka'],
+    cheaper:'Jeftinije',cheapest24:'Najjeftiniji sat u narednih 24 sata',lo:'najjeftiniji sat',hi:'najskuplji sat',
+    next:'Narednih',p2:'2 dana',p5:'5 dana',p7:'7 dana',period:'Period',fc:'Cena na tržištu za dan unapred',actual:'Cena na tržištu za dan unapred',
+    byDay:'Dan po dan',day:'Dan',range:'Raspon',type:'Vrsta',none:'Cene trenutno nije moguće učitati.',
+    cap:'Berzanska cena na tržištu za dan unapred bez PDV-a, poreza i naknada za mrežu',
+    avg:'pros.',
     act1:'Danas',act2:'Danas i sutra',cheapRest:'Najjeftiniji sat do kraja dana'}
 };
 
@@ -1122,7 +1132,8 @@ var ZONES={
   be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
   cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
-  hr:{name:'HR',city:'Hrvatska',lang:'hr',cur:'EUR',rate:1,sub:'c',src:'entsoe'}
+  hr:{name:'HR',city:'Hrvatska',lang:'hr',cur:'EUR',rate:1,sub:'c',src:'entsoe'},
+  rs:{name:'RS',city:'Srbija',lang:'sr-Latn',cur:'EUR',rate:1,sub:'c€',src:'entsoe'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1243,7 +1254,15 @@ var PRIS_COUNTRIES={
     desc:'Burzovna cijena struje (tržište dan unaprijed) u Hrvatskoj po satima, danas i sutra, u c/kWh, bez PDV-a, poreza i mrežarine. Izvor: ENTSO-E',
     tx:{h1:'Cijena struje u Hrvatskoj: danas i sutra',
       zonesH:'Cijena struje u Hrvatskoj',
-      note:'Satne prosjeke petnaestominutnih cijena izračunao je elpriser.org (podaci su izmijenjeni u odnosu na izvornik). Cijene su u eurocentima po kWh. Izvor:'}}
+      note:'Satne prosjeke petnaestominutnih cijena izračunao je elpriser.org (podaci su izmijenjeni u odnosu na izvornik). Cijene su u eurocentima po kWh. Izvor:'}},
+  'rs/cena-struje':{lang:'sr-Latn',cc:'rs',zones:['rs'],def:'rs',act:1,
+    name:'Srbija',da:'Serbien',loc:'sr_RS',qid:'Q403',
+    title:'Cena struje danas i sutra – berzanska cena u Srbiji',
+    desc:'Berzanska cena struje (tržište za dan unapred) u Srbiji po satima, danas i sutra, u c€/kWh, bez PDV-a, poreza i naknada za mrežu. Izvor: ENTSO-E',
+    tx:{h1:'Cena struje u Srbiji: danas i sutra',
+      zonesH:'Cena struje u Srbiji',
+      note:'Satne proseke petnaestominutnih cena izračunao je elpriser.org (podaci su izmenjeni u odnosu na original). Cene su u evrocentima po kWh, a ne u dinarima. Izvor:',
+      cap:'Berzanska cena na tržištu za dan unapred u evrocentima, bez PDV-a, poreza i naknada za mrežu'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1331,9 +1350,13 @@ var CHROME_I18N={
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
     chg:'Změna: hodinové průměry vypočítal elpriser.org'},
   hr:{home:'elpriser.org – početna stranica',land:'Zemlje',place:'Gdje se nalazite?',area:'Cjenovna zona',oth:'Druge zemlje',back:'Natrag',find:'Traži',none:'Nema rezultata',close:'Zatvori',
-    cn:{dk:'Danska',no:'Norveška',sv:'Švedska',fi:'Finska',nl:'Nizozemska',de:'Njemačka',fr:'Francuska',pl:'Poljska',it:'Italija',at:'Austrija',ch:'Švicarska',be:'Belgija',ie:'Irska',cz:'Češka',hr:'Hrvatska'},
+    cn:{dk:'Danska',no:'Norveška',sv:'Švedska',fi:'Finska',nl:'Nizozemska',de:'Njemačka',fr:'Francuska',pl:'Poljska',it:'Italija',at:'Austrija',ch:'Švicarska',be:'Belgija',ie:'Irska',cz:'Češka',hr:'Hrvatska',rs:'Srbija'},
     privacy:'Zaštita privatnosti (na danskom)',src:'Izvor:',and:'i',open:'Otvoreni skupovi podataka na',
-    chg:'Izmjena: satne prosjeke izračunao je elpriser.org'}
+    chg:'Izmjena: satne prosjeke izračunao je elpriser.org'},
+  'sr-Latn':{home:'elpriser.org – početna stranica',land:'Zemlje',place:'Gde se nalazite?',area:'Cenovna zona',oth:'Druge zemlje',back:'Nazad',find:'Pretraga',none:'Nema rezultata',close:'Zatvori',
+    cn:{dk:'Danska',no:'Norveška',sv:'Švedska',fi:'Finska',nl:'Holandija',de:'Nemačka',fr:'Francuska',pl:'Poljska',it:'Italija',at:'Austrija',ch:'Švajcarska',be:'Belgija',ie:'Irska',cz:'Češka',hr:'Hrvatska',rs:'Srbija'},
+    privacy:'Privatnost (na danskom)',src:'Izvor:',and:'i',open:'Otvoreni skupovi podataka na',
+    chg:'Izmena: satne proseke izračunao je elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark

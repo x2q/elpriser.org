@@ -134,7 +134,7 @@ for (const [p, w] of Object.entries(PAGES)) {
   // The chrome: the globe in the page's language, a slim footer, and none of the Danish site's.
   {
     const hd = h.slice(h.indexOf('<header'), h.indexOf('</header>')), ft = h.slice(h.indexOf('<footer'), h.indexOf('</footer>')), X = chromeI18n[w.lang];
-    ok(/<html lang="[a-z]+" class="xc">/.test(h) && /<a href="\/" class="site-logo" aria-label="[^"]+">[\s\S]*<\/svg><\/span>Elpriser<\/a>/.test(hd), `${p}: logoet viser ordmærket Elpriser og linker til /`);
+    ok(/<html lang="[A-Za-z-]+" class="xc">/.test(h) && /<a href="\/" class="site-logo" aria-label="[^"]+">[\s\S]*<\/svg><\/span>Elpriser<\/a>/.test(hd), `${p}: logoet viser ordmærket Elpriser og linker til /`);
     ok(!/class="site-links"|<nav|countryBtn/.test(hd) && /id="netChip"/.test(hd) && !/Vestdanmark|DK1|Netselskab|netselskab/.test(hd), `${p}: headeren har stedschippen, ingen globus og ingen landerække`);
     ok(hd.includes(`aria-label="${X.home}"`) && hd.includes(`aria-label="${X.place}"`), `${p}: logoets og vælgerens navne på ${w.lang}`);
     ok(!/app-btn|Hent appen|Smart hjem|>Om<|Hovedmenu|href="\/automation"|href="\/om-elpriser"|href="\/download"/.test(hd), `${p}: ingen netchip, ingen app-knap, ingen dansk menu i headeren`);
@@ -223,6 +223,7 @@ const ACT = {
   '/ie/electricity-price': { lang: 'en', title: /^Electricity price today and tomorrow – Ireland \(SEM\)/, zones: ['Ireland'], unit: 'c', now: 'Electricity price now', first: 'ie', card: 'Today and tomorrow', one: 'Today', kind: 'Day-ahead price', loc: 'en_IE', h1: 'Electricity price in Ireland: today and tomorrow', src: 'entsoe', note: 'Ireland and Northern Ireland trade as one market, the all-island Single Electricity Market (SEM). Prices are in euro cent. Source:' },
   '/cz/ceny-elektriny': { lang: 'cs', title: /^Cena elektřiny dnes a zítra – burzovní cena v Česku/, zones: ['Česko'], unit: 'ct', now: 'Cena elektřiny právě teď', first: 'cz', card: 'Dnes a zítra', one: 'Dnes', kind: 'Cena na denním trhu', loc: 'cs_CZ', h1: 'Cena elektřiny v Česku: dnes a zítra', src: 'ec', cap: 'Burzovní cena z denního trhu v eurocentech, bez DPH, daní a poplatků za distribuci' },
   '/hr/cijena-struje': { lang: 'hr', title: /^Cijena struje danas i sutra – burzovna cijena u Hrvatskoj/, zones: ['Hrvatska'], unit: 'c', now: 'Cijena struje trenutno', first: 'hr', card: 'Danas i sutra', one: 'Danas', kind: 'Cijena na tržištu dan unaprijed', loc: 'hr_HR', h1: 'Cijena struje u Hrvatskoj: danas i sutra', src: 'entsoe' },
+  '/rs/cena-struje': { lang: 'sr-Latn', title: /^Cena struje danas i sutra – berzanska cena u Srbiji/, zones: ['Srbija'], unit: 'c€', now: 'Cena struje trenutno', first: 'rs', card: 'Danas i sutra', one: 'Danas', kind: 'Cena na tržištu za dan unapred', loc: 'sr_RS', h1: 'Cena struje u Srbiji: danas i sutra', src: 'entsoe', cap: 'Berzanska cena na tržištu za dan unapred u evrocentima, bez PDV-a, poreza i naknada za mrežu' },
 };
 // What the text block says about the data's change and its source, per language (the words before the credit links).
 const PRISNOTE = {
@@ -239,22 +240,23 @@ const PAGENOTE = {
   '/ch/strompreis': 'Stundenmittel der Viertelstundenpreise, von elpriser.org berechnet (gegenüber den Originaldaten verändert). Die Schweiz hat eine eigene Gebotszone; die Preise sind in Euro-Cent angegeben, nicht in Rappen. Quelle:',
   '/be/prix-electricite': 'Moyennes horaires des prix au quart d’heure, calculées par elpriser.org (données modifiées par rapport à l’original). Source\u00a0:',
   '/cz/ceny-elektriny': CZNOTE };
+PAGENOTE['/rs/cena-struje'] = 'Satne proseke petnaestominutnih cena izračunao je elpriser.org (podaci su izmenjeni u odnosu na original). Cene su u evrocentima po kWh, a ne u dinarima. Izvor:';
 PAGENOTE['/hr/cijena-struje'] = 'Satne prosjeke petnaestominutnih cijena izračunao je elpriser.org (podaci su izmijenjeni u odnosu na izvornik). Cijene su u eurocentima po kWh. Izvor:';
 const PRISCAP = {
   de: 'Börsenstrompreis (Day-Ahead) ohne MwSt., Steuern, Abgaben und Netzentgelte', fr: 'Prix spot day-ahead hors TVA, taxes et frais de réseau',
   pl: 'Cena giełdowa na rynku dnia następnego (RDN) bez VAT, podatków i opłat sieciowych', it: 'Prezzo day-ahead al netto di IVA, imposte e costi di rete',
   nl: 'Spotprijs zonder btw, belastingen en netkosten', en: 'Wholesale day-ahead price excluding VAT, taxes, levies and network charges',
   cs: 'Burzovní cena z denního trhu bez DPH, daní a poplatků za distribuci' };
-Object.assign(PRISCAP, { hr: 'Burzovna cijena na tržištu dan unaprijed bez PDV-a, poreza i mrežarine' });
+Object.assign(PRISCAP, { hr: 'Burzovna cijena na tržištu dan unaprijed bez PDV-a, poreza i mrežarine', 'sr-Latn': 'Berzanska cena na tržištu za dan unapred bez PDV-a, poreza i naknada za mrežu' });
 // "<avg word> <tomorrow word> <number>" — what a text block would say about tomorrow.
 const PRISTOM = { de: 'Ø morgen', fr: 'moy\\. demain', pl: 'śr\\. jutro', it: 'media domani', nl: 'gem\\. morgen', en: 'avg\\. tomorrow', cs: 'prům\\. zítra' };
-Object.assign(PRISTOM, { hr: 'prosj\\. sutra' });
+Object.assign(PRISTOM, { hr: 'prosj\\. sutra', 'sr-Latn': 'pros\\. sutra' });
 const FORECAST = /prognos|vorhersage|vorschau|prévision|previsi|prognoz|przewid|forecast|prediction|predict|modell?o?\b|machine|maskinl|hugging/i;
 // The attribution of the pages and the note that the site changed the data: Energy-Charts pages credit Bundesnetzagentur | SMARD.de (CC BY 4.0) and name ENTSO-E nowhere; Ireland credits ENTSO-E.
 const CREDIT_ENTSOE = '<a href="https://transparency.entsoe.eu" target="_blank" rel="noopener">ENTSO-E Transparency Platform</a>';
 const CREDIT = '<a href="https://www.smard.de" target="_blank" rel="noopener">Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>';
 const CHANGED = { de: 'Änderung: Stundenmittel von elpriser.org berechnet', fr: 'Modifié\u00a0: moyennes horaires calculées par elpriser.org', pl: 'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org', it: 'Modifiche: medie orarie calcolate da elpriser.org', nl: 'Wijziging: uurgemiddelden berekend door elpriser.org', en: 'Changed: hourly means calculated by elpriser.org', cs: 'Změna: hodinové průměry vypočítal elpriser.org' };
-Object.assign(CHANGED, { hr: 'Izmjena: satne prosjeke izračunao je elpriser.org' });
+Object.assign(CHANGED, { hr: 'Izmjena: satne prosjeke izračunao je elpriser.org', 'sr-Latn': 'Izmena: satne proseke izračunao je elpriser.org' });
 const X9 = ['dk', ...PB.PRIS_PICK.slice(1).map(c => c[0])];   // the countries of the footer list, in order (the old name said nine; it is every country of PRIS_COUNTRIES)
 for (const [p, w] of Object.entries(ACT)) {
   store.clear(); upstream = []; noTomorrow = false;
@@ -290,7 +292,7 @@ for (const [p, w] of Object.entries(ACT)) {
   const visible = raw.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '');
   ok(w.src === 'entsoe' ? /ENTSO-E Transparency Platform/.test(visible) && !/SMARD|CC BY|Energy-Charts/.test(visible) : !/ENTSO/.test(visible), `${p}: ${w.src === 'entsoe' ? 'kun ENTSO-E nævnes som kilde, ikke Bundesnetzagentur/Energy-Charts' : 'ENTSO-E nævnes ikke noget sted på siden'}`);
   ok(w.zones.every(c => list.includes(`<b>${c}</b>`)) && (list.match(/<li>/g) || []).length === w.zones.length, `${p}: tekstblokken nævner zonen`, list.slice(0, 160));
-  ok(new RegExp(`${w.unit}/kWh`).test(list) && /(Ø|moy\.|śr\.|media|gem\.|avg\.|prům\.|prosj\.) \S+ [\d.,]+/.test(list), `${p}: tekstblokken har dagens og morgendagens gennemsnit`);
+  ok(new RegExp(`${w.unit}/kWh`).test(list) && /(Ø|moy\.|śr\.|media|gem\.|avg\.|prům\.|prosj\.|pros\.) \S+ [\d.,]+/.test(list), `${p}: tekstblokken har dagens og morgendagens gennemsnit`);
   ok(!/data-zone="/.test(h.match(/<dialog id="netDialog"[\s\S]*?<\/dialog>/)[0]), `${p}: ingen zonevalg i stedsdialogen (én zone)`);
   // The chrome: the nine countries (footer list) in the page's language, a slim footer whose data line names ENTSO-E and not Energi Data Service.
   const hd = h.slice(h.indexOf('<header'), h.indexOf('</header>')), ft = h.slice(h.indexOf('<footer'), h.indexOf('</footer>'));
@@ -306,7 +308,7 @@ for (const [p, w] of Object.entries(ACT)) {
   const one = (await get(p)).page.replace(/<!--[\s\S]*?-->/g, ''), om = one.slice(one.indexOf('<main'), one.indexOf('</main>'));
   const oneBars = (om.slice(om.indexOf('pris-card pp2'), om.indexOf('pris-tiles pp2')).match(/<span class="pc[ "]/g) || []).length;
   ok(om.includes(`<p class="pris-ct">${w.one}</p>`) && !om.includes(`<p class="pris-ct">${w.card}</p>`) && oneBars === 24 && (om.match(/<tr><th scope="row">/g) || []).length === 1, `${p}: uden i morgen: titlen er "${w.one}", 24 søjler og én række`, `${oneBars}`);
-  ok(!/NaN|undefined/.test(om) && !FORECAST.test(om) && /avg|Ø|moy|śr|media|gem|prům|prosj/.test(om) && !new RegExp(`${PRISTOM[w.lang]}`).test(om), `${p}: uden i morgen: ingen i-morgen-tal i tekstblokken, ingen NaN`, (om.match(new RegExp(PRISTOM[w.lang])) || [])[0]);
+  ok(!/NaN|undefined/.test(om) && !FORECAST.test(om) && /avg|Ø|moy|śr|media|gem|prům|pros/.test(om) && !new RegExp(`${PRISTOM[w.lang]}`).test(om), `${p}: uden i morgen: ingen i-morgen-tal i tekstblokken, ingen NaN`, (om.match(new RegExp(PRISTOM[w.lang])) || [])[0]);
   noTomorrow = false;
 }
 // A page added to PRIS_COUNTRIES without a row above (docs/add-a-country.md) is still checked, from its own entry: 200, title, language, h1, locale, canonical,
@@ -396,7 +398,7 @@ function get_dialog(r) { return (r.page.match(/<dialog id="netDialog"[\s\S]*?<\/
 // The sitemap and llms.txt list every page of PRIS_COUNTRIES, at foreign-page priority; the Europe bullet says who the source is, per source.
 {
   const sm = (await get('/sitemap.xml')).body, llms = (await get('/llms.txt')).body, full = (await get('/llms-full.txt')).body;
-  const NEW = ['/at/strompreis', '/ch/strompreis', '/be/stroomprijs', '/be/prix-electricite', '/ie/electricity-price', '/cz/ceny-elektriny', '/hr/cijena-struje'];
+  const NEW = ['/at/strompreis', '/ch/strompreis', '/be/stroomprijs', '/be/prix-electricite', '/ie/electricity-price', '/cz/ceny-elektriny', '/hr/cijena-struje', '/rs/cena-struje'];
   const prio = p => +sm.match(new RegExp(`<loc>https://elpriser\\.org${p}</loc>[\\s\\S]*?<priority>([\\d.]+)`))[1];
   ok(NEW.every(p => sm.includes(`<loc>https://elpriser.org${p}</loc>`) && prio(p) === 0.5 && llms.includes(`https://elpriser.org${p})`) && full.includes(`https://elpriser.org${p})`)), 'sitemap og llms.txt: de nye sider er med, i udenlandsk prioritet');
   const bullet = llms.slice(llms.indexOf('- [Elpriser i Europa]'), llms.indexOf('- [Automation]'));
@@ -463,7 +465,7 @@ for (const [from, to] of Object.entries(OLD)) {
 // A Place (never a Country: Google flagged that on /api), the country's Wikidata entity, the page's own zone labels,
 // no coordinates and no boundary. DE-LU is Germany and Luxembourg; IT-Nord is the north of Italy only.
 {
-  const QID = { no: 'Q20', sv: 'Q34', fi: 'Q33', nl: 'Q55', de: 'Q183', fr: 'Q142', pl: 'Q36', it: 'Q38', dk: 'Q35', lu: 'Q32', at: 'Q40', ch: 'Q39', be: 'Q31', ie: 'Q27', ni: 'Q26', cz: 'Q213', hr: 'Q224' };   // checked against Wikidata's English labels 2026-11-02
+  const QID = { no: 'Q20', sv: 'Q34', fi: 'Q33', nl: 'Q55', de: 'Q183', fr: 'Q142', pl: 'Q36', it: 'Q38', dk: 'Q35', lu: 'Q32', at: 'Q40', ch: 'Q39', be: 'Q31', ie: 'Q27', ni: 'Q26', cz: 'Q213', hr: 'Q224', rs: 'Q403' };   // checked against Wikidata's English labels 2026-11-02
   const ldOf = body => [...body.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => JSON.parse(m[1])).find(x => x['@type'] === 'WebPage');
   const wd = c => `https://www.wikidata.org/wiki/${QID[c]}`;
   const walk = (n, f) => { f(n); for (const c of [].concat(n.containsPlace || [], n.containedInPlace || [])) walk(c, f); };
@@ -480,6 +482,7 @@ for (const [from, to] of Object.entries(OLD)) {
     '/be/prix-electricite': { name: 'Belgique', q: 'be', zones: [] },
     '/cz/ceny-elektriny': { name: 'Česko', q: 'cz', zones: [] },
     '/hr/cijena-struje': { name: 'Hrvatska', q: 'hr', zones: [] },
+    '/rs/cena-struje': { name: 'Srbija', q: 'rs', zones: [] },
   };
   for (const [p, w] of Object.entries(WANT)) {
     store.clear();

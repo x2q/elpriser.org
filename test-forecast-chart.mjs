@@ -277,9 +277,9 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const FCWORD = { de: /prognos|vorhersage|vorschau/i, fr: /prévision|prevision|prédi/i, pl: /prognoz|przewid/i, it: /previsi|prognosi|stima/i, en: /forecast|predict|outlook/i, cs: /předpově|prognóz|odhad/i };
   const CAPWORD = { de: [/ohne/, /MwSt/], fr: [/hors/, /TVA/], pl: [/bez/, /VAT/], it: [/al netto/, /IVA/], en: [/excluding/, /VAT/], cs: [/bez/, /DPH/], nl: [/zonder/, /btw/] };
   const NOTEWORD = { de: [/berechnet/, /verändert/], fr: [/calculées/, /modifiées/], pl: [/przeliczone/, /zmienione/], it: [/calcolate/, /modificati/], en: [/calculated/, /changed/], cs: [/vypočítal/, /upraveny/], nl: [/berekend/, /gewijzigd/] };
-  Object.assign(FCWORD, { hr: /prognoz|predvi[dđ]|procjen/i });
-  Object.assign(CAPWORD, { hr: [/bez/, /PDV/] });
-  Object.assign(NOTEWORD, { hr: [/izračunao/, /izmijenjeni/] });
+  Object.assign(FCWORD, { hr: /prognoz|predvi[dđ]|procjen/i, 'sr-Latn': /prognoz|predvi[dđ]|procen/i });
+  Object.assign(CAPWORD, { hr: [/bez/, /PDV/], 'sr-Latn': [/bez/, /PDV/] });
+  Object.assign(NOTEWORD, { hr: [/izračunao/, /izmijenjeni/], 'sr-Latn': [/izračunao/, /izmenjeni/] });
   for (const l of ACT_ONLY) {
     const all = Object.values(L[l]).flat().join(' | ');
     ok(!DANISH.test(all), `${l}: ingen danske ord i tabellen`, (all.match(DANISH) || [])[0]);
@@ -293,7 +293,10 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     ok(c.every(r => r.test(P.cap)) && P.cap.length > 30, `${pg}: billedteksten siger "ekskl. moms" (spotpris, ikke hvad kunden betaler)`, P.cap);
     ok(P.h1.length > 15 && P.zonesH.length > 8 && P.h1 !== L.da.h1 && !/Danmark/.test(P.h1 + P.zonesH + P.note), `${pg}: egen h1, egen overskrift over tekstblokken, og ingen anden lands navn i noten`);
   }
-  ok(ACT_ONLY.length < 2 || (new Set(ACT_ONLY.map(l => L[l].now)).size === ACT_ONLY.length && new Set(ACT_ONLY.map(l => L[l].cap)).size === ACT_ONLY.length && new Set(ACT_ONLY.map(l => L[l].act2)).size === ACT_ONLY.length), 'sprogene med act-sider har hver deres tekster');
+  // The close languages hr, sr-Latn (sr-ME) share single words (act2 'Danas i sutra'): one representative counts here, and as WHOLE tables they must differ (below).
+  const FAM = ['sr-Latn', 'sr-ME'], REP = ACT_ONLY.filter(l => !FAM.includes(l));
+  ok(REP.length < 2 || (new Set(REP.map(l => L[l].now)).size === REP.length && new Set(REP.map(l => L[l].cap)).size === REP.length && new Set(REP.map(l => L[l].act2)).size === REP.length), 'sprogene med act-sider har hver deres tekster');
+  ok(new Set(ACT_ONLY.map(l => JSON.stringify(L[l]))).size === ACT_ONLY.length, 'også de nært beslægtede sprog (hr, sr-Latn, sr-ME) har hver deres tabel');
   ok(langs.slice(1).every(l => L[l].p2 !== L.da.p2 || l === 'nb'), 'hvert sprog har egne ord for 2 døgn (på nær bokmål)');
 
   // The adapter: five days from today, at the response's ECB rate.
@@ -423,7 +426,8 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     ok(pctx.prisCn(X.fi, 'ie') === 'Irlanti' && pctx.prisCn({ cn: {} }, 'ie') === 'Ireland' && pctx.prisCn({ cn: {} }, 'be') === 'België · Belgique', 'et land uden oversættelse hedder sit eget navn i stedet for at mangle (prisCn)');
     ok(CCS.length === new Set(CCS).size && Object.values(CT).every(c => CCS.includes(c.cc)), 'landenavnene dækker Danmark og hvert landeside-cc, ét pr. land (Belgien har to sider men ét land)');
     // The words differ between the languages — a copy-pasted Norwegian table would pass every check above.
-    ok(new Set(cl.map(l => X[l].place)).size === cl.length && new Set(cl.map(l => X[l].privacy)).size === cl.length && new Set(cl.map(l => X[l].land)).size >= cl.length - 1 && cl.every(l => new Set(Object.values(X[l].cn)).size === Object.values(X[l].cn).length), 'vælger-, privatlivs- og landeord er forskellige på alle sprog');
+    const cr = cl.filter(l => !['sr-Latn', 'sr-ME'].includes(l));   // the close languages (hr, sr-Latn, sr-ME) share single words: hr stands for the family here
+    ok(new Set(cr.map(l => X[l].place)).size === cr.length && new Set(cr.map(l => X[l].privacy)).size === cr.length && new Set(cr.map(l => X[l].land)).size >= cr.length - 1 && cl.every(l => new Set(Object.values(X[l].cn)).size === Object.values(X[l].cn).length) && new Set(cl.map(l => JSON.stringify(X[l]))).size === cl.length, 'vælger-, privatlivs- og landeord er forskellige på alle sprog (de nært beslægtede som én familie, men hver med sin egen tabel)');
     const html = pg => pctx.chromeHTML(pg);
     const CREDIT_EC = '>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>';
     for (const pg of Object.keys(CT)) {
