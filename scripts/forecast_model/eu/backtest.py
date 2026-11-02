@@ -31,6 +31,7 @@ import pandas as pd
 DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, DIR)
 import features as F      # noqa: E402
+import level_correction as LC   # noqa: E402
 import metrics as M       # noqa: E402
 
 PARAMS = dict(objective="quantile", alpha=0.5, n_estimators=400, num_leaves=63, min_child_samples=60,
@@ -72,7 +73,7 @@ def predict(m, test, feats, variant):
 
 
 def run(args):
-    df = pd.read_parquet(os.path.join(DIR, "dataset_eu.parquet"))
+    df = pd.read_parquet(os.path.join(DIR, args.dataset))
     df["t"] = pd.to_datetime(df["t"])
     df["date"] = df["t"].dt.normalize()
     df = df.sort_values("t")
@@ -92,12 +93,19 @@ def run(args):
         out.append(test)
         print(f"  fold {lo:%Y-%m}..{hi:%Y-%m}: train {n:,} test {len(test):,} in {time.time() - t0:.0f}s", flush=True)
     res = pd.concat(out, ignore_index=True)
+    res["p_raw"] = res["p_md"]
+    # the trailing level correction (level_correction.py; only error days settled at issue time are used) is always computed
+    # and kept as p_corr for the evidence; p_md - what is scored, calibrated and published - is the uncorrected model unless
+    # --lam > 0, because the correction is a SHADOW until the live archive has confirmed it (see level_correction.py)
+    res["p_corr"] = res["p_raw"] + LC.apply_to_backtest(res, LC.LAMBDA)
+    if args.lam > 0:
+        res["p_md"] = res["p_raw"] + LC.apply_to_backtest(res, args.lam)
     res["hyb"] = M.blend(res, "p_md")
     res["b_lag7"] = res["lag7"]
     res["b_seasonal"] = res["seasonal4w"]
     res["b_persist"] = res["lag_last"]
     res["b_lvlshape"] = M.level_shape(res)
-    res.to_parquet(os.path.join(DIR, f"backtest_eu_{args.variant.replace('+', '_')}.parquet"), index=False)
+    res.to_parquet(os.path.join(DIR, f"backtest_eu_{args.variant.replace('+', '_')}{args.tag}.parquet"), index=False)
     return res
 
 
@@ -105,10 +113,10 @@ COLS = {"model": "p_md", "hybrid": "hyb", "lag7": "b_lag7", "seasonal": "b_seaso
         "persist": "b_persist", "lvlshape": "b_lvlshape"}
 
 
-def report(res):
+def report(res, tag=""):
     keep = res.dropna(subset=["b_lag7", "b_seasonal", "b_persist", "b_lvlshape", "p_md"])
     sc = M.scorecard(keep, COLS)
-    sc.to_csv(os.path.join(DIR, "backtest_eu_scorecard.csv"), index=False)
+    sc.to_csv(os.path.join(DIR, f"backtest_eu_scorecard{tag}.csv"), index=False)
     pd.set_option("display.width", 250)
     by_h = sc.groupby("h").apply(lambda g: pd.Series({
         **{f"{k}_mae": np.average(g[f"{k}_mae"], weights=g.n_days) for k in COLS},
@@ -121,15 +129,18 @@ def report(res):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--variant", default="raw", type=str)
+    ap.add_argument("--variant", default="rel", type=str)
+    ap.add_argument("--dataset", default="dataset_eu.parquet")
+    ap.add_argument("--tag", default="", help="suffix of the output files")
     ap.add_argument("--first", default="2025-04")
     ap.add_argument("--last", default=None)
     ap.add_argument("--step", type=int, default=2)
     ap.add_argument("--jobs", type=int, default=8)
+    ap.add_argument("--lam", type=float, default=0.0, help="level correction strength applied to p_md (default 0 = off: shadow only); p_raw/p_corr are always stored")
     a = ap.parse_args()
     if a.last is None:
         a.last = str(pd.Timestamp.today().to_period("M"))
-    report(run(a))
+    report(run(a), a.tag)
     print("BACKTEST DONE", flush=True)
 
 

@@ -11,6 +11,13 @@ scores every zone for the days after its last published price, and writes
 It NEVER writes eu-prices-<zone> or any nordic-forecast-* / forecast-v3-* key. --dry-run does everything except the KV writes
 and prints a summary; it needs only ENTSOE_TOKEN (and network), not the Cloudflare pair.
 
+Level correction is a SHADOW: the published forecast is the model's own; the corrected numbers are archived beside it (`shadow`)
+and scored by monitor.py --field shadow against --field published. EU_FORECAST_LAMBDA=0.5 publishes the correction instead.
+
+Cron (not installed by the repo; see run_daily.sh): 15 15 * * *  /home/cc/eu-forecast/run_daily.sh
+Monthly, to keep the bands and the accuracy block current (they are measured on a 180-day window):
+    python3 backtest.py --variant rel && python3 calibrate.py --variant rel      (about 4 minutes, 9 GB, 8 threads)
+
 Failure policy: a zone that cannot be scored is skipped (its old key expires after 3 days and the API then serves the settled
 prices alone); a missing live weather forecast aborts the whole run with exit 1 before anything is written, because a model
 trained with weather must not be fed NaN weather; the job exits 0 otherwise. Bands and the accuracy block come from
@@ -37,6 +44,7 @@ import fetch_prices                   # noqa: E402
 import fetch_weather as W             # noqa: E402
 import forecast as FC                 # noqa: E402
 import kv                             # noqa: E402
+import level_correction as LC         # noqa: E402
 from zones import ZONES               # noqa: E402
 
 PRICE_SANITY = (-500.0, 4000.0)       # EUR/MWh: the harmonised day-ahead limits are -500 and 4,000
@@ -87,7 +95,10 @@ def train(df, variant):
     y = tr["y"] - tr["level_7d"] if "rel" in B.flags(variant) else tr["y"]
     m = lgb.LGBMRegressor(n_jobs=int(os.environ.get("EU_FORECAST_JOBS", "8")), **B.PARAMS)
     m.fit(tr[feats], y, categorical_feature=["zone"])
-    trained_through = pd.to_datetime(tr["t"]).max().date()
+    # The newest day with (nearly) every zone's rows - a stray first hour of the next day in the eastern zones must not
+    # make a model look fresher than it is. A frozen source shows up here as a date that stops moving.
+    per_day = pd.to_datetime(tr["t"]).dt.normalize().value_counts()
+    trained_through = per_day[per_day >= 0.5 * per_day.median()].index.max().date()
     return m, feats, len(tr), trained_through
 
 
@@ -96,7 +107,7 @@ def main(argv=None):
     ap.add_argument("--dry-run", action="store_true", help="do everything except write to KV")
     ap.add_argument("--zones", help="comma-separated subset to score (the model is always trained on all zones)")
     ap.add_argument("--skip-refresh", action="store_true", help="use the cached prices and weather as they are")
-    ap.add_argument("--variant", default=os.environ.get("EU_FORECAST_VARIANT", "raw"))
+    ap.add_argument("--variant", default=os.environ.get("EU_FORECAST_VARIANT", "rel"))
     a = ap.parse_args(argv)
     load_env()
     now = datetime.now(timezone.utc)
@@ -143,35 +154,52 @@ def main(argv=None):
     prices = ds.load_prices()
     days, eu = F.day_table(prices)
     cal, acc = load_json("calibration_eu.json"), load_json("accuracy_eu.json")
+    lam = float(os.environ.get("EU_FORECAST_LAMBDA", "0"))          # what is PUBLISHED; 0 = the uncorrected model (shadow only)
+    tables = [LC.day_errors_from_archive(os.path.join(DIR, "archive"), prices)]
+    bt = os.path.join(DIR, f"backtest_eu_{a.variant.replace('+', '_')}.parquet")
+    if os.environ.get("EU_FORECAST_BOOTSTRAP") == "1" and os.path.exists(bt):       # experiments only, see level_correction.py
+        tables.append(LC.day_errors_from_backtest(pd.read_parquet(bt, columns=["zone", "date", "h", "y", "p_raw"])))
+    errors = LC.merge_errors(*tables)
+    log(f"  level correction: {len(errors):,} day errors from the live archive; published lambda={lam}, shadow lambda={LC.LAMBDA}")
+    level_corr = (lambda z, h, d: LC.correction(errors, z, h, d, lam)) if lam > 0 else None
+    shadow_corr = lambda z, h, d: LC.correction(errors, z, h, d, LC.LAMBDA)
     if cal is None:
         log("  calibration_eu.json missing: days are published WITHOUT a band")
-    wrote, skipped = 0, []
+    wrote, skipped, latest = 0, [], {}
     for z in zones:
         try:
             tz = ZoneInfo(ZONES[z][1])
             today = now.astimezone(tz).date()
             wx = FC.live_weather_local(live, z)
             reg = FC.live_regional_local(live, z)
-            fdays = FC.forecast_zone(z, predict, prices, wx, reg, days, eu, today, cal)
+            fdays = FC.forecast_zone(z, predict, prices, wx, reg, days, eu, today, cal, accuracy=(acc or {}).get(z), level_corr=level_corr, shadow_corr=shadow_corr)
             fdays = [d for d in fdays if all(PRICE_SANITY[0] <= p["eur_mwh"] <= PRICE_SANITY[1] for p in d["prices"])]
             if not fdays:
                 skipped.append(z)
                 log(f"  {z}: nothing to publish (stale prices or no finite forecast)")
                 continue
             pl = FC.payload(z, fdays, today, trained_through, now.isoformat(timespec="seconds"), (acc or {}).get(z))
+            latest[z] = FC.archive_payload(pl, fdays)
             horizons = ",".join(str(d["horizon"]) for d in fdays)
             mean = np.mean([p["eur_mwh"] for d in fdays for p in d["prices"]])
             if a.dry_run:
                 log(f"  {z}: would write eu-forecast-{z}: {len(fdays)} days (h {horizons}), mean {mean:.1f} EUR/MWh")
             else:
                 kv.put(f"eu-forecast-{z}", pl, kv.FORECAST_TTL, acct, cf)
-                kv.put(f"eu-forecast-archive-{z}-{today.isoformat()}", FC.archive_payload(pl), kv.ARCHIVE_TTL, acct, cf)
+                arch = FC.archive_payload(pl, fdays)
+                kv.put(f"eu-forecast-archive-{z}-{today.isoformat()}", arch, kv.ARCHIVE_TTL, acct, cf)
+                os.makedirs(os.path.join(DIR, "archive"), exist_ok=True)
+                with open(os.path.join(DIR, "archive", f"{z}-{today.isoformat()}.json"), "w", encoding="utf-8") as fh:
+                    json.dump(arch, fh)
                 log(f"  {z}: wrote eu-forecast-{z} (+ archive): {len(fdays)} days (h {horizons}), mean {mean:.1f} EUR/MWh")
             wrote += 1
             time.sleep(0.2)
         except Exception as e:
             skipped.append(z)
             log(f"  {z}: FAILED (non-fatal): {type(e).__name__}: {e}")
+    # a local copy of what was (or, in a dry run, would have been) published: for looking at, never read by the site
+    with open(os.path.join(DIR, "forecast_latest.json"), "w", encoding="utf-8") as f:
+        json.dump(latest, f)
     log(f"DONE {wrote}/{len(zones)} zones" + (f", skipped: {', '.join(skipped)}" if skipped else ""))
     return 3 if (len(zones) == len(ZONES) and wrote < MIN_ZONES) else 0
 

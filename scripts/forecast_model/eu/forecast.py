@@ -23,6 +23,7 @@ from zones import ZONES
 MAX_H = 8
 MIN_HOURS = 12                 # a day counts as published with at least this many priced hours (like the price jobs)
 MODEL_NAME = "eu-pooled-v1"
+MIN_SKILL = -0.05              # a horizon whose backtest MAE is more than 5 % WORSE than the best naive baseline is not published
 
 
 def last_known_day(p):
@@ -67,22 +68,38 @@ def band_for(cal, zone, h):
     return z[near]
 
 
-def forecast_zone(zone, predict, prices, wx, reg, days, eu, today, cal=None, days_ahead=7):
+def horizon_ok(accuracy, h, min_skill=MIN_SKILL):
+    """False when this zone's own backtest says the forecast at horizon h is clearly worse than a naive baseline. A zone or a
+    horizon without an accuracy entry is not blocked (no evidence is not evidence against)."""
+    e = (((accuracy or {}).get("backtest") or {}).get("byHorizon") or {}).get(str(h))
+    return e is None or e.get("skill") is None or e["skill"] >= min_skill
+
+
+def forecast_zone(zone, predict, prices, wx, reg, days, eu, today, cal=None, days_ahead=7, accuracy=None, level_corr=None, shadow_corr=None):
     """The `days` list of one zone's forecast. `prices` is {zone: hourly Series} (day_table's input), `wx`/`reg` the
     LIVE weather on the zone's clock, `days`/`eu` the day_table output. `predict(X)` -> prices for the feature rows.
-    Returns [] when the zone has no usable price history (never a guess)."""
+    Returns [] when the zone has no usable price history (never a guess). `accuracy` is the zone's accuracy_eu.json entry: horizons
+    whose skill is below MIN_SKILL are left out. `level_corr(zone, h, date) -> EUR/MWh` (level_correction.correction) shifts the
+    day; each day then also carries `uncorrected`, the model's own 24 numbers, for the archive (payload() strips it).
+    `shadow_corr` has the same signature; when given, each day also carries `shadow`, the numbers WITH that correction, which are
+    archived but never published."""
     p = prices[zone]
     lk = last_known_day(p)
     if lk is None or lk < today - timedelta(days=1):
         return []                          # stale prices: a forecast built on them would be a week old
     out = []
     for d, h in target_days(lk, today, days_ahead):
+        if not horizon_ok(accuracy, h):
+            continue                       # the zone's own backtest says: not better than a naive forecast here
         idx = pd.date_range(pd.Timestamp(d), periods=24, freq="h")
         X = F.make_features(zone, idx, h, p, wx, reg, days[zone], eu)
         X["zone"] = pd.Categorical([zone] * len(X), categories=list(ZONES))
         y = np.asarray(predict(X), dtype=float)
         if not np.isfinite(y).all():
             continue                       # a day with a NaN anywhere is dropped, not patched
+        raw = y.copy()
+        if level_corr is not None:
+            y = y + float(level_corr(zone, h, d))
         band = band_for(cal, zone, h)
         rows = []
         for hr in range(24):
@@ -91,7 +108,11 @@ def forecast_zone(zone, predict, prices, wx, reg, days, eu, today, cal=None, day
                 r["min_eur_mwh"] = round(float(y[hr] + band["lo"]), 2)
                 r["max_eur_mwh"] = round(float(y[hr] + band["hi"]), 2)
             rows.append(r)
-        out.append({"date": d.isoformat(), "type": "forecast", "horizon": h, "prices": rows})
+        day = {"date": d.isoformat(), "type": "forecast", "horizon": h, "prices": rows,
+               "uncorrected": [round(float(v), 2) for v in raw]}
+        if shadow_corr is not None:
+            day["shadow"] = [round(float(v) + float(shadow_corr(zone, h, d)), 2) for v in raw]
+        out.append(day)
     return out
 
 
@@ -99,12 +120,18 @@ def payload(zone, days, today, trained_through, generated_at, accuracy=None):
     """The KV value. `generated` is the zone-independent run date; `accuracy` is the backtest block for this zone."""
     v = {"zone": zone, "generated": today.isoformat(), "generatedAt": generated_at,
          "trainedThrough": trained_through.isoformat() if trained_through else None,
-         "unit": "EUR/MWh", "model": MODEL_NAME, "days": days}
+         "unit": "EUR/MWh", "model": MODEL_NAME,
+         "days": [{k: x for k, x in d.items() if k not in ("uncorrected", "shadow")} for d in days]}
     if accuracy:
         v["accuracy"] = accuracy
     return v
 
 
-def archive_payload(pl):
-    """What is kept for monitoring (forecast-v3-archive pattern): the run as published, without the accuracy block."""
-    return {k: v for k, v in pl.items() if k != "accuracy"}
+def archive_payload(pl, days=None):
+    """What is kept for monitoring (forecast-v3-archive pattern): the run as published, without the accuracy block, and - when
+    the unstripped `days` are passed - with each day's `uncorrected` model numbers and `shadow` numbers, so the error of the MODEL (not of the
+    corrected forecast) can be measured from the archive later."""
+    out = {k: v for k, v in pl.items() if k != "accuracy"}
+    if days is not None:
+        out["days"] = days
+    return out

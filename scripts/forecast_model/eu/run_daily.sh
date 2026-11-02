@@ -1,0 +1,17 @@
+#!/bin/bash
+# Cron entry point for the EU forecast (NOT installed by the repo; see the deployment plan in the commit message of the change that adds it).
+#
+#   15 15 * * *  /home/cc/eu-forecast/run_daily.sh
+#
+# 15:15 UTC: after the price jobs (Energy-Charts 11:30/14:00, ENTSO-E 11:45/14:15, which finish by ~14:20), after the Nordic
+# jobs (12:10 prognose3, 12:40 nordic, 12:50/12:55 price_archive) and after the 12:45 CET day-ahead auction in both summer and
+# winter time, so tomorrow's prices are known and the first forecast day is the day after tomorrow.
+#
+# One run at a time (flock), lowest CPU priority, at most 2 hours, LightGBM on 8 threads. Credentials come from
+# ~/.config/elpriser.env and are never echoed. Exit codes of train_daily.py: 0 ok, 1 aborted before writing (live weather
+# missing), 2 missing configuration, 3 fewer than 20 zones written; the log line "DONE n/25 zones" is the one to alert on.
+set -u
+cd "$(dirname "$0")" || exit 2
+set -a; . "$HOME/.config/elpriser.env"; set +a
+export EU_FORECAST_JOBS="${EU_FORECAST_JOBS:-8}"
+exec flock -n /tmp/eu-forecast.lock nice -n 10 timeout 2h python3 train_daily.py >> daily.log 2>&1

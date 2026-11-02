@@ -26,9 +26,11 @@ sys.path.insert(0, DIR)
 MIN_DAYS = 10
 
 
-def evaluate(archives, actual):
+def evaluate(archives, actual, field="published"):
     """archives: [payload as stored]; actual: {zone: hourly Series on the zone's naive local clock}.
-    Returns a DataFrame zone, h, days, mae, bias (EUR/MWh) over the forecast days that have settled prices for all 24 hours."""
+    `field` picks the numbers to score: "published" (what customers saw), "uncorrected" (the model's own) or "shadow" (with the
+    shadow level correction; level_correction.py). Returns a DataFrame zone, h, days, mae, bias (EUR/MWh) over the forecast
+    days that have settled prices for all 24 hours."""
     rows = []
     for pl in archives:
         z = pl.get("zone")
@@ -40,7 +42,10 @@ def evaluate(archives, actual):
                 continue
             idx = pd.date_range(pd.Timestamp(d["date"]), periods=24, freq="h")
             y = a.reindex(idx).to_numpy(dtype=float)
-            f = np.array([p["eur_mwh"] if p.get("eur_mwh") is not None else np.nan for p in sorted(d["prices"], key=lambda p: p["hour"])], dtype=float)
+            if field == "published":
+                f = np.array([p["eur_mwh"] if p.get("eur_mwh") is not None else np.nan for p in sorted(d["prices"], key=lambda p: p["hour"])], dtype=float)
+            else:
+                f = np.array(d.get(field) or [], dtype=float)
             if len(f) != 24 or np.isnan(y).any() or np.isnan(f).any():
                 continue            # the day has not (fully) settled, or the forecast is incomplete
             rows.append({"zone": z, "h": int(d["horizon"]), "date": d["date"], "mae": float(np.abs(f - y).mean()), "bias": float((f - y).mean())})
@@ -68,6 +73,8 @@ def main(argv=None):
     ap.add_argument("--days", type=int, default=21, help="how many past run dates to read from the archive")
     ap.add_argument("--zones")
     ap.add_argument("--alert-factor", type=float, default=1.5)
+    ap.add_argument("--field", default="published", choices=["published", "uncorrected", "shadow"],
+                    help="which archived numbers to score; run once with published and once with shadow to compare them")
     a = ap.parse_args(argv)
     import kv
     import train_daily as T
@@ -86,7 +93,7 @@ def main(argv=None):
             v = kv.get(f"eu-forecast-archive-{z}-{(today - timedelta(days=k)).isoformat()}", acct, tok)
             if v:
                 archives.append(v)
-    live = evaluate(archives, ds.load_prices(zones=zones))
+    live = evaluate(archives, ds.load_prices(zones=zones), a.field)
     res = drift(live, T.load_json("accuracy_eu.json"), a.alert_factor)
     pd.set_option("display.width", 200)
     if res.empty:

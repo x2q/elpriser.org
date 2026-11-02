@@ -18,8 +18,10 @@ sys.path.insert(0, HERE)
 import calendar_features as C    # noqa: E402
 import features as F             # noqa: E402
 import forecast as FC            # noqa: E402
+import level_correction as LC    # noqa: E402
 import calibrate as K             # noqa: E402
 import metrics as M              # noqa: E402
+import kv as KV                  # noqa: E402
 import monitor as MON            # noqa: E402
 from zones import ZONES          # noqa: E402
 
@@ -260,6 +262,17 @@ class Scoring(unittest.TestCase):
         self.assertNotIn(3, [d["horizon"] for d in out])
         self.assertIn(2, [d["horizon"] for d in out])
 
+    def test_a_horizon_that_loses_to_a_naive_baseline_is_not_published(self):
+        acc = {"backtest": {"byHorizon": {"2": {"skill": 0.10}, "3": {"skill": -0.04}, "4": {"skill": -0.06}, "5": {"skill": None}}}}
+        out = FC.forecast_zone("de", lambda X: np.full(len(X), 40.0), self.prices, self.wx["de"], self.reg, self.days, self.eu,
+                               self.last, accuracy=acc)
+        hs = [d["horizon"] for d in out]
+        self.assertIn(2, hs)
+        self.assertIn(3, hs)               # -4 % is inside the tolerance
+        self.assertNotIn(4, hs)            # -6 % is not
+        self.assertIn(5, hs)               # no skill number: not blocked
+        self.assertIn(7, hs)               # no entry at all: not blocked
+
     def test_payload_shape(self):
         pl = FC.payload("de", [], date(2026, 11, 2), date(2026, 11, 1), "2026-11-02T12:50:00+00:00",
                         {"byHorizon": {"2": {"mae": 20}}})
@@ -271,6 +284,123 @@ class Scoring(unittest.TestCase):
     def test_no_band_without_calibration(self):
         out = FC.forecast_zone("de", lambda X: np.full(len(X), 1.0), self.prices, self.wx["de"], self.reg, self.days, self.eu, self.last)
         self.assertTrue(out and "min_eur_mwh" not in out[0]["prices"][0])
+
+
+class LevelCorrection(unittest.TestCase):
+    def backtest_frame(self, bias_by_day, h=3, zone="de"):
+        """One row per hour: forecast = actual - bias of that target day (so the day error equals the bias)."""
+        rows = []
+        for day, bias in bias_by_day.items():
+            for hr in range(24):
+                rows.append({"zone": zone, "date": pd.Timestamp(day), "h": h, "hour": hr, "y": 100.0, "p_raw": 100.0 - bias})
+        d = pd.DataFrame(rows)
+        d["zone"] = pd.Categorical(d["zone"])
+        return d
+
+    def test_only_days_settled_at_issue_time_are_used(self):
+        # target 2026-03-20 at h=3: the last known day is 03-18; the window is the 14 days ending there
+        days = {d.strftime("%Y-%m-%d"): 10.0 for d in pd.date_range("2026-03-01", "2026-03-18")}
+        days.update({d.strftime("%Y-%m-%d"): 500.0 for d in pd.date_range("2026-03-19", "2026-03-25")})   # not settled yet: must not count
+        errs = LC.day_errors_from_backtest(self.backtest_frame(days))
+        self.assertAlmostEqual(LC.correction(errs, "de", 3, pd.Timestamp("2026-03-20").date(), lam=0.5), 5.0)
+        self.assertAlmostEqual(LC.correction(errs, "de", 3, pd.Timestamp("2026-03-20").date(), lam=1.0), 10.0)
+
+    def test_no_evidence_no_correction(self):
+        errs = LC.day_errors_from_backtest(self.backtest_frame({"2026-03-01": 10.0, "2026-03-02": 10.0}))
+        self.assertEqual(LC.correction(errs, "de", 3, pd.Timestamp("2026-03-05").date()), 0.0)     # 2 days < MIN_DAYS
+        self.assertEqual(LC.correction(errs, "fr", 3, pd.Timestamp("2026-03-05").date()), 0.0)     # another zone
+        self.assertEqual(LC.correction(errs, "de", 4, pd.Timestamp("2026-03-05").date()), 0.0)     # another horizon
+        self.assertEqual(LC.correction(None, "de", 3, pd.Timestamp("2026-03-05").date()), 0.0)
+        self.assertEqual(LC.correction(errs, "de", 3, pd.Timestamp("2026-03-05").date(), lam=0), 0.0)
+
+    def test_the_vectorised_backtest_version_equals_the_per_forecast_one(self):
+        """What the backtest measures must be exactly what production applies."""
+        rng = np.random.default_rng(5)
+        days = {d.strftime("%Y-%m-%d"): float(rng.normal(8, 12)) for d in pd.date_range("2026-01-01", periods=70)}
+        bt = self.backtest_frame(days, h=4)
+        vec = LC.apply_to_backtest(bt, lam=0.5)
+        errs = LC.day_errors_from_backtest(bt)
+        per_row = np.array([LC.correction(errs, "de", 4, r.date.date(), lam=0.5) for r in bt.itertuples()])
+        np.testing.assert_allclose(vec, per_row, atol=1e-9)
+        self.assertTrue((vec != 0).any())
+
+    def test_the_archive_wins_over_the_backtest_and_measures_the_uncorrected_model(self):
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            day = {"date": "2026-03-02", "type": "forecast", "horizon": 3, "prices": [{"hour": h, "eur_mwh": 999.0} for h in range(24)],
+                   "uncorrected": [90.0] * 24}
+            with open(os.path.join(td, "de-2026-02-28.json"), "w", encoding="utf-8") as f:
+                json.dump({"zone": "de", "days": [day, {**day, "date": "2026-03-03", "uncorrected": [80.0] * 24}]}, f)
+            idx = pd.date_range("2026-03-02", periods=48, freq="h")
+            prices = {"de": pd.Series(100.0, index=idx)}
+            arch = LC.day_errors_from_archive(td, prices)
+            self.assertEqual(sorted(arch["res"].round(1).tolist()), [10.0, 20.0])      # actual - UNcorrected, not the 999 published
+            bt = LC.day_errors_from_backtest(self.backtest_frame({"2026-03-02": 1.0}, h=3))
+            merged = LC.merge_errors(arch, bt)
+            self.assertEqual(len(merged), 2)
+            self.assertAlmostEqual(float(merged[merged["date"] == pd.Timestamp("2026-03-02")]["res"].iloc[0]), 10.0)
+
+    def test_forecast_zone_applies_the_shift_and_the_published_payload_hides_the_raw_numbers(self):
+        idx, prices, wx, reg = synthetic(days=60)
+        days, eu = F.day_table(prices)
+        lk = FC.last_known_day(prices["de"])
+        out = FC.forecast_zone("de", lambda X: np.full(len(X), 50.0), prices, wx["de"], reg, days, eu, lk,
+                               level_corr=lambda z, h, d: 7.0)
+        self.assertEqual(out[0]["prices"][0]["eur_mwh"], 57.0)
+        self.assertEqual(out[0]["uncorrected"][0], 50.0)
+        sh = FC.forecast_zone("de", lambda X: np.full(len(X), 50.0), prices, wx["de"], reg, days, eu, lk, shadow_corr=lambda z, h, d: -4.0)
+        self.assertEqual(sh[0]["prices"][0]["eur_mwh"], 50.0)                  # the shadow is never published
+        self.assertEqual(sh[0]["shadow"][0], 46.0)
+        pl = FC.payload("de", out, lk, lk, "x")
+        self.assertTrue(all("uncorrected" not in d and "shadow" not in d for d in FC.payload("de", sh, lk, lk, "x")["days"]))
+        self.assertTrue(all("uncorrected" not in d for d in pl["days"]))
+        self.assertTrue(all("uncorrected" in d for d in FC.archive_payload(pl, out)["days"]))
+
+
+class KvWrites(unittest.TestCase):
+    """kv.put against a fake urlopen: the request is what Cloudflare expects and a failure never carries the token."""
+
+    def test_put_request_shape_and_ttl(self):
+        import io
+        import json
+        import urllib.error
+        seen = {}
+
+        class Resp(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        def fake(req, timeout=0):
+            seen.update(url=req.full_url, method=req.get_method(), body=req.data, auth=req.get_header("Authorization"))
+            return Resp(b'{"success": true}')
+        real = KV.urllib.request.urlopen
+        KV.urllib.request.urlopen = fake
+        try:
+            KV.put("eu-forecast-de", {"a": 1}, KV.FORECAST_TTL, "ACCT", "SECRET-TOKEN")
+        finally:
+            KV.urllib.request.urlopen = real
+        self.assertEqual(seen["method"], "PUT")
+        self.assertIn("/accounts/ACCT/storage/kv/namespaces/" + KV.KV_NAMESPACE + "/values/eu-forecast-de?expiration_ttl=259200", seen["url"])
+        self.assertEqual(json.loads(seen["body"]), {"a": 1})
+        self.assertEqual(seen["auth"], "Bearer SECRET-TOKEN")
+
+        def boom(req, timeout=0):
+            raise urllib.error.HTTPError(req.full_url, 403, "no", {}, None)
+        KV.urllib.request.urlopen = boom
+        try:
+            with self.assertRaises(RuntimeError) as cm:
+                KV.put("k", {}, 60, "ACCT", "SECRET-TOKEN")
+        finally:
+            KV.urllib.request.urlopen = real
+        self.assertNotIn("SECRET-TOKEN", str(cm.exception))
+        self.assertIn("403", str(cm.exception))
+
+    def test_the_key_is_escaped_not_interpreted(self):
+        self.assertNotIn("/../", KV._url("../x", "A"))
 
 
 class Calibration(unittest.TestCase):
@@ -290,25 +420,41 @@ class Calibration(unittest.TestCase):
 
     def test_bands_are_the_residual_quantiles(self):
         d = self.frame(n_days=60)
-        b = K.residual_bands(d)["de"]["2"]
+        b = K.residual_bands(d, window_days=None, scale=1.0)["de"]["2"]
         self.assertLess(b["lo"], 0)
         self.assertGreater(b["hi"], 0)
         self.assertAlmostEqual(b["hi"], 1.2816 * 5.0, delta=1.0)
         self.assertAlmostEqual(b["lo"], -1.2816 * 5.0, delta=1.0)
+        wide = K.residual_bands(d, window_days=None, scale=1.2)["de"]["2"]
+        self.assertAlmostEqual(wide["hi"], b["hi"] * 1.2, delta=0.02)
+
+    def test_the_band_comes_from_the_recent_window_only(self):
+        d = self.frame(n_days=120)
+        d.loc[d["date"] < pd.Timestamp("2026-02-15"), "y"] += np.random.default_rng(1).normal(0, 40, (d["date"] < pd.Timestamp("2026-02-15")).sum())
+        recent = K.residual_bands(d, window_days=40, scale=1.0)["de"]["2"]
+        everything = K.residual_bands(d, window_days=None, scale=1.0)["de"]["2"]
+        self.assertLess(recent["hi"], everything["hi"] / 3)             # old noisy period excluded: much narrower
 
     def test_thin_cells_get_no_band(self):
         self.assertEqual(K.residual_bands(self.frame(n_days=3)), {})
 
-    def test_out_of_sample_coverage_is_close_to_80_when_errors_are_stationary(self):
-        cov = K.out_of_sample_coverage(self.frame(n_days=90))
+    def test_rolling_coverage_is_close_to_80_when_errors_are_stationary(self):
+        cov = K.rolling_coverage(self.frame(n_days=240), window_days=90, scale=1.0, warmup_days=90)
         self.assertAlmostEqual(cov[("de", 2)], 0.8, delta=0.05)
 
+    def test_a_volatility_jump_is_visible_in_the_measured_coverage(self):
+        d = self.frame(n_days=240)
+        late = d["date"] >= d["date"].min() + pd.Timedelta(days=150)
+        d.loc[late, "y"] += np.random.default_rng(2).normal(0, 12, late.sum())     # errors 3x larger late on
+        cov = K.rolling_coverage(d, window_days=90, scale=1.0, warmup_days=90)
+        self.assertLess(cov[("de", 2)], 0.75)                                      # an honest number, not 80 %
+
     def test_accuracy_block_is_honest_about_the_best_naive_baseline(self):
-        a = K.accuracy(self.frame(n_days=60), "2026-01-01", "2026-03-01")["de"]["backtest"]
+        a = K.accuracy(self.frame(n_days=260), "2026-01-01", "2026-09-18")["de"]["backtest"]
         e = a["byHorizon"]["2"]
         self.assertEqual(e["bestNaive"], "lvlshape")
         self.assertGreater(e["skill"], 0.0)                      # the model beats every naive column here
-        self.assertEqual(a["period"], "2026-01-01..2026-03-01")
+        self.assertEqual(a["period"], "2026-01-01..2026-09-18")
         self.assertIn("coverageP10P90", e)
         self.assertLess(e["regret"], e["regretAvgHour"])
 
@@ -329,6 +475,16 @@ class Monitoring(unittest.TestCase):
         self.assertEqual((r.zone, r.h, r.days), ("de", 2, 1))
         self.assertAlmostEqual(r.mae, 4.0)
         self.assertAlmostEqual(r.bias, -4.0)           # forecast below the realised price
+
+    def test_shadow_and_uncorrected_numbers_can_be_scored_instead_of_the_published_ones(self):
+        arch = self.archive(dates=["2026-03-02"], level=50.0)               # published: 50 + hour
+        arch["days"][0]["uncorrected"] = [40.0 + hr for hr in range(24)]
+        arch["days"][0]["shadow"] = [53.0 + hr for hr in range(24)]
+        act = {"de": self.actual(["2026-03-02"])}                           # actual: 50 + hour
+        self.assertAlmostEqual(MON.evaluate([arch], act).iloc[0].mae, 0.0)
+        self.assertAlmostEqual(MON.evaluate([arch], act, "uncorrected").iloc[0].mae, 10.0)
+        self.assertAlmostEqual(MON.evaluate([arch], act, "shadow").iloc[0].mae, 3.0)
+        self.assertTrue(MON.evaluate([self.archive()], act, "shadow").empty)      # an archive without shadow numbers: nothing scored
 
     def test_unsettled_or_incomplete_days_are_not_scored(self):
         a = self.actual(["2026-03-02"])

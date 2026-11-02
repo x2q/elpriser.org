@@ -82,12 +82,15 @@ def _request(pts, s, e):
     return res if isinstance(res, list) else [res]
 
 
-def fetch_history(out_dir=DIR, today=None, pause=RAMP_PAUSE):
-    """Create or top up every point's cache. Points are grouped PER_CALL to a request."""
+def fetch_history(out_dir=DIR, today=None, pause=RAMP_PAUSE, only=None):
+    """Create or top up every point's cache. Points are grouped PER_CALL to a request; `only` is an optional set of group
+    indexes (so a first run can be split over several processes, each its own groups)."""
     today = today or date.today()
     yesterday = today - timedelta(days=1)
     points = all_points()
     for g in range(0, len(points), PER_CALL):
+        if only is not None and g // PER_CALL not in only:
+            continue
         group = points[g:g + PER_CALL]
         have = [os.path.exists(path(p[0], p[1], out_dir)) for p in group]
         if all(have):
@@ -143,5 +146,5 @@ def live(horizon_days=10):
 
 
 if __name__ == "__main__":
-    fetch_history()
+    fetch_history(only={int(a) for a in sys.argv[1:]} or None)
     print("WEATHER DONE", flush=True)

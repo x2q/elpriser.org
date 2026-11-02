@@ -41,7 +41,7 @@ def load_weather(zones, out_dir=DIR):
     return out
 
 
-def build(out_dir=DIR, zones=None, save=True):
+def build(out_dir=DIR, zones=None, save=True, name="dataset_eu.parquet"):
     prices = load_prices(out_dir, zones)
     zs = list(prices)
     prev = load_weather(zs, out_dir)
@@ -78,11 +78,16 @@ def build(out_dir=DIR, zones=None, save=True):
     out = pd.concat(frames, ignore_index=True).dropna(subset=["y"])
     out["zone"] = pd.Categorical(out["zone"], categories=list(ZONES))
     if save:
-        out.to_parquet(os.path.join(out_dir, "dataset_eu.parquet"), index=False)
+        out.to_parquet(os.path.join(out_dir, name), index=False)
     print(f"dataset: {len(out):,} rows, {out.zone.nunique()} zones, {out.t.min():%Y-%m-%d} -> {out.t.max():%Y-%m-%d}",
           flush=True)
     return out
 
 
 if __name__ == "__main__":
-    build()
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--zones", help="comma-separated subset (default: all)")
+    ap.add_argument("--name", default="dataset_eu.parquet")
+    a = ap.parse_args()
+    build(zones=a.zones.split(",") if a.zones else None, name=a.name)

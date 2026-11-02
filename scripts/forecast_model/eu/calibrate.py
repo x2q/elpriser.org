@@ -4,13 +4,17 @@
     python3 calibrate.py [--variant raw]      reads backtest_eu_<variant>.parquet, writes calibration_eu.json, accuracy_eu.json
 
 calibration_eu.json   {zone: {h: {lo, hi}}}  additive P10 / P90 offsets: the 10th and 90th percentile of (actual - forecast)
-                      per zone and horizon over the whole backtest. Empirical residual quantiles, not scaled model quantiles
-                      (the Nordic lesson: scaling needed 8x in flat zones and still missed 80 %).
+                      per zone and horizon over the LAST WINDOW_DAYS of the backtest, times BAND_SCALE. Empirical residual
+                      quantiles, not scaled model quantiles (the Nordic lesson: scaling needed 8x in flat zones and still
+                      missed 80 %). Why a recent window and a scale: error is not stationary (2026 was more volatile than 2025),
+                      and a band fitted on the whole backtest covered only ~69 % when scored on the following months. Measured
+                      rolling out of sample (bands from residuals settled 8+ days before each month), 180 days x 1.2 covers
+                      80 % at D+2, D+5 and D+7. The file ages: re-run backtest + calibrate monthly.
 accuracy_eu.json      {zone: {backtest: {...}}} what the forecast is WORTH in this zone, per horizon, for the page to state.
                       Besides MAE and regret it carries the HONEST comparison: the same error of the best naive baseline,
-                      the skill (how much smaller the model's error is) and `coverage`, the share of hours inside the P10-P90
-                      band measured OUT OF SAMPLE (the band from the older part of the backtest, scored on its newest third),
-                      so the band is not graded on the data that set it.
+                      the skill (how much smaller the model's error is) and `coverageP10P90`, the share of hours inside the
+                      P10-P90 band measured ROLLING OUT OF SAMPLE with the very recipe that makes the published band, so the
+                      band is not graded on the data that set it.
 """
 import argparse
 import json
@@ -26,35 +30,53 @@ import metrics as M      # noqa: E402
 
 NAIVE = {"lag7": "b_lag7", "seasonal4w": "b_seasonal", "persist": "b_persist", "lvlshape": "b_lvlshape"}
 MIN_N = 200               # rows needed for a (zone, h) quantile
+WINDOW_DAYS = 180
+BAND_SCALE = 1.2
+SETTLE_LAG_DAYS = 8       # a forecast's error is known once its target day has settled: at most 8 days after issue
 
 
-def residual_bands(res, col="p_md"):
-    """{zone: {h: {lo, hi}}} from the 10th/90th percentile of actual - forecast."""
-    out = {}
+def residual_bands(res, col="p_md", window_days=WINDOW_DAYS, scale=BAND_SCALE, until=None):
+    """{zone: {h: {lo, hi}}} from the 10th/90th percentile of actual - forecast over the last `window_days` before `until`
+    (default: the newest date in `res`), multiplied by `scale`. window_days=None uses everything."""
     d = res.assign(resid=res["y"] - res[col]).dropna(subset=["resid"])
+    d["date"] = pd.to_datetime(d["date"])
+    end = pd.Timestamp(until) if until is not None else d["date"].max() + pd.Timedelta(days=1)
+    d = d[d["date"] < end]
+    if window_days:
+        d = d[d["date"] >= end - pd.Timedelta(days=window_days)]
+    out = {}
     for (z, h), s in d.groupby(["zone", "h"], observed=True):
         if len(s) < MIN_N:
             continue
         lo, hi = np.percentile(s["resid"], [10, 90])
-        out.setdefault(str(z), {})[str(int(h))] = {"lo": round(float(lo), 2), "hi": round(float(hi), 2)}
+        out.setdefault(str(z), {})[str(int(h))] = {"lo": round(float(lo) * scale, 2), "hi": round(float(hi) * scale, 2)}
     return out
 
 
-def out_of_sample_coverage(res, col="p_md", frac=2 / 3):
-    """{(zone, h): share of hours inside P10-P90} with the band fitted on the first `frac` of the dates and scored on the rest."""
+def rolling_coverage(res, col="p_md", window_days=WINDOW_DAYS, scale=BAND_SCALE, block_days=30, warmup_days=None):
+    """{(zone, h): share of hours inside P10-P90}, measured the way production works: for each block of `block_days`, the band
+    comes only from residuals of targets settled at least SETTLE_LAG_DAYS before the block starts. Blocks start after
+    `warmup_days` of history (default: window_days)."""
     d = res.copy()
     d["date"] = pd.to_datetime(d["date"])
-    cut = d["date"].quantile(frac)
-    fit, test = d[d["date"] <= cut], d[d["date"] > cut]
-    bands = residual_bands(fit, col)
-    cov = {}
-    for (z, h), s in test.groupby(["zone", "h"], observed=True):
-        b = bands.get(str(z), {}).get(str(int(h)))
-        if b is None or s.empty:
-            continue
-        ok = (s["y"] >= s[col] + b["lo"]) & (s["y"] <= s[col] + b["hi"])
-        cov[(str(z), int(h))] = float(ok.mean())
-    return cov
+    warm = window_days if warmup_days is None else warmup_days
+    t0 = d["date"].min() + pd.Timedelta(days=warm)
+    hits, n = {}, {}
+    start = t0
+    while start <= d["date"].max():
+        stop = start + pd.Timedelta(days=block_days)
+        test = d[(d["date"] >= start) & (d["date"] < stop)]
+        bands = residual_bands(d, col, window_days, scale, until=start - pd.Timedelta(days=SETTLE_LAG_DAYS))
+        for (z, h), s in test.groupby(["zone", "h"], observed=True):
+            b = bands.get(str(z), {}).get(str(int(h)))
+            if b is None or s.empty:
+                continue
+            ok = (s["y"] >= s[col] + b["lo"]) & (s["y"] <= s[col] + b["hi"])
+            k = (str(z), int(h))
+            hits[k] = hits.get(k, 0) + int(ok.sum())
+            n[k] = n.get(k, 0) + len(s)
+        start = stop
+    return {k: hits[k] / n[k] for k in hits if n[k] > 0}
 
 
 def accuracy(res, first, last, col="p_md"):
@@ -62,7 +84,7 @@ def accuracy(res, first, last, col="p_md"):
     keep = res.dropna(subset=[col] + list(NAIVE.values()))
     cols = {"model": col, **{k: v for k, v in NAIVE.items()}}
     sc = M.scorecard(keep, cols)
-    cov = out_of_sample_coverage(keep, col)
+    cov = rolling_coverage(keep, col)
     out = {}
     for _, r in sc.iterrows():
         z, h = str(r["zone"]), int(r["h"])
