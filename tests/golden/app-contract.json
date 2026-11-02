@@ -112,6 +112,86 @@
       ]
     },
     {
+      "name": "Veksel",
+      "gln": "5790001088217",
+      "area": "DK1",
+      "match": [
+        "Veksel"
+      ]
+    },
+    {
+      "name": "Ikast El Net",
+      "gln": "5790000682102",
+      "area": "DK1",
+      "match": [
+        "Ikast El Net"
+      ]
+    },
+    {
+      "name": "Midtfyns Elforsyning",
+      "gln": "5790001089023",
+      "area": "DK1",
+      "match": [
+        "Midtfyns Elforsyning"
+      ]
+    },
+    {
+      "name": "Elinord",
+      "gln": "5790001095277",
+      "area": "DK1",
+      "match": [
+        "Elinord"
+      ]
+    },
+    {
+      "name": "Læsø Elnet",
+      "gln": "5790001103460",
+      "area": "DK1",
+      "match": [
+        "Læsø Elnet"
+      ]
+    },
+    {
+      "name": "Sunds Net",
+      "gln": "5790001095444",
+      "area": "DK1",
+      "match": [
+        "Sunds Net"
+      ]
+    },
+    {
+      "name": "Tarm Elværk",
+      "gln": "5790000706419",
+      "area": "DK1",
+      "match": [
+        "Tarm Elværk"
+      ]
+    },
+    {
+      "name": "Hammel Elforsyning",
+      "gln": "5790001090166",
+      "area": "DK1",
+      "match": [
+        "Hammel Elforsyning"
+      ]
+    },
+    {
+      "name": "Grindsted Elnet",
+      "gln": "5790000681105",
+      "area": "DK1",
+      "match": [
+        "Grindsted Elnet"
+      ]
+    },
+    {
+      "name": "Forsyning Elnet",
+      "gln": "5790001088309",
+      "area": "DK1",
+      "match": [
+        "Forsyning Elnet"
+      ]
+    },
+    {
       "name": "Cerius",
       "gln": "5790000705184",
       "area": "DK2",
@@ -134,6 +214,14 @@
       "area": "DK2",
       "match": [
         "Radius"
+      ]
+    },
+    {
+      "name": "Elektrus",
+      "gln": "5790000836239",
+      "area": "DK2",
+      "match": [
+        "Elektrus"
       ]
     }
   ],

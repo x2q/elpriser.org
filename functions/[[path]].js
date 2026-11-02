@@ -34,7 +34,7 @@ const SEO_PAGES = {
     hash: '#DK2/inkl_alt',
   },
   '/tariffer': {
-    title: 'Nettariffer 2026: Nettarif C for alle 16 netselskaber, pr. kWh',
+    title: 'Nettariffer 2026: Nettarif C for alle 27 netselskaber, pr. kWh',
     description: 'Nettarif 2026 (nettarif C) for N1, Radius, Trefor, Cerius, RAH, Konstant m.fl. — lav-, høj- og spidslast i øre/kWh. Se hvad dit netselskab koster.',
     hash: '#tariffer',
   },
@@ -207,11 +207,22 @@ const NETS = {
     { name: 'Elnet Midt',  slug: 'elnet-midt',  gln: '5790001100520' },
     { name: 'Flow Elnet',  slug: 'flow-elnet',  gln: '5790000392551' },
     { name: 'LNet',        slug: 'lnet',        gln: '5790001090111' },
+    { name: 'Veksel', slug: 'veksel', gln: '5790001088217' },
+    { name: 'Ikast El Net', slug: 'ikast-el-net', gln: '5790000682102' },
+    { name: 'Midtfyns Elforsyning', slug: 'midtfyns-elforsyning', gln: '5790001089023' },
+    { name: 'Elinord', slug: 'elinord', gln: '5790001095277' },
+    { name: 'Læsø Elnet', slug: 'laeso-elnet', gln: '5790001103460' },
+    { name: 'Sunds Net', slug: 'sunds-net', gln: '5790001095444' },
+    { name: 'Tarm Elværk', slug: 'tarm-elvaerk', gln: '5790000706419' },
+    { name: 'Hammel Elforsyning', slug: 'hammel-elforsyning', gln: '5790001090166' },
+    { name: 'Grindsted Elnet', slug: 'grindsted-elnet', gln: '5790000681105' },
+    { name: 'Forsyning Elnet', slug: 'forsyning-elnet', gln: '5790001088309' },
   ],
   DK2: [
     { name: 'Cerius',      slug: 'cerius',      gln: '5790000705184' },
     { name: 'Trefor Øst',  slug: 'trefor-ost',  gln: '5790000706686' },
     { name: 'Radius',      slug: 'radius',      gln: '5790000705689' },
+    { name: 'Elektrus', slug: 'elektrus', gln: '5790000836239' },
   ],
 };
 const AREA_LABEL = { DK1: 'DK1 Vest', DK2: 'DK2 Øst' };
@@ -439,8 +450,8 @@ Den samlede elpris per kWh består af:
 
 ## Netselskaber
 
-Understøttede netselskaber i DK1: N1, Trefor, Konstant, Dinel, Vores Elnet, Ravdex, RAH Net, Elværk, Nord Energi, NOE Net, Elnet Midt, Flow Elnet og LNet.
-Understøttede netselskaber i DK2: Radius, Cerius og Trefor Øst.
+Understøttede netselskaber i DK1: N1, Trefor, Konstant, Dinel, Vores Elnet, Ravdex, RAH Net, Elværk, Nord Energi, NOE Net, Elnet Midt, Flow Elnet, LNet, Veksel, Ikast El Net, Midtfyns Elforsyning, Elinord, Læsø Elnet, Sunds Net, Tarm Elværk, Hammel Elforsyning, Grindsted Elnet og Forsyning Elnet.
+Understøttede netselskaber i DK2: Radius, Cerius, Trefor Øst og Elektrus.
 
 GPS-funktionen finder automatisk dit netselskab ud fra din position via OpenStreetMap (adresseopslag) og Green Power Denmark. Positionen bruges kun ét øjeblik og gemmes aldrig — kun netselskabets navn gemmes.
 
@@ -585,9 +596,20 @@ Elpriser.org bruger GLN-numre (Global Location Number) til at slå nettariffer o
 | Elnet Midt | DK1 | \`elnet-midt\` | 5790001100520 |
 | Flow Elnet | DK1 | \`flow-elnet\` | 5790000392551 |
 | LNet | DK1 | \`lnet\` | 5790001090111 |
+| Veksel | DK1 | \`veksel\` | 5790001088217 |
+| Ikast El Net | DK1 | \`ikast-el-net\` | 5790000682102 |
+| Midtfyns Elforsyning | DK1 | \`midtfyns-elforsyning\` | 5790001089023 |
+| Elinord | DK1 | \`elinord\` | 5790001095277 |
+| Læsø Elnet | DK1 | \`laeso-elnet\` | 5790001103460 |
+| Sunds Net | DK1 | \`sunds-net\` | 5790001095444 |
+| Tarm Elværk | DK1 | \`tarm-elvaerk\` | 5790000706419 |
+| Hammel Elforsyning | DK1 | \`hammel-elforsyning\` | 5790001090166 |
+| Grindsted Elnet | DK1 | \`grindsted-elnet\` | 5790000681105 |
+| Forsyning Elnet | DK1 | \`forsyning-elnet\` | 5790001088309 |
 | Cerius | DK2 | \`cerius\` | 5790000705184 |
 | Trefor Øst | DK2 | \`trefor-ost\` | 5790000706686 |
 | Radius | DK2 | \`radius\` | 5790000705689 |
+| Elektrus | DK2 | \`elektrus\` | 5790000836239 |
 | Energinet (transmission/system) | DK1 + DK2 | — | 5790000432752 |
 
 Slug bruges i URL-mønsteret \`https://elpriser.org/dk1/<slug>\` eller \`https://elpriser.org/dk2/<slug>\` for prissiden inkl. det pågældende netselskabs nettarif, og GLN bruges i \`GET https://elpriser.org/api/raw/tariff?gln=<gln>\` for rå tarifdata (24 timeværdier).
@@ -1812,9 +1834,20 @@ const NET_COVERAGE = {
   'elnet-midt': 'Elnet Midt er et lokalt netselskab, der forsyner et afgrænset område i Vestdanmark med el.',
   'flow-elnet': 'Flow Elnet er et lokalt netselskab, der står for eldistributionen i et afgrænset område af Vestdanmark.',
   'lnet': 'LNet er et lokalt netselskab, der forsyner et afgrænset område i Vestdanmark med el.',
+  'veksel': 'Veksel er et lokalt netselskab, der forsyner et afgrænset område på Langeland.',
+  'ikast-el-net': 'Ikast El Net er et lokalt netselskab, der forsyner et afgrænset område omkring Ikast.',
+  'midtfyns-elforsyning': 'Midtfyns Elforsyning er et lokalt netselskab, der forsyner et afgrænset område på Midtfyn.',
+  'elinord': 'Elinord er et lokalt netselskab, der forsyner et afgrænset område i Nordjylland.',
+  'laeso-elnet': 'Læsø Elnet er et lokalt netselskab, der forsyner et afgrænset område på Læsø.',
+  'sunds-net': 'Sunds Net er et lokalt netselskab, der forsyner et afgrænset område omkring Sunds.',
+  'tarm-elvaerk': 'Tarm Elværk er et lokalt netselskab, der forsyner et afgrænset område omkring Tarm.',
+  'hammel-elforsyning': 'Hammel Elforsyning er et lokalt netselskab, der forsyner et afgrænset område omkring Hammel.',
+  'grindsted-elnet': 'Grindsted Elnet er et lokalt netselskab, der forsyner et afgrænset område omkring Grindsted.',
+  'forsyning-elnet': 'Forsyning Elnet er et lokalt netselskab, der forsyner et afgrænset område omkring Struer.',
   'cerius': 'Cerius driver elnettet på Sjælland uden for hovedstadsområdet.',
   'trefor-ost': 'Trefor Øst er et netselskab, der forsyner et afgrænset område på Sjælland med el.',
   'radius': 'Radius driver elnettet i Storkøbenhavn og Nordsjælland.',
+  'elektrus': 'Elektrus er et lokalt netselskab, der forsyner et afgrænset område i Nordsjælland omkring Helsingør.',
 };
 
 const DA_MONTHS = ['januar','februar','marts','april','maj','juni','juli','august','september','oktober','november','december'];
@@ -1978,7 +2011,7 @@ function areaForecastSentence(fc, area, todayDk) {
 }
 
 /**
- * SSR intro for the 18 price pages: a real H1, a dated answer sentence with
+ * SSR intro for the 29 price pages: a real H1, a dated answer sentence with
  * the live price, per-net coverage prose + current tariff rates, and a
  * PriceSpecification JSON-LD block. This is what makes each price URL carry
  * unique, quotable content for crawlers and answer engines.
@@ -2175,7 +2208,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v78');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v79');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -2224,9 +2257,9 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v13';
-const CITY_SSR_VERSION = 'city-ssr-v10';
-const PROGNOSE_SSR_VERSION = 'prognose-ssr-v8';
+const ZONE_SSR_VERSION = 'zone-ssr-v14';
+const CITY_SSR_VERSION = 'city-ssr-v11';
+const PROGNOSE_SSR_VERSION = 'prognose-ssr-v9';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);

@@ -25,9 +25,20 @@ enum Nets {
         Net(name: "Elnet Midt", gln: "5790001100520", area: "DK1", match: ["Elnet Midt"]),
         Net(name: "Flow Elnet", gln: "5790000392551", area: "DK1", match: ["FLOW Elnet", "Flow"]),
         Net(name: "LNet", gln: "5790001090111", area: "DK1", match: ["L-Net", "LNet"]),
+        Net(name: "Veksel", gln: "5790001088217", area: "DK1", match: ["Veksel"]),
+        Net(name: "Ikast El Net", gln: "5790000682102", area: "DK1", match: ["Ikast El Net"]),
+        Net(name: "Midtfyns Elforsyning", gln: "5790001089023", area: "DK1", match: ["Midtfyns Elforsyning"]),
+        Net(name: "Elinord", gln: "5790001095277", area: "DK1", match: ["Elinord"]),
+        Net(name: "Læsø Elnet", gln: "5790001103460", area: "DK1", match: ["Læsø Elnet"]),
+        Net(name: "Sunds Net", gln: "5790001095444", area: "DK1", match: ["Sunds Net"]),
+        Net(name: "Tarm Elværk", gln: "5790000706419", area: "DK1", match: ["Tarm Elværk"]),
+        Net(name: "Hammel Elforsyning", gln: "5790001090166", area: "DK1", match: ["Hammel Elforsyning"]),
+        Net(name: "Grindsted Elnet", gln: "5790000681105", area: "DK1", match: ["Grindsted Elnet"]),
+        Net(name: "Forsyning Elnet", gln: "5790001088309", area: "DK1", match: ["Forsyning Elnet"]),
         Net(name: "Cerius", gln: "5790000705184", area: "DK2", match: ["Cerius"]),
         Net(name: "Trefor Øst", gln: "5790000706686", area: "DK2", match: ["TREFOR El-Net Øst", "TREFOR El-Net Ost"]),
         Net(name: "Radius", gln: "5790000705689", area: "DK2", match: ["Radius"]),
+        Net(name: "Elektrus", gln: "5790000836239", area: "DK2", match: ["Elektrus"]),
     ]
 
     static func byGln(_ gln: String?) -> Net? { all.first { $0.gln == gln } }

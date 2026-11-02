@@ -102,9 +102,11 @@ const inDK = (lat, lng) => lat > 54.4 && lat < 57.9 && lng > 7.9 && lng < 15.3;
 const slugOf = p => p.split('/')[2];
 const bySlug = {}; for (const p of netPaths) bySlug[slugOf(p)] = p;
 
-test('the experiment: sixteen net companies, four variants of four, and the polygon only where it is the area', () => {
+test('the experiment: sixteen net companies, four variants of four (later additions are control), and the polygon only where it is the area', () => {
   assert.deepEqual(Object.keys(NET_ARM).sort(), Object.keys(NET_AREAS).sort(), 'every net has an arm and an area');
-  assert.deepEqual(Object.keys(bySlug).sort(), Object.keys(NET_ARM).sort(), 'and a page');
+  for (const slug of Object.keys(NET_ARM)) assert.ok(bySlug[slug], `${slug}: has a page`);
+  // The net companies added after the experiment began (2026-11-02) have no arm: they are served as the control, base.
+  assert.ok(Object.keys(bySlug).length >= Object.keys(NET_ARM).length, 'the pages are at least the experiment\'s nets');
   for (const a of ['base', 'box', 'map', 'shape']) assert.equal(Object.values(NET_ARM).filter(x => x === a).length, 4, a);
   for (const [slug, arm] of Object.entries(NET_ARM)) if (arm === 'shape') {
     assert.ok(NET_AREAS[slug].largestShare >= SHAPE_MIN_SHARE && NET_AREAS[slug].ring.length <= SHAPE_MAX_POINTS, `${slug}: the polygon is not the area`);
@@ -113,7 +115,7 @@ test('the experiment: sixteen net companies, four variants of four, and the poly
 
 test('each variant adds exactly its one thing to the control, and the data variants name their source', async () => {
   for (const [slug, p] of Object.entries(bySlug)) {
-    const arm = NET_ARM[slug], r = await get(p), w = r.ld.find(x => x['@type'] === 'WebPage'), c = w.spatialCoverage, A = NET_AREAS[slug];
+    const arm = NET_ARM[slug] || 'base', r = await get(p), w = r.ld.find(x => x['@type'] === 'WebPage'), c = w.spatialCoverage, A = NET_AREAS[slug];
     assert.deepEqual(w.about.areaServed, c, `${p}: the Organization serves the page's Place`);
     assert.equal('geo' in c, arm === 'box' || arm === 'shape', `${p}: geo only in box and shape (${arm})`);
     assert.equal('hasMap' in c, arm === 'map', `${p}: hasMap only in map`);

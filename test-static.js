@@ -1371,13 +1371,13 @@ const ADDED_NETS = [
   { slug: 'ravdex', name: 'Ravdex', gln: '5790000836727', lookup: 'Ravdex', after: 'vores-elnet', city: ['odense', 'ravdex', 0.1] },
 ];
 
-test('nets: sixteen net companies, one GLN and one slug each, the same in index.html, functions/[[path]].js, server.js and the footer', () => {
+test('nets: twenty-seven net companies, one GLN and one slug each, the same in index.html, functions/[[path]].js, server.js and the footer', () => {
   const vm = require('node:vm');
   const web = vm.runInNewContext('(' + INDEX.match(/const NETS=(\{[\s\S]*?\]\});/)[1] + ')');
   const all = [...web.DK1, ...web.DK2];
-  assert.equal(all.length, 16, 'sixteen net companies in index.html NETS');
-  assert.equal(new Set(all.map(n => n.gln)).size, 16, 'every GLN once');
-  assert.equal(new Set(all.map(n => n.slug)).size, 16, 'every slug once');
+  assert.equal(all.length, 27, 'twenty-seven net companies in index.html NETS');
+  assert.equal(new Set(all.map(n => n.gln)).size, 27, 'every GLN once');
+  assert.equal(new Set(all.map(n => n.slug)).size, 27, 'every slug once');
   // The server's own table (functions/[[path]].js NETS) has the same names and GLNs, area by area, in the same order.
   const fnBlock = (area, next) => ROUTES.match(new RegExp(area + ':\\s*\\[([\\s\\S]*?)\\],\\s*' + next))[1];
   for (const [area, next] of [['DK1', 'DK2:'], ['DK2', '\\}']]) {
@@ -1386,7 +1386,7 @@ test('nets: sixteen net companies, one GLN and one slug each, the same in index.
   }
   assert.deepEqual(SERVER.match(/NET_SLUGS\s*=\s*\{\s*DK1: \[([^\]]*)\]/)[1].replace(/'/g, '').split(','), JSON.parse(JSON.stringify(web.DK1.map(n => n.slug))), 'server.js NET_SLUGS.DK1 is index.html DK1, in order');
   const title = ROUTES.match(/'\/tariffer': \{\s*title: '([^']+)'/)[1];
-  assert.ok(/for alle 16 netselskaber/.test(title) && title.length <= 62, `the tariff page title counts 16 net companies and fits (${title.length})`);
+  assert.ok(/for alle 27 netselskaber/.test(title) && title.length <= 62, `the tariff page title counts 27 net companies and fits (${title.length})`);
   assert.ok(INDEX.includes(`document.title='${title}'`), 'the router sets the same /tariffer title');
   // The new names overlap with no other net's match string, so neither can be taken for the other.
   const strs = all.flatMap(n => n.match.map(m => [n.slug, m.toLowerCase()]));
@@ -1418,6 +1418,48 @@ for (const N of ADDED_NETS) {
     const mine = row.nets.find(n => n.slug === slug);
     assert.ok(mine && mine.gln === N.gln && mine.name === N.name && mine.share === share, `${city}: ${N.name} ${share * 100} % in nets`);
     assert.ok(!(row.other || []).some(o => o.name.toLowerCase().includes(N.slug)), `${N.name} is not "other" any more`);
+  });
+}
+
+// Added 2026-11-02: the eleven further licence holders with a household "Nettarif C" in force in DatahubPricelist that day (Energistyrelsen's
+// 2026-04-08 licence list names 18 holders the site did not price; the other seven publish their household tariff under another Note
+// — "Nettarif C time", "C-Kunde Nettarif" — or none, which the tariff pipeline does not read). `lookup` is the name the
+// tariff owner carries in EDS; Green Power Denmark's wording was not sampled for these, so the match string is the plain name.
+const ADDED_NETS_2 = [
+  { area: 'DK1', slug: 'veksel', name: 'Veksel', gln: '5790001088217', lookup: 'Veksel A/S' },
+  { area: 'DK1', slug: 'ikast-el-net', name: 'Ikast El Net', gln: '5790000682102', lookup: 'Ikast El Net A/S' },
+  { area: 'DK1', slug: 'midtfyns-elforsyning', name: 'Midtfyns Elforsyning', gln: '5790001089023', lookup: 'Midtfyns Elforsyning A.m.b.A' },
+  { area: 'DK1', slug: 'elinord', name: 'Elinord', gln: '5790001095277', lookup: 'Elinord A/S' },
+  { area: 'DK1', slug: 'laeso-elnet', name: 'Læsø Elnet', gln: '5790001103460', lookup: 'Læsø Elnet A/S' },
+  { area: 'DK1', slug: 'sunds-net', name: 'Sunds Net', gln: '5790001095444', lookup: 'Sunds Net A.m.b.a' },
+  { area: 'DK1', slug: 'tarm-elvaerk', name: 'Tarm Elværk', gln: '5790000706419', lookup: 'Tarm Elværk Net A/S' },
+  { area: 'DK1', slug: 'hammel-elforsyning', name: 'Hammel Elforsyning', gln: '5790001090166', lookup: 'Hammel Elforsyning Net A/S' },
+  { area: 'DK1', slug: 'grindsted-elnet', name: 'Grindsted Elnet', gln: '5790000681105', lookup: 'Grindsted Elnet A/S' },
+  { area: 'DK1', slug: 'forsyning-elnet', name: 'Forsyning Elnet', gln: '5790001088309', lookup: 'Forsyning Elnet A/S' },
+  { area: 'DK2', slug: 'elektrus', name: 'Elektrus', gln: '5790000836239', lookup: 'Elektrus A/S' },
+];
+
+for (const N of ADDED_NETS_2) {
+  test(`${N.slug}: ${N.name} is in every list a net lives in (${N.area}, GLN ${N.gln}), and the tariff owner's "${N.lookup}" resolves to it`, () => {
+    const vm = require('node:vm');
+    const web = vm.runInNewContext('(' + INDEX.match(/const NETS=(\{[\s\S]*?\]\});/)[1] + ')');
+    const other = N.area === 'DK1' ? 'DK2' : 'DK1', all = [...web.DK1, ...web.DK2];
+    const d = web[N.area].find(n => n.slug === N.slug);
+    assert.ok(d && d.name === N.name && d.gln === N.gln && JSON.stringify(d.match) === JSON.stringify([N.name]), `index.html NETS: ${N.name}, ${N.area}, the GLN, match "${N.name}"`);
+    assert.ok(!web[other].some(n => n.slug === N.slug), `not in ${other}`);
+    const serverList = SERVER.match(new RegExp(`${N.area}: \\[([^\\]]*)\\]`))[1];
+    assert.ok(serverList.includes(`'${N.slug}'`), `server.js NET_SLUGS.${N.area}`);
+    assert.ok(ROUTES.includes(`| ${N.name} | ${N.area} | \\\`${N.slug}\\\` | ${N.gln} |`), 'llms-full.txt GLN table has the row');
+    assert.ok(new RegExp(`Understøttede netselskaber i ${N.area}: [^\\n]*${N.name}`).test(ROUTES), 'llms-full.txt lists it among the supported net companies');
+    assert.ok(ROUTES.includes(`'${N.slug}': '${N.name} er `), 'NET_COVERAGE has a sentence');
+    const area = N.area.toLowerCase();
+    assert.ok(INDEX.slice(INDEX.indexOf('<footer'), INDEX.indexOf('</footer>')).includes(`<li><a href="/${area}/${N.slug}">${N.name}</a></li>`), `footer links /${area}/${N.slug}`);
+    assert.ok(INDEX.includes(`<a href="/${area}/${N.slug}" class="text-brand-500 underline">${N.name}</a>`), 'tariff page prose links it');
+    // Longest match wins, as in the apps: "Tarm Elværk Net A/S" is Tarm Elværk although "Elværk" is also a net.
+    const matchNet = (name) => { let best = null; for (const n of all) for (const m of n.match) if (name.toLowerCase().includes(m.toLowerCase()) && (!best || m.length > best.len)) best = { n, len: m.length }; return best && best.n.slug; };
+    assert.equal(matchNet(N.lookup), N.slug, `the lookup name "${N.lookup}" is ${N.name}`);
+    assert.equal(matchNet('Netselskabet Elværk A/S'), 'elvaerk', 'and Elværk is still Elværk');
+    assert.equal(matchNet('KONSTANT Net A/S'), 'konstant', 'and Konstant is still Konstant');
   });
 }
 
@@ -1553,7 +1595,7 @@ test('footer: ONE link to the explainer, labelled "Forstå din elpris" in Viden 
   for (const gone of Object.keys(LEGACY)) assert.ok(!FOOTER.includes(`href="${gone}"`), `footer still links ${gone}`);
 });
 
-test('footer: all 16 net companies and the four foreign-area pages sit inside ONE collapsed details, as real links', () => {
+test('footer: all 27 net companies and the four foreign-area pages sit inside ONE collapsed details, as real links', () => {
   const m = FOOTER.match(/<details class="sf-all">\s*<summary>[^]*?Alle netselskaber og prisområder[^]*?<\/summary>([^]*?)<\/details>/);
   assert.ok(m, 'details "Alle netselskaber og prisområder"');
   assert.ok(!/<details[^>]*\bopen\b/.test(m[0]), 'collapsed by default');
@@ -1564,9 +1606,9 @@ test('footer: all 16 net companies and the four foreign-area pages sit inside ON
     for (const s of slugs) assert.ok(inside.includes(`/${area}/${s}`), `/${area}/${s} is inside the details`);
   }
   // The ten pilot cities sit between the nets and the foreign areas, in the order of the table (the table is the pilot's list).
-  assert.deepEqual(inside.slice(16, 26), CITY_TABLE.map(c => '/elpris/' + c.slug), 'Byer: the ten cities, in the table\'s order, after the 16 nets');
-  assert.deepEqual(inside.slice(26), ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce'], 'Andre prisområder: Norden, Norge, Sverige, Finland, Nederland, Tyskland, Frankrig, Polen, Italien — in that order, after the cities');
-  assert.equal(inside.length, 35, 'nothing else in there');
+  assert.deepEqual(inside.slice(27, 37), CITY_TABLE.map(c => '/elpris/' + c.slug), 'Byer: the ten cities, in the table\'s order, after the 27 nets');
+  assert.deepEqual(inside.slice(37), ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce'], 'Andre prisområder: Norden, Norge, Sverige, Finland, Nederland, Tyskland, Frankrig, Polen, Italien — in that order, after the cities');
+  assert.equal(inside.length, 46, 'nothing else in there');
   assert.equal(new Set(inside).size, inside.length, 'no duplicate href in the details');
   for (const h of ['Vestdanmark (DK1)', 'Østdanmark (DK2)', 'Byer', 'Andre prisområder']) assert.ok(m[1].includes(h), `heading ${h}`);
   // Nothing outside the details links a net page: the visible footer stays short.
@@ -1596,7 +1638,7 @@ test('footer: no link list is repeated, and the credits line keeps both external
   // 48 since the ten city pages joined the disclosure ("Byer"); 49 since Dinel became the 15th net company; 50 with Ravdex.
   // 51 with Nederland (/nl/stroomprijs) among the other price areas.
   // 55 with Tyskland, Frankrig, Polen and Italien (the EU price pages).
-  assert.equal(hrefs.length, 55, `footer has ${hrefs.length} links: 18 in the groups and the apps, 16 nets, 10 cities, Norden and eight countries, and the two credits`);
+  assert.equal(hrefs.length, 66, `footer has ${hrefs.length} links: 18 in the groups and the apps, 27 nets, 10 cities, Norden and eight countries, and the two credits`);
   const legal = FOOTER.match(/<p class="sf-legal">([^]*?)<\/p>/);
   assert.ok(legal, 'credits line');
   assert.ok(/&copy; Elpriser\.org &mdash; Data fra <a href="https:\/\/www\.energidataservice\.dk"[^>]*rel="noopener">Energi Data Service<\/a> \(Energinet\)\. Åbne datasæt på <a href="https:\/\/huggingface\.co\/Elpriser"[^>]*rel="noopener">Hugging Face<\/a>\./.test(legal[1]), 'credits wording and links');
@@ -1637,18 +1679,18 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // v74: the footer and the net dialog list Nederland (/nl/stroomprijs); the country pages swap the chrome for their own (CHROME_I18N).
   // v75: the footer and the net dialog list Tyskland, Frankrig, Polen and Italien.
   // v77: one place chip and one place dialog (Land, then net or price zone) replace the globe, the net chip's dialog and the country picker.
-  assert.ok(/homepage-ssr-v78/.test(ROUTES), 'homepage-ssr-v78');
+  assert.ok(/homepage-ssr-v79/.test(ROUTES), 'homepage-ssr-v79');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
   // (v8: the shared Pris block changed with PRIS_FC.)
   // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
   // (v10: the four EU price pages joined, the Pris block gained PRIS_ACT and the footer the four links.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v13'/.test(ROUTES), 'zone-ssr-v13');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v14'/.test(ROUTES), 'zone-ssr-v14');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v10'/.test(ROUTES), 'city-ssr-v10');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v11'/.test(ROUTES), 'city-ssr-v11');
   // /prognose shares the header and footer too (v4: the four EU country links).
-  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v8'/.test(ROUTES), 'prognose-ssr-v8');
+  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v9'/.test(ROUTES), 'prognose-ssr-v9');
 });
 
 

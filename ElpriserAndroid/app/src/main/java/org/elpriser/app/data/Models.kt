@@ -22,9 +22,20 @@ object Nets {
         Net("Elnet Midt", "5790001100520", "DK1", listOf("Elnet Midt")),
         Net("Flow Elnet", "5790000392551", "DK1", listOf("FLOW Elnet", "Flow")),
         Net("LNet", "5790001090111", "DK1", listOf("L-Net", "LNet")),
+        Net("Veksel", "5790001088217", "DK1", listOf("Veksel")),
+        Net("Ikast El Net", "5790000682102", "DK1", listOf("Ikast El Net")),
+        Net("Midtfyns Elforsyning", "5790001089023", "DK1", listOf("Midtfyns Elforsyning")),
+        Net("Elinord", "5790001095277", "DK1", listOf("Elinord")),
+        Net("Læsø Elnet", "5790001103460", "DK1", listOf("Læsø Elnet")),
+        Net("Sunds Net", "5790001095444", "DK1", listOf("Sunds Net")),
+        Net("Tarm Elværk", "5790000706419", "DK1", listOf("Tarm Elværk")),
+        Net("Hammel Elforsyning", "5790001090166", "DK1", listOf("Hammel Elforsyning")),
+        Net("Grindsted Elnet", "5790000681105", "DK1", listOf("Grindsted Elnet")),
+        Net("Forsyning Elnet", "5790001088309", "DK1", listOf("Forsyning Elnet")),
         Net("Cerius", "5790000705184", "DK2", listOf("Cerius")),
         Net("Trefor Øst", "5790000706686", "DK2", listOf("TREFOR El-Net Øst", "TREFOR El-Net Ost")),
         Net("Radius", "5790000705689", "DK2", listOf("Radius")),
+        Net("Elektrus", "5790000836239", "DK2", listOf("Elektrus")),
     )
 
     fun byGln(gln: String?): Net? = all.firstOrNull { it.gln == gln }

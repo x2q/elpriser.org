@@ -22,6 +22,7 @@
 import { CITY_LOCATION } from './_cities.js';
 import { NET_AREAS, NET_AREAS_SOURCE } from './_net-areas.js';
 
+// A net company not listed here (the eleven added 2026-11-02, and any later one) is served as the control, 'base'.
 export const NET_ARM = {
   'n1': 'base', 'trefor-ost': 'base', 'noe-net': 'base', 'flow-elnet': 'base',
   'cerius': 'box', 'trefor': 'box', 'elvaerk': 'box', 'lnet': 'box',
