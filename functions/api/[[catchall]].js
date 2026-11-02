@@ -379,6 +379,21 @@ function chargesOn(history, dateStr, { reduced = false, useToday = false } = {})
 }
 
 /**
+ * The Notes under which a company publishes its household tariff in DatahubPricelist. Nearly all call it
+ * "Nettarif C"; these publish it under another name (checked against DatahubPricelist on 2026-11-02).
+ * scripts/data_backup/build_tariff_archive.py carries the same table (test-static.js pins them equal). Kimbrer Elnet
+ * (5790001095239) is left out on purpose: every rate it publishes is 0.000.
+ */
+const TARIFF_NOTES_DEFAULT = ['Nettarif C'];
+const TARIFF_NOTES = {
+  '5790001089375': ['Nettarif C', 'Nettarif C time'],                          // Zeanet
+  '5790001095451': ['Nettarif C', 'Nettarif C time'],                          // Aal El-Net
+  '5790001095376': ['Nettarif C', 'Nettarif C skabelon', 'C-Kunde Nettarif'],  // Hjerting Transformatorforening
+  '5790000610839': ['Nettarif fra 0-100000 kWh'],                              // Hurup Elværk Net
+};
+const tariffNotes = gln => TARIFF_NOTES[gln] || TARIFF_NOTES_DEFAULT;
+
+/**
  * A grid company's household tariff (Nettarif C) with its full hourly profile,
  * for every period overlapping [from, to].
  *
@@ -401,7 +416,7 @@ function chargesOn(history, dateStr, { reduced = false, useToday = false } = {})
  */
 async function fetchTariffRecords(gln, to) {
   const f = encodeURIComponent(JSON.stringify({
-    GLN_Number: gln, ChargeType: 'D03', Note: 'Nettarif C',
+    GLN_Number: gln, ChargeType: 'D03', Note: tariffNotes(gln).length === 1 ? tariffNotes(gln)[0] : tariffNotes(gln),
   }));
   const cols = 'ValidFrom,ValidTo,ChargeTypeCode,ResolutionDuration,' +
     Array.from({ length: 24 }, (_, i) => 'Price' + (i + 1)).join(',');
@@ -601,7 +616,9 @@ function cached(key, ttlMs, fn) {
 async function loadTariffRecords(gln, to, env) {
   if (env && env.PRICE_CACHE) {
     const a = await kvJson(env, `dk-nettarif-${gln}`, { ttl: 3600 }).catch(() => null);
-    if (a && Array.isArray(a.periods) && a.periods.length) {
+    // An archive built before a company's Notes were widened lacks them and would hide periods: ignore it, fetch live.
+    const notesOk = !TARIFF_NOTES[gln] || (Array.isArray(a && a.notes) && a.notes.join('|') === TARIFF_NOTES[gln].join('|'));
+    if (a && Array.isArray(a.periods) && a.periods.length && notesOk) {
       return a.periods.map(p => ({
         fromStr: p.from,
         toStr: p.to,

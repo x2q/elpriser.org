@@ -192,6 +192,30 @@
       ]
     },
     {
+      "name": "Aal El-Net",
+      "gln": "5790001095451",
+      "area": "DK1",
+      "match": [
+        "Aal El-Net"
+      ]
+    },
+    {
+      "name": "Hjerting",
+      "gln": "5790001095376",
+      "area": "DK1",
+      "match": [
+        "Hjerting"
+      ]
+    },
+    {
+      "name": "Hurup Elværk",
+      "gln": "5790000610839",
+      "area": "DK1",
+      "match": [
+        "Hurup Elværk"
+      ]
+    },
+    {
       "name": "Cerius",
       "gln": "5790000705184",
       "area": "DK2",
@@ -222,6 +246,14 @@
       "area": "DK2",
       "match": [
         "Elektrus"
+      ]
+    },
+    {
+      "name": "Zeanet",
+      "gln": "5790001089375",
+      "area": "DK2",
+      "match": [
+        "Zeanet"
       ]
     }
   ],

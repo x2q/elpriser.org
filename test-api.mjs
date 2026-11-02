@@ -295,6 +295,36 @@ test('KV: a key that is not in KV is remembered as missing, not re-read per requ
   assert.equal(n, 1, `the missing tariff key was read ${n} times`);
 });
 
+// A company that publishes its household tariff under another Note than "Nettarif C" (Zeanet: "Nettarif C time") is
+// fetched with all its Notes, and a KV archive built before that (no `notes`) would hide periods, so it is ignored.
+const GLN_ZEANET = '5790001089375';
+const zeanetArchive = (notes) => ({ ...tariffArchive(), ...(notes ? { notes } : {}) });
+const tariffCalls = api => api.calls.filter(u => u.includes('DatahubPricelist') && u.includes(GLN_ZEANET)).map(decodeURIComponent);
+
+test('tariff Notes: a company with its own Notes is fetched under all of them; the others under "Nettarif C" alone', async () => {
+  const api = await createApi();
+  await api.get(`/api/now?area=DK2&mode=net_inkl_alt&gln=${GLN_ZEANET}`);
+  const z = tariffCalls(api);
+  assert.ok(z.length >= 1 && z.every(u => u.includes('"Note":["Nettarif C","Nettarif C time"]')), z.join('\n'));
+  const api2 = await createApi();
+  await api2.get(`/api/now?area=DK1&mode=net_inkl_alt&gln=${GLN_N1}`);
+  const n1 = api2.calls.filter(u => u.includes('DatahubPricelist') && u.includes(GLN_N1)).map(decodeURIComponent);
+  assert.ok(n1.length >= 1 && n1.every(u => u.includes('"Note":"Nettarif C"')), n1.join('\n'));
+});
+
+test('tariff Notes: an archive without the company\'s Notes is ignored, one with them is used', async () => {
+  const stale = await createApi({ kv: makeKv({ [`dk-nettarif-${GLN_ZEANET}`]: zeanetArchive(null) }) });
+  await stale.get(`/api/now?area=DK2&mode=net_inkl_alt&gln=${GLN_ZEANET}`);
+  assert.ok(tariffCalls(stale).length >= 1, 'the stale archive was trusted: no live fetch');
+  const fresh = await createApi({ kv: makeKv({ [`dk-nettarif-${GLN_ZEANET}`]: zeanetArchive(['Nettarif C', 'Nettarif C time']) }) });
+  await fresh.get(`/api/now?area=DK2&mode=net_inkl_alt&gln=${GLN_ZEANET}`);
+  assert.equal(tariffCalls(fresh).length, 0, 'an archive with the right Notes is used without going upstream');
+  // A company on the default needs no `notes` in its archive.
+  const n1 = await createApi({ kv: makeKv({ [`dk-nettarif-${GLN_N1}`]: tariffArchive() }) });
+  await n1.get(`/api/now?area=DK1&mode=net_inkl_alt&gln=${GLN_N1}`);
+  assert.equal(n1.calls.filter(u => u.includes('DatahubPricelist') && u.includes(GLN_N1)).length, 0);
+});
+
 test('KV: /api/raw/prices does not read the rolling backup on every request', async () => {
   const kv = makeKv({});
   const api = await createApi({ kv });

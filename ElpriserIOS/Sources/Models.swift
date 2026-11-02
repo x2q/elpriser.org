@@ -35,10 +35,14 @@ enum Nets {
         Net(name: "Hammel Elforsyning", gln: "5790001090166", area: "DK1", match: ["Hammel Elforsyning"]),
         Net(name: "Grindsted Elnet", gln: "5790000681105", area: "DK1", match: ["Grindsted Elnet"]),
         Net(name: "Forsyning Elnet", gln: "5790001088309", area: "DK1", match: ["Forsyning Elnet"]),
+        Net(name: "Aal El-Net", gln: "5790001095451", area: "DK1", match: ["Aal El-Net"]),
+        Net(name: "Hjerting", gln: "5790001095376", area: "DK1", match: ["Hjerting"]),
+        Net(name: "Hurup Elværk", gln: "5790000610839", area: "DK1", match: ["Hurup Elværk"]),
         Net(name: "Cerius", gln: "5790000705184", area: "DK2", match: ["Cerius"]),
         Net(name: "Trefor Øst", gln: "5790000706686", area: "DK2", match: ["TREFOR El-Net Øst", "TREFOR El-Net Ost"]),
         Net(name: "Radius", gln: "5790000705689", area: "DK2", match: ["Radius"]),
         Net(name: "Elektrus", gln: "5790000836239", area: "DK2", match: ["Elektrus"]),
+        Net(name: "Zeanet", gln: "5790001089375", area: "DK2", match: ["Zeanet"]),
     ]
 
     static func byGln(_ gln: String?) -> Net? { all.first { $0.gln == gln } }

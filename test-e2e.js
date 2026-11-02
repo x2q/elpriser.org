@@ -321,14 +321,14 @@ async function startServer() {
     });
   }
 
-  await test('start: "Find dit netselskab" opens the net dialog, which lists all 27 nets; choosing one opens its page', async () => {
+  await test('start: "Find dit netselskab" opens the net dialog, which lists all 31 nets; choosing one opens its page', async () => {
     await page.goto(BASE + '/');
     await page.evaluate(() => localStorage.clear());
     await page.locator('main[data-page="start"] [data-area-row] button').click();
     await page.waitForSelector('#netDialog[open]');
     assert.equal((await page.locator('#netDialogTitle').textContent()).trim(), 'Hvor er du?');
-    // 27 nets plus one "Uden netselskab" per area.
-    assert.equal(await page.locator('#netDialog a[data-net]:not([data-net=""])').count(), 27, 'the dialog lists every net');
+    // 31 nets plus one "Uden netselskab" per area.
+    assert.equal(await page.locator('#netDialog a[data-net]:not([data-net=""])').count(), 31, 'the dialog lists every net');
     assert.equal(await page.locator('#netDlgDK1').isVisible(), false, 'the net lists are one level down');
     await page.locator('#netDialog [data-go="dk1"]').click();
     await page.locator('#netDlgDK1 a:has-text("Trefor")').first().click();
@@ -1354,7 +1354,7 @@ async function startServer() {
     await page.goto(BASE + '/dk1/n1');
     await page.waitForSelector('footer.sf');
     assert.equal(await page.locator('footer details[open]').count(), 0, 'no disclosure open');
-    assert.equal(await page.locator('footer details.sf-all a[href^="/dk"]').count(), 27, '27 net links in the DOM');
+    assert.equal(await page.locator('footer details.sf-all a[href^="/dk"]').count(), 31, '31 net links in the DOM');
     assert.equal(await page.locator('footer details.sf-all a[href="/dk1/trefor"]').isVisible(), false, 'hidden while closed');
     assert.deepEqual(await page.locator('footer .sf-h').allTextContents().then(a => a.slice(0, 4)), ['Priser', 'Smart hjem', 'Viden', 'Elpriser']);
   });

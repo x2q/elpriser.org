@@ -34,8 +34,19 @@ from collections import defaultdict
 
 KV_NAMESPACE = "126700e66e8d4a19b289b0e8afdaff69"
 EDS = "https://api.energidataservice.dk/dataset/DatahubPricelist"
-COLS = ("ChargeOwner,GLN_Number,ChargeTypeCode,ValidFrom,ValidTo,ResolutionDuration,"
+COLS = ("ChargeOwner,GLN_Number,Note,ChargeTypeCode,ValidFrom,ValidTo,ResolutionDuration,"
         + ",".join(f"Price{i}" for i in range(1, 25)))
+
+# The Notes under which a company publishes its household tariff. Nearly all call it "Nettarif C"; these publish it
+# under another name (checked against DatahubPricelist on 2026-11-02). functions/api/[[catchall]].js carries the same
+# table (test-static.js pins them equal). Kimbrer Elnet (5790001095239) is left out on purpose: every rate it publishes is 0.
+NOTES_DEFAULT = ["Nettarif C"]
+NOTES = {
+    "5790001089375": ["Nettarif C", "Nettarif C time"],                          # Zeanet
+    "5790001095451": ["Nettarif C", "Nettarif C time"],                          # Aal El-Net
+    "5790001095376": ["Nettarif C", "Nettarif C skabelon", "C-Kunde Nettarif"],  # Hjerting Transformatorforening
+    "5790000610839": ["Nettarif fra 0-100000 kWh"],                              # Hurup Elværk Net
+}
 
 
 def fetch(params, attempts=5):
@@ -83,9 +94,12 @@ def main():
     if not (account and token):
         sys.exit("CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN required")
 
-    records = fetch({"filter": json.dumps({"ChargeType": "D03", "Note": "Nettarif C"}),
+    wanted = sorted({n for notes in [NOTES_DEFAULT, *NOTES.values()] for n in notes})
+    records = fetch({"filter": json.dumps({"ChargeType": "D03", "Note": wanted}),
                      "sort": "ValidFrom desc", "limit": 0, "columns": COLS})
-    print(f"{len(records)} Nettarif C records", flush=True)
+    # Each company keeps only the Notes it publishes its household tariff under.
+    records = [r for r in records if r.get("Note") in NOTES.get(r.get("GLN_Number"), NOTES_DEFAULT)]
+    print(f"{len(records)} household tariff records", flush=True)
 
     by_gln = defaultdict(list)
     owners = {}
@@ -118,6 +132,8 @@ def main():
                      reverse=True)
         periods.sort(key=lambda p: p["from"], reverse=True)
         payload = {"gln": gln, "owner": owners[gln], "periods": periods}
+        if gln in NOTES:
+            payload["notes"] = NOTES[gln]   # the Worker ignores an archive without them (see loadTariffRecords)
         kv_put(f"dk-nettarif-{gln}", payload, account, token)
         span = f"{periods[-1]['from']}..{periods[0]['from']}"
         index.append({"gln": gln, "owner": owners[gln], "periods": len(periods)})

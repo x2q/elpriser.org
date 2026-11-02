@@ -35,7 +35,7 @@ const SEO_PAGES = {
     hash: '#DK2/inkl_alt',
   },
   '/tariffer': {
-    title: 'Nettariffer 2026: Nettarif C for alle 27 netselskaber, pr. kWh',
+    title: 'Nettariffer 2026: Nettarif C for alle 31 netselskaber, pr. kWh',
     description: 'Nettarif 2026 (nettarif C) for N1, Radius, Trefor, Cerius, RAH, Konstant m.fl. — lav-, høj- og spidslast i øre/kWh. Se hvad dit netselskab koster.',
     hash: '#tariffer',
   },
@@ -218,12 +218,16 @@ const NETS = {
     { name: 'Hammel Elforsyning', slug: 'hammel-elforsyning', gln: '5790001090166' },
     { name: 'Grindsted Elnet', slug: 'grindsted-elnet', gln: '5790000681105' },
     { name: 'Forsyning Elnet', slug: 'forsyning-elnet', gln: '5790001088309' },
+    { name: 'Aal El-Net', slug: 'aal-el-net', gln: '5790001095451' },
+    { name: 'Hjerting', slug: 'hjerting', gln: '5790001095376' },
+    { name: 'Hurup Elværk', slug: 'hurup-elvaerk', gln: '5790000610839' },
   ],
   DK2: [
     { name: 'Cerius',      slug: 'cerius',      gln: '5790000705184' },
     { name: 'Trefor Øst',  slug: 'trefor-ost',  gln: '5790000706686' },
     { name: 'Radius',      slug: 'radius',      gln: '5790000705689' },
     { name: 'Elektrus', slug: 'elektrus', gln: '5790000836239' },
+    { name: 'Zeanet', slug: 'zeanet', gln: '5790001089375' },
   ],
 };
 const AREA_LABEL = { DK1: 'DK1 Vest', DK2: 'DK2 Øst' };
@@ -458,8 +462,8 @@ Den samlede elpris per kWh består af:
 
 ## Netselskaber
 
-Understøttede netselskaber i DK1: N1, Trefor, Konstant, Dinel, Vores Elnet, Ravdex, RAH Net, Elværk, Nord Energi, NOE Net, Elnet Midt, Flow Elnet, LNet, Veksel, Ikast El Net, Midtfyns Elforsyning, Elinord, Læsø Elnet, Sunds Net, Tarm Elværk, Hammel Elforsyning, Grindsted Elnet og Forsyning Elnet.
-Understøttede netselskaber i DK2: Radius, Cerius, Trefor Øst og Elektrus.
+Understøttede netselskaber i DK1: N1, Trefor, Konstant, Dinel, Vores Elnet, Ravdex, RAH Net, Elværk, Nord Energi, NOE Net, Elnet Midt, Flow Elnet, LNet, Veksel, Ikast El Net, Midtfyns Elforsyning, Elinord, Læsø Elnet, Sunds Net, Tarm Elværk, Hammel Elforsyning, Grindsted Elnet, Forsyning Elnet, Aal El-Net, Hjerting og Hurup Elværk.
+Understøttede netselskaber i DK2: Radius, Cerius, Trefor Øst, Elektrus og Zeanet.
 
 GPS-funktionen finder automatisk dit netselskab ud fra din position via OpenStreetMap (adresseopslag) og Green Power Denmark. Positionen bruges kun ét øjeblik og gemmes aldrig — kun netselskabets navn gemmes.
 
@@ -614,10 +618,14 @@ Elpriser.org bruger GLN-numre (Global Location Number) til at slå nettariffer o
 | Hammel Elforsyning | DK1 | \`hammel-elforsyning\` | 5790001090166 |
 | Grindsted Elnet | DK1 | \`grindsted-elnet\` | 5790000681105 |
 | Forsyning Elnet | DK1 | \`forsyning-elnet\` | 5790001088309 |
+| Aal El-Net | DK1 | \`aal-el-net\` | 5790001095451 |
+| Hjerting | DK1 | \`hjerting\` | 5790001095376 |
+| Hurup Elværk | DK1 | \`hurup-elvaerk\` | 5790000610839 |
 | Cerius | DK2 | \`cerius\` | 5790000705184 |
 | Trefor Øst | DK2 | \`trefor-ost\` | 5790000706686 |
 | Radius | DK2 | \`radius\` | 5790000705689 |
 | Elektrus | DK2 | \`elektrus\` | 5790000836239 |
+| Zeanet | DK2 | \`zeanet\` | 5790001089375 |
 | Energinet (transmission/system) | DK1 + DK2 | — | 5790000432752 |
 
 Slug bruges i URL-mønsteret \`https://elpriser.org/dk1/<slug>\` eller \`https://elpriser.org/dk2/<slug>\` for prissiden inkl. det pågældende netselskabs nettarif, og GLN bruges i \`GET https://elpriser.org/api/raw/tariff?gln=<gln>\` for rå tarifdata (24 timeværdier).
@@ -1852,10 +1860,14 @@ const NET_COVERAGE = {
   'hammel-elforsyning': 'Hammel Elforsyning er et lokalt netselskab, der forsyner et afgrænset område omkring Hammel.',
   'grindsted-elnet': 'Grindsted Elnet er et lokalt netselskab, der forsyner et afgrænset område omkring Grindsted.',
   'forsyning-elnet': 'Forsyning Elnet er et lokalt netselskab, der forsyner et afgrænset område omkring Struer.',
+  'aal-el-net': 'Aal El-Net er et lokalt netselskab, der forsyner et afgrænset område omkring Ål ved Varde.',
+  'hjerting': 'Hjerting er et lokalt netselskab, der forsyner et afgrænset område omkring Hjerting ved Esbjerg.',
+  'hurup-elvaerk': 'Hurup Elværk er et lokalt netselskab, der forsyner et afgrænset område omkring Hurup i Thy.',
   'cerius': 'Cerius driver elnettet på Sjælland uden for hovedstadsområdet.',
   'trefor-ost': 'Trefor Øst er et netselskab, der forsyner et afgrænset område på Sjælland med el.',
   'radius': 'Radius driver elnettet i Storkøbenhavn og Nordsjælland.',
   'elektrus': 'Elektrus er et lokalt netselskab, der forsyner et afgrænset område i Nordsjælland omkring Helsingør.',
+  'zeanet': 'Zeanet er et lokalt netselskab, der forsyner et afgrænset område på Sjælland.',
 };
 
 const DA_MONTHS = ['januar','februar','marts','april','maj','juni','juli','august','september','oktober','november','december'];
@@ -2019,7 +2031,7 @@ function areaForecastSentence(fc, area, todayDk) {
 }
 
 /**
- * SSR intro for the 29 price pages: a real H1, a dated answer sentence with
+ * SSR intro for the 33 price pages: a real H1, a dated answer sentence with
  * the live price, per-net coverage prose + current tariff rates, and a
  * PriceSpecification JSON-LD block. This is what makes each price URL carry
  * unique, quotable content for crawlers and answer engines.
@@ -2216,7 +2228,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v79');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v80');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -2265,9 +2277,9 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v15';
-const CITY_SSR_VERSION = 'city-ssr-v11';
-const PROGNOSE_SSR_VERSION = 'prognose-ssr-v9';
+const ZONE_SSR_VERSION = 'zone-ssr-v16';
+const CITY_SSR_VERSION = 'city-ssr-v12';
+const PROGNOSE_SSR_VERSION = 'prognose-ssr-v10';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);

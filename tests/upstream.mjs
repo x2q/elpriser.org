@@ -87,7 +87,7 @@ function eds(url) {
     return { records: priceRows(dataset, filter.PriceArea || 'DK1', q.get('start'), q.get('end')) };
   }
   if (dataset === 'DatahubPricelist') {
-    if (filter.Note === 'Nettarif C') {
+    if ([].concat(filter.Note).includes('Nettarif C')) {
       if (filter.GLN_Number) return { records: GLNS[filter.GLN_Number] ? [tariffRecord(filter.GLN_Number)] : [] };
       return { records: Object.keys(GLNS).map(tariffRecord) };
     }

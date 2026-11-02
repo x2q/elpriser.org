@@ -32,10 +32,14 @@ object Nets {
         Net("Hammel Elforsyning", "5790001090166", "DK1", listOf("Hammel Elforsyning")),
         Net("Grindsted Elnet", "5790000681105", "DK1", listOf("Grindsted Elnet")),
         Net("Forsyning Elnet", "5790001088309", "DK1", listOf("Forsyning Elnet")),
+        Net("Aal El-Net", "5790001095451", "DK1", listOf("Aal El-Net")),
+        Net("Hjerting", "5790001095376", "DK1", listOf("Hjerting")),
+        Net("Hurup Elværk", "5790000610839", "DK1", listOf("Hurup Elværk")),
         Net("Cerius", "5790000705184", "DK2", listOf("Cerius")),
         Net("Trefor Øst", "5790000706686", "DK2", listOf("TREFOR El-Net Øst", "TREFOR El-Net Ost")),
         Net("Radius", "5790000705689", "DK2", listOf("Radius")),
         Net("Elektrus", "5790000836239", "DK2", listOf("Elektrus")),
+        Net("Zeanet", "5790001089375", "DK2", listOf("Zeanet")),
     )
 
     fun byGln(gln: String?): Net? = all.firstOrNull { it.gln == gln }
