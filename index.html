@@ -4419,7 +4419,7 @@ function updateHeader(){
   const ml={spot_inkl:'Spotpris inkl moms',inkl_alt:'Inkl alt',net_inkl_alt:`${S.netName} Inkl alt`};
   // SEO-aligned titles for crawlable URLs (/dk1, /dk2, /dk1/<slug>, /dk2/<slug>)
   if(S.netName && S.mode==='net_inkl_alt'){
-    document.title=`Elpris ${S.netName} i dag (${S.area}) — time for time inkl. nettarif`;
+    {const full=`Elpris ${S.netName} i dag (${S.area}) — time for time inkl. nettarif`;document.title=full.length<=62?full:`Elpris ${S.netName} i dag (${S.area}) inkl. nettarif`;}
   } else if(S.mode==='inkl_alt'){
     // Must equal SEO_PAGES' title for /dk1 and /dk2, the view those URLs open in.
     document.title=`Elpris ${S.area==='DK1'?'Vest':'Øst'} (${S.area}) i dag — spotpris inkl. alt, time for time`;

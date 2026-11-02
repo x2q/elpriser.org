@@ -1511,10 +1511,17 @@ test('seo: descriptions are trimmed to what a results page shows, titles stay sh
   const SRV2 = fs.readFileSync(path.join(__dirname, 'functions', '[[path]].js'), 'utf8');
   assert.ok(/const DESC_MAX = 155;/.test(SRV2) && /function tidyDescription/.test(SRV2), 'tidyDescription exists');
   assert.ok(/meta = \{ \.\.\.meta, description: tidyDescription\(meta\.description\) \}/.test(SRV2), 'renderSPA applies it');
-  // The per-net title template, with the longest net name, must stay under ~66.
-  const t = SRV2.match(/title:\s+`(Elpris \$\{net\.name\} i dag \(\$\{area\}\)[^`]*)`/);
-  assert.ok(t, 'net title template');
-  assert.ok(t[1].replace('${net.name}', 'Nord Energi').replace('${area}', 'DK1').length <= 66, 'net title too long');
+  // The per-net title is built by netTitle(): the long form, or without "time for time" for a long company name.
+  // Every one of the net companies must come out at 62 characters or fewer, on the server and (the same rule) in the browser.
+  const fnSrc = SRV2.match(/function netTitle\(name, area\) \{[\s\S]*?\n\}/);
+  assert.ok(fnSrc, 'net title function');
+  const netTitle = new Function(fnSrc[0] + '\nreturn netTitle;')();
+  const webNets = require('node:vm').runInNewContext('(' + INDEX.match(/const NETS=(\{[\s\S]*?\]\});/)[1] + ')');
+  for (const [area, list] of Object.entries(webNets)) for (const n of list) {
+    const t = netTitle(n.name, area);
+    assert.ok(t.length <= 62 && t.startsWith(`Elpris ${n.name} i dag (${area})`) && t.endsWith('inkl. nettarif'), `net title for ${n.name}: ${t.length} characters: ${t}`);
+  }
+  assert.ok(INDEX.includes("document.title=full.length<=62?full:`Elpris ${S.netName} i dag (${S.area}) inkl. nettarif`"), 'the browser applies the same rule');
   for (const m of SRV2.matchAll(/'(\/[^']*)': \{\s*\n\s*title: '((?:[^'\\]|\\.)*)'/g)) {
     assert.ok(m[2].length <= 66, `title for ${m[1]} is ${m[2].length} characters`);
   }

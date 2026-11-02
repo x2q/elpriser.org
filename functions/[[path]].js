@@ -229,11 +229,18 @@ const NETS = {
 const AREA_LABEL = { DK1: 'DK1 Vest', DK2: 'DK2 Øst' };
 const AREA_REGION = { DK1: 'Vestdanmark (Jylland og Fyn)', DK2: 'Østdanmark (Sjælland, Lolland-Falster og Bornholm)' };
 
+/** The long form, or without "time for time" when a long company name would push it past what a results page shows.
+ *  The browser sets the same title when it draws a net page (updateHeader in index.html). */
+function netTitle(name, area) {
+  const full = `Elpris ${name} i dag (${area}) — time for time inkl. nettarif`;
+  return full.length <= 62 ? full : `Elpris ${name} i dag (${area}) inkl. nettarif`;
+}
+
 function netPageMeta(area, net) {
   const areaLabel = AREA_LABEL[area];
   const region = AREA_REGION[area];
   return {
-    title:       `Elpris ${net.name} i dag (${area}) — time for time inkl. nettarif`,
+    title:       netTitle(net.name, area),
     description: `Aktuel elpris og spotpris lige nu hos ${net.name} i ${region} — time for time. Den reelle pris pr. kWh du betaler inkl. ${net.name}-nettarif, elafgift og moms. Opdateret dagligt fra Energi Data Service.`,
     hash:        `#${area}/net_inkl_alt/${net.slug}`,
   };
