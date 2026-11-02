@@ -38,6 +38,7 @@ const BASE = { no1: 80, no2: 120, no3: 60, no4: 30, no5: 100, se1: 25, se2: 35, 
   de: 95, fr: 62, pl: 118, 'it-n': 118, at: 105, ch: 110, be: 88, ie: 140, cz: 99 };
 BASE.sk = 88;
 BASE.hu = 105;
+BASE.si = 98;
 const NORDIC = ['no1', 'no2', 'no3', 'no4', 'no5', 'se1', 'se2', 'se3', 'se4', 'fi', 'nl', 'dk1', 'dk2'];
 let noTomorrow = false;   // the EU job has not published tomorrow yet
 // Ireland's days are Dublin's: one hour behind Copenhagen (the EU changes the clocks at one instant), so its "today" is yesterday for the first Danish hour of a day.
@@ -226,6 +227,7 @@ const ACT = {
   '/cz/ceny-elektriny': { lang: 'cs', title: /^Cena elektřiny dnes a zítra – burzovní cena v Česku/, zones: ['Česko'], unit: 'ct', now: 'Cena elektřiny právě teď', first: 'cz', card: 'Dnes a zítra', one: 'Dnes', kind: 'Cena na denním trhu', loc: 'cs_CZ', h1: 'Cena elektřiny v Česku: dnes a zítra', src: 'ec', cap: 'Burzovní cena z denního trhu v eurocentech, bez DPH, daní a poplatků za distribuci' },
   '/sk/ceny-elektriny': { lang: 'sk', title: /^Cena elektriny dnes a zajtra – burzová cena na Slovensku/, zones: ['Slovensko'], unit: 'c', now: 'Cena elektriny práve teraz', first: 'sk', card: 'Dnes a zajtra', one: 'Dnes', kind: 'Cena na dennom trhu', loc: 'sk_SK', h1: 'Cena elektriny na Slovensku: dnes a zajtra', src: 'entsoe', cap: 'Burzová cena z denného trhu v eurocentoch, bez DPH, daní a poplatkov za distribúciu' },
   '/hu/aramar': { lang: 'hu', title: /^Áramár ma és holnap – tőzsdei áramár Magyarországon/, zones: ['Magyarország'], unit: 'ct', now: 'Áramár most', first: 'hu', card: 'Ma és holnap', one: 'Ma', kind: 'Másnapi piaci ár', loc: 'hu_HU', h1: 'Áramár Magyarországon: ma és holnap', src: 'ec', cap: 'Tőzsdei másnapi ár eurócentben, áfa, adók és hálózati díjak nélkül' },
+  '/si/cena-elektrike': { lang: 'sl', title: /^Cena elektrike danes in jutri – borzna cena v Sloveniji/, zones: ['Slovenija'], unit: 'c', now: 'Cena elektrike zdaj', first: 'si', card: 'Danes in jutri', one: 'Danes', kind: 'Cena na trgu za dan vnaprej', loc: 'sl_SI', h1: 'Cena elektrike v Sloveniji: danes in jutri', src: 'ec', cap: 'Borzna cena na trgu za dan vnaprej v evrocentih, brez DDV, davkov in omrežnine' },
 };
 // What the text block says about the data's change and its source, per language (the words before the credit links).
 const PRISNOTE = {
@@ -244,6 +246,7 @@ const PAGENOTE = {
   '/cz/ceny-elektriny': CZNOTE };
 PAGENOTE['/sk/ceny-elektriny'] = 'Hodinové priemery štvrťhodinových cien vypočítal elpriser.org (údaje sú oproti originálu upravené). Ceny sú v eurocentoch za kWh. Zdroj:';
 PAGENOTE['/hu/aramar'] = 'A negyedórás árak óránkénti átlagát az elpriser.org számította ki (az adatokat az eredetihez képest módosítottuk). Az árak eurócentben értendők, nem forintban. Forrás:';
+PAGENOTE['/si/cena-elektrike'] = 'Urna povprečja četrturnih cen je izračunal elpriser.org (podatki so v primerjavi z izvirnikom spremenjeni). Cene so v evrocentih za kWh. Vir:';
 const PRISCAP = {
   de: 'Börsenstrompreis (Day-Ahead) ohne MwSt., Steuern, Abgaben und Netzentgelte', fr: 'Prix spot day-ahead hors TVA, taxes et frais de réseau',
   pl: 'Cena giełdowa na rynku dnia następnego (RDN) bez VAT, podatków i opłat sieciowych', it: 'Prezzo day-ahead al netto di IVA, imposte e costi di rete',
@@ -255,6 +258,8 @@ const PRISTOM = { de: 'Ø morgen', fr: 'moy\\. demain', pl: 'śr\\. jutro', it: 
 const AVGW = l => PB.PRIS_I18N[l].avg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 PRISTOM.sk = 'priem\\. zajtra';
 PRISTOM.hu = 'átl\\. holnap';
+PRISTOM.sl = 'povp\\. jutri';
+PRISCAP.sl = 'Veleprodajna cena na trgu za dan vnaprej brez DDV, davkov in omrežnine';
 PRISCAP.hu = 'Tőzsdei másnapi ár áfa, adók és hálózati díjak nélkül';
 PRISCAP.sk = 'Burzová cena z denného trhu bez DPH, daní a poplatkov za distribúciu';
 const FORECAST = /prognos|vorhersage|vorschau|prévision|previsi|prognoz|przewid|forecast|prediction|predict|modell?o?\b|machine|maskinl|hugging/i;
@@ -264,6 +269,7 @@ const CREDIT = '<a href="https://www.smard.de" target="_blank" rel="noopener">Bu
 const CHANGED = { de: 'Änderung: Stundenmittel von elpriser.org berechnet', fr: 'Modifié\u00a0: moyennes horaires calculées par elpriser.org', pl: 'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org', it: 'Modifiche: medie orarie calcolate da elpriser.org', nl: 'Wijziging: uurgemiddelden berekend door elpriser.org', en: 'Changed: hourly means calculated by elpriser.org', cs: 'Změna: hodinové průměry vypočítal elpriser.org' };
 CHANGED.sk = 'Zmena: hodinové priemery vypočítal elpriser.org';
 CHANGED.hu = 'Módosítás: az óránkénti átlagokat az elpriser.org számította ki';
+CHANGED.sl = 'Sprememba: urna povprečja je izračunal elpriser.org';
 const X9 = ['dk', ...PB.PRIS_PICK.slice(1).map(c => c[0])];   // the countries of the footer list, in order (the old name said nine; it is every country of PRIS_COUNTRIES)
 for (const [p, w] of Object.entries(ACT)) {
   store.clear(); upstream = []; noTomorrow = false;
@@ -408,12 +414,13 @@ function get_dialog(r) { return (r.page.match(/<dialog id="netDialog"[\s\S]*?<\/
   const NEW = ['/at/strompreis', '/ch/strompreis', '/be/stroomprijs', '/be/prix-electricite', '/ie/electricity-price', '/cz/ceny-elektriny'];
   NEW.push('/sk/ceny-elektriny');
   NEW.push('/hu/aramar');
+  NEW.push('/si/cena-elektrike');
   const prio = p => +sm.match(new RegExp(`<loc>https://elpriser\\.org${p}</loc>[\\s\\S]*?<priority>([\\d.]+)`))[1];
   ok(NEW.every(p => sm.includes(`<loc>https://elpriser.org${p}</loc>`) && prio(p) === 0.5 && llms.includes(`https://elpriser.org${p})`) && full.includes(`https://elpriser.org${p})`)), 'sitemap og llms.txt: de nye sider er med, i udenlandsk prioritet');
   const bullet = llms.slice(llms.indexOf('- [Elpriser i Europa]'), llms.indexOf('- [Automation]'));
   const nAct = new Set(Object.values(PB.PRIS_COUNTRIES).filter(c => c.act).map(c => c.cc)).size;
   ok(bullet.includes(`i ${nAct} europæiske lande`) && /Kun faktiske børspriser — ingen prognose/.test(bullet) && /Kilde: Bundesnetzagentur \| SMARD\.de via Energy-Charts\.info, licens CC BY 4\.0; Irland[^;:]*: ENTSO-E Transparency Platform; vi har ændret dataene \(timegennemsnit/.test(bullet), 'llms.txt: Europa-punktet siger otte lande, kun faktiske priser, de to kilder (Irland: ENTSO-E) og at dataene er ændret', bullet.slice(0, 700));
-  ok(/\[Belgien\]\(https:\/\/elpriser\.org\/be\/stroomprijs\) \(hollandsk, \[fransk\]\(https:\/\/elpriser\.org\/be\/prix-electricite\)\)/.test(bullet) && /\[Irland\]\(https:\/\/elpriser\.org\/ie\/electricity-price\) \(prisområdet SEM: Irland og Nordirland\)/.test(bullet) && /\[Schweiz\]\([^)]*\) \(priserne er i euro, ikke franc\)/.test(bullet) && /\[Tjekkiet\]\(https:\/\/elpriser\.org\/cz\/ceny-elektriny\)/.test(bullet) && /\[Slovakiet\]\(https:\/\/elpriser\.org\/sk\/ceny-elektriny\)/.test(bullet) && /\[Ungarn\]\(https:\/\/elpriser\.org\/hu\/aramar\)/.test(bullet) && !/\{\{/.test(llms + full), 'llms.txt: Belgien med begge sprog, Irland som SEM, Schweiz i euro; ingen ubrugt skabelon');
+  ok(/\[Belgien\]\(https:\/\/elpriser\.org\/be\/stroomprijs\) \(hollandsk, \[fransk\]\(https:\/\/elpriser\.org\/be\/prix-electricite\)\)/.test(bullet) && /\[Irland\]\(https:\/\/elpriser\.org\/ie\/electricity-price\) \(prisområdet SEM: Irland og Nordirland\)/.test(bullet) && /\[Schweiz\]\([^)]*\) \(priserne er i euro, ikke franc\)/.test(bullet) && /\[Tjekkiet\]\(https:\/\/elpriser\.org\/cz\/ceny-elektriny\)/.test(bullet) && /\[Slovakiet\]\(https:\/\/elpriser\.org\/sk\/ceny-elektriny\)/.test(bullet) && /\[Ungarn\]\(https:\/\/elpriser\.org\/hu\/aramar\)/.test(bullet) && /\[Slovenien\]\(https:\/\/elpriser\.org\/si\/cena-elektrike\)/.test(bullet) && !/\{\{/.test(llms + full), 'llms.txt: Belgien med begge sprog, Irland som SEM, Schweiz i euro; ingen ubrugt skabelon');
   ok(/elpriser\.org\/(de\/strompreis|fr\/prix-electricite|pl\/ceny-pradu|it\/prezzo-luce)\)/.test(bullet) && /Tyskland\]\([^)]*\) \(DE-LU, fælles prisområde med Luxembourg\)/.test(bullet) && /Italien\]\([^)]*\) \(kun prisområdet Nord\)/.test(bullet), 'llms.txt: de fire første lande har stadig deres noter');
 }
 
@@ -476,7 +483,8 @@ for (const [from, to] of Object.entries(OLD)) {
 {
   const QID = { no: 'Q20', sv: 'Q34', fi: 'Q33', nl: 'Q55', de: 'Q183', fr: 'Q142', pl: 'Q36', it: 'Q38', dk: 'Q35', lu: 'Q32', at: 'Q40', ch: 'Q39', be: 'Q31', ie: 'Q27', ni: 'Q26', cz: 'Q213' };
   QID.sk = 'Q214';
-  QID.hu = 'Q28';   // checked against Wikidata's English labels 2026-11-02
+  QID.hu = 'Q28';
+  QID.si = 'Q215';   // checked against Wikidata's English labels 2026-11-02
   const ldOf = body => [...body.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => JSON.parse(m[1])).find(x => x['@type'] === 'WebPage');
   const wd = c => `https://www.wikidata.org/wiki/${QID[c]}`;
   const walk = (n, f) => { f(n); for (const c of [].concat(n.containsPlace || [], n.containedInPlace || [])) walk(c, f); };
@@ -494,6 +502,7 @@ for (const [from, to] of Object.entries(OLD)) {
     '/cz/ceny-elektriny': { name: 'Česko', q: 'cz', zones: [] },
     '/sk/ceny-elektriny': { name: 'Slovensko', q: 'sk', zones: [] },
     '/hu/aramar': { name: 'Magyarország', q: 'hu', zones: [] },
+    '/si/cena-elektrike': { name: 'Slovenija', q: 'si', zones: [] },
   };
   for (const [p, w] of Object.entries(WANT)) {
     store.clear();

@@ -1098,7 +1098,17 @@ var PRIS_I18N={
     byDay:'Napról napra',day:'Nap',range:'Tartomány',type:'Típus',none:'Az árakat most nem sikerült betölteni.',
     cap:'Tőzsdei másnapi ár áfa, adók és hálózati díjak nélkül',
     avg:'átl.',
-    act1:'Ma',act2:'Ma és holnap',cheapRest:'A nap hátralévő részének legolcsóbb órája'}
+    act1:'Ma',act2:'Ma és holnap',cheapRest:'A nap hátralévő részének legolcsóbb órája'},
+  sl:{wd:['nedelja','ponedeljek','torek','sreda','četrtek','petek','sobota'],ws:['ned','pon','tor','sre','čet','pet','sob'],
+    mon:['jan.','feb.','mar.','apr.','maj','jun.','jul.','avg.','sep.','okt.','nov.','dec.'],dot:'.',hs:':00',hh:1,
+    now:'Cena elektrike zdaj',hourly:'Cena elektrike po urah',at:'',today:'danes',tomorrow:'jutri',evening:'danes zvečer',
+    verdict:['Nizka cena zdaj','Povprečna cena zdaj','Visoka cena zdaj'],tier:['Nizka','Povprečna','Visoka'],
+    cheaper:'Ceneje',cheapest24:'Najcenejša ura v naslednjih 24 urah',lo:'najcenejša ura',hi:'najdražja ura',
+    next:'Naslednjih',p2:'2 dni',p5:'5 dni',p7:'7 dni',period:'Obdobje',fc:'Cena na trgu za dan vnaprej',actual:'Cena na trgu za dan vnaprej',
+    byDay:'Dan za dnem',day:'Dan',range:'Razpon',type:'Vrsta',none:'Cen trenutno ni bilo mogoče naložiti.',
+    cap:'Veleprodajna cena na trgu za dan vnaprej brez DDV, davkov in omrežnine',
+    avg:'povp.',
+    act1:'Danes',act2:'Danes in jutri',cheapRest:'Najcenejša ura do konca dneva'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1133,7 +1143,8 @@ var ZONES={
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
   cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   sk:{name:'SK',city:'Slovensko',lang:'sk',cur:'EUR',rate:1,sub:'c',src:'entsoe'},
-  hu:{name:'HU',city:'Magyarország',lang:'hu',cur:'EUR',rate:1,sub:'ct',src:'ec'}
+  hu:{name:'HU',city:'Magyarország',lang:'hu',cur:'EUR',rate:1,sub:'ct',src:'ec'},
+  si:{name:'SI',city:'Slovenija',lang:'sl',cur:'EUR',rate:1,sub:'c',src:'ec'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1263,7 +1274,15 @@ var PRIS_COUNTRIES={
     tx:{h1:'Áramár Magyarországon: ma és holnap',
       zonesH:'Áramár Magyarországon',
       note:'A negyedórás árak óránkénti átlagát az elpriser.org számította ki (az adatokat az eredetihez képest módosítottuk). Az árak eurócentben értendők, nem forintban. Forrás:',
-      cap:'Tőzsdei másnapi ár eurócentben, áfa, adók és hálózati díjak nélkül'}}
+      cap:'Tőzsdei másnapi ár eurócentben, áfa, adók és hálózati díjak nélkül'}},
+  'si/cena-elektrike':{lang:'sl',cc:'si',zones:['si'],def:'si',act:1,
+    name:'Slovenija',da:'Slovenien',loc:'sl_SI',qid:'Q215',
+    title:'Cena elektrike danes in jutri – borzna cena v Sloveniji',
+    desc:'Borzna cena elektrike (trg za dan vnaprej) v Sloveniji po urah, danes in jutri, v c/kWh, brez DDV, davkov in omrežnine. Vir: Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Cena elektrike v Sloveniji: danes in jutri',
+      zonesH:'Cena elektrike v Sloveniji',
+      note:'Urna povprečja četrturnih cen je izračunal elpriser.org (podatki so v primerjavi z izvirnikom spremenjeni). Cene so v evrocentih za kWh. Vir:',
+      cap:'Borzna cena na trgu za dan vnaprej v evrocentih, brez DDV, davkov in omrežnine'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1351,13 +1370,17 @@ var CHROME_I18N={
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
     chg:'Změna: hodinové průměry vypočítal elpriser.org'},
   sk:{home:'elpriser.org – úvodná stránka',land:'Krajiny',place:'Kde ste?',area:'Cenová zóna',oth:'Ďalšie krajiny',back:'Späť',find:'Hľadať',none:'Žiadne výsledky',close:'Zavrieť',
-    cn:{dk:'Dánsko',no:'Nórsko',sv:'Švédsko',fi:'Fínsko',nl:'Holandsko',de:'Nemecko',fr:'Francúzsko',pl:'Poľsko',it:'Taliansko',at:'Rakúsko',ch:'Švajčiarsko',be:'Belgicko',ie:'Írsko',cz:'Česko',sk:'Slovensko',hu:'Maďarsko'},
+    cn:{dk:'Dánsko',no:'Nórsko',sv:'Švédsko',fi:'Fínsko',nl:'Holandsko',de:'Nemecko',fr:'Francúzsko',pl:'Poľsko',it:'Taliansko',at:'Rakúsko',ch:'Švajčiarsko',be:'Belgicko',ie:'Írsko',cz:'Česko',sk:'Slovensko',hu:'Maďarsko',si:'Slovinsko'},
     privacy:'Ochrana súkromia (po dánsky)',src:'Zdroj:',and:'a',open:'Otvorené súbory údajov na',
     chg:'Zmena: hodinové priemery vypočítal elpriser.org'},
   hu:{home:'elpriser.org – kezdőlap',land:'Országok',place:'Hol vagy?',area:'Árzóna',oth:'További országok',back:'Vissza',find:'Keresés',none:'Nincs találat',close:'Bezárás',
-    cn:{dk:'Dánia',no:'Norvégia',sv:'Svédország',fi:'Finnország',nl:'Hollandia',de:'Németország',fr:'Franciaország',pl:'Lengyelország',it:'Olaszország',at:'Ausztria',ch:'Svájc',be:'Belgium',ie:'Írország',cz:'Csehország',sk:'Szlovákia',hu:'Magyarország'},
+    cn:{dk:'Dánia',no:'Norvégia',sv:'Svédország',fi:'Finnország',nl:'Hollandia',de:'Németország',fr:'Franciaország',pl:'Lengyelország',it:'Olaszország',at:'Ausztria',ch:'Svájc',be:'Belgium',ie:'Írország',cz:'Csehország',sk:'Szlovákia',hu:'Magyarország',si:'Szlovénia'},
     privacy:'Adatvédelem (dánul)',src:'Forrás:',and:'és',open:'Nyílt adatkészletek:',
-    chg:'Módosítás: az óránkénti átlagokat az elpriser.org számította ki'}
+    chg:'Módosítás: az óránkénti átlagokat az elpriser.org számította ki'},
+  sl:{home:'elpriser.org – domača stran',land:'Države',place:'Kje ste?',area:'Cenovno območje',oth:'Druge države',back:'Nazaj',find:'Iskanje',none:'Ni rezultatov',close:'Zapri',
+    cn:{dk:'Danska',no:'Norveška',sv:'Švedska',fi:'Finska',nl:'Nizozemska',de:'Nemčija',fr:'Francija',pl:'Poljska',it:'Italija',at:'Avstrija',ch:'Švica',be:'Belgija',ie:'Irska',cz:'Češka',sk:'Slovaška',hu:'Madžarska',si:'Slovenija'},
+    privacy:'Zasebnost (v danščini)',src:'Vir:',and:'in',open:'Odprti nabori podatkov na',
+    chg:'Sprememba: urna povprečja je izračunal elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark

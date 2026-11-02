@@ -279,6 +279,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const NOTEWORD = { de: [/berechnet/, /verändert/], fr: [/calculées/, /modifiées/], pl: [/przeliczone/, /zmienione/], it: [/calcolate/, /modificati/], en: [/calculated/, /changed/], cs: [/vypočítal/, /upraveny/], nl: [/berekend/, /gewijzigd/] };
   FCWORD.sk = /predpoveď|predpoved|prognóz|odhad/i; CAPWORD.sk = [/bez/, /DPH/]; NOTEWORD.sk = [/vypočítal/, /upravené/];
   FCWORD.hu = /előrejelz|prognózis|becslés/i; CAPWORD.hu = [/nélkül/, /áfa/i]; NOTEWORD.hu = [/számította/, /módosítottuk/];
+  FCWORD.sl = /napoved|prognoz/i; CAPWORD.sl = [/brez/, /DDV/]; NOTEWORD.sl = [/izračunal/, /spremenjeni/];
   for (const l of ACT_ONLY) {
     const all = Object.values(L[l]).flat().join(' | ');
     ok(!DANISH.test(all), `${l}: ingen danske ord i tabellen`, (all.match(DANISH) || [])[0]);
