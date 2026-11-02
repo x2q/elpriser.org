@@ -98,10 +98,10 @@ test('plural forms: a plural has exactly the categories its language needs (many
   assert.deepEqual(bad, []);
 });
 
-test('shipped languages are exactly the complete ones with a file (a partial language never leaks into a build)', () => {
+test('shipped languages: tier 1 always (English fills a missing key), tier 2 and 3 only when complete (a partial language never leaks into a build)', () => {
   const ship = shipped(cat).map(l => l.code);
   for (const l of cat.langs) {
-    const should = l.ship !== false && !!cat.strings[l.code] && (isComplete(cat, l) || !!l.allowPartial);
+    const should = l.ship !== false && !!cat.strings[l.code] && (l.tier === 1 || isComplete(cat, l) || !!l.allowPartial);
     assert.equal(ship.includes(l.code), should, l.code);
   }
   assert.ok(ship.includes('da') && ship.includes('en'));

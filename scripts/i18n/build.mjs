@@ -73,9 +73,29 @@ export function missingKeys(cat, lang) {
 
 export function isComplete(cat, lang) { return !!cat.strings[lang.code] && missingKeys(cat, lang).length === 0; }
 
-/** The languages that ship: a catalogue file exists, it is complete (or the language says allowPartial) and 'ship' is not false. */
+/**
+ * The languages that ship: a catalogue file exists and 'ship' is not false, and the language is tier 1 (the build then falls back to English
+ * for a key it lacks, as Android does at run time, until the translators have caught up; test-i18n.mjs fails the gate while one is missing),
+ * or it is complete, or it says allowPartial. A partial tier 2/3 language is left out of the build.
+ */
 export function shipped(cat) {
-  return cat.langs.filter(l => l.ship !== false && cat.strings[l.code] && (isComplete(cat, l) || l.allowPartial));
+  return cat.langs.filter(l => l.ship !== false && cat.strings[l.code] && (l.tier === 1 || isComplete(cat, l) || l.allowPartial));
+}
+
+/** A language's texts with every missing key filled from English (plural categories the language needs but English lacks get English 'other'). */
+export function filledTexts(cat, lang) {
+  const t = cat.strings[lang.code], en = cat.strings[cat.fallback], out = {};
+  for (const k of cat.keys) {
+    let v = t[k.key];
+    if (v == null || (Array.isArray(en[k.key]) && (!Array.isArray(v) || v.length !== en[k.key].length))) v = en[k.key];
+    else if (typeof en[k.key] === 'object' && !Array.isArray(en[k.key])) {
+      const forms = { ...v };
+      for (const c of lang.plural) if (!forms[c]) forms[c] = en[k.key][c] || en[k.key].other;
+      v = forms;
+    }
+    out[k.key] = v;
+  }
+  return out;
 }
 
 /* ── Serbian: Cyrillic is the source, Latin is derived ────────────────────────────────── */
@@ -93,7 +113,7 @@ const mapDeep = (v, f) => typeof v === 'string' ? f(v) : Array.isArray(v) ? v.ma
 function outputLanguages(cat) {
   const out = [];
   for (const l of shipped(cat)) {
-    const t = cat.strings[l.code];
+    const t = filledTexts(cat, l);
     out.push({ code: l.code, lang: l, texts: t });
     if (l.latin) out.push({ code: l.latin, lang: l, texts: mapDeep(t, serbianLatin), derived: true });
     for (const a of l.aliases || []) out.push({ code: a, lang: l, texts: t, alias: true });
