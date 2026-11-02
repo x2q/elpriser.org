@@ -66,6 +66,8 @@ android {
             it.inputs.file(rootProject.file("../tests/golden/app-contract.json")).withPropertyName("goldenContract")
             // The unit tests read the Danish texts from this file; its text changes do not change any class, so declare it.
             it.inputs.file("src/main/res/values-da/strings.xml").withPropertyName("danishStrings")
+            // The all-languages test reads every shipped strings.xml (default English, values-da and the other languages).
+            it.inputs.files(project.fileTree("src/main/res") { include("values*/strings.xml") }).withPropertyName("allStrings")
         }
     }
 }

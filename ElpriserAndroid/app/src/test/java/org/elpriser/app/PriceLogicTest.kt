@@ -26,6 +26,9 @@ import org.junit.Test
 
 /** Logikken bag den nye Pris-skærm (Design A): sætning, nøgletal, akse, etiketter og bobler. */
 class PriceLogicTest {
+    // Numbers follow the locale; these tests pin the Danish wording and numbers.
+    @get:org.junit.Rule val locale = LocaleRule(DANISH)
+
     // The Danish texts, read from res/values/strings.xml. The wrappers keep every assertion below as it was
     // (they only hand the texts to the logic); an assertion on Danish wording therefore also pins the resource file.
     private val tx = TestStrings.da

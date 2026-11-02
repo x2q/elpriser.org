@@ -7,16 +7,23 @@ import java.util.Locale
 import javax.xml.parsers.DocumentBuilderFactory
 
 /**
- * The app's own texts for the JVM tests, read from the values-da/strings.xml the app ships — so there is exactly one Danish wording.
+ * The app's own texts for the JVM tests, read from a strings.xml the app ships (Danish by default) — so there is exactly one wording.
  * The logic functions ask for texts by resource id; the ids are mapped to names through the generated R class.
  * Placeholders are formatted with String.format in the file's locale, as Resources.getString does on a device.
  * Android's resource escapes (\n, \', \", \\, \@, \?, \uXXXX) are undone; whitespace handling is the plain trim only,
  * which is all these files use (test-android-strings.mjs forbids the rest).
  */
-class XmlStrings(file: File, private val locale: Locale) : Strings {
+class XmlStrings(file: File, val locale: Locale) : Strings {
     private val strings = HashMap<String, String>()
     private val plurals = HashMap<String, Map<String, String>>()
     private val arrays = HashMap<String, List<String>>()
+
+    /** The raw (unescaped, unformatted) templates, for tests that go through every text of a language. */
+    val stringTemplates: Map<String, String> get() = strings
+    val pluralTemplates: Map<String, Map<String, String>> get() = plurals
+    val arrayItems: Map<String, List<String>> get() = arrays
+    /** Names of the strings the file marks translatable="false" (brand names). */
+    val untranslatable = HashSet<String>()
     private val names = HashMap<Int, String>()
 
     init {
@@ -34,7 +41,7 @@ class XmlStrings(file: File, private val locale: Locale) : Strings {
             val n = nodes.item(i) as? Element ?: continue
             val name = n.getAttribute("name")
             when (n.tagName) {
-                "string" -> strings[name] = unescape(n.textContent)
+                "string" -> { strings[name] = unescape(n.textContent); if (n.getAttribute("translatable") == "false") untranslatable.add(name) }
                 "plurals" -> plurals[name] = items(n).associate { it.getAttribute("quantity") to unescape(it.textContent) }
                 "string-array" -> arrays[name] = items(n).map { unescape(it.textContent) }
             }
@@ -89,6 +96,25 @@ class XmlStrings(file: File, private val locale: Locale) : Strings {
 }
 
 object TestStrings {
+    private val res = File("src/main/res")
+
     /** Danish: values-da/strings.xml (English is the default values/ set since the Europe release). Gradle runs unit tests with the module directory (app/) as working directory. */
     val da: Strings by lazy { XmlStrings(File("src/main/res/values-da/strings.xml"), Locale("da", "DK")) }
+
+    /** English: the default values/ set. */
+    val en: XmlStrings by lazy { forFolder("values") }
+
+    /** Every language folder the app ships: the default values/ (English) and each values-XX folder with a strings.xml, e.g. "values-da", "values-b+sr+Latn". */
+    fun folders(): List<String> =
+        (res.listFiles { f -> f.isDirectory && f.name.startsWith("values") && File(f, "strings.xml").exists() } ?: emptyArray()).map { it.name }.sorted()
+
+    /** The texts of one folder, formatted in that folder's locale. "values" is English. */
+    fun forFolder(folder: String): XmlStrings {
+        val tag = when {
+            folder == "values" -> "en"
+            folder.startsWith("values-b+") -> folder.removePrefix("values-b+").replace('+', '-')
+            else -> folder.removePrefix("values-")
+        }
+        return XmlStrings(File(res, "$folder/strings.xml"), Locale.forLanguageTag(tag))
+    }
 }

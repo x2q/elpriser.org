@@ -21,6 +21,9 @@ import org.junit.Test
  * Det giver (øre): spot 85,0 · system 7,0 · transmission 5,4 · nettarif 33,0 · elafgift 0,8 · moms 32,8 · i alt 164,0.
  */
 class BreakdownTest {
+    // Numbers follow the locale; these tests pin the Danish wording and numbers.
+    @get:org.junit.Rule val locale = LocaleRule(DANISH)
+
     private val charges = Charges(sys = 0.07, trans = 0.054, afg = 0.008, vat = 0.25)
 
     // The Danish texts, read from res/values/strings.xml. The wrappers keep every assertion below as it was.

@@ -62,7 +62,7 @@ private fun AppRoot(vm: AppViewModel) {
     val wide = LocalConfiguration.current.screenWidthDp >= 600
 
     // Hent priser ved start, når netselskab/visning skifter, og når appen vender tilbage efter en pause.
-    LaunchedEffect(vm.settings.mode, vm.settings.netGln, vm.settings.area) { vm.refresh() }
+    LaunchedEffect(vm.settings.mode, vm.settings.netGln, vm.settings.zoneKey) { vm.refresh() }
     val owner = LocalLifecycleOwner.current
     DisposableEffect(owner) {
         val obs = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) vm.refresh() }

@@ -87,6 +87,7 @@ const DANISH_ONLY = [
 /* Hard-coded text the UI-literal check may see in the Kotlin sources. Each entry is [file suffix, regexp on the literal, reason]. */
 const HARDCODED_ALLOWLIST = [
   ['data/Models.kt', /.*/, 'the net company list: names and the match strings Green Power Denmark answers with, proper nouns pinned by test-golden.mjs'],
+  ['data/Zones.kt', /.*/, 'the price-zone table: place names (Oslo, Tromsø, Malmö …) and the sub-unit literals (øre, öre, gr) pinned by test-golden.mjs against tests/golden/app-contract.json'],
   ['data/Api.kt', /.*/, 'network constants (URL, user agent, JSON keys), nothing the user sees'],
   ['ui/AutomationScreen.kt', /^(\{\\n  \\"area\\"|    \{ \\"name\\")|\\"hours\\"|\\"devices\\"|Elpriser-plan/, 'JSON handed to Home Assistant / Shelly and the clipboard label: a data format, not UI text'],
   ['ui/AutomationScreen.kt', /^(varmepumpe|elbil|vandvarmer)$/, 'device names inside that JSON stay fixed so a user\'s automation does not break when the language changes'],
@@ -407,11 +408,6 @@ export function findHardcoded(file, src) {
   return problems;
 }
 
-/* Texts of the Europe release (country and zone selection) that the catalogue has before the Kotlin code uses them. The Android zone work
- * deletes this list; until then it is the only way the catalogue can lead the code without this test going red. */
-const NOT_USED_YET = new Set(['settings_subtitle_zone', 'unit_ct_kwh', 'unit_ct', 'caption_zone', 'about_sources_eu', 'welcome_zone_title', 'welcome_zone_body',
-  'place_countries', 'place_your_country', 'place_zone_title', 'place_zone_note', 'note_zone_de_lu', 'note_zone_it_n']);
-
 const kt = kotlinFiles(KOTLIN).map(f => [f, fs.readFileSync(f, 'utf8')]);
 
 test('(f) no hard-coded user-visible text in the Kotlin sources', () => {
@@ -431,8 +427,7 @@ test('(f) every R.string / R.plurals / R.array used in Kotlin exists in the defa
   for (const k of Object.keys(used)) for (const n of used[k]) if (!have[k].has(n)) missing.push(`R.${k}.${n}`);
   assert.deepEqual(missing, [], 'Kotlin refers to resources that strings.xml does not define');
   const unused = [];
-  for (const k of Object.keys(have)) for (const n of have[k]) if (!used[k].has(n) && !(k === 'string' && NOT_USED_YET.has(n))) unused.push(`${k}:${n}`);
-  for (const n of NOT_USED_YET) assert.ok(!used.string.has(n), `NOT_USED_YET lists ${n}, but the Kotlin sources use it now: remove it from the list`);
+  for (const k of Object.keys(have)) for (const n of have[k]) if (!used[k].has(n)) unused.push(`${k}:${n}`);
   assert.deepEqual(unused, [], 'strings.xml defines texts nothing uses (delete them, or use them)');
 });
 

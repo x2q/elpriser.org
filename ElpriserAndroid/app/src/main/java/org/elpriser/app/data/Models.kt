@@ -1,8 +1,10 @@
 package org.elpriser.app.data
 
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 
 /** Et netselskab, som elpriser.org kender. `match` er de navne, Green Power Denmark svarer med. */
 data class Net(val name: String, val gln: String, val area: String, val match: List<String>)
@@ -54,7 +56,9 @@ object Nets {
     }
 }
 
-/** Ét døgn med 24 timepriser i kr/kWh. `lo`/`hi` er P10/P90 på prognosedage. `gridTariff` er nettariffen pr. time (kr/kWh ekskl. moms), kun på net-visninger. */
+/**
+ * Ét døgn med 24 timepriser: kr/kWh på de danske zoner, ellers zonens underenhed pr. kWh (øre, öre, gr, ct; one decimal).
+ * `lo`/`hi` er P10/P90 på prognosedage. `gridTariff` er nettariffen pr. time (kr/kWh ekskl. moms), kun på net-visninger. */
 class Day(
     val date: String,
     val actual: Boolean,
@@ -76,9 +80,37 @@ class Forecast(
 
 class Lookup(val name: String?, val error: String?)
 
+/**
+ * "Now" on the wall clock of the price zone on screen: the API's days and hours follow the zone's own time (Oslo, Lisbon, Helsinki …).
+ * The view model sets [zone] when the user changes zone; Copenhagen is the default (and every Danish zone). The overloads taking an
+ * instant and a zone are pure, so the rules can be tested in any zone.
+ */
 object Clock {
-    val zone: ZoneId = ZoneId.of("Europe/Copenhagen")
-    fun now(): ZonedDateTime = ZonedDateTime.now(zone)
-    fun today(): String = now().toLocalDate().toString()
-    fun hour(): Int = now().hour
+    val COPENHAGEN: ZoneId = ZoneId.of("Europe/Copenhagen")
+
+    @Volatile var zone: ZoneId = COPENHAGEN
+
+    fun now(): ZonedDateTime = now(Instant.now(), zone)
+    fun today(): String = today(Instant.now(), zone)
+    fun hour(): Int = hour(Instant.now(), zone)
+
+    fun now(at: Instant, zone: ZoneId): ZonedDateTime = ZonedDateTime.ofInstant(at, zone)
+    /** The date on the zone's wall clock, "2026-10-11". */
+    fun today(at: Instant, zone: ZoneId): String = now(at, zone).toLocalDate().toString()
+    /** The wall-clock hour 0..23 in the zone (index into a day's 24 prices; on a DST day the wall clock skips or repeats an hour). */
+    fun hour(at: Instant, zone: ZoneId): Int = now(at, zone).hour
+}
+
+/**
+ * The days from [today] on, consecutive: the feed opens on yesterday, and a hole must not close up (it would put "tomorrow" on the wrong
+ * date). Same rule as `daysFrom` of tests/golden/zones.mjs.
+ */
+fun daysFrom(days: List<Day>, today: String): List<Day> {
+    val t = LocalDate.parse(today)
+    val out = ArrayList<Day>()
+    for (d in days.filter { it.date >= today }.sortedBy { it.date }) {
+        if (ChronoUnit.DAYS.between(t, LocalDate.parse(d.date)) != out.size.toLong()) break
+        out.add(d)
+    }
+    return out
 }

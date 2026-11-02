@@ -19,6 +19,12 @@ import org.elpriser.app.data.Net
 import org.elpriser.app.data.Nets
 import org.elpriser.app.data.Position
 import org.elpriser.app.data.Settings
+import org.elpriser.app.data.Zones
+import org.elpriser.app.data.Zone
+import org.elpriser.app.data.daysFrom
+
+/** The series key of a zone outside Denmark (see Api.zone). */
+const val ZONE_MODE = "zone"
 
 /** Pris og Smart hjem er de to faner; Indstillinger åbnes fra net-chippen og er ikke en fane. */
 enum class Tab { Pris, Smart, Settings }
@@ -31,6 +37,11 @@ sealed interface Step {
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     val settings = Settings(app)
+
+    init {
+        // Hours and dates follow the zone on screen (Oslo, Lisbon …), not the phone.
+        Clock.zone = settings.zone.zoneId
+    }
 
     var tab by mutableStateOf(Tab.Pris)
     var step by mutableStateOf<Step?>(if (settings.onboarded) null else Step.Place())
@@ -49,30 +60,40 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private var loadedAt = 0L
     private var loadedKey = ""
 
-    /** Dage fra i dag og frem for en visning. */
+    /**
+     * Dage fra i dag og frem for en visning. Outside Denmark the feed opens on yesterday and may have a hole (tomorrow is published around
+     * 13:00 CET), so the days are cut at today in the zone's own clock and kept only while consecutive.
+     */
     fun days(mode: String = settings.mode): List<Day> {
         val today = Clock.today()
-        return series[mode]?.days?.filter { it.date >= today }.orEmpty()
+        val all = series[mode]?.days ?: return emptyList()
+        return if (mode == ZONE_MODE) daysFrom(all, today) else all.filter { it.date >= today }
     }
 
     fun model(): String? = series[settings.mode]?.model
 
-    /** Henter alt, appen skal bruge: den valgte visning plus de tre, prisopbygningen regnes af. */
+    /** Henter alt, appen skal bruge: den valgte visning plus de tre, prisopbygningen regnes af. Outside Denmark: the zone's day-ahead series, no CO₂. */
     fun refresh(force: Boolean = false) {
-        val key = settings.mode + "|" + settings.effectiveArea + "|" + settings.netGln
+        val key = settings.mode + "|" + settings.zoneKey + "|" + settings.netGln
         if (!force && key == loadedKey && System.currentTimeMillis() - loadedAt < 20 * 60_000L && series.isNotEmpty()) return
         loadedKey = key
         viewModelScope.launch {
             loading = true
             error = null
+            val zone = settings.zone
             val area = settings.effectiveArea
             val gln = settings.netGln
             val modes = linkedSetOf(settings.mode, "inkl_alt", "spot_inkl")
             if (gln != null) modes.add("net_inkl_alt")
             try {
-                val results = modes.map { m -> async { m to Api.forecast(area, m, gln) } }.awaitAll()
-                series = results.toMap()
-                co2 = runCatching { Api.co2(area) }.getOrDefault(co2)
+                if (zone.isDanish) {
+                    val results = modes.map { m -> async { m to Api.forecast(area, m, gln) } }.awaitAll()
+                    series = results.toMap()
+                    co2 = runCatching { Api.co2(area) }.getOrDefault(co2)
+                } else {
+                    series = mapOf(ZONE_MODE to Api.zone(zone))
+                    co2 = emptyMap()
+                }
                 loadedAt = System.currentTimeMillis()
             } catch (e: Exception) {
                 error = if (series.isEmpty()) R.string.error_load_failed else R.string.error_load_stale
@@ -93,17 +114,24 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun choose(net: Net, how: String) {
+        Clock.zone = Clock.COPENHAGEN
         settings.saveNet(net, how)
         step = null
         refresh(true)
     }
 
-    /** "Uden netselskab": prisområdet alene. */
-    fun chooseArea(area: String) {
-        settings.forgetNet()
-        settings.updateArea(area)
+    /** A price zone: a country with one zone, a Norwegian or Swedish zone, or "no grid company" in a Danish area. The grid company is forgotten. */
+    fun chooseZone(zone: Zone) {
+        Clock.zone = zone.zoneId
+        settings.chooseZone(zone)
+        series = emptyMap()
         step = null
         refresh(true)
+    }
+
+    /** "Uden netselskab": prisområdet alene ("DK1" / "DK2"). */
+    fun chooseArea(area: String) {
+        Zones.byKey(area)?.let { chooseZone(it) }
     }
 
     fun forget() {

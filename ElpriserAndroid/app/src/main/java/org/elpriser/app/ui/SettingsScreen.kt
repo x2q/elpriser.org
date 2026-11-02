@@ -42,6 +42,8 @@ fun SettingsScreen(vm: AppViewModel, wide: Boolean) {
     val ctx = LocalContext.current
     val tx = rememberStrings()
     fun open(url: String) = ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    // The price-view choice (with grid company, spot incl./excl. VAT) exists only in Denmark; elsewhere there is one spot price.
+    val danish = s.zone.isDanish
 
     val viewCard: @Composable () -> Unit = {
         val defs = listOf(
@@ -83,6 +85,10 @@ fun SettingsScreen(vm: AppViewModel, wide: Boolean) {
             SectionLabel(tx.get(R.string.settings_about_label))
             Text(tx.get(R.string.about_text, BuildConfig.VERSION_NAME),
                 Modifier.padding(top = 8.dp), fontSize = 12.5.sp, lineHeight = 18.sp, color = t.text2, fontWeight = FontWeight.Medium)
+            if (!danish) {
+                Text(tx.get(R.string.about_sources_eu),
+                    Modifier.padding(top = 8.dp), fontSize = 12.5.sp, lineHeight = 18.sp, color = t.text2, fontWeight = FontWeight.Medium)
+            }
             Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SoftButton(tx.get(R.string.action_privacy), { open("https://elpriser.org/privatliv") }, bg = t.brandSoft, fg = t.brand)
                 SoftButton(tx.get(R.string.link_site), { open("https://elpriser.org") }, bg = t.brandSoft, fg = t.brand)
@@ -98,17 +104,18 @@ fun SettingsScreen(vm: AppViewModel, wide: Boolean) {
             ) { Icon(Ic.Back, t.text, 24.dp, stroke = 2.2f) }
             Column(Modifier.weight(1f).padding(start = 4.dp)) {
                 Text(tx.get(R.string.settings_title), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.4).sp, lineHeight = 26.sp)
-                Text(tx.get(R.string.settings_subtitle), fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = t.text2)
+                Text(tx.get(if (danish) R.string.settings_subtitle else R.string.settings_subtitle_zone), fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = t.text2)
             }
         }
         if (wide) {
             Row(Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = 20.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                Column(Modifier.width(520.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { viewCard() }
+                if (danish) Column(Modifier.width(520.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { viewCard() }
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { lookCard(); aboutCard() }
             }
         } else {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                viewCard(); lookCard(); aboutCard()
+                if (danish) viewCard()
+                lookCard(); aboutCard()
             }
         }
     }
