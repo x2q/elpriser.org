@@ -41,6 +41,7 @@ BASE.sk = 88;
 BASE.hu = 105;
 BASE.si = 98;
   de: 95, fr: 62, pl: 118, 'it-n': 118, at: 105, ch: 110, be: 88, ie: 140, cz: 99, ro: 120, bg: 130, gr: 105 };
+  de: 95, fr: 62, pl: 118, 'it-n': 118, at: 105, ch: 110, be: 88, ie: 140, cz: 99, ee: 84, lv: 92, lt: 77 };
 const NORDIC = ['no1', 'no2', 'no3', 'no4', 'no5', 'se1', 'se2', 'se3', 'se4', 'fi', 'nl', 'dk1', 'dk2'];
 let noTomorrow = false;   // the EU job has not published tomorrow yet
 // Ireland's days are Dublin's: one hour behind Copenhagen (the EU changes the clocks at one instant), so its "today" is yesterday for the first Danish hour of a day.
@@ -49,6 +50,9 @@ const dublinToday = new Intl.DateTimeFormat('en-CA', cph).format(hourBack), DUB_
 const ZSHIFT = { ro: 1, bg: 1, gr: 1 };   // zones on a clock ahead of Copenhagen: their feed's "today" is the date an hour (or more) later
 const zoneToday = z => new Intl.DateTimeFormat('en-CA', cph).format(new Date(Date.now() + (ZSHIFT[z] || 0) * 3600000));
 const zoneHour = z => +new Intl.DateTimeFormat('en-GB', { ...cph, hour: 'numeric', hourCycle: 'h23' }).format(new Date(Date.now() + (ZSHIFT[z] || 0) * 3600000));
+// Estonia, Latvia and Lithuania are an hour AHEAD of Copenhagen: their "today" is Copenhagen's tomorrow for the last Danish hour of a day.
+const hourAhead = new Date(Date.now() + 3600000);
+const eastToday = new Intl.DateTimeFormat('en-CA', cph).format(hourAhead), EAST_H = +new Intl.DateTimeFormat('en-GB', { ...cph, hour: 'numeric', hourCycle: 'h23' }).format(hourAhead);
 let nullHours = {};   // zone -> [[day index, hour] …]: an hour the source did not price (Ireland and Portugal have 23 hours on one day of the market's calendar)
 /** Ten days from YESTERDAY, like the live feed; EUR/MWh with a daily swing so there is a cheapest hour. */
 const nordic = zone => !NORDIC.includes(zone) ? ({
@@ -58,6 +62,7 @@ const nordic = zone => !NORDIC.includes(zone) ? ({
   days: Array.from({ length: noTomorrow ? 2 : 3 }, (_, i) => ({
     date: addDays(zone === 'ie' || zone === 'pt' ? dublinToday : today, i - 1), type: 'actual',
     date: addDays(zone === 'ie' ? dublinToday : zoneToday(zone), i - 1), type: 'actual',
+    date: addDays(zone === 'ie' ? dublinToday : ['ee', 'lv', 'lt'].includes(zone) ? eastToday : today, i - 1), type: 'actual',
     prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: ((nullHours[zone] || []).some(([d, hh]) => d === i && hh === h)) ? null : +((BASE[zone] ?? 70) + 25 * Math.sin(h / 24 * 6.2832) + i * 2).toFixed(2) })),
   })),
 }) : ({
@@ -242,6 +247,9 @@ const ACT = {
   '/hr/cijena-struje': { lang: 'hr', title: /^Cijena struje danas i sutra – burzovna cijena u Hrvatskoj/, zones: ['Hrvatska'], unit: 'c', now: 'Cijena struje trenutno', first: 'hr', card: 'Danas i sutra', one: 'Danas', kind: 'Cijena na tržištu dan unaprijed', loc: 'hr_HR', h1: 'Cijena struje u Hrvatskoj: danas i sutra', src: 'entsoe' },
   '/rs/cena-struje': { lang: 'sr-Latn', title: /^Cena struje danas i sutra – berzanska cena u Srbiji/, zones: ['Srbija'], unit: 'c€', now: 'Cena struje trenutno', first: 'rs', card: 'Danas i sutra', one: 'Danas', kind: 'Cena na tržištu za dan unapred', loc: 'sr_RS', h1: 'Cena struje u Srbiji: danas i sutra', src: 'entsoe', cap: 'Berzanska cena na tržištu za dan unapred u evrocentima, bez PDV-a, poreza i naknada za mrežu' },
   '/me/cijena-struje': { lang: 'sr-ME', title: /^Cijena struje danas i sjutra – berzanska cijena u Crnoj Gori/, zones: ['Crna Gora'], unit: 'c', now: 'Cijena struje trenutno', first: 'me', card: 'Danas i sjutra', one: 'Danas', kind: 'Cijena na tržištu za dan unaprijed', loc: 'sr_ME', h1: 'Cijena struje u Crnoj Gori: danas i sjutra', src: 'entsoe' },
+  '/ee/elektri-hind': { lang: 'et', title: /^Elektri hind täna ja homme – börsihind Eestis/, zones: ['Eesti'], unit: 'senti', now: 'Elektri hind praegu', first: 'ee', card: 'Täna ja homme', one: 'Täna', kind: 'Päev-ette hind', loc: 'et_EE', h1: 'Elektri hind Eestis: täna ja homme', src: 'entsoe' },
+  '/lv/elektribas-cena': { lang: 'lv', title: /^Elektrības cena šodien un rīt – biržas cena Latvijā/, zones: ['Latvija'], unit: 'c', now: 'Elektrības cena tagad', first: 'lv', card: 'Šodien un rīt', one: 'Šodien', kind: 'Dienas tirgus cena', loc: 'lv_LV', h1: 'Elektrības cena Latvijā: šodien un rīt', src: 'entsoe' },
+  '/lt/elektros-kaina': { lang: 'lt', title: /^Elektros kaina šiandien ir rytoj – biržos kaina Lietuvoje/, zones: ['Lietuva'], unit: 'ct', now: 'Elektros kaina dabar', first: 'lt', card: 'Šiandien ir rytoj', one: 'Šiandien', kind: 'Kaina prieš parą', loc: 'lt_LT', h1: 'Elektros kaina Lietuvoje: šiandien ir rytoj', src: 'entsoe' },
 };
 // What the text block says about the data's change and its source, per language (the words before the credit links).
 const PRISNOTE = {
@@ -256,6 +264,10 @@ const PRISNOTE = {
   ro: 'Mediile orare ale prețurilor la 15 minute, calculate de elpriser.org (date modificate față de original). Prețurile sunt în eurocenți pe kWh, nu în lei. Sursa:',
   bg: 'Средните часови стойности на 15-минутните цени са изчислени от elpriser.org (данните са променени спрямо оригинала). От 1 януари 2026 г. България е в еврозоната; цените са в евроцента за kWh. Източник:',
   el: 'Οι ωριαίοι μέσοι όροι των τιμών των 15 λεπτών υπολογίστηκαν από το elpriser.org (τα δεδομένα έχουν τροποποιηθεί σε σχέση με το πρωτότυπο). Οι τιμές είναι σε ευρώ, εκφρασμένες σε λεπτά του ευρώ ανά kWh. Πηγή:' };
+  en: 'Hourly means of the 15-minute prices, calculated by elpriser.org (changed from the original data). Ireland and Northern Ireland trade as one market, the all-island Single Electricity Market (SEM). Prices are in euro cent. Source:' };
+const NOTE_ET = 'Tunnikeskmised 15-minutiliste hindade põhjal arvutas elpriser.org (andmeid on algallikaga võrreldes muudetud). Hinnad on eurosentides kilovatt-tunni kohta. Allikas:';
+const NOTE_LV = 'Stundu vidējās vērtības no 15 minūšu cenām aprēķinājis elpriser.org (dati salīdzinājumā ar oriģinālu mainīti). Cenas norādītas eirocentos par kWh. Avots:';
+const NOTE_LT = 'Valandų vidurkius iš 15 minučių kainų apskaičiavo elpriser.org (duomenys, palyginti su originalu, pakeisti). Kainos nurodytos euro centais už kWh. Šaltinis:';
 const CZNOTE = 'Hodinové průměry čtvrthodinových cen vypočítal elpriser.org (údaje jsou oproti originálu upraveny). Ceny jsou v eurocentech za kWh, nikoli v korunách. Zdroj:';
 // Austria, Switzerland and Belgium (French) say it in their language's words with their own country: the note of a page is `PAGENOTE[page]` when it has one.
 const PAGENOTE = {
@@ -269,6 +281,10 @@ PAGENOTE['/si/cena-elektrike'] = 'Urna povprečja četrturnih cen je izračunal 
 PAGENOTE['/me/cijena-struje'] = 'Satne prosjeke petnaestominutnih cijena izračunao je elpriser.org (podaci su izmijenjeni u odnosu na original). Cijene su u eurocentima po kWh. Izvor:';
 PAGENOTE['/rs/cena-struje'] = 'Satne proseke petnaestominutnih cena izračunao je elpriser.org (podaci su izmenjeni u odnosu na original). Cene su u evrocentima po kWh, a ne u dinarima. Izvor:';
 PAGENOTE['/hr/cijena-struje'] = 'Satne prosjeke petnaestominutnih cijena izračunao je elpriser.org (podaci su izmijenjeni u odnosu na izvornik). Cijene su u eurocentima po kWh. Izvor:';
+  '/cz/ceny-elektriny': CZNOTE,
+  '/ee/elektri-hind': NOTE_ET,
+  '/lv/elektribas-cena': NOTE_LV,
+  '/lt/elektros-kaina': NOTE_LT };
 const PRISCAP = {
   de: 'Börsenstrompreis (Day-Ahead) ohne MwSt., Steuern, Abgaben und Netzentgelte', fr: 'Prix spot day-ahead hors TVA, taxes et frais de réseau',
   pl: 'Cena giełdowa na rynku dnia następnego (RDN) bez VAT, podatków i opłat sieciowych', it: 'Prezzo day-ahead al netto di IVA, imposte e costi di rete',
@@ -310,6 +326,16 @@ CHANGED.hu = 'Módosítás: az óránkénti átlagokat az elpriser.org számíto
 CHANGED.sl = 'Sprememba: urna povprečja je izračunal elpriser.org';
 const CHANGED = { de: 'Änderung: Stundenmittel von elpriser.org berechnet', fr: 'Modifié\u00a0: moyennes horaires calculées par elpriser.org', pl: 'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org', it: 'Modifiche: medie orarie calcolate da elpriser.org', nl: 'Wijziging: uurgemiddelden berekend door elpriser.org', en: 'Changed: hourly means calculated by elpriser.org', cs: 'Změna: hodinové průměry vypočítal elpriser.org', ro: 'Modificare: mediile orare calculate de elpriser.org', bg: 'Промяна: средните часови стойности са изчислени от elpriser.org', el: 'Τροποποίηση: οι ωριαίοι μέσοι όροι υπολογίστηκαν από το elpriser.org' };
 Object.assign(CHANGED, { hr: 'Izmjena: satne prosjeke izračunao je elpriser.org', 'sr-Latn': 'Izmena: satne proseke izračunao je elpriser.org', 'sr-ME': 'Izmjena: satne prosjeke izračunao je elpriser.org' });
+  et: 'Päev-ette börsihind, mis ei sisalda käibemaksu, makse ega võrgutasusid',
+  lv: 'Dienas tirgus cena biržā bez PVN, nodokļiem un tīkla maksas',
+  lt: 'Biržos kaina prieš parą be PVM, mokesčių ir tinklo mokesčių' };
+// "<avg word> <tomorrow word> <number>" — what a text block would say about tomorrow.
+const PRISTOM = { de: 'Ø morgen', fr: 'moy\\. demain', pl: 'śr\\. jutro', it: 'media domani', nl: 'gem\\. morgen', en: 'avg\\. tomorrow', cs: 'prům\\. zítra', et: 'keskm\\. homme', lv: 'vid\\. rīt', lt: 'vid\\. rytoj' };
+const FORECAST = /prognos|vorhersage|vorschau|prévision|previsi|prognoz|przewid|forecast|prediction|predict|modell?o?\b|machine|maskinl|hugging|prognoo|ennustus|paredz|numatom/i;
+// The attribution of the pages and the note that the site changed the data: Energy-Charts pages credit Bundesnetzagentur | SMARD.de (CC BY 4.0) and name ENTSO-E nowhere; Ireland credits ENTSO-E.
+const CREDIT_ENTSOE = '<a href="https://transparency.entsoe.eu" target="_blank" rel="noopener">ENTSO-E Transparency Platform</a>';
+const CREDIT = '<a href="https://www.smard.de" target="_blank" rel="noopener">Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>';
+const CHANGED = { de: 'Änderung: Stundenmittel von elpriser.org berechnet', fr: 'Modifié\u00a0: moyennes horaires calculées par elpriser.org', pl: 'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org', it: 'Modifiche: medie orarie calcolate da elpriser.org', nl: 'Wijziging: uurgemiddelden berekend door elpriser.org', en: 'Changed: hourly means calculated by elpriser.org', cs: 'Změna: hodinové průměry vypočítal elpriser.org', et: 'Muudatus: tunnikeskmised arvutas elpriser.org', lv: 'Izmaiņas: stundu vidējās vērtības aprēķinājis elpriser.org', lt: 'Pakeitimas: valandų vidurkius apskaičiavo elpriser.org' };
 const X9 = ['dk', ...PB.PRIS_PICK.slice(1).map(c => c[0])];   // the countries of the footer list, in order (the old name said nine; it is every country of PRIS_COUNTRIES)
 for (const [p, w] of Object.entries(ACT)) {
   store.clear(); upstream = []; noTomorrow = false;
@@ -349,11 +375,13 @@ for (const [p, w] of Object.entries(ACT)) {
   ok(new RegExp(`${w.unit}/kWh`).test(list) && new RegExp(`${AVGW(w.lang)} \\S+ [\\d.,]+`).test(list), `${p}: tekstblokken har dagens og morgendagens gennemsnit`);
   ok(new RegExp(`${w.unit}/kWh`).test(list) && /(Ø|moy\.|śr\.|media|gem\.|avg\.|prům\.|medie|ср\.|μ\.ό\.) \S+ [\d.,]+/.test(list), `${p}: tekstblokken har dagens og morgendagens gennemsnit`);
   ok(new RegExp(`${w.unit}/kWh`).test(list) && /(Ø|moy\.|śr\.|media|gem\.|avg\.|prům\.|prosj\.|pros\.) \S+ [\d.,]+/.test(list), `${p}: tekstblokken har dagens og morgendagens gennemsnit`);
+  ok(new RegExp(`${w.unit}/kWh`).test(list) && /(Ø|moy\.|śr\.|media|gem\.|avg\.|prům\.|keskm\.|vid\.) \S+ [\d.,]+/.test(list), `${p}: tekstblokken har dagens og morgendagens gennemsnit`);
   ok(!/data-zone="/.test(h.match(/<dialog id="netDialog"[\s\S]*?<\/dialog>/)[0]), `${p}: ingen zonevalg i stedsdialogen (én zone)`);
   // The chrome: the nine countries (footer list) in the page's language, a slim footer whose data line names ENTSO-E and not Energi Data Service.
   const hd = h.slice(h.indexOf('<header'), h.indexOf('</header>')), ft = h.slice(h.indexOf('<footer'), h.indexOf('</footer>'));
   const nav = [...ft.matchAll(/<li><a href="([^"]+)"([^>]*)>([^<]+)<\/a><\/li>/g)];
   ok(!/class="site-links"/.test(hd) && nav.length === X9.length && nav.map(m => m[3]).join() === X9.map(c => PB.prisCn(X, c)).join() && nav.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === p, `${p}: headeren har ingen landerække; fodens landeliste har ${X9.length} lande på ${w.lang}, den aktuelle er aria-current`, nav.map(m => m[3]).join());
+  ok(!/class="site-links"/.test(hd) && nav.length === X9.length && nav.map(m => m[3]).join() === X9.map(c => X.cn[c] || PB.PRIS_PICK.find(q => q[0] === c)[1]).join() && nav.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === p, `${p}: headeren har ingen landerække; fodens landeliste har ${X9.length} lande på ${w.lang}, den aktuelle er aria-current`, nav.map(m => m[3]).join());
   ok(ft.includes(`&copy; Elpriser.org &mdash; ${X.src} ${credit} &mdash; ${CHANGED[w.lang]}. ${X.open}`) && !/Energi Data Service|energidataservice/.test(ft + hd) && (w.src === 'entsoe' ? !/SMARD|CC BY/.test(ft + hd) : !/ENTSO/.test(ft + hd)) && ft.includes(X.privacy), `${p}: fodens kilde er ${w.src === 'entsoe' ? 'ENTSO-E Transparency Platform' : 'Bundesnetzagentur | SMARD.de (CC BY 4.0, med licenslink)'} og siger at dataene er ændret — ikke Energi Data Service og ikke den anden kilde`, ft.slice(ft.indexOf('sf-legal')));
   ok(!/class="tabbar|id="gpsBtn|netDlgDK|Hent appen|Smart hjem/.test(h.replace(/<!--[\s\S]*?-->/g, '')), `${p}: ingen dansk chrome`);
   ok(upstream.length === 1 && upstream.every(x => x.startsWith('/api/nordic?zone=')), `${p}: serveren henter præcis landets zone`, upstream.join(' '));
@@ -368,6 +396,7 @@ for (const [p, w] of Object.entries(ACT)) {
   ok(!/NaN|undefined/.test(om) && !FORECAST.test(om) && new RegExp(AVGW(w.lang).replace(/\\\.$/, '')).test(om) && !new RegExp(`${PRISTOM[w.lang]}`).test(om), `${p}: uden i morgen: ingen i-morgen-tal i tekstblokken, ingen NaN`, (om.match(new RegExp(PRISTOM[w.lang])) || [])[0]);
   ok(!/NaN|undefined/.test(om) && !FORECAST.test(om) && /avg|Ø|moy|śr|media|gem|prům|medie|ср|μ\.ό/.test(om) && !new RegExp(`${PRISTOM[w.lang]}`).test(om), `${p}: uden i morgen: ingen i-morgen-tal i tekstblokken, ingen NaN`, (om.match(new RegExp(PRISTOM[w.lang])) || [])[0]);
   ok(!/NaN|undefined/.test(om) && !FORECAST.test(om) && /avg|Ø|moy|śr|media|gem|prům|pros/.test(om) && !new RegExp(`${PRISTOM[w.lang]}`).test(om), `${p}: uden i morgen: ingen i-morgen-tal i tekstblokken, ingen NaN`, (om.match(new RegExp(PRISTOM[w.lang])) || [])[0]);
+  ok(!/NaN|undefined/.test(om) && !FORECAST.test(om) && /avg|Ø|moy|śr|media|gem|prům|keskm|vid/.test(om) && !new RegExp(`${PRISTOM[w.lang]}`).test(om), `${p}: uden i morgen: ingen i-morgen-tal i tekstblokken, ingen NaN`, (om.match(new RegExp(PRISTOM[w.lang])) || [])[0]);
   noTomorrow = false;
 }
 // A page added to PRIS_COUNTRIES without a row above (docs/add-a-country.md) is still checked, from its own entry: 200, title, language, h1, locale, canonical,
@@ -474,6 +503,39 @@ for (const [p, z, w] of [
   ok(new RegExp(`class="pris-now">${expect.toFixed(dec).replace('.', ',')}<`).test(h), `${p}: prisen nu er EUR/MWh ÷ 10 i eurocent med decimalkomma`, `${expect.toFixed(dec)} vs ${(h.match(/class="pris-now">([^<]*)</) || [])[1]}`);
   ok(/>ENTSO-E Transparency Platform<\/a>/.test(h) && !/SMARD|CC BY|Energi Data Service/.test(mainOf(h) + h.slice(h.indexOf('<footer'))) && h.includes(`aria-current="page">${w.own}</a>`), `${p}: ENTSO-E er kilden, og ${w.own} er markeret i landelisten`);
   ok((h.match(/<tr><th scope="row">/g) || []).length === 2, `${p}: to dagsrækker (i dag og i morgen) uanset forskellen til København`);
+// Estonia (ENTSO-E) is on Tallinn's clock: ONE hour AHEAD of Copenhagen (ZONES shift +1), the other direction from Ireland. The Estonian words: "kell 13:00", decimal comma, no "Uhr".
+{
+  store.clear(); upstream = [];
+  const r = await get('/ee/elektri-hind'), h = r.page;
+  ok(r.status === 200 && upstream.length === 1 && upstream[0] === '/api/nordic?zone=ee', '/ee/elektri-hind: 200, og serveren henter kun zonen ee');
+  ok(h.includes(`data-hour="${EAST_H}"`) && h.includes(`data-date="${eastToday}"`), `EE: skærmen er tegnet for Tallinns time (${EAST_H}) og dato (${eastToday}), ikke Københavns`, (h.match(/data-hour="\d+" data-date="[\d-]+"/) || [])[0]);
+  ok(new RegExp(`class="pris-label">Elektri hind praegu · <span class="pris-wd">(pühapäev|esmaspäev|teisipäev|kolmapäev|neljapäev|reede|laupäev) </span>kell ${String(EAST_H).padStart(2, '0')}:00<`).test(h), 'EE: "kell 13:00" og en estisk ugedag med lille begyndelsesbogstav');
+  const exp = nordic('ee').days[1].prices[EAST_H].eur_mwh / 10, dec = Math.max(...nordic('ee').days.slice(1).flatMap(d => d.prices.map(q => q.eur_mwh / 10))) >= 10 ? 1 : 2;
+  ok(new RegExp(`class="pris-now">${exp.toFixed(dec).replace('.', ',')}<`).test(h) && /data-tip="Täna kell \d\d:00 · \d+,\d+ senti\/kWh"/.test(h) && /<td>kell \d\d:00–\d\d:00<\/td>/.test(h) && /<small>senti · kell \d\d:00<\/small>/.test(h), 'EE: prisen nu er EUR/MWh ÷ 10 i senti med decimalkomma; tooltips, dagsliste og felter siger "kell 13:00" og "senti/kWh"', `${exp.toFixed(dec)} vs ${(h.match(/class="pris-now">([^<]*)</) || [])[1]}`);
+  ok((h.match(/<tr><th scope="row">/g) || []).length === 2 && /<a href="\/ee\/elektri-hind" aria-current="page">Eesti<\/a>/.test(h) && />ENTSO-E Transparency Platform<\/a>/.test(h), 'EE: to dagsrækker uanset forskellen til København, Eesti er markeret, ENTSO-E krediteres');
+}
+// Latvia (ENTSO-E) is on Riga's clock like Estonia: an hour ahead of Copenhagen. "plkst. 13:00", decimal comma, weekday in lower case.
+{
+  store.clear(); upstream = [];
+  const r = await get('/lv/elektribas-cena'), h = r.page;
+  ok(r.status === 200 && upstream.length === 1 && upstream[0] === '/api/nordic?zone=lv', '/lv/elektribas-cena: 200, og serveren henter kun zonen lv');
+  ok(h.includes(`data-hour="${EAST_H}"`) && h.includes(`data-date="${eastToday}"`), `LV: skærmen er tegnet for Rigas time (${EAST_H}) og dato (${eastToday}), ikke Københavns`, (h.match(/data-hour="\d+" data-date="[\d-]+"/) || [])[0]);
+  ok(new RegExp(`class="pris-label">Elektrības cena tagad · <span class="pris-wd">(svētdiena|pirmdiena|otrdiena|trešdiena|ceturtdiena|piektdiena|sestdiena) </span>plkst\\. ${String(EAST_H).padStart(2, '0')}:00<`).test(h), 'LV: "plkst. 13:00" og en lettisk ugedag med lille begyndelsesbogstav');
+  const exp = nordic('lv').days[1].prices[EAST_H].eur_mwh / 10, dec = Math.max(...nordic('lv').days.slice(1).flatMap(d => d.prices.map(q => q.eur_mwh / 10))) >= 10 ? 1 : 2;
+  ok(new RegExp(`class="pris-now">${exp.toFixed(dec).replace('.', ',')}<`).test(h) && /data-tip="Šodien plkst\. \d\d:00 · \d+,\d+ c\/kWh"/.test(h) && /<td>plkst\. \d\d:00–\d\d:00<\/td>/.test(h) && /<small>c · plkst\. \d\d:00<\/small>/.test(h), 'LV: prisen nu er EUR/MWh ÷ 10 i cent med decimalkomma; tooltips, dagsliste og felter siger "plkst. 13:00" og "c/kWh"', `${exp.toFixed(dec)} vs ${(h.match(/class="pris-now">([^<]*)</) || [])[1]}`);
+  ok((h.match(/<tr><th scope="row">/g) || []).length === 2 && /<a href="\/lv\/elektribas-cena" aria-current="page">Latvija<\/a>/.test(h) && />ENTSO-E Transparency Platform<\/a>/.test(h), 'LV: to dagsrækker, Latvija er markeret, ENTSO-E krediteres');
+}
+// Lithuania (ENTSO-E) is on Vilnius' clock like Estonia and Latvia: an hour ahead of Copenhagen. A bare "13:00" (no word before the hour), decimal comma, weekday in lower case.
+// Its feed may hold only today until about 13:00 CET: the generic loop above (noTomorrow) covers the one-day page.
+{
+  store.clear(); upstream = [];
+  const r = await get('/lt/elektros-kaina'), h = r.page;
+  ok(r.status === 200 && upstream.length === 1 && upstream[0] === '/api/nordic?zone=lt', '/lt/elektros-kaina: 200, og serveren henter kun zonen lt');
+  ok(h.includes(`data-hour="${EAST_H}"`) && h.includes(`data-date="${eastToday}"`), `LT: skærmen er tegnet for Vilniaus time (${EAST_H}) og dato (${eastToday}), ikke Københavns`, (h.match(/data-hour="\d+" data-date="[\d-]+"/) || [])[0]);
+  ok(new RegExp(`class="pris-label">Elektros kaina dabar · <span class="pris-wd">(sekmadienis|pirmadienis|antradienis|trečiadienis|ketvirtadienis|penktadienis|šeštadienis) </span>${String(EAST_H).padStart(2, '0')}:00<`).test(h), 'LT: "13:00" uden ord før timen og en litauisk ugedag med lille begyndelsesbogstav');
+  const exp = nordic('lt').days[1].prices[EAST_H].eur_mwh / 10, dec = Math.max(...nordic('lt').days.slice(1).flatMap(d => d.prices.map(q => q.eur_mwh / 10))) >= 10 ? 1 : 2;
+  ok(new RegExp(`class="pris-now">${exp.toFixed(dec).replace('.', ',')}<`).test(h) && /data-tip="Šiandien \d\d:00 · \d+,\d+ ct\/kWh"/.test(h) && /<td>\d\d:00–\d\d:00<\/td>/.test(h) && /<small>ct · \d\d:00<\/small>/.test(h), 'LT: prisen nu er EUR/MWh ÷ 10 i cent med decimalkomma; tooltips, dagsliste og felter skriver "13:00" og "ct/kWh"', `${exp.toFixed(dec)} vs ${(h.match(/class="pris-now">([^<]*)</) || [])[1]}`);
+  ok((h.match(/<tr><th scope="row">/g) || []).length === 2 && /<a href="\/lt\/elektros-kaina" aria-current="page">Lietuva<\/a>/.test(h) && />ENTSO-E Transparency Platform<\/a>/.test(h), 'LT: to dagsrækker, Lietuva er markeret, ENTSO-E krediteres');
 }
 // Belgium has two pages, one per language, of ONE zone (be): each says its own unit and name, and each country list links to the page in ITS language.
 {
@@ -504,6 +566,7 @@ function get_dialog(r) { return (r.page.match(/<dialog id="netDialog"[\s\S]*?<\/
   NEW.push('/si/cena-elektrike');
   const NEW = ['/at/strompreis', '/ch/strompreis', '/be/stroomprijs', '/be/prix-electricite', '/ie/electricity-price', '/cz/ceny-elektriny', '/ro/pretul-energiei', '/bg/tsena-na-toka', '/gr/timi-revmatos'];
   const NEW = ['/at/strompreis', '/ch/strompreis', '/be/stroomprijs', '/be/prix-electricite', '/ie/electricity-price', '/cz/ceny-elektriny', '/hr/cijena-struje', '/rs/cena-struje', '/me/cijena-struje'];
+  const NEW = ['/at/strompreis', '/ch/strompreis', '/be/stroomprijs', '/be/prix-electricite', '/ie/electricity-price', '/cz/ceny-elektriny', '/ee/elektri-hind', '/lv/elektribas-cena', '/lt/elektros-kaina'];
   const prio = p => +sm.match(new RegExp(`<loc>https://elpriser\\.org${p}</loc>[\\s\\S]*?<priority>([\\d.]+)`))[1];
   ok(NEW.every(p => sm.includes(`<loc>https://elpriser.org${p}</loc>`) && prio(p) === 0.5 && llms.includes(`https://elpriser.org${p})`) && full.includes(`https://elpriser.org${p})`)), 'sitemap og llms.txt: de nye sider er med, i udenlandsk prioritet');
   const bullet = llms.slice(llms.indexOf('- [Elpriser i Europa]'), llms.indexOf('- [Automation]'));
@@ -516,6 +579,8 @@ function get_dialog(r) { return (r.page.match(/<dialog id="netDialog"[\s\S]*?<\/
   ok(/\[Belgien\]\(https:\/\/elpriser\.org\/be\/stroomprijs\) \(hollandsk, \[fransk\]\(https:\/\/elpriser\.org\/be\/prix-electricite\)\)/.test(bullet) && /\[Irland\]\(https:\/\/elpriser\.org\/ie\/electricity-price\) \(prisområdet SEM: Irland og Nordirland\)/.test(bullet) && /\[Schweiz\]\([^)]*\) \(priserne er i euro, ikke franc\)/.test(bullet) && / og \[Grækenland\]\(https:\/\/elpriser\.org\/gr\/timi-revmatos\)\.$/.test(bullet.trim()) && !/\{\{/.test(llms + full), 'llms.txt: Belgien med begge sprog, Irland som SEM, Schweiz i euro; ingen ubrugt skabelon');
   ok(bullet.includes(`i ${nAct} europæiske lande`) && /Kun faktiske børspriser — ingen prognose/.test(bullet) && /Kilde: Bundesnetzagentur \| SMARD\.de via Energy-Charts\.info, licens CC BY 4\.0; Irland[^:;]*: ENTSO-E Transparency Platform; vi har ændret dataene \(timegennemsnit/.test(bullet), 'llms.txt: Europa-punktet siger otte lande, kun faktiske priser, de to kilder (Irland: ENTSO-E) og at dataene er ændret', bullet.slice(0, 700));
   ok(/\[Belgien\]\(https:\/\/elpriser\.org\/be\/stroomprijs\) \(hollandsk, \[fransk\]\(https:\/\/elpriser\.org\/be\/prix-electricite\)\)/.test(bullet) && /\[Irland\]\(https:\/\/elpriser\.org\/ie\/electricity-price\) \(prisområdet SEM: Irland og Nordirland\)/.test(bullet) && /\[Schweiz\]\([^)]*\) \(priserne er i euro, ikke franc\)/.test(bullet) && / og \[[^\]]+\]\(https:\/\/elpriser\.org\/[^)]+\)\.$/.test(bullet.trim()) && !/\{\{/.test(llms + full), 'llms.txt: Belgien med begge sprog, Irland som SEM, Schweiz i euro; ingen ubrugt skabelon');
+  ok(bullet.includes(`i ${nAct} europæiske lande`) && /Kun faktiske børspriser — ingen prognose/.test(bullet) && /Kilde: Bundesnetzagentur \| SMARD\.de via Energy-Charts\.info, licens CC BY 4\.0; Irland[^:;]*: ENTSO-E Transparency Platform; vi har ændret dataene \(timegennemsnit/.test(bullet), 'llms.txt: Europa-punktet siger otte lande, kun faktiske priser, de to kilder (Irland: ENTSO-E) og at dataene er ændret', bullet.slice(0, 700));
+  ok(/\[Belgien\]\(https:\/\/elpriser\.org\/be\/stroomprijs\) \(hollandsk, \[fransk\]\(https:\/\/elpriser\.org\/be\/prix-electricite\)\)/.test(bullet) && /\[Irland\]\(https:\/\/elpriser\.org\/ie\/electricity-price\) \(prisområdet SEM: Irland og Nordirland\)/.test(bullet) && /\[Schweiz\]\([^)]*\) \(priserne er i euro, ikke franc\)/.test(bullet) && / og \[Litauen\]\(https:\/\/elpriser\.org\/lt\/elektros-kaina\)\.$/.test(bullet.trim()) && !/\{\{/.test(llms + full), 'llms.txt: Belgien med begge sprog, Irland som SEM, Schweiz i euro; ingen ubrugt skabelon');
   ok(/elpriser\.org\/(de\/strompreis|fr\/prix-electricite|pl\/ceny-pradu|it\/prezzo-luce)\)/.test(bullet) && /Tyskland\]\([^)]*\) \(DE-LU, fælles prisområde med Luxembourg\)/.test(bullet) && /Italien\]\([^)]*\) \(kun prisområdet Nord\)/.test(bullet), 'llms.txt: de fire første lande har stadig deres noter');
 }
 
@@ -583,6 +648,7 @@ for (const [from, to] of Object.entries(OLD)) {
   QID.si = 'Q215';   // checked against Wikidata's English labels 2026-11-02
   const QID = { no: 'Q20', sv: 'Q34', fi: 'Q33', nl: 'Q55', de: 'Q183', fr: 'Q142', pl: 'Q36', it: 'Q38', dk: 'Q35', lu: 'Q32', at: 'Q40', ch: 'Q39', be: 'Q31', ie: 'Q27', ni: 'Q26', cz: 'Q213', ro: 'Q218', bg: 'Q219', gr: 'Q41' };   // checked against Wikidata's English labels 2026-11-02
   const QID = { no: 'Q20', sv: 'Q34', fi: 'Q33', nl: 'Q55', de: 'Q183', fr: 'Q142', pl: 'Q36', it: 'Q38', dk: 'Q35', lu: 'Q32', at: 'Q40', ch: 'Q39', be: 'Q31', ie: 'Q27', ni: 'Q26', cz: 'Q213', hr: 'Q224', rs: 'Q403', me: 'Q236' };   // checked against Wikidata's English labels 2026-11-02
+  const QID = { no: 'Q20', sv: 'Q34', fi: 'Q33', nl: 'Q55', de: 'Q183', fr: 'Q142', pl: 'Q36', it: 'Q38', dk: 'Q35', lu: 'Q32', at: 'Q40', ch: 'Q39', be: 'Q31', ie: 'Q27', ni: 'Q26', cz: 'Q213', ee: 'Q191', lv: 'Q211', lt: 'Q37' };   // checked against Wikidata's English labels 2026-11-02
   const ldOf = body => [...body.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => JSON.parse(m[1])).find(x => x['@type'] === 'WebPage');
   const wd = c => `https://www.wikidata.org/wiki/${QID[c]}`;
   const walk = (n, f) => { f(n); for (const c of [].concat(n.containsPlace || [], n.containedInPlace || [])) walk(c, f); };
@@ -609,6 +675,9 @@ for (const [from, to] of Object.entries(OLD)) {
     '/hr/cijena-struje': { name: 'Hrvatska', q: 'hr', zones: [] },
     '/rs/cena-struje': { name: 'Srbija', q: 'rs', zones: [] },
     '/me/cijena-struje': { name: 'Crna Gora', q: 'me', zones: [] },
+    '/ee/elektri-hind': { name: 'Eesti', q: 'ee', zones: [] },
+    '/lv/elektribas-cena': { name: 'Latvija', q: 'lv', zones: [] },
+    '/lt/elektros-kaina': { name: 'Lietuva', q: 'lt', zones: [] },
   };
   for (const [p, w] of Object.entries(WANT)) {
     store.clear();

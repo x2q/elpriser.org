@@ -270,6 +270,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     const empty = Object.entries(L[lang]).filter(([k, v]) => v === '').map(([k]) => k);
     ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (['sv', 'nl', 'fr', 'pl', 'it', 'en', 'es', 'pt'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl, it og en; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
     ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (['sv', 'nl', 'fr', 'pl', 'it', 'en', 'ro', 'bg', 'el'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl, it og en; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
+    ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (['sv', 'nl', 'fr', 'pl', 'it', 'en', 'lt'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl, it, en og lt; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
     ok(L[lang].wd.length === 7 && L[lang].ws.length === 7 && L[lang].mon.length === 12 && L[lang].verdict.length === 3 && L[lang].tier.length === 3, `${lang}: 7 ugedage, 12 måneder, 3 niveauer`);
   }
   ok(langs.every(l => !/\b10\b/.test(JSON.stringify(L[l]))), 'ingen sprog nævner 10 døgn');
@@ -288,6 +289,12 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   Object.assign(FCWORD, { hr: /prognoz|predvi[dđ]|procjen/i, 'sr-Latn': /prognoz|predvi[dđ]|procen/i, 'sr-ME': /prognoz|predvi[dđ]|procjen/i });
   Object.assign(CAPWORD, { hr: [/bez/, /PDV/], 'sr-Latn': [/bez/, /PDV/], 'sr-ME': [/bez/, /PDV/] });
   Object.assign(NOTEWORD, { hr: [/izračunao/, /izmijenjeni/], 'sr-Latn': [/izračunao/, /izmenjeni/], 'sr-ME': [/izračunao/, /izmijenjeni/] });
+// Estonian (et): its own words for the three checks below, one line per language so parallel additions merge.
+Object.assign(FCWORD, { et: /prognoo|ennustus|prognoos/i }); Object.assign(CAPWORD, { et: [/ei sisalda/, /käibemaksu/] }); Object.assign(NOTEWORD, { et: [/arvutas/, /muudetud/] });
+// Latvian (lv)
+Object.assign(FCWORD, { lv: /prognoz|paredz/i }); Object.assign(CAPWORD, { lv: [/bez/, /PVN/] }); Object.assign(NOTEWORD, { lv: [/aprēķinājis/, /mainīti/] });
+// Lithuanian (lt)
+Object.assign(FCWORD, { lt: /prognoz|numatom/i }); Object.assign(CAPWORD, { lt: [/be PVM/, /mokesči/] }); Object.assign(NOTEWORD, { lt: [/apskaičiavo/, /pakeisti/] });
   for (const l of ACT_ONLY) {
     const all = Object.values(L[l]).flat().join(' | ');
     ok(!DANISH.test(all), `${l}: ingen danske ord i tabellen`, (all.match(DANISH) || [])[0]);

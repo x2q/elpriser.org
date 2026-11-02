@@ -1188,7 +1188,37 @@ var PRIS_I18N={
     byDay:'Dan po dan',day:'Dan',range:'Raspon',type:'Vrsta',none:'Cijene trenutno nije moguće učitati.',
     cap:'Berzanska cijena na tržištu za dan unaprijed bez PDV-a, poreza i naknada za mrežu',
     avg:'prosj.',
-    act1:'Danas',act2:'Danas i sjutra',cheapRest:'Najjeftiniji sat do kraja dana'}
+    act1:'Danas',act2:'Danas i sjutra',cheapRest:'Najjeftiniji sat do kraja dana'},
+  et:{wd:['pühapäev','esmaspäev','teisipäev','kolmapäev','neljapäev','reede','laupäev'],ws:['P','E','T','K','N','R','L'],
+    mon:['jaan','veebr','märts','apr','mai','juuni','juuli','aug','sept','okt','nov','dets'],dot:'.',hs:':00',hh:1,
+    now:'Elektri hind praegu',hourly:'Elektri hind tundide kaupa',at:'kell',today:'täna',tomorrow:'homme',evening:'täna õhtul',
+    verdict:['Odav praegu','Keskmine praegu','Kallis praegu'],tier:['Odav','Keskmine','Kallis'],
+    cheaper:'Odavam',cheapest24:'Odavaim tund järgmise 24 tunni jooksul',lo:'odavaim tund',hi:'kalleim tund',
+    next:'Järgmised',p2:'2 päeva',p5:'5 päeva',p7:'7 päeva',period:'Periood',fc:'Päev-ette hind',actual:'Päev-ette hind',
+    byDay:'Päev päeva haaval',day:'Päev',range:'Vahemik',type:'Liik',none:'Hindu ei õnnestunud praegu laadida.',
+    cap:'Päev-ette börsihind, mis ei sisalda käibemaksu, makse ega võrgutasusid',
+    avg:'keskm.',
+    act1:'Täna',act2:'Täna ja homme',cheapRest:'Päeva ülejäänud osa odavaim tund'},
+  lv:{wd:['svētdiena','pirmdiena','otrdiena','trešdiena','ceturtdiena','piektdiena','sestdiena'],ws:['Sv','P','O','T','C','Pk','S'],
+    mon:['janv.','febr.','marts','apr.','maijs','jūn.','jūl.','aug.','sept.','okt.','nov.','dec.'],dot:'.',hs:':00',hh:1,
+    now:'Elektrības cena tagad',hourly:'Elektrības cena pa stundām',at:'plkst.',today:'šodien',tomorrow:'rīt',evening:'šovakar',
+    verdict:['Zema cena tagad','Vidēja cena tagad','Augsta cena tagad'],tier:['Zema','Vidēja','Augsta'],
+    cheaper:'Lētāk',cheapest24:'Lētākā stunda tuvāko 24 stundu laikā',lo:'lētākā stunda',hi:'dārgākā stunda',
+    next:'Nākamās',p2:'2 dienas',p5:'5 dienas',p7:'7 dienas',period:'Periods',fc:'Dienas tirgus cena',actual:'Dienas tirgus cena',
+    byDay:'Diena pa dienai',day:'Diena',range:'Diapazons',type:'Veids',none:'Cenas šobrīd neizdevās ielādēt.',
+    cap:'Dienas tirgus cena biržā bez PVN, nodokļiem un tīkla maksas',
+    avg:'vid.',
+    act1:'Šodien',act2:'Šodien un rīt',cheapRest:'Lētākā stunda atlikušajā dienas daļā'},
+  lt:{wd:['sekmadienis','pirmadienis','antradienis','trečiadienis','ketvirtadienis','penktadienis','šeštadienis'],ws:['Sk','Pr','An','Tr','Kt','Pn','Št'],
+    mon:['saus.','vas.','kov.','bal.','geg.','birž.','liep.','rugp.','rugs.','spal.','lapkr.','gruod.'],dot:'',hs:':00',hh:1,
+    now:'Elektros kaina dabar',hourly:'Elektros kaina pagal valandas',at:'',today:'šiandien',tomorrow:'rytoj',evening:'šį vakarą',
+    verdict:['Žema kaina dabar','Vidutinė kaina dabar','Aukšta kaina dabar'],tier:['Žema','Vidutinė','Aukšta'],
+    cheaper:'Pigiau',cheapest24:'Pigiausia valanda per artimiausias 24 valandas',lo:'pigiausia valanda',hi:'brangiausia valanda',
+    next:'Artimiausios',p2:'2 dienos',p5:'5 dienos',p7:'7 dienos',period:'Laikotarpis',fc:'Kaina prieš parą',actual:'Kaina prieš parą',
+    byDay:'Diena po dienos',day:'Diena',range:'Intervalas',type:'Rūšis',none:'Šiuo metu nepavyko įkelti kainų.',
+    cap:'Biržos kaina prieš parą be PVM, mokesčių ir tinklo mokesčių',
+    avg:'vid.',
+    act1:'Šiandien',act2:'Šiandien ir rytoj',cheapRest:'Pigiausia likusios dienos valanda'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1232,7 +1262,10 @@ var ZONES={
   gr:{name:'GR',city:'Ελλάδα',lang:'el',cur:'EUR',rate:1,sub:'c€',src:'entsoe',shift:1},
   hr:{name:'HR',city:'Hrvatska',lang:'hr',cur:'EUR',rate:1,sub:'c',src:'entsoe'},
   rs:{name:'RS',city:'Srbija',lang:'sr-Latn',cur:'EUR',rate:1,sub:'c€',src:'entsoe'},
-  me:{name:'ME',city:'Crna Gora',lang:'sr-ME',cur:'EUR',rate:1,sub:'c',src:'entsoe'}
+  me:{name:'ME',city:'Crna Gora',lang:'sr-ME',cur:'EUR',rate:1,sub:'c',src:'entsoe'},
+  ee:{name:'EE',city:'Eesti',lang:'et',cur:'EUR',rate:1,sub:'senti',shift:1,src:'entsoe'},
+  lv:{name:'LV',city:'Latvija',lang:'lv',cur:'EUR',rate:1,sub:'c',shift:1,src:'entsoe'},
+  lt:{name:'LT',city:'Lietuva',lang:'lt',cur:'EUR',rate:1,sub:'ct',shift:1,src:'entsoe'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1429,7 +1462,28 @@ var PRIS_COUNTRIES={
     desc:'Berzanska cijena struje (tržište za dan unaprijed) u Crnoj Gori po satima, danas i sjutra, u c/kWh, bez PDV-a, poreza i naknada za mrežu. Izvor: ENTSO-E',
     tx:{h1:'Cijena struje u Crnoj Gori: danas i sjutra',
       zonesH:'Cijena struje u Crnoj Gori',
-      note:'Satne prosjeke petnaestominutnih cijena izračunao je elpriser.org (podaci su izmijenjeni u odnosu na original). Cijene su u eurocentima po kWh. Izvor:'}}
+      note:'Satne prosjeke petnaestominutnih cijena izračunao je elpriser.org (podaci su izmijenjeni u odnosu na original). Cijene su u eurocentima po kWh. Izvor:'}},
+  'ee/elektri-hind':{lang:'et',cc:'ee',zones:['ee'],def:'ee',act:1,
+    name:'Eesti',da:'Estland',loc:'et_EE',qid:'Q191',
+    title:'Elektri hind täna ja homme – börsihind Eestis',
+    desc:'Elektri päev-ette börsihind Eestis tundide kaupa, täna ja homme, senti/kWh, käibemaksuta ja tasudeta. Allikas: ENTSO-E',
+    tx:{h1:'Elektri hind Eestis: täna ja homme',
+      zonesH:'Elektri hind Eestis',
+      note:'Tunnikeskmised 15-minutiliste hindade põhjal arvutas elpriser.org (andmeid on algallikaga võrreldes muudetud). Hinnad on eurosentides kilovatt-tunni kohta. Allikas:'}},
+  'lv/elektribas-cena':{lang:'lv',cc:'lv',zones:['lv'],def:'lv',act:1,
+    name:'Latvija',da:'Letland',loc:'lv_LV',qid:'Q211',
+    title:'Elektrības cena šodien un rīt – biržas cena Latvijā',
+    desc:'Elektrības dienas tirgus cena Latvijā pa stundām, šodien un rīt, c/kWh, bez PVN, nodokļiem un tīkla maksas. Avots: ENTSO-E',
+    tx:{h1:'Elektrības cena Latvijā: šodien un rīt',
+      zonesH:'Elektrības cena Latvijā',
+      note:'Stundu vidējās vērtības no 15 minūšu cenām aprēķinājis elpriser.org (dati salīdzinājumā ar oriģinālu mainīti). Cenas norādītas eirocentos par kWh. Avots:'}},
+  'lt/elektros-kaina':{lang:'lt',cc:'lt',zones:['lt'],def:'lt',act:1,
+    name:'Lietuva',da:'Litauen',loc:'lt_LT',qid:'Q37',
+    title:'Elektros kaina šiandien ir rytoj – biržos kaina Lietuvoje',
+    desc:'Elektros kaina prieš parą Lietuvoje pagal valandas, šiandien ir rytoj, ct/kWh, be PVM, mokesčių ir tinklo mokesčių. Šaltinis: ENTSO-E',
+    tx:{h1:'Elektros kaina Lietuvoje: šiandien ir rytoj',
+      zonesH:'Elektros kaina Lietuvoje',
+      note:'Valandų vidurkius iš 15 minučių kainų apskaičiavo elpriser.org (duomenys, palyginti su originalu, pakeisti). Kainos nurodytos euro centais už kWh. Šaltinis:'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1559,7 +1613,19 @@ var CHROME_I18N={
   'sr-ME':{home:'elpriser.org – početna stranica',land:'Države',place:'Gdje ste?',area:'Cjenovna zona',oth:'Druge države',back:'Nazad',find:'Pretraga',none:'Nema rezultata',close:'Zatvori',
     cn:{dk:'Danska',no:'Norveška',sv:'Švedska',fi:'Finska',nl:'Holandija',de:'Njemačka',fr:'Francuska',pl:'Poljska',it:'Italija',at:'Austrija',ch:'Švajcarska',be:'Belgija',ie:'Irska',cz:'Češka',hr:'Hrvatska',rs:'Srbija',me:'Crna Gora'},
     privacy:'Privatnost (na danskom jeziku)',src:'Izvor:',and:'i',open:'Otvoreni skupovi podataka na',
-    chg:'Izmjena: satne prosjeke izračunao je elpriser.org'}
+    chg:'Izmjena: satne prosjeke izračunao je elpriser.org'},
+  et:{home:'elpriser.org avaleht',land:'Riigid',place:'Kus te asute?',area:'Hinnapiirkond',oth:'Muud riigid',back:'Tagasi',find:'Otsi',none:'Tulemusi ei leitud',close:'Sulge',
+    cn:{dk:'Taani',no:'Norra',sv:'Rootsi',fi:'Soome',nl:'Madalmaad',de:'Saksamaa',fr:'Prantsusmaa',pl:'Poola',it:'Itaalia',at:'Austria',ch:'Šveits',be:'Belgia',ie:'Iirimaa',cz:'Tšehhi',ee:'Eesti',lv:'Läti',lt:'Leedu'},
+    privacy:'Privaatsus (taani keeles)',src:'Allikas:',and:'ja',open:'Avatud andmestikud:',
+    chg:'Muudatus: tunnikeskmised arvutas elpriser.org'},
+  lv:{home:'elpriser.org – sākumlapa',land:'Valstis',place:'Kur jūs atrodaties?',area:'Cenu zona',oth:'Citas valstis',back:'Atpakaļ',find:'Meklēt',none:'Nav rezultātu',close:'Aizvērt',
+    cn:{dk:'Dānija',no:'Norvēģija',sv:'Zviedrija',fi:'Somija',nl:'Nīderlande',de:'Vācija',fr:'Francija',pl:'Polija',it:'Itālija',at:'Austrija',ch:'Šveice',be:'Beļģija',ie:'Īrija',cz:'Čehija',ee:'Igaunija',lv:'Latvija',lt:'Lietuva'},
+    privacy:'Privātums (dāņu valodā)',src:'Avots:',and:'un',open:'Atvērtie datu kopumi vietnē',
+    chg:'Izmaiņas: stundu vidējās vērtības aprēķinājis elpriser.org'},
+  lt:{home:'elpriser.org – pradžios puslapis',land:'Šalys',place:'Kur esate?',area:'Kainų zona',oth:'Kitos šalys',back:'Atgal',find:'Ieškoti',none:'Rezultatų nėra',close:'Uždaryti',
+    cn:{dk:'Danija',no:'Norvegija',sv:'Švedija',fi:'Suomija',nl:'Nyderlandai',de:'Vokietija',fr:'Prancūzija',pl:'Lenkija',it:'Italija',at:'Austrija',ch:'Šveicarija',be:'Belgija',ie:'Airija',cz:'Čekija',ee:'Estija',lv:'Latvija',lt:'Lietuva'},
+    privacy:'Privatumas (daniškai)',src:'Šaltinis:',and:'ir',open:'Atviri duomenų rinkiniai svetainėje',
+    chg:'Pakeitimas: valandų vidurkius apskaičiavo elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
