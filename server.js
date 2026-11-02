@@ -394,14 +394,6 @@ const SPA_ROUTES = {
   '/automation': '#automation',
   '/om-elpriser': '#om-elpriser',
   '/download': '#download',
-  '/no/strompris': '#no/strompris',
-  '/sv/elpris': '#sv/elpris',
-  '/fi/sahkon-hinta': '#fi/sahkon-hinta',
-  '/nl/stroomprijs': '#nl/stroomprijs',
-  '/de/strompreis': '#de/strompreis',
-  '/fr/prix-electricite': '#fr/prix-electricite',
-  '/pl/ceny-pradu': '#pl/ceny-pradu',
-  '/it/prezzo-luce': '#it/prezzo-luce',
   '/norden': '#norden',
   '/prognose': '#prognose',
   '/api': '#api',
@@ -412,6 +404,16 @@ const SPA_ROUTES = {
   '/blog/elafgift-2028': '#blog/elafgift-2028',
   '/blog/elafgift-og-spotpris': '#blog/elafgift-og-spotpris',
 };
+
+// The country pages (/no/strompris … /ie/electricity-price) are one entry each of PRIS_COUNTRIES, in the Pris block of index.html: read
+// from there, so a new country is a new entry and nothing here.
+{
+  const html = fs.readFileSync(path.join(__dir, 'index.html'), 'utf8');
+  const A = '// ═══ Pris-skærmen (Design A: ét svar) ═══', Z = '// ═══ /Pris-skærmen ═══';
+  const ctx = require('vm').createContext({ console, Date, Math });
+  require('vm').runInContext(html.slice(html.indexOf(A), html.indexOf(Z)) + '\nglobalThis.pages = Object.keys(PRIS_COUNTRIES);', ctx);
+  for (const pg of ctx.pages) SPA_ROUTES['/' + pg] = '#' + pg;
+}
 
 // Retired pages → their replacement (301). Mirrors LEGACY_REDIRECTS in
 // functions/[[path]].js; test-static.js keeps the two equal.

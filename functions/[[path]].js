@@ -56,67 +56,9 @@ const SEO_PAGES = {
     description: 'Elprisen lige nu, i morgen og de næste 5 døgn — med dit netselskab. Gratis app til iPhone, iPad og Android, uden konto, i App Store og Google Play.',
     hash: '#download',
   },
-  // Four country pages for the foreign price areas, each on the same Pris screen as the Danish pages
-  // and in its country's language (lang → <html lang>, JSON-LD inLanguage, header and footer in that
-  // language too: CHROME_I18N); /norden is the Danish hub that compares them. Only 2 and 5 døgn are ever shown on them.
-  '/no/strompris': {
-    title: 'Strømpris prognose Norge: NO1–NO5, i dag og 5 dager frem',
-    description: 'Strømpris nå og prognose for de neste 5 døgnene, time for time: NO1 Oslo, NO2 Kristiansand, NO3 Trondheim, NO4 Tromsø og NO5 Bergen. Spotpris uten mva.',
-    hash: '#no/strompris',
-    lang: 'nb',
-    zonePage: 'no/strompris',
-  },
-  '/sv/elpris': {
-    title: 'Elpris prognos Sverige: SE1–SE4, idag och 5 dygn framåt',
-    description: 'Elpris just nu och prognos för de närmaste 5 dygnen, timme för timme: SE1 Luleå, SE2 Sundsvall, SE3 Stockholm och SE4 Malmö. Spotpris utan moms.',
-    hash: '#sv/elpris',
-    lang: 'sv',
-    zonePage: 'sv/elpris',
-  },
-  '/fi/sahkon-hinta': {
-    title: 'Sähkön hinta ennuste Suomi: tänään ja 5 vrk eteenpäin',
-    description: 'Sähkön hinta juuri nyt ja ennuste seuraaville 5 vuorokaudelle tunneittain, koko Suomi. Pörssihinta ilman arvonlisäveroa, veroja ja siirtomaksua.',
-    hash: '#fi/sahkon-hinta',
-    lang: 'fi',
-    zonePage: 'fi/sahkon-hinta',
-  },
-  '/nl/stroomprijs': {
-    title: 'Stroomprijs vandaag en morgen, prognose 5 dagen vooruit',
-    description: 'Stroomprijs nu en prognose voor de komende 5 dagen, uur voor uur, voor heel Nederland. Spotprijs in cent per kWh, zonder btw, belastingen en netkosten.',
-    hash: '#nl/stroomprijs',
-    lang: 'nl',
-    zonePage: 'nl/stroomprijs',
-  },
-  // Four more country pages of ACTUAL day-ahead prices only (PRIS_ACT; data CC BY 4.0 from Bundesnetzagentur | SMARD.de via Energy-Charts):
-  // no forecast in title, description or text, and the source named in each description.
-  '/de/strompreis': {
-    title: 'Strompreis aktuell und morgen – Börsenstrompreis Deutschland',
-    description: 'Börsenstrompreis (Day-Ahead) für Deutschland, heute und morgen, in ct/kWh, ohne MwSt., Steuern und Netzentgelte. Quelle: Bundesnetzagentur | SMARD.de',
-    hash: '#de/strompreis',
-    lang: 'de',
-    zonePage: 'de/strompreis',
-  },
-  '/fr/prix-electricite': {
-    title: 'Prix de l’électricité aujourd’hui et demain en France',
-    description: 'Prix spot day-ahead en France, heure par heure, aujourd’hui et demain, en c€/kWh, hors TVA, taxes et réseau. Source : Bundesnetzagentur | SMARD.de',
-    hash: '#fr/prix-electricite',
-    lang: 'fr',
-    zonePage: 'fr/prix-electricite',
-  },
-  '/pl/ceny-pradu': {
-    title: 'Cena prądu dziś i jutro – giełdowa cena energii w Polsce',
-    description: 'Giełdowa cena energii w Polsce (RDN), godzina po godzinie, dziś i jutro, w gr/kWh, bez VAT, podatków i opłat. Źródło: Bundesnetzagentur | SMARD.de',
-    hash: '#pl/ceny-pradu',
-    lang: 'pl',
-    zonePage: 'pl/ceny-pradu',
-  },
-  '/it/prezzo-luce': {
-    title: 'Prezzo dell’energia elettrica oggi e domani – Italia del Nord',
-    description: 'Prezzo day-ahead dell’energia nel Nord Italia, ora per ora, oggi e domani, in c€/kWh, senza IVA, imposte e rete. Fonte: Bundesnetzagentur | SMARD.de',
-    hash: '#it/prezzo-luce',
-    lang: 'it',
-    zonePage: 'it/prezzo-luce',
-  },
+  // The country pages (/no/strompris … /ie/electricity-price) are not listed here: each is ONE entry of PRIS_COUNTRIES (title, description,
+  // language, locale, text) and the loop after that table adds it to SEO_PAGES, the sitemap, HASH_TO_DATA_PAGE and llms.txt.
+  // /norden is the Danish hub that compares the Nordic ones. Only 2 and 5 døgn are ever shown on the forecast pages.
   '/norden': {
     title: 'Elpriser i Norden: sammenlign Norge, Sverige og Finland',
     description: 'Spotpris nu og i morgen i alle prisområder i Norge (NO1–NO5), Sverige (SE1–SE4), Finland og Holland, omregnet til kr/kWh så du kan sammenligne dem.',
@@ -260,10 +202,10 @@ for (const area of ['DK1', 'DK2']) {
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff', '/download',
   '/blog',
-  '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
+  '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/norden', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
   ...NET_URLS,
   ...CITY_URLS,
-];
+];   // the country pages are added from PRIS_COUNTRIES, below the Pris block
 
 // Real lastmod dates for content pages (from git history / last substantive
 // edit). Price-bearing pages legitimately change daily and use today's date.
@@ -277,7 +219,7 @@ const CONTENT_LASTMOD = {
   '/download': '2026-10-23',
   '/blog/elafgift-2028': '2026-07-24',
   '/blog/elafgift-og-spotpris': '2026-10-17',
-  // The country pages (/no/strompris … /it/prezzo-luce) and /norden are deliberately NOT listed here: they are
+  // The country pages (PRIS_COUNTRIES) and /norden are deliberately NOT listed here: they are
   // drawn with today's prices, so they change every day and fall through to
   // lastmod=today / changefreq=daily like /dk1 and /dk2.
   '/blog/hvornaar-er-stroemmen-billigst': '2026-07-28',
@@ -289,10 +231,9 @@ function buildSitemap() {
   const today = new Date().toISOString().split('T')[0];
   // Crawl budget follows priority. The foreign-area pages stay below the
   // per-net pages: this is a Danish site, and those are the pages searched for by name.
-  const ZONE_ONLY = /^\/(no\/strompris|sv\/elpris|fi\/sahkon-hinta|nl\/stroomprijs|de\/strompreis|fr\/prix-electricite|pl\/ceny-pradu|it\/prezzo-luce|norden)$/;
   const priorityFor = p => {
     if (p === '/') return '1.0';
-    if (ZONE_ONLY.test(p)) return '0.5';                    // foreign-market pages
+    if (p === '/norden' || prisIsPage(p.slice(1))) return '0.5';   // foreign-market pages
     if (/^\/(dk[12])\/[a-z0-9-]+$/.test(p)) return '0.6'; // per-net long-tail pages
     if (CITY_PATH.test(p)) return '0.5';                    // the pilot city pages: a test, not yet a bet
     return '0.8';
@@ -327,7 +268,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Nettariffer](https://elpriser.org/tariffer): Sammenligning af nettariffer for alle danske netselskaber.
 - [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser for DK1 og DK2 time for time de næste 7 døgn. Laves dagligt af en maskinlæringsmodel ud fra vejrprognoser (vind og sol) og prisen samme ugedag de seneste fire uger; skifter til faktiske børspriser, når de offentliggøres ca. kl. 13.
 - [Elpriser i Norden](https://elpriser.org/norden): Alle prisområder i Norge, Sverige, Finland og Holland side om side i kr/kWh uden moms, så de kan sammenlignes. Landesiderne er på landets eget sprog og viser spotpris time for time for i dag og i morgen og prognose for de næste 2 og 5 døgn: [Norge](https://elpriser.org/no/strompris) (NO1 Oslo, NO2 Kristiansand, NO3 Trondheim, NO4 Tromsø, NO5 Bergen), [Sverige](https://elpriser.org/sv/elpris) (SE1 Luleå, SE2 Sundsvall, SE3 Stockholm, SE4 Malmö), [Finland](https://elpriser.org/fi/sahkon-hinta) og [Holland](https://elpriser.org/nl/stroomprijs). Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder ([model på Hugging Face](https://huggingface.co/Elpriser/nordic-price-forecast)); omregnet til lokal valuta med Den Europæiske Centralbanks daglige referencekurs, uden moms, afgifter og nettariffer.
-- [Elpriser i Europa](https://elpriser.org/de/strompreis): Spotpriser (day-ahead) i Tyskland, Frankrig, Polen og Norditalien, time for time for i dag og i morgen på landets eget sprog. Kun faktiske børspriser — ingen prognose — uden moms, afgifter og nettariffer, så det er ikke, hvad en kunde betaler. Kilde: Bundesnetzagentur | SMARD.de via Energy-Charts.info, licens CC BY 4.0; vi har ændret dataene (timegennemsnit af kvarterspriserne, for Polen desuden omregnet til grosze med Den Europæiske Centralbanks referencekurs): [Tyskland](https://elpriser.org/de/strompreis) (DE-LU, fælles prisområde med Luxembourg), [Frankrig](https://elpriser.org/fr/prix-electricite), [Polen](https://elpriser.org/pl/ceny-pradu) og [Italien](https://elpriser.org/it/prezzo-luce) (kun prisområdet Nord).
+{{EUROPE_PAGES}}
 - [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home. Guides: [Shelly](https://elpriser.org/automation#shelly) (script, der henter døgnets plan én gang) og [Home Assistant](https://elpriser.org/automation#home-assistant) (REST-sensor og automation).
 - [Hent appen](https://elpriser.org/download): Gratis app til iPhone, iPad og Android — elprisen lige nu, i morgen og de næste 5 døgn med dit netselskab, uden konto. Links til [App Store](https://apps.apple.com/dk/app/id6820474476) og [Google Play](https://play.google.com/store/apps/details?id=org.elpriser.app).
 - [Forstå din elpris](https://elpriser.org/om-elpriser): Hvad elprisen består af (spotpris, nettarif, systemtarif og transmissionstarif, elafgift, moms), DK1 og DK2, hvornår strømmen er billigst, negative priser, sparetips og datakilder.
@@ -358,7 +299,7 @@ Send a User-Agent header: Cloudflare answers 403 to Python's default \`Python-ur
 - \`GET /api/schedule?area=DK1&strategy=cheapest_n&hours=6\` — The N cheapest hours of the day
 - \`GET /api/forecast?area=DK1&mode=inkl_alt\` — Hourly price forecast, today and the next 9 days (settled prices where published, \`type: actual\`). \`mode=net_inkl_alt&gln=…\` adds that grid company's nettarif as in force on each day's own date, so it equals /api/prices on a published day. \`min\`/\`max\` are P10/P90 widened to 80 % backtested coverage on model days; \`model.generatedAt\` names the run.
 - \`GET /api/forecast/archive?area=DK1[&issued=2026-10-06]\` — Past forecast runs (400 days, from 2026-10-06): list the run dates, or fetch one as it was issued (raw spot, DKK/MWh excl. VAT), to measure error by horizon
-- \`GET /api/nordic?zone=se3\` — Same for any of the 13 Nordic/NL bidding zones (dk1, dk2, no1–no5, se1–se4, fi, nl), in EUR/MWh, with the ECB rate to the local currency in \`zoneInfo\`. Also four EU zones, settled day-ahead prices only and no forecast: \`de\`, \`fr\`, \`pl\` and \`it-n\` (Northern Italy), hourly means of the 15-minute prices (a change of the data) from Bundesnetzagentur | SMARD.de via Energy-Charts.info, CC BY 4.0; tomorrow is absent until it is published, about 13:00 CET
+- \`GET /api/nordic?zone=se3\` — Same for any of the 13 Nordic/NL bidding zones (dk1, dk2, no1–no5, se1–se4, fi, nl), in EUR/MWh, with the ECB rate to the local currency in \`zoneInfo\`. Also 25 EU zones, settled day-ahead prices only and no forecast, in EUR/MWh (Poland's \`zoneInfo\` carries the PLN rate): \`de\`, \`fr\`, \`pl\`, \`it-n\` (Northern Italy), \`at\`, \`be\`, \`ch\`, \`cz\`, \`hu\` and \`si\` from Bundesnetzagentur | SMARD.de via Energy-Charts.info, CC BY 4.0, and \`es\`, \`pt\`, \`sk\`, \`gr\`, \`ro\`, \`bg\`, \`hr\`, \`rs\`, \`ee\`, \`lv\`, \`lt\`, \`ie\` (Ireland and Northern Ireland), \`me\`, \`mk\` and \`al\` from the ENTSO-E Transparency Platform; all hourly means of the 15-minute prices (a change of the data); tomorrow is absent until it is published, about 13:00 CET
 - \`GET /api/shelly/tariff?area=DK1&mode=inkl_alt\` — Tibber-compatible 24h JSON
 - \`GET /api/raw/prices?area=DK1&start=YYYY-MM-DD&end=YYYY-MM-DD\` — Raw DayAheadPrices records
 - \`GET /api/raw/tariff?gln=5790000704842\` — Single net company's Nettarif C (24 values)
@@ -734,13 +675,13 @@ Sitemap: https://elpriser.org/sitemap.xml`,
     type: 'text/plain; charset=utf-8',
   },
   '/llms.txt': {
-    body: LLMS_TXT,
+    body: () => fillLlms(LLMS_TXT),
     type: 'text/plain; charset=utf-8',
   },
   '/llms-full.txt': {
     // Static text plus today's figures, dated to the hour, so an answer engine
     // quoting this file quotes numbers that were true when it read them.
-    body: async context => LLMS_FULL_TXT + await llmsNowSection(context),
+    body: async context => fillLlms(LLMS_FULL_TXT) + await llmsNowSection(context),
     type: 'text/plain; charset=utf-8',
     maxAge: 900,
   },
@@ -1018,9 +959,12 @@ ${JSON.stringify({
 // rather than toLocaleDateString, whose output depends on the ICU build and would
 // differ between Workers and a browser.
 
-/** Every word the screen shows, per language. Same keys in every language
- *  (test-forecast-chart.mjs). The Din pris / Spotpris switch and the breakdown
- *  panel are Danish-only features and keep their Danish text in their functions. */
+/** Every word the screen shows, per LANGUAGE (one entry per language, shared by every country page in it). Same keys in
+ *  every language (test-forecast-chart.mjs). The Din pris / Spotpris switch and the breakdown panel are Danish-only
+ *  features and keep their Danish text in their functions. What is about a COUNTRY rather than a language — the h1, the
+ *  heading of the text block and the note about the data (`tx` of a PRIS_COUNTRIES entry) — is not here: Austria and
+ *  Switzerland read this German table, Belgium the Dutch and the French one, and each says its own country.
+ *  The `tx` of a page may also override any single word of its language (prisPageL), e.g. `cap`. */
 var PRIS_I18N={
   da:{wd:['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'],ws:['søn','man','tir','ons','tor','fre','lør'],
     mon:['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'],dot:'.',
@@ -1029,8 +973,8 @@ var PRIS_I18N={
     cheaper:'Billigere',cheapest24:'Billigste time de næste 24 timer',lo:'billigst',hi:'dyrest',
     next:'Næste',p2:'2 døgn',p5:'5 døgn',p7:'7 døgn',period:'Periode',fc:'Prognose',actual:'Børspris',
     byDay:'Dag for dag',day:'Dag',range:'Spænd',type:'Type',none:'Priserne kunne ikke hentes lige nu.',
-    cap:'Spotpris uden moms, afgifter og nettarif',h1:'Elpriser i Danmark i dag',
-    zonesH:'Elpriser i Danmark',avg:'gns.',note:'Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder. Omregnet fra EUR med Den Europæiske Centralbanks dagskurs.',model:'Se modellen på Hugging Face'},
+    cap:'Spotpris uden moms, afgifter og nettarif',
+    avg:'gns.',model:'Se modellen på Hugging Face'},
   nb:{wd:['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'],ws:['søn','man','tir','ons','tor','fre','lør'],
     mon:['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'],dot:'.',
     now:'Strømpris akkurat nå',hourly:'Strømpris time for time',at:'kl.',today:'i dag',tomorrow:'i morgen',evening:'i kveld',
@@ -1038,8 +982,8 @@ var PRIS_I18N={
     cheaper:'Billigere',cheapest24:'Billigste time de neste 24 timene',lo:'billigst',hi:'dyrest',
     next:'Neste',p2:'2 døgn',p5:'5 døgn',p7:'7 døgn',period:'Periode',fc:'Prognose',actual:'Børspris',
     byDay:'Dag for dag',day:'Dag',range:'Spenn',type:'Type',none:'Prisene kunne ikke hentes akkurat nå.',
-    cap:'Spotpris uten mva, avgifter og nettleie',h1:'Strømpris i Norge: i dag og prognose for de neste 5 døgnene',
-    zonesH:'Strømpriser i Norge etter by og prisområde',avg:'snitt',note:'Prognosen kommer fra én åpen maskinlæringsmodell for alle 13 prisområder. Omregnet fra EUR med Den europeiske sentralbankens daglige kurs.',model:'Se modellen på Hugging Face'},
+    cap:'Spotpris uten mva, avgifter og nettleie',
+    avg:'snitt',model:'Se modellen på Hugging Face'},
   sv:{wd:['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'],ws:['sön','mån','tis','ons','tors','fre','lör'],
     mon:['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'],dot:'',
     now:'Elpris just nu',hourly:'Elpris timme för timme',at:'kl.',today:'idag',tomorrow:'imorgon',evening:'ikväll',
@@ -1047,8 +991,8 @@ var PRIS_I18N={
     cheaper:'Billigare',cheapest24:'Billigaste timmen de närmaste 24 timmarna',lo:'billigast',hi:'dyrast',
     next:'Kommande',p2:'2 dygn',p5:'5 dygn',p7:'7 dygn',period:'Period',fc:'Prognos',actual:'Börspris',
     byDay:'Dag för dag',day:'Dag',range:'Spann',type:'Typ',none:'Priserna kunde inte hämtas just nu.',
-    cap:'Spotpris utan moms, skatter och nätavgift',h1:'Elpris i Sverige: idag och prognos för de närmaste 5 dygnen',
-    zonesH:'Elpriser i Sverige per stad och elområde',avg:'snitt',note:'Prognosen kommer från en öppen maskininlärningsmodell för alla 13 elområden. Omräknat från EUR med Europeiska centralbankens dagliga kurs.',model:'Se modellen på Hugging Face'},
+    cap:'Spotpris utan moms, skatter och nätavgift',
+    avg:'snitt',model:'Se modellen på Hugging Face'},
   fi:{wd:['sunnuntai','maanantai','tiistai','keskiviikko','torstai','perjantai','lauantai'],ws:['su','ma','ti','ke','to','pe','la'],
     mon:['tammik.','helmik.','maalisk.','huhtik.','toukok.','kesäk.','heinäk.','elok.','syysk.','lokak.','marrask.','jouluk.'],dot:'.',
     now:'Sähkön hinta juuri nyt',hourly:'Sähkön hinta tunneittain',at:'klo',today:'tänään',tomorrow:'huomenna',evening:'illalla',
@@ -1056,8 +1000,8 @@ var PRIS_I18N={
     cheaper:'Halvempi',cheapest24:'Halvin tunti seuraavan 24 tunnin aikana',lo:'halvin',hi:'kallein',
     next:'Seuraavat',p2:'2 vrk',p5:'5 vrk',p7:'7 vrk',period:'Jakso',fc:'Ennuste',actual:'Pörssihinta',
     byDay:'Päivä päivältä',day:'Päivä',range:'Vaihteluväli',type:'Tyyppi',none:'Hintoja ei voitu hakea juuri nyt.',
-    cap:'Pörssihinta ilman arvonlisäveroa, veroja ja siirtomaksua',h1:'Sähkön hinta Suomessa: tänään ja ennuste seuraaville 5 vuorokaudelle',
-    zonesH:'Sähkön hinta Suomessa',avg:'keskihinta',note:'Ennuste tulee yhdestä avoimesta koneoppimismallista, joka kattaa kaikki 13 hinta-aluetta. Muunnettu euroista Euroopan keskuspankin päiväkurssilla.',model:'Katso malli Hugging Facessa'},
+    cap:'Pörssihinta ilman arvonlisäveroa, veroja ja siirtomaksua',
+    avg:'keskihinta',model:'Katso malli Hugging Facessa'},
   nl:{wd:['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'],ws:['zo','ma','di','wo','do','vr','za'],
     mon:['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],dot:'',
     now:'Stroomprijs nu',hourly:'Stroomprijs per uur',at:'om',today:'vandaag',tomorrow:'morgen',evening:'vanavond',
@@ -1065,14 +1009,16 @@ var PRIS_I18N={
     cheaper:'Goedkoper',cheapest24:'Goedkoopste uur van de komende 24 uur',lo:'goedkoopst',hi:'duurst',
     next:'Komende',p2:'2 dagen',p5:'5 dagen',p7:'7 dagen',period:'Periode',fc:'Prognose',actual:'Beursprijs',
     byDay:'Dag voor dag',day:'Dag',range:'Bereik',type:'Type',none:'De prijzen konden nu niet worden opgehaald.',
-    cap:'Spotprijs zonder btw, belastingen en netkosten',h1:'Stroomprijs in Nederland: vandaag en prognose voor de komende 5 dagen',
-    zonesH:'Stroomprijs in Nederland',avg:'gem.',note:'De prognose komt van één open machinelearningmodel voor alle 13 prijsgebieden. Prijzen in euro, uitgedrukt in cent per kWh.',model:'Bekijk het model op Hugging Face'},
-  // The four EU price pages (Germany, France, Poland, Northern Italy) show ACTUAL day-ahead prices only (PRIS_ACT): no
-  // forecast, so `fc` is the same word as `actual`, and the tables carry three more keys: act1 / act2, the card title for one
-  // and for two days, and cheapRest, the sentence when only today is known. `hs` is an optional suffix after the hour or range
-  // (" Uhr", " h"); prisAt() puts it together. The data are CC BY 4.0 from "Bundesnetzagentur | SMARD.de", and the site changes
-  // them (hourly means of 15-minute prices; Poland also converted to grosze): `note` says so, then names the source whose
-  // links prisZoneList writes after it.
+    cap:'Spotprijs zonder btw, belastingen en netkosten',
+    avg:'gem.',model:'Bekijk het model op Hugging Face',
+    act1:'Vandaag',act2:'Vandaag en morgen',cheapRest:'Goedkoopste uur van de rest van de dag'},
+  // The EU price pages (PRIS_COUNTRIES `act`) show ACTUAL day-ahead prices only (PRIS_ACT): no forecast, so `fc` is the same
+  // word as `actual`, and the table of a language used by such a page carries three more keys: act1 / act2, the card title for one
+  // and for two days, and cheapRest, the sentence when only today is known. Optional keys: `hs`, a suffix after the hour or
+  // range (" Uhr", " h", ":00"), and with `hh` after EACH hour ("at 13:00–14:00"); `at` may be '' (no word before the hour:
+  // Czech); `dec`, the decimal mark when it is not a comma ("." in English). prisAt() and prisNum() put it together. The
+  // data are changed by the site (hourly means of 15-minute prices): the `note` of each page says so, then names the source
+  // whose links prisZoneList writes after it.
   de:{wd:['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'],ws:['So','Mo','Di','Mi','Do','Fr','Sa'],
     mon:['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],dot:'.',hs:' Uhr',
     now:'Strompreis jetzt',hourly:'Strompreis stündlich',at:'um',today:'heute',tomorrow:'morgen',evening:'heute Abend',
@@ -1080,8 +1026,8 @@ var PRIS_I18N={
     cheaper:'Günstiger',cheapest24:'Günstigste Stunde der nächsten 24 Stunden',lo:'günstigste Stunde',hi:'teuerste Stunde',
     next:'Nächste',p2:'2 Tage',p5:'5 Tage',p7:'7 Tage',period:'Zeitraum',fc:'Day-Ahead-Preis',actual:'Day-Ahead-Preis',
     byDay:'Tag für Tag',day:'Tag',range:'Spanne',type:'Art',none:'Die Preise konnten gerade nicht geladen werden.',
-    cap:'Börsenstrompreis (Day-Ahead) ohne MwSt., Steuern, Abgaben und Netzentgelte',h1:'Strompreis in Deutschland: heute und morgen',
-    zonesH:'Strompreis in Deutschland',avg:'Ø',note:'Stundenmittel der Viertelstundenpreise, von elpriser.org berechnet (gegenüber den Originaldaten verändert). Deutschland und Luxemburg bilden eine gemeinsame Gebotszone. Quelle:',model:'Bundesnetzagentur | SMARD.de',
+    cap:'Börsenstrompreis (Day-Ahead) ohne MwSt., Steuern, Abgaben und Netzentgelte',
+    avg:'Ø',
     act1:'Heute',act2:'Heute und morgen',cheapRest:'Günstigste Stunde des restlichen Tages'},
   fr:{wd:['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'],ws:['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'],
     mon:['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'],dot:'',hs:' h',
@@ -1090,8 +1036,8 @@ var PRIS_I18N={
     cheaper:'Moins cher',cheapest24:'Heure la moins chère des 24 prochaines heures',lo:'heure la moins chère',hi:'heure la plus chère',
     next:'Prochains',p2:'2 jours',p5:'5 jours',p7:'7 jours',period:'Période',fc:'Prix day-ahead',actual:'Prix day-ahead',
     byDay:'Jour par jour',day:'Jour',range:'Fourchette',type:'Type',none:'Les prix n’ont pas pu être chargés pour le moment.',
-    cap:'Prix spot day-ahead hors TVA, taxes et frais de réseau',h1:'Prix de l’électricité en France : aujourd’hui et demain',
-    zonesH:'Prix de l’électricité en France',avg:'moy.',note:'Moyennes horaires des prix au quart d’heure, calculées par elpriser.org (données modifiées par rapport à l’original). Source :',model:'Bundesnetzagentur | SMARD.de',
+    cap:'Prix spot day-ahead hors TVA, taxes et frais de réseau',
+    avg:'moy.',
     act1:'Aujourd’hui',act2:'Aujourd’hui et demain',cheapRest:'Heure la moins chère du reste de la journée'},
   pl:{wd:['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'],ws:['niedz.','pon.','wt.','śr.','czw.','pt.','sob.'],
     mon:['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'],dot:'',
@@ -1100,8 +1046,8 @@ var PRIS_I18N={
     cheaper:'Taniej',cheapest24:'Najtańsza godzina w ciągu najbliższych 24 godzin',lo:'najtańsza godzina',hi:'najdroższa godzina',
     next:'Najbliższe',p2:'2 dni',p5:'5 dni',p7:'7 dni',period:'Okres',fc:'Cena RDN',actual:'Cena RDN',
     byDay:'Dzień po dniu',day:'Dzień',range:'Zakres',type:'Rodzaj',none:'Nie udało się teraz pobrać cen.',
-    cap:'Cena giełdowa na rynku dnia następnego (RDN) bez VAT, podatków i opłat sieciowych',h1:'Cena prądu w Polsce: dziś i jutro',
-    zonesH:'Cena prądu w Polsce',avg:'śr.',note:'Średnie godzinowe z cen kwadransowych, przeliczone z euro według dziennego kursu referencyjnego EBC przez elpriser.org (dane zmienione względem oryginału). Źródło:',model:'Bundesnetzagentur | SMARD.de',
+    cap:'Cena giełdowa na rynku dnia następnego (RDN) bez VAT, podatków i opłat sieciowych',
+    avg:'śr.',
     act1:'Dziś',act2:'Dziś i jutro',cheapRest:'Najtańsza godzina do końca dnia'},
   it:{wd:['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'],ws:['dom','lun','mar','mer','gio','ven','sab'],
     mon:['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'],dot:'',
@@ -1110,14 +1056,27 @@ var PRIS_I18N={
     cheaper:'Più basso',cheapest24:'Ora più economica delle prossime 24 ore',lo:'ora più economica',hi:'ora più cara',
     next:'Prossimi',p2:'2 giorni',p5:'5 giorni',p7:'7 giorni',period:'Periodo',fc:'Prezzo day-ahead',actual:'Prezzo day-ahead',
     byDay:'Giorno per giorno',day:'Giorno',range:'Intervallo',type:'Tipo',none:'Non è stato possibile caricare i prezzi in questo momento.',
-    cap:'Prezzo day-ahead al netto di IVA, imposte e costi di rete',h1:'Prezzo dell’energia elettrica in Italia del Nord: oggi e domani',
-    zonesH:'Prezzo dell’energia elettrica in Italia del Nord',avg:'media',note:'Zona di mercato Nord. Medie orarie dei prezzi al quarto d’ora, calcolate da elpriser.org (dati modificati rispetto all’originale). Fonte:',model:'Bundesnetzagentur | SMARD.de',
-    act1:'Oggi',act2:'Oggi e domani',cheapRest:'Ora più economica del resto della giornata'}
+    cap:'Prezzo day-ahead al netto di IVA, imposte e costi di rete',
+    avg:'media',
+    act1:'Oggi',act2:'Oggi e domani',cheapRest:'Ora più economica del resto della giornata'},
+  en:{wd:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],ws:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+    mon:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],dot:'',hs:':00',hh:1,dec:'.',
+    now:'Electricity price now',hourly:'Electricity price by the hour',at:'at',today:'today',tomorrow:'tomorrow',evening:'this evening',
+    verdict:['Cheap right now','Average right now','Expensive right now'],tier:['Cheap','Average','Expensive'],
+    cheaper:'Cheaper',cheapest24:'Cheapest hour in the next 24 hours',lo:'cheapest hour',hi:'most expensive hour',
+    next:'Next',p2:'2 days',p5:'5 days',p7:'7 days',period:'Period',fc:'Day-ahead price',actual:'Day-ahead price',
+    byDay:'Day by day',day:'Day',range:'Range',type:'Type',none:'The prices could not be loaded right now.',
+    cap:'Wholesale day-ahead price excluding VAT, taxes, levies and network charges',
+    avg:'avg.',
+    act1:'Today',act2:'Today and tomorrow',cheapRest:'Cheapest hour of the rest of the day'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
  *  `rate` is the fallback for the ECB rate /api/nordic returns (zoneInfo.rate).
- *  `lang` picks the PRIS_I18N table for a zone's own page. */
+ *  `lang` picks the PRIS_I18N table for a zone's own page (a page may read another language's table for the same zone: the
+ *  French page of Belgium, PRIS_COUNTRIES). `shift`: hours from Copenhagen to the zone's own clock, when it is not the same
+ *  (Dublin -1); the feed's days are the zone's local days. `src`: where an `act` zone's data come from, which prisCredit names:
+ *  'ec' Energy-Charts (Bundesnetzagentur | SMARD.de, CC BY 4.0) or 'entsoe' (ENTSO-E Transparency Platform). */
 var ZONES={
   dk1:{name:'DK1',city:'Vestdanmark',lang:'da',cur:'DKK',rate:7.4755,sub:'øre'},
   dk2:{name:'DK2',city:'Østdanmark',lang:'da',cur:'DKK',rate:7.4755,sub:'øre'},
@@ -1132,80 +1091,222 @@ var ZONES={
   se4:{name:'SE4',city:'Malmö',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
   fi:{name:'FI',city:'Suomi',lang:'fi',cur:'EUR',rate:1,sub:'snt'},
   nl:{name:'NL',city:'Nederland',lang:'nl',cur:'EUR',rate:1,sub:'cent'},
-  // Germany, France, Poland and Northern Italy: actual day-ahead prices from Energy-Charts (Bundesnetzagentur | SMARD.de,
-  // CC BY 4.0), no forecast. `city` is what the zone's text line calls it, `name` the market's own code. Poland converts at
-  // the ECB's PLN rate (4.39 only if the response carries none).
-  de:{name:'DE-LU',city:'Deutschland',lang:'de',cur:'EUR',rate:1,sub:'ct'},
-  fr:{name:'FR',city:'France',lang:'fr',cur:'EUR',rate:1,sub:'c€'},
-  pl:{name:'PL',city:'Polska',lang:'pl',cur:'PLN',rate:4.39,sub:'gr'},
-  'it-n':{name:'IT-Nord',city:'Italia del Nord',lang:'it',cur:'EUR',rate:1,sub:'c€'}
+  // The EU zones: actual day-ahead prices, no forecast. `city` is what the zone's text line calls it, `name` the market's own
+  // code. Poland converts at the ECB's PLN rate (4.39 only if the response carries none); every other zone is EUR.
+  de:{name:'DE-LU',city:'Deutschland',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
+  fr:{name:'FR',city:'France',lang:'fr',cur:'EUR',rate:1,sub:'c€',src:'ec'},
+  pl:{name:'PL',city:'Polska',lang:'pl',cur:'PLN',rate:4.39,sub:'gr',src:'ec'},
+  'it-n':{name:'IT-Nord',city:'Italia del Nord',lang:'it',cur:'EUR',rate:1,sub:'c€',src:'ec'},
+  at:{name:'AT',city:'Österreich',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
+  ch:{name:'CH',city:'Schweiz',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
+  be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
+  ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
-/** The country pages: their language, their zones left to right, the one shown first, and `cc`, the
- *  country's key in CHROME_I18N's country names. `act` marks a page of ACTUAL prices only (PRIS_ACT): one period,
- *  no forecast anywhere, Bundesnetzagentur | SMARD.de (CC BY 4.0, changed) as the source in the footer. */
+/** The country pages: ONE entry per page, holding everything about it that is not a word of its LANGUAGE (docs/add-a-country.md).
+ *  lang   the page's language: a key of PRIS_I18N and CHROME_I18N, and the <html lang>
+ *  cc     the country (key of CHROME_I18N's `cn`); a country may have several pages, e.g. Belgium in Dutch and in French
+ *  zones  the price zones left to right, def the one drawn first; act: 1 = actual day-ahead prices only (PRIS_ACT), no forecast
+ *  name   the country's name in the page's language (PRIS_PICK, the place dialog); pick: the label of the dialog when two languages
+ *         share a country; da: the Danish name (the Danish footer, analytics); loc: og:locale; qid: the country's Wikidata item
+ *  title, desc   the <title> and the meta description (<= 62 and 80-155 characters; the server's SEO_PAGES and the browser's router read them)
+ *  sub, city     this page's own unit and own name of its single zone, when they are not the zone's (ZONES) — Belgium in French
+ *  tx     what the page says in its language's table about ITS country: h1, zonesH and note (prisPageL), and any single word it
+ *         overrides (cap, chg). No other country may be named in a language table: Austria and Switzerland read the German one. */
 var PRIS_COUNTRIES={
-  'no/strompris':{lang:'nb',cc:'no',zones:['no1','no2','no3','no4','no5'],def:'no1'},
-  'sv/elpris':{lang:'sv',cc:'sv',zones:['se1','se2','se3','se4'],def:'se3'},
-  'fi/sahkon-hinta':{lang:'fi',cc:'fi',zones:['fi'],def:'fi'},
-  'nl/stroomprijs':{lang:'nl',cc:'nl',zones:['nl'],def:'nl'},
-  'de/strompreis':{lang:'de',cc:'de',zones:['de'],def:'de',act:1},
-  'fr/prix-electricite':{lang:'fr',cc:'fr',zones:['fr'],def:'fr',act:1},
-  'pl/ceny-pradu':{lang:'pl',cc:'pl',zones:['pl'],def:'pl',act:1},
-  'it/prezzo-luce':{lang:'it',cc:'it',zones:['it-n'],def:'it-n',act:1}
+  'no/strompris':{lang:'nb',cc:'no',zones:['no1','no2','no3','no4','no5'],def:'no1',
+    name:'Norge',da:'Norge',loc:'nb_NO',qid:'Q20',
+    title:'Strømpris prognose Norge: NO1–NO5, i dag og 5 dager frem',
+    desc:'Strømpris nå og prognose for de neste 5 døgnene, time for time: NO1 Oslo, NO2 Kristiansand, NO3 Trondheim, NO4 Tromsø og NO5 Bergen. Spotpris uten mva.',
+    tx:{h1:'Strømpris i Norge: i dag og prognose for de neste 5 døgnene',
+      zonesH:'Strømpriser i Norge etter by og prisområde',
+      note:'Prognosen kommer fra én åpen maskinlæringsmodell for alle 13 prisområder. Omregnet fra EUR med Den europeiske sentralbankens daglige kurs.'}},
+  'sv/elpris':{lang:'sv',cc:'sv',zones:['se1','se2','se3','se4'],def:'se3',
+    name:'Sverige',da:'Sverige',loc:'sv_SE',qid:'Q34',
+    title:'Elpris prognos Sverige: SE1–SE4, idag och 5 dygn framåt',
+    desc:'Elpris just nu och prognos för de närmaste 5 dygnen, timme för timme: SE1 Luleå, SE2 Sundsvall, SE3 Stockholm och SE4 Malmö. Spotpris utan moms.',
+    tx:{h1:'Elpris i Sverige: idag och prognos för de närmaste 5 dygnen',
+      zonesH:'Elpriser i Sverige per stad och elområde',
+      note:'Prognosen kommer från en öppen maskininlärningsmodell för alla 13 elområden. Omräknat från EUR med Europeiska centralbankens dagliga kurs.'}},
+  'fi/sahkon-hinta':{lang:'fi',cc:'fi',zones:['fi'],def:'fi',
+    name:'Suomi',da:'Finland',loc:'fi_FI',qid:'Q33',
+    title:'Sähkön hinta ennuste Suomi: tänään ja 5 vrk eteenpäin',
+    desc:'Sähkön hinta juuri nyt ja ennuste seuraaville 5 vuorokaudelle tunneittain, koko Suomi. Pörssihinta ilman arvonlisäveroa, veroja ja siirtomaksua.',
+    tx:{h1:'Sähkön hinta Suomessa: tänään ja ennuste seuraaville 5 vuorokaudelle',
+      zonesH:'Sähkön hinta Suomessa',
+      note:'Ennuste tulee yhdestä avoimesta koneoppimismallista, joka kattaa kaikki 13 hinta-aluetta. Muunnettu euroista Euroopan keskuspankin päiväkurssilla.'}},
+  'nl/stroomprijs':{lang:'nl',cc:'nl',zones:['nl'],def:'nl',
+    name:'Nederland',da:'Nederland',loc:'nl_NL',qid:'Q55',
+    title:'Stroomprijs vandaag en morgen, prognose 5 dagen vooruit',
+    desc:'Stroomprijs nu en prognose voor de komende 5 dagen, uur voor uur, voor heel Nederland. Spotprijs in cent per kWh, zonder btw, belastingen en netkosten.',
+    tx:{h1:'Stroomprijs in Nederland: vandaag en prognose voor de komende 5 dagen',
+      zonesH:'Stroomprijs in Nederland',
+      note:'De prognose komt van één open machinelearningmodel voor alle 13 prijsgebieden. Prijzen in euro, uitgedrukt in cent per kWh.'}},
+  'de/strompreis':{lang:'de',cc:'de',zones:['de'],def:'de',act:1,
+    name:'Deutschland',da:'Tyskland',loc:'de_DE',qid:'Q183',
+    title:'Strompreis aktuell und morgen – Börsenstrompreis Deutschland',
+    desc:'Börsenstrompreis (Day-Ahead) für Deutschland, heute und morgen, in ct/kWh, ohne MwSt., Steuern und Netzentgelte. Quelle: Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Strompreis in Deutschland: heute und morgen',
+      zonesH:'Strompreis in Deutschland',
+      note:'Stundenmittel der Viertelstundenpreise, von elpriser.org berechnet (gegenüber den Originaldaten verändert). Deutschland und Luxemburg bilden eine gemeinsame Gebotszone. Quelle:'}},
+  'fr/prix-electricite':{lang:'fr',cc:'fr',zones:['fr'],def:'fr',act:1,
+    name:'France',da:'Frankrig',loc:'fr_FR',qid:'Q142',
+    title:'Prix de l’électricité aujourd’hui et demain en France',
+    desc:'Prix spot day-ahead en France, heure par heure, aujourd’hui et demain, en c€/kWh, hors TVA, taxes et réseau. Source : Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Prix de l’électricité en France : aujourd’hui et demain',
+      zonesH:'Prix de l’électricité en France',
+      note:'Moyennes horaires des prix au quart d’heure, calculées par elpriser.org (données modifiées par rapport à l’original). Source :'}},
+  'pl/ceny-pradu':{lang:'pl',cc:'pl',zones:['pl'],def:'pl',act:1,
+    name:'Polska',da:'Polen',loc:'pl_PL',qid:'Q36',
+    title:'Cena prądu dziś i jutro – giełdowa cena energii w Polsce',
+    desc:'Giełdowa cena energii w Polsce (RDN), godzina po godzinie, dziś i jutro, w gr/kWh, bez VAT, podatków i opłat. Źródło: Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Cena prądu w Polsce: dziś i jutro',
+      zonesH:'Cena prądu w Polsce',
+      note:'Średnie godzinowe z cen kwadransowych, przeliczone z euro według dziennego kursu referencyjnego EBC przez elpriser.org (dane zmienione względem oryginału). Źródło:'}},
+  'it/prezzo-luce':{lang:'it',cc:'it',zones:['it-n'],def:'it-n',act:1,
+    name:'Italia',da:'Italien',loc:'it_IT',qid:'Q38',
+    title:'Prezzo dell’energia elettrica oggi e domani – Italia del Nord',
+    desc:'Prezzo day-ahead dell’energia nel Nord Italia, ora per ora, oggi e domani, in c€/kWh, senza IVA, imposte e rete. Fonte: Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Prezzo dell’energia elettrica in Italia del Nord: oggi e domani',
+      zonesH:'Prezzo dell’energia elettrica in Italia del Nord',
+      note:'Zona di mercato Nord. Medie orarie dei prezzi al quarto d’ora, calcolate da elpriser.org (dati modificati rispetto all’originale). Fonte:'}},
+  'at/strompreis':{lang:'de',cc:'at',zones:['at'],def:'at',act:1,
+    name:'Österreich',da:'Østrig',loc:'de_AT',qid:'Q40',
+    title:'Strompreis aktuell und morgen – Börsenstrompreis Österreich',
+    desc:'Börsenstrompreis (Day-Ahead) für Österreich, heute und morgen, in ct/kWh, ohne MwSt., Steuern und Netzentgelte. Quelle: Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Strompreis in Österreich: heute und morgen',
+      zonesH:'Strompreis in Österreich',
+      note:'Stundenmittel der Viertelstundenpreise, von elpriser.org berechnet (gegenüber den Originaldaten verändert). Österreich bildet eine eigene Gebotszone. Quelle:'}},
+  'ch/strompreis':{lang:'de',cc:'ch',zones:['ch'],def:'ch',act:1,
+    name:'Schweiz',da:'Schweiz',loc:'de_CH',qid:'Q39',
+    title:'Strompreis aktuell und morgen – Börsenstrompreis Schweiz',
+    desc:'Börsenstrompreis (Day-Ahead) für die Schweiz, heute und morgen, in Euro-Cent/kWh, ohne MwSt., Abgaben, Netzentgelte. Quelle: Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Strompreis in der Schweiz: heute und morgen',
+      zonesH:'Strompreis in der Schweiz',
+      note:'Stundenmittel der Viertelstundenpreise, von elpriser.org berechnet (gegenüber den Originaldaten verändert). Die Schweiz hat eine eigene Gebotszone; die Preise sind in Euro-Cent angegeben, nicht in Rappen. Quelle:',
+      cap:'Börsenstrompreis (Day-Ahead) in Euro-Cent, ohne MwSt., Abgaben und Netzentgelte'}},
+  'be/stroomprijs':{lang:'nl',cc:'be',zones:['be'],def:'be',act:1,
+    name:'België',pick:'België · Belgique',da:'Belgien',loc:'nl_BE',qid:'Q31',
+    title:'Stroomprijs vandaag en morgen – beursprijs België',
+    desc:'Beursprijs stroom (day-ahead) in België, per uur, vandaag en morgen, in cent/kWh, zonder btw, heffingen en netkosten. Bron: Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Stroomprijs in België: vandaag en morgen',
+      zonesH:'Stroomprijs in België',
+      note:'Uurgemiddelden van de kwartierprijzen, berekend door elpriser.org (gegevens gewijzigd ten opzichte van het origineel). Prijzen in euro, uitgedrukt in cent per kWh. Bron:'}},
+  'be/prix-electricite':{lang:'fr',cc:'be',zones:['be'],def:'be',act:1,sub:'c€',city:'Belgique',
+    name:'Belgique',da:'Belgien',loc:'fr_BE',qid:'Q31',
+    title:'Prix de l’électricité aujourd’hui et demain en Belgique',
+    desc:'Prix day-ahead en Belgique, heure par heure, aujourd’hui et demain, en c€/kWh, hors TVA, taxes et réseau. Source : Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Prix de l’électricité en Belgique : aujourd’hui et demain',
+      zonesH:'Prix de l’électricité en Belgique',
+      note:'Moyennes horaires des prix au quart d’heure, calculées par elpriser.org (données modifiées par rapport à l’original). Source :'}},
+  'ie/electricity-price':{lang:'en',cc:'ie',zones:['ie'],def:'ie',act:1,
+    name:'Ireland',da:'Irland',loc:'en_IE',qid:'Q27',
+    title:'Electricity price today and tomorrow – Ireland (SEM)',
+    desc:'Day-ahead electricity price for Ireland and Northern Ireland (SEM), hour by hour, today and tomorrow, in c/kWh, excl. VAT and charges. Source: ENTSO-E',
+    tx:{h1:'Electricity price in Ireland: today and tomorrow',
+      zonesH:'Electricity price in Ireland',
+      note:'Hourly means of the 15-minute prices, calculated by elpriser.org (changed from the original data). Ireland and Northern Ireland trade as one market, the all-island Single Electricity Market (SEM). Prices are in euro cent. Source:'}}
 };
+/** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
+var PRIS_PICK=[['dk','Danmark']];
+(function(){
+  var seen={dk:1},p,C;
+  for(p in PRIS_COUNTRIES){C=PRIS_COUNTRIES[p];if(seen[C.cc])continue;seen[C.cc]=1;PRIS_PICK.push([C.cc,C.pick||C.name]);}
+})();
+/** The page of country `cc` in `lang` if it has one, otherwise its first page: where a country's link goes from a page in another language. */
+function prisPageFor(cc,lang){
+  var p,first='';
+  for(p in PRIS_COUNTRIES)if(PRIS_COUNTRIES[p].cc===cc){if(PRIS_COUNTRIES[p].lang===lang)return p;if(!first)first=p;}
+  return first;
+}
+/** Is `p` ('no/strompris') a country page? An own-property test: a hash like "constructor" must not be one. */
+function prisIsPage(p){return Object.prototype.hasOwnProperty.call(PRIS_COUNTRIES,p);}
+/** A country's name in the language of `X` (an entry of CHROME_I18N): its own, or — until that language has translated it — the country's own name. */
+function prisCn(X,cc){
+  if(X.cn[cc])return X.cn[cc];
+  for(var i=0;i<PRIS_PICK.length;i++)if(PRIS_PICK[i][0]===cc)return PRIS_PICK[i][1];
+  return cc;
+}
+/** The words of country page `pg`: its language's table with the page's own `tx` laid over it. */
+function prisPageL(pg){
+  var C=PRIS_COUNTRIES[pg],L=PRIS_I18N[C.lang],o={},k;
+  for(k in L)o[k]=L[k];
+  for(k in C.tx)o[k]=C.tx[k];
+  return o;
+}
+/** What page `pg` calls zone `k` in its text: the page's own name for its single zone (`city`), else the zone's. */
+function prisCity(pg,k){var C=PRIS_COUNTRIES[pg];return (C&&C.zones.length===1&&C.city)||ZONES[k].city;}
+/** The unit of zone `k` on page `pg`: the page's own `sub` (Belgium: cent in Dutch, c€ in French), else the zone's. */
+function prisSub(pg,k){var C=pg&&PRIS_COUNTRIES[pg];return (C&&C.sub)||ZONES[k].sub;}
+function prisAddDays(d,n){return new Date(Date.parse(d+'T12:00:00Z')+n*86400000).toISOString().slice(0,10);}
+/** The date and hour on zone `k`'s own clock, given Copenhagen's: the feed's days are the zone's local days. Zones differ from
+ *  Copenhagen by a whole number of hours (ZONES `shift`: Dublin -1) and the EU changes the clocks at one instant, so the offset is fixed. */
+function prisZoneNow(k,todayStr,nowHour){
+  var s=(ZONES[k]&&ZONES[k].shift)||0,h=nowHour+s;
+  if(h<0)return {date:prisAddDays(todayStr,-1),hour:h+24};
+  if(h>23)return {date:prisAddDays(todayStr,1),hour:h-24};
+  return {date:todayStr,hour:h};
+}
 
-/** The words of the page chrome (header navigation, footer) on a country page, per language. The Danish
- *  chrome is the markup in index.html and has no entry here. Same keys in every language
- *  (test-forecast-chart.mjs); chromeHTML turns one entry into the markup, so there is one template for all
- *  four. `cn`: the country names in this language, keyed by CHROME_I18N's `cc`; `privacy` says that the
- *  policy is in Danish. */
+/** The words of the page chrome (header navigation, footer) on a country page, per LANGUAGE. The Danish
+ *  chrome is the markup in index.html and has no entry here. Same keys in every language (test-forecast-chart.mjs); chromeHTML
+ *  turns one entry into the markup, so there is one template for all. `cn`: the country names in this language, keyed by the
+ *  `cc` of PRIS_COUNTRIES — a country not named here shows its own name (prisCn) until a translator adds it; `privacy` says that
+ *  the policy is in Danish; `chg` (languages that have an `act` page): the note that the site changed the data, which a page
+ *  may override in its `tx`. */
 var CHROME_I18N={
   nb:{home:'elpriser.org forside',land:'Land',place:'Hvor er du?',area:'Prisområde',oth:'Andre land',back:'Tilbake',find:'Søk',none:'Ingen resultater',close:'Lukk',
-    cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederland',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italia'},
+    cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederland',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italia',at:'Østerrike',ch:'Sveits',be:'Belgia',ie:'Irland'},
     privacy:'Personvern (på dansk)',src:'Data fra',and:'og',open:'Åpne datasett på'},
   sv:{home:'elpriser.org startsida',land:'Länder',place:'Var är du?',area:'Elområde',oth:'Andra länder',back:'Tillbaka',find:'Sök',none:'Inga resultat',close:'Stäng',
-    cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederländerna',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italien'},
+    cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederländerna',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italien',at:'Österrike',ch:'Schweiz',be:'Belgien',ie:'Irland'},
     privacy:'Integritet (på danska)',src:'Data från',and:'och',open:'Öppna datamängder på'},
   fi:{home:'elpriser.org etusivu',land:'Maat',place:'Missä olet?',area:'Hinta-alue',oth:'Muut maat',back:'Takaisin',find:'Haku',none:'Ei tuloksia',close:'Sulje',
-    cn:{dk:'Tanska',no:'Norja',sv:'Ruotsi',fi:'Suomi',nl:'Alankomaat',de:'Saksa',fr:'Ranska',pl:'Puola',it:'Italia'},
+    cn:{dk:'Tanska',no:'Norja',sv:'Ruotsi',fi:'Suomi',nl:'Alankomaat',de:'Saksa',fr:'Ranska',pl:'Puola',it:'Italia',at:'Itävalta',ch:'Sveitsi',be:'Belgia',ie:'Irlanti'},
     privacy:'Tietosuoja (tanskaksi)',src:'Tietolähteet:',and:'ja',open:'Avoimet aineistot:'},
   nl:{home:'elpriser.org startpagina',land:'Landen',place:'Waar ben je?',area:'Biedzone',oth:'Andere landen',back:'Terug',find:'Zoeken',none:'Geen resultaten',close:'Sluiten',
-    cn:{dk:'Denemarken',no:'Noorwegen',sv:'Zweden',fi:'Finland',nl:'Nederland',de:'Duitsland',fr:'Frankrijk',pl:'Polen',it:'Italië'},
-    privacy:'Privacy (in het Deens)',src:'Gegevens van',and:'en',open:'Open datasets op'},
+    cn:{dk:'Denemarken',no:'Noorwegen',sv:'Zweden',fi:'Finland',nl:'Nederland',de:'Duitsland',fr:'Frankrijk',pl:'Polen',it:'Italië',at:'Oostenrijk',ch:'Zwitserland',be:'België',ie:'Ierland'},
+    privacy:'Privacy (in het Deens)',src:'Gegevens van',and:'en',open:'Open datasets op',
+    chg:'Wijziging: uurgemiddelden berekend door elpriser.org'},
   de:{home:'elpriser.org Startseite',land:'Länder',place:'Wo bist du?',area:'Preiszone',oth:'Andere Länder',back:'Zurück',find:'Suchen',none:'Keine Ergebnisse',close:'Schließen',
-    cn:{dk:'Dänemark',no:'Norwegen',sv:'Schweden',fi:'Finnland',nl:'Niederlande',de:'Deutschland',fr:'Frankreich',pl:'Polen',it:'Italien'},
+    cn:{dk:'Dänemark',no:'Norwegen',sv:'Schweden',fi:'Finnland',nl:'Niederlande',de:'Deutschland',fr:'Frankreich',pl:'Polen',it:'Italien',at:'Österreich',ch:'Schweiz',be:'Belgien',ie:'Irland'},
     privacy:'Datenschutz (auf Dänisch)',src:'Quelle:',and:'und',open:'Offene Datensätze auf',
     chg:'Änderung: Stundenmittel von elpriser.org berechnet'},
   fr:{home:'elpriser.org accueil',land:'Pays',place:'Où êtes-vous ?',area:'Zone de prix',oth:'Autres pays',back:'Retour',find:'Rechercher',none:'Aucun résultat',close:'Fermer',
-    cn:{dk:'Danemark',no:'Norvège',sv:'Suède',fi:'Finlande',nl:'Pays-Bas',de:'Allemagne',fr:'France',pl:'Pologne',it:'Italie'},
+    cn:{dk:'Danemark',no:'Norvège',sv:'Suède',fi:'Finlande',nl:'Pays-Bas',de:'Allemagne',fr:'France',pl:'Pologne',it:'Italie',at:'Autriche',ch:'Suisse',be:'Belgique',ie:'Irlande'},
     privacy:'Confidentialité (en danois)',src:'Source\u00a0:',and:'et',open:'Jeux de données ouverts sur',
     chg:'Modifié\u00a0: moyennes horaires calculées par elpriser.org'},
   pl:{home:'elpriser.org – strona główna',land:'Kraje',place:'Gdzie jesteś?',area:'Strefa cenowa',oth:'Inne kraje',back:'Wstecz',find:'Szukaj',none:'Brak wyników',close:'Zamknij',
-    cn:{dk:'Dania',no:'Norwegia',sv:'Szwecja',fi:'Finlandia',nl:'Holandia',de:'Niemcy',fr:'Francja',pl:'Polska',it:'Włochy'},
+    cn:{dk:'Dania',no:'Norwegia',sv:'Szwecja',fi:'Finlandia',nl:'Holandia',de:'Niemcy',fr:'Francja',pl:'Polska',it:'Włochy',at:'Austria',ch:'Szwajcaria',be:'Belgia',ie:'Irlandia'},
     privacy:'Prywatność (po duńsku)',src:'Źródło:',and:'i',open:'Otwarte zbiory danych na',
     chg:'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org'},
   it:{home:'elpriser.org pagina iniziale',land:'Paesi',place:'Dove sei?',area:'Zona di prezzo',oth:'Altri paesi',back:'Indietro',find:'Cerca',none:'Nessun risultato',close:'Chiudi',
-    cn:{dk:'Danimarca',no:'Norvegia',sv:'Svezia',fi:'Finlandia',nl:'Paesi Bassi',de:'Germania',fr:'Francia',pl:'Polonia',it:'Italia'},
+    cn:{dk:'Danimarca',no:'Norvegia',sv:'Svezia',fi:'Finlandia',nl:'Paesi Bassi',de:'Germania',fr:'Francia',pl:'Polonia',it:'Italia',at:'Austria',ch:'Svizzera',be:'Belgio',ie:'Irlanda'},
     privacy:'Privacy (in danese)',src:'Fonte:',and:'e',open:'Dataset aperti su',
-    chg:'Modifiche: medie orarie calcolate da elpriser.org'}
+    chg:'Modifiche: medie orarie calcolate da elpriser.org'},
+  en:{home:'elpriser.org home page',land:'Countries',place:'Where are you?',area:'Price zone',oth:'Other countries',back:'Back',find:'Search',none:'No results',close:'Close',
+    cn:{dk:'Denmark',no:'Norway',sv:'Sweden',fi:'Finland',nl:'Netherlands',de:'Germany',fr:'France',pl:'Poland',it:'Italy',at:'Austria',ch:'Switzerland',be:'Belgium',ie:'Ireland'},
+    privacy:'Privacy (in Danish)',src:'Source:',and:'and',open:'Open datasets on',
+    chg:'Changed: hourly means calculated by elpriser.org'}
 };
+
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
- *  first, then PRIS_COUNTRIES in order), the page's own marked aria-current; the header has the place chip (placeHTML) instead. No net chip, no app button,
+ *  first, then one link per country of PRIS_PICK — to that country's page in this page's language when it has one), the page's own
+ *  marked aria-current; the header has the place chip (placeHTML) instead. No net chip, no app button,
  *  no Danish menu — those describe the Danish site. `home` is the logo's accessible name. The footer's data
- *  line names ENTSO-E and Energi Data Service on the Nordic pages; on an `act` page it is prisCredit() — the CC BY 4.0
+ *  line names ENTSO-E and Energi Data Service on the Nordic pages; on an `act` page it is prisCredit() of the zone's source — the
  *  attribution — and `chg`, the note that the site changed the data. */
 function chromeHTML(pg){
-  var X=CHROME_I18N[PRIS_COUNTRIES[pg].lang],items=[{cc:'dk',href:'/dk1'}],p;
-  for(p in PRIS_COUNTRIES)items.push({cc:PRIS_COUNTRIES[p].cc,href:'/'+p,cur:p===pg});
-  var a=function(it,cls){return '<a href="'+it.href+'"'+(it.cur?(cls?' class="'+cls+'"':'')+' aria-current="page"':'')+'>'+X.cn[it.cc]+'</a>';};
+  var C=PRIS_COUNTRIES[pg],X=CHROME_I18N[C.lang],items=[{cc:'dk',href:'/dk1'}],i,q;
+  for(i=1;i<PRIS_PICK.length;i++){q=prisPageFor(PRIS_PICK[i][0],C.lang);items.push({cc:PRIS_PICK[i][0],href:'/'+q,cur:q===pg});}
+  var a=function(it,cls){return '<a href="'+it.href+'"'+(it.cur?(cls?' class="'+cls+'"':'')+' aria-current="page"':'')+'>'+prisCn(X,it.cc)+'</a>';};
   var lk=function(href,t){return '<a href="'+href+'" target="_blank" rel="noopener">'+t+'</a>';};
-  var P=placeHTML(PRIS_COUNTRIES[pg].lang,PRIS_COUNTRIES[pg].cc,pg);
+  var P=placeHTML(C.lang,C.cc,pg);
   return {home:X.home,btn:P.btn,place:P.dialog,
     foot:'<footer class="sf sf-x" data-pg="'+pg+'"><div class="sf-in"><nav class="sf-col" aria-labelledby="sfLand"><p class="sf-h" id="sfLand">'+X.land+'</p>'
       +'<ul class="sf-chips">'+items.map(function(it){return '<li>'+a(it,'')+'</li>';}).join('')+'</ul></nav>'
-      +'<p class="sf-legal">&copy; Elpriser.org &mdash; '+X.src+' '+(PRIS_COUNTRIES[pg].act?prisCredit()+' &mdash; '+X.chg
+      +'<p class="sf-legal">&copy; Elpriser.org &mdash; '+X.src+' '+(C.act?prisCredit(ZONES[C.def].src)+' &mdash; '+(C.tx.chg||X.chg)
         :lk('https://transparency.entsoe.eu','ENTSO-E')+' '+X.and+' '+lk('https://www.energidataservice.dk','Energi Data Service'))
       +'. '+X.open+' '+lk('https://huggingface.co/Elpriser','Hugging Face')+'. <a href="/privatliv" hreflang="da">'+X.privacy+'</a></p></div></footer>'};
 }
@@ -1219,10 +1320,9 @@ function chromeHTML(pg){
  *  lists and detectLocation drives the position lookup, hence the ids. A country page gets its own, in its language, from chromeHTML. `pg`
  *  is the country page (null: Danish). Returns the header chip and the dialog. */
 var PLACE_DA={place:'Hvor er du?',area:'Prisområde',oth:'Andre lande',back:'Tilbage',find:'Søg',none:'Ingen resultater',close:'Luk'};
-var PRIS_PICK=[['dk','Danmark'],['no','Norge'],['sv','Sverige'],['fi','Suomi'],['nl','Nederland'],['de','Deutschland'],['fr','France'],['pl','Polska'],['it','Italia']];
 function placeHTML(lang,cur,pg){
-  var da=lang==='da',X=da?PLACE_DA:CHROME_I18N[lang],i,p,own='',C=pg?PRIS_COUNTRIES[pg]:null;
-  var href=function(cc){if(cc==='dk')return '/dk1';for(p in PRIS_COUNTRIES)if(PRIS_COUNTRIES[p].cc===cc)return '/'+p;return '/';};
+  var da=lang==='da',X=da?PLACE_DA:CHROME_I18N[lang],i,own='',C=pg?PRIS_COUNTRIES[pg]:null;
+  var href=function(cc){if(cc==='dk')return '/dk1';var q=prisPageFor(cc,lang);return q?'/'+q:'/';};
   for(i=0;i<PRIS_PICK.length;i++)if(PRIS_PICK[i][0]===cur)own=PRIS_PICK[i][1];
   var sec=function(title,rows){return '<section>'+(title?'<p class="pd-gt">'+title+'</p>':'')+'<div class="pl-grp">'+rows+'</div></section>';};
   var go=function(s,label,id,v){return '<button type="button" data-go="'+s+'">'+label+'<small id="'+id+'">'+v+'</small></button>';};
@@ -1259,20 +1359,23 @@ function placeHTML(lang,cur,pg){
   };
 }
 
-/** The CC BY 4.0 attribution of the data on an `act` page: "Bundesnetzagentur | SMARD.de" (the licensor), Energy-Charts.info (the API
- *  it comes through) and the licence, each a link. The footer and the text block both write it; the change the site makes is said beside it. */
-function prisCredit(){
+/** The attribution of the data on an `act` page, by the zone's source (ZONES `src`). 'ec' (default): "Bundesnetzagentur | SMARD.de" (the
+ *  licensor), Energy-Charts.info (the API it comes through) and the licence CC BY 4.0, each a link. 'entsoe': the ENTSO-E Transparency
+ *  Platform. The footer and the text block both write it; the change the site makes is said beside it. */
+function prisCredit(src){
   var lk=function(href,t){return '<a href="'+href+'" target="_blank" rel="noopener">'+t+'</a>';};
+  if(src==='entsoe')return lk('https://transparency.entsoe.eu','ENTSO-E Transparency Platform');
   return lk('https://www.smard.de','Bundesnetzagentur | SMARD.de')+' ('+lk('https://www.energy-charts.info','Energy-Charts.info')+'), '+lk('https://creativecommons.org/licenses/by/4.0/','CC BY 4.0');
 }
 
-/** A price with d decimals and a Danish comma; never "-0,00". */
-function prisNum(v,d){var s=v.toFixed(d);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',',');}
+/** A price with d decimals and a comma (the table's `dec` when it has another mark: English "."); never "-0,00". */
+function prisNum(v,d,L){var s=v.toFixed(d);if(/^-0\.?0*$/.test(s))s=s.slice(1);return s.replace('.',L&&L.dec?L.dec:',');}
 function prisHH(h){return (h<10?'0':'')+h;}
-/** "kl. 14", "um 14 Uhr", "à 03–04 h": the language's word, the hour (or the range h–h2) and its optional suffix `hs`,
- *  written once at the end (German and French have one; the others have none). */
+/** "kl. 14", "um 14 Uhr", "à 03–04 h", "at 13:00–14:00": the language's word (`at`, none in Czech), the hour (or the range h–h2) and its
+ *  optional suffix `hs`, written once at the end — or after each hour when the table has `hh` (English). */
 function prisAt(L,h,h2){
-  return L.at+' '+prisHH(h)+(h2==null?'':'–'+prisHH(h2))+(L.hs||'');
+  var s=L.hs||'',e=L.hh?s:'';
+  return (L.at?L.at+' ':'')+prisHH(h)+e+(h2==null?'':'–'+prisHH(h2)+e)+(L.hh?'':s);
 }
 function prisEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function prisCap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
@@ -1378,7 +1481,8 @@ function prisTier(p,ref){
   return pct<=33?0:pct<=66?1:2;
 }
 
-/** What differs between a Danish screen and a zone's: the language table, the unit,
+/** What differs between a Danish screen and a zone's: the language table (the page's own, `o.pg`, with its overrides — else the
+ *  zone's language), the unit (the page's own `sub` too),
  *  the decimals (about three significant figures of the largest price, as øre and
  *  snt run from 5 to 300) and the axis grain `sc` — a power of ten that scales the
  *  axis rule below. Danish is kr/kWh with two decimals and grain 1. */
@@ -1386,7 +1490,7 @@ function prisDec(mx){return mx>=100?0:mx>=10?1:2;}
 function prisCtx(o,all){
   var z=o.zone?ZONES[o.zone]:null,mx=0,i,h,v;
   if(z)for(i=0;i<all.length;i++)for(h=0;h<24;h++){v=all[i].ps[h];if(v!=null&&Math.abs(v)>mx)mx=Math.abs(v);}
-  return {z:!!z,L:PRIS_I18N[z?z.lang:'da'],u:z?z.sub:'kr',d:z?prisDec(mx):2,
+  return {z:!!z,L:z?(o.pg?prisPageL(o.pg):PRIS_I18N[z.lang]):PRIS_I18N.da,u:z?prisSub(o.pg,o.zone):'kr',d:z?prisDec(mx):2,
     sc:z&&mx>0?Math.pow(10,Math.floor(Math.log(mx)/Math.LN10)):1};
 }
 
@@ -1437,7 +1541,7 @@ function prisSentence(all,nowHour,nowP,C){
   }
   var best=prisExtremes(win).lo;
   if(best&&best.p<nowP)
-    return C.L.cheaper+' '+prisWhen(best,all,C)+' '+prisAt(C.L,best.h)+' — <b>'+prisNum(best.p,C.d)+' '+C.u+'</b>';
+    return C.L.cheaper+' '+prisWhen(best,all,C)+' '+prisAt(C.L,best.h)+' — <b>'+prisNum(best.p,C.d,C.L)+' '+C.u+'</b>';
   // An actual-prices page that has only today (tomorrow is not published yet) cannot say "the next 24 hours".
   if(C.act&&!best)return '';
   return C.act&&all.length<2?C.L.cheapRest:C.L.cheapest24;
@@ -1451,7 +1555,7 @@ function prisTiles(all,nowHour,nDays,cls,C){
     for(var h=0;h<24;h++)if(d>0||h>=nowHour)up.push({d:d,h:h,p:all[d].ps[h]});
   var ex=prisExtremes(up),out='';
   var tile=function(k,s){
-    return '<div class="pris-tile"><div class="k">'+k+'</div><div class="v">'+prisNum(s.p,C.d)
+    return '<div class="pris-tile"><div class="k">'+k+'</div><div class="v">'+prisNum(s.p,C.d,C.L)
       +' <small>'+C.u+' · '+prisAt(C.L,s.h)+'</small></div></div>';};
   if(ex.lo)out+=tile(prisCap(C.L.lo)+' '+prisWhen(ex.lo,all,C),ex.lo);
   if(ex.hi)out+=tile(prisCap(C.L.hi)+' '+(ex.hi.d===0&&ex.hi.h>=17?C.L.evening:prisWhen(ex.hi,all,C)),ex.hi);
@@ -1552,7 +1656,7 @@ function prisChart(rows,nDays,o){
   for(i=0;i<ax.ticks.length;i++){
     var top=(100-y(ax.ticks[i])).toFixed(2);
     grid+='<span class="pris-gl" style="top:'+top+'%"></span>';
-    yl+='<span style="top:'+top+'%">'+prisNum(ax.ticks[i],ax.step%1?1:0)+'</span>';
+    yl+='<span style="top:'+top+'%">'+prisNum(ax.ticks[i],ax.step%1?1:0,L)+'</span>';
   }
   var cols='',seps='',fcAt=-1;
   for(var s=0;s<n;s++){
@@ -1563,7 +1667,7 @@ function prisChart(rows,nDays,o){
     var base=y(Math.min(p,0)),ht=Math.abs(p)/span*100,dt=prisDate(r.date,L);
     var dn=Math.floor(a/24);
     var tip=(dn===0?prisCap(L.today):dn===1?prisCap(L.tomorrow):dt.ws+' '+dt.d+L.dot+' '+dt.m)
-      +' '+prisAt(L,h)+' · '+prisNum(p,C.d)+' '+C.u+'/kWh';
+      +' '+prisAt(L,h)+' · '+prisNum(p,C.d,L)+' '+C.u+'/kWh';
     cols+='<span class="pc'+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
       +'" style="bottom:'+base.toFixed(1)+'%;height:'+ht.toFixed(1)+'%"></i>'
       +(a===o.nowSlot?'<b class="pd" style="bottom:calc('+(base+ht).toFixed(1)+'% + 3px)"></b>':'')+'</span>';
@@ -1589,8 +1693,8 @@ function prisChart(rows,nDays,o){
   }
   var ex=prisExtremes(prisFlat(rows).slice(st,st+n));
   var at=function(s){return ' '+C.u+'/kWh '+prisAt(L,s.h);};
-  var aria=o.title+': '+(ex.lo?L.lo+' '+prisNum(ex.lo.p,C.d)+at(ex.lo)+', ':'')
-    +(ex.hi?L.hi+' '+prisNum(ex.hi.p,C.d)+at(ex.hi)+'.':'');
+  var aria=o.title+': '+(ex.lo?L.lo+' '+prisNum(ex.lo.p,C.d,L)+at(ex.lo)+', ':'')
+    +(ex.hi?L.hi+' '+prisNum(ex.hi.p,C.d,L)+at(ex.hi)+'.':'');
   return '<div class="pris-plotwrap"><span class="pris-unit">'+C.u+'/kWh</span><div class="pris-yl">'+yl+'</div>'
     +'<div class="pris-plot" role="img" tabindex="0" aria-label="'+prisEsc(aria)+'" data-n="'+n+'"'+(st?' data-st="'+st+'"':'')+'>'
     +grid+seps+'<div class="pris-cols">'+cols+'</div>'+fc+'<div class="pris-tip" role="status" hidden></div></div>'
@@ -1611,7 +1715,7 @@ function prisDayRows(all,C,cfg,wins){
   var row=function(i,d,lo,hi,loH,cls){
     var dt=prisDate(d.date,L),name=i===0?prisCap(L.today):i===1?prisCap(L.tomorrow):prisCap(dt.wd);
     return '<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+name+'<small>'+dt.d+L.dot+' '+dt.m+'</small></th>'
-      +'<td>'+prisNum(lo,C.d)+'–'+prisNum(hi,C.d)+'</td>'
+      +'<td>'+prisNum(lo,C.d,L)+'–'+prisNum(hi,C.d,L)+'</td>'
       +'<td>'+prisAt(L,loH,(loH+1)%24)+'</td>'
       +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?L.actual:L.fc)+'</td>'
       +(cfg.unc?'<td>'+prisUncertainty(i)+'</td>':'')+'</tr>';};
@@ -1738,7 +1842,7 @@ function prisHTML(days,todayStr,nowHour,o){
   var wd=today?prisDate(todayStr,L).wd:'';
   var hero='<section class="pris-hero" aria-label="'+L.now+(o.where?' — '+prisEsc(o.where):'')+'">'
     +'<p class="pris-label">'+L.now+' · '+(wd?'<span class="pris-wd">'+wd+' </span>':'')+prisAt(L,nowHour)+'</p>'
-    +'<p class="pris-price"><span class="pris-now">'+(nowP!=null?prisNum(nowP,C.d):'—')+'</span><span class="pris-u">'+C.u+'/kWh</span></p>'
+    +'<p class="pris-price"><span class="pris-now">'+(nowP!=null?prisNum(nowP,C.d,L):'—')+'</span><span class="pris-u">'+C.u+'/kWh</span></p>'
     +'<div class="pris-vrow">'
     +(nowP!=null?'<span class="pris-pill t'+verdict+'"><i></i>'+L.verdict[verdict]+'</span>':'')
     +(sentence?'<p class="pris-sent">'+sentence+'</p>':'<p class="pris-sent">'+(today?'':L.none)+'</p>')
@@ -1793,20 +1897,21 @@ function prisHref(k){
 }
 
 /** The country page's text block, for crawlers and for anyone who wants every zone at a glance:
- *  each zone's city and name with today's and tomorrow's average, then the basis and the model (an `act` page:
+ *  each zone's city and name with today's and tomorrow's average (on the zone's own clock: `nowHour` is Copenhagen's), then the basis and the model (an `act` page:
  *  the basis, the note that the data were changed, and the source with its licence — prisCredit()). */
-function prisZoneList(pg,raws,todayStr){
-  var C=PRIS_COUNTRIES[pg],L=PRIS_I18N[C.lang],rows='';
+function prisZoneList(pg,raws,todayStr,nowHour){
+  var C=PRIS_COUNTRIES[pg],L=prisPageL(pg),rows='';
   C.zones.forEach(function(k){
-    var z=ZONES[k],raw=raws[k],all=raw?prisDays(zoneToPrisDays(raw,raw.zoneInfo,todayStr),todayStr):[];
+    var z=ZONES[k],raw=raws[k],zn=prisZoneNow(k,todayStr,nowHour==null?12:nowHour),sub=prisSub(pg,k);
+    var all=raw?prisDays(zoneToPrisDays(raw,raw.zoneInfo,zn.date),zn.date):[];
     var v=[0,1].map(function(i){return all[i]?prisAvg(all[i].ps):null;});
     var mx=Math.max(Math.abs(v[0]||0),Math.abs(v[1]||0));
-    var part=function(w,x){return x==null?'':L.avg+' '+w+' '+prisNum(x,prisDec(mx))+' '+z.sub+'/kWh';};
-    rows+='<li><a href="'+prisHref(k)+'" data-zone="'+k+'"><b>'+z.city+'</b> ('+z.name+')</a>'
+    var part=function(w,x){return x==null?'':L.avg+' '+w+' '+prisNum(x,prisDec(mx),L)+' '+sub+'/kWh';};
+    rows+='<li><a href="'+prisHref(k)+'" data-zone="'+k+'"><b>'+prisCity(pg,k)+'</b> ('+z.name+')</a>'
       +(v[0]==null&&v[1]==null?'':': '+[part(L.today,v[0]),part(L.tomorrow,v[1])].filter(Boolean).join(', '))+'</li>';
   });
   return '<section class="zl" data-date="'+todayStr+'"><h2>'+L.zonesH+'</h2><ul>'+rows+'</ul>'
-    +'<p class="zl-n">'+L.cap+'. '+L.note+' '+(C.act?prisCredit():'<a href="https://huggingface.co/Elpriser/nordic-price-forecast" rel="noopener">'+L.model+'</a>')+'.</p></section>';
+    +'<p class="zl-n">'+L.cap+'. '+L.note+' '+(C.act?prisCredit(ZONES[C.def].src):'<a href="https://huggingface.co/Elpriser/nordic-price-forecast" rel="noopener">'+L.model+'</a>')+'.</p></section>';
 }
 
 /** /norden: one row per area in DKK/kWh excl. VAT and taxes — the price now, the average of
@@ -1832,6 +1937,38 @@ function prisNordenHTML(raws,todayStr,nowHour){
     +prisNum(dkk,2)+' kr pr. euro). De danske sider viser prisen inkl. moms, så tallene her er lavere.</p></div>';
 }
 // ═══ /Pris-skærmen ═══
+
+// ═══ The country pages as site pages ═══
+// Everything about a country page that lives outside the Pris block is read from its PRIS_COUNTRIES entry, so adding a
+// country is ONE new entry (docs/add-a-country.md): the SEO entry below (title, description, language, locale), the sitemap,
+// the data-page of the section (dataPageForHash), og:locale, the llms.txt bullet and the dev server's routes all follow from it.
+for (const [pg, C] of Object.entries(PRIS_COUNTRIES)) {
+  SEO_PAGES['/' + pg] = { title: C.title, description: C.desc, hash: '#' + pg, lang: C.lang, loc: C.loc, zonePage: pg };
+  SITEMAP_URLS.push('/' + pg);
+}
+
+/** The Danish names of the languages, to tell a country's second page from its first in llms.txt. */
+const LLMS_LANG = { nl: 'hollandsk', fr: 'fransk', de: 'tysk', en: 'engelsk', cs: 'tjekkisk' };
+/** What llms.txt says about a country beyond its name (Danish), by cc: where the price zone is not the country. */
+const LLMS_NOTE = { de: '(DE-LU, fælles prisområde med Luxembourg)', it: '(kun prisområdet Nord)', ch: '(priserne er i euro, ikke franc)', ie: '(prisområdet SEM: Irland og Nordirland)' };
+/** The bullet of llms.txt for the pages of actual day-ahead prices, written from PRIS_COUNTRIES so a new country is listed by being added. */
+function llmsEuropeBullet() {
+  const act = Object.entries(PRIS_COUNTRIES).filter(([, C]) => C.act);
+  const byCc = new Map();
+  for (const [pg, C] of act) { if (!byCc.has(C.cc)) byCc.set(C.cc, []); byCc.get(C.cc).push([pg, C]); }
+  const link = (pg, t) => `[${t}](https://elpriser.org/${pg})`;
+  const list = [...byCc.values()].map(pages => {
+    const [pg0, C0] = pages[0];
+    return link(pg0, C0.da) + (LLMS_NOTE[C0.cc] ? ' ' + LLMS_NOTE[C0.cc] : '') + (pages.length > 1 ? ' (' + pages.map(([pg, C], i) => (i ? link(pg, LLMS_LANG[C.lang] || C.lang) : (LLMS_LANG[C.lang] || C.lang))).join(', ') + ')' : '');
+  });
+  const src = new Set(act.map(([, C]) => ZONES[C.def].src));
+  const ec = act.filter(([, C]) => ZONES[C.def].src === 'ec').map(([, C]) => C.da).filter((d, i, a) => a.indexOf(d) === i);
+  const entsoe = act.filter(([, C]) => ZONES[C.def].src === 'entsoe').map(([, C]) => C.da);
+  const kilde = 'Kilde: Bundesnetzagentur | SMARD.de via Energy-Charts.info, licens CC BY 4.0'
+    + (src.has('entsoe') ? `; ${entsoe.join(' og ')}: ENTSO-E Transparency Platform` : '');
+  return `- [Elpriser i Europa](https://elpriser.org/de/strompreis): Spotpriser (day-ahead) i ${byCc.size} europæiske lande, time for time for i dag og i morgen på landets eget sprog. Kun faktiske børspriser — ingen prognose — uden moms, afgifter og nettariffer, så det er ikke, hvad en kunde betaler. ${kilde}; vi har ændret dataene (timegennemsnit af kvarterspriserne, for Polen desuden omregnet til grosze med Den Europæiske Centralbanks referencekurs): ${list.length > 1 ? list.slice(0, -1).join(', ') + ' og ' + list[list.length - 1] : list[0]}.`;
+}
+const fillLlms = txt => txt.replace('{{EUROPE_PAGES}}', () => llmsEuropeBullet());
 
 // Per-netselskab coverage prose for the SSR price-page intros. Deliberately
 // number-free (live numbers are injected separately) and hedged for the small
@@ -2228,7 +2365,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v80');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v81');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -2277,9 +2414,9 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v16';
-const CITY_SSR_VERSION = 'city-ssr-v12';
-const PROGNOSE_SSR_VERSION = 'prognose-ssr-v10';
+const ZONE_SSR_VERSION = 'zone-ssr-v17';
+const CITY_SSR_VERSION = 'city-ssr-v13';
+const PROGNOSE_SSR_VERSION = 'prognose-ssr-v11';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);
@@ -2308,14 +2445,6 @@ const HASH_TO_DATA_PAGE = {
   'prognose': 'prognose',
   'blog/elafgift-2028': 'blog-elafgift-2028',
   'blog/elafgift-og-spotpris': 'blog-elafgift-og-spotpris',
-  'no/strompris': 'zone',
-  'sv/elpris': 'zone',
-  'fi/sahkon-hinta': 'zone',
-  'nl/stroomprijs': 'zone',
-  'de/strompreis': 'zone',
-  'fr/prix-electricite': 'zone',
-  'pl/ceny-pradu': 'zone',
-  'it/prezzo-luce': 'zone',
   'norden': 'norden',
   'blog/hvornaar-er-stroemmen-billigst': 'blog-hvornaar-er-stroemmen-billigst',
   'blog/groennest-og-dyrest': 'blog-groennest-og-dyrest',
@@ -2324,6 +2453,7 @@ const HASH_TO_DATA_PAGE = {
 function dataPageForHash(hash) {
   const h = (hash || '').replace(/^#/, '');
   if (HASH_TO_DATA_PAGE[h]) return HASH_TO_DATA_PAGE[h];
+  if (prisIsPage(h)) return 'zone';   // every country page shares one section
   if (/^DK[12]\//.test(h)) return 'prices';
   if (/^elpris\//.test(h)) return 'city';
   return 'start';
@@ -2491,18 +2621,19 @@ async function renderSPA(context, pathname, meta, opts = {}) {
     keys.forEach((k, i) => { if (got[i]) raws[k] = got[i]; });
     const { todayDk, nowH } = danishClock();
     if (C) {
-      const L = PRIS_I18N[C.lang], raw = raws[C.def];
+      // The zone's own clock (Dublin is an hour behind Copenhagen): its days are its local days.
+      const L = prisPageL(pg), raw = raws[C.def], zn = prisZoneNow(C.def, todayDk, nowH);
       html = html.replace('id="zH1">&nbsp;<', `id="zH1">${L.h1}<`);
-      if (raw) html = html.replace('<!--SSR_PRIS-->', prisHTML(zoneToPrisDays(raw, raw.zoneInfo, todayDk), todayDk, nowH,
-        { zone: C.def, period: 2, cfg: prisCountryCfg(pg), key: C.def, where: `${ZONES[C.def].name} ${ZONES[C.def].city}` }));
-      html = html.replace('<!--SSR_ZONE_LIST-->', prisZoneList(pg, raws, todayDk));
+      if (raw) html = html.replace('<!--SSR_PRIS-->', prisHTML(zoneToPrisDays(raw, raw.zoneInfo, zn.date), zn.date, zn.hour,
+        { zone: C.def, pg, period: 2, cfg: prisCountryCfg(pg), key: C.def, where: `${ZONES[C.def].name} ${prisCity(pg, C.def)}` }));
+      html = html.replace('<!--SSR_ZONE_LIST-->', prisZoneList(pg, raws, todayDk, nowH));
       html = withCountryChrome(html, pg);
     } else {
       html = html.replace('<!--SSR_NORDEN-->', prisNordenHTML(raws, todayDk, nowH));
     }
     const page = { '@context': 'https://schema.org', '@type': 'WebPage', name: meta.title, description: meta.description,
       url: pageUrl, inLanguage: C ? C.lang : 'da', isPartOf: { '@type': 'WebSite', name: 'elpriser.org', url: 'https://elpriser.org' },
-      ...zoneLocation(pg || null, { ZONES, PRIS_COUNTRIES, CHROME_I18N, NORDEN_ZONES }) };
+      ...zoneLocation(pg || null, { ZONES, PRIS_COUNTRIES, CHROME_I18N, NORDEN_ZONES, prisCn }) };
     html = html.replace('</head>', `  <script type="application/ld+json">${JSON.stringify(page).replace(/</g, '\\u003c')}</script>\n</head>`);
     if (opts.done) opts.done.full = keys.every(k => raws[k]);
   }
@@ -2537,7 +2668,7 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   // spoken by screen readers) as Danish.
   if (meta.lang) {
     html = html.replace(/<html lang="[^"]*"/, `<html lang="${meta.lang}"`);
-    html = html.replace(/(<meta property="og:locale" content=")[^"]*"/, `$1${{ nb: 'nb_NO', sv: 'sv_SE', fi: 'fi_FI', nl: 'nl_NL', de: 'de_DE', fr: 'fr_FR', pl: 'pl_PL', it: 'it_IT' }[meta.lang]}"`);
+    html = html.replace(/(<meta property="og:locale" content=")[^"]*"/, `$1${meta.loc}"`);
     // No hreflang here: the pages are not translations of one another — NO1 and SE3 are
     // different markets with different prices — so a cluster would make /no/strompris "the
     // Norwegian version" of /sv/elpris. The base template's hreflang="da" is removed too:

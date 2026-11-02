@@ -18,6 +18,14 @@ const ROOT = __dirname;
 const INDEX  = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const STYLE  = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
 const ROUTES = fs.readFileSync(path.join(ROOT, 'functions', '[[path]].js'), 'utf8');
+// The tables of the Pris block (PRIS_COUNTRIES, ZONES, the two language tables), run out of index.html. Through JSON: a vm object has another realm's prototypes.
+const PRIS = (() => {
+  const vm = require('node:vm'), A = '// ═══ Pris-skærmen (Design A: ét svar) ═══', Z = '// ═══ /Pris-skærmen ═══';
+  const ctx = vm.createContext({ console, Date, Math });
+  vm.runInContext(INDEX.slice(INDEX.indexOf(A), INDEX.indexOf(Z)) + '\nglobalThis.out = { PRIS_COUNTRIES, ZONES, PRIS_I18N, CHROME_I18N, PRIS_PICK, NORDEN_ZONES };', ctx);
+  return JSON.parse(JSON.stringify(ctx.out));
+})();
+const PAGES = Object.keys(PRIS.PRIS_COUNTRIES), ACT_PAGES = PAGES.filter(p => PRIS.PRIS_COUNTRIES[p].act);
 const SERVER = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
 
 // The pages folded into others and where they now go: five blog posts (2026-10-17 cleanup) and the
@@ -477,8 +485,8 @@ test('foreign-area pages: one section with the Pris screen and a text block (the
     assert.ok(!SRV.includes(gone) && !INDEX.includes(gone), `${gone} is still in the code`);
   for (const [i, why] of [['id="zEyebrow"', 'the old eyebrow'], ['id="zTitle"', 'the old title']]) assert.ok(!INDEX.includes(i), why);
   // The page draws the canonical screen, spot only, from the adapter — and the server does the same.
-  assert.ok(/prisHTML\(zoneToPrisDays\(raw,raw\.zoneInfo,today\),today,hour,\s*\{zone:k,/.test(INDEX), 'the client does not draw the zone through prisHTML + the adapter');
-  assert.ok(/prisHTML\(zoneToPrisDays\(raw, raw\.zoneInfo, todayDk\), todayDk, nowH,\s*\{ zone: C\.def/.test(SRV), 'the server does not draw the zone through prisHTML + the adapter');
+  assert.ok(/prisHTML\(zoneToPrisDays\(raw,raw\.zoneInfo,zn\.date\),zn\.date,zn\.hour,\s*\{zone:k,/.test(INDEX), 'the client does not draw the zone through prisHTML + the adapter');
+  assert.ok(/prisHTML\(zoneToPrisDays\(raw, raw\.zoneInfo, zn\.date\), zn\.date, zn\.hour,\s*\{ zone: C\.def/.test(SRV), 'the server does not draw the zone through prisHTML + the adapter');
   // The 10-day horizon never gets this far: the adapter keeps five days.
   assert.ok(/out\.length<5/.test(INDEX.slice(INDEX.indexOf('function zoneToPrisDays('), INDEX.indexOf('function prisDays('))), 'the adapter does not stop at five days');
 });
@@ -596,42 +604,57 @@ test('seo: the pages keep the words Search Console shows people typing', () => {
     assert.ok(field(k, 'title').length <= 62, `${k} title is ${field(k, 'title').length} characters; results cut it near 60`);
 });
 
-test('foreign-area pages: five SEO entries in the page\'s own language, with titles and descriptions that fit a result', () => {
+test('foreign-area pages: every country page (PRIS_COUNTRIES) has its SEO entry in its own language, with a title and description that fit a result — written once', () => {
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const entry = k => SRV.slice(SRV.indexOf(`'${k}': {`), SRV.indexOf('\n  },', SRV.indexOf(`'${k}': {`)));
   const field = (k, f) => (entry(k).match(new RegExp(`${f}: '([^']*)'`)) || [])[1] || '';
-  for (const [k, lang, lead] of [['/no/strompris', 'nb', /^Strømpris prognose Norge/], ['/sv/elpris', 'sv', /^Elpris prognos Sverige/], ['/fi/sahkon-hinta', 'fi', /^Sähkön hinta ennuste/], ['/nl/stroomprijs', 'nl', /^Stroomprijs/], ['/norden', '', /^Elpriser i Norden/],
-    ['/de/strompreis', 'de', /^Strompreis aktuell und morgen/], ['/fr/prix-electricite', 'fr', /^Prix de l’électricité aujourd’hui et demain/], ['/pl/ceny-pradu', 'pl', /^Cena prądu dziś i jutro/], ['/it/prezzo-luce', 'it', /^Prezzo dell’energia elettrica oggi e domani – Italia del Nord/]]) {
-    assert.ok(lead.test(field(k, 'title')), `${k} title`);
-    assert.ok(field(k, 'title').length <= 62, `${k} title is ${field(k, 'title').length} characters`);
-    assert.ok(field(k, 'description').length >= 80 && field(k, 'description').length <= 155, `${k} description is ${field(k, 'description').length} characters`);
-    assert.equal(field(k, 'lang'), lang, `${k} lang`);
-    assert.ok(new RegExp(`'${k.slice(1)}': '(zone|norden)'`).test(SRV), `${k} has no data-page`);
-    assert.ok(INDEX.includes(`'${k}':'${k.slice(1)}'`), `PATH_ROUTES lacks ${k}`);
+  // /norden is a hand-written entry; the country pages are generated from the table, so none can be missing or differ from it.
+  assert.ok(/for \(const \[pg, C\] of Object\.entries\(PRIS_COUNTRIES\)\) \{\s*SEO_PAGES\['\/' \+ pg\] = \{ title: C\.title, description: C\.desc, hash: '#' \+ pg, lang: C\.lang, loc: C\.loc, zonePage: pg \};\s*SITEMAP_URLS\.push\('\/' \+ pg\);\s*\}/.test(SRV), 'the SEO entries and the sitemap are not generated from PRIS_COUNTRIES');
+  assert.ok(/'\/norden': \{/.test(SRV) && /^Elpriser i Norden/.test(field('/norden', 'title')) && field('/norden', 'title').length <= 62 && field('/norden', 'description').length >= 80 && field('/norden', 'description').length <= 155, '/norden entry');
+  for (const k of ['no/strompris', 'sv/elpris', 'fi/sahkon-hinta', 'nl/stroomprijs', 'de/strompreis', 'fr/prix-electricite', 'pl/ceny-pradu', 'it/prezzo-luce'])
+    assert.ok(!SRV.includes(`'/${k}': {`), `/${k} is written out by hand in SEO_PAGES again`);
+  // The leads the existing pages are known by (Search Console), and the shape every page's text must have.
+  const LEAD = { 'no/strompris': /^Strømpris prognose Norge/, 'sv/elpris': /^Elpris prognos Sverige/, 'fi/sahkon-hinta': /^Sähkön hinta ennuste/, 'nl/stroomprijs': /^Stroomprijs/,
+    'de/strompreis': /^Strompreis aktuell und morgen/, 'fr/prix-electricite': /^Prix de l’électricité aujourd’hui et demain/, 'pl/ceny-pradu': /^Cena prądu dziś i jutro/, 'it/prezzo-luce': /^Prezzo dell’energia elettrica oggi e domani – Italia del Nord/,
+    'at/strompreis': /^Strompreis aktuell und morgen/, 'ch/strompreis': /^Strompreis aktuell und morgen/, 'be/stroomprijs': /^Stroomprijs vandaag en morgen/, 'be/prix-electricite': /^Prix de l’électricité aujourd’hui et demain/, 'ie/electricity-price': /^Electricity price today and tomorrow/ };
+  const titles = new Set();
+  for (const pg of PAGES) {
+    const C = PRIS.PRIS_COUNTRIES[pg];
+    assert.ok(/^[a-z]{2}\/[a-z-]+$/.test(pg), `${pg} is not a <cc>/<slug> path`);
+    if (LEAD[pg]) assert.ok(LEAD[pg].test(C.title), `${pg} title`);
+    assert.ok(C.title.length >= 20 && C.title.length <= 62, `${pg} title is ${C.title.length} characters`);
+    assert.ok(C.desc.length >= 80 && C.desc.length <= 155, `${pg} description is ${C.desc.length} characters`);
+    assert.ok(!titles.has(C.title), `${pg} title is another page's`); titles.add(C.title);
+    assert.ok(C.lang in PRIS.PRIS_I18N && C.lang in PRIS.CHROME_I18N, `${pg} lang ${C.lang} has no language table`);
+    assert.ok(new RegExp(`^${C.lang}_[A-Z]{2}$`).test(C.loc), `${pg} og:locale ${C.loc} does not belong to ${C.lang}`);
+    assert.ok(/^Q\d+$/.test(C.qid) && C.name && C.da && C.cc, `${pg} lacks qid, name, da or cc`);
+    assert.ok(C.tx && C.tx.h1 && C.tx.zonesH && C.tx.note, `${pg} lacks its own h1, zonesH or note (tx)`);
     // 2 and 5 døgn only: none of the pages names the feed's longer horizon.
-    assert.ok(!/\b10 (døgn|dager|dygn|vrk|vuorokautta)/i.test(entry(k)), `${k} names a 10-day horizon`);
-    // The five EU pages show settled prices only: nothing in the entry may promise a forecast, and the source is named.
-    if (/^\/(de|fr|pl|it)\//.test(k)) {
-      assert.ok(!/prognos|vorhersage|prévision|previsi|prognoz|prediction|forecast/i.test(entry(k)), `${k} mentions a forecast`);
-      assert.ok(/Bundesnetzagentur \| SMARD\.de/.test(field(k, 'description')) && !/ENTSO/i.test(entry(k)), `${k} description does not name its source (Bundesnetzagentur | SMARD.de), or names ENTSO-E`);
+    assert.ok(!/\b10 (døgn|dager|dygn|vrk|vuorokautta|days)/i.test(JSON.stringify(C)), `${pg} names a 10-day horizon`);
+    // The EU price pages show settled prices only: nothing may promise a forecast, and the source is named.
+    if (C.act) {
+      const src = PRIS.ZONES[C.def].src, all = C.title + C.desc + JSON.stringify(C.tx);
+      assert.ok(!/prognos|vorhersage|prévision|previsi|prognoz|prediction|forecast|predikc|předpově/i.test(all), `${pg} mentions a forecast`);
+      assert.ok(src === 'ec' ? /Bundesnetzagentur \| SMARD\.de/.test(C.desc) && !/ENTSO/i.test(all) : src === 'entsoe' ? /ENTSO-E/.test(C.desc) && !/SMARD/i.test(all) : false, `${pg} description does not name its source (ZONES.${C.def}.src is ${src})`);
     }
   }
 });
 
-test('foreign-area pages: ONE path table; the first spelling (/norge, /sverige, /finland) is in no link, sitemap entry or route map', () => {
+test('foreign-area pages: ONE path table (PRIS_COUNTRIES); every route table reads it; the first spelling (/norge, /sverige, /finland) is in no link, sitemap entry or route map', () => {
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
-  const table = Object.fromEntries([...INDEX.slice(INDEX.indexOf('var PRIS_COUNTRIES={'), INDEX.indexOf('};', INDEX.indexOf('var PRIS_COUNTRIES={')))
-    .matchAll(/'([a-z]{2}\/[a-z-]+)':\{lang:'(\w+)'/g)].map(m => [m[1], m[2]]));
-  assert.deepEqual(table, { 'no/strompris': 'nb', 'sv/elpris': 'sv', 'fi/sahkon-hinta': 'fi', 'nl/stroomprijs': 'nl', 'de/strompreis': 'de', 'fr/prix-electricite': 'fr', 'pl/ceny-pradu': 'pl', 'it/prezzo-luce': 'it' }, 'PRIS_COUNTRIES is the table of paths and languages');
+  const table = Object.fromEntries(PAGES.map(p => [p, PRIS.PRIS_COUNTRIES[p].lang]));
+  for (const [p, l] of Object.entries({ 'no/strompris': 'nb', 'sv/elpris': 'sv', 'fi/sahkon-hinta': 'fi', 'nl/stroomprijs': 'nl', 'de/strompreis': 'de', 'fr/prix-electricite': 'fr', 'pl/ceny-pradu': 'pl', 'it/prezzo-luce': 'it' }))
+    assert.equal(table[p], l, `${p} is in PRIS_COUNTRIES with the language ${l}`);
+  assert.deepEqual(PAGES.slice(0, 8), ['no/strompris', 'sv/elpris', 'fi/sahkon-hinta', 'nl/stroomprijs', 'de/strompreis', 'fr/prix-electricite', 'pl/ceny-pradu', 'it/prezzo-luce'], 'the eight first pages keep their order (the footers list them in it)');
+  assert.equal(new Set(PAGES.map(p => PRIS.PRIS_COUNTRIES[p].cc + '/' + PRIS.PRIS_COUNTRIES[p].lang)).size, PAGES.length, 'two pages of one country in one language');
   const OLD = ['/norge', '/sverige', '/finland'];
-  for (const [p, lang] of Object.entries(table)) {
-    // every place that needs the path spells it as the table does
-    assert.ok(new RegExp(`'/${p}': \\{\\s*title:[^}]*hash: '#${p}',\\s*lang: '${lang}',\\s*zonePage: '${p}'`).test(SRV), `SEO_PAGES entry for /${p}`);
-    assert.ok(SRV.includes(`'${p}': 'zone'`), `HASH_TO_DATA_PAGE for ${p}`);
-    assert.ok(INDEX.includes(`'/${p}':'${p}'`), `PATH_ROUTES for /${p}`);
-    assert.ok(SERVER.includes(`'/${p}': '#${p}'`), `server.js SPA_ROUTES for /${p}`);
-    assert.ok(new RegExp(`SITEMAP_URLS = \\[[^\\]]*'/${p}'`).test(SRV), `sitemap lists /${p}`);
-    assert.ok(INDEX.includes(`h==='${p}'`), `the client router has /${p}`);
+  // Every place that needs a country page reads the table — nothing is spelled out per page.
+  assert.ok(INDEX.includes("if(prisIsPage(h)){openZonePage(h);document.title=PRIS_COUNTRIES[h].title;pv(PRIS_COUNTRIES[h].da,'/'+h);return;}"), 'the client router does not read PRIS_COUNTRIES');
+  assert.ok(/if\(prisIsPage\(p\.slice\(1\)\)\)return p\.slice\(1\);/.test(INDEX) && /prisIsPage\(path\.slice\(1\)\)/.test(INDEX) && /if\(prisIsPage\(h\)\)return 'zone';/.test(INDEX), 'the client\'s path → route and data-page mapping do not read PRIS_COUNTRIES');
+  assert.ok(/if \(prisIsPage\(h\)\) return 'zone';/.test(SRV), 'the server\'s data-page mapping does not read PRIS_COUNTRIES');
+  assert.ok(/for \(const pg of ctx\.pages\) SPA_ROUTES\['\/' \+ pg\] = '#' \+ pg;/.test(SERVER), 'server.js does not read its country routes from PRIS_COUNTRIES');
+  for (const p of PAGES) {
+    assert.ok(!INDEX.includes(`'/${p}':'${p}'`) && !INDEX.includes(`h==='${p}'`) && !SRV.includes(`'${p}': 'zone'`) && !SERVER.includes(`'/${p}': '#${p}'`), `${p} is spelled out in a route table (it is read from PRIS_COUNTRIES)`);
   }
   const urls = SRV.match(/SITEMAP_URLS\s*=\s*\[([\s\S]*?)\n\];/)[1];
   for (const o of OLD) {
@@ -659,7 +682,7 @@ test('country pages: ONE chrome builder (chromeHTML) feeds the server render and
   // The builder and its words are in the canonical Pris block (test-forecast-chart.mjs diffs the two copies).
   for (const src of [SRV, INDEX]) assert.ok(src.includes('var CHROME_I18N={') && src.includes('function chromeHTML(pg){'), 'CHROME_I18N / chromeHTML missing');
   // Server: only for a country page (inside the `if (C)` branch), after the zone list.
-  assert.ok(/prisZoneList\(pg, raws, todayDk\)\);\s*html = withCountryChrome\(html, pg\);/.test(SRV), 'the server does not localise the chrome of a country page');
+  assert.ok(/prisZoneList\(pg, raws, todayDk, nowH\)\);\s*html = withCountryChrome\(html, pg\);/.test(SRV), 'the server does not localise the chrome of a country page');
   assert.equal((SRV.match(/= withCountryChrome\(html/g) || []).length, 1, 'withCountryChrome is used once, for country pages only');
   // Browser: openZonePage localises, and nothing else does.
   assert.ok(/document\.documentElement\.lang=C\.lang;\s*localiseChrome\(pg\);/.test(INDEX) && (INDEX.match(/localiseChrome\(/g) || []).length === 2, 'the client localises in openZonePage only');
@@ -671,14 +694,9 @@ test('country pages: ONE chrome builder (chromeHTML) feeds the server render and
   assert.ok(!/<[a-z]/.test(tbl), 'CHROME_I18N holds markup');
   // The country pages' mobile chrome: no Danish bottom bar room, and no row of country links (the globe is the navigation).
   assert.ok(/\.xc body\{padding-bottom:0\}/.test(INDEX) && !/\.xc \.site-links/.test(INDEX), 'phone styles for html.xc');
-  // /nl/stroomprijs is wired everywhere a country page is.
-  assert.ok(SRV.includes("'nl/stroomprijs': 'zone'") && INDEX.includes("'/nl/stroomprijs':'nl/stroomprijs'") && SERVER.includes("'/nl/stroomprijs': '#nl/stroomprijs'") && INDEX.includes("h==='nl/stroomprijs'"), 'a route table lacks /nl/stroomprijs');
-  assert.ok(/nl: 'nl_NL'/.test(SRV), 'og:locale for nl');
-  // The four EU pages: wired in every route table, og:locale in the language's own country, and no hreflang is invented.
-  for (const [p, loc] of [['de/strompreis', 'de: \'de_DE\''], ['fr/prix-electricite', 'fr: \'fr_FR\''], ['pl/ceny-pradu', 'pl: \'pl_PL\''], ['it/prezzo-luce', 'it: \'it_IT\'']]) {
-    assert.ok(SRV.includes(`'${p}': 'zone'`) && INDEX.includes(`'/${p}':'${p}'`) && SERVER.includes(`'/${p}': '#${p}'`) && INDEX.includes(`h==='${p}'`), `a route table lacks /${p}`);
-    assert.ok(SRV.includes(loc), `og:locale ${loc}`);
-  }
+  // Every country page is wired the same way — from its PRIS_COUNTRIES entry (the next test pins that) — and og:locale comes from the entry (`loc`), not a table per language.
+  assert.ok(SRV.includes('`$1${meta.loc}"`') && !/nb: 'nb_NO'/.test(SRV), 'og:locale is not read from the page\'s entry');
+  for (const pg of PAGES) assert.ok(PRIS.PRIS_COUNTRIES[pg].loc.startsWith(PRIS.PRIS_COUNTRIES[pg].lang + '_'), `og:locale of ${pg}`);
 });
 
 test('EU price pages: actual prices only — one period, no forecast wording, the API zones, the licence attribution and the single source reader are wired as the tests below assume', () => {
@@ -687,40 +705,44 @@ test('EU price pages: actual prices only — one period, no forecast wording, th
   // One configuration drives them: PRIS_ACT has one period, and a single period draws no pill at all.
   assert.ok(/var PRIS_ACT=\{periods:\[2\],def:2,days:2,unc:false,act:true\};/.test(block), 'PRIS_ACT is not one period of two days');
   assert.ok(/var tabs=cfg\.periods\.length<2\?'':/.test(block), 'a one-period page still draws the period pill');
-  // The four pages and only they are `act`; the Nordic ones keep the screen they have.
-  const acts = [...block.matchAll(/'([a-z]{2}\/[a-z-]+)':\{lang:'\w+',cc:'\w+',zones:\[[^\]]*\],def:'[a-z-]+',act:1\}/g)].map(m => m[1]);
-  assert.deepEqual(acts, ['de/strompreis', 'fr/prix-electricite', 'pl/ceny-pradu', 'it/prezzo-luce']);
+  // The pages of actual prices (and only they) are `act`; the Nordic ones keep the screen they have.
+  const acts = ACT_PAGES;
+  assert.deepEqual(acts.slice(0, 4), ['de/strompreis', 'fr/prix-electricite', 'pl/ceny-pradu', 'it/prezzo-luce']);
+  assert.ok(['no/strompris', 'sv/elpris', 'fi/sahkon-hinta', 'nl/stroomprijs'].every(p => !acts.includes(p)), 'a Nordic forecast page is `act`');
   // Both runtimes draw the screen with the page's own configuration.
   assert.ok(/cfg:prisCountryCfg\(ZP\.page\)/.test(INDEX), 'the browser does not use the page\'s cfg');
   assert.ok(/cfg: prisCountryCfg\(pg\)/.test(ROUTES), 'the server does not use the page\'s cfg');
-  // No leftover of the removed Ireland / Dublin clock and of the extra Italian zones.
-  for (const gone of ['prisClockIn', 'shift:', 'it-cn', 'it-cs', 'it-cal', 'it-sic', 'it-sar', 'ie/electricity-price', 'en_IE', "L.hm", "L.dec"])
-    assert.ok(!INDEX.includes(gone) && !ROUTES.includes(gone) && !SERVER.includes(gone), `${gone} is still in the code (Ireland and Italy's other zones are out of wave 1)`);
+  // No leftover of the first Ireland attempt's own clock function and of the extra Italian zones (Energy-Charts: internal use only). Ireland itself is back,
+  // on ENTSO-E, with the clock of its zone (ZONES `shift`) and the English table's `dec` / `hh`.
+  for (const gone of ['prisClockIn', 'it-cn', 'it-cs', 'it-cal', 'it-sic', 'it-sar', "L.hm"])
+    assert.ok(!INDEX.includes(gone) && !ROUTES.includes(gone) && !SERVER.includes(gone), `${gone} is still in the code (Italy's other zones are out of wave 1)`);
   // /norden stays Nordic: it asks for its thirteen zones, never for "all of ZONES".
   assert.ok(/zoneRaws\(NORDEN_ZONES\)/.test(INDEX) && /C \? C\.zones : NORDEN_ZONES/.test(ROUTES) && !/Object\.keys\(ZONES\)/.test(INDEX + ROUTES), '/norden no longer fetches only its own zones');
   // The zones of the pages are the zones the API serves, in the keys the job writes.
   const apiZones = ['EU_ZONES_ENERGY_CHARTS', 'EU_ZONES_ENTSOE'].flatMap(n => (API.match(new RegExp(`const ${n} = \\[([^\\]]*)\\]`))[1].match(/'([a-z-]+)'/g) || []).map(x => x.replace(/'/g, '')));
-  const pageZones = [...block.matchAll(/zones:\[([^\]]*)\],def:'[a-z-]+',act:1/g)].flatMap(m => m[1].match(/'([a-z-]+)'/g).map(x => x.replace(/'/g, '')));
-  assert.deepEqual(pageZones, ['de', 'fr', 'pl', 'it-n'], 'the pages\' zones');
+  const pageZones = ACT_PAGES.flatMap(p => PRIS.PRIS_COUNTRIES[p].zones).filter((z, i, a) => a.indexOf(z) === i);
+  assert.deepEqual(pageZones.slice(0, 4), ['de', 'fr', 'pl', 'it-n'], 'the pages\' zones');
   assert.ok(pageZones.every(z => apiZones.includes(z)), 'a page asks for a zone /api/nordic does not serve');   // the API serves more zones than there are pages yet
-  for (const k of pageZones) assert.ok(new RegExp(`(^|[\\s,{])'?${k}'?:\\{name:'[^']+',city:'[^']+',lang:'(de|fr|pl|it)'`, 'm').test(block.slice(block.indexOf('var ZONES={'), block.indexOf('var NORDEN_ZONES'))), `ZONES lacks ${k}`);
+  // A zone's `src` is the job that writes it: Energy-Charts (CC BY 4.0, named in prisCredit) or ENTSO-E — the attribution on the page follows it.
+  const ec = (API.match(/const EU_ZONES_ENERGY_CHARTS = \[([^\]]*)\]/)[1].match(/'([a-z-]+)'/g) || []).map(x => x.replace(/'/g, ''));
+  for (const k of pageZones) {
+    const z = PRIS.ZONES[k];
+    assert.ok(z && z.name && z.city && z.cur && z.rate > 0 && z.sub && z.lang in PRIS.PRIS_I18N, `ZONES lacks a complete ${k}`);
+    assert.equal(z.src, ec.includes(k) ? 'ec' : 'entsoe', `ZONES.${k}.src is not the job that writes the zone`);
+  }
   // Poland converts at the ECB's PLN rate: the API asks the ECB file for it and sanity-checks it; the page's fallback is the API's.
   assert.ok(/PLN: get\('PLN'\)/.test(API) && /rates\.PLN > 3 && rates\.PLN < 6/.test(API), 'the API does not read and check the ECB PLN rate');
   assert.equal((API.match(/PLN: ([\d.]+),/) || [])[1], (INDEX.match(/pl:\{name:'PL',city:'Polska',lang:'pl',cur:'PLN',rate:([\d.]+),/) || [])[1], 'the page\'s PLN fallback differs from the API\'s');
-  // Sitemap and llms.txt: listed, below the Danish pages in priority; the text says "no forecast" and names the source and its licence.
-  for (const p of ['/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce']) {
-    assert.ok(ROUTES.includes(`'${p}'`) && new RegExp(`ZONE_ONLY = [^;]*${p.slice(1).replace('/', '\\\\/')}`).test(ROUTES), `${p} is not in the sitemap at foreign-page priority`);
-    assert.ok(ROUTES.includes(`https://elpriser.org${p})`), `llms.txt does not list ${p}`);
-  }
-  const bullet = ROUTES.slice(ROUTES.indexOf('- [Elpriser i Europa]'), ROUTES.indexOf('- [Automation]'));
-  assert.ok(/Kun faktiske børspriser — ingen prognose/.test(bullet) && /Bundesnetzagentur \| SMARD\.de via Energy-Charts\.info, licens CC BY 4\.0; vi har ændret dataene \(timegennemsnit/.test(bullet) && !/ENTSO|Irland|Ireland/.test(bullet), 'llms.txt does not say the EU pages are actual prices only, name the CC BY 4.0 source and say the data were changed');
+  // Sitemap and llms.txt: every page of the table is listed (generated), below the Danish pages in priority; the served text (test-zone-pages) says "no forecast" and names the sources.
+  assert.ok(/if \(p === '\/norden' \|\| prisIsPage\(p\.slice\(1\)\)\) return '0\.5';/.test(ROUTES), 'the country pages are not at foreign-page priority');
+  assert.ok(ROUTES.includes('{{EUROPE_PAGES}}') && /body: \(\) => fillLlms\(LLMS_TXT\)/.test(ROUTES) && /fillLlms\(LLMS_FULL_TXT\)/.test(ROUTES) && !/\[Elpriser i Europa\]\(https:\/\/elpriser\.org\/de\/strompreis\): Spotpriser \(day-ahead\) i Tyskland/.test(ROUTES), 'llms.txt\'s Europe bullet is not generated from the table');
   const apiLine = ROUTES.slice(ROUTES.indexOf('GET /api/nordic?zone=se3'), ROUTES.indexOf('GET /api/shelly/tariff'));
-  assert.ok(/four EU zones/.test(apiLine) && /CC BY 4\.0/.test(apiLine) && /a change of the data/.test(apiLine) && !/ENTSO/.test(apiLine), 'the /api/nordic line in llms.txt');
+  assert.ok(/Also 25 EU zones/.test(apiLine) && /CC BY 4\.0/.test(apiLine) && /a change of the data/.test(apiLine) && /ENTSO-E Transparency Platform/.test(apiLine), 'the /api/nordic line in llms.txt');
   // THE LICENCE (CC BY 4.0, "Bundesnetzagentur | SMARD.de", Energy-Charts.info as the API's source; changes must be indicated):
   // the credit and the changed-note exist for every EU language, in the footer builder and the text block, and nothing names ENTSO-E for them.
-  const credit = block.slice(block.indexOf('function prisCredit(){'), block.indexOf('\n}\n', block.indexOf('function prisCredit(){')));
+  const credit = block.slice(block.indexOf('function prisCredit(src){'), block.indexOf('\n}\n', block.indexOf('function prisCredit(src){')));
   assert.ok(credit.includes("lk('https://www.smard.de','Bundesnetzagentur | SMARD.de')") && credit.includes("lk('https://www.energy-charts.info','Energy-Charts.info')") && credit.includes("lk('https://creativecommons.org/licenses/by/4.0/','CC BY 4.0')"), 'prisCredit() is not the CC BY 4.0 attribution');
-  assert.ok(/PRIS_COUNTRIES\[pg\]\.act\?prisCredit\(\)\+' &mdash; '\+X\.chg/.test(block) && /C\.act\?prisCredit\(\)/.test(block), 'the footer and the text block do not both use prisCredit() and say the data were changed');
+  assert.ok(/C\.act\?prisCredit\(ZONES\[C\.def\]\.src\)\+' &mdash; '\+\(C\.tx\.chg\|\|X\.chg\)/.test(block) && /C\.act\?prisCredit\(ZONES\[C\.def\]\.src\)/.test(block), 'the footer and the text block do not both use prisCredit() and say the data were changed');
   const tableEU = INDEX.slice(INDEX.indexOf("  de:{wd:['Sonntag'"), INDEX.indexOf('var NORDEN_ZONES') < 0 ? undefined : INDEX.indexOf("/** The price areas: the single source"));
   assert.ok(!/ENTSO/i.test(tableEU), 'a PRIS_I18N table of the EU languages names ENTSO-E');
   // The source is read in ONE place (the Spark job); the site only names it. A swap of the source changes build_eu_prices.py / energy_charts_parse.py,
@@ -766,7 +788,7 @@ test('structured data: each block is served only on the page it describes', () =
   for (const m of INDEX.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) JSON.parse(m[1]);
   const SRV = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   assert.ok(/html\.replace\('<\/head>', `  \$\{breadcrumbLd\(pathname, meta, opts\)\}/.test(SRV), 'sub-pages get no breadcrumbs');
-  assert.ok(/body: async context => LLMS_FULL_TXT \+ await llmsNowSection\(context\)/.test(SRV), 'llms-full.txt carries no dated figures');
+  assert.ok(/body: async context => fillLlms\(LLMS_FULL_TXT\) \+ await llmsNowSection\(context\)/.test(SRV), 'llms-full.txt carries no dated figures');
 });
 
 test('indexnow: the served key and the submitting script agree', () => {
@@ -998,7 +1020,7 @@ test('sitemap: foreign-zone pages rank below the Danish ones in priority', () =>
   const ROUTES_SRC = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
   const fn = ROUTES_SRC.match(/const priorityFor = p => \{([\s\S]*?)\n  \};/);
   assert.ok(fn, 'priorityFor not found');
-  const zone = fn[1].match(/ZONE_ONLY\.test\(p\)\) return '([\d.]+)'/);
+  const zone = fn[1].match(/prisIsPage\(p\.slice\(1\)\)\) return '([\d.]+)'/);
   const net = fn[1].match(/dk\[12\].*?return '([\d.]+)'/);
   assert.ok(zone && net, 'zone or per-net priority missing');
   assert.ok(parseFloat(zone[1]) < parseFloat(net[1]),
@@ -1617,7 +1639,7 @@ test('footer: ONE link to the explainer, labelled "Forstå din elpris" in Viden 
   for (const gone of Object.keys(LEGACY)) assert.ok(!FOOTER.includes(`href="${gone}"`), `footer still links ${gone}`);
 });
 
-test('footer: all 31 net companies and the four foreign-area pages sit inside ONE collapsed details, as real links', () => {
+test('footer: all 31 net companies and the foreign-area pages (one per country) sit inside ONE collapsed details, as real links', () => {
   const m = FOOTER.match(/<details class="sf-all">\s*<summary>[^]*?Alle netselskaber og prisområder[^]*?<\/summary>([^]*?)<\/details>/);
   assert.ok(m, 'details "Alle netselskaber og prisområder"');
   assert.ok(!/<details[^>]*\bopen\b/.test(m[0]), 'collapsed by default');
@@ -1629,13 +1651,19 @@ test('footer: all 31 net companies and the four foreign-area pages sit inside ON
   }
   // The ten pilot cities sit between the nets and the foreign areas, in the order of the table (the table is the pilot's list).
   assert.deepEqual(inside.slice(31, 41), CITY_TABLE.map(c => '/elpris/' + c.slug), 'Byer: the ten cities, in the table\'s order, after the 31 nets');
-  assert.deepEqual(inside.slice(41), ['/norden', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce'], 'Andre prisområder: Norden, Norge, Sverige, Finland, Nederland, Tyskland, Frankrig, Polen, Italien — in that order, after the cities');
-  assert.equal(inside.length, 50, 'nothing else in there');
+  assert.deepEqual(inside.slice(41), ['/norden', ...PRIS.PRIS_PICK.slice(1).map(c => '/' + PAGES.find(p => PRIS.PRIS_COUNTRIES[p].cc === c[0]))], 'Andre prisområder: Norden, then each country of PRIS_COUNTRIES in its order (Norge, Sverige, Finland, Nederland, Tyskland, Frankrig, Polen, Italien, …), after the cities');
+  assert.equal(inside.length, 42 + PRIS.PRIS_PICK.length - 1, 'nothing else in there');
   assert.equal(new Set(inside).size, inside.length, 'no duplicate href in the details');
   for (const h of ['Vestdanmark (DK1)', 'Østdanmark (DK2)', 'Byer', 'Andre prisområder']) assert.ok(m[1].includes(h), `heading ${h}`);
   // Nothing outside the details links a net page: the visible footer stays short.
   const outside = footerHrefs(FOOTER.replace(m[0], ''));
-  assert.deepEqual(outside.filter(h => /^\/(dk[12]\/|elpris\/|norden|no\/strompris|sv\/elpris|fi\/sahkon-hinta|nl\/stroomprijs|de\/strompreis|fr\/prix-electricite|pl\/ceny-pradu|it\/prezzo-luce)/.test(h)), [], 'net pages, city pages and foreign-area pages only behind the disclosure');
+  assert.deepEqual(outside.filter(h => /^\/(dk[12]\/|elpris\/|norden)/.test(h) || PAGES.includes(h.slice(1))), [], 'net pages, city pages and foreign-area pages only behind the disclosure');
+});
+
+test('Danish pages: the footer chips and the place dialog list the countries of PRIS_COUNTRIES — derived, never hand-edited (scripts/sync-danish-chrome.mjs; the Pris block copy: scripts/sync-pris-block.mjs)', () => {
+  const run = script => { try { require('node:child_process').execFileSync(process.execPath, [path.join(ROOT, 'scripts', script), '--check'], { stdio: 'pipe' }); } catch (e) { assert.fail(String(e.stderr || e.message).trim()); } };
+  run('sync-danish-chrome.mjs');
+  run('sync-pris-block.mjs');
 });
 
 test('footer: both app stores are linked, rel=noopener, with the Danish button wording', () => {
@@ -1659,8 +1687,9 @@ test('footer: no link list is repeated, and the credits line keeps both external
   // 38 since /download joined the Elpriser group ("Hent appen"); the two store buttons below it still point straight at the stores.
   // 48 since the ten city pages joined the disclosure ("Byer"); 49 since Dinel became the 15th net company; 50 with Ravdex.
   // 51 with Nederland (/nl/stroomprijs) among the other price areas.
-  // 55 with Tyskland, Frankrig, Polen and Italien (the EU price pages).
-  assert.equal(hrefs.length, 70, `footer has ${hrefs.length} links: 18 in the groups and the apps, 31 nets, 10 cities, Norden and eight countries, and the two credits`);
+  // 55 with Tyskland, Frankrig, Polen and Italien (the EU price pages); one more for every country added to PRIS_COUNTRIES (derived: sync-danish-chrome.mjs).
+  const nCountries = PRIS.PRIS_PICK.length - 1;
+  assert.equal(hrefs.length, 62 + nCountries, `footer has ${hrefs.length} links: 18 in the groups and the apps, 31 nets, 10 cities, Norden and ${nCountries} countries, and the two credits`);
   const legal = FOOTER.match(/<p class="sf-legal">([^]*?)<\/p>/);
   assert.ok(legal, 'credits line');
   assert.ok(/&copy; Elpriser\.org &mdash; Data fra <a href="https:\/\/www\.energidataservice\.dk"[^>]*rel="noopener">Energi Data Service<\/a> \(Energinet\)\. Åbne datasæt på <a href="https:\/\/huggingface\.co\/Elpriser"[^>]*rel="noopener">Hugging Face<\/a>\./.test(legal[1]), 'credits wording and links');
@@ -1701,18 +1730,21 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // v74: the footer and the net dialog list Nederland (/nl/stroomprijs); the country pages swap the chrome for their own (CHROME_I18N).
   // v75: the footer and the net dialog list Tyskland, Frankrig, Polen and Italien.
   // v77: one place chip and one place dialog (Land, then net or price zone) replace the globe, the net chip's dialog and the country picker.
-  assert.ok(/homepage-ssr-v80/.test(ROUTES), 'homepage-ssr-v80');
+  // v81: the footer and the place dialog list the countries of PRIS_COUNTRIES (Østrig, Schweiz, Belgien, Irland joined).
+  assert.ok(/homepage-ssr-v81/.test(ROUTES), 'homepage-ssr-v81');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
   // (v8: the shared Pris block changed with PRIS_FC.)
   // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
   // (v10: the four EU price pages joined, the Pris block gained PRIS_ACT and the footer the four links.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v16'/.test(ROUTES), 'zone-ssr-v16');
+  // (v17: per-country i18n (prisPageL), Austria, Switzerland, Belgium and Ireland joined.)
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v17'/.test(ROUTES), 'zone-ssr-v17');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v12'/.test(ROUTES), 'city-ssr-v12');
+  // (v13: the four new country links.)
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v13'/.test(ROUTES), 'city-ssr-v13');
   // /prognose shares the header and footer too (v4: the four EU country links).
-  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v10'/.test(ROUTES), 'prognose-ssr-v10');
+  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v11'/.test(ROUTES), 'prognose-ssr-v11');
 });
 
 

@@ -247,38 +247,51 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   ok(/<p class="pris-cap">Spotpris inkl\. moms<\/p>/.test(pris(netFeed, D0, 21, { ...o, view: 'spot' })), 'spotpris uden charges: ren billedtekst');
 
 // ── One screen for every price area: language table, adapter, zone rendering ─────────────
-  const L = pctx.PRIS_I18N, langs = ['da', 'nb', 'sv', 'fi', 'nl', 'de', 'fr', 'pl', 'it'], ACTL = ['de', 'fr', 'pl', 'it'];
-  ok(Object.keys(L).join() === langs.join(), 'PRIS_I18N har præcis da, nb, sv, fi, nl, de, fr, pl og it', Object.keys(L).join());
-  // The four EU languages carry three keys more (act1, act2: the card title for one and two days; cheapRest) and may carry the
-  // optional hs (a suffix after the hour or range: " Uhr", " h").
-  const OPT = ['hs'], ACTKEYS = ['act1', 'act2', 'cheapRest'];
-  // Every key in every language, with the same shape and no empty text.
+  const L = pctx.PRIS_I18N, langs = Object.keys(L), CT = pctx.PRIS_COUNTRIES;
+  // Languages used by a page of actual prices (`act`), and by a forecast page (the Nordic ones): nl serves both (NL forecast, BE actual).
+  const ACTL = [...new Set(Object.values(CT).filter(c => c.act).map(c => c.lang))], NONACT = ['da', ...new Set(Object.values(CT).filter(c => !c.act).map(c => c.lang))];
+  const ACT_ONLY = ACTL.filter(l => !NONACT.includes(l));
+  ok(langs.slice(0, 9).join() === 'da,nb,sv,fi,nl,de,fr,pl,it' && langs.every(l => l === 'da' || l in pctx.CHROME_I18N) && Object.keys(pctx.CHROME_I18N).every(l => l in L), 'PRIS_I18N har da, nb, sv, fi, nl, de, fr, pl og it først, og hvert andet sprog har også en CHROME_I18N-tabel (og omvendt)', langs.join());
+  // The languages of the actual-price pages carry three keys more (act1, act2: the card title for one and two days; cheapRest); `model` (the link text of the
+  // forecast pages' model note) only the languages of a forecast page. Optional: hs (a suffix after the hour or range: " Uhr", " h", ":00"), hh (the suffix after EACH
+  // hour: English), dec (the decimal mark when it is not a comma: English). h1, zonesH and note are NOT in a language table: they belong to a country page (tx).
+  const OPT = ['hs', 'hh', 'dec'], ACTKEYS = ['act1', 'act2', 'cheapRest'];
   const shape = v => Array.isArray(v) ? `array${v.length}` : typeof v;
-  const keys = Object.keys(L.da);
+  const keys = Object.keys(L.da).filter(k => k !== 'model');
   for (const lang of langs) {
-    const have = Object.keys(L[lang]).filter(k => !OPT.includes(k) && !(ACTL.includes(lang) && ACTKEYS.includes(k)));
+    const have = Object.keys(L[lang]).filter(k => !OPT.includes(k) && !(ACTL.includes(lang) && ACTKEYS.includes(k)) && k !== 'model');
     ok(have.length === keys.length && keys.every(k => k in L[lang]), `${lang}: samme nøgler som dansk`, keys.filter(k => !(k in L[lang])).concat(have.filter(k => !keys.includes(k))).join(','));
-    ok(ACTL.includes(lang) ? ACTKEYS.every(k => typeof L[lang][k] === 'string' && L[lang][k].length > 2) : ACTKEYS.every(k => !(k in L[lang])), `${lang}: act-nøglerne findes på de fire EU-sprog og kun dér`);
-    ok(OPT.every(k => !(k in L[lang]) || typeof L[lang][k] === 'string') && (lang !== 'de' || L.de.hs === ' Uhr') && (lang !== 'fr' || L.fr.hs === ' h') && (!['da', 'nb', 'sv', 'fi', 'nl', 'pl', 'it'].includes(lang) || !('hs' in L[lang])) && !('dec' in L[lang]) && !('hm' in L[lang]), `${lang}: hs kun på tysk og fransk (ingen engelsk decimalpunktum eller :00 mere)`);
+    ok(ACTL.includes(lang) ? ACTKEYS.every(k => typeof L[lang][k] === 'string' && L[lang][k].length > 2) : ACTKEYS.every(k => !(k in L[lang])), `${lang}: act-nøglerne findes på sprog med en act-side og kun dér`);
+    ok(NONACT.includes(lang) ? typeof L[lang].model === 'string' && L[lang].model.length > 5 : !('model' in L[lang]), `${lang}: model-teksten findes kun på sprog med en prognoseside`);
+    ok(!['h1', 'zonesH', 'note'].some(k => k in L[lang]), `${lang}: h1, zonesH og note står ikke i sprogtabellen (de hører til landesiden)`);
+    ok(OPT.every(k => !(k in L[lang]) || typeof L[lang][k] === 'string' || k === 'hh') && (lang !== 'de' || L.de.hs === ' Uhr') && (lang !== 'fr' || L.fr.hs === ' h') && (lang !== 'en' || (L.en.hs === ':00' && L.en.hh === 1 && L.en.dec === '.')) && (!['da', 'nb', 'sv', 'fi', 'nl', 'pl', 'it'].includes(lang) || !['hs', 'hh', 'dec'].some(k => k in L[lang])), `${lang}: hs, hh og dec kun hvor sproget skriver timer og tal sådan (tysk, fransk, engelsk)`);
     ok(keys.every(k => shape(L[lang][k]) === shape(L.da[k])), `${lang}: samme form på hver nøgle`, keys.filter(k => shape(L[lang][k]) !== shape(L.da[k])).join(','));
     const flat = keys.flatMap(k => [].concat(L[lang][k]));
-    ok(flat.every(x => typeof x === 'string') && flat.filter(x => x === '').length === (['sv', 'nl', 'fr', 'pl', 'it'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl og it)`);
+    const empty = Object.entries(L[lang]).filter(([k, v]) => v === '').map(([k]) => k);
+    ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (['sv', 'nl', 'fr', 'pl', 'it', 'en'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl, it og en; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
     ok(L[lang].wd.length === 7 && L[lang].ws.length === 7 && L[lang].mon.length === 12 && L[lang].verdict.length === 3 && L[lang].tier.length === 3, `${lang}: 7 ugedage, 12 måneder, 3 niveauer`);
   }
   ok(langs.every(l => !/\b10\b/.test(JSON.stringify(L[l]))), 'ingen sprog nævner 10 døgn');
-  // The four EU languages: no Danish words, no forecast word (every day on those pages is settled), and words of their own.
+  // The languages that serve actual-price pages only: no Danish words, no forecast word (every day on those pages is settled), and words of their own.
   const DANISH = /\b(lige nu|døgn|børspris|billig|dyr|næste|prognose|spotpris|uden moms|afgifter|nettarif|i dag|i morgen|dag for dag|spænd|kl\.)\b/i;
-  const FCWORD = { de: /prognos|vorhersage|vorschau/i, fr: /prévision|prevision|prédi/i, pl: /prognoz|przewid/i, it: /previsi|prognosi|stima/i };
-  for (const l of ACTL) {
+  const FCWORD = { de: /prognos|vorhersage|vorschau/i, fr: /prévision|prevision|prédi/i, pl: /prognoz|przewid/i, it: /previsi|prognosi|stima/i, en: /forecast|predict|outlook/i, cs: /předpově|prognóz|odhad/i };
+  const CAPWORD = { de: [/ohne/, /MwSt/], fr: [/hors/, /TVA/], pl: [/bez/, /VAT/], it: [/al netto/, /IVA/], en: [/excluding/, /VAT/], cs: [/bez/, /DPH/], nl: [/zonder/, /btw/] };
+  const NOTEWORD = { de: [/berechnet/, /verändert/], fr: [/calculées/, /modifiées/], pl: [/przeliczone/, /zmienione/], it: [/calcolate/, /modificati/], en: [/calculated/, /changed/], cs: [/vypočítal/, /upraveny/], nl: [/berekend/, /gewijzigd/] };
+  for (const l of ACT_ONLY) {
     const all = Object.values(L[l]).flat().join(' | ');
     ok(!DANISH.test(all), `${l}: ingen danske ord i tabellen`, (all.match(DANISH) || [])[0]);
     ok(!FCWORD[l].test(all) && !/prognos|forecast|ennuste/i.test(all), `${l}: intet ord for prognose i tabellen (siderne viser kun faktiske priser)`, (all.match(FCWORD[l]) || [])[0]);
-    ok(L[l].fc === L[l].actual && L[l].p2 !== L.da.p2 && L[l].h1 !== L.da.h1 && L[l].cap !== L.da.cap && L[l].model === 'Bundesnetzagentur | SMARD.de' && !/ENTSO/i.test(all), `${l}: fc er samme ord som actual, egne ord, kilden er Bundesnetzagentur | SMARD.de og ENTSO-E nævnes ikke`);
-    ok(/elpriser\.org/.test(L[l].note) && /berechnet|calculées|przeliczone|calcolate/.test(L[l].note) && /verändert|modifiées|zmienione|modificati/.test(L[l].note), `${l}: noten siger at elpriser.org har ændret dataene (timegennemsnit)`, L[l].note);
-    ok(/ohne|hors|bez|al netto/i.test(L[l].cap) && /VAT|MwSt|TVA|IVA/.test(L[l].cap), `${l}: billedteksten siger "ekskl. moms" (spotpris, ikke hvad kunden betaler)`, L[l].cap);
+    ok(L[l].fc === L[l].actual && L[l].p2 !== L.da.p2 && L[l].cap !== L.da.cap && !/ENTSO/i.test(all), `${l}: fc er samme ord som actual, egne ord, og kilden nævnes ikke i tabellen`);
   }
-  ok(new Set(ACTL.map(l => L[l].now)).size === 4 && new Set(ACTL.map(l => L[l].cap)).size === 4 && new Set(ACTL.map(l => L[l].act2)).size === 4, 'de fire EU-sprog har hver deres tekster');
-  ok(langs.slice(1).every(l => L[l].p2 !== L.da.p2 || l === 'nb'), 'sv og fi har egne ord for 2 døgn');
+  // Each page of actual prices says, in ITS words: the data are changed by elpriser.org, the basis excludes VAT, and which country it is.
+  for (const [pg, C] of Object.entries(CT)) if (C.act) {
+    const P = pctx.prisPageL(pg), w = NOTEWORD[C.lang] || [], c = CAPWORD[C.lang] || [];
+    ok(/elpriser\.org/.test(P.note) && w.every(r => r.test(P.note)) && /[:：]$/.test(P.note), `${pg}: noten siger at elpriser.org har ændret dataene (timegennemsnit) og ender på kolon før kilden`, P.note);
+    ok(c.every(r => r.test(P.cap)) && P.cap.length > 30, `${pg}: billedteksten siger "ekskl. moms" (spotpris, ikke hvad kunden betaler)`, P.cap);
+    ok(P.h1.length > 15 && P.zonesH.length > 8 && P.h1 !== L.da.h1 && !/Danmark/.test(P.h1 + P.zonesH + P.note), `${pg}: egen h1, egen overskrift over tekstblokken, og ingen anden lands navn i noten`);
+  }
+  ok(ACT_ONLY.length < 2 || (new Set(ACT_ONLY.map(l => L[l].now)).size === ACT_ONLY.length && new Set(ACT_ONLY.map(l => L[l].cap)).size === ACT_ONLY.length && new Set(ACT_ONLY.map(l => L[l].act2)).size === ACT_ONLY.length), 'sprogene med act-sider har hver deres tekster');
+  ok(langs.slice(1).every(l => L[l].p2 !== L.da.p2 || l === 'nb'), 'hvert sprog har egne ord for 2 døgn (på nær bokmål)');
 
   // The adapter: five days from today, at the response's ECB rate.
   const raw = { zone: 'no2', zoneInfo: { rate: 10.6 }, days: Array.from({ length: 10 }, (_, i) => ({
@@ -369,51 +382,81 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   ok(!('prisZoneTabs' in pctx) && !/zoneTabs/.test(JSON.stringify(Object.values(pctx.PRIS_I18N))), 'ingen zonefaner: funktionen og de otte sprogs fanetekster er væk (zonen vælges i stedsdialogen)');
   ok(pctx.prisHref('no5') === '/no/strompris#no5' && pctx.prisHref('fi') === '/fi/sahkon-hinta' && pctx.prisHref('dk2') === '/dk2' && pctx.prisHref('nl') === '/nl/stroomprijs', 'prisHref: landesidens anker, Finland og Holland uden anker, DK');
   ok(pctx.PRIS_COUNTRIES['no/strompris'].def === 'no1' && pctx.PRIS_COUNTRIES['sv/elpris'].def === 'se3' && pctx.PRIS_COUNTRIES['no/strompris'].zones.every(k => pctx.ZONES[k].lang === 'nb'), 'landenes startzone og sprog');
-  ok(Object.values(pctx.ZONES).every(z => z.name && z.city && z.cur && z.rate > 0 && z.sub) && Object.keys(pctx.ZONES).length === 17, 'ZONES: 17 områder med navn, by, valuta, kurs og enhed');
+  ok(Object.values(pctx.ZONES).every(z => z.name && z.city && z.cur && z.rate > 0 && z.sub) && Object.keys(pctx.ZONES).length >= 21, 'ZONES: mindst 21 områder med navn, by, valuta, kurs og enhed');
   ok(pctx.NORDEN_ZONES.length === 13 && pctx.NORDEN_ZONES.every(k => k in pctx.ZONES && /^(dk|no|se|fi|nl)/.test(k)), '/norden sammenligner stadig kun de 13 nordiske og hollandske områder');
   ok(pctx.ZONES.nl.lang === 'nl' && pctx.ZONES.nl.sub === 'cent' && pctx.ZONES.nl.rate === 1 && pctx.PRIS_COUNTRIES['nl/stroomprijs'].def === 'nl' && pctx.PRIS_COUNTRIES['nl/stroomprijs'].zones.join() === 'nl', 'NL: hollandsk, cent, kurs 1, og landets eneste zone');
   ok(Object.values(pctx.ZONES).every(z => z.lang in L) && Object.values(pctx.PRIS_COUNTRIES).every(c => c.lang in L), 'hver zone og hvert land peger på et sprog der findes');
+  // Every country page's zones exist, an `act` page's zones have a data source, and a page's own unit/city override (Belgium in French) is for a single-zone page.
+  ok(Object.values(CT).every(c => c.zones.length && c.zones.every(k => k in pctx.ZONES) && c.zones.includes(c.def) && (!c.act || c.zones.every(k => ['ec', 'entsoe'].includes(pctx.ZONES[k].src))) && (!(c.sub || c.city) || c.zones.length === 1)), 'hvert lands zoner findes, en act-side har en datakilde, og egen enhed/by kun på en side med én zone');
+  // A zone's own clock: Dublin is an hour behind Copenhagen at every instant (the EU changes both clocks together), so its day starts an hour later.
+  {
+    const zn = (k, d, h) => JSON.stringify(pctx.prisZoneNow(k, d, h));
+    ok(zn('ie', '2026-11-02', 0) === '{"date":"2026-11-01","hour":23}' && zn('ie', '2026-11-02', 13) === '{"date":"2026-11-02","hour":12}' && zn('de', '2026-11-02', 0) === '{"date":"2026-11-02","hour":0}' && zn('no1', '2026-03-29', 23) === '{"date":"2026-03-29","hour":23}', 'prisZoneNow: Irland er en time efter København (ved midnat er det i går 23), de øvrige zoner uændrede');
+    pctx.ZONES.zz = { shift: 1 };   // an Eastern European zone, to see the other direction (and the end of the month)
+    ok(zn('zz', '2026-10-31', 23) === '{"date":"2026-11-01","hour":0}' && zn('zz', '2026-12-31', 23) === '{"date":"2027-01-01","hour":0}' && zn('zz', '2026-11-02', 5) === '{"date":"2026-11-02","hour":6}', 'prisZoneNow: en zone foran København ruller datoen frem ved midnat, også over månedsskiftet');
+    delete pctx.ZONES.zz;
+    // The English table: "at 13:00–14:00" and a decimal point; the other tables are untouched by the new options.
+    const en = pctx.PRIS_I18N.en, de = pctx.PRIS_I18N.de, cs0 = { at: '', hs: ':00', hh: 1 };
+    ok(pctx.prisAt(en, 13) === 'at 13:00' && pctx.prisAt(en, 13, 14) === 'at 13:00–14:00' && pctx.prisAt(de, 13, 14) === 'um 13–14 Uhr' && pctx.prisAt(pctx.PRIS_I18N.da, 3, 4) === 'kl. 03–04' && pctx.prisAt(cs0, 13, 14) === '13:00–14:00', 'prisAt: "at 13:00–14:00" på engelsk, uændret på dansk og tysk, og uden ord før klokkeslættet hvis sproget vil det');
+    ok(pctx.prisNum(8.84, 1, en) === '8.8' && pctx.prisNum(-0.001, 2, en) === '0.00' && pctx.prisNum(8.84, 1) === '8,8' && pctx.prisNum(8.84, 1, de) === '8,8' && pctx.prisNum(-0.001, 2) === '0,00', 'prisNum: decimalpunktum når tabellen har dec, ellers komma, og aldrig "-0"');
+  }
+  ok(pctx.ZONES.ie.shift === -1 && Object.entries(pctx.ZONES).every(([k, z]) => z.shift === undefined || (Number.isInteger(z.shift) && Math.abs(z.shift) < 3)) && pctx.ZONES.at.src === 'ec' && pctx.ZONES.ie.src === 'entsoe' && pctx.ZONES.be.lang === 'nl', 'Irland går en time efter København og har ENTSO-E som kilde; Østrig Energy-Charts');
+
 
   // ── The country pages' chrome: CHROME_I18N has the same keys in all four languages, chromeHTML is the one template ──
   {
-    const X = pctx.CHROME_I18N, cl = ['nb', 'sv', 'fi', 'nl', 'de', 'fr', 'pl', 'it'];
-    ok(Object.keys(X).join() === cl.join(), 'CHROME_I18N har præcis nb, sv, fi, nl, de, fr, pl og it (den danske chrome er index.html\'s egen markup)', Object.keys(X).join());
-    const ks = Object.keys(X.nb), cks = Object.keys(X.nb.cn);
+    const X = pctx.CHROME_I18N, cl = Object.keys(X), CCS = ['dk', ...pctx.PRIS_PICK.slice(1).map(c => c[0])];
+    ok(cl.slice(0, 8).join() === 'nb,sv,fi,nl,de,fr,pl,it' && cl.every(l => l in L && l !== 'da'), 'CHROME_I18N har nb, sv, fi, nl, de, fr, pl og it først, og ét sprog pr. PRIS_I18N-sprog (den danske chrome er index.html\'s egen markup)', cl.join());
+    const ks = Object.keys(X.nb).filter(k => k !== 'chg');
+    const needChg = l => Object.entries(CT).some(([pg, c]) => c.act && c.lang === l && !(c.tx && c.tx.chg));
     for (const l of cl) {
-      // the four EU languages carry one key more: chg, the note that the site changed the data
-      ok(Object.keys(X[l]).filter(k => k !== 'chg').join() === ks.join() && Object.keys(X[l].cn).join() === cks.join() && ('chg' in X[l]) === ['de', 'fr', 'pl', 'it'].includes(l), `${l}: chrome-nøgler som norsk (chg kun på de fire EU-sprog)`, Object.keys(X[l]).join());
-      ok(ks.concat(l === 'de' || l === 'fr' || l === 'pl' || l === 'it' ? ['chg'] : []).every(k => k === 'cn' || (typeof X[l][k] === 'string' && X[l][k].length > (k === 'and' ? 0 : 1))) && cks.every(k => typeof X[l].cn[k] === 'string' && X[l].cn[k].length > 2), `${l}: ingen tom chrome-tekst`);
+      // `chg` (the note that the site changed the data) is the language's default for its act pages; a page may carry its own in tx
+      ok(Object.keys(X[l]).filter(k => k !== 'chg').join() === ks.join() && (!needChg(l) || ('chg' in X[l])) && (!('chg' in X[l]) || ACTL.includes(l)), `${l}: chrome-nøgler som norsk (chg på de sprog der har en act-side uden egen chg)`, Object.keys(X[l]).join());
+      ok(ks.every(k => k === 'cn' || (typeof X[l][k] === 'string' && X[l][k].length > (k === 'and' ? 0 : 1))) && ('chg' in X[l] ? X[l].chg.length > 10 : true), `${l}: ingen tom chrome-tekst`);
+      // `cn`: country names, a subset of the countries there are; the language's own country pages are named (a missing name falls back to the country's own: prisCn)
+      ok(Object.keys(X[l].cn).every(c => CCS.includes(c)) && Object.values(X[l].cn).every(v => typeof v === 'string' && v.length > 2) && Object.values(CT).filter(c => c.lang === l).every(c => c.cc in X[l].cn), `${l}: landenavne kun for lande der findes, og sprogets egne landesider er navngivet`);
     }
-    ok(cks.join() === 'dk,no,sv,fi,nl,de,fr,pl,it' && Object.values(pctx.PRIS_COUNTRIES).every(c => cks.includes(c.cc)), 'landenavnene dækker Danmark og hvert landeside-cc');
+    ok(['nb', 'sv', 'fi', 'nl', 'de', 'fr', 'pl', 'it', 'en'].every(l => CCS.slice(0, 13).every(c => c in X[l].cn)) && X.en.cn.at === 'Austria' && X.de.cn.at === 'Österreich', 'de ni første sprog og engelsk navngiver Danmark og alle landene fra bølge 1 (tretten)');
+    ok(pctx.prisCn(X.fi, 'ie') === 'Irlanti' && pctx.prisCn({ cn: {} }, 'ie') === 'Ireland' && pctx.prisCn({ cn: {} }, 'be') === 'België · Belgique', 'et land uden oversættelse hedder sit eget navn i stedet for at mangle (prisCn)');
+    ok(CCS.length === new Set(CCS).size && Object.values(CT).every(c => CCS.includes(c.cc)), 'landenavnene dækker Danmark og hvert landeside-cc, ét pr. land (Belgien har to sider men ét land)');
     // The words differ between the languages — a copy-pasted Norwegian table would pass every check above.
-    ok(new Set(cl.map(l => X[l].place)).size === 8 && new Set(cl.map(l => X[l].privacy)).size === 8 && new Set(cl.map(l => X[l].land)).size >= 7 && cl.every(l => new Set(Object.values(X[l].cn)).size === 9), 'vælger-, privatlivs- og landeord er forskellige på de otte sprog');
+    ok(new Set(cl.map(l => X[l].place)).size === cl.length && new Set(cl.map(l => X[l].privacy)).size === cl.length && new Set(cl.map(l => X[l].land)).size >= cl.length - 1 && cl.every(l => new Set(Object.values(X[l].cn)).size === Object.values(X[l].cn).length), 'vælger-, privatlivs- og landeord er forskellige på alle sprog');
     const html = pg => pctx.chromeHTML(pg);
-    for (const pg of Object.keys(pctx.PRIS_COUNTRIES)) {
-      const c = html(pg), C = pctx.PRIS_COUNTRIES[pg], x = X[C.lang];
+    const CREDIT_EC = '>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>';
+    for (const pg of Object.keys(CT)) {
+      const c = html(pg), C = CT[pg], x = X[C.lang], src = C.act ? pctx.ZONES[C.def].src : null;
       ok(!('nav' in c) && c.home === x.home, `${pg}: ingen landerække i headeren (globussen er vælgeren), og logoets navn er på ${C.lang}`);
       ok(c.foot.startsWith('<footer ') && (c.foot.match(/<footer/g) || []).length === 1 && c.foot.includes(`<p class="sf-h" id="sfLand">${x.land}</p>`) && (c.foot.match(/aria-current="page"/g) || []).length === 1, `${pg}: sidefoden har en landeliste med den aktuelle markeret`);
       ok(c.foot.includes(`<a href="/privatliv" hreflang="da">${x.privacy}</a>`) && (c.foot.match(/hreflang/g) || []).length === 1, `${pg}: privatlivslinket peger på /privatliv med hreflang="da" og er mærket på ${C.lang}`);
-      // The Nordic pages credit ENTSO-E and Energi Data Service; the EU pages credit Bundesnetzagentur | SMARD.de (CC BY 4.0, with the
-      // licence link) and say the data were changed — and name neither ENTSO-E nor Energi Data Service.
+      // The Nordic pages credit ENTSO-E and Energi Data Service; an actual-price page credits its zone's source (Energy-Charts: Bundesnetzagentur | SMARD.de, CC BY 4.0 with the
+      // licence link; ENTSO-E: the Transparency Platform) and says the data were changed — and names neither Energi Data Service nor the other source.
       ok(/&copy; Elpriser\.org &mdash; /.test(c.foot) && c.foot.includes('>Hugging Face</a>') && (C.act
-        ? c.foot.includes('>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> &mdash; ' + x.chg) && !c.foot.includes('Energi Data Service') && !/ENTSO/.test(c.foot)
+        ? (src === 'ec' ? c.foot.includes(CREDIT_EC + ' &mdash; ' + (C.tx.chg || x.chg)) && !/ENTSO/.test(c.foot)
+          : c.foot.includes('<a href="https://transparency.entsoe.eu" target="_blank" rel="noopener">ENTSO-E Transparency Platform</a> &mdash; ' + (C.tx.chg || x.chg)) && !/SMARD|CC BY/.test(c.foot)) && !c.foot.includes('Energi Data Service')
         : c.foot.includes('>ENTSO-E</a>') && c.foot.includes('>Energi Data Service</a>')), `${pg}: ophavsretslinjen med kilderne`);
       const all = c.foot;
       ok(!/Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Mobilnavigation|Privatliv|Åbne datasæt|Alle guides|Forstå din elpris|id="netChip|class="app-btn|class="tabbar|<dialog/.test(all), `${pg}: ingen dansk chrome, ingen netchip, ingen app-knap`, (all.match(/Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Privatliv|Åbne datasæt/) || [])[0]);
       ok(/^<footer class="sf sf-x" data-pg="[^"]+">/.test(c.foot) && !/\$\{|undefined|NaN/.test(all), `${pg}: ingen skabelonrester`);
+      // One link per country, in the language's own names (a name not translated yet is the country's own), to the country's page in THIS language when it has one.
+      const items = [...c.foot.matchAll(/<li><a href="([^"]+)"[^>]*>([^<]+)<\/a><\/li>/g)];
+      ok(items.length === CCS.length && items.map(m => m[2]).join() === CCS.map(cc => pctx.prisCn(x, cc)).join() && items.map(m => m[1]).join() === CCS.map(cc => cc === 'dk' ? '/dk1' : '/' + pctx.prisPageFor(cc, C.lang)).join(), `${pg}: landelisten har ét link pr. land på ${C.lang}, til landets side på sproget når den findes`);
     }
   }
 
   // ── The place dialog (the one chip in the header): one template for the Danish pages and the eight languages ──
   {
-    const X = pctx.CHROME_I18N, ALL = ['/dk1', '/no/strompris', '/sv/elpris', '/fi/sahkon-hinta', '/nl/stroomprijs', '/de/strompreis', '/fr/prix-electricite', '/pl/ceny-pradu', '/it/prezzo-luce'];
-    const NAMES = { '/dk1': 'Danmark', '/no/strompris': 'Norge', '/sv/elpris': 'Sverige', '/fi/sahkon-hinta': 'Suomi', '/nl/stroomprijs': 'Nederland', '/de/strompreis': 'Deutschland', '/fr/prix-electricite': 'France', '/pl/ceny-pradu': 'Polska', '/it/prezzo-luce': 'Italia' };
-    const links = d => [...d.matchAll(/<a href="(\/[^"#]+)"( aria-current="page")?>([^<]+)<\/a>/g)].filter(m => ALL.includes(m[1]));
+    const X = pctx.CHROME_I18N, CT = pctx.PRIS_COUNTRIES;
+    // The place dialog lists every country once, by its OWN name (the same in every language: PRIS_PICK), linked to the country's page in the dialog's language when it has one.
+    const NAMES = Object.fromEntries(pctx.PRIS_PICK), ccOf = href => href === '/dk1' ? 'dk' : (CT[href.slice(1)] || {}).cc;
+    const toPage = (cc, lang) => cc === 'dk' ? '/dk1' : '/' + pctx.prisPageFor(cc, lang);
+    const ALLHREFS = ['/dk1', ...Object.keys(CT).map(p => '/' + p)];
+    const ALL = lang => pctx.PRIS_PICK.map(c => toPage(c[0], lang));
+    const links = d => [...d.matchAll(/<a href="(\/[^"#]+)"( aria-current="page")?>([^<]+)<\/a>/g)].filter(m => ALLHREFS.includes(m[1]));
     const header = INDEX.slice(INDEX.indexOf('<header class="site-nav">'), INDEX.indexOf('</header>'));
     const da = pctx.placeHTML('da', 'dk');
     ok(INDEX.includes(da.dialog) && header.includes(da.btn), 'den danske stedsvælger i index.html er placeHTML(da, dk), tegn for tegn');
     ok(!/countryDialog|countryBtn|openCountryDialog/.test(INDEX.replace(/<script[\s\S]*?<\/script>/g, '') + header), 'ingen globus og ingen separat landevælger tilbage på de danske sider');
-    ok(links(da.dialog).map(m => m[1]).join() === ALL.slice(1).join() && links(da.dialog).map(m => m[3]).join() === ALL.slice(1).map(h => NAMES[h]).join() && !links(da.dialog).some(m => m[2]), 'dansk stedsvælger: de otte andre lande med eget navn, Danmark har sin egen gruppe');
+    ok(links(da.dialog).map(m => m[1]).join() === ALL('da').slice(1).join() && links(da.dialog).map(m => m[3]).join() === ALL('da').slice(1).map(h => NAMES[ccOf(h)]).join() && !links(da.dialog).some(m => m[2]), 'dansk stedsvælger: de andre lande med eget navn, Danmark har sin egen gruppe');
     ok(da.dialog.includes('>Hvor er du?</h2>') && da.dialog.includes('>Danmark</p>') && da.dialog.includes('>Andre lande</p>') && da.dialog.includes('placeholder="Søg"') && da.dialog.includes('>Luk</button>') && da.btn.includes('aria-label="Hvor er du?"'), 'dansk stedsvælger: overskrift, grupper, søgefelt, luk-knap og chipnavn på dansk');
     ok(!/<details|pl-step|Vis priser/.test(da.dialog) && /<button type="button" data-go="dk1">Vestdanmark<small id="plDK1">Uden netselskab<\/small><\/button><button type="button" data-go="dk2">Østdanmark<small id="plDK2"><\/small><\/button>/.test(da.dialog) && /data-scr="dk1" data-t="Vestdanmark" hidden><div class="pl-grp" id="netDlgDK1">/.test(da.dialog) && /data-scr="dk2" data-t="Østdanmark" hidden><div class="pl-grp" id="netDlgDK2">/.test(da.dialog) && /<button id="gpsBtn" onclick="detectLocation\(\)" type="button">[\s\S]*<span id="gpsText">Brug min position<\/span>/.test(da.dialog) && da.dialog.includes('id="gpsForget"'), 'dansk stedsvælger: positionsrække først, Vest- og Østdanmark som rækker med › til hver sin netliste (skjult skærm), én liste i stedet for trin');
     ok(!/data-zone/.test(da.dialog) && da.dialog.includes('href="/norden"') && da.dialog.includes('href="/privatliv"') && da.dialog.includes('href="/om-elpriser"') && da.dialog.includes('id="plQ"') && da.dialog.includes('id="plRes" hidden'), 'dansk stedsvælger: ingen zoner, men Norden-oversigten, privatliv/om og søgefeltet med sit resultatfelt');
@@ -422,8 +465,8 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     for (const pg of Object.keys(pctx.PRIS_COUNTRIES)) {
       const C = pctx.PRIS_COUNTRIES[pg], x = X[C.lang], P = pctx.placeHTML(C.lang, C.cc, pg), l = links(P.dialog), multi = C.zones.length > 1;
       titles.add(x.place);
-      const want = multi ? ALL.filter(h => h !== '/' + pg) : ALL;
-      ok(l.map(m => m[1]).join() === want.join() && l.map(m => m[3]).join() === want.map(h => NAMES[h]).join(), `${pg}: landerækkerne er ${multi ? 'de otte andre lande' : 'alle ni lande'} med deres egne navne, ens på alle sprog`);
+      const want = multi ? ALL(C.lang).filter(h => h !== '/' + pg) : ALL(C.lang);
+      ok(l.map(m => m[1]).join() === want.join() && l.map(m => m[3]).join() === want.map(h => NAMES[ccOf(h)]).join(), `${pg}: landerækkerne er ${multi ? 'de andre lande' : 'alle lande'} med deres egne navne, ens på alle sprog, og linker til landets side på sidens sprog`);
       ok(l.filter(m => m[2]).map(m => m[1]).join() === (multi ? '' : '/' + pg), `${pg}: ${multi ? 'sidens eget land har sin egen zonegruppe' : 'præcis sidens eget land er aria-current i landelisten'}`);
       ok(P.dialog.includes(`id="netDialogTitle">${x.place}</h2>`) && P.dialog.includes(`<p class="pd-gt">${x.oth}</p>`) && P.dialog.includes(`>${x.close}</button>`) && P.dialog.includes(`placeholder="${x.find}"`) && P.dialog.includes(`${x.back}</button>`) && P.dialog.includes(`>${x.none}</p>`) && P.btn.includes(`aria-label="${x.place}"`), `${pg}: stedsvælgerens ord er på ${C.lang}`);
       const zs = [...P.dialog.matchAll(/data-zone="([^"]+)"/g)].map(m => m[1]).join();
@@ -431,7 +474,8 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
       ok(!/gpsBtn|netDlgDK|Netselskab|data-go|details/.test(P.dialog), `${pg}: ingen danske netselskaber, intet positionsopslag og ingen drill-in`);
       ok(!/hreflang|\$\{|undefined|NaN/.test(P.dialog + P.btn) && pctx.chromeHTML(pg).btn === P.btn && pctx.chromeHTML(pg).place === P.dialog, `${pg}: ingen hreflang-klynge eller skabelonrester, og chromeHTML bruger den samme stedsvælger`);
     }
-    ok(titles.size === 8, 'stedsvælgerens overskrift er forskellig på de otte sprog (norsk bokmål og dansk deler den)', [...titles].join());
+    const used = [...new Set(Object.values(CT).map(c => c.lang))];
+    ok(titles.size === used.length + 1 - (used.includes('nb') ? 1 : 0) && new Set(used.map(l => X[l].place)).size === used.length, 'stedsvælgerens overskrift er forskellig på alle sprog (norsk bokmål og dansk deler den)', [...titles].join());
   }
 
   // ── /prognose: the SAME screen with a configuration (PRIS_FC) ──────────────────────────────────────────────
