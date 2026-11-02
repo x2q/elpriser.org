@@ -373,17 +373,20 @@ async function main() {
       check(!/class="app-btn|class="tabbar|id="gpsBtn|netDlgDK|Smart hjem|Hent appen|Hovedmenu|Alle netselskaber/.test(chrome), `${p}: ingen dansk app-knap, menu, mobilbar eller netselskabsliste`);
     }
   }
-  // The four EU pages show ACTUAL prices only (data CC BY 4.0 from Bundesnetzagentur | SMARD.de via Energy-Charts): one period, no forecast
-  // wording, the source, the licence and the note that the data were changed. They need the Spark job (scripts/eu_prices) to have written KV:
-  // without data the page still answers 200 but has no screen.
+  // The EU pages show settled prices (data CC BY 4.0 from Bundesnetzagentur | SMARD.de via Energy-Charts) and, when the zone has a forecast (the Spark job
+  // scripts/forecast_model/eu has written eu-forecast-<zone>), 2/5/7 days with the honest note: then the forecast words are expected on the page, and none of them in the
+  // static title and description. Without a forecast: one period and no forecast wording at all. Always: the source, the licence and the note that the data were changed.
+  // They need the Spark job (scripts/eu_prices) to have written KV: without data the page still answers 200 but has no screen.
   const llmsTxt = (await get('/llms.txt')).body;
   for (const [p, lang, src] of ACT_PAGES.map(([p, lang]) => [p, lang, PB.ZONES[PB.PRIS_COUNTRIES[p.slice(1)].def].src])) {
     const entsoe = src === 'entsoe';
     const r = await get(p);
     const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<!--[\s\S]*?-->/g, '');
     const main = page.slice(page.indexOf('<main'), page.indexOf('</main>'));
-    check(/<div class="pris" data-period="2"/.test(main) && !/data-pris-period|pris-period/.test(main), `${p}: Pris-skærmen er tegnet, uden periodeknap`, 'kører Spark-jobbet (eu-prices-*)?');
-    check(!/prognos|vorhersage|prévision|previsi|prognoz|forecast|machine|hugging/i.test(main + one(r.body, /<title>([^<]*)<\/title>/) + one(r.body, /<meta name="description" content="([^"]*)"/)), `${p}: ingen prognose-ord`);
+    const fcMode = /data-pris-period/.test(main), PL = PB.prisPageL(p.slice(1));
+    check(/<div class="pris" data-period="2"/.test(main) && (fcMode ? (main.match(/data-pris-period="/g) || []).length === 3 && main.includes(`<p class="pris-fcn">${PL.fcn}</p>`) : !/pris-period/.test(main)), `${p}: Pris-skærmen er tegnet: uden prognose uden periodeknap, med prognose 2/5/7 og den ærlige note`, 'kører Spark-jobbet (eu-prices-*)?');
+    const FW = /prognos|vorhersage|prévision|previsi|prognoz|forecast|machine|hugging/i;
+    check(!FW.test(one(r.body, /<title>([^<]*)<\/title>/) + one(r.body, /<meta name="description" content="([^"]*)"/)) && (fcMode || !FW.test(main)) && !/\b(gas|mibgas|eex|eua|ttf|carbon|fuel)\b/i.test(main), `${p}: ingen prognose-ord i titel og beskrivelse (og ingen i indholdet uden prognose); aldrig brændstofsord`);
     const foot = page.slice(page.indexOf('<footer'));
     check(src === 'semopx'
       ? (main.includes('>SEMOpx</a>') && /SEMOpx/.test(foot) && !/ENTSO|SMARD|CC BY|Energi Data Service|BMRS/.test(main + foot))

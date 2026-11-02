@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { createApi, makeKv, priceArchiveYear, tariffArchive, upstreamState } from './tests/upstream.mjs';
+import { parseZone, daysFrom } from './tests/golden/zones.mjs';       // the reference of what the Android and iOS apps make of /api/nordic
 
 const day = offset => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
 const range = `start=${day(-7)}&end=${day(2)}`;
@@ -507,7 +508,7 @@ test('/api/nordic: every EU zone (27 of them) is served from its own eu-prices k
     const kv = makeKv(seed), api = await createApi({ kv, ecb: ECB });
     const r = await api.get(`/api/nordic?zone=${z}`);
     assert.equal(r.status, 200, z);
-    assert.deepEqual(kv.ops.get, [`eu-prices-${z}`], `${z} reads exactly its own key`);
+    assert.deepEqual([...kv.ops.get].sort(), [`eu-forecast-${z}`, `eu-prices-${z}`], `${z} reads exactly its own two keys (prices, and the forecast that is absent here)`);
     assert.equal(r.body.zone, z);
     assert.equal(r.body.trainedThrough, null, `${z}: no model, so no training date`);
     assert.equal(r.body.unit, 'EUR/MWh');    // the fixture's; the real gb payload says GBP/MWh (below)
@@ -572,17 +573,225 @@ test('/api/nordic: EU zones carry an ETag, answer 304, and cost one KV read howe
   assert.ok(etag, 'ETag');
   assert.equal((await api.get('/api/nordic?zone=it-n', { 'If-None-Match': etag })).status, 304);
   for (let i = 0; i < 20; i++) await api.get('/api/nordic?zone=it-n');
-  assert.equal(kv.reads(), 1, `20 requests cost ${kv.reads()} KV reads`);
+  assert.equal(kv.reads(), 2, `20 requests cost ${kv.reads()} KV reads (the prices key and the forecast key, once each)`);
 });
 
-test('/api/openapi.json documents /api/nordic with every zone, and says the EU zones are actual prices only', async () => {
+// ── EU forecast days: eu-forecast-<zone> on top of the settled prices (scripts/forecast_model/eu), NEW key, nothing else changes ──
+
+/** The accuracy block as scripts/forecast_model/eu/gate.py accuracy_block writes it (version 2). */
+const ACC = { version: 2, period: '2025-04-01..2026-11-02', baseline: 'level+shape', recent: '2026-09-01', fuel: true, showEur: false,
+  byHorizon: { 2: { mae: 19.7, baseMae: 31.8, gain: 0.381, gainHold: 0.402, gainRecent: 0.393, bias: -6, baseBias: -9.2, regret: 2.16, baseRegret: 4.06, rankGain: 0.468, rankOk: true, coverage: 0.79, coverageRecent: 0.66, low: false, days: 572 },
+    3: { mae: 22.1, baseMae: 33.0, gain: 0.27, gainHold: 0.3, gainRecent: 0.28, bias: -7, baseBias: -9.4, regret: 2.5, baseRegret: 4.1, rankGain: 0.4, rankOk: true, coverage: 0.78, coverageRecent: 0.65, low: false, days: 572 } } };
+
+/** A forecast KV value as scripts/forecast_model/eu/forecast.py writes it: forecast days only, with horizon and P10/P90. */
+const euFc = (zone, dates, { generated = day(0), trained = day(-1), accuracy } = {}) => ({
+  zone, generated, generatedAt: `${generated}T12:50:00+00:00`, trainedThrough: trained, unit: 'EUR/MWh', model: 'eu-ens-v2',
+  ...(accuracy ? { accuracy } : {}),
+  days: dates.map((d, i) => ({ date: d, type: 'forecast', horizon: i + 2, prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: 80 + h, min_eur_mwh: 60 + h, max_eur_mwh: 100 + h })) })),
+});
+
+test('/api/nordic: an EU zone with a forecast key gets the settled days first and the forecast days after them', async () => {
+  const acc = ACC;
+  const kv = makeKv({ 'eu-prices-de': feed('de', [day(-1), day(0), day(1)]), 'eu-forecast-de': euFc('de', [day(2), day(3), day(4)], { accuracy: acc }) });
+  const r = await (await createApi({ kv, ecb: ECB })).get('/api/nordic?zone=de');
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.body.days.map(d => [d.date, d.type]), [[day(-1), 'actual'], [day(0), 'actual'], [day(1), 'actual'], [day(2), 'forecast'], [day(3), 'forecast'], [day(4), 'forecast']]);
+  assert.deepEqual(r.body.days[3].prices[5], { hour: 5, eur_mwh: 85, min_eur_mwh: 65, max_eur_mwh: 105 }, 'the Nordic field names for the band');
+  assert.equal(r.body.days[3].horizon, 2);
+  assert.equal(r.body.model, 'eu-ens-v2');
+  assert.equal(r.body.trainedThrough, day(-1));
+  assert.equal(r.body.forecastGenerated, day(0));
+  assert.deepEqual(r.body.accuracy, acc);
+  assert.equal(r.body.zoneInfo.currency, 'EUR');
+  assert.deepEqual([...kv.ops.get].sort(), ['eu-forecast-de', 'eu-prices-de']);
+  assert.equal(kv.ops.put.length, 0, 'the forecast is read, never written, by the API');
+});
+
+test('/api/nordic: a settled price always wins over a forecast for the same day, and a forecast never fills a hole before a settled day', async () => {
+  // tomorrow is published (settled) although the forecast run still lists it: the settled day is used and the forecast copy dropped
+  const kv = makeKv({ 'eu-prices-fr': feed('fr', [day(0), day(1)]), 'eu-forecast-fr': euFc('fr', [day(-1), day(0), day(1), day(2)]) });
+  const r = await (await createApi({ kv, ecb: ECB })).get('/api/nordic?zone=fr');
+  assert.deepEqual(r.body.days.map(d => [d.date, d.type]), [[day(0), 'actual'], [day(1), 'actual'], [day(2), 'forecast']]);
+});
+
+test('/api/nordic: without a forecast key an EU zone answers exactly as before (byte for byte the settled prices)', async () => {
+  const f = feed('es', [day(-1), day(0)]);
+  const r = await (await createApi({ kv: makeKv({ 'eu-prices-es': f }), ecb: ECB })).get('/api/nordic?zone=es');
+  assert.deepEqual(r.body, { ...f, zoneInfo: { name: 'ES Spain', country: 'ES', currency: 'EUR', rate: 1, rateDate: '2026-10-23', rateSource: 'ECB' } });
+  assert.ok(!('model' in r.body) && !('accuracy' in r.body) && !('forecastGenerated' in r.body));
+});
+
+test('/api/nordic: a stale, malformed or foreign forecast is ignored, not repaired', async () => {
+  const prices = feed('ro', [day(-1), day(0), day(1)]);
+  const cases = {
+    'a run older than 3 days before the newest settled day': euFc('ro', [day(2), day(3)], { generated: day(-4) }),
+    'a run without a generated date': { ...euFc('ro', [day(2)]), generated: undefined },
+    'no days': { ...euFc('ro', [day(2)]), days: [] },
+    'days that are not forecast': { ...euFc('ro', [day(2)]), days: euFc('ro', [day(2)]).days.map(d => ({ ...d, type: 'actual' })) },
+    'a day with 23 hours': { ...euFc('ro', [day(2)]), days: euFc('ro', [day(2)]).days.map(d => ({ ...d, prices: d.prices.slice(1) })) },
+    'a NaN-ish hour (null)': { ...euFc('ro', [day(2)]), days: euFc('ro', [day(2)]).days.map(d => ({ ...d, prices: d.prices.map((p, i) => (i === 7 ? { hour: 7, eur_mwh: null } : p)) })) },
+    'not an object': 'oops',
+  };
+  for (const [name, fc] of Object.entries(cases)) {
+    const r = await (await createApi({ kv: makeKv({ 'eu-prices-ro': prices, 'eu-forecast-ro': fc }), ecb: ECB })).get('/api/nordic?zone=ro');
+    assert.equal(r.status, 200, name);
+    assert.deepEqual(r.body.days.map(d => d.type), ['actual', 'actual', 'actual'], `${name}: only the settled days`);
+    assert.ok(!('model' in r.body), `${name}: no model metadata`);
+  }
+  // one malformed day among good ones ends the run there: the days after it would leave a hole, and the apps and the Pris screen stop at a hole
+  const mixed = euFc('ro', [day(2), day(3), day(4)]);
+  mixed.days[1].prices = mixed.days[1].prices.slice(0, 20);
+  const r = await (await createApi({ kv: makeKv({ 'eu-prices-ro': prices, 'eu-forecast-ro': mixed }), ecb: ECB })).get('/api/nordic?zone=ro');
+  assert.deepEqual(r.body.days.filter(d => d.type === 'forecast').map(d => d.date), [day(2)]);
+  // the same malformed day first: nothing is usable
+  const first = euFc('ro', [day(2), day(3)]);
+  first.days[0].prices = first.days[0].prices.slice(0, 20);
+  const r2 = await (await createApi({ kv: makeKv({ 'eu-prices-ro': prices, 'eu-forecast-ro': first }), ecb: ECB })).get('/api/nordic?zone=ro');
+  assert.deepEqual(r2.body.days.map(d => d.type), ['actual', 'actual', 'actual']);
+  assert.ok(!('model' in r2.body));
+});
+
+const euGet = async (zone, fc, dates = [day(-1), day(0), day(1)]) =>
+  (await (await createApi({ kv: makeKv({ [`eu-prices-${zone}`]: feed(zone, dates), [`eu-forecast-${zone}`]: fc }), ecb: ECB })).get(`/api/nordic?zone=${zone}`)).body;
+const fcDays = body => body.days.filter(d => d.type === 'forecast');
+
+test('/api/nordic: the forecast days join the settled days without a hole, or not at all (the apps and the Pris screen stop at a hole)', async () => {
+  // the run starts a day late (the settled prices end on day 1, the first forecast day is day 3): nothing is added
+  let b = await euGet('de', euFc('de', [day(3), day(4), day(5)]));
+  assert.deepEqual(b.days.map(d => d.type), ['actual', 'actual', 'actual']);
+  assert.ok(!('model' in b) && !('accuracy' in b));
+  // a hole inside the run ends it there
+  b = await euGet('de', euFc('de', [day(2), day(3), day(5), day(6)]));
+  assert.deepEqual(fcDays(b).map(d => d.date), [day(2), day(3)]);
+  // the run starts earlier than the newest settled day (tomorrow was published after the run): the settled days win, the rest joins
+  b = await euGet('de', euFc('de', [day(0), day(1), day(2), day(3)]));
+  assert.deepEqual(b.days.map(d => [d.date, d.type]), [[day(-1), 'actual'], [day(0), 'actual'], [day(1), 'actual'], [day(2), 'forecast'], [day(3), 'forecast']]);
+  // only today is settled (before the auction): the run's first day is tomorrow
+  b = await euGet('de', euFc('de', [day(1), day(2)]), [day(-1), day(0)]);
+  assert.deepEqual(fcDays(b).map(d => d.date), [day(1), day(2)]);
+  // days arriving out of order or twice are put in order and counted once
+  const fc = euFc('de', [day(2), day(3), day(4)]);
+  fc.days = [fc.days[2], fc.days[0], fc.days[1], { ...fc.days[0] }];
+  b = await euGet('de', fc);
+  assert.deepEqual(fcDays(b).map(d => d.date), [day(2), day(3), day(4)]);
+  // never more than eight forecast days
+  b = await euGet('de', euFc('de', Array.from({ length: 12 }, (_, i) => day(2 + i))));
+  assert.equal(fcDays(b).length, 8);
+});
+
+test('/api/nordic: a band is on all 24 hours of a day or on none, and contains the price; anything else costs that day', async () => {
+  const mk = edit => { const f = euFc('at', [day(2), day(3)]); edit(f.days[0].prices); return f; };
+  const cases = {
+    'a band on 23 hours only': f => { delete f[4].min_eur_mwh; delete f[4].max_eur_mwh; },
+    'min above the price': f => { f[9].min_eur_mwh = f[9].eur_mwh + 1; },
+    'max below the price': f => { f[9].max_eur_mwh = f[9].eur_mwh - 1; },
+    'only a min': f => { delete f[2].max_eur_mwh; },
+    'a text band': f => { f[2].min_eur_mwh = '60'; },
+    'a repeated hour': f => { f[3].hour = 2; },
+    'an hour outside 0-23': f => { f[23].hour = 24; },
+  };
+  for (const [name, edit] of Object.entries(cases)) {
+    const b = await euGet('at', mk(edit));
+    assert.deepEqual(b.days.map(d => d.type), ['actual', 'actual', 'actual'], `${name}: the broken first day ends the run`);
+  }
+  // no band at all is fine (a run published without calibration)
+  const nb = euFc('at', [day(2), day(3)]);
+  for (const d of nb.days) d.prices = d.prices.map(({ hour, eur_mwh }) => ({ hour, eur_mwh }));
+  const b = await euGet('at', nb);
+  assert.deepEqual(fcDays(b).map(d => d.date), [day(2), day(3)]);
+  assert.ok(!('min_eur_mwh' in fcDays(b)[0].prices[0]));
+});
+
+test('/api/nordic: fields are copied by name - the job\'s archive numbers and unknown fields never reach a client', async () => {
+  const fc = euFc('be', [day(2), day(3)], { accuracy: ACC });
+  for (const d of fc.days) { d.uncorrected = Array(24).fill(1); d.shadow = Array(24).fill(2); d.secret = 'x'; d.prices[0].extra = 1; }
+  fc.zoneSecret = 'y';
+  const b = await euGet('be', fc);
+  const d0 = fcDays(b)[0];
+  assert.deepEqual(Object.keys(d0), ['date', 'type', 'horizon', 'prices']);
+  assert.deepEqual(Object.keys(d0.prices[0]), ['hour', 'eur_mwh', 'min_eur_mwh', 'max_eur_mwh']);
+  assert.ok(!('zoneSecret' in b) && !('recipe' in b));
+  assert.ok(!JSON.stringify(b).includes('uncorrected') && !JSON.stringify(b).includes('shadow'));
+});
+
+test('/api/nordic: the accuracy block is passed on as it is, a non-object one is dropped, and the days do not need it', async () => {
+  assert.deepEqual((await euGet('ch', euFc('ch', [day(2)], { accuracy: ACC }))).accuracy, ACC);
+  for (const bad of ['oops', 7, [1, 2], null]) {
+    const fc = euFc('ch', [day(2)]);
+    fc.accuracy = bad;
+    const b = await euGet('ch', fc);
+    assert.deepEqual(fcDays(b).map(d => d.date), [day(2)], JSON.stringify(bad));
+    assert.ok(!('accuracy' in b), JSON.stringify(bad));
+  }
+});
+
+test('/api/nordic: what the apps make of an EU zone with forecast days (the golden parseZone + daysFrom the Android and iOS tests are written against)', async () => {
+  // settled up to tomorrow, six forecast days D+2..D+7 after it
+  const b = await euGet('de', euFc('de', [day(2), day(3), day(4), day(5), day(6), day(7)], { accuracy: ACC }));
+  const parsed = parseZone(b);
+  const days = daysFrom(parsed.days, day(0));
+  assert.deepEqual(days.map(d => d.date), [day(0), day(1), day(2), day(3), day(4), day(5), day(6), day(7)], 'today..today+7, consecutive, no hole');
+  assert.deepEqual(days.map(d => d.actual), [true, true, false, false, false, false, false, false]);
+  for (const d of days) assert.equal(d.price.length, 24);
+  assert.equal(days[0].lo, null, 'a settled day has no band');
+  for (const d of days.slice(2)) {
+    assert.ok(d.lo && d.hi, 'a forecast day carries its band');
+    d.price.forEach((p, h) => assert.ok(d.lo[h] <= p && p <= d.hi[h], 'min <= price <= max'));
+  }
+  assert.equal(parsed.currency, 'EUR');
+  // a day the API refuses (23 hours) never reaches the apps as a half day, and nothing after it either: a hole would end their run at that point
+  const cut = euFc('de', [day(2), day(3), day(4)]);
+  cut.days[1].prices = cut.days[1].prices.slice(0, 23);
+  const c = await euGet('de', cut);
+  assert.deepEqual(daysFrom(parseZone(c).days, day(0)).map(d => d.date), [day(0), day(1), day(2)]);
+  // a run that starts a day late joins nothing: the apps show the settled days only, the same as without a forecast
+  const late = await euGet('de', euFc('de', [day(3), day(4)]));
+  assert.deepEqual(daysFrom(parseZone(late).days, day(0)).map(d => d.actual), [true, true]);
+});
+
+test('/api/nordic: Baltic and Balkan zones, Poland and Ireland are served like the rest (forecast days, the ECB rate of the zone\'s currency)', async () => {
+  for (const z of ['ee', 'lv', 'lt', 'al', 'ie', 'pl', 'it-n']) {
+    const b = await euGet(z, euFc(z, [day(2), day(3)]));
+    assert.deepEqual(fcDays(b).map(d => d.date), [day(2), day(3)], z);
+    assert.equal(b.zoneInfo.currency, z === 'pl' ? 'PLN' : 'EUR');
+  }
+});
+
+test('/api/nordic: no settled prices means 404 even when a forecast exists, and Nordic zones never read an eu-forecast key', async () => {
+  const r = await (await createApi({ kv: makeKv({ 'eu-forecast-de': euFc('de', [day(2)]) }), ecb: ECB })).get('/api/nordic?zone=de');
+  assert.equal(r.status, 404, 'a forecast with no settled day beside it is not served');
+  const kv = makeKv({ 'nordic-forecast-no1': feed('no1', [day(0), day(1)], 'forecast', day(-1)), 'eu-forecast-no1': euFc('no1', [day(5)]) });
+  const n = await (await createApi({ kv, ecb: ECB })).get('/api/nordic?zone=no1');
+  assert.deepEqual(n.body.days.map(d => d.date), [day(0), day(1)], 'a Nordic zone is untouched');
+  assert.deepEqual(kv.ops.get, ['nordic-forecast-no1'], 'and costs no extra KV read');
+});
+
+test('/api/nordic: an EU zone with a forecast is still cached and still one read per key however often it is asked', async () => {
+  const kv = makeKv({ 'eu-prices-pt': feed('pt', [day(0), day(1)]), 'eu-forecast-pt': euFc('pt', [day(2), day(3)]) });
+  const api = await createApi({ kv, ecb: ECB });
+  const first = await api.get('/api/nordic?zone=pt');
+  assert.ok(first.headers.get('etag'));
+  assert.equal(first.headers.get('cache-control'), 'public, max-age=1800, s-maxage=1800');
+  for (let i = 0; i < 20; i++) await api.get('/api/nordic?zone=pt');
+  assert.equal(kv.reads(), 2);
+});
+
+test('/api/openapi.json documents /api/nordic with every zone, the EU forecast days and what they are worth', async () => {
   const spec = (await (await createApi()).get('/api/openapi.json')).body;
   const op = spec.paths['/api/nordic'].get;
   const zones = op.parameters[0].schema.enum;
   for (const z of ['dk1', 'no5', 'se4', 'fi', 'nl', ...EU]) assert.ok(zones.includes(z), `${z} missing from the zone enum`);
   assert.equal(zones.length, 13 + 27);
   for (const z of ['it-cn', 'it-sar', 'uk', 'gb-nir']) assert.ok(!zones.includes(z), `${z} must not be offered`);
-  assert.match(op.description, /actual prices only, no forecast/);
+  assert.match(op.description, /\*\*Forecast days for 25 EU zones\*\*/);
+  assert.match(op.description, /NOT an official forecast/);
+  assert.match(op.description, /all of the above except `xk` and `gb`/);
+  assert.match(op.description, /at least 5 % below that of a simple level-and-shape method out of sample/);
+  assert.match(op.description, /`gainRecent`[^\n]*2026-09-01/);
+  assert.match(op.description, /not a promised 80 %/);
+  assert.match(op.description, /`accuracy\.showEur`/);
+  assert.match(op.description, /settled price always replaces the forecast/);
+  assert.doesNotMatch(op.description, /MIBGAS|EEX|\bTTF\b|gas price|carbon price/i, 'the fuel inputs are never named on a public page');
   assert.match(op.description, /Bundesnetzagentur \| SMARD\.de via Energy-Charts\.info/);
   assert.match(op.description, /CC BY 4\.0/);
   assert.match(op.description, /changed by elpriser\.org/);

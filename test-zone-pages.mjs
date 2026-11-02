@@ -52,6 +52,7 @@ const BASE = { no1: 80, no2: 120, no3: 60, no4: 30, no5: 100, se1: 25, se2: 35, 
   ee: 84, lv: 92, lt: 77, mk: 105 };
 const NORDIC = ['no1', 'no2', 'no3', 'no4', 'no5', 'se1', 'se2', 'se3', 'se4', 'fi', 'nl', 'dk1', 'dk2'];
 let noTomorrow = false;   // the EU job has not published tomorrow yet
+let fcZones = new Set();   // EU zones whose answer carries forecast days (the elpriser.org model: eu-forecast-<zone> on top of the settled days), with the accuracy block
 // A zone's days are its OWN local days: ZONES[z].shift hours from Copenhagen (Dublin and Lisbon -1; Tallinn, Riga, Vilnius, Bucharest, Sofia and Athens +1; the EU changes
 // the clocks at one instant). The feed's "today" and the hour of the screen differ from Copenhagen's for the first or the last Danish hour of a day. Read from ZONES, so a zone
 // added to the table needs no edit here.
@@ -81,6 +82,18 @@ const nordic = zone => !NORDIC.includes(zone) ? ({
     prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: +((BASE[zone] ?? 70) + 25 * Math.sin(h / 24 * 6.2832) + i * 2).toFixed(2) })),
   })),
 });
+/** The answer of an EU zone in `fcZones`: the settled days and, after the last one, forecast days up to today + 7 with the P10-P90 band, horizon 2 first,
+ *  and the accuracy block (model, trainedThrough, forecastGenerated, accuracy) the API adds. Every other answer is passed on as it is. */
+const ACC = h => ({ mae: 20 + h, baseMae: 30 + h, gain: 0.3 - 0.02 * h, gainRecent: 0.2, bias: -5, baseBias: -6, regret: 3, baseRegret: 4, rankGain: 0.25, rankOk: true, coverage: 0.76, low: h === 7 });
+const withFc = (zone, r) => {
+  if (!fcZones.has(zone)) return r;
+  const last = r.days.length - 1, extra = [];
+  for (let i = last + 1; i <= 8; i++) extra.push({ date: addDays(zoneToday(zone), i - 1), type: 'forecast', horizon: i - last + 1,
+    prices: Array.from({ length: 24 }, (_, h) => { const p = +((BASE[zone] ?? 70) + 25 * Math.sin(h / 24 * 6.2832) + i * 2).toFixed(2); return { hour: h, eur_mwh: p, min_eur_mwh: p - 15, max_eur_mwh: p + 25 }; }) });
+  return { ...r, trainedThrough: today, model: 'eu-ens-v2', forecastGenerated: today, days: [...r.days, ...extra],
+    accuracy: { version: 2, period: '2025-04-01..2026-11-02', baseline: 'level+shape', recent: '2026-09-01', fuel: true, showEur: ['ee', 'lv', 'lt'].includes(zone),
+      byHorizon: Object.fromEntries([2, 3, 4, 5, 6, 7].map(h => [String(h), ACC(h)])) } };
+};
 const store = new Map();
 globalThis.caches = { default: { match: async k => { const r = store.get(k.url); return r ? r.clone() : undefined; }, put: async (k, r) => { store.set(k.url, r); } } };
 let upstream = [], missing = new Set();
@@ -88,7 +101,7 @@ globalThis.fetch = async u => {
   const url = new URL(String(u));
   upstream.push(url.pathname + url.search);
   const z = url.searchParams.get('zone');
-  if (url.pathname === '/api/nordic' && z && !missing.has(z)) return new Response(JSON.stringify(nordic(z)), { headers: { 'content-type': 'application/json' } });
+  if (url.pathname === '/api/nordic' && z && !missing.has(z)) return new Response(JSON.stringify(withFc(z, nordic(z))), { headers: { 'content-type': 'application/json' } });
   return new Response('{}', { status: 404 });
 };
 const get = async p => {
@@ -407,6 +420,43 @@ for (const [p, w] of Object.entries(ACT)) {
   ok(!/NaN|undefined/.test(om) && !FORECAST.test(om) && new RegExp(AVGW(w.lang).replace(/\\\.$/, '')).test(om) && !new RegExp(PRISTOM(w.lang)).test(om), `${p}: uden i morgen: ingen i-morgen-tal i tekstblokken, ingen NaN`, (om.match(new RegExp(PRISTOM(w.lang))) || [])[0]);
   noTomorrow = false;
 }
+// ── The same pages when their zone has a forecast (eu-forecast-<zone> on top of the settled days): the server draws PRIS_EUF — eight days, 2/5/7, the band, the accuracy line and the honest note ──
+const NOFUEL = /\b(gas|mibgas|eex|eua|ttf|carbon|fuel|brændstof)\b/i;
+for (const [p, w] of Object.entries(ACT)) {
+  if (w.oneDay) continue;   // Great Britain never has a forecast
+  const pg = p.slice(1), C = PB.PRIS_COUNTRIES[pg], PL = PB.prisPageL(pg), zone = w.first;
+  store.clear(); upstream = []; noTomorrow = false;
+  const plain = await get(p);
+  store.clear(); upstream = []; fcZones = new Set([zone]);
+  const r = await get(p), h = r.page, raw = r.body, noc = h.replace(/<!--[\s\S]*?-->/g, ''), main = noc.slice(noc.indexOf('<main'), noc.indexOf('</main>'));
+  const title = (raw.match(/<title>([^<]*)<\/title>/) || [])[1] || '', desc = (raw.match(/<meta name="description" content="([^"]*)"/) || [])[1] || '';
+  ok(r.status === 200 && title === (plain.body.match(/<title>([^<]*)<\/title>/) || [])[1] && desc === (plain.body.match(/<meta name="description" content="([^"]*)"/) || [])[1] && !FORECAST.test(title + desc), `${p}: med prognose: samme titel og beskrivelse (de er statiske og lover ingen prognose)`);
+  ok((h.match(/data-pris-period="/g) || []).length === 3 && h.includes('<div class="pris" data-period="2"') && h.includes('pris-card pp7') && !h.includes(`<p class="pris-ct">${w.card}</p>`), `${p}: med prognose: tre perioder (2, 5, 7) og kort for hver, ikke "${w.card}"`);
+  const h7 = h.slice(h.indexOf('pris-card pp7'), h.indexOf('</section>', h.indexOf('pris-card pp7')));
+  ok((h7.match(/<span class="pc[ "]/g) || []).length >= 6 + 24 * 7 - 24 && (h7.match(/class="pbd t/g) || []).length > 100, `${p}: med prognose: 7 døgn har sine søjler og et P10–P90-bånd på prognosetimerne`, String((h7.match(/class="pbd t/g) || []).length));
+  const tb7 = (h.match(/<tbody class="pp7">([^]*?)<\/tbody>/) || [])[1] || '';
+  // 7 døgn start six hours before now and run seven days on; in the zone's hour 0 there is no hour before and the card is seven days from midnight, so the eighth day
+  // (the last forecast day, D+7) stays in the list as a hidden row for crawlers (class r10) and the card's last horizon is D+6.
+  const hz = zoneHour(zone) > 0 ? 7 : 6;
+  ok((tb7.match(/<tr[ >]/g) || []).length === 8 && (tb7.match(/<td class="fc">/g) || []).length === 6 && (tb7.match(/<td class="real">/g) || []).length === 2 && (zoneHour(zone) > 0 || /<tr class="r10">/.test(tb7)), `${p}: med prognose: dagslisten har otte dage, seks af dem prognose`);
+  ok(h.includes(`<td class="fc">${PL.fc}`) && h.includes(`</i>${PL.fc}</span>`) && PL.fc !== PL.actual && w.kind === PL.actual, `${p}: med prognose: prognosedøgn hedder "${PL.fc}", de afgjorte "${PL.actual}"`);
+  ok(h.includes(`<p class="pris-fcn">${PL.fcn}</p>`) && h.includes(`${PL.fcn}</p></section>`), `${p}: med prognose: den ærlige note står på skærmen og i tekstblokken, på sidens sprog`);
+  const l7 = (h7.match(/<p class="pris-fca">([^]*?)<\/p>/) || [])[1] || '';
+  ok(l7.includes(PL.fcb) && l7.includes(`D+${hz}`) && /\b76\b/.test(l7) && l7.includes(PL.fcl) === (hz === 7) && !/\b80 ?%/.test(h.replace(/<[^>]*>/g, ' ')) && !/NaN|undefined|\{[a-z]+\}/.test(main), `${p}: med prognose: nøjagtighedslinjen har de målte tal (dækning 76 %, ikke 80), lav sikkerhed og ingen skabelon-rester`, l7.slice(0, 200));
+  ok(!NOFUEL.test(raw.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), `${p}: med prognose: ingen ord om gas, kul eller brændstof på siden`);
+  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v21${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v21`);
+  // the text block says the forecast exists only while there is one; the plain page stays as before
+  ok(!plain.page.includes(PL.fcn) && !plain.page.includes('pris-fca') && (plain.page.match(/data-pris-period="/g) || []).length === 0, `${p}: uden prognose i svaret er siden som før (ingen note, ingen periodeknapper)`);
+  fcZones = new Set();
+}
+// EE, LV and LT quote EUR/MWh, not per cent (accuracy.showEur): no "NN %" improvement on their pages.
+for (const [p, zone] of [['/ee/elektri-hind', 'ee'], ['/lv/elektribas-cena', 'lv'], ['/lt/elektros-kaina', 'lt']]) {
+  store.clear(); upstream = []; noTomorrow = false; fcZones = new Set([zone]);
+  const r = await get(p), h = r.page, c7 = h.slice(h.indexOf('pris-card pp7'), h.indexOf('</section>', h.indexOf('pris-card pp7')));
+  const l = (c7.match(/<p class="pris-fca">([^]*?)<\/p>/) || [])[1] || '';
+  ok(/EUR\/MWh \(/.test(l) && !/\b(16|18|20|25) ?%/.test(l) && /\b76 ?%/.test(l), `${p}: showEur: fejlen står i EUR/MWh mod den simple metode, ingen procent-forbedring`, l);
+  fcZones = new Set();
+}
 // A page added to PRIS_COUNTRIES without a row above (docs/add-a-country.md) is still checked, from its own entry: 200, title, language, h1, locale, canonical,
 // no forecast words, the credit of its zone's source, the footer's country list, one fetch — what a row above would pin by hand.
 for (const pg of Object.keys(PB.PRIS_COUNTRIES)) {
@@ -631,7 +681,7 @@ function get_dialog(r) { return (r.page.match(/<dialog id="netDialog"[\s\S]*?<\/
   ok(NEW.every(p => sm.includes(`<loc>https://elpriser.org${p}</loc>`) && prio(p) === 0.5 && llms.includes(`https://elpriser.org${p})`) && full.includes(`https://elpriser.org${p})`)), 'sitemap og llms.txt: de nye sider er med, i udenlandsk prioritet');
   const bullet = llms.slice(llms.indexOf('- [Elpriser i Europa]'), llms.indexOf('- [Automation]'));
   const nAct = new Set(Object.values(PB.PRIS_COUNTRIES).filter(c => c.act).map(c => c.cc)).size;
-  ok(bullet.includes(`i ${nAct} europæiske lande`) && /Kun faktiske børspriser — ingen prognose/.test(bullet) && /Kilde: Bundesnetzagentur \| SMARD\.de via Energy-Charts\.info, licens CC BY 4\.0; Spanien[^:;]*: ENTSO-E Transparency Platform; Irland: SEMOpx \(resultaterne af day-ahead-auktionen\); Storbritannien: Elexon BMRS, Contains BMRS data © Elexon Limited copyright and database right \d{4}; vi har ændret dataene \(timegennemsnit/.test(bullet) && /Storbritannien er undtagelsen: siden viser Market Index Price \(within-day\), altså ikke day-ahead-prisen, kun for i dag og i pund/.test(bullet), 'llms.txt: Europa-punktet siger hvor mange lande, kun faktiske priser, de to kilder (Irland m.fl.: ENTSO-E) og at dataene er ændret', bullet.slice(0, 700));
+  ok(bullet.includes(`i ${nAct} europæiske lande`) && /Faktiske børspriser og for de fleste lande desuden en prognose op til en uge frem fra elpriser\.orgs egen statistiske model \(ikke en officiel prognose; den er bedre til at udpege de billigste timer end til at ramme prisniveauet, og de faktiske priser erstatter den\) — uden moms/.test(bullet) && !/ingen prognose|Kun faktiske/.test(bullet) && /Kilde: Bundesnetzagentur \| SMARD\.de via Energy-Charts\.info, licens CC BY 4\.0; Spanien[^:;]*: ENTSO-E Transparency Platform; Irland: SEMOpx \(resultaterne af day-ahead-auktionen\); Storbritannien: Elexon BMRS, Contains BMRS data © Elexon Limited copyright and database right \d{4}; vi har ændret dataene \(timegennemsnit/.test(bullet) && /Storbritannien er undtagelsen: siden viser Market Index Price \(within-day\), altså ikke day-ahead-prisen, kun for i dag og i pund/.test(bullet), 'llms.txt: Europa-punktet siger hvor mange lande, at der for de fleste også er en prognose (ikke officiel, erstattet af de faktiske priser), de to kilder (Irland m.fl.: ENTSO-E) og at dataene er ændret', bullet.slice(0, 700));
   ok(/\[Belgien\]\(https:\/\/elpriser\.org\/be\/stroomprijs\) \(hollandsk, \[fransk\]\(https:\/\/elpriser\.org\/be\/prix-electricite\)\)/.test(bullet) && /\[Irland\]\(https:\/\/elpriser\.org\/ie\/electricity-price\) \(prisområdet SEM: Irland og Nordirland\)/.test(bullet) && /\[Schweiz\]\([^)]*\) \(priserne er i euro, ikke franc\)/.test(bullet) && / og \[[^\]]+\]\(https:\/\/elpriser\.org\/[^)]+\)\.$/.test(bullet.trim()) && !/\{\{/.test(llms + full), 'llms.txt: Belgien med begge sprog, Irland som SEM, Schweiz i euro; ingen ubrugt skabelon');
   // Every country is linked under its Danish name (the page's `da`), at the first page of that country.
   const seenCc = new Set(), unlinked = [];

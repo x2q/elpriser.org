@@ -1,0 +1,45 @@
+{
+ "version": 2,
+ "built": "2026-11-02",
+ "period": "2025-04-01..2026-11-02",
+ "model": "eu-ens-v2",
+ "rule": "a zone-horizon is published only if the recipe's MAE is at least 5 % below the naive level+shape method on the hold-out (2026-07-01..) and on the whole backtest",
+ "forcedOff": {
+  "al": [7]
+ },
+ "ownerWeak": {
+  "it-n": "all",
+  "pt": "all",
+  "gr": "all",
+  "me": "all",
+  "mk": "all",
+  "es": [2]
+ },
+ "zones": {
+  "de": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "fr": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "pl": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "it-n": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4]},
+  "at": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "be": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "ch": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "cz": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "hu": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "si": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "es": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "pt": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "sk": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "gr": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "ro": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "bg": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "hr": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "rs": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "ee": {"recipe": "lgb", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "lv": {"recipe": "lgb", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "lt": {"recipe": "lgb", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "ie": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "me": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "mk": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "al": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6], "nofuel": [2, 3, 4, 5, 6]}
+ }
+}

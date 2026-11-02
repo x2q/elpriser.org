@@ -1032,6 +1032,71 @@ const EU_ZONE_INFO = {
   ie:       { name: 'IE Ireland (SEM)',              country: 'IE', currency: 'EUR', rate: 1 },
 };
 
+// An EU zone's answer: the settled prices of `eu-prices-<zone>` (each zone's licensed source) with, AFTER the last settled day,
+// the forecast days of `eu-forecast-<zone>` (scripts/forecast_model/eu: elpriser.org's own model, forecast days only, never a price a
+// licence attributes to somebody else). Nothing is invented: with no usable forecast key the answer is the prices, byte for byte
+// as before this key existed. What is used of a run, and what is not:
+//  - the run is not older than EU_FORECAST_MAX_AGE_DAYS before the newest settled day (a run the Spark stopped writing must not pass for current);
+//  - a day counts only if it is a well-formed `forecast` day: a real date later than every settled day (a settled price always wins),
+//    24 distinct hours 0-23 with a finite `eur_mwh`, and a band (`min_eur_mwh`/`max_eur_mwh`, P10/P90) that is either on all 24 hours, with
+//    min <= price <= max, or on none. Fields are copied by name: nothing else a run carries (the job's `uncorrected`/`shadow` numbers) is passed on;
+//  - the days must follow the last settled day WITHOUT A HOLE: the first one is the day after it, each next one the day after the previous.
+//    The apps (tests/golden parseZone) and the Pris screen stop at the first missing day, so a forecast starting one day late would
+//    be invisible there and a hole would silently cut the rest; a run that cannot be joined to the settled prices contributes nothing;
+//  - at most EU_FORECAST_MAX_DAYS days (today + 7 is all the pages draw).
+// The response then also says `model`, `trainedThrough`, `forecastGenerated` and `accuracy` (the backtest's error of this zone per horizon,
+// as scripts/forecast_model/eu/build_gate.py writes it) so a page can state what the forecast is worth.
+const EU_FORECAST_MAX_AGE_DAYS = 3;
+const EU_FORECAST_MAX_DAYS = 8;
+function withEuForecast(priced, fc) {
+  if (!fc || typeof fc !== 'object' || !Array.isArray(fc.days) || !fc.days.length || !priced || !Array.isArray(priced.days) || !priced.days.length) return priced;
+  const DATE = /^\d{4}-\d{2}-\d{2}$/;
+  const dayMs = d => Date.parse(`${d}T00:00:00Z`);
+  const nextDay = d => new Date(dayMs(d) + 86400000).toISOString().slice(0, 10);
+  const num = v => typeof v === 'number' && Number.isFinite(v);
+  const settled = priced.days.filter(d => d && d.type === 'actual' && typeof d.date === 'string' && DATE.test(d.date));
+  if (!settled.length) return priced;
+  const last = settled.reduce((m, d) => (d.date > m ? d.date : m), '');
+  if (typeof fc.generated !== 'string' || !DATE.test(fc.generated) || !(dayMs(last) - dayMs(fc.generated) <= EU_FORECAST_MAX_AGE_DAYS * 86400000)) return priced;
+  // one well-formed day, copied by field name; null when anything about it is off
+  const clean = d => {
+    if (!d || d.type !== 'forecast' || typeof d.date !== 'string' || !DATE.test(d.date) || !(d.date > last) || !Array.isArray(d.prices) || d.prices.length !== 24) return null;
+    const rows = [];
+    for (const p of d.prices) {
+      if (!p || !Number.isInteger(p.hour) || p.hour < 0 || p.hour > 23 || !num(p.eur_mwh)) return null;
+      const row = { hour: p.hour, eur_mwh: p.eur_mwh };
+      const hasLo = p.min_eur_mwh !== undefined && p.min_eur_mwh !== null, hasHi = p.max_eur_mwh !== undefined && p.max_eur_mwh !== null;
+      if (hasLo !== hasHi) return null;
+      if (hasLo) {
+        if (!num(p.min_eur_mwh) || !num(p.max_eur_mwh) || p.min_eur_mwh > p.eur_mwh || p.max_eur_mwh < p.eur_mwh) return null;
+        row.min_eur_mwh = p.min_eur_mwh; row.max_eur_mwh = p.max_eur_mwh;
+      }
+      rows.push(row);
+    }
+    if (new Set(rows.map(r => r.hour)).size !== 24) return null;
+    if (rows.some(r => 'min_eur_mwh' in r) && !rows.every(r => 'min_eur_mwh' in r)) return null;     // a band on some hours only is not a band
+    rows.sort((a, b) => a.hour - b.hour);
+    const out = { date: d.date, type: 'forecast' };
+    if (Number.isInteger(d.horizon) && d.horizon >= 1 && d.horizon <= 14) out.horizon = d.horizon;
+    out.prices = rows;
+    return out;
+  };
+  const seen = new Set();
+  const good = fc.days.map(clean).filter(d => d && !seen.has(d.date) && seen.add(d.date)).sort((a, b) => (a.date < b.date ? -1 : 1));
+  const extra = [];
+  for (const d of good) {
+    if (d.date !== nextDay(extra.length ? extra[extra.length - 1].date : last)) break;     // sorted: nothing later can close the hole
+    extra.push(d);
+    if (extra.length >= EU_FORECAST_MAX_DAYS) break;
+  }
+  if (!extra.length) return priced;
+  const out = { ...priced, days: [...priced.days, ...extra], trainedThrough: typeof fc.trainedThrough === 'string' ? fc.trainedThrough : null,
+                model: typeof fc.model === 'string' ? fc.model : null, forecastGenerated: fc.generated };
+  if (fc.accuracy && typeof fc.accuracy === 'object' && !Array.isArray(fc.accuracy)) out.accuracy = fc.accuracy;
+  return out;
+}
+
+
 /** The ECB's daily euro reference rates, edge-cached for six hours (the ECB
  *  publishes once a working day, ~16:00 CET). A rate outside a sane band is
  *  treated as a parse failure, so a malformed file can never put a Norwegian
@@ -1263,7 +1328,7 @@ const OPENAPI_SPEC = {
           '**Nordic zones and the Netherlands** (`dk1`, `dk2`, `no1`-`no5`, `se1`-`se4`, `fi`, `nl`): ten days from yesterday, settled days as `actual` and',
           'the rest a `forecast` from one open model (`trainedThrough` says how fresh its training data is).',
           '',
-          '**EU zones, actual prices only, no forecast** (`trainedThrough` is null; every day is `actual`; tomorrow is absent until it is published, about 13:00 CET):',
+          '**EU zones** (settled days are `actual`; tomorrow is absent until it is published, about 13:00 CET; `trainedThrough` is null when the answer is settled prices alone, see the end of this text for the forecast):',
           '`de` Germany and Luxembourg (DE-LU), `fr` France, `pl` Poland (`zoneInfo.currency` PLN, so convert with `zoneInfo.rate`), `it-n` Italy, bidding zone North only,',
           '`at` Austria, `be` Belgium, `ch` Switzerland, `cz` Czechia, `hu` Hungary and `si` Slovenia. Source: Bundesnetzagentur | SMARD.de via Energy-Charts.info,',
           'licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).',
@@ -1273,6 +1338,16 @@ const OPENAPI_SPEC = {
           'prices are the means of the market\'s 30-minute prices).',
           'Prices of the non-euro countries are in EUR/MWh as published; `zoneInfo.currency` is EUR for all of these.',
           'The data were changed by elpriser.org: the 15- or 30-minute prices are aggregated to hourly means by the zone\'s local clock.',
+          '',
+          '**Forecast days for 25 EU zones** (all of the above except `xk` and `gb`): after the last settled day come up to seven `forecast` days, the first one the day after',
+          'the last settled day, with no hole. It is elpriser.org\'s own statistical model (a mean of a rolling linear model and a gradient-boosted tree model, using weather forecasts',
+          'and market data as inputs): NOT an official forecast. A day has `horizon` (days after the last settled day + 1, 2 to 7), `eur_mwh` as the central estimate and',
+          '`min_eur_mwh` / `max_eur_mwh` as P10 / P90. The settled price always replaces the forecast for the same day. A horizon is published for a zone only if its error (mean absolute error)',
+          'was at least 5 % below that of a simple level-and-shape method out of sample; the others are left out. The answer then also carries `model`, `trainedThrough`, `forecastGenerated`',
+          'and `accuracy` for the zone: `byHorizon[h]` with `mae` (EUR/MWh), `baseMae` (the simple method\'s), `gain` (1 - mae / baseMae, whole backtest), `gainRecent` (since 2026-09-01, when',
+          'prices rose sharply), `rankGain` and `rankOk` (how much better the model picks the cheapest hours than the simple method, and whether that is at least 5 %), `coverage` (the share of hours',
+          'that fell inside min..max, measured out of sample: not a promised 80 %), `low` (true: low confidence) and `bias`/`baseBias` since 2026-09-01. `accuracy.showEur` is true for the zones where',
+          'a percentage misleads (`ee`, `lv`, `lt`): quote EUR/MWh. A run older than three days is ignored, so without a current forecast the answer is the settled prices alone.',
           '',
           '**Great Britain, `gb`: NOT a day-ahead price.** It is the Market Index Price (within-day): the volume-weighted price of the within-day wholesale trades',
           'of each half hour (Market Index Data of the Balancing Mechanism Reporting Service, EPEX SPOT UK and N2EX), as hourly means by the London clock, an hour only once',
@@ -1480,8 +1555,12 @@ async function handleApi(context) {
     }
     if (!context.env || !context.env.PRICE_CACHE) return fail(503, 'forecast store unavailable');
     try {
-      const raw = await kvJson(context.env, eu ? `eu-prices-${zone}` : `nordic-forecast-${zone}`, { ttl: 900 });
-      if (!raw) return fail(404, eu ? `no prices available for ${zone}` : `no forecast available for ${zone}`);
+      const [priced, fc] = await Promise.all([
+        kvJson(context.env, eu ? `eu-prices-${zone}` : `nordic-forecast-${zone}`, { ttl: 900 }),
+        eu ? kvJson(context.env, `eu-forecast-${zone}`, { ttl: 900 }) : null,
+      ]);
+      if (!priced) return fail(404, eu ? `no prices available for ${zone}` : `no forecast available for ${zone}`);
+      const raw = eu ? withEuForecast(priced, fc) : priced;
       const fx = await ecbRates();
       const info = eu ? EU_ZONE_INFO[zone] : NORDIC_ZONE_INFO[zone];
       return jsonResponse({ ...raw, zoneInfo: { ...info,
