@@ -36,7 +36,7 @@ No widget, notification, Live Activity or background fetch exists in either app,
 | Plurals | `devices_active`, `hours_count` | one/other | CLDR categories per language (pl, cs, sk, lt, lv, ro, sl, hr, sr need more) |
 | Chart axis | `axisFor` / `priceAxis`: whole kroner | prices around 0–5 kr | unit-aware axis (0–40 ct) |
 | Default language | `values/` Danish; iOS development region da | unknown device language gets Danish | English fallback on both platforms; Danish is `values-da` / `da` |
-| Country selection | none (the "Andre lande" row opened elpriser.org/norden) | Denmark is the only country | country list (29 countries, 38 zones), default from the device region and language |
+| Country selection | none (the "Andre lande" row opened elpriser.org/norden) | Denmark is the only country | country list (30 countries, 38 zones), default from the device region and language |
 | Store text | `ElpriserAndroid/store/listing-*.md`, `ElpriserIOS/store/listing-da.md` | "kun Danmark", "kroner" | per-language listing in `docs/store/` |
 | Privacy text | `privatliv.html`, ASC/Play declarations | Danish only; location "indsamlet+delt til OSM" for the net lookup | unchanged data flows (see `docs/store/europe-release-checklist.md`), but the policy is Danish only: owner decision |
 | Telemetry | User-Agent version count | already pan-European | unchanged; the zone is not sent beyond the API query |

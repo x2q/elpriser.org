@@ -69,3 +69,87 @@ test('the web app resolves every grid-company name exactly as the contract says'
   }
   assert.ok(webNets().length === golden.nets.length);
 });
+
+/* ── Zones: the same table in the API, the web, the contract and both apps ───────────────────────── */
+
+const apiSrc = fs.readFileSync(path.join(ROOT, 'functions/api/[[catchall]].js'), 'utf8');
+const apiList = name => ((apiSrc.match(new RegExp(`const ${name} = \\[([^\\]]*)\\]`)) || [])[1] || '').split(',').map(x => x.trim().replace(/'/g, '')).filter(Boolean);
+const apiInfo = Object.fromEntries([...apiSrc.matchAll(/^\s+'?([a-z0-9-]+)'?:\s+\{ name: '([^']+)',\s+country: '([A-Z]{2})', currency: '([A-Z]{3})'/gm)].map(m => [m[1], { name: m[2], country: m[3], currency: m[4] }]));
+
+test('the contract\'s zone table lists exactly the zones /api/nordic serves, with the API\'s country and currency', () => {
+  const served = [...apiList('NORDIC_ZONES'), ...apiList('EU_ZONES_ENERGY_CHARTS'), ...apiList('EU_ZONES_ENTSOE')];
+  assert.deepEqual(golden.zones.map(z => z.key).sort(), [...served].sort());
+  assert.equal(served.length, 38, 'the API serves 13 Nordic/NL + 25 EU zones');
+  for (const z of golden.zones) {
+    const info = apiInfo[z.key];
+    assert.ok(info, `${z.key}: no zoneInfo in the API`);
+    assert.equal(z.country, info.country, `${z.key}: country`);
+    assert.equal(z.currency, info.currency, `${z.key}: currency`);
+  }
+});
+
+test('the zone table agrees with the web\'s ZONES (currency, sub-unit, the names of the Norwegian and Swedish areas)', () => {
+  const fn = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const from = fn.indexOf('var ZONES={');
+  const body = fn.slice(from, fn.indexOf('\n};', from) + 3);
+  const web = vm.runInNewContext(body.replace('var ZONES=', '(').replace(/;\s*$/, ')'));
+  for (const z of golden.zones) {
+    const w = web[z.key];
+    if (!w) continue;
+    assert.equal(z.currency, w.cur, `${z.key}: currency`);
+    if (z.sub !== 'ct') assert.equal(z.sub, w.sub, `${z.key}: sub-unit`);
+    else assert.equal(w.cur, 'EUR', `${z.key}: ct means euro cent`);
+    if (/^(no|se)\d$/.test(z.key)) assert.equal(z.city, w.city, `${z.key}: city`);
+  }
+  // the API's days are by the zone's own wall clock: the contract's tz must be a real IANA zone
+  for (const z of golden.zones) assert.doesNotThrow(() => new Intl.DateTimeFormat('en', { timeZone: z.tz }), `${z.key}: ${z.tz}`);
+});
+
+test('countries: every zone belongs to exactly one country; the default zone of every region and language is a zone of the table', () => {
+  const keys = new Set(golden.zones.map(z => z.key));
+  assert.deepEqual(golden.countries.flatMap(c => c.zones).sort(), [...keys].sort());
+  for (const z of [...Object.values(golden.regionZone), ...Object.values(golden.languageZone), golden.fallbackZone]) assert.ok(keys.has(z), z);
+  const dk = golden.defaultZone.filter(c => c.region === 'DK' || c.language === 'da').map(c => c.expect);
+  assert.ok(dk.every(z => z === 'dk1'), 'Denmark and Danish stay on DK1: the Danish experience is unchanged');
+  assert.equal(golden.countries.length, 30);
+});
+
+test('/api/nordic parsing: complete days only, EUR/MWh -> sub-unit per kWh at the response\'s rate (ECB fallback without one), band optional', () => {
+  const [no, de, pl] = golden.zoneResponses;
+  assert.deepEqual(no.expect.days.map(d => d.date), ['2026-10-09', '2026-10-10', '2026-10-11', '2026-10-14']);
+  assert.equal(no.expect.days[1].price[0], 65.04, '60 EUR/MWh x 10.84 / 10');
+  assert.equal(no.expect.days[1].actual, true);
+  assert.equal(no.expect.days[2].actual, false);
+  assert.ok(no.expect.days[2].lo && no.expect.days[2].hi && no.expect.days[1].lo === null);
+  assert.equal(de.expect.days[0].price[0], -1.25, 'a negative price stays negative');
+  assert.equal(pl.expect.rate, 4.39, 'no rate in zoneInfo: the fallback for PLN');
+  assert.equal(pl.expect.days[0].price[0], 39.51);
+});
+
+test('days from today: consecutive, a hole ends the run, no today means nothing', () => {
+  assert.deepEqual(golden.zoneDays.map(c => c.expect), [['2026-10-10', '2026-10-11'], [], ['2026-10-10'], []]);
+});
+
+const zoneTable = (file, re, build) => {
+  const f = path.join(ROOT, file);
+  return fs.existsSync(f) ? [...fs.readFileSync(f, 'utf8').matchAll(re)].map(build) : null;
+};
+const strip = z => ({ key: z.key, country: z.country, tz: z.tz, currency: z.currency, sub: z.sub, city: z.city });
+
+// Skipped until the apps' Zones files exist (the Europe work adds them); then they pin the apps to the contract.
+const kotlinZones = path.join(ROOT, 'ElpriserAndroid/app/src/main/java/org/elpriser/app/data/Zones.kt');
+const swiftZones = path.join(ROOT, 'ElpriserIOS/Sources/Zones.swift');
+
+test('the Android zone table (Zones.kt) equals the contract: key, country, time zone, currency, sub-unit, city, in order', { skip: !fs.existsSync(kotlinZones) && 'Zones.kt not written yet' }, () => {
+  const rows = zoneTable('ElpriserAndroid/app/src/main/java/org/elpriser/app/data/Zones.kt',
+    /Zone\("([a-z0-9-]+)", "([A-Z]{2})", "([A-Za-z\/_]+)", "([A-Z]{3})", "([^"]+)", (?:"([^"]+)"|null)\)/g,
+    m => ({ key: m[1], country: m[2], tz: m[3], currency: m[4], sub: m[5], city: m[6] ?? null }));
+  assert.deepEqual(rows, golden.zones.map(strip));
+});
+
+test('the iOS zone table (Zones.swift) equals the contract: key, country, time zone, currency, sub-unit, city, in order', { skip: !fs.existsSync(swiftZones) && 'Zones.swift not written yet' }, () => {
+  const rows = zoneTable('ElpriserIOS/Sources/Zones.swift',
+    /Zone\(key: "([a-z0-9-]+)", country: "([A-Z]{2})", tz: "([A-Za-z\/_]+)", currency: "([A-Z]{3})", sub: "([^"]+)", city: (?:"([^"]+)"|nil)\)/g,
+    m => ({ key: m[1], country: m[2], tz: m[3], currency: m[4], sub: m[5], city: m[6] ?? null }));
+  assert.deepEqual(rows, golden.zones.map(strip));
+});
