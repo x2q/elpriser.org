@@ -386,7 +386,9 @@ async function main() {
       // 200 once the Spark job has written the key; a 404 "no prices available" before that.
       check(a.status === 200 ? (j.zone === z && j.trainedThrough === null && Array.isArray(j.days) && j.days.every(d => d.type === 'actual') && j.zoneInfo && j.zoneInfo.currency === (z === 'pl' ? 'PLN' : 'EUR')) : (a.status === 404 && /no prices available/.test(a.body)), `/api/nordic?zone=${z}: ${a.status === 200 ? 'faktiske døgn og zoneInfo' : '404 før jobbet har kørt'}`, String(a.status));
     }
-    for (const z of ['xx', 'ie', 'it-cn']) check((await get('/api/nordic?zone=' + z)).status === 400, `/api/nordic?zone=${z}: 400`);
+    for (const z of ['xx', 'gb', 'it-cn']) check((await get('/api/nordic?zone=' + z)).status === 400, `/api/nordic?zone=${z}: 400`);
+    // The 21 zones added 2026-11-02 (Energy-Charts and ENTSO-E jobs) answer with EUR/MWh days of 24 hours.
+    for (const z of ['at', 'ch', 'es', 'ie', 'ro', 'lt']) { const r = await get('/api/nordic?zone=' + z); let j = {}; try { j = JSON.parse(r.body); } catch {} check(r.status === 200 && j.unit === 'EUR/MWh' && j.zoneInfo && j.zoneInfo.currency === 'EUR' && j.days && j.days.length >= 2 && j.days.every(d => d.prices.length === 24), `/api/nordic?zone=${z}: EU-zone med timepriser`, `status ${r.status}`); }
   }
   console.log('\n9b. BYSIDER — /elpris/<by> (pilot)');
   // The ten pages are written by the function from functions/_cities.js (read here as data) and the live forecast.
