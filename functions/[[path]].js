@@ -1098,7 +1098,37 @@ var PRIS_I18N={
     byDay:'Dia a dia',day:'Dia',range:'Intervalo',type:'Tipo',none:'Não foi possível carregar os preços neste momento.',
     cap:'Preço grossista do mercado diário sem IVA, impostos, taxas nem tarifas de acesso às redes',
     avg:'média',
-    act1:'Hoje',act2:'Hoje e amanhã',cheapRest:'Hora mais barata do resto do dia'}
+    act1:'Hoje',act2:'Hoje e amanhã',cheapRest:'Hora mais barata do resto do dia'},
+  sk:{wd:['nedeľa','pondelok','utorok','streda','štvrtok','piatok','sobota'],ws:['ne','po','ut','st','št','pi','so'],
+    mon:['jan.','feb.','mar.','apr.','máj','jún','júl','aug.','sep.','okt.','nov.','dec.'],dot:'.',hs:':00',hh:1,
+    now:'Cena elektriny práve teraz',hourly:'Cena elektriny po hodinách',at:'',today:'dnes',tomorrow:'zajtra',evening:'dnes večer',
+    verdict:['Nízka cena práve teraz','Priemerná cena práve teraz','Vysoká cena práve teraz'],tier:['Nízka','Priemerná','Vysoká'],
+    cheaper:'Lacnejšie',cheapest24:'Najlacnejšia hodina v nasledujúcich 24 hodinách',lo:'najlacnejšia hodina',hi:'najdrahšia hodina',
+    next:'Nasledujúcich',p2:'2 dni',p5:'5 dní',p7:'7 dní',period:'Obdobie',fc:'Cena na dennom trhu',actual:'Cena na dennom trhu',
+    byDay:'Deň po dni',day:'Deň',range:'Rozpätie',type:'Typ',none:'Ceny sa teraz nepodarilo načítať.',
+    cap:'Burzová cena z denného trhu bez DPH, daní a poplatkov za distribúciu',
+    avg:'priem.',
+    act1:'Dnes',act2:'Dnes a zajtra',cheapRest:'Najlacnejšia hodina do konca dňa'},
+  hu:{wd:['vasárnap','hétfő','kedd','szerda','csütörtök','péntek','szombat'],ws:['v','h','k','sze','cs','p','szo'],
+    mon:['jan.','febr.','márc.','ápr.','máj.','jún.','júl.','aug.','szept.','okt.','nov.','dec.'],dot:'.',mf:1,hs:':00',hh:1,
+    now:'Áramár most',hourly:'Áramár óránként',at:'',today:'ma',tomorrow:'holnap',evening:'ma este',
+    verdict:['Most olcsó','Most átlagos','Most drága'],tier:['Olcsó','Átlagos','Drága'],
+    cheaper:'Olcsóbb',cheapest24:'A legolcsóbb óra a következő 24 órában',lo:'legolcsóbb óra',hi:'legdrágább óra',
+    next:'Következő',p2:'2 nap',p5:'5 nap',p7:'7 nap',period:'Időszak',fc:'Másnapi piaci ár',actual:'Másnapi piaci ár',
+    byDay:'Napról napra',day:'Nap',range:'Tartomány',type:'Típus',none:'Az árakat most nem sikerült betölteni.',
+    cap:'Tőzsdei másnapi ár áfa, adók és hálózati díjak nélkül',
+    avg:'átl.',
+    act1:'Ma',act2:'Ma és holnap',cheapRest:'A nap hátralévő részének legolcsóbb órája'},
+  sl:{wd:['nedelja','ponedeljek','torek','sreda','četrtek','petek','sobota'],ws:['ned','pon','tor','sre','čet','pet','sob'],
+    mon:['jan.','feb.','mar.','apr.','maj','jun.','jul.','avg.','sep.','okt.','nov.','dec.'],dot:'.',hs:':00',hh:1,
+    now:'Cena elektrike zdaj',hourly:'Cena elektrike po urah',at:'',today:'danes',tomorrow:'jutri',evening:'danes zvečer',
+    verdict:['Nizka cena zdaj','Povprečna cena zdaj','Visoka cena zdaj'],tier:['Nizka','Povprečna','Visoka'],
+    cheaper:'Ceneje',cheapest24:'Najcenejša ura v naslednjih 24 urah',lo:'najcenejša ura',hi:'najdražja ura',
+    next:'Naslednjih',p2:'2 dni',p5:'5 dni',p7:'7 dni',period:'Obdobje',fc:'Cena na trgu za dan vnaprej',actual:'Cena na trgu za dan vnaprej',
+    byDay:'Dan za dnem',day:'Dan',range:'Razpon',type:'Vrsta',none:'Cen trenutno ni bilo mogoče naložiti.',
+    cap:'Veleprodajna cena na trgu za dan vnaprej brez DDV, davkov in omrežnine',
+    avg:'povp.',
+    act1:'Danes',act2:'Danes in jutri',cheapRest:'Najcenejša ura do konca dneva'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1133,7 +1163,10 @@ var ZONES={
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
   cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   es:{name:'ES',city:'España',lang:'es',cur:'EUR',rate:1,sub:'c€',src:'entsoe'},
-  pt:{name:'PT',city:'Portugal',lang:'pt',cur:'EUR',rate:1,sub:'c€',shift:-1,src:'entsoe'}
+  pt:{name:'PT',city:'Portugal',lang:'pt',cur:'EUR',rate:1,sub:'c€',shift:-1,src:'entsoe'},
+  sk:{name:'SK',city:'Slovensko',lang:'sk',cur:'EUR',rate:1,sub:'c',src:'entsoe'},
+  hu:{name:'HU',city:'Magyarország',lang:'hu',cur:'EUR',rate:1,sub:'ct',src:'ec'},
+  si:{name:'SI',city:'Slovenija',lang:'sl',cur:'EUR',rate:1,sub:'c',src:'ec'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1261,7 +1294,31 @@ var PRIS_COUNTRIES={
     desc:'Preço da eletricidade em Portugal (mercado diário), hora a hora, hoje e amanhã, em c€/kWh, sem IVA, impostos nem tarifas de rede. Fonte: ENTSO-E',
     tx:{h1:'Preço da eletricidade em Portugal: hoje e amanhã',
       zonesH:'Preço da eletricidade em Portugal',
-      note:'Médias horárias dos preços de 15 minutos, calculadas por elpriser.org (dados alterados em relação aos originais). Os preços estão em cêntimos de euro por kWh. Fonte:'}}
+      note:'Médias horárias dos preços de 15 minutos, calculadas por elpriser.org (dados alterados em relação aos originais). Os preços estão em cêntimos de euro por kWh. Fonte:'}},
+  'sk/ceny-elektriny':{lang:'sk',cc:'sk',zones:['sk'],def:'sk',act:1,
+    name:'Slovensko',da:'Slovakiet',loc:'sk_SK',qid:'Q214',
+    title:'Cena elektriny dnes a zajtra – burzová cena na Slovensku',
+    desc:'Burzová cena elektriny (denný trh) na Slovensku po hodinách, dnes a zajtra, v c/kWh, bez DPH, daní a poplatkov. Zdroj: ENTSO-E',
+    tx:{h1:'Cena elektriny na Slovensku: dnes a zajtra',
+      zonesH:'Cena elektriny na Slovensku',
+      note:'Hodinové priemery štvrťhodinových cien vypočítal elpriser.org (údaje sú oproti originálu upravené). Ceny sú v eurocentoch za kWh. Zdroj:',
+      cap:'Burzová cena z denného trhu v eurocentoch, bez DPH, daní a poplatkov za distribúciu'}},
+  'hu/aramar':{lang:'hu',cc:'hu',zones:['hu'],def:'hu',act:1,
+    name:'Magyarország',da:'Ungarn',loc:'hu_HU',qid:'Q28',
+    title:'Áramár ma és holnap – tőzsdei áramár Magyarországon',
+    desc:'Tőzsdei áramár (másnapi piac) Magyarországon óránként, ma és holnap, ct/kWh-ban, áfa, adók és díjak nélkül. Forrás: Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Áramár Magyarországon: ma és holnap',
+      zonesH:'Áramár Magyarországon',
+      note:'A negyedórás árak óránkénti átlagát az elpriser.org számította ki (az adatokat az eredetihez képest módosítottuk). Az árak eurócentben értendők, nem forintban. Forrás:',
+      cap:'Tőzsdei másnapi ár eurócentben, áfa, adók és hálózati díjak nélkül'}},
+  'si/cena-elektrike':{lang:'sl',cc:'si',zones:['si'],def:'si',act:1,
+    name:'Slovenija',da:'Slovenien',loc:'sl_SI',qid:'Q215',
+    title:'Cena elektrike danes in jutri – borzna cena v Sloveniji',
+    desc:'Borzna cena elektrike (trg za dan vnaprej) v Sloveniji po urah, danes in jutri, v c/kWh, brez DDV, davkov in omrežnine. Vir: Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Cena elektrike v Sloveniji: danes in jutri',
+      zonesH:'Cena elektrike v Sloveniji',
+      note:'Urna povprečja četrturnih cen je izračunal elpriser.org (podatki so v primerjavi z izvirnikom spremenjeni). Cene so v evrocentih za kWh. Vir:',
+      cap:'Borzna cena na trgu za dan vnaprej v evrocentih, brez DDV, davkov in omrežnine'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1355,7 +1412,19 @@ var CHROME_I18N={
   pt:{home:'elpriser.org – página inicial',land:'Países',place:'Onde está?',area:'Zona de preço',oth:'Outros países',back:'Voltar',find:'Pesquisar',none:'Sem resultados',close:'Fechar',
     cn:{dk:'Dinamarca',no:'Noruega',sv:'Suécia',fi:'Finlândia',nl:'Países Baixos',de:'Alemanha',fr:'França',pl:'Polónia',it:'Itália',at:'Áustria',ch:'Suíça',be:'Bélgica',ie:'Irlanda',cz:'Chéquia',es:'Espanha',pt:'Portugal'},
     privacy:'Privacidade (em dinamarquês)',src:'Fonte:',and:'e',open:'Conjuntos de dados abertos em',
-    chg:'Dados alterados: médias horárias calculadas por elpriser.org'}
+    chg:'Dados alterados: médias horárias calculadas por elpriser.org'},
+  sk:{home:'elpriser.org – úvodná stránka',land:'Krajiny',place:'Kde ste?',area:'Cenová zóna',oth:'Ďalšie krajiny',back:'Späť',find:'Hľadať',none:'Žiadne výsledky',close:'Zavrieť',
+    cn:{dk:'Dánsko',no:'Nórsko',sv:'Švédsko',fi:'Fínsko',nl:'Holandsko',de:'Nemecko',fr:'Francúzsko',pl:'Poľsko',it:'Taliansko',at:'Rakúsko',ch:'Švajčiarsko',be:'Belgicko',ie:'Írsko',cz:'Česko',sk:'Slovensko',hu:'Maďarsko',si:'Slovinsko'},
+    privacy:'Ochrana súkromia (po dánsky)',src:'Zdroj:',and:'a',open:'Otvorené súbory údajov na',
+    chg:'Zmena: hodinové priemery vypočítal elpriser.org'},
+  hu:{home:'elpriser.org – kezdőlap',land:'Országok',place:'Hol vagy?',area:'Árzóna',oth:'További országok',back:'Vissza',find:'Keresés',none:'Nincs találat',close:'Bezárás',
+    cn:{dk:'Dánia',no:'Norvégia',sv:'Svédország',fi:'Finnország',nl:'Hollandia',de:'Németország',fr:'Franciaország',pl:'Lengyelország',it:'Olaszország',at:'Ausztria',ch:'Svájc',be:'Belgium',ie:'Írország',cz:'Csehország',sk:'Szlovákia',hu:'Magyarország',si:'Szlovénia'},
+    privacy:'Adatvédelem (dánul)',src:'Forrás:',and:'és',open:'Nyílt adatkészletek:',
+    chg:'Módosítás: az óránkénti átlagokat az elpriser.org számította ki'},
+  sl:{home:'elpriser.org – domača stran',land:'Države',place:'Kje ste?',area:'Cenovno območje',oth:'Druge države',back:'Nazaj',find:'Iskanje',none:'Ni rezultatov',close:'Zapri',
+    cn:{dk:'Danska',no:'Norveška',sv:'Švedska',fi:'Finska',nl:'Nizozemska',de:'Nemčija',fr:'Francija',pl:'Poljska',it:'Italija',at:'Avstrija',ch:'Švica',be:'Belgija',ie:'Irska',cz:'Češka',sk:'Slovaška',hu:'Madžarska',si:'Slovenija'},
+    privacy:'Zasebnost (v danščini)',src:'Vir:',and:'in',open:'Odprti nabori podatkov na',
+    chg:'Sprememba: urna povprečja je izračunal elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
@@ -1446,6 +1515,8 @@ function prisAt(L,h,h2){
 }
 function prisEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function prisCap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+/** "3. nov." (day first), or "nov. 3." when the language writes the month first (`mf`: Hungarian). */
+function prisDM(dt,L){return L.mf?dt.m+' '+dt.d+L.dot:dt.d+L.dot+' '+dt.m;}
 function prisDate(date,L){
   var dt=new Date(date+'T12:00:00Z');
   L=L||PRIS_I18N.da;
@@ -1733,7 +1804,7 @@ function prisChart(rows,nDays,o){
     if(p==null){cols+='<span class="pc"></span>';continue;}
     var base=y(Math.min(p,0)),ht=Math.abs(p)/span*100,dt=prisDate(r.date,L);
     var dn=Math.floor(a/24);
-    var tip=(dn===0?prisCap(L.today):dn===1?prisCap(L.tomorrow):dt.ws+' '+dt.d+L.dot+' '+dt.m)
+    var tip=(dn===0?prisCap(L.today):dn===1?prisCap(L.tomorrow):dt.ws+' '+prisDM(dt,L))
       +' '+prisAt(L,h)+' · '+prisNum(p,C.d,L)+' '+C.u+'/kWh';
     cols+='<span class="pc'+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
       +'" style="bottom:'+base.toFixed(1)+'%;height:'+ht.toFixed(1)+'%"></i>'
@@ -1781,7 +1852,7 @@ function prisDayRows(all,C,cfg,wins){
   var L=C.L,body='',last=cfg.periods[cfg.periods.length-1],any=false;
   var row=function(i,d,lo,hi,loH,cls){
     var dt=prisDate(d.date,L),name=i===0?prisCap(L.today):i===1?prisCap(L.tomorrow):prisCap(dt.wd);
-    return '<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+name+'<small>'+dt.d+L.dot+' '+dt.m+'</small></th>'
+    return '<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+name+'<small>'+prisDM(dt,L)+'</small></th>'
       +'<td>'+prisNum(lo,C.d,L)+'–'+prisNum(hi,C.d,L)+'</td>'
       +'<td>'+prisAt(L,loH,(loH+1)%24)+'</td>'
       +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?L.actual:L.fc)+'</td>'

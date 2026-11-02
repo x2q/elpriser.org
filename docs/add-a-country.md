@@ -70,7 +70,7 @@ a Danish word or a forecast word). Then do A for the first page.
 
 ```js
 // PRIS_I18N — the words of the screen
-  xx:{wd:[7 weekdays, Sunday first],ws:[7 short],mon:[12 short months],dot:'.' /* the mark after a day number: "2. lis"; '' if none */,
+  xx:{wd:[7 weekdays, Sunday first],ws:[7 short],mon:[12 short months],dot:'.' /* the mark after a day number: "2. lis"; '' if none */, /* optional: mf:1 when the language writes the month first, "nov. 3." (Hungarian), month names with their own dot */
     hs:':00' /* optional: suffix after the hour — " Uhr", " h", ":00" */, hh:1 /* optional: the suffix after EACH hour of a range ("13:00–14:00") */,
     dec:'.' /* optional: only if the decimal mark is not a comma */,
     now:'…',hourly:'…',at:'' /* the word before the hour: "um", "at"; '' if the language has none */,today:'…',tomorrow:'…',evening:'… (tonight)',

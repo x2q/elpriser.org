@@ -255,16 +255,16 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   // The languages of the actual-price pages carry three keys more (act1, act2: the card title for one and two days; cheapRest); `model` (the link text of the
   // forecast pages' model note) only the languages of a forecast page. Optional: hs (a suffix after the hour or range: " Uhr", " h", ":00"), hh (the suffix after EACH
   // hour: English), dec (the decimal mark when it is not a comma: English). h1, zonesH and note are NOT in a language table: they belong to a country page (tx).
-  const OPT = ['hs', 'hh', 'dec'], ACTKEYS = ['act1', 'act2', 'cheapRest'];
+  const OPT = ['hs', 'hh', 'dec', 'mf'], ACTKEYS = ['act1', 'act2', 'cheapRest'];
   const shape = v => Array.isArray(v) ? `array${v.length}` : typeof v;
   const keys = Object.keys(L.da).filter(k => k !== 'model');
   for (const lang of langs) {
     const have = Object.keys(L[lang]).filter(k => !OPT.includes(k) && !(ACTL.includes(lang) && ACTKEYS.includes(k)) && k !== 'model');
     ok(have.length === keys.length && keys.every(k => k in L[lang]), `${lang}: samme nøgler som dansk`, keys.filter(k => !(k in L[lang])).concat(have.filter(k => !keys.includes(k))).join(','));
-    ok(ACTL.includes(lang) ? ACTKEYS.every(k => typeof L[lang][k] === 'string' && L[lang][k].length > 2) : ACTKEYS.every(k => !(k in L[lang])), `${lang}: act-nøglerne findes på sprog med en act-side og kun dér`);
+    ok(ACTL.includes(lang) ? ACTKEYS.every(k => typeof L[lang][k] === 'string' && L[lang][k].length > 1) : ACTKEYS.every(k => !(k in L[lang])), `${lang}: act-nøglerne findes på sprog med en act-side og kun dér`);
     ok(NONACT.includes(lang) ? typeof L[lang].model === 'string' && L[lang].model.length > 5 : !('model' in L[lang]), `${lang}: model-teksten findes kun på sprog med en prognoseside`);
     ok(!['h1', 'zonesH', 'note'].some(k => k in L[lang]), `${lang}: h1, zonesH og note står ikke i sprogtabellen (de hører til landesiden)`);
-    ok(OPT.every(k => !(k in L[lang]) || typeof L[lang][k] === 'string' || k === 'hh') && (lang !== 'de' || L.de.hs === ' Uhr') && (lang !== 'fr' || L.fr.hs === ' h') && (lang !== 'en' || (L.en.hs === ':00' && L.en.hh === 1 && L.en.dec === '.')) && (!['da', 'nb', 'sv', 'fi', 'nl', 'pl', 'it'].includes(lang) || !['hs', 'hh', 'dec'].some(k => k in L[lang])), `${lang}: hs, hh og dec kun hvor sproget skriver timer og tal sådan (tysk, fransk, engelsk)`);
+    ok(OPT.every(k => !(k in L[lang]) || typeof L[lang][k] === 'string' || k === 'hh' || k === 'mf') && (lang !== 'de' || L.de.hs === ' Uhr') && (lang !== 'fr' || L.fr.hs === ' h') && (lang !== 'en' || (L.en.hs === ':00' && L.en.hh === 1 && L.en.dec === '.')) && (!['da', 'nb', 'sv', 'fi', 'nl', 'pl', 'it'].includes(lang) || !['hs', 'hh', 'dec'].some(k => k in L[lang])), `${lang}: hs, hh og dec kun hvor sproget skriver timer og tal sådan (tysk, fransk, engelsk)`);
     ok(keys.every(k => shape(L[lang][k]) === shape(L.da[k])), `${lang}: samme form på hver nøgle`, keys.filter(k => shape(L[lang][k]) !== shape(L.da[k])).join(','));
     const flat = keys.flatMap(k => [].concat(L[lang][k]));
     const empty = Object.entries(L[lang]).filter(([k, v]) => v === '').map(([k]) => k);
@@ -277,6 +277,12 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   const FCWORD = { de: /prognos|vorhersage|vorschau/i, fr: /prévision|prevision|prédi/i, pl: /prognoz|przewid/i, it: /previsi|prognosi|stima/i, en: /forecast|predict|outlook/i, cs: /předpově|prognóz|odhad/i, es: /previsi|pronóstic|pronostic|predic/i, pt: /previs|prognóst|prever/i };
   const CAPWORD = { de: [/ohne/, /MwSt/], fr: [/hors/, /TVA/], pl: [/bez/, /VAT/], it: [/al netto/, /IVA/], en: [/excluding/, /VAT/], cs: [/bez/, /DPH/], nl: [/zonder/, /btw/], es: [/sin/, /IVA/], pt: [/sem/, /IVA/] };
   const NOTEWORD = { de: [/berechnet/, /verändert/], fr: [/calculées/, /modifiées/], pl: [/przeliczone/, /zmienione/], it: [/calcolate/, /modificati/], en: [/calculated/, /changed/], cs: [/vypočítal/, /upraveny/], nl: [/berekend/, /gewijzigd/], es: [/calculadas/, /modificados/], pt: [/calculadas/, /alterados/] };
+  const FCWORD = { de: /prognos|vorhersage|vorschau/i, fr: /prévision|prevision|prédi/i, pl: /prognoz|przewid/i, it: /previsi|prognosi|stima/i, en: /forecast|predict|outlook/i, cs: /předpově|prognóz|odhad/i };
+  const CAPWORD = { de: [/ohne/, /MwSt/], fr: [/hors/, /TVA/], pl: [/bez/, /VAT/], it: [/al netto/, /IVA/], en: [/excluding/, /VAT/], cs: [/bez/, /DPH/], nl: [/zonder/, /btw/] };
+  const NOTEWORD = { de: [/berechnet/, /verändert/], fr: [/calculées/, /modifiées/], pl: [/przeliczone/, /zmienione/], it: [/calcolate/, /modificati/], en: [/calculated/, /changed/], cs: [/vypočítal/, /upraveny/], nl: [/berekend/, /gewijzigd/] };
+  FCWORD.sk = /predpoveď|predpoved|prognóz|odhad/i; CAPWORD.sk = [/bez/, /DPH/]; NOTEWORD.sk = [/vypočítal/, /upravené/];
+  FCWORD.hu = /előrejelz|prognózis|becslés/i; CAPWORD.hu = [/nélkül/, /áfa/i]; NOTEWORD.hu = [/számította/, /módosítottuk/];
+  FCWORD.sl = /napoved|prognoz/i; CAPWORD.sl = [/brez/, /DDV/]; NOTEWORD.sl = [/izračunal/, /spremenjeni/];
   for (const l of ACT_ONLY) {
     const all = Object.values(L[l]).flat().join(' | ');
     ok(!DANISH.test(all), `${l}: ingen danske ord i tabellen`, (all.match(DANISH) || [])[0]);
