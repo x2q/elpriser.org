@@ -1088,7 +1088,17 @@ var PRIS_I18N={
     byDay:'Deň po dni',day:'Deň',range:'Rozpätie',type:'Typ',none:'Ceny sa teraz nepodarilo načítať.',
     cap:'Burzová cena z denného trhu bez DPH, daní a poplatkov za distribúciu',
     avg:'priem.',
-    act1:'Dnes',act2:'Dnes a zajtra',cheapRest:'Najlacnejšia hodina do konca dňa'}
+    act1:'Dnes',act2:'Dnes a zajtra',cheapRest:'Najlacnejšia hodina do konca dňa'},
+  hu:{wd:['vasárnap','hétfő','kedd','szerda','csütörtök','péntek','szombat'],ws:['v','h','k','sze','cs','p','szo'],
+    mon:['jan.','febr.','márc.','ápr.','máj.','jún.','júl.','aug.','szept.','okt.','nov.','dec.'],dot:'.',mf:1,hs:':00',hh:1,
+    now:'Áramár most',hourly:'Áramár óránként',at:'',today:'ma',tomorrow:'holnap',evening:'ma este',
+    verdict:['Most olcsó','Most átlagos','Most drága'],tier:['Olcsó','Átlagos','Drága'],
+    cheaper:'Olcsóbb',cheapest24:'A legolcsóbb óra a következő 24 órában',lo:'legolcsóbb óra',hi:'legdrágább óra',
+    next:'Következő',p2:'2 nap',p5:'5 nap',p7:'7 nap',period:'Időszak',fc:'Másnapi piaci ár',actual:'Másnapi piaci ár',
+    byDay:'Napról napra',day:'Nap',range:'Tartomány',type:'Típus',none:'Az árakat most nem sikerült betölteni.',
+    cap:'Tőzsdei másnapi ár áfa, adók és hálózati díjak nélkül',
+    avg:'átl.',
+    act1:'Ma',act2:'Ma és holnap',cheapRest:'A nap hátralévő részének legolcsóbb órája'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1122,7 +1132,8 @@ var ZONES={
   be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
   cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
-  sk:{name:'SK',city:'Slovensko',lang:'sk',cur:'EUR',rate:1,sub:'c',src:'entsoe'}
+  sk:{name:'SK',city:'Slovensko',lang:'sk',cur:'EUR',rate:1,sub:'c',src:'entsoe'},
+  hu:{name:'HU',city:'Magyarország',lang:'hu',cur:'EUR',rate:1,sub:'ct',src:'ec'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1244,7 +1255,15 @@ var PRIS_COUNTRIES={
     tx:{h1:'Cena elektriny na Slovensku: dnes a zajtra',
       zonesH:'Cena elektriny na Slovensku',
       note:'Hodinové priemery štvrťhodinových cien vypočítal elpriser.org (údaje sú oproti originálu upravené). Ceny sú v eurocentoch za kWh. Zdroj:',
-      cap:'Burzová cena z denného trhu v eurocentoch, bez DPH, daní a poplatkov za distribúciu'}}
+      cap:'Burzová cena z denného trhu v eurocentoch, bez DPH, daní a poplatkov za distribúciu'}},
+  'hu/aramar':{lang:'hu',cc:'hu',zones:['hu'],def:'hu',act:1,
+    name:'Magyarország',da:'Ungarn',loc:'hu_HU',qid:'Q28',
+    title:'Áramár ma és holnap – tőzsdei áramár Magyarországon',
+    desc:'Tőzsdei áramár (másnapi piac) Magyarországon óránként, ma és holnap, ct/kWh-ban, áfa, adók és díjak nélkül. Forrás: Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Áramár Magyarországon: ma és holnap',
+      zonesH:'Áramár Magyarországon',
+      note:'A negyedórás árak óránkénti átlagát az elpriser.org számította ki (az adatokat az eredetihez képest módosítottuk). Az árak eurócentben értendők, nem forintban. Forrás:',
+      cap:'Tőzsdei másnapi ár eurócentben, áfa, adók és hálózati díjak nélkül'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1332,9 +1351,13 @@ var CHROME_I18N={
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
     chg:'Změna: hodinové průměry vypočítal elpriser.org'},
   sk:{home:'elpriser.org – úvodná stránka',land:'Krajiny',place:'Kde ste?',area:'Cenová zóna',oth:'Ďalšie krajiny',back:'Späť',find:'Hľadať',none:'Žiadne výsledky',close:'Zavrieť',
-    cn:{dk:'Dánsko',no:'Nórsko',sv:'Švédsko',fi:'Fínsko',nl:'Holandsko',de:'Nemecko',fr:'Francúzsko',pl:'Poľsko',it:'Taliansko',at:'Rakúsko',ch:'Švajčiarsko',be:'Belgicko',ie:'Írsko',cz:'Česko',sk:'Slovensko'},
+    cn:{dk:'Dánsko',no:'Nórsko',sv:'Švédsko',fi:'Fínsko',nl:'Holandsko',de:'Nemecko',fr:'Francúzsko',pl:'Poľsko',it:'Taliansko',at:'Rakúsko',ch:'Švajčiarsko',be:'Belgicko',ie:'Írsko',cz:'Česko',sk:'Slovensko',hu:'Maďarsko'},
     privacy:'Ochrana súkromia (po dánsky)',src:'Zdroj:',and:'a',open:'Otvorené súbory údajov na',
-    chg:'Zmena: hodinové priemery vypočítal elpriser.org'}
+    chg:'Zmena: hodinové priemery vypočítal elpriser.org'},
+  hu:{home:'elpriser.org – kezdőlap',land:'Országok',place:'Hol vagy?',area:'Árzóna',oth:'További országok',back:'Vissza',find:'Keresés',none:'Nincs találat',close:'Bezárás',
+    cn:{dk:'Dánia',no:'Norvégia',sv:'Svédország',fi:'Finnország',nl:'Hollandia',de:'Németország',fr:'Franciaország',pl:'Lengyelország',it:'Olaszország',at:'Ausztria',ch:'Svájc',be:'Belgium',ie:'Írország',cz:'Csehország',sk:'Szlovákia',hu:'Magyarország'},
+    privacy:'Adatvédelem (dánul)',src:'Forrás:',and:'és',open:'Nyílt adatkészletek:',
+    chg:'Módosítás: az óránkénti átlagokat az elpriser.org számította ki'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
@@ -1425,6 +1448,8 @@ function prisAt(L,h,h2){
 }
 function prisEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function prisCap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+/** "3. nov." (day first), or "nov. 3." when the language writes the month first (`mf`: Hungarian). */
+function prisDM(dt,L){return L.mf?dt.m+' '+dt.d+L.dot:dt.d+L.dot+' '+dt.m;}
 function prisDate(date,L){
   var dt=new Date(date+'T12:00:00Z');
   L=L||PRIS_I18N.da;
@@ -1712,7 +1737,7 @@ function prisChart(rows,nDays,o){
     if(p==null){cols+='<span class="pc"></span>';continue;}
     var base=y(Math.min(p,0)),ht=Math.abs(p)/span*100,dt=prisDate(r.date,L);
     var dn=Math.floor(a/24);
-    var tip=(dn===0?prisCap(L.today):dn===1?prisCap(L.tomorrow):dt.ws+' '+dt.d+L.dot+' '+dt.m)
+    var tip=(dn===0?prisCap(L.today):dn===1?prisCap(L.tomorrow):dt.ws+' '+prisDM(dt,L))
       +' '+prisAt(L,h)+' · '+prisNum(p,C.d,L)+' '+C.u+'/kWh';
     cols+='<span class="pc'+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
       +'" style="bottom:'+base.toFixed(1)+'%;height:'+ht.toFixed(1)+'%"></i>'
@@ -1760,7 +1785,7 @@ function prisDayRows(all,C,cfg,wins){
   var L=C.L,body='',last=cfg.periods[cfg.periods.length-1],any=false;
   var row=function(i,d,lo,hi,loH,cls){
     var dt=prisDate(d.date,L),name=i===0?prisCap(L.today):i===1?prisCap(L.tomorrow):prisCap(dt.wd);
-    return '<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+name+'<small>'+dt.d+L.dot+' '+dt.m+'</small></th>'
+    return '<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+name+'<small>'+prisDM(dt,L)+'</small></th>'
       +'<td>'+prisNum(lo,C.d,L)+'–'+prisNum(hi,C.d,L)+'</td>'
       +'<td>'+prisAt(L,loH,(loH+1)%24)+'</td>'
       +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?L.actual:L.fc)+'</td>'
