@@ -1660,6 +1660,17 @@ test('footer: all 31 net companies and the foreign-area pages (one per country) 
   assert.deepEqual(outside.filter(h => /^\/(dk[12]\/|elpris\/|norden)/.test(h) || PAGES.includes(h.slice(1))), [], 'net pages, city pages and foreign-area pages only behind the disclosure');
 });
 
+test('adding a country: the guide (docs/add-a-country.md) has a template with every key of the language tables, and no TODO is left in the Pris block', () => {
+  const DOC = fs.readFileSync(path.join(ROOT, 'docs', 'add-a-country.md'), 'utf8');
+  const block = INDEX.slice(INDEX.indexOf('// ═══ Pris-skærmen (Design A'), INDEX.indexOf('// ═══ /Pris-skærmen ═══'));
+  assert.ok(!/TODO/.test(block), 'a TODO is left in the Pris block');
+  const tpl = (name, keys) => { for (const k of keys) assert.ok(new RegExp(`[\\s{,]${k}:`).test(DOC.slice(DOC.indexOf(name))), `the guide's ${name} template lacks ${k}`); };
+  tpl('// PRIS_I18N', Object.keys(PRIS.PRIS_I18N.cs));
+  tpl('// CHROME_I18N', Object.keys(PRIS.CHROME_I18N.cs));
+  tpl("// PRIS_COUNTRIES", ['lang', 'cc', 'zones', 'def', 'act', 'name', 'da', 'loc', 'qid', 'title', 'desc', 'tx', 'h1', 'zonesH', 'note']);
+  tpl('// ZONES', ['name', 'city', 'lang', 'cur', 'rate', 'sub', 'src', 'shift']);
+});
+
 test('Danish pages: the footer chips and the place dialog list the countries of PRIS_COUNTRIES — derived, never hand-edited (scripts/sync-danish-chrome.mjs; the Pris block copy: scripts/sync-pris-block.mjs)', () => {
   const run = script => { try { require('node:child_process').execFileSync(process.execPath, [path.join(ROOT, 'scripts', script), '--check'], { stdio: 'pipe' }); } catch (e) { assert.fail(String(e.stderr || e.message).trim()); } };
   run('sync-danish-chrome.mjs');

@@ -1068,7 +1068,17 @@ var PRIS_I18N={
     byDay:'Day by day',day:'Day',range:'Range',type:'Type',none:'The prices could not be loaded right now.',
     cap:'Wholesale day-ahead price excluding VAT, taxes, levies and network charges',
     avg:'avg.',
-    act1:'Today',act2:'Today and tomorrow',cheapRest:'Cheapest hour of the rest of the day'}
+    act1:'Today',act2:'Today and tomorrow',cheapRest:'Cheapest hour of the rest of the day'},
+  cs:{wd:['neděle','pondělí','úterý','středa','čtvrtek','pátek','sobota'],ws:['ne','po','út','st','čt','pá','so'],
+    mon:['led','úno','bře','dub','kvě','čvn','čvc','srp','zář','říj','lis','pro'],dot:'.',hs:':00',hh:1,
+    now:'Cena elektřiny právě teď',hourly:'Cena elektřiny po hodinách',at:'',today:'dnes',tomorrow:'zítra',evening:'dnes večer',
+    verdict:['Nízká cena právě teď','Průměrná cena právě teď','Vysoká cena právě teď'],tier:['Nízká','Průměrná','Vysoká'],
+    cheaper:'Levněji',cheapest24:'Nejlevnější hodina v příštích 24 hodinách',lo:'nejlevnější hodina',hi:'nejdražší hodina',
+    next:'Příštích',p2:'2 dny',p5:'5 dní',p7:'7 dní',period:'Období',fc:'Cena na denním trhu',actual:'Cena na denním trhu',
+    byDay:'Den po dni',day:'Den',range:'Rozpětí',type:'Typ',none:'Ceny se teď nepodařilo načíst.',
+    cap:'Burzovní cena z denního trhu bez DPH, daní a poplatků za distribuci',
+    avg:'prům.',
+    act1:'Dnes',act2:'Dnes a zítra',cheapRest:'Nejlevnější hodina do konce dne'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1100,7 +1110,8 @@ var ZONES={
   at:{name:'AT',city:'Österreich',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   ch:{name:'CH',city:'Schweiz',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
   be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
-  ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'}
+  ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'entsoe'},
+  cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'}
 };
 /** The thirteen areas /norden compares, in the order of its rows (the other zones belong to country pages of their own). */
 var NORDEN_ZONES=['no1','no2','no3','no4','no5','se1','se2','se3','se4','fi','nl','dk1','dk2'];
@@ -1206,7 +1217,15 @@ var PRIS_COUNTRIES={
     desc:'Day-ahead electricity price for Ireland and Northern Ireland (SEM), hour by hour, today and tomorrow, in c/kWh, excl. VAT and charges. Source: ENTSO-E',
     tx:{h1:'Electricity price in Ireland: today and tomorrow',
       zonesH:'Electricity price in Ireland',
-      note:'Hourly means of the 15-minute prices, calculated by elpriser.org (changed from the original data). Ireland and Northern Ireland trade as one market, the all-island Single Electricity Market (SEM). Prices are in euro cent. Source:'}}
+      note:'Hourly means of the 15-minute prices, calculated by elpriser.org (changed from the original data). Ireland and Northern Ireland trade as one market, the all-island Single Electricity Market (SEM). Prices are in euro cent. Source:'}},
+  'cz/ceny-elektriny':{lang:'cs',cc:'cz',zones:['cz'],def:'cz',act:1,
+    name:'Česko',da:'Tjekkiet',loc:'cs_CZ',qid:'Q213',
+    title:'Cena elektřiny dnes a zítra – burzovní cena v Česku',
+    desc:'Burzovní cena elektřiny (denní trh) v Česku po hodinách, dnes a zítra, v ct/kWh, bez DPH, daní a poplatků. Zdroj: Bundesnetzagentur | SMARD.de',
+    tx:{h1:'Cena elektřiny v Česku: dnes a zítra',
+      zonesH:'Cena elektřiny v Česku',
+      note:'Hodinové průměry čtvrthodinových cen vypočítal elpriser.org (údaje jsou oproti originálu upraveny). Ceny jsou v eurocentech za kWh, nikoli v korunách. Zdroj:',
+      cap:'Burzovní cena z denního trhu v eurocentech, bez DPH, daní a poplatků za distribuci'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -1257,38 +1276,42 @@ function prisZoneNow(k,todayStr,nowHour){
  *  may override in its `tx`. */
 var CHROME_I18N={
   nb:{home:'elpriser.org forside',land:'Land',place:'Hvor er du?',area:'Prisområde',oth:'Andre land',back:'Tilbake',find:'Søk',none:'Ingen resultater',close:'Lukk',
-    cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederland',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italia',at:'Østerrike',ch:'Sveits',be:'Belgia',ie:'Irland'},
+    cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederland',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italia',at:'Østerrike',ch:'Sveits',be:'Belgia',ie:'Irland',cz:'Tsjekkia'},
     privacy:'Personvern (på dansk)',src:'Data fra',and:'og',open:'Åpne datasett på'},
   sv:{home:'elpriser.org startsida',land:'Länder',place:'Var är du?',area:'Elområde',oth:'Andra länder',back:'Tillbaka',find:'Sök',none:'Inga resultat',close:'Stäng',
-    cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederländerna',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italien',at:'Österrike',ch:'Schweiz',be:'Belgien',ie:'Irland'},
+    cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederländerna',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italien',at:'Österrike',ch:'Schweiz',be:'Belgien',ie:'Irland',cz:'Tjeckien'},
     privacy:'Integritet (på danska)',src:'Data från',and:'och',open:'Öppna datamängder på'},
   fi:{home:'elpriser.org etusivu',land:'Maat',place:'Missä olet?',area:'Hinta-alue',oth:'Muut maat',back:'Takaisin',find:'Haku',none:'Ei tuloksia',close:'Sulje',
-    cn:{dk:'Tanska',no:'Norja',sv:'Ruotsi',fi:'Suomi',nl:'Alankomaat',de:'Saksa',fr:'Ranska',pl:'Puola',it:'Italia',at:'Itävalta',ch:'Sveitsi',be:'Belgia',ie:'Irlanti'},
+    cn:{dk:'Tanska',no:'Norja',sv:'Ruotsi',fi:'Suomi',nl:'Alankomaat',de:'Saksa',fr:'Ranska',pl:'Puola',it:'Italia',at:'Itävalta',ch:'Sveitsi',be:'Belgia',ie:'Irlanti',cz:'Tšekki'},
     privacy:'Tietosuoja (tanskaksi)',src:'Tietolähteet:',and:'ja',open:'Avoimet aineistot:'},
   nl:{home:'elpriser.org startpagina',land:'Landen',place:'Waar ben je?',area:'Biedzone',oth:'Andere landen',back:'Terug',find:'Zoeken',none:'Geen resultaten',close:'Sluiten',
-    cn:{dk:'Denemarken',no:'Noorwegen',sv:'Zweden',fi:'Finland',nl:'Nederland',de:'Duitsland',fr:'Frankrijk',pl:'Polen',it:'Italië',at:'Oostenrijk',ch:'Zwitserland',be:'België',ie:'Ierland'},
+    cn:{dk:'Denemarken',no:'Noorwegen',sv:'Zweden',fi:'Finland',nl:'Nederland',de:'Duitsland',fr:'Frankrijk',pl:'Polen',it:'Italië',at:'Oostenrijk',ch:'Zwitserland',be:'België',ie:'Ierland',cz:'Tsjechië'},
     privacy:'Privacy (in het Deens)',src:'Gegevens van',and:'en',open:'Open datasets op',
     chg:'Wijziging: uurgemiddelden berekend door elpriser.org'},
   de:{home:'elpriser.org Startseite',land:'Länder',place:'Wo bist du?',area:'Preiszone',oth:'Andere Länder',back:'Zurück',find:'Suchen',none:'Keine Ergebnisse',close:'Schließen',
-    cn:{dk:'Dänemark',no:'Norwegen',sv:'Schweden',fi:'Finnland',nl:'Niederlande',de:'Deutschland',fr:'Frankreich',pl:'Polen',it:'Italien',at:'Österreich',ch:'Schweiz',be:'Belgien',ie:'Irland'},
+    cn:{dk:'Dänemark',no:'Norwegen',sv:'Schweden',fi:'Finnland',nl:'Niederlande',de:'Deutschland',fr:'Frankreich',pl:'Polen',it:'Italien',at:'Österreich',ch:'Schweiz',be:'Belgien',ie:'Irland',cz:'Tschechien'},
     privacy:'Datenschutz (auf Dänisch)',src:'Quelle:',and:'und',open:'Offene Datensätze auf',
     chg:'Änderung: Stundenmittel von elpriser.org berechnet'},
   fr:{home:'elpriser.org accueil',land:'Pays',place:'Où êtes-vous ?',area:'Zone de prix',oth:'Autres pays',back:'Retour',find:'Rechercher',none:'Aucun résultat',close:'Fermer',
-    cn:{dk:'Danemark',no:'Norvège',sv:'Suède',fi:'Finlande',nl:'Pays-Bas',de:'Allemagne',fr:'France',pl:'Pologne',it:'Italie',at:'Autriche',ch:'Suisse',be:'Belgique',ie:'Irlande'},
+    cn:{dk:'Danemark',no:'Norvège',sv:'Suède',fi:'Finlande',nl:'Pays-Bas',de:'Allemagne',fr:'France',pl:'Pologne',it:'Italie',at:'Autriche',ch:'Suisse',be:'Belgique',ie:'Irlande',cz:'Tchéquie'},
     privacy:'Confidentialité (en danois)',src:'Source\u00a0:',and:'et',open:'Jeux de données ouverts sur',
     chg:'Modifié\u00a0: moyennes horaires calculées par elpriser.org'},
   pl:{home:'elpriser.org – strona główna',land:'Kraje',place:'Gdzie jesteś?',area:'Strefa cenowa',oth:'Inne kraje',back:'Wstecz',find:'Szukaj',none:'Brak wyników',close:'Zamknij',
-    cn:{dk:'Dania',no:'Norwegia',sv:'Szwecja',fi:'Finlandia',nl:'Holandia',de:'Niemcy',fr:'Francja',pl:'Polska',it:'Włochy',at:'Austria',ch:'Szwajcaria',be:'Belgia',ie:'Irlandia'},
+    cn:{dk:'Dania',no:'Norwegia',sv:'Szwecja',fi:'Finlandia',nl:'Holandia',de:'Niemcy',fr:'Francja',pl:'Polska',it:'Włochy',at:'Austria',ch:'Szwajcaria',be:'Belgia',ie:'Irlandia',cz:'Czechy'},
     privacy:'Prywatność (po duńsku)',src:'Źródło:',and:'i',open:'Otwarte zbiory danych na',
     chg:'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org'},
   it:{home:'elpriser.org pagina iniziale',land:'Paesi',place:'Dove sei?',area:'Zona di prezzo',oth:'Altri paesi',back:'Indietro',find:'Cerca',none:'Nessun risultato',close:'Chiudi',
-    cn:{dk:'Danimarca',no:'Norvegia',sv:'Svezia',fi:'Finlandia',nl:'Paesi Bassi',de:'Germania',fr:'Francia',pl:'Polonia',it:'Italia',at:'Austria',ch:'Svizzera',be:'Belgio',ie:'Irlanda'},
+    cn:{dk:'Danimarca',no:'Norvegia',sv:'Svezia',fi:'Finlandia',nl:'Paesi Bassi',de:'Germania',fr:'Francia',pl:'Polonia',it:'Italia',at:'Austria',ch:'Svizzera',be:'Belgio',ie:'Irlanda',cz:'Repubblica Ceca'},
     privacy:'Privacy (in danese)',src:'Fonte:',and:'e',open:'Dataset aperti su',
     chg:'Modifiche: medie orarie calcolate da elpriser.org'},
   en:{home:'elpriser.org home page',land:'Countries',place:'Where are you?',area:'Price zone',oth:'Other countries',back:'Back',find:'Search',none:'No results',close:'Close',
-    cn:{dk:'Denmark',no:'Norway',sv:'Sweden',fi:'Finland',nl:'Netherlands',de:'Germany',fr:'France',pl:'Poland',it:'Italy',at:'Austria',ch:'Switzerland',be:'Belgium',ie:'Ireland'},
+    cn:{dk:'Denmark',no:'Norway',sv:'Sweden',fi:'Finland',nl:'Netherlands',de:'Germany',fr:'France',pl:'Poland',it:'Italy',at:'Austria',ch:'Switzerland',be:'Belgium',ie:'Ireland',cz:'Czechia'},
     privacy:'Privacy (in Danish)',src:'Source:',and:'and',open:'Open datasets on',
-    chg:'Changed: hourly means calculated by elpriser.org'}
+    chg:'Changed: hourly means calculated by elpriser.org'},
+  cs:{home:'elpriser.org – úvodní stránka',land:'Země',place:'Kde jste?',area:'Cenová zóna',oth:'Další země',back:'Zpět',find:'Hledat',none:'Žádné výsledky',close:'Zavřít',
+    cn:{dk:'Dánsko',no:'Norsko',sv:'Švédsko',fi:'Finsko',nl:'Nizozemsko',de:'Německo',fr:'Francie',pl:'Polsko',it:'Itálie',at:'Rakousko',ch:'Švýcarsko',be:'Belgie',ie:'Irsko',cz:'Česko'},
+    privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
+    chg:'Změna: hodinové průměry vypočítal elpriser.org'}
 };
 
 /** The header navigation and the footer of country page `pg`, in its language: the country list of the footer (Denmark
