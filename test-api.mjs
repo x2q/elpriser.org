@@ -507,7 +507,7 @@ test('/api/nordic: every EU zone (25 of them) is served from its own eu-prices k
     const kv = makeKv(seed), api = await createApi({ kv, ecb: ECB });
     const r = await api.get(`/api/nordic?zone=${z}`);
     assert.equal(r.status, 200, z);
-    assert.deepEqual(kv.ops.get, [`eu-prices-${z}`], `${z} reads exactly its own key`);
+    assert.deepEqual([...kv.ops.get].sort(), [`eu-forecast-${z}`, `eu-prices-${z}`], `${z} reads exactly its own two keys (prices, and the forecast that is absent here)`);
     assert.equal(r.body.zone, z);
     assert.equal(r.body.trainedThrough, null, `${z}: no model, so no training date`);
     assert.equal(r.body.unit, 'EUR/MWh');
@@ -572,7 +572,90 @@ test('/api/nordic: EU zones carry an ETag, answer 304, and cost one KV read howe
   assert.ok(etag, 'ETag');
   assert.equal((await api.get('/api/nordic?zone=it-n', { 'If-None-Match': etag })).status, 304);
   for (let i = 0; i < 20; i++) await api.get('/api/nordic?zone=it-n');
-  assert.equal(kv.reads(), 1, `20 requests cost ${kv.reads()} KV reads`);
+  assert.equal(kv.reads(), 2, `20 requests cost ${kv.reads()} KV reads (the prices key and the forecast key, once each)`);
+});
+
+// ── EU forecast days: eu-forecast-<zone> on top of the settled prices (scripts/forecast_model/eu), NEW key, nothing else changes ──
+
+/** A forecast KV value as scripts/forecast_model/eu/forecast.py writes it: forecast days only, with horizon and P10/P90. */
+const euFc = (zone, dates, { generated = day(0), trained = day(-1), accuracy } = {}) => ({
+  zone, generated, generatedAt: `${generated}T12:50:00+00:00`, trainedThrough: trained, unit: 'EUR/MWh', model: 'eu-pooled-v1',
+  ...(accuracy ? { accuracy } : {}),
+  days: dates.map((d, i) => ({ date: d, type: 'forecast', horizon: i + 2, prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: 80 + h, min_eur_mwh: 60 + h, max_eur_mwh: 100 + h })) })),
+});
+
+test('/api/nordic: an EU zone with a forecast key gets the settled days first and the forecast days after them', async () => {
+  const acc = { backtest: { byHorizon: { 2: { mae: 20 } } } };
+  const kv = makeKv({ 'eu-prices-de': feed('de', [day(-1), day(0), day(1)]), 'eu-forecast-de': euFc('de', [day(2), day(3), day(4)], { accuracy: acc }) });
+  const r = await (await createApi({ kv, ecb: ECB })).get('/api/nordic?zone=de');
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.body.days.map(d => [d.date, d.type]), [[day(-1), 'actual'], [day(0), 'actual'], [day(1), 'actual'], [day(2), 'forecast'], [day(3), 'forecast'], [day(4), 'forecast']]);
+  assert.deepEqual(r.body.days[3].prices[5], { hour: 5, eur_mwh: 85, min_eur_mwh: 65, max_eur_mwh: 105 }, 'the Nordic field names for the band');
+  assert.equal(r.body.days[3].horizon, 2);
+  assert.equal(r.body.model, 'eu-pooled-v1');
+  assert.equal(r.body.trainedThrough, day(-1));
+  assert.equal(r.body.forecastGenerated, day(0));
+  assert.deepEqual(r.body.accuracy, acc);
+  assert.equal(r.body.zoneInfo.currency, 'EUR');
+  assert.deepEqual([...kv.ops.get].sort(), ['eu-forecast-de', 'eu-prices-de']);
+  assert.equal(kv.ops.put.length, 0, 'the forecast is read, never written, by the API');
+});
+
+test('/api/nordic: a settled price always wins over a forecast for the same day, and a forecast never fills a hole before a settled day', async () => {
+  // tomorrow is published (settled) although the forecast run still lists it: the settled day is used and the forecast copy dropped
+  const kv = makeKv({ 'eu-prices-fr': feed('fr', [day(0), day(1)]), 'eu-forecast-fr': euFc('fr', [day(-1), day(0), day(1), day(2)]) });
+  const r = await (await createApi({ kv, ecb: ECB })).get('/api/nordic?zone=fr');
+  assert.deepEqual(r.body.days.map(d => [d.date, d.type]), [[day(0), 'actual'], [day(1), 'actual'], [day(2), 'forecast']]);
+});
+
+test('/api/nordic: without a forecast key an EU zone answers exactly as before (byte for byte the settled prices)', async () => {
+  const f = feed('es', [day(-1), day(0)]);
+  const r = await (await createApi({ kv: makeKv({ 'eu-prices-es': f }), ecb: ECB })).get('/api/nordic?zone=es');
+  assert.deepEqual(r.body, { ...f, zoneInfo: { name: 'ES Spain', country: 'ES', currency: 'EUR', rate: 1, rateDate: '2026-10-23', rateSource: 'ECB' } });
+  assert.ok(!('model' in r.body) && !('accuracy' in r.body) && !('forecastGenerated' in r.body));
+});
+
+test('/api/nordic: a stale, malformed or foreign forecast is ignored, not repaired', async () => {
+  const prices = feed('ro', [day(-1), day(0), day(1)]);
+  const cases = {
+    'a run older than 3 days before the newest settled day': euFc('ro', [day(2), day(3)], { generated: day(-4) }),
+    'a run without a generated date': { ...euFc('ro', [day(2)]), generated: undefined },
+    'no days': { ...euFc('ro', [day(2)]), days: [] },
+    'days that are not forecast': { ...euFc('ro', [day(2)]), days: euFc('ro', [day(2)]).days.map(d => ({ ...d, type: 'actual' })) },
+    'a day with 23 hours': { ...euFc('ro', [day(2)]), days: euFc('ro', [day(2)]).days.map(d => ({ ...d, prices: d.prices.slice(1) })) },
+    'a NaN-ish hour (null)': { ...euFc('ro', [day(2)]), days: euFc('ro', [day(2)]).days.map(d => ({ ...d, prices: d.prices.map((p, i) => (i === 7 ? { hour: 7, eur_mwh: null } : p)) })) },
+    'not an object': 'oops',
+  };
+  for (const [name, fc] of Object.entries(cases)) {
+    const r = await (await createApi({ kv: makeKv({ 'eu-prices-ro': prices, 'eu-forecast-ro': fc }), ecb: ECB })).get('/api/nordic?zone=ro');
+    assert.equal(r.status, 200, name);
+    assert.deepEqual(r.body.days.map(d => d.type), ['actual', 'actual', 'actual'], `${name}: only the settled days`);
+    assert.ok(!('model' in r.body), `${name}: no model metadata`);
+  }
+  // one malformed day among good ones costs only that day
+  const mixed = euFc('ro', [day(2), day(3), day(4)]);
+  mixed.days[1].prices = mixed.days[1].prices.slice(0, 20);
+  const r = await (await createApi({ kv: makeKv({ 'eu-prices-ro': prices, 'eu-forecast-ro': mixed }), ecb: ECB })).get('/api/nordic?zone=ro');
+  assert.deepEqual(r.body.days.filter(d => d.type === 'forecast').map(d => d.date), [day(2), day(4)]);
+});
+
+test('/api/nordic: no settled prices means 404 even when a forecast exists, and Nordic zones never read an eu-forecast key', async () => {
+  const r = await (await createApi({ kv: makeKv({ 'eu-forecast-de': euFc('de', [day(2)]) }), ecb: ECB })).get('/api/nordic?zone=de');
+  assert.equal(r.status, 404, 'a forecast with no settled day beside it is not served');
+  const kv = makeKv({ 'nordic-forecast-no1': feed('no1', [day(0), day(1)], 'forecast', day(-1)), 'eu-forecast-no1': euFc('no1', [day(5)]) });
+  const n = await (await createApi({ kv, ecb: ECB })).get('/api/nordic?zone=no1');
+  assert.deepEqual(n.body.days.map(d => d.date), [day(0), day(1)], 'a Nordic zone is untouched');
+  assert.deepEqual(kv.ops.get, ['nordic-forecast-no1'], 'and costs no extra KV read');
+});
+
+test('/api/nordic: an EU zone with a forecast is still cached and still one read per key however often it is asked', async () => {
+  const kv = makeKv({ 'eu-prices-pt': feed('pt', [day(0), day(1)]), 'eu-forecast-pt': euFc('pt', [day(2), day(3)]) });
+  const api = await createApi({ kv, ecb: ECB });
+  const first = await api.get('/api/nordic?zone=pt');
+  assert.ok(first.headers.get('etag'));
+  assert.equal(first.headers.get('cache-control'), 'public, max-age=1800, s-maxage=1800');
+  for (let i = 0; i < 20; i++) await api.get('/api/nordic?zone=pt');
+  assert.equal(kv.reads(), 2);
 });
 
 test('/api/openapi.json documents /api/nordic with every zone, and says the EU zones are actual prices only', async () => {

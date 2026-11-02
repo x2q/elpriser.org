@@ -1024,6 +1024,32 @@ const EU_ZONE_INFO = {
   al:       { name: 'AL Albania',                    country: 'AL', currency: 'EUR', rate: 1 },
 };
 
+// An EU zone's answer: the settled prices of `eu-prices-<zone>` (each zone's licensed source) with, AFTER the last settled day,
+// the forecast days of `eu-forecast-<zone>` (scripts/forecast_model/eu: ONE pooled model, forecast days only, never a price a
+// licence attributes to somebody else). Nothing is invented: with no usable forecast key the answer is the prices, byte for byte
+// as before this key existed. A forecast day is used only if it is a well-formed `forecast` day of 24 numeric hours, is later
+// than every settled day (a settled price always wins), and the run is not older than EU_FORECAST_MAX_AGE_DAYS before the newest
+// settled day - a run the Spark stopped writing must not pass for current. The response then also says `model`,
+// `forecastGenerated` and `accuracy` (the backtest's per-horizon error for this zone) so a page can state what the forecast is worth.
+const EU_FORECAST_MAX_AGE_DAYS = 3;
+function withEuForecast(priced, fc) {
+  if (!fc || !Array.isArray(fc.days) || !fc.days.length || !priced || !Array.isArray(priced.days) || !priced.days.length) return priced;
+  const dayMs = d => Date.parse(`${d}T00:00:00Z`);
+  const settled = priced.days.filter(d => d && d.type === 'actual' && typeof d.date === 'string');
+  if (!settled.length) return priced;
+  const last = settled.reduce((m, d) => (d.date > m ? d.date : m), '');
+  if (!fc.generated || !(dayMs(last) - dayMs(fc.generated) <= EU_FORECAST_MAX_AGE_DAYS * 86400000)) return priced;
+  const wellFormed = d => d && d.type === 'forecast' && /^\d{4}-\d{2}-\d{2}$/.test(d.date) && d.date > last && Array.isArray(d.prices)
+    && d.prices.length === 24 && d.prices.every(p => p && Number.isInteger(p.hour) && typeof p.eur_mwh === 'number' && Number.isFinite(p.eur_mwh));
+  const seen = new Set();
+  const extra = fc.days.filter(d => wellFormed(d) && !seen.has(d.date) && seen.add(d.date)).sort((a, b) => (a.date < b.date ? -1 : 1));
+  if (!extra.length) return priced;
+  const out = { ...priced, days: [...priced.days, ...extra], trainedThrough: fc.trainedThrough ?? null, model: fc.model ?? null, forecastGenerated: fc.generated };
+  if (fc.accuracy && typeof fc.accuracy === 'object') out.accuracy = fc.accuracy;
+  return out;
+}
+
+
 /** The ECB's daily euro reference rates, edge-cached for six hours (the ECB
  *  publishes once a working day, ~16:00 CET). A rate outside a sane band is
  *  treated as a parse failure, so a malformed file can never put a Norwegian
@@ -1263,6 +1289,8 @@ const OPENAPI_SPEC = {
           '`ie` Ireland (the all-island SEM), `me` Montenegro, `mk` North Macedonia and `al` Albania. Source: ENTSO-E Transparency Platform (day-ahead prices, article 12.1.d).',
           'Prices of the non-euro countries are in EUR/MWh as published; `zoneInfo.currency` is EUR for all of these.',
           'The data were changed by elpriser.org: the 15-minute prices are aggregated to hourly means by the zone\'s local clock.',
+          'If a forecast has been published for an EU zone, the days after the last settled day are `forecast` days (`horizon` = days after the last settled day + 1, `min_eur_mwh`/`max_eur_mwh` = P10/P90),',
+          'and the answer also carries `model`, `trainedThrough`, `forecastGenerated` and `accuracy` (this zone\'s backtest error per horizon). Without a current forecast the answer is the settled prices alone.',
         ].join('\n'),
         parameters: [{ name: 'zone', in: 'query', schema: { type: 'string', enum: [...NORDIC_ZONES, ...EU_ZONES], default: 'dk1' }, description: 'The bidding zone. Unknown values answer 400.' }],
         responses: { '200': { description: 'Days of hourly prices in EUR/MWh plus zoneInfo.' }, '400': { description: 'Unknown zone.' }, '404': { description: 'No data for that zone (yet).' } },
@@ -1463,8 +1491,12 @@ async function handleApi(context) {
     }
     if (!context.env || !context.env.PRICE_CACHE) return fail(503, 'forecast store unavailable');
     try {
-      const raw = await kvJson(context.env, eu ? `eu-prices-${zone}` : `nordic-forecast-${zone}`, { ttl: 900 });
-      if (!raw) return fail(404, eu ? `no prices available for ${zone}` : `no forecast available for ${zone}`);
+      const [priced, fc] = await Promise.all([
+        kvJson(context.env, eu ? `eu-prices-${zone}` : `nordic-forecast-${zone}`, { ttl: 900 }),
+        eu ? kvJson(context.env, `eu-forecast-${zone}`, { ttl: 900 }) : null,
+      ]);
+      if (!priced) return fail(404, eu ? `no prices available for ${zone}` : `no forecast available for ${zone}`);
+      const raw = eu ? withEuForecast(priced, fc) : priced;
       const fx = await ecbRates();
       const info = eu ? EU_ZONE_INFO[zone] : NORDIC_ZONE_INFO[zone];
       return jsonResponse({ ...raw, zoneInfo: { ...info,
