@@ -2,6 +2,7 @@ import { activateDataPage, stripInactiveMains, promoteSectionTitle } from './_sp
 import { CITIES } from './_cities.js';
 import { cityLocation } from './_city-location.js';
 import { netLocation, netSourceNote, netAreasGeoJSON } from './_net-location.js';
+import { zoneLocation } from './_zone-location.js';
 
 const OG_IMAGE = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
@@ -2257,7 +2258,7 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v14';
+const ZONE_SSR_VERSION = 'zone-ssr-v15';
 const CITY_SSR_VERSION = 'city-ssr-v11';
 const PROGNOSE_SSR_VERSION = 'prognose-ssr-v9';
 async function renderCachedPage(context, pathname, meta, opts, version) {
@@ -2481,7 +2482,8 @@ async function renderSPA(context, pathname, meta, opts = {}) {
       html = html.replace('<!--SSR_NORDEN-->', prisNordenHTML(raws, todayDk, nowH));
     }
     const page = { '@context': 'https://schema.org', '@type': 'WebPage', name: meta.title, description: meta.description,
-      url: pageUrl, inLanguage: C ? C.lang : 'da', isPartOf: { '@type': 'WebSite', name: 'elpriser.org', url: 'https://elpriser.org' } };
+      url: pageUrl, inLanguage: C ? C.lang : 'da', isPartOf: { '@type': 'WebSite', name: 'elpriser.org', url: 'https://elpriser.org' },
+      ...zoneLocation(pg || null, { ZONES, PRIS_COUNTRIES, CHROME_I18N, NORDEN_ZONES }) };
     html = html.replace('</head>', `  <script type="application/ld+json">${JSON.stringify(page).replace(/</g, '\\u003c')}</script>\n</head>`);
     if (opts.done) opts.done.full = keys.every(k => raws[k]);
   }

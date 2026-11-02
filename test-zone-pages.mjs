@@ -355,6 +355,49 @@ for (const [from, to] of Object.entries(OLD)) {
   ok((await get('/no')).status === 404 && (await get('/sv')).status === 404 && (await get('/no/strompris/')).status === 301 && (await get('/no/ukendt')).status === 404, 'sprogmapperne alene er 404, en skråstreg efter siden er 301, en ukendt side under mappen er 404');
 }
 
+// ── Location data: spatialCoverage on the WebPage of every foreign page ─────────────────────────────────────────
+// A Place (never a Country: Google flagged that on /api), the country's Wikidata entity, the page's own zone labels,
+// no coordinates and no boundary. DE-LU is Germany and Luxembourg; IT-Nord is the north of Italy only.
+{
+  const QID = { no: 'Q20', sv: 'Q34', fi: 'Q33', nl: 'Q55', de: 'Q183', fr: 'Q142', pl: 'Q36', it: 'Q38', dk: 'Q35', lu: 'Q32' };
+  const ldOf = body => [...body.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => JSON.parse(m[1])).find(x => x['@type'] === 'WebPage');
+  const wd = c => `https://www.wikidata.org/wiki/${QID[c]}`;
+  const walk = (n, f) => { f(n); for (const c of [].concat(n.containsPlace || [], n.containedInPlace || [])) walk(c, f); };
+  const WANT = {
+    '/no/strompris': { name: 'Norge', q: 'no', zones: ['Prisområde NO1 Oslo', 'Prisområde NO2 Kristiansand', 'Prisområde NO3 Trondheim', 'Prisområde NO4 Tromsø', 'Prisområde NO5 Bergen'] },
+    '/sv/elpris': { name: 'Sverige', q: 'sv', zones: ['Elområde SE1 Luleå', 'Elområde SE2 Sundsvall', 'Elområde SE3 Stockholm', 'Elområde SE4 Malmö'] },
+    '/fi/sahkon-hinta': { name: 'Suomi', q: 'fi', zones: [] },
+    '/nl/stroomprijs': { name: 'Nederland', q: 'nl', zones: [] },
+    '/fr/prix-electricite': { name: 'France', q: 'fr', zones: [] },
+    '/pl/ceny-pradu': { name: 'Polska', q: 'pl', zones: [] },
+  };
+  for (const [p, w] of Object.entries(WANT)) {
+    store.clear();
+    const r = await get(p), sc = (ldOf(r.body) || {}).spatialCoverage;
+    ok(sc && sc['@type'] === 'Place' && sc.name === w.name && sc.sameAs === wd(w.q), `${p}: spatialCoverage er stedet ${w.name} med sit Wikidata-id`, JSON.stringify(sc));
+    ok(JSON.stringify((sc && sc.containsPlace || []).map(z => z.name)) === JSON.stringify(w.zones), `${p}: containsPlace er sidens egne prisområder`, JSON.stringify(sc && sc.containsPlace));
+    ok(!JSON.stringify(sc).includes('"Country"') && !/geo|latitude|longitude|GeoShape/.test(JSON.stringify(sc)), `${p}: ingen Country, ingen koordinater, ingen opfunden grænse`);
+  }
+  {
+    store.clear();
+    const sc = ldOf((await get('/de/strompreis')).body).spatialCoverage;
+    ok(sc['@type'] === 'Place' && sc.name === 'Preiszone DE-LU' && JSON.stringify(sc.containsPlace.map(x => [x.name, x.sameAs])) === JSON.stringify([['Deutschland', wd('de')], ['Luxemburg', wd('lu')]]), '/de/strompreis: DE-LU er Tyskland og Luxembourg', JSON.stringify(sc));
+    store.clear();
+    const it = ldOf((await get('/it/prezzo-luce')).body).spatialCoverage;
+    ok(it['@type'] === 'Place' && /Nord Italia/.test(it.name) && it.sameAs === undefined && it.containedInPlace && it.containedInPlace.sameAs === wd('it') && it.containedInPlace.name === 'Italia', '/it/prezzo-luce: kun Nord-Italien, i Italien', JSON.stringify(it));
+  }
+  {
+    store.clear();
+    const r = await get('/norden'), sc = ldOf(r.body).spatialCoverage, names = [];
+    walk(sc, n => names.push(n.name));
+    const zoneNames = names.filter(n => /^Prisområde /.test(n));
+    ok(sc['@type'] === 'Place' && sc.name === 'Norden og Holland' && sc.containsPlace.length === 5, '/norden: ét sted med fem lande', JSON.stringify(sc).slice(0, 300));
+    ok(zoneNames.length === 11 && ['NO1', 'NO5', 'SE1', 'SE4', 'DK1', 'DK2'].every(z => zoneNames.some(n => n.includes(` ${z} `))), `/norden: elleve navngivne prisområder (Finland og Holland er hele landet)`, zoneNames.join(' | '));
+    ok(sc.containsPlace.map(c => c.sameAs).join() === ['no', 'sv', 'fi', 'nl', 'dk'].map(wd).join(), '/norden: landene med deres Wikidata-id, i sidens rækkefølge', sc.containsPlace.map(c => c.sameAs).join());
+    ok(!JSON.stringify(sc).includes('"Country"') && !/latitude|GeoShape/.test(JSON.stringify(sc)), '/norden: ingen Country og ingen koordinater');
+  }
+}
+
 console.log(`${pass} beståede, ${fails.length} fejl`);
 fails.forEach(f => console.log('  ✗ ' + f));
 process.exit(fails.length ? 1 : 0);

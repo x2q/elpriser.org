@@ -1684,7 +1684,7 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // (v8: the shared Pris block changed with PRIS_FC.)
   // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
   // (v10: the four EU price pages joined, the Pris block gained PRIS_ACT and the footer the four links.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v14'/.test(ROUTES), 'zone-ssr-v14');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v15'/.test(ROUTES), 'zone-ssr-v15');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
