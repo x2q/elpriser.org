@@ -413,7 +413,7 @@ async function main() {
       const a = await get('/api/nordic?zone=' + z);
       let j = {}; try { j = JSON.parse(a.body); } catch {}
       // 200 once the Spark job has written the key; a 404 "no prices available" before that.
-      check(a.status === 200 ? (j.zone === z && j.trainedThrough === null && Array.isArray(j.days) && j.days.every(d => d.type === 'actual') && j.zoneInfo && j.zoneInfo.currency === (z === 'pl' ? 'PLN' : z === 'gb' ? 'GBP' : 'EUR') && j.unit === (z === 'gb' ? 'GBP/MWh' : 'EUR/MWh')) : (a.status === 404 && /no prices available/.test(a.body)), `/api/nordic?zone=${z}: ${a.status === 200 ? 'faktiske døgn og zoneInfo' : '404 før jobbet har kørt'}`, String(a.status));
+      check(a.status === 200 ? (j.zone === z && Array.isArray(j.days) && j.days.length > 0 && j.days[0].type === 'actual' && j.days.every((d, i) => d.type === 'actual' || (d.type === 'forecast' && j.days.slice(0, i).every(e => e.type !== 'forecast' || e.horizon < d.horizon))) && ((j.trainedThrough === null) === !j.days.some(d => d.type === 'forecast')) && j.zoneInfo && j.zoneInfo.currency === (z === 'pl' ? 'PLN' : z === 'gb' ? 'GBP' : 'EUR') && j.unit === (z === 'gb' ? 'GBP/MWh' : 'EUR/MWh')) : (a.status === 404 && /no prices available/.test(a.body)), `/api/nordic?zone=${z}: ${a.status === 200 ? 'faktiske døgn og zoneInfo' : '404 før jobbet har kørt'}`, String(a.status));
     }
     for (const z of ['xx', 'uk', 'it-cn']) check((await get('/api/nordic?zone=' + z)).status === 400, `/api/nordic?zone=${z}: 400`);
     // The 21 zones added 2026-11-02 (Energy-Charts and ENTSO-E jobs) answer with EUR/MWh days of 24 hours.
