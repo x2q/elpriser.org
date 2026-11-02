@@ -24,6 +24,15 @@ const BASE = (process.env.BASE_URL || 'https://elpriser.org').replace(/\/$/, '')
 const CANONICAL_ORIGIN = 'https://elpriser.org';
 const UA = 'elpriser-urltest/1.0 (+https://elpriser.org)';
 const CONCURRENCY = 6;
+// The Pris block of the real function (pages, zones and the words of the languages), read the way test-zone-pages.mjs reads it: the list of country pages lives in
+// PRIS_COUNTRIES, not in this file, so a page added there is covered here without an edit.
+const PB = (() => {
+  const fs = require('node:fs'), vm = require('node:vm'), path = require('node:path');
+  const src = fs.readFileSync(path.join(__dirname, 'functions', '[[path]].js'), 'utf8');
+  const ctx = vm.createContext({ console, Date, Math });
+  vm.runInContext(src.slice(src.indexOf('// ═══ Pris-skærmen (Design A: ét svar) ═══'), src.indexOf('// ═══ /Pris-skærmen ═══')), ctx);
+  return ctx;
+})();
 
 let passed = 0;
 const failures = [];
@@ -345,14 +354,10 @@ async function main() {
   // The five foreign-area pages: own language, the canonical Pris screen drawn into the HTML, and only 2 and 5 døgn.
   // The four country pages also wear their own chrome (a country navigation and a slim footer in their language):
   // no net chip, app button, Danish menu, tab bar or net dialog.
-  for (const [p, lang, unit] of [['/no/strompris', 'nb', 'øre'], ['/sv/elpris', 'sv', 'öre'], ['/fi/sahkon-hinta', 'fi', 'snt'], ['/nl/stroomprijs', 'nl', 'cent'],
-      ['/de/strompreis', 'de', 'ct'], ['/fr/prix-electricite', 'fr', 'c€'], ['/pl/ceny-pradu', 'pl', 'gr'], ['/it/prezzo-luce', 'it', 'c€'],
-      ['/at/strompreis', 'de', 'ct'], ['/ch/strompreis', 'de', 'ct'], ['/be/stroomprijs', 'nl', 'cent'], ['/be/prix-electricite', 'fr', 'c€'], ['/ie/electricity-price', 'en', 'c'], ['/cz/ceny-elektriny', 'cs', 'ct'], ['/es/precio-luz', 'es', 'c€'], ['/pt/preco-eletricidade', 'pt', 'c€'], ['/norden', 'da', null]]) {
-      ['/at/strompreis', 'de', 'ct'], ['/ch/strompreis', 'de', 'ct'], ['/be/stroomprijs', 'nl', 'cent'], ['/be/prix-electricite', 'fr', 'c€'], ['/ie/electricity-price', 'en', 'c'], ['/cz/ceny-elektriny', 'cs', 'ct'], ['/sk/ceny-elektriny', 'sk', 'c'], ['/hu/aramar', 'hu', 'ct'], ['/si/cena-elektrike', 'sl', 'c'], ['/norden', 'da', null]]) {
-      ['/at/strompreis', 'de', 'ct'], ['/ch/strompreis', 'de', 'ct'], ['/be/stroomprijs', 'nl', 'cent'], ['/be/prix-electricite', 'fr', 'c€'], ['/ie/electricity-price', 'en', 'c'], ['/cz/ceny-elektriny', 'cs', 'ct'], ['/ro/pretul-energiei', 'ro', 'c€'], ['/bg/tsena-na-toka', 'bg', 'евроц.'], ['/gr/timi-revmatos', 'el', 'c€'], ['/norden', 'da', null]]) {
-      ['/at/strompreis', 'de', 'ct'], ['/ch/strompreis', 'de', 'ct'], ['/be/stroomprijs', 'nl', 'cent'], ['/be/prix-electricite', 'fr', 'c€'], ['/ie/electricity-price', 'en', 'c'], ['/cz/ceny-elektriny', 'cs', 'ct'], ['/hr/cijena-struje', 'hr', 'c'], ['/rs/cena-struje', 'sr-Latn', 'c€'], ['/me/cijena-struje', 'sr-ME', 'c'], ['/norden', 'da', null]]) {
-      ['/at/strompreis', 'de', 'ct'], ['/ch/strompreis', 'de', 'ct'], ['/be/stroomprijs', 'nl', 'cent'], ['/be/prix-electricite', 'fr', 'c€'], ['/ie/electricity-price', 'en', 'c'], ['/cz/ceny-elektriny', 'cs', 'ct'], ['/ee/elektri-hind', 'et', 'senti'], ['/lv/elektribas-cena', 'lv', 'c'], ['/lt/elektros-kaina', 'lt', 'ct'], ['/norden', 'da', null]]) {
-      ['/at/strompreis', 'de', 'ct'], ['/ch/strompreis', 'de', 'ct'], ['/be/stroomprijs', 'nl', 'cent'], ['/be/prix-electricite', 'fr', 'c€'], ['/ie/electricity-price', 'en', 'c'], ['/cz/ceny-elektriny', 'cs', 'ct'], ['/mk/cena-na-struja', 'mk', 'ц'], ['/al/cmimi-i-energjise', 'sq', 'c'], ['/norden', 'da', null]]) {
+  // The four Nordic pages by hand, then EVERY page of actual prices (`act`) of PRIS_COUNTRIES, with its language and unit read from the table (PB, above): a page added to the
+  // table is checked without an edit here. /norden last.
+  const ACT_PAGES = Object.entries(PB.PRIS_COUNTRIES).filter(([, C]) => C.act).map(([pg, C]) => ['/' + pg, C.lang, PB.prisSub(pg, C.def)]);
+  for (const [p, lang, unit] of [['/no/strompris', 'nb', 'øre'], ['/sv/elpris', 'sv', 'öre'], ['/fi/sahkon-hinta', 'fi', 'snt'], ['/nl/stroomprijs', 'nl', 'cent'], ...ACT_PAGES, ['/norden', 'da', null]]) {
     const r = p === '/sv/elpris' ? se3 : await get(p);
     const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<dialog[\s\S]*?<\/dialog>/g, '');
     const title = one(r.body, /<title>([^<]*)<\/title>/), desc = one(r.body, /<meta name="description" content="([^"]*)"/);
@@ -372,18 +377,8 @@ async function main() {
   // wording, the source, the licence and the note that the data were changed. They need the Spark job (scripts/eu_prices) to have written KV:
   // without data the page still answers 200 but has no screen.
   const llmsTxt = (await get('/llms.txt')).body;
-  for (const [p, lang] of [['/de/strompreis', 'de'], ['/fr/prix-electricite', 'fr'], ['/pl/ceny-pradu', 'pl'], ['/it/prezzo-luce', 'it'], ['/at/strompreis', 'de'], ['/ch/strompreis', 'de'], ['/be/stroomprijs', 'nl'], ['/be/prix-electricite', 'fr'], ['/ie/electricity-price', 'en'], ['/cz/ceny-elektriny', 'cs'], ['/es/precio-luz', 'es'], ['/pt/preco-eletricidade', 'pt']]) {
-    const r = await get(p), entsoe = ['/ie/electricity-price', '/es/precio-luz', '/pt/preco-eletricidade'].includes(p);
-  for (const [p, lang] of [['/de/strompreis', 'de'], ['/fr/prix-electricite', 'fr'], ['/pl/ceny-pradu', 'pl'], ['/it/prezzo-luce', 'it'], ['/at/strompreis', 'de'], ['/ch/strompreis', 'de'], ['/be/stroomprijs', 'nl'], ['/be/prix-electricite', 'fr'], ['/ie/electricity-price', 'en'], ['/cz/ceny-elektriny', 'cs'], ['/sk/ceny-elektriny', 'sk'], ['/hu/aramar', 'hu'], ['/si/cena-elektrike', 'sl']]) {
-    const r = await get(p), entsoe = ['/ie/electricity-price', '/sk/ceny-elektriny'].includes(p);
-  for (const [p, lang] of [['/de/strompreis', 'de'], ['/fr/prix-electricite', 'fr'], ['/pl/ceny-pradu', 'pl'], ['/it/prezzo-luce', 'it'], ['/at/strompreis', 'de'], ['/ch/strompreis', 'de'], ['/be/stroomprijs', 'nl'], ['/be/prix-electricite', 'fr'], ['/ie/electricity-price', 'en'], ['/cz/ceny-elektriny', 'cs'], ['/ro/pretul-energiei', 'ro'], ['/bg/tsena-na-toka', 'bg'], ['/gr/timi-revmatos', 'el']]) {
-    const r = await get(p), entsoe = p === '/ie/electricity-price' || p === '/ro/pretul-energiei' || p === '/bg/tsena-na-toka' || p === '/gr/timi-revmatos';
-  for (const [p, lang] of [['/de/strompreis', 'de'], ['/fr/prix-electricite', 'fr'], ['/pl/ceny-pradu', 'pl'], ['/it/prezzo-luce', 'it'], ['/at/strompreis', 'de'], ['/ch/strompreis', 'de'], ['/be/stroomprijs', 'nl'], ['/be/prix-electricite', 'fr'], ['/ie/electricity-price', 'en'], ['/cz/ceny-elektriny', 'cs'], ['/hr/cijena-struje', 'hr'], ['/rs/cena-struje', 'sr-Latn'], ['/me/cijena-struje', 'sr-ME']]) {
-    const r = await get(p), entsoe = ['/ie/electricity-price', '/hr/cijena-struje', '/rs/cena-struje', '/me/cijena-struje'].includes(p);
-  for (const [p, lang] of [['/de/strompreis', 'de'], ['/fr/prix-electricite', 'fr'], ['/pl/ceny-pradu', 'pl'], ['/it/prezzo-luce', 'it'], ['/at/strompreis', 'de'], ['/ch/strompreis', 'de'], ['/be/stroomprijs', 'nl'], ['/be/prix-electricite', 'fr'], ['/ie/electricity-price', 'en'], ['/cz/ceny-elektriny', 'cs'], ['/ee/elektri-hind', 'et'], ['/lv/elektribas-cena', 'lv'], ['/lt/elektros-kaina', 'lt']]) {
-    const r = await get(p), entsoe = ['/ie/electricity-price', '/ee/elektri-hind', '/lv/elektribas-cena', '/lt/elektros-kaina'].includes(p);
-  for (const [p, lang] of [['/de/strompreis', 'de'], ['/fr/prix-electricite', 'fr'], ['/pl/ceny-pradu', 'pl'], ['/it/prezzo-luce', 'it'], ['/at/strompreis', 'de'], ['/ch/strompreis', 'de'], ['/be/stroomprijs', 'nl'], ['/be/prix-electricite', 'fr'], ['/ie/electricity-price', 'en'], ['/cz/ceny-elektriny', 'cs'], ['/mk/cena-na-struja', 'mk'], ['/al/cmimi-i-energjise', 'sq']]) {
-    const r = await get(p), entsoe = p === '/ie/electricity-price';
+  for (const [p, lang, entsoe] of ACT_PAGES.map(([p, lang]) => [p, lang, PB.ZONES[PB.PRIS_COUNTRIES[p.slice(1)].def].src === 'entsoe'])) {
+    const r = await get(p);
     const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<!--[\s\S]*?-->/g, '');
     const main = page.slice(page.indexOf('<main'), page.indexOf('</main>'));
     check(/<div class="pris" data-period="2"/.test(main) && !/data-pris-period|pris-period/.test(main), `${p}: Pris-skærmen er tegnet, uden periodeknap`, 'kører Spark-jobbet (eu-prices-*)?');
@@ -393,11 +388,9 @@ async function main() {
       ? (main.includes('>ENTSO-E Transparency Platform</a>') && /ENTSO-E Transparency Platform/.test(foot) && !/SMARD|CC BY|Energi Data Service/.test(main + foot))
       : (main.includes('>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/"') && /Bundesnetzagentur \| SMARD\.de/.test(foot) && !/ENTSO|Energi Data Service/.test(main + foot)),
       `${p}: kilden er ${entsoe ? 'ENTSO-E Transparency Platform' : 'Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket'} — ikke den anden kilde og ikke EDS`);
-    check(/(Änderung|Modifié|Zmiany|Modifiche|Wijziging|Changed|Změna|Datos modificados|Dados alterados)/.test(page.slice(page.indexOf('<footer'))) && /elpriser\.org/.test(page.slice(page.indexOf('<footer'))), `${p}: fodens kildelinje siger at dataene er ændret`);
-    check(/(Änderung|Modifié|Zmiany|Modifiche|Wijziging|Changed|Změna|Zmena|Módosítás|Sprememba)/.test(page.slice(page.indexOf('<footer'))) && /elpriser\.org/.test(page.slice(page.indexOf('<footer'))), `${p}: fodens kildelinje siger at dataene er ændret`);
-    check(/(Änderung|Modifié|Zmiany|Modifiche|Wijziging|Changed|Změna|Modificare|Промяна|Τροποποίηση)/.test(page.slice(page.indexOf('<footer'))) && /elpriser\.org/.test(page.slice(page.indexOf('<footer'))), `${p}: fodens kildelinje siger at dataene er ændret`);
-    check(/(Änderung|Modifié|Zmiany|Modifiche|Wijziging|Changed|Změna|Izmjena|Izmena)/.test(page.slice(page.indexOf('<footer'))) && /elpriser\.org/.test(page.slice(page.indexOf('<footer'))), `${p}: fodens kildelinje siger at dataene er ændret`);
-    check(/(Änderung|Modifié|Zmiany|Modifiche|Wijziging|Changed|Změna|Muudatus|Izmaiņas|Pakeitimas)/.test(page.slice(page.indexOf('<footer'))) && /elpriser\.org/.test(page.slice(page.indexOf('<footer'))), `${p}: fodens kildelinje siger at dataene er ændret`);
+    // The footer says the data were changed: the first word of the language's `chg` ("Änderung", "Modifié", "Muudatus" …), read from the table.
+    const chgWord = PB.CHROME_I18N[lang].chg.split(/\s*[:：]/)[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    check(new RegExp(chgWord).test(page.slice(page.indexOf('<footer'))) && /elpriser\.org/.test(page.slice(page.indexOf('<footer'))), `${p}: fodens kildelinje siger at dataene er ændret`);
     check(new RegExp(`"inLanguage":"${lang}"`).test(r.body) && new RegExp(`<link rel="canonical" href="https://elpriser.org${p}">`).test(r.body) && llmsTxt.includes(`https://elpriser.org${p})`), `${p}: inLanguage, canonical og llms.txt`);
   }
   {
@@ -407,12 +400,8 @@ async function main() {
     check(/Ireland and Northern Ireland trade as one market/.test(ie.body) && /ENTSO-E Transparency Platform/.test(ie.body) && /"sameAs":"https:\/\/www\.wikidata\.org\/wiki\/Q26"/.test(ie.body), '/ie/electricity-price: siger at SEM er Irland og Nordirland, krediterer ENTSO-E og har spatialCoverage med begge');
     const be = [await get('/be/stroomprijs'), await get('/be/prix-electricite')];
     check(/<html lang="nl"/.test(be[0].body) && /<html lang="fr"/.test(be[1].body) && be[0].body.includes('data-key="be"') && be[1].body.includes('data-key="be"'), '/be/…: to sider, hollandsk og fransk, af den ene zone be');
-    for (const z of ['de', 'fr', 'pl', 'it-n', 'at', 'ch', 'be', 'ie', 'cz', 'es', 'pt']) {
-    for (const z of ['de', 'fr', 'pl', 'it-n', 'at', 'ch', 'be', 'ie', 'cz', 'sk', 'hu', 'si']) {
-    for (const z of ['de', 'fr', 'pl', 'it-n', 'at', 'ch', 'be', 'ie', 'cz', 'ro', 'bg', 'gr']) {
-    for (const z of ['de', 'fr', 'pl', 'it-n', 'at', 'ch', 'be', 'ie', 'cz', 'hr', 'rs', 'me']) {
-    for (const z of ['de', 'fr', 'pl', 'it-n', 'at', 'ch', 'be', 'ie', 'cz', 'ee', 'lv', 'lt']) {
-    for (const z of ['de', 'fr', 'pl', 'it-n', 'at', 'ch', 'be', 'ie', 'cz', 'mk', 'al']) {
+    // Every zone a page of actual prices draws (the table's own list), once each.
+    for (const z of [...new Set(Object.values(PB.PRIS_COUNTRIES).filter(C => C.act).flatMap(C => C.zones))]) {
       const a = await get('/api/nordic?zone=' + z);
       let j = {}; try { j = JSON.parse(a.body); } catch {}
       // 200 once the Spark job has written the key; a 404 "no prices available" before that.

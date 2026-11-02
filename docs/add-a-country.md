@@ -38,11 +38,15 @@ place dialog are plain HTML in `index.html`; **derive them, never hand-edit**: `
 4. `node scripts/sync-pris-block.mjs && node scripts/sync-danish-chrome.mjs`
 5. Country names: the footer of other languages shows a country's own name until their `cn` has it (`prisCn`). Adding `cc:'…'` to every
    language's `cn` is optional and last: when several agents work in parallel, leave it for one consolidation pass.
-6. Tests: the structural tests (`test-static.js`, `test-forecast-chart.mjs`, and the generic loop at the end of the actual-price section of
-   `test-zone-pages.mjs`) read the table and cover the new page without an edit. **Pin the strings by hand** the way the existing pages are pinned
-   (a second pair of eyes on the translation): one row in `ACT` (+ `PRISNOTE`/`PAGENOTE`, `CHANGED`) in `test-zone-pages.mjs`, `BASE` for the fake
-   price, one row in `CHROME` and `EUP` and the zone in `ZN` in `test-e2e.js` (Playwright, CI only), one row in `test-urls.js`, one in `WANT` of
-   the spatialCoverage block. Names of the new country in the footer lists of the e2e `CHROME` rows follow the language's `cn`.
+6. Tests: **the four per-country test files read the table** (`PRIS_COUNTRIES`, `ZONES`, `PRIS_PICK`, `CHROME_I18N`, `PRIS_I18N`) and cover a new page without an edit:
+   `test-static.js`, `test-forecast-chart.mjs`, the generic loop at the end of the actual-price section of `test-zone-pages.mjs` (and its sitemap, llms.txt and
+   spatialCoverage blocks, which iterate the table; the clock of a zone comes from `ZONES[z].shift`), `test-urls.js` (live; pages, zones, language, unit, source) and
+   `test-e2e.js` (Playwright, CI only: routes, stub zones, footer and place-dialog lists, the chrome of every page, the generic loop over the EUP rows, the clock test).
+   **Pin the strings by hand** the way the existing pages are pinned (a second pair of eyes on the translation) — these are the only per-country edits:
+   one row in `ACT` (+ `PRISNOTE`/`PRISCAP`/`CHANGED` rows per *language*, `PAGENOTE` for a page that names its own country in a shared language) in `test-zone-pages.mjs`,
+   one row in `QID` there, one row per language in `WORDS` of `test-forecast-chart.mjs` (fc, cap, note, nodot), one row per language in `CHROME_WORDS` and one row in `EUP`
+   in `test-e2e.js` (an `EUP` page without a row is still checked from its own entry). Names of the new country in the footer lists follow the language's `cn`
+   (the e2e derives them with `prisCn`).
 7. Bump the SSR cache keys when the shared markup changed (`ZONE_SSR_VERSION`, `CITY_SSR_VERSION`, `PROGNOSE_SSR_VERSION`,
    `homepage-ssr-vNN` in `functions/[[path]].js`; `test-static.js` pins them).
 8. `npm run test:gate` and `TZ=UTC npx -y node@22 test-static.js` (CI runs UTC and Node 22).
@@ -94,9 +98,11 @@ time (a language whose preposition changes with the number — Czech v/ve — is
 "model" or any number of days beyond today and tomorrow (the pages show settled prices only); nothing may say a currency other than the unit
 (prices are euro cent, with a note where the country uses another currency).
 
-A new language also needs, in `test-forecast-chart.mjs`, a `FCWORD` entry (its word for "forecast": the loop reads `FCWORD[lang]` and throws without one) and, when
-its day mark is `''` (Romanian, Bulgarian, Greek: no dot after a day number), its code in the list that allows exactly one empty `dot`. A zone on a clock
-ahead of Copenhagen (+1) needs its code in `ZSHIFT` (`test-zone-pages.mjs`) and in the `{ ie: -1, … }` map of the e2e stub. The Pris font (`manrope.woff2`) has
+A new language also needs, in `test-forecast-chart.mjs`, ONE row in `WORDS` (`fc`: its word for "forecast", which may not occur; `cap`: the words the caption must carry,
+`note`: the words of the change note; `nodot: 1` when its day mark is `''`, Romanian, Bulgarian, Greek, Lithuanian, Albanian: the check allows exactly one empty `dot` there; the
+suite fails with the language's name when the row is missing), one row each in `PRISNOTE`, `PRISCAP` and `CHANGED` of `test-zone-pages.mjs`, and one row in `CHROME_WORDS` of
+`test-e2e.js`. A zone on another clock than Copenhagen's needs only its `shift` in `ZONES`: the tests (`zoneToday`/`zoneHour` in `test-zone-pages.mjs`, `shiftOf` in `test-e2e.js`)
+read it from there. The Pris font (`manrope.woff2`) has
 Basic Latin and Latin-1 only: Latin Extended (Czech, Polish, Romanian), Cyrillic and Greek fall back to the system font, which is how the pages look today.
 
 ## C. Do not

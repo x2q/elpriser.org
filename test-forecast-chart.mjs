@@ -251,6 +251,38 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   // Languages used by a page of actual prices (`act`), and by a forecast page (the Nordic ones): nl serves both (NL forecast, BE actual).
   const ACTL = [...new Set(Object.values(CT).filter(c => c.act).map(c => c.lang))], NONACT = ['da', ...new Set(Object.values(CT).filter(c => !c.act).map(c => c.lang))];
   const ACT_ONLY = ACTL.filter(l => !NONACT.includes(l));
+  // ONE table of the per-language expectation words, every language that has a price page: fc = a "forecast" word that may NOT occur (every day on those pages is
+  // settled), cap = what the caption must say (excluding VAT), note = what the change note must say (calculated, changed), nodot = 1 when the day mark is '' (no dot
+  // after a day number). Nordic forecast languages (nb sv fi) have no price page of their own and need no row (sv only says nodot); nl serves Belgium. A new language adds ONE row here.
+  // \b is ASCII-only in JS, so no row uses it (Cyrillic, Greek).
+  const WORDS = {
+    de: { fc: /prognos|vorhersage|vorschau/i, cap: [/ohne/, /MwSt/], note: [/berechnet/, /verändert/] },
+    fr: { fc: /prévision|prevision|prédi/i, cap: [/hors/, /TVA/], note: [/calculées/, /modifiées/], nodot: 1 },
+    pl: { fc: /prognoz|przewid/i, cap: [/bez/, /VAT/], note: [/przeliczone/, /zmienione/], nodot: 1 },
+    it: { fc: /previsi|prognosi|stima/i, cap: [/al netto/, /IVA/], note: [/calcolate/, /modificati/], nodot: 1 },
+    en: { fc: /forecast|predict|outlook/i, cap: [/excluding/, /VAT/], note: [/calculated/, /changed/], nodot: 1 },
+    cs: { fc: /předpově|prognóz|odhad/i, cap: [/bez/, /DPH/], note: [/vypočítal/, /upraveny/] },
+    es: { fc: /previsi|pronóstic|pronostic|predic/i, cap: [/sin/, /IVA/], note: [/calculadas/, /modificados/], nodot: 1 },
+    pt: { fc: /previs|prognóst|prever/i, cap: [/sem/, /IVA/], note: [/calculadas/, /alterados/], nodot: 1 },
+    sk: { fc: /predpoveď|predpoved|prognóz|odhad/i, cap: [/bez/, /DPH/], note: [/vypočítal/, /upravené/] },
+    hu: { fc: /előrejelz|prognózis|becslés/i, cap: [/nélkül/, /áfa/i], note: [/számította/, /módosítottuk/] },
+    sl: { fc: /napoved|prognoz/i, cap: [/brez/, /DDV/], note: [/izračunal/, /spremenjeni/] },
+    ro: { fc: /prognoz|previziun|estimar/i, cap: [/fără|fara/i, /TVA/], note: [/calculat/, /modificat/], nodot: 1 },
+    bg: { fc: /прогноз|предвиж/i, cap: [/без/, /ДДС/], note: [/изчислен/, /променен/], nodot: 1 },
+    el: { fc: /πρόγνωση|προγνωσ|πρόβλεψη|προβλέψ/i, cap: [/χωρίς/, /ΦΠΑ/], note: [/υπολογ/, /τροποποι/], nodot: 1 },
+    hr: { fc: /prognoz|predvi[dđ]|procjen/i, cap: [/bez/, /PDV/], note: [/izračunao/, /izmijenjeni/] },
+    'sr-Latn': { fc: /prognoz|predvi[dđ]|procen/i, cap: [/bez/, /PDV/], note: [/izračunao/, /izmenjeni/] },
+    'sr-ME': { fc: /prognoz|predvi[dđ]|procjen/i, cap: [/bez/, /PDV/], note: [/izračunao/, /izmijenjeni/] },
+    et: { fc: /prognoo|ennustus|prognoos/i, cap: [/ei sisalda/, /käibemaksu/], note: [/arvutas/, /muudetud/] },
+    lv: { fc: /prognoz|paredz/i, cap: [/bez/, /PVN/], note: [/aprēķinājis/, /mainīti/] },
+    lt: { fc: /prognoz|numatom/i, cap: [/be PVM/, /mokesči/], note: [/apskaičiavo/, /pakeisti/], nodot: 1 },
+    mk: { fc: /прогноз|предвид|предикц/i, cap: [/без/, /ДДВ/], note: [/пресметува/, /изменети/] },
+    sq: { fc: /parashikim|prognoz|projeksion/i, cap: [/pa /, /TVSH/], note: [/llogaritur/, /ndryshuar/], nodot: 1 },
+    sv: { nodot: 1 },
+    nl: { fc: /voorspel|prognose|verwacht/i, cap: [/zonder/, /btw/], note: [/berekend/, /gewijzigd/], nodot: 1 },
+  };
+  ok(ACTL.every(l => l in WORDS), 'WORDS har en række for hvert sprog med en prissiden', ACTL.filter(l => !(l in WORDS)).join());
+  const FCWORD = Object.fromEntries(Object.entries(WORDS).filter(([l, w]) => w.fc).map(([l, w]) => [l, w.fc])), CAPWORD = Object.fromEntries(Object.entries(WORDS).filter(([l, w]) => w.cap).map(([l, w]) => [l, w.cap])), NOTEWORD = Object.fromEntries(Object.entries(WORDS).filter(([l, w]) => w.note).map(([l, w]) => [l, w.note]));
   ok(langs.slice(0, 9).join() === 'da,nb,sv,fi,nl,de,fr,pl,it' && langs.every(l => l === 'da' || l in pctx.CHROME_I18N) && Object.keys(pctx.CHROME_I18N).every(l => l in L), 'PRIS_I18N har da, nb, sv, fi, nl, de, fr, pl og it først, og hvert andet sprog har også en CHROME_I18N-tabel (og omvendt)', langs.join());
   // The languages of the actual-price pages carry three keys more (act1, act2: the card title for one and two days; cheapRest); `model` (the link text of the
   // forecast pages' model note) only the languages of a forecast page. Optional: hs (a suffix after the hour or range: " Uhr", " h", ":00"), hh (the suffix after EACH
@@ -268,38 +300,12 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     ok(keys.every(k => shape(L[lang][k]) === shape(L.da[k])), `${lang}: samme form på hver nøgle`, keys.filter(k => shape(L[lang][k]) !== shape(L.da[k])).join(','));
     const flat = keys.flatMap(k => [].concat(L[lang][k]));
     const empty = Object.entries(L[lang]).filter(([k, v]) => v === '').map(([k]) => k);
-    ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (['sv', 'nl', 'fr', 'pl', 'it', 'en', 'es', 'pt'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl, it og en; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
-    ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (['sv', 'nl', 'fr', 'pl', 'it', 'en', 'ro', 'bg', 'el'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl, it og en; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
-    ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (['sv', 'nl', 'fr', 'pl', 'it', 'en', 'lt'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl, it, en og lt; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
-    ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (['sv', 'nl', 'fr', 'pl', 'it', 'en', 'sq'].includes(lang) ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, i sv, nl, fr, pl, it og en; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
+    ok(flat.every(x => typeof x === 'string') && empty.every(k => ['dot', 'at'].includes(k)) && empty.filter(k => k === 'dot').length === (WORDS[lang] && WORDS[lang].nodot ? 1 : 0), `${lang}: ingen tom tekst (kun '' = ingen punktum efter dagstal, og kun i sprogene med nodot i WORDS; og '' = intet ord før klokkeslættet, hvis sproget vil det)`);
     ok(L[lang].wd.length === 7 && L[lang].ws.length === 7 && L[lang].mon.length === 12 && L[lang].verdict.length === 3 && L[lang].tier.length === 3, `${lang}: 7 ugedage, 12 måneder, 3 niveauer`);
   }
   ok(langs.every(l => !/\b10\b/.test(JSON.stringify(L[l]))), 'ingen sprog nævner 10 døgn');
   // The languages that serve actual-price pages only: no Danish words, no forecast word (every day on those pages is settled), and words of their own.
   const DANISH = /\b(lige nu|døgn|børspris|billig|dyr|næste|prognose|spotpris|uden moms|afgifter|nettarif|i dag|i morgen|dag for dag|spænd|kl\.)\b/i;
-  const FCWORD = { de: /prognos|vorhersage|vorschau/i, fr: /prévision|prevision|prédi/i, pl: /prognoz|przewid/i, it: /previsi|prognosi|stima/i, en: /forecast|predict|outlook/i, cs: /předpově|prognóz|odhad/i, es: /previsi|pronóstic|pronostic|predic/i, pt: /previs|prognóst|prever/i };
-  const CAPWORD = { de: [/ohne/, /MwSt/], fr: [/hors/, /TVA/], pl: [/bez/, /VAT/], it: [/al netto/, /IVA/], en: [/excluding/, /VAT/], cs: [/bez/, /DPH/], nl: [/zonder/, /btw/], es: [/sin/, /IVA/], pt: [/sem/, /IVA/] };
-  const NOTEWORD = { de: [/berechnet/, /verändert/], fr: [/calculées/, /modifiées/], pl: [/przeliczone/, /zmienione/], it: [/calcolate/, /modificati/], en: [/calculated/, /changed/], cs: [/vypočítal/, /upraveny/], nl: [/berekend/, /gewijzigd/], es: [/calculadas/, /modificados/], pt: [/calculadas/, /alterados/] };
-  const FCWORD = { de: /prognos|vorhersage|vorschau/i, fr: /prévision|prevision|prédi/i, pl: /prognoz|przewid/i, it: /previsi|prognosi|stima/i, en: /forecast|predict|outlook/i, cs: /předpově|prognóz|odhad/i };
-  const FCWORD = { de: /prognos|vorhersage|vorschau/i, fr: /prévision|prevision|prédi/i, pl: /prognoz|przewid/i, it: /previsi|prognosi|stima/i, en: /forecast|predict|outlook/i, cs: /předpově|prognóz|odhad/i, ro: /prognoz|previziun|estimar/i, bg: /прогноз|предвиж/i, el: /πρόγνωση|προγνωσ|πρόβλεψη|προβλέψ/i };
-  const CAPWORD = { de: [/ohne/, /MwSt/], fr: [/hors/, /TVA/], pl: [/bez/, /VAT/], it: [/al netto/, /IVA/], en: [/excluding/, /VAT/], cs: [/bez/, /DPH/], nl: [/zonder/, /btw/] };
-  const NOTEWORD = { de: [/berechnet/, /verändert/], fr: [/calculées/, /modifiées/], pl: [/przeliczone/, /zmienione/], it: [/calcolate/, /modificati/], en: [/calculated/, /changed/], cs: [/vypočítal/, /upraveny/], nl: [/berekend/, /gewijzigd/] };
-  FCWORD.sk = /predpoveď|predpoved|prognóz|odhad/i; CAPWORD.sk = [/bez/, /DPH/]; NOTEWORD.sk = [/vypočítal/, /upravené/];
-  FCWORD.hu = /előrejelz|prognózis|becslés/i; CAPWORD.hu = [/nélkül/, /áfa/i]; NOTEWORD.hu = [/számította/, /módosítottuk/];
-  FCWORD.sl = /napoved|prognoz/i; CAPWORD.sl = [/brez/, /DDV/]; NOTEWORD.sl = [/izračunal/, /spremenjeni/];
-  Object.assign(FCWORD, { hr: /prognoz|predvi[dđ]|procjen/i, 'sr-Latn': /prognoz|predvi[dđ]|procen/i, 'sr-ME': /prognoz|predvi[dđ]|procjen/i });
-  Object.assign(CAPWORD, { hr: [/bez/, /PDV/], 'sr-Latn': [/bez/, /PDV/], 'sr-ME': [/bez/, /PDV/] });
-  Object.assign(NOTEWORD, { hr: [/izračunao/, /izmijenjeni/], 'sr-Latn': [/izračunao/, /izmenjeni/], 'sr-ME': [/izračunao/, /izmijenjeni/] });
-// Estonian (et): its own words for the three checks below, one line per language so parallel additions merge.
-Object.assign(FCWORD, { et: /prognoo|ennustus|prognoos/i }); Object.assign(CAPWORD, { et: [/ei sisalda/, /käibemaksu/] }); Object.assign(NOTEWORD, { et: [/arvutas/, /muudetud/] });
-// Latvian (lv)
-Object.assign(FCWORD, { lv: /prognoz|paredz/i }); Object.assign(CAPWORD, { lv: [/bez/, /PVN/] }); Object.assign(NOTEWORD, { lv: [/aprēķinājis/, /mainīti/] });
-// Lithuanian (lt)
-Object.assign(FCWORD, { lt: /prognoz|numatom/i }); Object.assign(CAPWORD, { lt: [/be PVM/, /mokesči/] }); Object.assign(NOTEWORD, { lt: [/apskaičiavo/, /pakeisti/] });
-  // North Macedonia (Cyrillic): no forecast word (прогноз, предвиду, предвидување), the VAT word ДДВ, the change note's own words. \b is ASCII-only in JS, so none of these use it.
-  FCWORD.mk = /прогноз|предвид|предикц/i; CAPWORD.mk = [/без/, /ДДВ/]; NOTEWORD.mk = [/пресметува/, /изменети/];
-  // Albania: no forecast word (parashikim, prognozë), the VAT word TVSH, the change note's own words.
-  FCWORD.sq = /parashikim|prognoz|projeksion/i; CAPWORD.sq = [/pa /, /TVSH/]; NOTEWORD.sq = [/llogaritur/, /ndryshuar/];
   for (const l of ACT_ONLY) {
     const all = Object.values(L[l]).flat().join(' | ');
     ok(!DANISH.test(all), `${l}: ingen danske ord i tabellen`, (all.match(DANISH) || [])[0]);
@@ -446,9 +452,11 @@ Object.assign(FCWORD, { lt: /prognoz|numatom/i }); Object.assign(CAPWORD, { lt: 
     ok(pctx.prisCn(X.fi, 'ie') === 'Irlanti' && pctx.prisCn({ cn: {} }, 'ie') === 'Ireland' && pctx.prisCn({ cn: {} }, 'be') === 'België · Belgique', 'et land uden oversættelse hedder sit eget navn i stedet for at mangle (prisCn)');
     ok(CCS.length === new Set(CCS).size && Object.values(CT).every(c => CCS.includes(c.cc)), 'landenavnene dækker Danmark og hvert landeside-cc, ét pr. land (Belgien har to sider men ét land)');
     // The words differ between the languages — a copy-pasted Norwegian table would pass every check above.
-    ok(new Set(cl.map(l => X[l].place)).size === cl.length && new Set(cl.map(l => X[l].privacy)).size === cl.length && new Set(cl.map(l => X[l].land)).size >= cl.length - 2 && cl.every(l => new Set(Object.values(X[l].cn)).size === Object.values(X[l].cn).length), 'vælger-, privatlivs- og landeord er forskellige på alle sprog');
-    const cr = cl.filter(l => !['sr-Latn', 'sr-ME'].includes(l));   // the close languages (hr, sr-Latn, sr-ME) share single words: hr stands for the family here
-    ok(new Set(cr.map(l => X[l].place)).size === cr.length && new Set(cr.map(l => X[l].privacy)).size === cr.length && new Set(cr.map(l => X[l].land)).size >= cr.length - 1 && cl.every(l => new Set(Object.values(X[l].cn)).size === Object.values(X[l].cn).length) && new Set(cl.map(l => JSON.stringify(X[l]))).size === cl.length, 'vælger-, privatlivs- og landeord er forskellige på alle sprog (de nært beslægtede som én familie, men hver med sin egen tabel)');
+    // Close or coincidental languages may share the single word for "Countries": exactly these pairs (anything else is a copy-pasted table). The WHOLE tables must always differ.
+    const LANDSHARE = ['de+sv', 'es+pt', 'sl+sr-ME', 'hr+sr-Latn'], byLand = {};
+    cl.forEach(l => (byLand[X[l].land] = byLand[X[l].land] || []).push(l));
+    const shared = Object.values(byLand).filter(g => g.length > 1).map(g => g.slice().sort().join('+'));
+    ok(new Set(cl.map(l => X[l].place)).size === cl.length && new Set(cl.map(l => X[l].privacy)).size === cl.length && shared.every(s => LANDSHARE.includes(s)) && cl.every(l => new Set(Object.values(X[l].cn)).size === Object.values(X[l].cn).length) && new Set(cl.map(l => JSON.stringify(X[l]))).size === cl.length, 'vælger-, privatlivs- og landeord er forskellige på alle sprog (kun nære sprogpar deler ordet "lande", og hver tabel er sin egen)', shared.join());
     const html = pg => pctx.chromeHTML(pg);
     const CREDIT_EC = '>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>';
     for (const pg of Object.keys(CT)) {
