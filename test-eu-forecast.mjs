@@ -28,6 +28,22 @@ test('python unit tests: test_eu_forecast.py passes', { skip: havePandas ? false
   assert.match(r.stderr, /Ran \d{2,} tests/, 'the Python suite ran suspiciously few tests');
 });
 
+test('python unit tests: test_fuel_regions.py passes (fuel parsers on saved fixtures, leak-free fuel features, per-region candidates)', { skip: havePandas ? false : 'pandas/numpy not installed here' }, () => {
+  const r = spawnSync('python3', [path.join(DIR, 'test_fuel_regions.py')], { encoding: 'utf8' });
+  assert.equal(r.status, 0, 'test_fuel_regions.py failed:\n' + r.stdout + r.stderr);
+  assert.match(r.stderr, /Ran \d{2,} tests/, 'the fuel/region suite ran suspiciously few tests');
+});
+
+test('the fuel and per-region research code is research only: it never touches KV or the API, and its only secret is an optional env key', () => {
+  for (const f of ['fetch_fuel.py', 'fuel_features.py', 'fuel_dataset.py', 'region_models.py', 'region_backtest.py', 'region_scores.py', 'region_report.py', 'nordic_backtest.py']) {
+    const code = read(f).replace(/"""[\s\S]*?"""/g, '').replace(/#.*$/gm, '');
+    assert.ok(!/import kv\b|kv\.put|api\.cloudflare\.com|CLOUDFLARE_API_TOKEN|ENTSOE_TOKEN/.test(code), `${f} must not write to KV or use the price-job credentials`);
+  }
+  const ff = read('fetch_fuel.py');
+  assert.ok(/os\.environ\.get\("GIE_API_KEY"\)/.test(ff), 'the AGSI+ key must come from the environment');
+  assert.ok(!/GIE_API_KEY\s*=\s*["'][^"']+["']/.test(ff), 'no AGSI+ key literal');
+});
+
 test('the model covers exactly the 25 EU zones /api/nordic serves, with the API\'s EIC code per ENTSO-E zone', () => {
   const zones = [...read('zones.py').matchAll(/^\s+"([a-z-]+)":\s+\("(10Y[0-9A-Z-]{13})",/gm)].map(m => m[1]);
   const apiEu = [...apiArray('EU_ZONES_ENERGY_CHARTS'), ...apiArray('EU_ZONES_ENTSOE')];

@@ -10,6 +10,10 @@ Variants (--variant, combinable with +, e.g. rel+nowx): raw     target = price
                       rel     target = price - level_7d (the model predicts the deviation from the zone's last-week level)
                       nolvl   raw, without the EU-level features (ablation of the cross-zone level features)
                       nowx    raw, without any weather feature (ablation of what weather adds)
+                      fuel    adds the leak-free gas / carbon features of fuel_features.py (needs --dataset dataset_eu_fuel.parquet,
+                              built by fuel_dataset.py): gas level and 7/28-day change, month-ahead spread, EUA level and changes,
+                              CCGT marginal cost and its gap to the zone's recent level
+                      gasonly like fuel, but gas only (no carbon): separates what each input contributes
 
 Baselines (all use only what is known at issue time for the same horizon):
   lag7       the same hour one week before the target
@@ -37,6 +41,8 @@ import metrics as M       # noqa: E402
 PARAMS = dict(objective="quantile", alpha=0.5, n_estimators=400, num_leaves=63, min_child_samples=60,
               learning_rate=0.06, subsample=0.6, subsample_freq=1, colsample_bytree=0.8, max_bin=127, verbosity=-1)
 NULLABLE = {"lag_last", "lag1", "lag2", "lag3"}          # empty by design at some horizons
+FUEL_FEATS = ["gas", "gas_d7", "gas_d28", "gas_m1_spread", "eua", "eua_d7", "eua_d28", "ccgt_mc", "ccgt_mc_d7", "ccgt_mc_d28", "mc_gap"]
+GAS_FEATS = ["gas", "gas_d7", "gas_d28", "gas_m1_spread"]
 
 
 def flags(variant):
@@ -50,6 +56,10 @@ def feats_for(variant):
         f = [c for c in f if not c.startswith("eu_") and c != "level_30d_vs_eu"]
     if "nowx" in flags(variant):
         f = [c for c in f if c not in F.WX and c not in ("precip_24h", "reg_wind", "reg_rad", "reg_temp")]
+    if "fuel" in flags(variant):
+        f += FUEL_FEATS
+    elif "gasonly" in flags(variant):
+        f += GAS_FEATS
     return f
 
 
