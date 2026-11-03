@@ -30,7 +30,7 @@ OG
 • Til telefon og tablet, lys og mørk tilstand
 • Ingen reklamer, ingen konto
 
-Priserne er børspriser (day-ahead-markedet) uden afgifter, nettarif og leverandørens tillæg – undtagen i Danmark, hvor afgifter og tariffer lægges til. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, omregnet til timemiddel af elpriser.org), Energi Data Service. Prognosemodellen er åben på Hugging Face.
+Priserne er børspriser (day-ahead-markedet) uden afgifter, nettarif og leverandørens tillæg – undtagen i Danmark, hvor afgifter og tariffer lægges til. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, omregnet til timemiddel af elpriser.org), Energi Data Service. Prognosemodellerne er åbne på Hugging Face (i resten af Europa som en variant uden to af produktionsmodellens prisinput).
 
 Elpriser er en uafhængig tjeneste og er ikke tilknyttet noget netselskab, elselskab eller markedsoperatør. Priserne er vejledende; din faktiske afregning kan afvige.
 
@@ -62,7 +62,7 @@ AND
 • For phone and tablet, light and dark mode
 • No ads, no account
 
-Prices are wholesale spot prices (day-ahead market) without taxes, grid fees and supplier margin, except in Denmark where taxes and tariffs are added. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, converted to hourly averages by elpriser.org), Energi Data Service. The forecast model is open on Hugging Face.
+Prices are wholesale spot prices (day-ahead market) without taxes, grid fees and supplier margin, except in Denmark where taxes and tariffs are added. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, converted to hourly averages by elpriser.org), Energi Data Service. The forecast models are open on Hugging Face (elsewhere in Europe as a variant without two of the production model's price inputs).
 
 Elpriser is an independent service and is not affiliated with any grid company, energy supplier or market operator. Prices are indicative; your actual settlement may differ.
 

@@ -199,6 +199,14 @@ flexible load — and research. Not validated for trading or hedging.
 
 ## Sources & license
 
-CC BY 4.0. Prices and reservoir levels: ENTSO-E Transparency Platform.
-Weather: Open-Meteo. Code: [elpriser.org on GitHub](https://github.com/x2q/elpriser.org),
-`scripts/forecast_model/nordic/`.
+Weights, code and documentation: **CC BY 4.0**, credit "elpriser.org". The data sources keep their own terms; the full audit is in `DATA_LICENCES.md` in this repo.
+
+- **ENTSO-E Transparency Platform**: day-ahead prices (all 13 zones) and weekly reservoir filling, re-used under the platform's Terms of Use (source named, no endorsement
+  implied). These items are **not** on ENTSO-E's list of data open under CC BY 4.0; no ENTSO-E series is part of this repo.
+- **Energinet, Energi Data Service**: used to cross-check the Danish prices (CC BY 4.0, *Source: Energinet (www.energidataservice.dk)*).
+- **Weather data by [Open-Meteo.com](https://open-meteo.com)** (CC BY 4.0). Note that Open-Meteo's *free API* is for non-commercial use only.
+
+The backtest above ends in July 2026, before the price rise of September 2026; it says nothing about how the model behaves in the new price regime. Live errors are logged daily on
+elpriser.org but are not part of this card.
+
+Code: [elpriser.org on GitHub](https://github.com/x2q/elpriser.org), `scripts/forecast_model/nordic/`.

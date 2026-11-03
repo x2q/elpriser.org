@@ -20,7 +20,7 @@ Quantile LightGBM models forecasting DK1 (West Denmark) and DK2 (East Denmark)
 day-ahead spot electricity prices, 2 to 9 days ahead. This is the exact model
 powering [elpriser.org/prognose](https://elpriser.org/prognose).
 
-**This repo is live**: retrained from scratch and re-uploaded daily (14:10 UTC,
+**This repo is live**: retrained from scratch and re-uploaded daily (12:10 UTC,
 after the day-ahead auction publishes), so the weights here are always what
 production is running. Training data comes from the sibling
 [Denmark Power Market](https://huggingface.co/datasets/Elpriser/denmark-power-market)
@@ -190,8 +190,11 @@ configuration before its regime guard (`D_congest`); the seasonal four-week base
 Baselines on the same backtest: seasonal 4-week heuristic ~35-38% MAE, naive
 persistence ~41-46%.
 
-These figures are a **floor**: the backtest deliberately uses a weather-forecast
-lead at least as old as the operational run would see.
+These figures are a **floor** in one respect: the backtest deliberately uses a weather-forecast
+lead at least as old as the operational run would see. In another respect they are **not** a guide to
+today: the backtest ends on 2026-07-30, before the price rise of September 2026, so it says nothing about
+how the model behaves in the new price regime (a model trained on the older, calmer prices tends to run too low when the level rises).
+Live errors are logged daily on elpriser.org but are not part of this card.
 
 ## Why this exact configuration (Pareto analysis)
 
@@ -247,9 +250,13 @@ dishwasher or charge the car" — as implemented on
 [elpriser.org/prognose](https://elpriser.org/prognose). Not validated for
 wholesale trading, hedging, or any other financial decision.
 
-## License
+## License and data sources
 
-CC BY 4.0, matching the underlying data (Energinet and ENTSO-E, both CC BY 4.0;
-Open-Meteo free for commercial and non-commercial use with attribution).
-Source: [elpriser.org on GitHub](https://github.com/x2q/elpriser.org),
-`scripts/forecast_model/v3/`.
+Weights, code and documentation: **CC BY 4.0**, credit "elpriser.org". The data sources keep their own terms; the full audit is in `DATA_LICENCES.md` in this repo.
+
+- **Energinet, Energi Data Service** (day-ahead prices, actual wind and solar): CC BY 4.0. *Source: Energinet (www.energidataservice.dk).*
+- **ENTSO-E Transparency Platform**: the month-ahead transfer capacities are on ENTSO-E's list of data open under CC BY 4.0. The German wind and solar generation is re-used under
+  the platform's Terms of Use (source named, no endorsement implied) but is **not** on that CC BY list; no ENTSO-E series is part of this repo.
+- **Weather data by [Open-Meteo.com](https://open-meteo.com)** (CC BY 4.0). Note that Open-Meteo's *free API* is for non-commercial use only.
+
+Source: [elpriser.org on GitHub](https://github.com/x2q/elpriser.org), `scripts/forecast_model/v3/`.
