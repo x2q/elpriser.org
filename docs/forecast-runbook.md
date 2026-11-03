@@ -126,6 +126,15 @@ Optional: `EU_FORECAST_JOBS` (LightGBM threads, default 8), `EU_FORECAST_LAMBDA`
 * Tomorrow's price is a settled price. If a zone's own price job is late, the API shows the settled days it has and the forecast joins only if it starts the day after them
   (otherwise the answer is the settled prices alone until the next run).
 
+## The Netherlands: Nordic feed plus settled overlay
+
+`nl` is NOT an EU zone: it is one of the 13 zones of the Nordic pooled model (`scripts/forecast_model/nordic`, cron 12:40 UTC, KV `nordic-forecast-nl`, 9 forecast days).
+That job reads ENTSO-E once a day and the Dutch day-ahead results often reach ENTSO-E after that run (seen on 28, 29, 30 October and 2 November 2026; DK/NO/SE/FI were always
+in), so for most of the day the feed served NL's today (and tomorrow) as model forecast. `build_entsoe_prices.py` therefore also writes `eu-prices-nl` (its `NORDIC_OVERLAY`, same
+A44 request and parser, Amsterdam clock = CET/CEST like Copenhagen; the default run and `--zones nl` both do), and `/api/nordic?zone=nl` (`overlayNordicSettled`) lays those settled days
+over the feed: a complete settled day replaces the same date, the feed's forecast days stay only from the day after the last settled day, consecutive (the `withEuForecast` contract).
+Without `eu-prices-nl` the answer is the feed byte for byte. Rollback: remove `nl` from `NORDIC_OVERLAY` (or just let the key expire after 3 days).
+
 ## Data licences (open)
 
 MIBGAS (gas) and EEX (carbon) data are used **only as model inputs**: they are never shown, never part of a payload, never redistributed, and the pages and

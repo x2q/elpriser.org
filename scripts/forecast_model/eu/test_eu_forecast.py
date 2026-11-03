@@ -80,6 +80,7 @@ class Zones(unittest.TestCase):
         root = os.path.join(HERE, "..", "..", "eu_prices")
         en = read(os.path.join(root, "build_entsoe_prices.py"))
         ec = read(os.path.join(root, "build_eu_prices.py"))
+        en = en.split("NORDIC_OVERLAY = {")[0]       # the Netherlands is below ZONES: a Nordic-model zone whose settled days the ENTSO-E job only overlays
         en_z = dict((m[0], (m[1], m[2])) for m in re.findall(r'^\s+"([a-z-]+)":\s+\("(10Y[0-9A-Z-]{13})",\s+"([A-Za-z/_]+)"\)', en, re.M))
         ec_z = dict((m[0], m[1]) for m in re.findall(r'^\s+"([a-z-]+)":\s+\("[A-Za-z-]+",\s+"([A-Za-z/_]+)"\)', ec, re.M))
         # the model covers the Energy-Charts and ENTSO-E zones plus Ireland (whose prices the site now takes from SEMOpx; the model keeps

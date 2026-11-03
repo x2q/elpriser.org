@@ -51,6 +51,7 @@ const BASE = { no1: 80, no2: 120, no3: 60, no4: 30, no5: 100, se1: 25, se2: 35, 
   de: 95, fr: 62, pl: 118, 'it-n': 118, at: 105, ch: 110, be: 88, ie: 140, cz: 99, es: 105, pt: 100, sk: 88, hu: 105, si: 98, ro: 120, bg: 130, gr: 105,
   ee: 84, lv: 92, lt: 77, mk: 105 };
 const NORDIC = ['no1', 'no2', 'no3', 'no4', 'no5', 'se1', 'se2', 'se3', 'se4', 'fi', 'nl', 'dk1', 'dk2'];
+let nlSettled = 3;       // NL: how many days of the answer (the first is yesterday) are settled prices: 3 = yesterday, today, tomorrow; 2 = tomorrow is not published yet (overlayNordicSettled in the API)
 let noTomorrow = false;   // the EU job has not published tomorrow yet
 let fcZones = new Set();   // EU zones whose answer carries forecast days (the elpriser.org model: eu-forecast-<zone> on top of the settled days), with the accuracy block
 // A zone's days are its OWN local days: ZONES[z].shift hours from Copenhagen (Dublin and Lisbon -1; Tallinn, Riga, Vilnius, Bucharest, Sofia and Athens +1; the EU changes
@@ -78,7 +79,7 @@ const nordic = zone => !NORDIC.includes(zone) ? ({
   zone, generated: today, unit: 'EUR/MWh',
   zoneInfo: { name: zone.toUpperCase(), currency: 'X', rate: rateOf(zone), rateSource: 'test' },
   days: Array.from({ length: 10 }, (_, i) => ({
-    date: addDays(today, i - 1), type: i < 3 ? 'actual' : 'forecast',
+    date: addDays(today, i - 1), type: i < (zone === 'nl' ? nlSettled : 3) ? 'actual' : 'forecast',
     prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: +((BASE[zone] ?? 70) + 25 * Math.sin(h / 24 * 6.2832) + i * 2).toFixed(2) })),
   })),
 });
@@ -193,6 +194,19 @@ for (const [p, w] of Object.entries(PAGES)) {
   ok(/data-tip="Vandaag om \d\d · [\d,]+ cent\/kWh"/.test(h) && /data-tip="Morgen om \d\d · [\d,]+ cent\/kWh"/.test(h) && /data-tip="[a-z]{2} \d+ [a-z]{3} om \d\d · [\d,]+ cent\/kWh"/.test(h), 'NL: tooltips på hollandsk i cent (Vandaag, Morgen, og senere dage som "wo 29 okt")');
   ok(!/\b(øre|snt|kr\/kWh|døgn|dager|dygn|vrk)\b/.test(h.slice(h.indexOf('<main'), h.indexOf('</main>'))), 'NL: ingen ord eller enheder fra de andre sprog i sidens indhold');
   ok(/<li><a href="\/nl\/stroomprijs" data-zone="nl"><b>Nederland<\/b> \(NL\)<\/a>: gem\. vandaag [\d,]+ cent\/kWh, gem\. morgen/.test(h), 'NL: tekstblokken har Nederland med dagens og morgendagens gennemsnit');
+}
+// Netherlands, tomorrow's auction not published yet: today is a settled price ("Beursprijs"), only the days after it are "Prognose" - the answer
+// /api/nordic gives once eu-prices-nl is laid over the nordic feed (before it, today was a forecast day on this page).
+{
+  const dayKinds = h => { const t = h.slice(h.indexOf('<tbody')); return [...t.slice(0, t.indexOf('</tbody>')).matchAll(/<td class="(real|fc)">([^<]*)</g)].map(m => m[1] + ':' + m[2]); };
+  try {
+    store.clear(); nlSettled = 2;
+    const k = dayKinds((await get('/nl/stroomprijs')).page);
+    ok(k.length >= 3 && k[0] === 'real:Beursprijs' && k.slice(1).every(x => x.startsWith('fc:Prognose')), 'NL: i dag er en afgjort pris (Beursprijs), kun dagene efter er prognose', k.join(' '));
+    store.clear(); nlSettled = 3;
+    const k2 = dayKinds((await get('/nl/stroomprijs')).page);
+    ok(k2.length >= 3 && k2[0].startsWith('real') && k2[1].startsWith('real') && k2.slice(2).every(x => x.startsWith('fc')), 'NL: i dag og i morgen afgjort, derefter prognose', k2.join(' '));
+  } finally { nlSettled = 3; store.clear(); }
 }
 // The Danish pages' chrome is the fixture, byte for byte: header, phone tab bar, footer and net dialog.
 // The fixture is index.html's chrome as it was before the country pages got their own, plus the one intended change:
@@ -512,7 +526,7 @@ for (const pg of Object.keys(PB.PRIS_COUNTRIES)) {
   // The feed is Dublin's: when it is the first Danish hour of a day the date in the feed is YESTERDAY's Danish date, and the page still shows today (Dublin's) and tomorrow.
   ok((h.match(/<tr><th scope="row">/g) || []).length === 2, 'IE: to dagsrækker (i dag og i morgen) uanset forskellen til København');
   // An hour the source did not price (23-hour day): the bar is empty, nothing says NaN, the day still has its cheapest and dearest hour.
-  nullHours = { ie: [[2, 23], [1, 3]] }; store.clear();
+  nullHours = { ie: [[2, 23], [1, (DUB_H + 5) % 24]] }; store.clear();     // never the current hour (it was a fixed hour 3, which failed the test every night at 03:00 Dublin time)
   const nh = (await get('/ie/electricity-price')).page, nm = nh.slice(nh.indexOf('<main'), nh.indexOf('</main>'));
   const nb = (nm.slice(nm.indexOf('pris-card pp2'), nm.indexOf('pris-tiles pp2')).match(/<span class="pc[ "]/g) || []).length;
   ok(nb === 48 && (nm.match(/<span class="pc"><\/span>/g) || []).length >= 1 && !/NaN|undefined|Infinity|null/.test(nm) && /class="pris-now">[\d.]+</.test(nm), 'IE: en time uden pris giver en tom søjle, 48 i alt, ingen NaN/null og stadig en pris nu');

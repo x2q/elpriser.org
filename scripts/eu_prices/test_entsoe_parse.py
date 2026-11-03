@@ -107,6 +107,50 @@ class RealResponses(unittest.TestCase):
         p = E.build_payload("xk", fx("xk"), J.ZONES["xk"][1], ["2026-11-01", "2026-11-02", "2026-11-03"], "2026-11-02")
         self.assertEqual((p["zone"], p["unit"]), ("xk", "EUR/MWh"))
 
+    def test_netherlands_is_a_nordic_overlay_zone_with_two_full_cet_days(self):
+        # NL is served from the Nordic feed (nordic-forecast-nl); this job only supplies the settled days laid over it. Real response,
+        # fetched 2026-11-03 03:02Z: 2 and 3 November, 15-minute prices, Amsterdam's clock (CET from 2026-10-25, UTC+1).
+        self.assertNotIn("nl", J.ZONES)                       # ZONES is pinned to the API's EU_ZONES_ENTSOE (no Nordic feed)
+        self.assertIn("nl", J.NORDIC_OVERLAY)
+        self.assertEqual(J.ALL_ZONES["nl"], ("10YNL----------L", "Europe/Amsterdam"))
+        slots = E.parse_a44(fx("nl"))
+        self.assertEqual((len(slots), {m for _, m, _ in slots}), (192, {15}))
+        p = E.build_payload("nl", fx("nl"), J.ALL_ZONES["nl"][1], ["2026-11-01", "2026-11-02", "2026-11-03"], "2026-11-03")
+        self.assertEqual([d["date"] for d in p["days"]], ["2026-11-02", "2026-11-03"])      # 1 November is outside the request: absent, not invented
+        self.assertTrue(all(d["type"] == "actual" and [q["hour"] for q in d["prices"]] == list(range(24))
+                            and all(q["eur_mwh"] is not None for q in d["prices"]) for d in p["days"]))
+        # hour 0 of 3 November is the mean of the first four quarter-hours, which start at 2026-11-02T23:00Z
+        first = [pr for t, m, pr in slots if t == datetime(2026, 11, 2, 23, tzinfo=timezone.utc)
+                 or (0 < (t - datetime(2026, 11, 2, 23, tzinfo=timezone.utc)).total_seconds() < 3600)]
+        self.assertEqual(len(first), 4)
+        self.assertAlmostEqual(p["days"][1]["prices"][0]["eur_mwh"], round(sum(first) / 4, 2), places=2)
+
+    def test_netherlands_keeps_the_dst_days_whole(self):
+        # 25 October 2026 has 25 hours in Amsterdam, as in Copenhagen (the Nordic job): local hour 2 is the mean of both, 24 hours, none null.
+        from datetime import timedelta
+        start = datetime(2026, 10, 24, 22, tzinfo=timezone.utc)
+        slots = [(start + timedelta(hours=i), 60, float(i)) for i in range(25)]
+        d = P.build_days(slots, J.ALL_ZONES["nl"][1], ["2026-10-25"])[0]
+        self.assertEqual([q["hour"] for q in d["prices"]], list(range(24)))
+        self.assertEqual(d["prices"][2]["eur_mwh"], 2.5)
+        # 29 March 2026: 23 hours, local hour 2 does not exist and is null
+        start = datetime(2026, 3, 28, 23, tzinfo=timezone.utc)
+        slots = [(start + timedelta(hours=i), 60, float(i)) for i in range(23)]
+        d = P.build_days(slots, J.ALL_ZONES["nl"][1], ["2026-03-29"])[0]
+        self.assertIsNone(d["prices"][2]["eur_mwh"])
+        self.assertEqual(sum(1 for q in d["prices"] if q["eur_mwh"] is not None), 23)
+
+    def test_dry_run_of_the_netherlands_writes_eu_prices_nl(self):
+        old = J.fetch_a44
+        J.fetch_a44 = lambda token, eic, s, e: fx("nl")
+        try:
+            line = J.run_zone("nl", datetime(2026, 11, 3, 3, tzinfo=timezone.utc), "SECRETTOKEN", None, True)
+        finally:
+            J.fetch_a44 = old
+        self.assertIn("nl: 2026-11-02 (24 h), 2026-11-03 (24 h)", line)
+        self.assertIn("would write eu-prices-nl", line)
+        self.assertNotIn("SECRETTOKEN", line)
+
     def test_ireland_is_no_longer_a_zone_of_this_job(self):
         self.assertNotIn("ie", J.ZONES)         # build_semopx_prices.py writes eu-prices-ie (the SEMOpx day-ahead results)
         self.assertIn("xk", J.ZONES)
@@ -125,7 +169,7 @@ class Job(unittest.TestCase):
 
     def test_every_zone_has_an_eic_and_a_real_timezone(self):
         from zoneinfo import ZoneInfo
-        for z, (eic, tz) in J.ZONES.items():
+        for z, (eic, tz) in J.ALL_ZONES.items():
             self.assertRegex(eic, r"^10Y[0-9A-Z-]{12}[0-9A-Z]$", z)
             ZoneInfo(tz)
 

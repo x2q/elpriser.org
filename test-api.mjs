@@ -502,6 +502,82 @@ test('/api/nordic: a Nordic zone is served exactly as before — the KV value pl
   assert.equal((await (await createApi({ kv: makeKv({ 'nordic-forecast-dk1': feed('dk1', [day(0)]) }), ecb: ECB })).get('/api/nordic')).body.zone, 'dk1', 'no zone means dk1, as before');
 });
 
+// ── NL: the Nordic feed (model forecast) with the settled ENTSO-E days of eu-prices-nl laid over it ──
+// nordic-forecast-nl is written once a day at 12:40 UTC and the Dutch day-ahead results often reach ENTSO-E after that, so its today (and
+// tomorrow) are forecast days although the auction has settled. build_entsoe_prices.py (NORDIC_OVERLAY) writes eu-prices-nl twice a day.
+const nlFeed = (actual, forecast, generated = day(-1)) => ({
+  zone: 'nl', generated, trainedThrough: day(-3), unit: 'EUR/MWh',
+  days: [...feed('nl', actual, 'actual').days,
+    ...feed('nl', forecast, 'forecast').days.map(d => ({ ...d, prices: d.prices.map(p => ({ ...p, eur_mwh: p.eur_mwh + 100, min_eur_mwh: p.eur_mwh + 90, max_eur_mwh: p.eur_mwh + 110 })) }))],
+});
+const nlGet = async (nordic, settled) => createApi({ kv: makeKv({ ...(nordic ? { 'nordic-forecast-nl': nordic } : {}), ...(settled ? { 'eu-prices-nl': settled } : {}) }), ecb: ECB })
+  .then(api => api.get('/api/nordic?zone=nl'));
+const kinds = b => b.days.map(d => [d.date, d.type]);
+const span = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => day(a + i));
+
+test('/api/nordic: NL today (and tomorrow) are settled prices, the nordic model days follow the last settled day without a hole', async () => {
+  // the feed is a day old: yesterday settled, today and the next eight days forecast
+  const nordic = nlFeed([day(-2), day(-1)], span(0, 8));
+  let r = await nlGet(nordic, feed('nl', [day(-1), day(0)]));
+  assert.equal(r.status, 200);
+  assert.deepEqual(kinds(r.body), [[day(-2), 'actual'], [day(-1), 'actual'], [day(0), 'actual'], ...span(1, 8).map(d => [d, 'forecast'])]);
+  assert.deepEqual(r.body.days[2].prices[3], { hour: 3, eur_mwh: 54 }, 'today is the settled price of eu-prices-nl (50 + hour 3 + day 1 of ITS list), not the model\'s');
+  assert.deepEqual(r.body.days[3].prices[3], { hour: 3, eur_mwh: 154, min_eur_mwh: 144, max_eur_mwh: 164 }, 'the forecast days are the nordic job\'s, band included');
+  assert.equal(r.body.trainedThrough, day(-3));
+  assert.equal(r.body.generated, day(-1));
+  assert.ok(!('model' in r.body) && !('accuracy' in r.body));
+  assert.deepEqual(r.body.zoneInfo, { name: 'NL Nederland', country: 'NL', currency: 'EUR', rate: 1, rateDate: '2026-10-23', rateSource: 'ECB' });
+  // tomorrow's auction has settled too: it replaces the forecast of that date, the forecast starts the day after
+  r = await nlGet(nordic, feed('nl', [day(-1), day(0), day(1)]));
+  assert.deepEqual(kinds(r.body), [[day(-2), 'actual'], [day(-1), 'actual'], [day(0), 'actual'], [day(1), 'actual'], ...span(2, 8).map(d => [d, 'forecast'])]);
+  // what the apps make of it: complete days from today, today and tomorrow actual, then the forecast, consecutive
+  const days = daysFrom(parseZone(r.body).days, day(0));
+  assert.deepEqual(days.map(d => d.actual), [true, true, false, false, false, false, false, false, false]);
+});
+
+test('/api/nordic: NL without eu-prices-nl is the nordic feed, byte for byte; a Nordic zone never reads the settled key', async () => {
+  const nordic = nlFeed([day(-1)], span(0, 8));
+  const r = await nlGet(nordic, null);
+  assert.deepEqual(r.body, { ...nordic, zoneInfo: { name: 'NL Nederland', country: 'NL', currency: 'EUR', rate: 1, rateDate: '2026-10-23', rateSource: 'ECB' } });
+  const kv = makeKv({ 'nordic-forecast-dk1': nlFeed([day(0)], span(1, 3)), 'eu-prices-dk1': feed('dk1', [day(0)]) });
+  const d = await (await createApi({ kv, ecb: ECB })).get('/api/nordic?zone=dk1');
+  assert.deepEqual(d.body.days.map(x => x.type), ['actual', 'forecast', 'forecast', 'forecast']);
+  assert.deepEqual(kv.ops.get, ['nordic-forecast-dk1']);
+  assert.equal((await nlGet(null, feed('nl', [day(0)]))).status, 404, 'no nordic feed: unchanged, 404');
+});
+
+test('/api/nordic: NL - a forecast that cannot be joined to the settled days is dropped, a half-published day does not displace a forecast day', async () => {
+  // the feed's forecast starts two days after the last settled day: no hole is closed with it
+  let r = await nlGet(nlFeed([day(-1)], span(3, 8)), feed('nl', [day(0), day(1)]));
+  assert.deepEqual(kinds(r.body), [[day(-1), 'actual'], [day(0), 'actual'], [day(1), 'actual']]);
+  // a hole inside the feed's forecast ends it there
+  r = await nlGet(nlFeed([day(-1)], [day(1), day(2), day(4), day(5)]), feed('nl', [day(-1), day(0)]));
+  assert.deepEqual(kinds(r.body), [[day(-1), 'actual'], [day(0), 'actual'], [day(1), 'forecast'], [day(2), 'forecast']]);
+  // today only half published at ENTSO-E (13 hours): the overlay ignores it, the feed's forecast day for today stays whole
+  const half = feed('nl', [day(0)]); half.days[0].prices = half.days[0].prices.slice(0, 13);
+  r = await nlGet(nlFeed([day(-1)], span(0, 3)), { ...half, days: [...feed('nl', [day(-1)]).days, ...half.days] });
+  assert.deepEqual(kinds(r.body), [[day(-1), 'actual'], ...span(0, 3).map(d => [d, 'forecast'])]);
+  assert.equal(r.body.days[1].prices.length, 24);
+  // a day with a null price is not a settled day
+  const nul = feed('nl', [day(0)]); nul.days[0].prices[5].eur_mwh = null;
+  r = await nlGet(nlFeed([day(-1)], span(0, 2)), nul);
+  assert.deepEqual(kinds(r.body), [[day(-1), 'actual'], [day(0), 'forecast'], [day(1), 'forecast'], [day(2), 'forecast']]);
+  // a spring-forward day (23 hours, local hour 2 does not exist) is
+  const dst = feed('nl', [day(0)]); dst.days[0].prices = dst.days[0].prices.filter(p => p.hour !== 2);
+  r = await nlGet(nlFeed([day(-1)], span(0, 2)), dst);
+  assert.deepEqual(kinds(r.body), [[day(-1), 'actual'], [day(0), 'actual'], [day(1), 'forecast'], [day(2), 'forecast']]);
+  // a `forecast` day in eu-prices-nl is not a settled price
+  r = await nlGet(nlFeed([day(-1)], span(0, 2)), feed('nl', [day(0)], 'forecast'));
+  assert.deepEqual(kinds(r.body).map(k => k[1]), ['actual', 'forecast', 'forecast', 'forecast']);
+  assert.deepEqual(r.body.days[1].prices[0], { hour: 0, eur_mwh: 150, min_eur_mwh: 140, max_eur_mwh: 160 });
+});
+
+test('/api/nordic: NL - the nordic job has caught up (its own actual days) and the overlay is older: nothing is lost, nothing duplicated', async () => {
+  const r = await nlGet(nlFeed([day(-1), day(0), day(1)], span(2, 8), day(0)), feed('nl', [day(-2), day(-1), day(0)]));
+  assert.deepEqual(kinds(r.body), [[day(-2), 'actual'], [day(-1), 'actual'], [day(0), 'actual'], [day(1), 'actual'], ...span(2, 8).map(d => [d, 'forecast'])]);
+  assert.equal(new Set(r.body.days.map(d => d.date)).size, r.body.days.length);
+});
+
 test('/api/nordic: every EU zone (27 of them) is served from its own eu-prices key, with zoneInfo, and nothing but actual days', async () => {
   const seed = Object.fromEntries(EU.map(z => [`eu-prices-${z}`, feed(z, [day(0), day(1)])]));
   for (const z of EU) {

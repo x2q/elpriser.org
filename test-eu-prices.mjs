@@ -61,6 +61,20 @@ test('the four jobs write exactly the keys /api/nordic reads, for exactly the zo
   assert.ok(/os\.environ\.get\("ENTSOE_TOKEN"\)/.test(en), 'the ENTSO-E job does not read its token from the environment');
 });
 
+test('the Netherlands is a Nordic-feed zone with an ENTSO-E settled overlay: the job NORDIC_OVERLAY, the API NORDIC_SETTLED_OVERLAY, and in none of the EU lists', () => {
+  const en = readJob('build_entsoe_prices.py');
+  const api = fs.readFileSync(path.join(ROOT, 'functions/api/[[catchall]].js'), 'utf8');
+  const block = en.slice(en.indexOf('NORDIC_OVERLAY = {'), en.indexOf('\n}\n', en.indexOf('NORDIC_OVERLAY = {')));
+  const zones = [...block.matchAll(/^\s+"([a-z-]+)":\s+\("(10Y[0-9A-Z-]{13})",\s+"([A-Za-z/_]+)"\)/gm)].map(m => [m[1], m[2], m[3]]);
+  assert.deepEqual(zones, [['nl', '10YNL----------L', 'Europe/Amsterdam']], 'NL: ENTSO-E bidding zone 10YNL----------L on the Amsterdam clock (CET/CEST like DE and DK)');
+  assert.deepEqual(apiArray(api, 'NORDIC_SETTLED_OVERLAY'), ['nl']);
+  assert.ok(/const NORDIC_ZONES = \[[^\]]*'nl'\]/.test(api), 'nl stays a Nordic-feed zone (the 9-day model forecast)');
+  for (const n of ['EU_ZONES_ENERGY_CHARTS', 'EU_ZONES_ENTSOE', 'EU_ZONES_ELEXON', 'EU_ZONES_SEMOPX']) assert.ok(!apiArray(api, n).includes('nl'), `nl is in ${n}: it would lose its nordic forecast and break the pinned zone lists`);
+  assert.ok(!zoneBlock(en).includes('"nl"'), 'nl must stay out of ZONES: the zone list is pinned to EU_ZONES_ENTSOE');
+  assert.ok(/ALL_ZONES\s*=\s*\{\*\*ZONES, \*\*NORDIC_OVERLAY\}/.test(en) && /zones = a\.zones\.split\(","\) if a\.zones else list\(ALL_ZONES\)/.test(en), 'the job runs the overlay zone by default');
+  assert.ok(!/Energy-Charts|energy-charts/i.test(block), 'the Netherlands comes from ENTSO-E, never from Energy-Charts (licence)');
+});
+
 test('each price source is read in ONE place: Energy-Charts from build_eu_prices.py, ENTSO-E from build_entsoe_prices.py — and never from the Worker', () => {
   const ecReaders = [], enReaders = [], enMentions = [], exReaders = [], sxReaders = [];
   for (const dir of ['functions', 'scripts/eu_prices']) for (const f of fs.readdirSync(path.join(ROOT, dir), { recursive: true })) {
