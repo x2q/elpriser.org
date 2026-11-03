@@ -126,7 +126,7 @@ def live_weather():
 
 
 def score(models, prices, live, reservoirs, nordic_res, today):
-    """10-day forecast per zone in a compact JSON-ready structure."""
+    """10 days per zone (yesterday, then today + 8 days) in a compact JSON-ready structure."""
     out = {}
     idx_all = pd.date_range(pd.Timestamp(today), periods=10 * 24, freq="h")
     reg = {}
@@ -148,9 +148,14 @@ def score(models, prices, live, reservoirs, nordic_res, today):
         lvl30 = day_mean.rolling(30, min_periods=10).mean()
         sc = _seasonal(p, today)
         days = []
-        for offset in range(10):
+        # Yesterday first, then today .. today+8: ten days "from yesterday" as /api/nordic documents. Yesterday is only ever a settled day (never forecast), and it is
+        # not there for its own sake: the API re-cuts Finland into Helsinki days (functions/_localdays.js), whose hour 0 is the Copenhagen hour 23 of the day
+        # before, so the first day of the feed has to be a day before today or Finland's today would lack its first hour (an app drops a day with a hole).
+        for offset in range(-1, 9):
             d = today + timedelta(days=offset)
             dayp = p[p.index.normalize() == pd.Timestamp(d)]
+            if offset < 0 and len(dayp) <= 12:
+                continue                                  # a yesterday that is not complete is left out, not forecast
             if len(dayp) > 12:
                 days.append({"date": d.isoformat(), "type": "actual",
                              "prices": [{"hour": h,
