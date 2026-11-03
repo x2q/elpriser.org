@@ -53,7 +53,8 @@ export const ZONES = [
   { key: 'xk', country: 'XK', tz: 'Europe/Belgrade', currency: 'EUR', sub: 'ct', city: null, forecast: false, apps: false },
   // Great Britain: the Market Index Price (within-day) from Elexon BMRS, NOT a day-ahead price. Already in pounds: the feed's `eur_mwh` holds GBP/MWh
   // and zoneInfo.rate is 1, so price * rate / 10 is pence per kWh. Today is never complete (an hour appears once both half hours have traded) and
-  // there is no tomorrow: a client that drops incomplete days (parseZone) would show nothing current for this zone.
+  // there is no tomorrow: a client that drops incomplete days (parseZone) would show nothing current for this zone. The ESTIMATE of today's unpriced hours (and of the missing hour 23 of pt and ie) is a
+  // separate top-level `estimate` of the answer (functions/_estimate.js), never part of days[]: parseZone / daysFrom make the same of the answer with and without it (test-api.mjs).
   { key: 'gb', country: 'GB', tz: 'Europe/London', currency: 'GBP', sub: 'p', city: null, forecast: false, apps: false },
 ];
 

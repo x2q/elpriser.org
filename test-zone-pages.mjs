@@ -53,6 +53,7 @@ const BASE = { no1: 80, no2: 120, no3: 60, no4: 30, no5: 100, se1: 25, se2: 35, 
 const NORDIC = ['no1', 'no2', 'no3', 'no4', 'no5', 'se1', 'se2', 'se3', 'se4', 'fi', 'nl', 'dk1', 'dk2'];
 let nlSettled = 3;       // NL: how many days of the answer (the first is yesterday) are settled prices: 3 = yesterday, today, tomorrow; 2 = tomorrow is not published yet (overlayNordicSettled in the API)
 let noTomorrow = false;   // the EU job has not published tomorrow yet
+let estZones = new Set();   // zones whose answer carries `estimate`: elpriser.org's own estimate of the hours without a price (gb: the rest of today; pt, ie: the last local hour of the newest day)
 let fcZones = new Set();   // EU zones whose answer carries forecast days (the elpriser.org model: eu-forecast-<zone> on top of the settled days), with the accuracy block
 // A zone's days are its OWN local days: ZONES[z].shift hours from Copenhagen (Dublin and Lisbon -1; Tallinn, Riga, Vilnius, Bucharest, Sofia and Athens +1; the EU changes
 // the clocks at one instant). The feed's "today" and the hour of the screen differ from Copenhagen's for the first or the last Danish hour of a day. Read from ZONES, so a zone
@@ -92,8 +93,19 @@ const withFc = (zone, r) => {
   for (let i = last + 1; i <= 8; i++) extra.push({ date: addDays(zoneToday(zone), i - 1), type: 'forecast', horizon: i - last + 1,
     prices: Array.from({ length: 24 }, (_, h) => { const p = +((BASE[zone] ?? 70) + 25 * Math.sin(h / 24 * 6.2832) + i * 2).toFixed(2); return { hour: h, eur_mwh: p, min_eur_mwh: p - 15, max_eur_mwh: p + 25 }; }) });
   return { ...r, trainedThrough: today, model: 'eu-ens-v2', forecastGenerated: today, days: [...r.days, ...extra],
-    accuracy: { version: 2, period: '2025-04-01..2026-11-02', baseline: 'level+shape', recent: '2026-09-01', fuel: true, showEur: ['ee', 'lv', 'lt'].includes(zone),
+    accuracy: { version: 2, ...(zone === 'gb' ? { unit: 'GBP/MWh' } : {}), period: '2025-04-01..2026-11-02', baseline: 'level+shape', recent: '2026-09-01', fuel: true, showEur: ['ee', 'lv', 'lt'].includes(zone),
       byHorizon: Object.fromEntries([2, 3, 4, 5, 6, 7].map(h => [String(h), ACC(h)])) } };
+};
+/** The answer with `estimate` for the zones in `estZones`: gb the hours of today after the last priced one (GBP/MWh, a P10-P90 band), pt and ie the missing hour 23 of the last day. */
+const withEst = (zone, r) => {
+  if (!estZones.has(zone)) return r;
+  const gb = zone === 'gb', d = r.days[r.days.length - 1];
+  const hours = d.prices.filter(q => q.eur_mwh == null).map(q => q.hour);
+  if (!hours.length) return r;
+  return { ...r, estimate: { date: d.date, type: 'forecast', scope: 'partial-day', model: 'gb-est-v1', generatedAt: new Date().toISOString(),
+    prices: hours.map(h => { const p = +((BASE[zone] ?? 70) + 25 * Math.sin(h / 24 * 6.2832) + 3).toFixed(2); return { hour: h, eur_mwh: p, min_eur_mwh: p - 12, max_eur_mwh: p + 20 }; }),
+    accuracy: gb ? { asOf: 2, unit: 'GBP/MWh', baseline: 'level+shape', mae: 18.4, baseMae: 25.6, gain: 0.28, gainRecent: 0.33, coverage: 0.77, low: false }
+      : { hours: 1, unit: 'EUR/MWh', baseline: 'persistence of hour 22', mae: 8.5, baseMae: 8.5, gain: 0, coverage: 0.83, low: false } } };
 };
 const store = new Map();
 globalThis.caches = { default: { match: async k => { const r = store.get(k.url); return r ? r.clone() : undefined; }, put: async (k, r) => { store.set(k.url, r); } } };
@@ -102,7 +114,7 @@ globalThis.fetch = async u => {
   const url = new URL(String(u));
   upstream.push(url.pathname + url.search);
   const z = url.searchParams.get('zone');
-  if (url.pathname === '/api/nordic' && z && !missing.has(z)) return new Response(JSON.stringify(withFc(z, nordic(z))), { headers: { 'content-type': 'application/json' } });
+  if (url.pathname === '/api/nordic' && z && !missing.has(z)) return new Response(JSON.stringify(withFc(z, withEst(z, nordic(z)))), { headers: { 'content-type': 'application/json' } });
   return new Response('{}', { status: 404 });
 };
 const get = async p => {
@@ -306,7 +318,7 @@ const PRISNOTE = {
 // Pages whose note names their OWN country in a language they share (Austria and Switzerland read the German table, Belgium (French) the French one): the note of a page is `PAGENOTE[page]` when it has one.
 const PAGENOTE = {
   '/ie/electricity-price': 'Hourly means of the 30-minute prices of the SEMOpx day-ahead auction, calculated by elpriser.org (changed from the original data). Ireland and Northern Ireland trade as one market, the all-island Single Electricity Market (SEM). Prices are in euro cent. Source:',
-  '/gb/electricity-price': 'The Market Index Price (within-day) is the volume-weighted price of the within-day wholesale trades of each half hour (EPEX SPOT UK and N2EX, as reported to Elexon). It is not the day-ahead auction price, which is not free data for Great Britain, and there is no tomorrow: an hour is shown once both of its half hours have traded. Hourly means of the half-hourly prices, calculated by elpriser.org (changed from the original data). Great Britain only: Northern Ireland trades in the all-island market (see Ireland). Prices are in pence. Source:',
+  '/gb/electricity-price': 'The Market Index Price (within-day) is the volume-weighted price of the within-day wholesale trades of each half hour (EPEX SPOT UK and N2EX, as reported to Elexon). It is not the day-ahead auction price, which is not free data for Great Britain, and there is no tomorrow: an hour is shown as a price once both of its half hours have traded. Hours that have not traded yet may be shown as an Estimate calculated by elpriser.org, not the Elexon number, replaced by the Elexon price as soon as it is published. Hourly means of the half-hourly prices, calculated by elpriser.org (changed from the original data). Great Britain only: Northern Ireland trades in the all-island market (see Ireland). Prices are in pence. Source:',
   '/xk/cmimi-i-rrymes': 'Mesataret orare të çmimeve janë llogaritur nga elpriser.org (të dhënat janë ndryshuar në krahasim me origjinalin; kur burimi jep çmime më të shkurtra se një orë, merret mesatarja e tyre). Çmimet janë në cent euro. Burimi:',
   '/at/strompreis': 'Stundenmittel der Viertelstundenpreise, von elpriser.org berechnet (gegenüber den Originaldaten verändert). Österreich bildet eine eigene Gebotszone. Quelle:',
   '/ch/strompreis': 'Stundenmittel der Viertelstundenpreise, von elpriser.org berechnet (gegenüber den Originaldaten verändert). Die Schweiz hat eine eigene Gebotszone; die Preise sind in Euro-Cent angegeben, nicht in Rappen. Quelle:',
@@ -458,7 +470,7 @@ for (const [p, w] of Object.entries(ACT)) {
   const l7 = (h7.match(/<p class="pris-fca">([^]*?)<\/p>/) || [])[1] || '';
   ok(l7.includes(PL.fcb) && l7.includes(`D+${hz}`) && /\b76\b/.test(l7) && l7.includes(PL.fcl) === (hz === 7) && !/\b80 ?%/.test(h.replace(/<[^>]*>/g, ' ')) && !/NaN|undefined|\{[a-z]+\}/.test(main), `${p}: med prognose: nøjagtighedslinjen har de målte tal (dækning 76 %, ikke 80), lav sikkerhed og ingen skabelon-rester`, l7.slice(0, 200));
   ok(!NOFUEL.test(raw.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), `${p}: med prognose: ingen ord om gas, kul eller brændstof på siden`);
-  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v21${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v21`);
+  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v22${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v22`);
   // the text block says the forecast exists only while there is one; the plain page stays as before
   ok(!plain.page.includes(PL.fcn) && !plain.page.includes('pris-fca') && (plain.page.match(/data-pris-period="/g) || []).length === 0, `${p}: uden prognose i svaret er siden som før (ingen note, ingen periodeknapper)`);
   fcZones = new Set();
@@ -529,7 +541,7 @@ for (const pg of Object.keys(PB.PRIS_COUNTRIES)) {
   nullHours = { ie: [[2, 23], [1, (DUB_H + 5) % 24]] }; store.clear();     // never the current hour (it was a fixed hour 3, which failed the test every night at 03:00 Dublin time)
   const nh = (await get('/ie/electricity-price')).page, nm = nh.slice(nh.indexOf('<main'), nh.indexOf('</main>'));
   const nb = (nm.slice(nm.indexOf('pris-card pp2'), nm.indexOf('pris-tiles pp2')).match(/<span class="pc[ "]/g) || []).length;
-  ok(nb === 48 && (nm.match(/<span class="pc"><\/span>/g) || []).length >= 1 && !/NaN|undefined|Infinity|null/.test(nm) && /class="pris-now">[\d.]+</.test(nm), 'IE: en time uden pris giver en tom søjle, 48 i alt, ingen NaN/null og stadig en pris nu');
+  ok(nb === 48 && (nm.match(/<span class="pc"><\/span>/g) || []).length >= 1 && !/NaN|undefined|Infinity|null/.test(nm) && /class="pris-now">[\d.]+</.test(nm), 'IE: en time uden pris giver en tom søjle, 48 i alt, ingen NaN/null og stadig en pris nu', JSON.stringify({ nb, empty: (nm.match(/<span class="pc"><\/span>/g) || []).length, bad: (nm.match(/.{30}(NaN|undefined|Infinity|null).{30}/) || [])[0], now: (nm.match(/class="pris-now">[^<]*</) || [])[0] }));
   // The CURRENT hour has no price: the big number is a dash, there is no verdict and no sentence — and still no NaN.
   nullHours = { ie: [[1, DUB_H]] }; store.clear();
   const nn = (await get('/ie/electricity-price')).page, nnm = nn.slice(nn.indexOf('<main'), nn.indexOf('</main>'));
@@ -561,6 +573,50 @@ for (const pg of Object.keys(PB.PRIS_COUNTRIES)) {
   const full = (await get('/gb/electricity-price')).page;
   ok(new RegExp(`class="pris-label">Latest Market Index Price \\(within-day\\) · <span class="pris-wd">[A-Za-z]+ </span>at ${String(GBH).padStart(2, '0')}:00<`).test(full), 'GB: når den nuværende time har en pris, er det den, med sit eget klokkeslæt');
   gbThrough = null; store.clear();
+}
+// The ESTIMATE of hours that have no price yet (Great Britain: the rest of today; Portugal and Ireland: the missing last hour) — drawn hatched, called "Estimate", never as the price now,
+// with the honest note and the measured accuracy in the unit of the answer. The settled days are what they were; the hero is the latest SETTLED hour.
+{
+  const GBH = zoneHour('gb'), through = Math.max(Math.min(GBH - 2, 20), 3);
+  gbThrough = through; estZones.add('gb'); store.clear(); upstream = [];
+  const r = await get('/gb/electricity-price'), h = r.page, m = mainOf(h);
+  const plot = m.slice(m.indexOf('pris-card pp2'), m.indexOf('pris-tiles pp2'));
+  const esBars = (plot.match(/<span class="pc fx es[ "]/g) || []).length;
+  const estHours = 24 - (through + 1);
+  ok(esBars === estHours && (plot.match(/<span class="pc[ "]/g) || []).length === 24, `GB estimat: ${estHours} skønnede timer (hatched, med bånd) i et dagsdiagram på 24 søjler (gb har ingen i morgen)`, `${esBars}`);
+  ok(/<span class="pris-lge"><i><\/i>Estimate<\/span>/.test(m) && /<span class="pris-bl pris-be"><i><\/i>Estimate<\/span>/.test(m) && /class="pris-fc[^"]*" style="left:[\d.]+%"><i><\/i>Estimate</.test(m), 'GB estimat: forklaringen og skillelinjen hedder "Estimate" (ikke Forecast)');
+  ok(/<p class="pris-fcn pris-estn">Hours marked Estimate are not the Elexon Market Index Price\. They are elpriser\.org’s own statistical model, not the Elexon number/.test(m) && /replaced by the Elexon price as soon as it is published/.test(m), 'GB estimat: noten siger at det er elpriser.orgs egen statistiske model, ikke Elexons tal, og at det afgjorte tal erstatter det');
+  ok(/Back-test, rest of the day: mean error 18\.4 GBP\/MWh, 28 % lower than a simple method \(33 % since 1 Sept 2026\)\./.test(m) && /In the back-test 77 % of the hours fell inside the range\./.test(m) && !/EUR\/MWh/.test(m), 'GB estimat: det målte i pund (GBP/MWh), med målt dækning og uden euro');
+  ok(/data-tip="Today at \d\d:00 · [\d.]+ p\/kWh \(Estimate, P10–P90 [\d.]+–[\d.]+\)"/.test(plot), 'GB estimat: tooltip siger Estimate og båndet');
+  // The hero is the latest SETTLED hour, not the estimate for the hour that is running.
+  const want = nordic('gb').days[1].prices[through].eur_mwh / 10, dec = Math.max(...nordic('gb').days.flatMap(d => d.prices.map(q => q.eur_mwh == null ? 0 : q.eur_mwh / 10))) >= 10 ? 1 : 2;
+  if (GBH >= 4) ok(new RegExp(`class="pris-now">${want.toFixed(dec)}<`).test(m) && new RegExp(`at ${String(through).padStart(2, '0')}:00<`).test(m), 'GB estimat: det store tal er den seneste AFGJORTE time, aldrig skønnet');
+  ok(/<td class="real">Market Index Price \(within-day\) \+ estimate<\/td>/.test(m) && !/<td class="fc">/.test(m), 'GB estimat: dagens række siger afgjort + skøn');
+  // The text block's averages are of settled prices: the estimate is not in them.
+  const zl = h.slice(h.indexOf('<section class="zl"'), h.indexOf('</section>', h.indexOf('<section class="zl"')));
+  const settled = nordic('gb').days[1].prices.filter(q => q.eur_mwh != null).map(q => q.eur_mwh / 10);
+  const avg = settled.reduce((a, b) => a + b, 0) / settled.length;
+  ok(zl.includes(`avg. today ${avg.toFixed(avg >= 100 ? 0 : avg >= 10 ? 1 : 2)} p/kWh`), 'GB estimat: tekstblokkens gennemsnit er af afgjorte priser alene', zl.slice(0, 300));
+  ok(!/NaN|undefined|Infinity|\{[a-z]+\}/.test(m) && !/\b(øre|kr\/kWh|døgn|Prognose)\b/.test(m), 'GB estimat: ingen NaN, ingen skabelonrester, ingen danske ord');
+  // No estimate in the answer: the page is exactly what it was.
+  estZones.delete('gb'); store.clear();
+  const none = mainOf((await get('/gb/electricity-price')).page);
+  ok(!/pris-lge|pris-be|pris-estn|pc fx es/.test(none), 'GB uden estimat: ingen forklaring, ingen note, ingen skraverede søjler');
+  // With forecast days after today as well (D+1..D+7 pass the gate): both notes, the estimate's hours and the forecast days' band.
+  estZones.add('gb'); fcZones.add('gb'); store.clear();
+  const both = mainOf((await get('/gb/electricity-price')).page);
+  ok(/pris-estn/.test(both) && /<p class="pris-fcn">/.test(both) && (both.match(/role="tab"/g) || []).length === 3 && /Back-test, rest of the day/.test(both) && /Back-test, D\+\d: mean error [\d.]+ GBP\/MWh/.test(both) && !/EUR\/MWh/.test(both), 'GB estimat + prognosedage: begge noter, tre perioder, begge målinger i GBP/MWh', JSON.stringify({ e: /pris-estn/.test(both), f: /<p class="pris-fcn">/.test(both), tabs: (both.match(/role="tab"/g) || []).length, rest: /Back-test, rest of the day/.test(both), d: (both.match(/Back-test, D[^<]{0,90}/) || [])[0] }));
+  estZones.delete('gb'); fcZones.delete('gb'); gbThrough = null; store.clear();
+}
+for (const [z, page, label] of [['pt', '/pt/preco-eletricidade', 'PT'], ['ie', '/ie/electricity-price', 'IE']]) {
+  estZones.add(z); store.clear(); upstream = [];
+  nullHours = { [z]: [[2, 23]] };                       // tomorrow has 23 priced hours: the last local hour belongs to the next auction
+  const r = await get(page), m = mainOf(r.page);
+  const plot = m.slice(m.indexOf('pris-card pp2'), m.indexOf('pris-tiles pp2'));
+  ok((plot.match(/<span class="pc fx es[ "]/g) || []).length === 1 && (plot.match(/<span class="pc[ "]/g) || []).length === 48 && !/NaN|undefined|Infinity|null/.test(m), `${label} estimat: den ene manglende time (23) er skønnet og tegnet skraveret, 48 søjler`);
+  ok(/class="pris-estn"|pris-fcn pris-estn/.test(m) && /pris-lge/.test(m), `${label} estimat: forklaring og note`);
+  ok(/(mean error|erro médio) [\d.,]+ EUR\/MWh/.test(m) && !/GBP/.test(m), `${label} estimat: målingen er i EUR/MWh`, (m.match(/pris-fca[^]{0,400}/) || [])[0]);
+  estZones.delete(z); nullHours = {}; store.clear();
 }
 // Kosovo: ENTSO-E, Albanian, CET (no shift), euro cent. The words are the Albanian table's; the page names Kosovo, never Albania.
 {

@@ -490,6 +490,51 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
         && !FUEL.test([T.fcn, T.fcb, T.fcl, T.fca, T.fcae, T.fcr, T.fcc].join(' ')) && !/80 ?%/.test([T.fcn, T.fca, T.fcae, T.fcr, T.fcc].join(' ')), `${l}: prognosetekster: alle nøgler, skabelonerne har deres pladser, ingen brændstofsord, aldrig 80 %`);
     }
     ok(new Set(langs.map(l => L[l].fcn)).size === langs.length && langs.length === 27, 'alle 27 sprog har hver deres tekst til noten');
+    // The ESTIMATE (hours of a settled day without a price: Great Britain today, Portugal and Ireland hour 23; functions/_estimate.js): the four words of every language table, and the
+    // screen in every language: hatched bars, the label, the note, the accuracy line in the answer's unit, the hero never an estimate.
+    const estRaw = (zone, { from = 20, gb = false, day = 1 } = {}) => {
+      const raw = euF(zone, { nFc: 0 }), last = raw.days[day], hs = [];
+      last.prices.forEach(p => { if (p.hour >= from) { hs.push({ hour: p.hour, eur_mwh: p.eur_mwh + 7, min_eur_mwh: p.eur_mwh - 10, max_eur_mwh: p.eur_mwh + 30 }); p.eur_mwh = null; } });
+      raw.estimate = { date: last.date, type: 'forecast', scope: 'partial-day', model: 'gb-est-v1', generatedAt: '2026-10-14T20:12:00Z', prices: hs,
+        accuracy: gb ? { asOf: 2, unit: 'GBP/MWh', mae: 18.4, baseMae: 25.6, gain: 0.28, gainRecent: 0.33, coverage: 0.77, low: false } : { hours: 1, unit: 'EUR/MWh', mae: 8.5, baseMae: 8.5, gain: 0, coverage: 0.83, low: false } };
+      return raw;
+    };
+    const drawE = (raw, hour = 21, page) => { const pg = page || pgOf(raw.zone), cfg = pctx.prisZoneCfg(pg, raw);
+      return pris(pctx.zoneToPrisDays(raw, raw.zoneInfo, D0, cfg.zd), D0, hour, { zone: raw.zone, pg, key: raw.zone, period: 2, cfg, acc: raw.accuracy, est: raw.estimate && raw.estimate.accuracy, where: raw.zone }); };
+    for (const l of langs) {
+      const T = L[l];
+      ok(['est', 'estn', 'esta', 'esth'].every(k => typeof T[k] === 'string' && T[k].length > 3) && T.est.length < 20 && T.estn.length > 120 && T.estn.length < 430 && !/[{}]/.test(T.est + T.estn)
+        && ['{mae}', '{u}', '{g}', '{r}'].every(x => T.esta.includes(x)) && ['{mae}', '{u}', '{base}'].every(x => T.esth.includes(x)) && !/\{(?!mae\}|u\}|g\}|r\}|base\})/.test(T.esta + T.esth)
+        && !FUEL.test([T.est, T.estn, T.esta, T.esth].join(' ')) && !/80 ?%/.test([T.estn, T.esta, T.esth].join(' ')) && !/EUR/.test([T.est, T.estn, T.esta, T.esth].join(' ')) && T.est !== T.fc,
+        `${l}: skønstekster: alle fire, skabelonerne har deres pladser, ingen brændstofsord, aldrig 80 %, ingen fast valuta`);
+      if (!['da', 'nb', 'sv'].includes(l)) ok(!/(afgjort|skøn|simpel|middelfejl|manglende)/i.test([T.est, T.estn, T.esta, T.esth].join(' ')), `${l}: ingen danske ord i skønstekster`);
+    }
+    ok(new Set(langs.map(l => L[l].estn)).size === langs.length && new Set(langs.map(l => L[l].est)).size >= 20, 'alle 27 sprog har hver deres tekst til skønsnoten');
+    for (const [pg, C] of Object.entries(CT)) if (C.act) {
+      const PL = pctx.prisPageL(pg), raw = estRaw(C.def, { gb: C.def === 'gb' }), out = drawE(raw, 21, pg), u = C.def === 'gb' ? 'GBP/MWh' : 'EUR/MWh';
+      const bars = (out.match(/<span class="pc fx es[ "]/g) || []).length, line = fcaOf(out), tipE = out.match(/data-tip="[^"]*\(([^"]*)P10–P90 [^"]*\)"/);
+      ok(bars === 4 && out.includes(`<span class="pris-lge"><i></i>${PL.est}</span>`) && out.includes(`<span class="pris-bl pris-be"><i></i>${PL.est}</span>`) && out.includes(`<p class="pris-fcn pris-estn">${PL.estn}</p>`)
+        && tipE && tipE[1].startsWith(PL.est) && line.includes(u) && !(C.def === 'gb' ? /EUR\/MWh/ : /GBP/).test(line) && !/NaN|undefined|Infinity|\{[a-z]+\}/.test(out) && !FUEL.test(out)
+        && !/<td class="fc">/.test(out) && !/role="tab"/.test(out), `${pg}: skønnet på ${C.lang}: fire skraverede søjler, ordet ${PL.est}, noten, målingen i ${u}, ingen faner, ingen prognoserække`, `${bars} ${line.slice(0, 160)}`);
+      // The hero is a settled price: with the estimate on TODAY's day, the hour that is running (21) is an estimate, so the big number is "—" (and, where the zone shows its latest priced hour,
+      // that hour's own time), never the estimate.
+      const rt = estRaw(C.def, { gb: C.def === 'gb', day: 0 }), ot = drawE(rt, 21, pg);
+      const hero = (ot.match(/class="pris-now">([^<]*)</) || [])[1], heroLbl = (ot.match(/class="pris-label">[^]*?<\/p>/) || [''])[0];
+      ok(C.def === 'gb' ? hero !== '—' && heroLbl.includes('19:00') : hero === '—', `${pg}: det store tal er en afgjort pris, aldrig skønnet for den løbende time`, `${hero} ${heroLbl}`);
+    }
+    // The adapter: only hours that are null in the settled day are filled (settled wins), each flagged; the days stay days of settled prices; a bad hour is ignored.
+    {
+      const raw = estRaw('gb', { gb: true }), d = pctx.zoneToPrisDays(raw, raw.zoneInfo, D0, 8);
+      const day = d.find(x => x.date === raw.estimate.date), est = day.prices.filter(p => p && p.e);
+      ok(day.type === 'actual' && est.length === 4 && est.every(p => p.hour >= 20 && p.hi > p.price && p.price > p.lo) && day.prices.filter(p => p && !p.e).length === 20, 'adapteren: fire skønnede timer med bånd i den afgjorte dag, de øvrige urørt');
+      const settledWins = JSON.parse(JSON.stringify(raw)); settledWins.estimate.prices.push({ hour: 3, eur_mwh: 1, min_eur_mwh: 0, max_eur_mwh: 2 }, { hour: 25, eur_mwh: 1 }, { hour: 21, eur_mwh: 'x' });
+      const dw = pctx.zoneToPrisDays(settledWins, settledWins.zoneInfo, D0, 8).find(x => x.date === raw.estimate.date);
+      ok(dw.prices.filter(p => p && p.e).length === 4 && dw.prices[3] && !dw.prices[3].e, 'adapteren: en afgjort pris vinder over et skøn; en time uden for 0-23 eller uden tal bliver ikke til en søjle');
+      const none = JSON.parse(JSON.stringify(raw)); delete none.estimate;
+      ok(!pctx.zoneToPrisDays(none, none.zoneInfo, D0, 8).some(x => x.prices.some(p => p && p.e)), 'adapteren: uden skøn ingen flag');
+      const row = pctx.prisDays(d, D0, 8).find(r => r.es);
+      ok(row.real === true && row.es.filter(Boolean).length === 4 && row.es.slice(0, 20).every(v => !v) && pctx.prisIsFc(row, 21) && !pctx.prisIsFc(row, 3) && pctx.prisSettledAt(row, 21) === null && pctx.prisSettledAt(row, 3) === row.ps[3], 'prisDays: es pr. time, prisIsFc / prisSettledAt skelner skøn fra afgjort');
+    }
   }
   // The country pages' pieces.
   ok(!('prisZoneTabs' in pctx) && !/zoneTabs/.test(JSON.stringify(Object.values(pctx.PRIS_I18N))), 'ingen zonefaner: funktionen og de otte sprogs fanetekster er væk (zonen vælges i stedsdialogen)');

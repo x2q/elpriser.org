@@ -97,7 +97,12 @@ a Danish word, a missing placeholder in the accuracy line or a word about gas, c
     fcb:'<P10–P90 range>',fcl:'<Low confidence>',
     fca:'<Back-test, D+{h}: mean error {mae} EUR/MWh, {g} % lower than a simple method ({r} % since 1 Sept 2026).>',
     fcae:'<the same for the zones that quote EUR (EE, LV, LT): Back-test, D+{h}: mean error {mae} EUR/MWh (a simple method: {base} EUR/MWh).>',
-    fcr:'<It ranks the cheapest hours {r} % better than a simple method.>',fcc:'<In the back-test {c} % of the hours fell inside the range.>'},
+    fcr:'<It ranks the cheapest hours {r} % better than a simple method.>',fcc:'<In the back-test {c} % of the hours fell inside the range.>',
+    // the ESTIMATE of hours that have no price yet (Great Britain, Portugal, Ireland: functions/_estimate.js): est the label (legend, divider, tooltip), estn the honest note,
+    // esta / esth the accuracy lines (rest of the day / the one missing hour), filled with measured numbers; {u} is the unit of the answer's accuracy ("GBP/MWh")
+    est:'<Estimate>',estn:'<Hours marked Estimate are not published prices. They are elpriser.org\'s own statistical estimate ... replaced by the settled price as soon as it is published.>',
+    esta:'<Back-test, rest of the day: mean error {mae} {u}, {g} % lower than a simple method ({r} % since 1 Sept 2026).>',
+    esth:'<Back-test, the missing hour: mean error {mae} {u} (the last settled hour alone: {base} {u}).>'},
 
 // CHROME_I18N — the words of the footer and the place dialog
   xx:{home:'elpriser.org <home page>',land:'Countries',place:'Where are you?',area:'Price zone',oth:'Other countries',back:'Back',find:'Search',none:'No results',close:'Close',
@@ -119,6 +124,12 @@ suite fails with the language's name when the row is missing), one row each in `
 `test-e2e.js`. A zone on another clock than Copenhagen's needs only its `shift` in `ZONES`: the tests (`zoneToday`/`zoneHour` in `test-zone-pages.mjs`, `shiftOf` in `test-e2e.js`)
 read it from there. The Pris font (`manrope.woff2`) has
 Basic Latin and Latin-1 only: Latin Extended (Czech, Polish, Romanian), Cyrillic and Greek fall back to the system font, which is how the pages look today.
+
+## B2. A zone with an estimate for hours that have no price yet (gb, pt, ie)
+
+`ESTIMATE_ZONES` in `functions/_estimate.js` is the one list (the Spark job lists the same three in `scripts/forecast_model/gb/run_estimate.py`; `test-eu-forecast.mjs` pins that they agree).
+A zone on it may have KV `eu-estimate-<zone>`; `/api/nordic` then adds a top-level `estimate` (the settled `days` are never changed) and the page draws those hours hatched,
+labelled `est`, with the note `estn` and the measured accuracy (`estimate.accuracy`). A new zone needs the job that writes the key (docs/forecast-runbook.md, "The estimate job"), its backtest and nothing else here.
 
 ## C. Do not
 

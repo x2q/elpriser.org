@@ -485,6 +485,7 @@ const feed = (zone, dates, type = 'actual', trained = null) => ({
   days: dates.map((d, i) => ({ date: d, type, prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: 50 + h + i })) })),
 });
 // Energy-Charts (CC BY 4.0 from SMARD.de), ENTSO-E (build_entsoe_prices.py), Elexon BMRS (gb, build_elexon_prices.py) and SEMOpx (ie, build_semopx_prices.py); Italy's other zones (it-cn, it-cs, ...) are not served yet
+const EST_ZONES = ['gb', 'pt', 'ie'];      // the zones that may have an estimate of the hours without a price yet (functions/_estimate.js)
 const EU = ['de', 'fr', 'pl', 'it-n', 'at', 'be', 'ch', 'cz', 'hu', 'si', 'es', 'pt', 'sk', 'gr', 'ro', 'bg', 'hr', 'rs', 'ee', 'lv', 'lt', 'me', 'mk', 'al', 'xk', 'gb', 'ie'];
 
 test('/api/nordic: a Nordic zone is served exactly as before — the KV value plus zoneInfo with the ECB rate', async () => {
@@ -584,7 +585,9 @@ test('/api/nordic: every EU zone (27 of them) is served from its own eu-prices k
     const kv = makeKv(seed), api = await createApi({ kv, ecb: ECB });
     const r = await api.get(`/api/nordic?zone=${z}`);
     assert.equal(r.status, 200, z);
-    assert.deepEqual([...kv.ops.get].sort(), [`eu-forecast-${z}`, `eu-prices-${z}`], `${z} reads exactly its own two keys (prices, and the forecast that is absent here)`);
+    // the zones with an estimate (functions/_estimate.js ESTIMATE_ZONES) read one more key of their own; no other zone does
+    const keys = [`eu-forecast-${z}`, `eu-prices-${z}`, ...(EST_ZONES.includes(z) ? [`eu-estimate-${z}`] : [])].sort();
+    assert.deepEqual([...kv.ops.get].sort(), keys, `${z} reads exactly its own keys (prices, the forecast and, for ${EST_ZONES.join('/')}, the estimate: all absent here but the prices)`);
     assert.equal(r.body.zone, z);
     assert.equal(r.body.trainedThrough, null, `${z}: no model, so no training date`);
     assert.equal(r.body.unit, 'EUR/MWh');    // the fixture's; the real gb payload says GBP/MWh (below)
@@ -595,7 +598,7 @@ test('/api/nordic: every EU zone (27 of them) is served from its own eu-prices k
     assert.equal(info.rate, z === 'pl' ? 4.3945 : 1, `${z}: rate (Great Britain's feed is already in pounds: 1)`);
     assert.equal(info.country, z === 'it-n' ? 'IT' : z.toUpperCase());
     assert.equal(info.rateSource, 'ECB');
-    assert.equal(r.headers.get('cache-control'), 'public, max-age=1800, s-maxage=1800', `${z}: same caching as a Nordic zone`);
+    assert.equal(r.headers.get('cache-control'), EST_ZONES.includes(z) ? 'public, max-age=300, s-maxage=300' : 'public, max-age=1800, s-maxage=1800', `${z}: same caching as a Nordic zone (five minutes where an estimate is replaced hour by hour)`);
   }
 });
 
@@ -847,9 +850,113 @@ test('/api/nordic: an EU zone with a forecast is still cached and still one read
   const api = await createApi({ kv, ecb: ECB });
   const first = await api.get('/api/nordic?zone=pt');
   assert.ok(first.headers.get('etag'));
-  assert.equal(first.headers.get('cache-control'), 'public, max-age=1800, s-maxage=1800');
+  assert.equal(first.headers.get('cache-control'), 'public, max-age=300, s-maxage=300', 'pt may carry an estimate: five minutes');
   for (let i = 0; i < 20; i++) await api.get('/api/nordic?zone=pt');
-  assert.equal(kv.reads(), 2);
+  assert.equal(kv.reads(), 3, 'prices, forecast and estimate, once each');
+  const de = makeKv({ 'eu-prices-de': feed('de', [day(0), day(1)]), 'eu-forecast-de': euFc('de', [day(2), day(3)]) });
+  const dapi = await createApi({ kv: de, ecb: ECB });
+  assert.equal((await dapi.get('/api/nordic?zone=de')).headers.get('cache-control'), 'public, max-age=1800, s-maxage=1800');
+  for (let i = 0; i < 20; i++) await dapi.get('/api/nordic?zone=de');
+  assert.equal(de.reads(), 2, 'a zone without an estimate costs no extra read');
+});
+
+// ── The ESTIMATE of hours that have no price yet (gb: today's unpriced hours; pt, ie: the last local hour of the newest day) — functions/_estimate.js ──
+
+/** A settled day whose hours from `from` on have no price (null), as the Elexon job writes today. */
+const partialDay = (date, from, to = 24) => ({ date, type: 'actual', prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: h >= from && h < to ? null : 100 + h })) });
+const estKv = (zone, date, hours, { at = new Date().toISOString(), band = true, extra = {} } = {}) => ({
+  zone, date, generatedAt: at, model: 'gb-est-v1', method: 'gb-intraday-ensemble', unit: zone === 'gb' ? 'GBP/MWh' : 'EUR/MWh',
+  hours: hours.map(h => ({ hour: h, eur_mwh: 150 + h, ...(band ? { min_eur_mwh: 130 + h, max_eur_mwh: 190 + h } : {}) })),
+  accuracy: { asOf: 2, unit: zone === 'gb' ? 'GBP/MWh' : 'EUR/MWh', mae: 18.1, baseMae: 24.7, gain: 0.267, coverage: 0.77 }, ...extra });
+const estGet = async (zone, est, days, fc) => (await (await createApi({ kv: makeKv({ [`eu-prices-${zone}`]: { ...feed(zone, []), days }, ...(est === undefined ? {} : { [`eu-estimate-${zone}`]: est }), ...(fc ? { [`eu-forecast-${zone}`]: fc } : {}) }), ecb: ECB })).get(`/api/nordic?zone=${zone}`)).body;
+const range2 = (a, b) => Array.from({ length: b - a }, (_, i) => a + i);
+
+test('/api/nordic?zone=gb: the estimate of the rest of today is a separate top-level object — days[] are never touched, and only unpriced hours are estimated', async () => {
+  const days = [{ ...feed('gb', [day(-1)]).days[0] }, partialDay(day(0), 3)];
+  const b = await estGet('gb', estKv('gb', day(0), range2(1, 24)), days);      // hours 1 and 2 already have a settled price: they are dropped
+  assert.deepEqual(b.days, days, 'the settled days are byte for byte what the price job wrote');
+  assert.equal(b.estimate.type, 'forecast');
+  assert.equal(b.estimate.scope, 'partial-day');
+  assert.equal(b.estimate.date, day(0));
+  assert.deepEqual(b.estimate.prices.map(p => p.hour), range2(3, 24), 'a settled price always replaces an estimate');
+  assert.deepEqual(b.estimate.prices[0], { hour: 3, eur_mwh: 153, min_eur_mwh: 133, max_eur_mwh: 193 }, 'hour-level, with the P10/P90 band in the Nordic field names');
+  assert.equal(b.estimate.accuracy.unit, 'GBP/MWh');
+  assert.equal(b.estimate.model, 'gb-est-v1');
+  assert.deepEqual(Object.keys(b.estimate).sort(), ['accuracy', 'date', 'generatedAt', 'method', 'model', 'prices', 'scope', 'type']);
+  assert.equal(b.zoneInfo.currency, 'GBP');
+});
+
+test('/api/nordic?zone=gb: a client that has never heard of `estimate` makes exactly what it made before (the apps\' parseZone, daysFrom)', async () => {
+  const days = [{ ...feed('gb', [day(-1)]).days[0] }, partialDay(day(0), 3)];
+  const plain = await estGet('gb', undefined, days);
+  const withEst = await estGet('gb', estKv('gb', day(0), range2(3, 24)), days);
+  assert.ok(!('estimate' in plain));
+  assert.deepEqual(parseZone(withEst), parseZone(plain), 'the golden parseZone ignores it');
+  assert.deepEqual(daysFrom(parseZone(withEst).days, day(0)), daysFrom(parseZone(plain).days, day(0)));
+  const { estimate, ...rest } = withEst;
+  assert.deepEqual(rest, plain, 'removing the estimate gives the old answer');
+});
+
+test('/api/nordic?zone=gb: forecast days D+1.. follow the partial day of settled prices without a hole, beside the estimate', async () => {
+  const days = [{ ...feed('gb', [day(-1)]).days[0] }, partialDay(day(0), 3)];
+  const fc = { ...euFc('gb', [day(1), day(2), day(3)], { accuracy: { ...ACC, unit: 'GBP/MWh' } }), unit: 'GBP/MWh', model: 'gb-est-v1' };
+  fc.days.forEach((d, i) => { d.horizon = i + 1; });
+  const b = await estGet('gb', estKv('gb', day(0), range2(3, 24)), days, fc);
+  assert.deepEqual(b.days.map(d => [d.date, d.type]), [[day(-1), 'actual'], [day(0), 'actual'], [day(1), 'forecast'], [day(2), 'forecast'], [day(3), 'forecast']]);
+  assert.deepEqual(b.days.filter(d => d.type === 'forecast').map(d => d.horizon), [1, 2, 3]);
+  assert.equal(b.model, 'gb-est-v1');
+  assert.equal(b.accuracy.unit, 'GBP/MWh');
+  assert.equal(b.estimate.prices.length, 21);
+});
+
+test('/api/nordic: an estimate is served only when it is fresh, well-formed and for a day of the answer — otherwise the answer is the settled prices alone', async () => {
+  const days = [partialDay(day(0), 3)];
+  const ok = await estGet('gb', estKv('gb', day(0), range2(3, 24)), days);
+  assert.ok(ok.estimate);
+  // too old (a job that stopped), from the future, for another day, for no day of the answer
+  assert.ok(!('estimate' in await estGet('gb', estKv('gb', day(0), range2(3, 24), { at: new Date(Date.now() - 3.2 * 3600e3).toISOString() }), days)), 'older than three hours');
+  assert.ok('estimate' in await estGet('gb', estKv('gb', day(0), range2(3, 24), { at: new Date(Date.now() - 2.5 * 3600e3).toISOString() }), days), 'two and a half hours is fine');
+  assert.ok(!('estimate' in await estGet('gb', estKv('gb', day(0), range2(3, 24), { at: new Date(Date.now() + 3600e3).toISOString() }), days)), 'from the future');
+  assert.ok(!('estimate' in await estGet('gb', estKv('gb', day(1), range2(3, 24)), days)), 'a day the answer does not have');
+  assert.ok(!('estimate' in await estGet('gb', estKv('gb', day(0), range2(0, 3)), days)), 'every hour already settled: nothing left to estimate');
+  assert.ok(!('estimate' in await estGet('gb', estKv('gb', day(0), range2(3, 24), { extra: { generatedAt: 'yesterday' } }), days)), 'a generatedAt that is not a time');
+  // a settled day that is complete takes no estimate; a forecast day (not settled) takes none either
+  assert.ok(!('estimate' in await estGet('gb', estKv('gb', day(0), range2(3, 24)), [{ ...feed('gb', [day(0)]).days[0] }])), 'a complete settled day');
+  assert.ok(!('estimate' in await estGet('gb', estKv('gb', day(1), range2(0, 24)), [partialDay(day(0), 3), { ...feed('gb', [day(1)], 'forecast').days[0] }])), 'a forecast day');
+});
+
+test('/api/nordic: estimated hours are copied by name, a band is on every hour or on none, min <= price <= max, bad hours are dropped', async () => {
+  const days = [partialDay(day(0), 3)];
+  const est = estKv('gb', day(0), range2(3, 24));
+  est.hours[0].secret = 'x'; est.secret = 'y';
+  est.hours[1] = { hour: 4, eur_mwh: 155, min_eur_mwh: 160, max_eur_mwh: 190 };         // min above the price: the hour is dropped
+  est.hours[2] = { hour: 5, eur_mwh: 'x' };                                              // not a number
+  est.hours[3] = { hour: 3, eur_mwh: 1 };                                                // a duplicate hour: the first one wins
+  est.hours.push({ hour: 24, eur_mwh: 1 }, { hour: -1, eur_mwh: 1 }, { hour: 1.5, eur_mwh: 1 }, null);
+  const b = await estGet('gb', est, days);
+  assert.deepEqual(b.estimate.prices.map(p => p.hour), [3, ...range2(7, 24)]);   // 4 (band outside), 5 (not a number), the duplicate 3 (it replaced 6)
+  assert.deepEqual(Object.keys(b.estimate.prices[0]), ['hour', 'eur_mwh', 'min_eur_mwh', 'max_eur_mwh']);
+  assert.ok(!JSON.stringify(b).includes('secret'));
+  const half = estKv('gb', day(0), range2(3, 24));
+  delete half.hours[5].min_eur_mwh; delete half.hours[5].max_eur_mwh;
+  const h = await estGet('gb', half, days);
+  assert.ok(h.estimate.prices.every(p => !('min_eur_mwh' in p)), 'a band on some hours only is no band');
+  for (const bad of ['oops', 7, [1], { hours: 'x' }, { hours: [] }]) assert.ok(!('estimate' in await estGet('gb', bad, days)), JSON.stringify(bad));
+});
+
+test('/api/nordic: Portugal and Ireland get the one missing last hour estimated, any other zone ignores (and never reads) an estimate key', async () => {
+  for (const z of ['pt', 'ie']) {
+    const days = [feed(z, [day(0)]).days[0], partialDay(day(1), 23)];
+    const b = await estGet(z, estKv(z, day(1), [23]), days);
+    assert.deepEqual(b.estimate.prices.map(p => p.hour), [23], z);
+    assert.equal(b.estimate.date, day(1));
+    assert.deepEqual(b.days, days, `${z}: the day with 23 priced hours is left as it is`);
+    assert.equal(b.zoneInfo.currency, 'EUR');
+  }
+  const kv = makeKv({ 'eu-prices-de': feed('de', [day(0)]), 'eu-estimate-de': estKv('de', day(0), [23]) });
+  const r = await (await createApi({ kv, ecb: ECB })).get('/api/nordic?zone=de');
+  assert.ok(!('estimate' in r.body));
+  assert.ok(![...kv.ops.get].includes('eu-estimate-de'), 'no read for a zone that is not on the list');
 });
 
 test('/api/openapi.json documents /api/nordic with every zone, the EU forecast days and what they are worth', async () => {
