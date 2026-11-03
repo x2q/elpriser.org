@@ -5,7 +5,7 @@
 <meta name="apple-itunes-app" content="app-id=6820474476">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Privatlivspolitik — Elpriser</title>
-<meta name="description" content="Sådan behandler Elpriser-appen og elpriser.org dine oplysninger: position bruges kun til at finde dit netselskab og gemmes ikke.">
+<meta name="description" content="Sådan behandler Elpriser-apperne (Android, iPhone, iPad, Mac og Apple Watch) og elpriser.org dine oplysninger: position bruges kun til at finde netselskab eller prisområde og gemmes ikke; hjemmesiden bruger Google Analytics.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
   :root{color-scheme:light dark;--bg:#f4f7fc;--fg:#0e1421;--muted:#4d596b;--card:#fff;--line:#dbe3f0;--brand:#1747d6}
@@ -20,49 +20,101 @@
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:16px 0}
   a{color:var(--brand)}
   ul{padding-left:20px}
+  li{margin:4px 0}
+  code{font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
 <main>
   <p class="muted"><a href="/">← elpriser.org</a></p>
   <h1>Privatlivspolitik</h1>
-  <p class="muted">Gælder Elpriser-appen til Android og hjemmesiden elpriser.org. Senest opdateret 1. november 2026.</p>
+  <p class="muted">Gælder Elpriser-apperne (Android, iPhone og iPad, Mac og Apple Watch med widget), hjemmesiden elpriser.org og vores åbne API. Senest opdateret 3. november 2026.</p>
 
   <div class="card">
-    <strong>Kort fortalt:</strong> Vi har ingen brugerkonti, ingen reklamer og ingen analyseværktøjer fra tredjepart; vi tæller kun anonymt, hvor mange kald der kommer fra hvilken version af appen. Appen spørger kun om din position, når du selv trykker på “Find mit netselskab”. Positionen bruges én gang til at finde dit netselskab og gemmes aldrig — hverken i appen eller hos os. Kun netselskabets navn gemmes, på din egen enhed.
+    <strong>Kort fortalt:</strong> Vi har ingen brugerkonti og ingen reklamer, og apperne har ingen analyse- eller reklameværktøjer fra tredjepart; vi tæller kun anonymt, hvor mange kald der kommer fra hvilken version af appen. Apperne spørger kun om din position, når du selv trykker på “Brug min position” (Apple Watch-appen spørger første gang, efter en forklaring, og du kan springe over). Positionen bruges én gang til at finde dit netselskab eller dit prisområde og gemmes aldrig — hverken i appen eller hos os. Kun netselskab og prisområde gemmes, på din egen enhed. Påmindelser om billig strøm planlægges kun på din egen enhed. På hjemmesiden elpriser.org bruger vi Google Analytics til at se, hvordan siden bruges; det gør vi ikke i apperne og ikke på denne side.
   </div>
 
   <h2>Hvem er ansvarlig?</h2>
   <p>Elpriser (elpriser.org) drives af Sandbox Ventures. Spørgsmål om privatliv kan stilles til <a href="mailto:hello@elpriser.org">hello@elpriser.org</a>.</p>
 
   <h2>Position</h2>
-  <p>Appen kan finde dit netselskab ud fra din placering. Det sker kun, når du trykker på knappen, og først efter at Android har spurgt dig om tilladelse. Du kan vælge omtrentlig eller præcis position, og du kan i stedet vælge netselskab fra en liste uden at dele din position.</p>
+  <p>Elpriser kan finde dit netselskab (i Danmark) eller dit prisområde (i udlandet) ud fra, hvor du er. Det sker kun, hvis du vil have det, og først efter at din enhed eller browser har spurgt dig om tilladelse. Du kan altid vælge netselskab eller land fra en liste uden at dele din position.</p>
+  <p><strong>Hvornår bliver du spurgt?</strong></p>
   <ul>
-    <li>Koordinaterne sendes fra din enhed til vores server (elpriser.org), som slår den nærmeste adresse op hos OpenStreetMap (Nominatim) og spørger Green Power Denmark, hvilket netselskab adressen hører til. Svaret sendes tilbage til appen.</li>
-    <li>Vi gemmer ikke koordinaterne, adressen eller dit netselskab i en log koblet til dig. Opslaget kan ligge i en teknisk cache i op til et døgn, nøglet på et koordinatnet på ca. 11 meter, uden at være knyttet til en enhed eller en person.</li>
-    <li>Appen gemmer kun <strong>netselskabets navn og prisområde</strong> på din enhed. Det kan du til enhver tid slette under Indstillinger → “Glem”.</li>
-    <li>Appen indhenter aldrig position i baggrunden.</li>
+    <li><strong>Android, iPhone, iPad og Mac:</strong> kun når du selv trykker på “Brug min position”. Du kan vælge omtrentlig position i stedet for præcis.</li>
+    <li><strong>Apple Watch:</strong> første gang, du åbner appen, får du en forklaring og en knap. Først når du trykker på knappen, spørger uret om tilladelse, tager ét positionsfix og slår prisområdet op. Du kan springe over. Senere kan du gentage det med “Brug min position” under valg af prisområde.</li>
+    <li><strong>Hjemmesiden:</strong> på forsiden beder vi din browser om din position ved dit første besøg, hvis du ikke allerede har valgt et netselskab. Browseren viser sit eget spørgsmål; siger du nej, spørger vi ikke igen i 30 dage. Du kan også selv trykke på “Brug min position”. Kan din browser ikke give en position, når du selv har trykket, bruger vi i stedet en omtrentlig position ud fra din IP-adresse, som Cloudflares netværk kender; den sendes kun tilbage til din browser og gemmes ikke, og et netselskab fundet på den måde huskes ikke.</li>
+    <li>Ingen af apperne (heller ikke widget og urskive) indhenter position i baggrunden.</li>
+  </ul>
+  <p><strong>Hvad sker der med positionen?</strong></p>
+  <ul>
+    <li>Koordinaterne sendes fra din enhed til vores server (elpriser.org) — kun til dette opslag. Apperne afrunder dem til fem decimaler, altså omkring en meter.</li>
+    <li>Vores server slår den nærmeste adresse op hos OpenStreetMap (Nominatim) og spørger for danske adresser Green Power Denmark, hvilket netselskab adressen hører til (de får adressen, ikke koordinaterne). OpenStreetMap får koordinaterne fra vores server, ikke din IP-adresse.</li>
+    <li>Svaret sendes tilbage til din enhed: netselskabets navn. Ligger positionen uden for Danmark, svarer serveren i stedet, at den er uden for Danmark, og sender den adresse, OpenStreetMap fandt. På iPhone, iPad, Mac og Apple Watch læser appen landet ud af adressen på selve enheden og vælger prisområdet; Android beder dig vælge land fra listen. Adressen vises ikke og gemmes ikke.</li>
+    <li>Vores egen kode skriver ikke koordinater, adresser eller netselskaber i en log. Selve opslaget kan ligge i en teknisk cache hos os i op til et døgn, nøglet på koordinater afrundet til fem decimaler (ca. 1 meter), uden at være knyttet til en enhed eller en person.</li>
+    <li>Enheden gemmer kun <strong>netselskabets navn og prisområdet</strong>, aldrig koordinaterne. På telefon og Mac kan du til enhver tid slette netselskabet med “Glem mit netselskab”; på hjemmesiden og på uret vælger du blot et andet.</li>
+    <li>Behandlingen sker på baggrund af dit samtykke: din tilladelse og dit tryk.</li>
   </ul>
 
-  <h2>Hvad appen ellers gemmer på din enhed</h2>
-  <p>Dine valg af prisvisning og udseende samt automations-indstillinger (hvilke enheder du har slået til, og hvor mange timer de skal køre). Intet af det forlader din enhed.</p>
+  <h2>Hvad apperne ellers gemmer på din enhed</h2>
+  <p>Dit valg af prisområde og netselskab, prisvisning og udseende, automations-indstillinger (hvilke enheder du har slået til, og hvor mange timer de skal køre), dine påmindelser (se nedenfor) og de seneste priser, appen har hentet, så de kan vises uden net. Intet af det forlader din enhed, ud over at prisområde og netselskab indgår i prisforespørgslen (se “Hvad serveren ser”).</p>
+
+  <h2>Besked, når strømmen er billigst</h2>
+  <p>Fra version 1.3.0 kan Android-appen og appen til iPhone og iPad give dig en besked, når strømmen er billigst. Mac-appen og Apple Watch-appen har ikke selv påmindelser.</p>
+  <ul>
+    <li>Beskederne planlægges <strong>på din egen enhed</strong> ud fra de priser, appen allerede har hentet. Der er ingen konto, ingen push-tjeneste (hverken Apples eller Googles) og ingen token hos os; vi får ikke at vide, hvilke påmindelser du har.</li>
+    <li>Din enhed spørger om tilladelse til beskeder, første gang du gemmer en påmindelse (på Android kun fra version 13).</li>
+    <li>For at holde priserne friske henter appen priser i baggrunden, mens mindst én påmindelse er slået til. Det er samme prisforespørgsel som appen selv laver (prisområde, prisvisning og netselskab), og den tæller med i de anonyme versionstal nedenfor. På iPhone bestemmer iOS, hvornår det sker; på Android sker det cirka hver sjette time og lidt efter kl. 13, når morgendagens priser er kommet.</li>
+    <li>Påmindelserne og de planlagte beskeder ligger kun på din enhed. Slet påmindelserne i appen, slå beskeder fra i enhedens indstillinger, eller afinstaller appen.</li>
+  </ul>
+
+  <h2>Widget, Apple Watch og Mac</h2>
+  <ul>
+    <li>iPhone-appen skriver dit valg af prisområde, netselskab og prisvisning ind i en fælles App Group på din iPhone, så widgeten kan læse det. Det bliver på enheden.</li>
+    <li>iPhone og Apple Watch udveksler dit valg med hinanden gennem Apples egen forbindelse mellem enhederne; det går ikke via os.</li>
+    <li>Widgeten og Apple Watch-appen (med urskive) henter selv priserne hos elpriser.org, med samme forespørgsel som appen, og husker det seneste svar på enheden. Mac-appen (menulinjen) gemmer sit valg for sig selv og henter priser på samme måde.</li>
+  </ul>
 
   <h2>Hvad serveren ser</h2>
-  <p>Når appen henter priser, modtager vores server (hostet af Cloudflare) en almindelig forespørgsel med din IP-adresse, som i netværkets tekniske logs bruges til drift og misbrugsbeskyttelse. Forespørgslen indeholder prisområde og netselskab (så vi kan beregne dine priser), men ikke dit navn, din e-mail eller et enheds-id. Vi bruger ikke oplysningerne til profilering eller reklame og videregiver dem ikke.</p>
-  <p>Appen (og de scripts til Shelly og Home Assistant, som vi udleverer på elpriser.org/automation) oplyser sit versionsnummer i forespørgslen. Vores server tæller anonymt, hvor mange kald der kommer fra hvilken platform og version, til hvilket prisområde og med hvilken strategi, og om kaldet lykkedes. Tællingen indeholder ikke IP-adresse, enheds-id, netselskab eller position og kan ikke føres tilbage til en person eller en enhed. Vi bruger den til at se, hvilke versioner der er i brug, og om noget fejler.</p>
+  <p>Når en app eller hjemmesiden henter priser, modtager vores server (hostet af Cloudflare) en almindelig forespørgsel med din IP-adresse, som i netværkets tekniske logs bruges til drift og misbrugsbeskyttelse. Forespørgslen indeholder prisområde og netselskabets nummer (så vi kan beregne dine priser), men ikke dit navn, din e-mail eller et enheds-id. Vi bruger ikke oplysningerne til profilering eller reklame og videregiver dem ikke.</p>
+  <p>Apperne (og de scripts til Shelly og Home Assistant, som vi udleverer på elpriser.org/automation) oplyser navn og versionsnummer i forespørgslen, fx “ElpriserIOS/1.3.0”. Ud fra det gemmer vores server ét anonymt datapunkt pr. kald fra en genkendt klient (Android-appen, Apple-apperne, Shelly eller Home Assistant): hvilken klient og version, hvilken slags kald (fx priser eller netselskabsopslag), prisområdet (kun DK1 eller DK2), prisvisning eller strategi, og om kaldet lykkedes eller fejlede. Fra Shelly og Home Assistant gemmer vi kun hvert femte kald og tæller det som fem. Apple-versionerne (iPhone, iPad, Mac, Apple Watch og widget) tæller samlet som iOS. Browsere og ukendte klienter registreres ikke.</p>
+  <p>Tællingen indeholder ikke IP-adresse, enheds-id, netselskab, position eller forespørgslens øvrige indhold og kan ikke føres tilbage til en person eller en enhed. Den opbevares hos Cloudflare (Analytics Engine) i tre måneder. Vi bruger den til at se, hvilke versioner der er i brug, og om noget fejler.</p>
+
+  <h2>Hjemmesiden elpriser.org</h2>
+  <ul>
+    <li><strong>Google Analytics.</strong> Når du åbner en side på elpriser.org (også landesiderne og appsiderne), indlæses Google Analytics 4 fra Google. Det gælder ikke denne side, apperne eller API’et. Der er i dag ikke et samtykkevalg på siden. Google Analytics sætter cookies (<code>_ga</code> og <code>_ga_…</code>) i din browser med et tilfældigt id, så et tilbagevendende besøg kan kendes igen; det er ikke dit navn eller din e-mail. Google modtager din IP-adresse, som ved enhver forbindelse, men gemmer ifølge Google ikke IP-adresser i Google Analytics 4. Google Ireland Limited og Google LLC behandler data for os, og data kan behandles uden for EU, bl.a. i USA.</li>
+    <li><strong>Hvad vi måler:</strong> hvilke sider du ser, hvilket sprog siden har, hvad du klikker på (menu, links til andre sites og klik på knapperne til App Store og Google Play, som kun fortæller hvilken butik, hvilken side og placering, og sprog), hvilke spørgsmål du åbner, hvor langt du ruller, om du bruger lys eller mørk visning, hvilket prisområde du har valgt, og hvordan et positionsopslag gik (om det lykkedes, hvilket netselskab og prisområde det gav, og en fejlårsag) — aldrig koordinater eller adresse. Google beregner desuden et omtrentligt land og en omtrentlig by ud fra IP-adressen samt browser og enhedstype. Vi bruger det til at forstå brugen og forbedre siden, ikke til reklamer.</li>
+    <li><strong>Sådan undgår du det:</strong> slå sporing fra i din browser eller brug en indholdsblokering, installér Googles tilføjelse til fravalg (tools.google.com/dlpage/gaoptout), eller slet cookies for elpriser.org. Siden virker også uden.</li>
+    <li><strong>Gemt i din browser (ikke cookies):</strong> dit valgte netselskab (så du ikke skal vælge igen), hvornår du sidst sagde nej til position (30 dage), og om du har lukket banneret om appen på Android (30 dage). Du sletter det med “Glem mit netselskab” eller ved at rydde webstedets data.</li>
+  </ul>
+
+  <h2>Åbent API og MCP-server</h2>
+  <p>API’et og MCP-serveren (elpriser.org/mcp, til AI-assistenter) kræver ingen nøgle og ingen konto. API-kald behandles som beskrevet under “Hvad serveren ser”. MCP-serveren gemmer ingenting og skriver ikke det, en bruger sender, i nogen log, og kaldene tælles ikke. Bruger en AI-assistent værktøjet “find_net_company”, sendes den position, assistenten giver (afrundet til ca. 11 meter, kun danske positioner), videre til samme opslag som i apperne (OpenStreetMap og Green Power Denmark).</p>
+
+  <h2>Del regulerbar kapacitet (valgfrit, Shelly og Home Assistant)</h2>
+  <p>Scriptet til Shelly og blokken til Home Assistant på elpriser.org/automation kan indsende, hvor meget strøm elpriser.org styrer på en enhed. Det er <strong>slået fra</strong> som standard og sker kun, hvis du selv slår det til. Appene gør det ikke.</p>
+  <ul>
+    <li><strong>Hvad der sendes:</strong> enhedens kategori (fx fryser eller pumpe), prisområde (DK1 eller DK2), om den er tændt, hvad elpriser.org bad den om, målt eller opgivet effekt i watt og et tilfældigt id, som dannes på enheden. Ikke navn, adresse, e-mail, MAC-adresse, serienummer eller IP-adresse — vores kode gemmer ikke IP-adressen.</li>
+    <li><strong>Hvorfor:</strong> for at opgøre den samlede fleksible effekt, som brugerne tilsammen kan flytte. Det, der er tænkt delt med andre, er kun summer på tværs af mange enheder, aldrig data om den enkelte enhed.</li>
+    <li><strong>Hvor længe:</strong> de enkelte målinger slettes efter 90 dage, og derefter bliver kun timesummer uden id tilbage. Enhedens egen post (id, kategori, prisområde, opgivet effekt og tidspunkter for første og seneste indsendelse) bliver, indtil du sletter den.</li>
+    <li><strong>Stop og slet:</strong> sæt <code>SHARE_FLEX = false</code> eller fjern blokken. Alt om en enhed slettes med et POST til <code>https://elpriser.org/api/flex/forget</code> med <code>{"id": "…"}</code>; id’et står i Shelly under KVS → <code>elpriser_flex_id</code>. Skriv til os, hvis du får brug for hjælp.</li>
+  </ul>
 
   <h2>Tredjeparter</h2>
   <ul>
-    <li><strong>Energi Data Service og ENTSO-E</strong> — kilder til priser og data (hentes af vores server, ikke af din enhed).</li>
-    <li><strong>OpenStreetMap (Nominatim)</strong> og <strong>Green Power Denmark</strong> — kun ved opslag af netselskab, som beskrevet ovenfor.</li>
-    <li><strong>Cloudflare</strong> — hosting af elpriser.org.</li>
+    <li><strong>Energi Data Service, ENTSO-E</strong> og andre offentlige kilder til priser, valutakurser og data — hentes af vores server, ikke af din enhed.</li>
+    <li><strong>OpenStreetMap (Nominatim)</strong> og <strong>Green Power Denmark</strong> — kun ved opslag af netselskab, som beskrevet under “Position”. Det er vores server, der kalder dem.</li>
+    <li><strong>Cloudflare</strong> — hosting og netværk for elpriser.org og vores API samt lagring af de anonyme tal.</li>
+    <li><strong>Google (Google Analytics)</strong> — kun på hjemmesiden, som beskrevet ovenfor.</li>
+    <li><strong>Apple og Google</strong> — App Store, Google Play og systemets egne tjenester til position og beskeder. Apperne bruger ikke Apples eller Googles push-tjenester, annoncetjenester eller analyseværktøjer.</li>
   </ul>
 
   <h2>Dine rettigheder</h2>
-  <p>Fordi vi ikke har en profil om dig, er der ingen persondata at give indsigt i eller slette hos os. Det, appen har gemt, ligger på din enhed, og du sletter det med “Glem” i Indstillinger eller ved at afinstallere appen. Du har ret til at klage til Datatilsynet (datatilsynet.dk).</p>
+  <p>I apperne har vi ingen profil om dig, så der er ingen persondata at give indsigt i eller slette hos os. Det, appen har gemt, ligger på din enhed, og du sletter det ved at fjerne netselskabet, påmindelserne eller selve appen. På hjemmesiden kan vi ikke slå dig op ud fra dit navn eller din e-mail, fordi Google Analytics kun kender et tilfældigt browser-id; du sletter det ved at slette cookies for elpriser.org. Har du delt regulerbar kapacitet, sletter du det som beskrevet ovenfor.</p>
+  <p>Du har ret til indsigt, berigtigelse, sletning, begrænsning, indsigelse og dataportabilitet, hvor det giver mening for de oplysninger, vi har, og du kan trække et samtykke tilbage. Skriv til <a href="mailto:hello@elpriser.org">hello@elpriser.org</a>. Du har ret til at klage til Datatilsynet (datatilsynet.dk).</p>
 
   <h2>Børn</h2>
-  <p>Appen er ikke rettet mod børn og indsamler ikke oplysninger om dem.</p>
+  <p>Apperne og hjemmesiden er ikke rettet mod børn og indsamler ikke oplysninger om dem.</p>
 
   <h2>Ændringer</h2>
   <p>Ændrer vi, hvordan oplysninger behandles, opdaterer vi denne side og datoen øverst.</p>
