@@ -1622,7 +1622,7 @@ test('footer: four labelled groups, each a nav with a visible heading', () => {
   // The grouped columns, in the owner's order and with the owner's links.
   const col = (id) => { const i = FOOTER.indexOf(`id="${id}"`); return FOOTER.slice(i, FOOTER.indexOf('</nav>', i)); };
   assert.deepEqual(footerHrefs(col('sfPriser')), ['/', '/dk1', '/dk2', '/prognose', '/tariffer']);
-  assert.deepEqual(footerHrefs(col('sfHjem')), ['/automation', '/shelly-tariff', '/api']);
+  assert.deepEqual(footerHrefs(col('sfHjem')), ['/automation', '/shelly-tariff', '/api', '/integrationer']);
   const viden = footerHrefs(col('sfViden'));
   assert.deepEqual(viden, ['/om-elpriser', '/blog/elafgift-2028', '/blog/elafgift-og-spotpris',
     '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest', '/blog']);
@@ -1709,7 +1709,8 @@ test('footer: no link list is repeated, and the credits line keeps both external
   // 51 with Nederland (/nl/stroomprijs) among the other price areas.
   // 55 with Tyskland, Frankrig, Polen and Italien (the EU price pages); one more for every country added to PRIS_COUNTRIES (derived: sync-danish-chrome.mjs).
   const nCountries = PRIS.PRIS_PICK.length - 1;
-  assert.equal(hrefs.length, 62 + nCountries, `footer has ${hrefs.length} links: 18 in the groups and the apps, 31 nets, 10 cities, Norden and ${nCountries} countries, and the two credits`);
+  // 63 since "Integrationer" joined the Smart hjem group.
+  assert.equal(hrefs.length, 63 + nCountries, `footer has ${hrefs.length} links: 19 in the groups and the apps, 31 nets, 10 cities, Norden and ${nCountries} countries, and the two credits`);
   const legal = FOOTER.match(/<p class="sf-legal">([^]*?)<\/p>/);
   assert.ok(legal, 'credits line');
   assert.ok(/&copy; Elpriser\.org &mdash; Data fra <a href="https:\/\/www\.energidataservice\.dk"[^>]*rel="noopener">Energi Data Service<\/a> \(Energinet\)\. Åbne datasæt på <a href="https:\/\/huggingface\.co\/Elpriser"[^>]*rel="noopener">Hugging Face<\/a>\./.test(legal[1]), 'credits wording and links');
@@ -1753,20 +1754,21 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // v81: the footer and the place dialog list the countries of PRIS_COUNTRIES (Østrig, Schweiz, Belgien, Irland joined).
   // v84: the footer and the place dialog list the United Kingdom and Kosovo; Ireland's source is SEMOpx.
   // v85: the Pris screen draws PRIS_EUF (forecast days of the EU zones: band, accuracy line, note) and the llms text says so.
-  assert.ok(/homepage-ssr-v86/.test(ROUTES), 'homepage-ssr-v86');
+  // v87: the footer's Smart hjem group gained "Integrationer" (/integrationer); zone v25, city v19 and prognose v17 moved with it.
+  assert.ok(/homepage-ssr-v87/.test(ROUTES), 'homepage-ssr-v87');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
   // (v8: the shared Pris block changed with PRIS_FC.)
   // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
   // (v10: the four EU price pages joined, the Pris block gained PRIS_ACT and the footer the four links.)
   // (v17: per-country i18n (prisPageL), Austria, Switzerland, Belgium and Ireland joined.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v24'/.test(ROUTES), 'zone-ssr-v24');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v25'/.test(ROUTES), 'zone-ssr-v25');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
   // (v13: the four new country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v18'/.test(ROUTES), 'city-ssr-v18');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v19'/.test(ROUTES), 'city-ssr-v19');
   // /prognose shares the header and footer too (v4: the four EU country links).
-  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v16'/.test(ROUTES), 'prognose-ssr-v16');
+  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v17'/.test(ROUTES), 'prognose-ssr-v17');
 });
 
 
@@ -2197,6 +2199,38 @@ test('mcp: the remote MCP server and its discovery documents are routed, shipped
   // Every URL the pages announce for the endpoint is the one the card advertises.
   const SRV = fs.readFileSync(path.join(ROOT, 'functions', '[[path]].js'), 'utf8');
   assert.ok(SRV.includes('remote: https://elpriser.org/mcp'), 'llms.txt names the remote MCP endpoint');
+});
+
+test('/integrationer: one path through the SEO entry, sitemap, route maps, router, dev server and llms.txt; statuses live in one file', () => {
+  const entry = ROUTES.slice(ROUTES.indexOf(`'/integrationer': {`), ROUTES.indexOf('\n  },', ROUTES.indexOf(`'/integrationer': {`)));
+  const field = f => (entry.match(new RegExp(`${f}: '([^']*)'`)) || [])[1] || '';
+  assert.ok(field('title').length >= 40 && field('title').length <= 62, `title is ${field('title').length} characters`);
+  assert.ok(field('description').length >= 80 && field('description').length <= 155, `description is ${field('description').length} characters`);
+  assert.equal(field('hash'), '#integrationer');
+  assert.ok(/SITEMAP_URLS = \[[^\]]*'\/integrationer'/.test(ROUTES), 'sitemap lists /integrationer');
+  assert.ok(/'\/integrationer': '2026-11-03'/.test(ROUTES), 'a real lastmod (a static page, not daily)');
+  assert.ok(/'integrationer': 'integrationer'/.test(ROUTES), 'HASH_TO_DATA_PAGE');
+  assert.ok(/url\.pathname === '\/integrationer'\) opts\.integrationer = true/.test(ROUTES) && ROUTES.includes("html.replace('<!--SSR_INTEGRATIONER-->'"), 'the Function writes the list into the HTML');
+  assert.ok(SERVER.includes("'/integrationer': '#integrationer'") && SERVER.includes('integrationsHTML'), 'dev server: route, and the same list');
+  assert.ok(INDEX.includes("'/integrationer':'integrationer'"), 'client PATH_ROUTES');
+  assert.ok(/h==='integrationer'\)\{[^\n]*document\.title='Integrationer og API-biblioteker/.test(INDEX), 'the router sets a title');
+  assert.ok(/<main style="display:none" data-page="integrationer" class="ig-page[^"]*">/.test(INDEX) && INDEX.includes('<!--SSR_INTEGRATIONER-->'), 'the section carries the placeholder the Function fills');
+  // The CSS is ours alone: every rule in the block is in the .ig- namespace.
+  const a = INDEX.indexOf('/* ═══ /integrationer (.ig-*) ═══');
+  const css = INDEX.slice(a, INDEX.indexOf('</style>', a)).replace(/\/\*[\s\S]*?\*\//g, '');
+  const sel = [...css.matchAll(/(?:^|[}\n])\s*([^{}\n][^{}]*)\{/g)].map(m => m[1].trim()).filter(s => !s.startsWith('@media'));
+  assert.ok(sel.length > 30, 'the .ig- block was found');
+  for (const s of sel) assert.ok(s.split(',').every(x => /\.ig-/.test(x)), `a rule outside the .ig- namespace: ${s}`);
+  assert.ok(/min-height:44px/.test(css) && /\.ig-ready \.ig-copy/.test(css) && /\.dark \.ig-page/.test(css), 'tap targets, the copy button only with JS, a dark theme');
+  const llms = ROUTES.slice(ROUTES.indexOf('const LLMS_TXT = `'), ROUTES.indexOf('const LLMS_FULL_TXT'));
+  assert.ok(llms.includes('https://elpriser.org/integrationer)') && llms.includes('${integrationsLlms()}'), 'llms.txt links /integrationer and lists every item with its status');
+  assert.ok(ROUTES.includes('[elpriser.org/integrationer](https://elpriser.org/integrationer)'), 'the "Åbne datasæt og værktøjer" list points to /integrationer');
+  // No second copy of a status anywhere else: index.html carries the placeholder, not a list.
+  const sec = mainOf('integrationer');
+  assert.ok(!/ig-chip|Fra GitHub|I registeret|Ansøgt/.test(sec), 'the section in index.html holds no status: it is all in functions/_integrations.js');
+  assert.ok(fs.existsSync(path.join(ROOT, 'functions', '_integrations.js')), 'functions/_integrations.js exists (an underscore file is no route and ships with functions/)');
+  const pj = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  assert.ok(/&& node test-integrations\.mjs/.test(pj.scripts['test:unit']), 'test-integrations.mjs runs in the gate (test:unit)');
 });
 
 console.log('\n⚡ Static integrity tests\n' + '─'.repeat(50));

@@ -3,6 +3,7 @@ import { CITIES } from './_cities.js';
 import { cityLocation } from './_city-location.js';
 import { netLocation, netSourceNote, netAreasGeoJSON } from './_net-location.js';
 import { zoneLocation } from './_zone-location.js';
+import { integrationsHTML, integrationsLd, integrationsLlms, integrationsNames } from './_integrations.js';   // /integrationer: the table of items and their true status is in that file
 
 const OG_IMAGE = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
@@ -43,6 +44,12 @@ const SEO_PAGES = {
     title: 'Elpriser API til Home Assistant og Shelly — gratis, med kode',
     description: 'Gratis elpriser-API (JSON, ingen nøgle) og færdig kode til Home Assistant og Shelly. Styr varmepumpe, elbil og vandvarmer efter de billigste timer.',
     hash: '#automation',
+  },
+  // The one overview of plugins and API libraries; the items and their statuses are in functions/_integrations.js.
+  '/integrationer': {
+    title: 'Integrationer og API-biblioteker til elpriser — med status',
+    description: 'Plugins til Home Assistant, Node-RED, Homey, evcc, openHAB og ESPHome, klienter i Python og JavaScript samt MCP. Gratis og uden nøgle, med sand status.',
+    hash: '#integrationer',
   },
   '/om-elpriser': {
     title: 'Om elpriser i Danmark — Spotpris, tariffer og afgifter',
@@ -201,6 +208,7 @@ for (const area of ['DK1', 'DK2']) {
 
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff', '/download',
+  '/integrationer',
   '/blog',
   '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/norden', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
   ...NET_URLS,
@@ -217,6 +225,7 @@ const CONTENT_LASTMOD = {
   '/om-elpriser': '2026-10-17',  // absorbed the Forstå din elpris guide
   '/shelly-tariff': '2026-07-24',
   '/download': '2026-10-23',
+  '/integrationer': '2026-11-03',  // new; bump it when a status in functions/_integrations.js changes
   '/blog/elafgift-2028': '2026-07-24',
   '/blog/elafgift-og-spotpris': '2026-10-17',
   // The country pages (PRIS_COUNTRIES) and /norden are deliberately NOT listed here: they are
@@ -270,6 +279,8 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Elpriser i Norden](https://elpriser.org/norden): Alle prisområder i Norge, Sverige, Finland og Holland side om side i kr/kWh uden moms, så de kan sammenlignes. Landesiderne er på landets eget sprog og viser spotpris time for time for i dag og i morgen og prognose for de næste 2 og 5 døgn: [Norge](https://elpriser.org/no/strompris) (NO1 Oslo, NO2 Kristiansand, NO3 Trondheim, NO4 Tromsø, NO5 Bergen), [Sverige](https://elpriser.org/sv/elpris) (SE1 Luleå, SE2 Sundsvall, SE3 Stockholm, SE4 Malmö), [Finland](https://elpriser.org/fi/sahkon-hinta) og [Holland](https://elpriser.org/nl/stroomprijs). Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder ([model på Hugging Face](https://huggingface.co/Elpriser/nordic-price-forecast)); omregnet til lokal valuta med Den Europæiske Centralbanks daglige referencekurs, uden moms, afgifter og nettariffer.
 {{EUROPE_PAGES}}
 - [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home. Guides: [Shelly](https://elpriser.org/automation#shelly) (script, der henter døgnets plan én gang) og [Home Assistant](https://elpriser.org/automation#home-assistant) (REST-sensor og automation).
+- [Integrationer](https://elpriser.org/integrationer): den ene oversigt over alle plugins, API-biblioteker og MCP-serveren, med den rigtige installationsstatus for hver (I registeret = ligger i npm eller MCP-registret; Fra GitHub = installeres direkte fra GitHub; Ansøgt = ansøgt om optagelse, svar afventes; Kommer = findes ikke endnu). Tjekket den 3. november 2026:
+${integrationsLlms()}
 - [Hent appen](https://elpriser.org/download): Gratis app til iPhone, iPad og Android — elprisen lige nu, i morgen og de næste 5 døgn med dit netselskab, uden konto. Den nyeste version (1.1.0) viser desuden spotpriser for Europa, så snart den er udrullet i din butik. Links til [App Store](https://apps.apple.com/dk/app/id6820474476) og [Google Play](https://play.google.com/store/apps/details?id=org.elpriser.app).
 - [Forstå din elpris](https://elpriser.org/om-elpriser): Hvad elprisen består af (spotpris, nettarif, systemtarif og transmissionstarif, elafgift, moms), DK1 og DK2, hvornår strømmen er billigst, negative priser, sparetips og datakilder.
 - [Hvornår er strømmen billigst](https://elpriser.org/blog/hvornaar-er-stroemmen-billigst): Analyse af 48.594 timers data — døgnets billigste time ligger nu midt på dagen på 68 % af dagene mod 23 % om natten; danske husholdninger flytter forbrug efter et forældet natte-mønster.
@@ -576,6 +587,7 @@ Slug bruges i URL-mønsteret \`https://elpriser.org/dk1/<slug>\` eller \`https:/
 ## Åbne datasæt og værktøjer
 
 - **Hugging Face** — [huggingface.co/Elpriser](https://huggingface.co/Elpriser): historiske pris-, produktions- og markedsdatasæt som parquet-filer, ét datasæt pr. land, licenseret under CC BY 4.0. Velegnet til backtesting, ML-træning og statistisk analyse uden at skulle scrape API'et for historik.
+- **Plugins og biblioteker** — [elpriser.org/integrationer](https://elpriser.org/integrationer): ${integrationsNames()}, hver med sin installationsstatus. Brug siden som den samlede oversigt.
 - **MCP-server** — [github.com/x2q/elpriser-mcp](https://github.com/x2q/elpriser-mcp): en Model Context Protocol-server til LLM-agenter. Kør \`npx -y elpriser-mcp\` for at give Claude Desktop og andre MCP-klienter native værktøjer til aktuel pris, billigste timer og prisprognosen — uden selv at skulle bygge HTTP-kald. Uden installation: den samme server findes hostet på \`https://elpriser.org/mcp\` (Streamable HTTP, ingen nøgle) — tilføj URL'en som connector i Claude eller ChatGPT.
 - **JS/TS-klient** — [github.com/x2q/elpriser-client](https://github.com/x2q/elpriser-client): en letvægts JavaScript/TypeScript-klient til elpriser.org's API, til brug i Node.js, browser eller edge-funktioner.
 `;
@@ -807,6 +819,7 @@ export async function onRequest(context) {
       opts.pricesIntro = { area: url.pathname.slice(1).toUpperCase(), net: null };
     }
     if (url.pathname === '/tariffer') opts.tariffFacts = true;
+    if (url.pathname === '/integrationer') opts.integrationer = true;
     if (url.pathname === '/prognose') opts.prognose = true;
     if (page.zonePage) opts.zonePage = page.zonePage;
     if (page.norden) opts.norden = true;
@@ -3156,7 +3169,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v86');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v87');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -3205,9 +3218,9 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v24';
-const CITY_SSR_VERSION = 'city-ssr-v18';
-const PROGNOSE_SSR_VERSION = 'prognose-ssr-v16';
+const ZONE_SSR_VERSION = 'zone-ssr-v25';
+const CITY_SSR_VERSION = 'city-ssr-v19';
+const PROGNOSE_SSR_VERSION = 'prognose-ssr-v17';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);
@@ -3233,6 +3246,7 @@ const HASH_TO_DATA_PAGE = {
   'shelly-tariff': 'shelly-tariff',
   'om-elpriser': 'om-elpriser',
   'download': 'download',
+  'integrationer': 'integrationer',
   'prognose': 'prognose',
   'blog/elafgift-2028': 'blog-elafgift-2028',
   'blog/elafgift-og-spotpris': 'blog-elafgift-og-spotpris',
@@ -3432,6 +3446,11 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   }
   if (opts.tariffFacts) {
     html = html.replace('<!--SSR_TARIFF_FACTS-->', await buildTariffFacts(context));
+  }
+  if (opts.integrationer) {
+    // The finished list from the status table (no fetch, nothing live), and the CollectionPage for the items that exist.
+    html = html.replace('<!--SSR_INTEGRATIONER-->', () => integrationsHTML());
+    html = html.replace('</head>', () => `  <script type="application/ld+json">${JSON.stringify(integrationsLd(pageUrl, meta)).replace(/</g, '\\u003c')}</script>\n</head>`);
   }
   if (opts.prognose) {
     // The Pris screen of the front page, drawn for /prognose's default view (DK1, Din pris with no
