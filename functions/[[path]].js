@@ -254,9 +254,9 @@ ${SITEMAP_URLS.map(p => {
 
 const LLMS_TXT = `# elpriser.org
 
-> Aktuelle elpriser (spotpriser) for Danmark — DK1 og DK2 — time for time.
+> Aktuelle elpriser (spotpriser) time for time: Danmark (DK1 og DK2, med netselskab, tariffer og prognose) og Europa (Norden, Holland, Storbritannien og det meste af kontinentet) på landets eget sprog.
 
-elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dagligt med data fra Energi Data Service (Energinet). Med dit netselskab valgt er prisen spotpris + dit netselskabs nettarif + Energinets systemtarif og transmissionstarif + elafgift + moms. Uden netselskab ("inkl alt") er det alt undtagen den lokale nettarif, som afhænger af netselskabet.
+elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dagligt med data fra Energi Data Service (Energinet). Med dit netselskab valgt er prisen spotpris + dit netselskabs nettarif + Energinets systemtarif og transmissionstarif + elafgift + moms. Uden netselskab ("inkl alt") er det alt undtagen den lokale nettarif, som afhænger af netselskabet. Uden for Danmark viser siden børsprisen (spotprisen) uden moms, afgifter og nettariffer, så den er ikke det, en kunde betaler.
 
 ## Sider
 
@@ -270,7 +270,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Elpriser i Norden](https://elpriser.org/norden): Alle prisområder i Norge, Sverige, Finland og Holland side om side i kr/kWh uden moms, så de kan sammenlignes. Landesiderne er på landets eget sprog og viser spotpris time for time for i dag og i morgen og prognose for de næste 2 og 5 døgn: [Norge](https://elpriser.org/no/strompris) (NO1 Oslo, NO2 Kristiansand, NO3 Trondheim, NO4 Tromsø, NO5 Bergen), [Sverige](https://elpriser.org/sv/elpris) (SE1 Luleå, SE2 Sundsvall, SE3 Stockholm, SE4 Malmö), [Finland](https://elpriser.org/fi/sahkon-hinta) og [Holland](https://elpriser.org/nl/stroomprijs). Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder ([model på Hugging Face](https://huggingface.co/Elpriser/nordic-price-forecast)); omregnet til lokal valuta med Den Europæiske Centralbanks daglige referencekurs, uden moms, afgifter og nettariffer.
 {{EUROPE_PAGES}}
 - [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home. Guides: [Shelly](https://elpriser.org/automation#shelly) (script, der henter døgnets plan én gang) og [Home Assistant](https://elpriser.org/automation#home-assistant) (REST-sensor og automation).
-- [Hent appen](https://elpriser.org/download): Gratis app til iPhone, iPad og Android — elprisen lige nu, i morgen og de næste 5 døgn med dit netselskab, uden konto. Links til [App Store](https://apps.apple.com/dk/app/id6820474476) og [Google Play](https://play.google.com/store/apps/details?id=org.elpriser.app).
+- [Hent appen](https://elpriser.org/download): Gratis app til iPhone, iPad og Android — elprisen lige nu, i morgen og de næste 5 døgn med dit netselskab, uden konto. Den nyeste version (1.1.0) viser desuden spotpriser for Europa, så snart den er udrullet i din butik. Links til [App Store](https://apps.apple.com/dk/app/id6820474476) og [Google Play](https://play.google.com/store/apps/details?id=org.elpriser.app).
 - [Forstå din elpris](https://elpriser.org/om-elpriser): Hvad elprisen består af (spotpris, nettarif, systemtarif og transmissionstarif, elafgift, moms), DK1 og DK2, hvornår strømmen er billigst, negative priser, sparetips og datakilder.
 - [Hvornår er strømmen billigst](https://elpriser.org/blog/hvornaar-er-stroemmen-billigst): Analyse af 48.594 timers data — døgnets billigste time ligger nu midt på dagen på 68 % af dagene mod 23 % om natten; danske husholdninger flytter forbrug efter et forældet natte-mønster.
 - [Grønnest og dyrest på samme tid](https://elpriser.org/blog/groennest-og-dyrest): Hvorfor døgnets dyreste time ofte er den grønneste — pris sættes marginalt på et europæisk marked, CO₂ er et gennemsnit der følger hvem Danmark importerer fra (norsk vandkraft om aftenen, tysk strøm midt på dagen).
@@ -328,7 +328,7 @@ tariffs + elafgift + 25 % VAT. \`hour\` is the current Danish local hour
 - Opdateres dagligt ca. kl. 13 når Nord Pool offentliggør næste døgns priser
 - Datakilde: [Energi Data Service](https://www.energidataservice.dk) (Energinet)
 - Gratis, ingen registrering påkrævet
-- Sprog: Dansk · CORS-headers: \`Access-Control-Allow-Origin: *\`
+- Sprog: Dansk på de danske sider; landesiderne er på landets eget sprog (27 sprog i alt) · CORS-headers: \`Access-Control-Allow-Origin: *\`
 `;
 
 /** "Elpriser lige nu" for llms-full.txt: each figure in a sentence that names
