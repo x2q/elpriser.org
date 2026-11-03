@@ -80,7 +80,7 @@ const nordic = zone => !NORDIC.includes(zone) ? ({
   zone, generated: today, unit: 'EUR/MWh',
   zoneInfo: { name: zone.toUpperCase(), currency: 'X', rate: rateOf(zone), rateSource: 'test' },
   days: Array.from({ length: 10 }, (_, i) => ({
-    date: addDays(today, i - 1), type: i < (zone === 'nl' ? nlSettled : 3) ? 'actual' : 'forecast',
+    date: addDays(zoneToday(zone), i - 1), type: i < (zone === 'nl' ? nlSettled : 3) ? 'actual' : 'forecast',     // fi: Helsinki's days (the API re-cuts the Copenhagen-hour feed, functions/_localdays.js), the others Copenhagen's
     prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: +((BASE[zone] ?? 70) + 25 * Math.sin(h / 24 * 6.2832) + i * 2).toFixed(2) })),
   })),
 });
@@ -154,7 +154,8 @@ for (const [p, w] of Object.entries(PAGES)) {
   ok((h.match(/data-pris-period="/g) || []).length === 2, `${p}: præcis to periodeknapper`);
   // Five days at most: 120 bars in the five-day card, five rows in the day list, no hidden sixth to tenth day.
   const five = h.slice(h.indexOf('pris-card pp5'), h.indexOf('pris-tiles pp2'));
-  ok((five.match(/<span class="pc[ "]/g) || []).length === 120 - (NOW_H > 0 ? NOW_H - Math.min(6, NOW_H) : 0), `${p}: 5 døgn er fem døgn fra seks timer før nu`, String((five.match(/<span class="pc[ "]/g) || []).length));
+  const zH = zoneHour(w.first);     // the hour of the page's zone on ITS clock (fi: Helsinki's)
+  ok((five.match(/<span class="pc[ "]/g) || []).length === 120 - (zH > 0 ? zH - Math.min(6, zH) : 0), `${p}: 5 døgn er fem døgn fra seks timer før nu`, String((five.match(/<span class="pc[ "]/g) || []).length));
   // One <tbody> per period over the hours its chart shows: 2 døgn reaches into day three (from hour 1 on), 5 døgn is the five days there are.
   ok((h.match(/<tr><th scope="row">/g) || []).length === (NOW_H > 0 ? 3 : 2) + 5 && !/class="r10"/.test(h), `${p}: dagslisten har tre (to) rækker for 2 døgn og fem for 5 døgn, ingen skjult dag seks-ti`);
   ok(!TEN.test(h), `${p}: ingen tekst om 10 døgn`, (h.match(TEN) || [])[0]);

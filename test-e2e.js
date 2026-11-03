@@ -113,7 +113,7 @@ async function startServer() {
   // A chart starts six hours before now (at hour 0: at midnight) and runs `days` days on, as far as the `have` days of data go.
   // st is the window's first hour counted from today 00:00, n its length in bars; winDays are the day labels (a day with under
   // six hours of the window has none) with their left edge in %.
-  const win = (days, have = 10) => { const h = hourDk(), back = Math.min(6, h), st = h - back; let n = h > 0 ? back + days * 24 : days * 24; if (h > 0 && days > 2) n = Math.min(n, have * 24 - st); return { st, n, back }; };
+  const win = (days, have = 10, h = hourDk()) => { const back = Math.min(6, h), st = h - back; let n = h > 0 ? back + days * 24 : days * 24; if (h > 0 && days > 2) n = Math.min(n, have * 24 - st); return { st, n, back }; };
   const winDays = w => { const out = []; for (let i = Math.floor(w.st / 24); i * 24 < w.st + w.n; i++) { const vs = Math.max(i * 24, w.st), ve = Math.min(i * 24 + 24, w.st + w.n); if (ve - vs >= 6) out.push({ i, left: ((vs + ve) / 2 - w.st) / w.n * 100 }); } return out; };
   // Picks zone `k` in the place dialog (the zones are the country's own group on its list).
   const pickZoneInDialog = async (k) => { await page.locator('#netChip').click(); await page.locator(`#netDialog [data-zone="${k}"]`).click(); };
@@ -197,7 +197,8 @@ async function startServer() {
     nordicRequests.push(zone);
     const k = ZN.indexOf(zone);
     if (k < 0) return route.fulfill({ status: 400, json: { error: 'zone' } });
-    const base = Date.parse(todayDk() + 'T12:00:00Z');
+    // fi is the one Nordic-feed zone on another clock than Copenhagen's: /api/nordic serves it in Helsinki's days (functions/_localdays.js), so its date is shifted like an EU zone's
+    const base = Date.parse(new Intl.DateTimeFormat('en-CA', cph).format(new Date(Date.now() + shiftOf(zone) * 3600000)) + 'T12:00:00Z');
     if (k >= 13) {
       const b = Date.parse(new Intl.DateTimeFormat('en-CA', cph).format(new Date(Date.now() + shiftOf(zone) * 3600000)) + 'T12:00:00Z');
       return route.fulfill({ json: { zone, unit: 'EUR/MWh', trainedThrough: null, zoneInfo: { rate: zone === 'pl' ? 4.4 : 1, currency: zone === 'pl' ? 'PLN' : 'EUR' },
@@ -1588,7 +1589,7 @@ async function startServer() {
       await page.locator('main[data-page="zone"] [data-pris-period="5"]').click();
       const t = await page.evaluate(() => document.querySelector('main[data-page="zone"]').innerText);
       assert.ok(!/\b10 (døgn|dager|dygn|vrk|dagen)/i.test(t), `${url} mentions 10 days`);
-      assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pc[data-tip]').count(), win(5, 5).n);
+      assert.equal(await page.locator('main[data-page="zone"] .pris-card.pp5 .pc[data-tip]').count(), win(5, 5, (hourDk() + shiftOf(url === '/fi/sahkon-hinta' ? 'fi' : 'dk1') + 24) % 24).n);     // the bars start six hours before the ZONE's now: fi's clock is Helsinki's
       assert.equal(await page.locator('main[data-page="zone"] .pris-week tbody:visible tr').count(), 5);
       assert.ok((await page.locator('main[data-page="zone"] .pris-card.pp5 .pris-ct').textContent()).endsWith(five));
     }

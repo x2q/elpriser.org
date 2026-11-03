@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { pathToFileURL } from 'node:url';
 import { build, webNets } from './tests/golden/generate.mjs';
 
 const ROOT = import.meta.dirname;
@@ -103,6 +104,46 @@ test('the zone table agrees with the web\'s ZONES (currency, sub-unit, the names
   }
   // the API's days are by the zone's own wall clock: the contract's tz must be a real IANA zone
   for (const z of golden.zones) assert.doesNotThrow(() => new Intl.DateTimeFormat('en', { timeZone: z.tz }), `${z.key}: ${z.tz}`);
+});
+
+/** Offset from UTC, in minutes, of a time zone at an instant. */
+const utcOffset = (tz, ms) => {
+  const part = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'longOffset' }).formatToParts(ms).find(p => p.type === 'timeZoneName').value;
+  const m = /GMT(?:([+-])(\d\d):(\d\d))?$/.exec(part);
+  return m && m[1] ? (m[1] === '-' ? -1 : 1) * (+m[2] * 60 + +m[3]) : 0;
+};
+/** The clock of `tz` relative to Copenhagen's, in whole hours, or NaN when the difference is not constant over 2026-2027 (the clocks change at one instant in all of Europe). */
+const hoursFromCopenhagen = tz => {
+  const seen = new Set();
+  for (let t = Date.parse('2026-01-01T00:00:00Z'); t < Date.parse('2028-01-01T00:00:00Z'); t += 3 * 3600_000) seen.add(utcOffset(tz, t) - utcOffset('Europe/Copenhagen', t));
+  return seen.size === 1 && [...seen][0] % 60 === 0 ? [...seen][0] / 60 : NaN;
+};
+
+test('every zone\'s contract time zone is the clock its days are cut by: the Nordic feed (functions/_localdays.js), the EU jobs\' tables (scripts/eu_prices) and the web\'s ZONES `shift` all say the same', async () => {
+  // Nordic-feed zones: the job floors to the Copenhagen hour; the API re-cuts the zones whose clock is another one (NORDIC_LOCAL_SHIFT).
+  const { NORDIC_LOCAL_SHIFT } = await import(pathToFileURL(path.join(ROOT, 'functions/_localdays.js')).href);
+  const nordic = apiList('NORDIC_ZONES');
+  assert.equal(nordic.length, 13);
+  const jobTz = {};                       // EU zones: the zone's wall clock in the job that writes eu-prices-<zone>
+  for (const f of ['build_eu_prices.py', 'build_entsoe_prices.py', 'build_semopx_prices.py', 'build_elexon_prices.py']) {
+    const src = fs.readFileSync(path.join(ROOT, 'scripts/eu_prices', f), 'utf8');
+    for (const m of src.matchAll(/^\s+"([a-z][a-z0-9-]*)":\s*\(([^)]*)\)/gm)) { const tz = /Europe\/[A-Za-z_]+/.exec(m[2]); if (tz && !nordic.includes(m[1])) jobTz[m[1]] = tz[0]; }
+  }
+  const fn = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const from = fn.indexOf('var ZONES={');
+  const web = vm.runInNewContext(fn.slice(from, fn.indexOf('\n};', from) + 3).replace('var ZONES=', '(').replace(/;\s*$/, ')'));
+  for (const z of golden.zones) {
+    const contract = hoursFromCopenhagen(z.tz);
+    assert.ok(!Number.isNaN(contract), `${z.key}: ${z.tz} is a whole number of hours from Copenhagen all year`);
+    if (nordic.includes(z.key)) assert.equal(contract, NORDIC_LOCAL_SHIFT[z.key] || 0, `${z.key}: the Nordic feed is on Copenhagen's clock; the contract says ${z.tz} (${contract} h), NORDIC_LOCAL_SHIFT says ${NORDIC_LOCAL_SHIFT[z.key] || 0}`);
+    else {
+      assert.ok(jobTz[z.key], `${z.key}: no job in scripts/eu_prices writes its days`);
+      assert.equal(contract, hoursFromCopenhagen(jobTz[z.key]), `${z.key}: the job cuts the days by ${jobTz[z.key]}, the contract says ${z.tz}`);
+    }
+    if (web[z.key]) assert.equal(web[z.key].shift || 0, contract, `${z.key}: the web draws the zone's hour with ZONES.shift ${web[z.key].shift || 0}, the contract says ${z.tz}`);
+  }
+  assert.deepEqual(Object.keys(NORDIC_LOCAL_SHIFT).sort(), golden.zones.filter(z => nordic.includes(z.key) && hoursFromCopenhagen(z.tz) !== 0).map(z => z.key).sort(), 'no Nordic-feed zone is on another clock without being re-cut');
+  assert.equal(golden.zones.find(z => z.key === 'fi').tz, 'Europe/Helsinki');
 });
 
 test('countries: every zone belongs to exactly one country; the default zone of every region and language is a zone of the table', () => {

@@ -4622,7 +4622,7 @@ var PRIS_I18N={
  *  `rate` is the fallback for the ECB rate /api/nordic returns (zoneInfo.rate).
  *  `lang` picks the PRIS_I18N table for a zone's own page (a page may read another language's table for the same zone: the
  *  French page of Belgium, PRIS_COUNTRIES). `shift`: hours from Copenhagen to the zone's own clock, when it is not the same
- *  (Dublin -1); the feed's days are the zone's local days. `src`: where an `act` zone's data come from, which prisCredit names:
+ *  (Dublin -1, Helsinki +1: /api/nordic re-cuts fi into Helsinki days, functions/_localdays.js); the feed's days are the zone's local days. `src`: where an `act` zone's data come from, which prisCredit names:
  *  'ec' Energy-Charts (Bundesnetzagentur | SMARD.de, CC BY 4.0), 'entsoe' (ENTSO-E Transparency Platform), 'semopx' (SEMOpx day-ahead auction
  *  results, Ireland) or 'elexon' (Elexon BMRS Market Index Data, Great Britain: a within-day index, NOT a day-ahead price). */
 var ZONES={
@@ -4637,7 +4637,7 @@ var ZONES={
   se2:{name:'SE2',city:'Sundsvall',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
   se3:{name:'SE3',city:'Stockholm',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
   se4:{name:'SE4',city:'Malmö',lang:'sv',cur:'SEK',rate:11.29,sub:'öre'},
-  fi:{name:'FI',city:'Suomi',lang:'fi',cur:'EUR',rate:1,sub:'snt'},
+  fi:{name:'FI',city:'Suomi',lang:'fi',cur:'EUR',rate:1,sub:'snt',shift:1},
   nl:{name:'NL',city:'Nederland',lang:'nl',cur:'EUR',rate:1,sub:'cent'},
   // The EU zones: actual day-ahead prices, no forecast. `city` is what the zone's text line calls it, `name` the market's own
   // code. Poland converts at the ECB's PLN rate (4.39 only if the response carries none); every other zone is EUR.

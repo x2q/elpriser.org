@@ -40,6 +40,7 @@ const kv = makeKv({
   [`prices-archive-DK1-${Y - 1}`]: priceArchiveYear(Y - 1), [`prices-archive-DK1-${Y}`]: priceArchiveYear(Y), [`prices-archive-DK1-${Y + 1}`]: priceArchiveYear(Y + 1),
   [`prices-archive-DK2-${Y - 1}`]: priceArchiveYear(Y - 1), [`prices-archive-DK2-${Y}`]: priceArchiveYear(Y), [`prices-archive-DK2-${Y + 1}`]: priceArchiveYear(Y + 1),
   'nordic-forecast-se3': feed('se3', [dayOf(-1), dayOf(0)]),
+  'nordic-forecast-fi': feed('fi', [dayOf(-1), dayOf(0)]),       // indexed by the Copenhagen hour, like the Nordic job's; /api/nordic serves it on Helsinki's clock
   'eu-prices-de': feed('de', [dayOf(0), dayOf(1)]),
   'eu-forecast-de': feed('de', [dayOf(2), dayOf(3)], 'forecast'),
 });
@@ -300,6 +301,16 @@ test('get_european_prices: a Nordic zone and an EU zone with its forecast days, 
   const none = await legacyCall('get_european_prices', { zone: 'fr' });
   assert.equal(none.json.result.isError, true);
   assert.match(textOf(none), /^Fejl: elpriser\.org API: no prices available for fr$/);
+});
+
+test('get_european_prices: fi is on Helsinki\'s clock — the cheapest hour of the feed (Copenhagen 00:00 = 51) is Finnish 01:00, and a first day without the day before has 23 hours', async () => {
+  const fi = await legacyCall('get_european_prices', { zone: 'fi' });
+  assert.ok(!fi.json.result.isError, textOf(fi));
+  // the feed's two days are yesterday (50+h) and today (51+h): Helsinki today = yesterday's hour 23 (73) at 00:00, then today's hours 0-22 (51..73) at 01:00..23:00
+  assert.match(textOf(fi), new RegExp(`${dayOf(0)} \\(actual\\): snit 62\\.\\d · billigste time 01:00 51 · 24 timer`));
+  assert.match(textOf(fi), new RegExp(`${dayOf(-1)} \\(actual\\): snit [\\d.]+ · billigste time 01:00 50 · 23 timer`), 'the first day has no source for 00:00');
+  const se = await legacyCall('get_european_prices', { zone: 'se3' });
+  assert.match(textOf(se), new RegExp(`${dayOf(0)} \\(actual\\): snit 62\\.5 · billigste time 00:00 51 · 24 timer`), 'a Copenhagen-clock zone is as it was');
 });
 
 test('find_net_company: the net company of a Danish position, through Nominatim and Green Power Denmark', async () => {

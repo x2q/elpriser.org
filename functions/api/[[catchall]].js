@@ -13,6 +13,7 @@
 import { activateDataPage, stripInactiveMains, promoteSectionTitle } from '../_spa.js';
 import { recordUsage } from '../_usage.js';
 import { ESTIMATE_ZONES, withEstimate } from '../_estimate.js';
+import { NORDIC_LOCAL_SHIFT, rebucketToLocalDays } from '../_localdays.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -1362,6 +1363,7 @@ const OPENAPI_SPEC = {
         summary: 'Hourly prices for a bidding zone outside Denmark\'s two',
         description: [
           'EUR/MWh by the zone\'s own wall clock, hour 0-23, `days[].type` `actual` (settled day-ahead price) or `forecast`,',
+          '(Copenhagen\'s clock for `dk1`, `dk2`, `no1`-`no5`, `se1`-`se4` and `nl`; Helsinki\'s for `fi`, so a Finnish day runs from 23:00 to 23:00 CET and hour 0 is 22:00 UTC in winter. A `fi` day that mixes settled and forecast hours is a `forecast` day, with `min_eur_mwh` = `max_eur_mwh` on its settled hours.)',
           'with the ECB reference rate to the local currency in `zoneInfo` (`rate`, `rateDate`, `rateSource`).',
           'Spot price only: excluding VAT, taxes and grid fees, not what a customer pays.',
           '',
@@ -1609,7 +1611,10 @@ async function handleApi(context) {
         ESTIMATE_ZONES.includes(zone) ? kvJson(context.env, `eu-estimate-${zone}`, { ttl: 300 }) : null,     // the hours of a day that have no price yet (functions/_estimate.js)
       ]);
       if (!priced) return fail(404, eu ? `no prices available for ${zone}` : `no forecast available for ${zone}`);
-      const raw = eu ? withEstimate(withEuForecast(priced, fc), est, Date.now()) : overlayNordicSettled(priced, fc);
+      // The Nordic feed is indexed by the COPENHAGEN hour for every zone; the API says "the zone's own wall clock", so Finland (an hour ahead) is re-cut
+      // into Helsinki days here, settled and forecast days alike (functions/_localdays.js). The settled overlay (nl) is on Copenhagen's clock: no shift.
+      const raw = eu ? withEstimate(withEuForecast(priced, fc), est, Date.now())
+        : rebucketToLocalDays(overlayNordicSettled(priced, fc), NORDIC_LOCAL_SHIFT[zone] || 0);
       const fx = await ecbRates();
       const info = eu ? EU_ZONE_INFO[zone] : NORDIC_ZONE_INFO[zone];
       return jsonResponse({ ...raw, zoneInfo: { ...info,
