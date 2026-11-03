@@ -1381,7 +1381,7 @@ const OPENAPI_SPEC = {
           '',
           '**Forecast days for 25 EU zones** (all of the above except `xk` and `gb`): after the last settled day come up to seven `forecast` days, the first one the day after',
           'the last settled day, with no hole. It is elpriser.org\'s own statistical model (a mean of a rolling linear model and a gradient-boosted tree model, using weather forecasts',
-          'and market data as inputs): NOT an official forecast. The production model also takes two further market-price inputs (their data licences are not confirmed); a variant WITHOUT them is open, weights and',
+          'and market data as inputs): NOT an official forecast. The production model also takes two further market-price inputs; a variant WITHOUT them is open, weights and',
           'code at https://huggingface.co/Elpriser/eu-price-forecast, and its backtest error is about 3 % higher. A day has `horizon` (days after the last settled day + 1, 2 to 7), `eur_mwh` as the central estimate and',
           '`min_eur_mwh` / `max_eur_mwh` as P10 / P90. The settled price always replaces the forecast for the same day. A horizon is published for a zone only if its error (mean absolute error)',
           'was at least 5 % below that of a simple level-and-shape method out of sample; the others are left out. The answer then also carries `model`, `trainedThrough`, `forecastGenerated`',
