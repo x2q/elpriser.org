@@ -8,7 +8,7 @@ jobs:
   # Fast and hermetic: no network, no server, no browser. This is the gate that
   # `npm run deploy` runs too.
   gate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,7 +20,7 @@ jobs:
   # `wrangler pages dev`. They also read live Energi Data Service data, so a
   # red run here is worth a look but is not always the code.
   browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: gate
     steps:
       - uses: actions/checkout@v4

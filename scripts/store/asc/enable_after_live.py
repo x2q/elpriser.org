@@ -35,7 +35,7 @@ def main():
         return
     st.setdefault("live_at", time.time())
     if not st.get("territories"):
-        s, j = call("GET", f"/v2/appAvailabilities/{APP}/territoryAvailabilities", params={"limit": 200})
+        s, j = call("GET", f"/v2/appAvailabilities/{APP}/territoryAvailabilities", params={"limit": 200, "include": "territory"})   # without include the rows carry no territory relationship
         ids = {x["relationships"]["territory"]["data"]["id"]: x["id"] for x in j["data"]}
         bad = []
         for t in TERRITORIES:
