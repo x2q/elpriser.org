@@ -1182,6 +1182,7 @@ const OPENAPI_SPEC = {
       '- Home automation (Shelly Plus/Pro scripts, Home Assistant REST sensors)',
       '- LLM agents (Tibber-compatible `/api/shelly/tariff` matches the schema Tibber publishes)',
       '- Smart-home aggregators (machine-readable spec at `/api/openapi.json`)',
+      '- MCP clients (Claude, ChatGPT, …): the same data as tools on a hosted MCP server, `https://elpriser.org/mcp` (Streamable HTTP, no key)',
     ].join('\n'),
     contact: { url: 'https://elpriser.org/api' },
     license: { name: 'Free for any use', url: 'https://elpriser.org/' },

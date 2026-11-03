@@ -2174,6 +2174,27 @@ test('app banner: shows on Android in the page language, not on iPhone, not on /
   assert.ok(run(A, '/', 'da', Date.now() - 31 * 864e5).shown, 'again after 30 days');
 });
 
+test('mcp: the remote MCP server and its discovery documents are routed, shipped and in the gate', () => {
+  // functions/mcp.js (the endpoint) and functions/mcp/server-card.js + functions/.well-known/* (discovery) are Pages Function files;
+  // functions/_mcp.js is their shared code and, being underscore-prefixed, no route. test-mcp.mjs holds the behaviour.
+  const routes = JSON.parse(fs.readFileSync(path.join(ROOT, '_routes.json'), 'utf8'));
+  for (const p of ['/mcp', '/mcp/server-card', '/.well-known/mcp/server-card.json', '/.well-known/ai-catalog.json'])
+    assert.ok(routedByFunction(routes, p), `_routes.json does not route "${p}" through the function`);
+  for (const f of ['mcp.js', '_mcp.js', 'mcp/server-card.js', '.well-known/mcp/server-card.json.js', '.well-known/ai-catalog.json.js'])
+    assert.ok(fs.existsSync(path.join(ROOT, 'functions', f)), `functions/${f} is missing`);
+  const build = fs.readFileSync(path.join(ROOT, 'scripts', 'build-dist.sh'), 'utf8');
+  assert.ok(/^cp -R functions "\$DIST\/functions"$/m.test(build), 'the deploy copies the whole functions/ directory (dot-directories included), so the MCP files ship without being listed');
+  const pj = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  assert.ok(/&& node test-mcp\.mjs/.test(pj.scripts['test:unit']) && pj.scripts['test:gate'].includes('test:unit'), 'test-mcp.mjs runs in the gate (test:unit)');
+  assert.equal(pj.scripts['test:mcp'], 'node test-mcp.mjs');
+  const mcp = fs.readFileSync(path.join(ROOT, 'functions', '_mcp.js'), 'utf8');
+  assert.ok(/import \{ onRequest as apiRequest \} from '\.\/api\/\[\[catchall\]\]\.js'/.test(mcp), 'the tools call the API in-process: a same-origin fetch would be a second Function invocation per call');
+  assert.ok(!/\bfetch\(/.test(mcp), 'the MCP module makes no network request of its own');
+  // Every URL the pages announce for the endpoint is the one the card advertises.
+  const SRV = fs.readFileSync(path.join(ROOT, 'functions', '[[path]].js'), 'utf8');
+  assert.ok(SRV.includes('remote: https://elpriser.org/mcp'), 'llms.txt names the remote MCP endpoint');
+});
+
 console.log('\n⚡ Static integrity tests\n' + '─'.repeat(50));
 for (const r of results) {
   console.log(`${r.ok ? '✅' : '❌'} ${r.name}${r.ok ? '' : '\n   └─ ' + r.msg}`);
