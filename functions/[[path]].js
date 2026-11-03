@@ -52,8 +52,8 @@ const SEO_PAGES = {
   // The app page: the "Hent appen" button in the header and a link in the footer lead here.
   // Titles of the other pages lead with their topic; this one leads with the action.
   '/download': {
-    title: 'Hent Elpriser-appen — iPhone og Android, gratis',
-    description: 'Elprisen lige nu, i morgen og de næste 5 døgn — med dit netselskab. Gratis app til iPhone, iPad og Android, uden konto, i App Store og Google Play.',
+    title: 'Hent Elpriser-appen — til iPhone, iPad og Android, gratis',
+    description: 'Elprisen lige nu og de næste 5 døgn, med dit netselskab. Gratis app til iPhone, iPad og Android uden konto og reklamer, i App Store og Google Play.',
     hash: '#download',
   },
   // The country pages (/no/strompris … /ie/electricity-price) are not listed here: each is ONE entry of PRIS_COUNTRIES (title, description,
@@ -216,7 +216,7 @@ const CONTENT_LASTMOD = {
   '/api': '2026-07-24',
   '/om-elpriser': '2026-10-17',  // absorbed the Forstå din elpris guide
   '/shelly-tariff': '2026-07-24',
-  '/download': '2026-10-23',
+  '/download': '2026-11-03',
   '/blog/elafgift-2028': '2026-07-24',
   '/blog/elafgift-og-spotpris': '2026-10-17',
   // The country pages (PRIS_COUNTRIES) and /norden are deliberately NOT listed here: they are
@@ -270,7 +270,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Elpriser i Norden](https://elpriser.org/norden): Alle prisområder i Norge, Sverige, Finland og Holland side om side i kr/kWh uden moms, så de kan sammenlignes. Landesiderne er på landets eget sprog og viser spotpris time for time for i dag og i morgen og prognose for de næste 2 og 5 døgn: [Norge](https://elpriser.org/no/strompris) (NO1 Oslo, NO2 Kristiansand, NO3 Trondheim, NO4 Tromsø, NO5 Bergen), [Sverige](https://elpriser.org/sv/elpris) (SE1 Luleå, SE2 Sundsvall, SE3 Stockholm, SE4 Malmö), [Finland](https://elpriser.org/fi/sahkon-hinta) og [Holland](https://elpriser.org/nl/stroomprijs). Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder ([model på Hugging Face](https://huggingface.co/Elpriser/nordic-price-forecast)); omregnet til lokal valuta med Den Europæiske Centralbanks daglige referencekurs, uden moms, afgifter og nettariffer.
 {{EUROPE_PAGES}}
 - [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home. Guides: [Shelly](https://elpriser.org/automation#shelly) (script, der henter døgnets plan én gang) og [Home Assistant](https://elpriser.org/automation#home-assistant) (REST-sensor og automation).
-- [Hent appen](https://elpriser.org/download): Gratis app til iPhone, iPad og Android — elprisen lige nu, i morgen og de næste 5 døgn med dit netselskab, uden konto. Den nyeste version (1.1.0) viser desuden spotpriser for Europa, så snart den er udrullet i din butik. Links til [App Store](https://apps.apple.com/dk/app/id6820474476) og [Google Play](https://play.google.com/store/apps/details?id=org.elpriser.app).
+- [Hent appen](https://elpriser.org/download): Oversigt over Elpriser-appen med skærmbilleder og funktioner. Gratis, uden konto og uden reklamer. Findes i dag til iPhone og iPad (iOS 18 eller nyere, App Store) og til Android-telefon og -tablet (Android 8 eller nyere, Google Play), med elprisen lige nu, 2 og 5 døgn frem, Din pris med netselskab, tariffer, afgifter og moms, og børspriser for 30 europæiske lande. Kommer: Mac (macOS 15 eller nyere), Apple Watch, påmindelser om billige timer og en widget. Links til [App Store](https://apps.apple.com/dk/app/id6820474476) og [Google Play](https://play.google.com/store/apps/details?id=org.elpriser.app).
 - [Forstå din elpris](https://elpriser.org/om-elpriser): Hvad elprisen består af (spotpris, nettarif, systemtarif og transmissionstarif, elafgift, moms), DK1 og DK2, hvornår strømmen er billigst, negative priser, sparetips og datakilder.
 - [Hvornår er strømmen billigst](https://elpriser.org/blog/hvornaar-er-stroemmen-billigst): Analyse af 48.594 timers data — døgnets billigste time ligger nu midt på dagen på 68 % af dagene mod 23 % om natten; danske husholdninger flytter forbrug efter et forældet natte-mønster.
 - [Grønnest og dyrest på samme tid](https://elpriser.org/blog/groennest-og-dyrest): Hvorfor døgnets dyreste time ofte er den grønneste — pris sættes marginalt på et europæisk marked, CO₂ er et gennemsnit der følger hvem Danmark importerer fra (norsk vandkraft om aftenen, tysk strøm midt på dagen).

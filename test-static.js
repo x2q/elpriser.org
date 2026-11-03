@@ -1961,7 +1961,7 @@ test('/download: one path through the SEO entry, sitemap, route maps, router and
   assert.ok(/5 døgn/.test(field('description')) && !/10 døgn/.test(entry), 'the apps show 2 and 5 døgn, never 10');
   assert.equal(field('hash'), '#download');
   assert.ok(/SITEMAP_URLS = \[[^\]]*'\/download'/.test(ROUTES), 'sitemap lists /download');
-  assert.ok(/'\/download': '2026-10-23'/.test(ROUTES), 'a real lastmod (a static page, not daily)');
+  assert.ok(/'\/download': '2026-11-03'/.test(ROUTES), 'a real lastmod (a static page, not daily)');
   assert.ok(/'download': 'download'/.test(ROUTES), 'HASH_TO_DATA_PAGE');
   assert.ok(SERVER.includes("'/download': '#download'"), 'dev-server route');
   assert.ok(INDEX.includes("'/download':'download'"), 'client PATH_ROUTES');
@@ -1980,7 +1980,10 @@ test('/download: H1, honest copy, two identical store badges with the exact link
   assert.ok(!/10 døgn|3.10 døgn|10 dage/.test(text), 'no 10-day claim: the apps show 2 døgn | 5 døgn');
   for (const claim of ['2 døgn', '5 døgn', 'Din pris', 'Spotpris', 'DK1', 'DK2', 'nettarif', 'moms', 'gratis', 'ingen konto'])
     assert.ok(new RegExp(claim, 'i').test(text), `copy lost "${claim}"`);
-  assert.ok(!/prognose|CO₂|usikkerhed|aflæs|styr|automatis/i.test(text), 'copy names a feature the apps no longer have or never had');
+  assert.ok(!/CO₂|usikkerhed|aflæs|styr|automatis|Hugging Face|10 døgn/i.test(text), 'copy names a feature the apps do not have, or an open-model claim');
+  // The forecast is in the apps now (2 and 5 døgn show it): the page may say "prognose", but only as elpriser.org's own model, never an official one, and with no accuracy figure.
+  assert.ok(/prognose/i.test(text) && /egen statistiske model, ikke en officiel/.test(text), 'the forecast is described as our own statistical model, not an official one');
+  assert.ok(!/\d\s?%|nøjagtig|MAE|træfsikker/i.test(text), 'no accuracy number or claim on the page');
   const badges = [...m.matchAll(/<a class="dl-badge ([\w-]+)" href="([^"]+)"([^>]*)>([\s\S]*?)<\/a>/g)];
   assert.equal(badges.length, 2, 'two badges');
   const [apple, play] = badges;
@@ -2005,6 +2008,99 @@ test('/download: H1, honest copy, two identical store badges with the exact link
   assert.ok(!/display:none|\shidden[\s>]/.test(m.match(/<div class="dl-stores">[\s\S]*?<\/div>/)[0]), 'nothing is hidden: both badges stay on every device');
 });
 
+// The overview page (2026-11-03): hero, alternating features with real screenshots, tablets, one card per platform, other ways.
+const DL_IMG = path.join(ROOT, 'download', 'img');
+test('/download: the overview — every platform has one card, and its status chip is true to what is released today', () => {
+  const m = mainOf('download');
+  const cards = [...m.matchAll(/<li class="dl-card dl-rv"[^>]*data-status="(\w+)"[^>]*>([\s\S]*?)<\/li>/g)]
+    .map(c => ({ status: c[1], name: (c[2].match(/<h3>([^<]+)<\/h3>/) || [])[1], chip: (c[2].match(/<span class="dl-chip">([^<]+)<\/span>/) || [])[1], links: [...c[2].matchAll(/<a [^>]*href="([^"]+)"/g)].map(x => x[1]) }));
+  assert.deepEqual(cards.map(c => [c.name, c.status, c.chip]), [
+    ['iPhone', 'live', 'Tilgængelig'], ['iPad', 'live', 'Tilgængelig'], ['Android-telefon', 'live', 'Tilgængelig'], ['Android-tablet', 'live', 'Tilgængelig'],
+    ['Mac', 'soon', 'Kommer snart'], ['Apple Watch', 'planned', 'Kommer'],
+    ['Påmindelser', 'next', 'Kommer i næste version'], ['Widget', 'next', 'Kommer i næste version'],
+  ], 'cards, in order, with the status the owner gave (iPhone/iPad/Android live; Mac with Apple for review; Watch built but unreleased; reminders and widget in the next version)');
+  for (const c of cards) {
+    if (c.status === 'live') assert.equal(c.links.length, 1, `${c.name}: one store link`);
+    else assert.deepEqual(c.links, [], `${c.name} is not released: no download link`);
+  }
+  assert.deepEqual(cards.filter(c => c.status === 'live').map(c => c.links[0]), [APPLE_URL, APPLE_URL, PLAY_URL, PLAY_URL]);
+  // A card link must never take over the badges' accessible names (the badges are the only "Hent i App Store" / "Hent på Google Play" links on the page).
+  assert.ok([...m.matchAll(/class="dl-more"[^>]*aria-label="([^"]+)"/g)].every(x => !/^Hent /.test(x[1])), 'card links are named differently from the two badges');
+  assert.ok(/<!-- ── Overview of all the apps[\s\S]*STATUS SWITCH: each card carries data-status="live \| soon \| planned \| next"/.test(m), 'the one place that explains the status switch sits above the cards');
+});
+
+test('/download: other ways to get the prices link to pages that exist', () => {
+  const m = mainOf('download');
+  const ways = [...m.matchAll(/<a class="dl-way" href="([^"]+)"/g)].map(x => x[1]);
+  assert.deepEqual(ways, ['/', 'https://github.com/x2q/ha-elpriser', '/automation#shelly', '/api', 'https://github.com/x2q/elpriser-mcp']);
+  for (const w of ways.filter(x => x.startsWith('http'))) assert.ok(m.includes(`href="${w}" rel="noopener"`), `${w} opens as an external link`);
+  assert.ok(/id="shelly"/.test(INDEX) && /data-page="api"/.test(INDEX), '/automation#shelly and /api are pages of this site');
+});
+
+test('/download: screenshots are the real ones, optimised WebP at 1x and 2x, small, with sizes, Danish alt text; only the hero image is eager', () => {
+  const m = mainOf('download');
+  const imgs = [...m.matchAll(/<img ([^>]*\/download\/img\/[^>]*)>/g)].map(x => x[1]);
+  assert.ok(imgs.length >= 10, `${imgs.length} screenshots`);
+  const eager = [];
+  let first = 0;
+  for (const a of imgs) {
+    const attr = n => (a.match(new RegExp(`(?:^|\\s)${n}="([^"]*)"`)) || [])[1];
+    assert.ok(/^\d+$/.test(attr('width')) && /^\d+$/.test(attr('height')), `width/height on ${attr('src')}`);
+    assert.ok((attr('alt') || '').length > 20, `Danish alt text on ${attr('src')}`);
+    const cands = attr('srcset').split(',').map(x => x.trim().split(' '));
+    assert.equal(cands.length, 2, 'a 1x and a 2x candidate');
+    assert.ok(/^(360|640)w$/.test(cands[0][1]) && /^(720|1280)w$/.test(cands[1][1]), 'candidates at 360/720 (phone) or 640/1280 (tablet)');
+    for (const f of new Set([attr('src'), cands[0][0], cands[1][0]])) {
+      assert.ok(/^\/download\/img\/[a-z0-9-]+\.webp$/.test(f), f);
+      const st = fs.statSync(path.join(ROOT, f.slice(1)));
+      assert.ok(st.size < 120 * 1024, `${f} is ${(st.size / 1024) | 0} KB`);   // far below the 400 KB repository limit
+    }
+    if (attr('loading') !== 'lazy') eager.push(attr('src'));
+    if (/fetchpriority="high"/.test(a)) first++;
+  }
+  assert.equal(first, 1, 'exactly one image is fetched with high priority: the hero phone');
+  assert.equal(eager.length, 1, 'and it is the only one not lazy');
+  assert.ok(eager.reduce((n, f) => n + fs.statSync(path.join(ROOT, f.slice(1))).size, 0) <= 150 * 1024, 'what loads at once stays far under the 600 KB budget');
+  assert.ok(fs.readdirSync(DL_IMG).every(f => f.endsWith('.webp') && fs.statSync(path.join(DL_IMG, f)).size < 400 * 1024), 'nothing over 400 KB in download/img, nothing but WebP');
+  assert.ok(/"\/download\/img\/\*"/.test(fs.readFileSync(path.join(ROOT, '_routes.json'), 'utf8')), '_routes.json keeps /download/img off the function');
+  assert.ok(/cp -R download\/img "\$DIST\/download\/img"/.test(fs.readFileSync(path.join(ROOT, 'scripts/build-dist.sh'), 'utf8')), 'build-dist.sh ships the images');
+  assert.ok(/'\.webp': 'image\/webp'/.test(SERVER), 'the dev server types them');
+  const ld = JSON.parse(m.match(/<script type="application\/ld\+json">(\{[\s\S]*?\})<\/script>/)[1]);
+  for (const u of ld.screenshot) assert.ok(fs.existsSync(path.join(ROOT, u.replace('https://elpriser.org/', ''))), `structured-data screenshot ${u} exists`);
+  assert.ok(ld.featureList.length >= 5 && !/Mac|Watch|widget|påmind/i.test(ld.featureList.join(' ')), 'structured data lists live features only');
+});
+
+test('/download: the facts on the page match the code — language count, 30 countries, no unreleased product offered, no emoji', () => {
+  const m = mainOf('download');
+  const text = textOf(m);
+  const langs = JSON.parse(fs.readFileSync(path.join(ROOT, 'i18n/languages.json'), 'utf8')).languages.filter(l => l.ship).length;
+  assert.ok(new RegExp(`${langs} sprog`).test(text) && new RegExp(`dansk og ${langs - 1} andre sprog`).test(text), `the apps ship ${langs} languages`);
+  assert.ok(/30 lande/.test(text) && /Og 29 lande mere/.test(text), 'Danmark and 29 more');
+  assert.ok(/iOS 18 eller nyere/.test(text) && /Android 8 eller nyere/.test(text) && /macOS 15 eller nyere/.test(text), 'the minimum systems');
+  assert.ok(!/\p{Extended_Pictographic}/u.test(m.replace(/<script[\s\S]*?<\/script>/g, '')), 'no emoji in the layout');
+  assert.ok(!/Hent (Mac|Watch)|App Store.{0,40}Mac|download.{0,20}Mac/i.test(text), 'no download for the Mac or the Watch');
+});
+
+test('/download: the reveal is progressive enhancement — content is visible without JS and under reduced motion; colours are tokens', () => {
+  const m = mainOf('download');
+  const css = INDEX.slice(INDEX.indexOf('/* ── /download: the overview of the apps'), INDEX.indexOf('/* ── The net chip opens a dialog'));
+  assert.ok(css.length > 3000, 'the /download block is where the test expects it');
+  // Nothing is hidden by default: the hiding rule needs .dl-js, which only the inline script (on IntersectionObserver, without reduced motion) adds.
+  assert.ok(!/(^|\n)\s*\.dl-rv\s*\{[^}]*opacity:0/.test(css), '.dl-rv is visible by default');
+  assert.ok(/\.dl-js \.dl-rv\{opacity:0/.test(css) && /@media \(prefers-reduced-motion:reduce\)\{\.dl-js \.dl-rv\{opacity:1;transform:none/.test(css), 'hidden only under .dl-js, and not at all with reduced motion');
+  assert.ok(/'IntersectionObserver' in window/.test(m) && /prefers-reduced-motion:reduce/.test(m) && /classList\.add\('dl-js'\)/.test(m), 'the script checks both before it adds .dl-js');
+  assert.ok(/transform:translateY\(26px\)/.test(css) && !/scale\(|rotate\(|blur\(/.test(css.slice(css.indexOf('scroll reveal'))), 'reveal = fade and a short rise, nothing else');
+  // Colours come from the --p-* tokens, which the .dark class remaps; the only literal hex colours are the device frames and the amber chip text (4.5:1 on its light tint).
+  const literals = (css.match(/#[0-9a-fA-F]{3,8}\b/g) || []).filter(h => !['#0b0f1a', '#05070d', '#7a5200', '#000'].includes(h));
+  assert.deepEqual(literals, [], 'literal colours in the /download CSS');
+  // Every dl- class the markup uses is defined (a missing one is a silent unstyled block).
+  const used = new Set([...m.matchAll(/class="([^"]*)"/g)].flatMap(x => x[1].split(/\s+/)).filter(c => c.startsWith('dl-')));
+  for (const c of used) if (!['dl-apple', 'dl-play'].includes(c)) assert.ok(INDEX.includes('.' + c + '{') || INDEX.includes('.' + c + ' ') || INDEX.includes('.' + c + ':') || INDEX.includes('.' + c + ','), `.${c} has no CSS`);
+  // Phone layout: a 16 px gutter and 44 px link targets.
+  assert.ok(/\.dl-in\{[^}]*padding:0 16px/.test(css) && /\.dl-more\{[^}]*min-height:44px/.test(css), '16 px gutter and 44 px link targets');
+  assert.ok(/@media print\{\.dl-js \.dl-rv\{opacity:1/.test(css), 'prints with everything shown');
+});
+
 test('/download: MobileApplication JSON-LD lives on this page only — free, iOS and Android, both stores, no invented rating', () => {
   const m = mainOf('download');
   const ld = JSON.parse(m.match(/<script type="application\/ld\+json">(\{[\s\S]*?\})<\/script>/)[1]);
@@ -2016,6 +2112,22 @@ test('/download: MobileApplication JSON-LD lives on this page only — free, iOS
   assert.ok(!/aggregateRating|ratingValue|reviewCount|review"/i.test(m), 'no rating: there is none to quote');
   assert.ok(!INDEX.slice(0, INDEX.indexOf('<body')).includes('MobileApplication'), 'not in the shared <head>');
   assert.equal((INDEX.match(/"@type": "MobileApplication"/g) || []).length, 1, 'one block, in this main');
+});
+
+test('store clicks: one delegated GA4 listener in the shared script — store_click with store, page, placement and language only, beacon transport, guarded, no new tracker', () => {
+  const a = INDEX.indexOf("document.addEventListener('click',e=>{\n    try{\n      const a=e.target.closest&&e.target.closest('a[href]');");
+  assert.ok(a > 0, 'the listener is in index.html\'s shared behaviour script, not inside a <main>');
+  const src = INDEX.slice(a, INDEX.indexOf('},true);', a) + 8);
+  assert.ok(INDEX.indexOf('function initBehaviorTracking') < a && a < INDEX.indexOf('buildNetDialog();initBehaviorTracking();route();'), 'inside initBehaviorTracking, which runs on every page');
+  assert.ok(/},true\);$/.test(src), 'capture phase');
+  assert.ok(/typeof gtag!=='function'/.test(src) && /catch\(_\)/.test(src), 'guarded: a missing gtag or an error never breaks the page');
+  assert.ok(/gtag\('event','store_click',\{store,page:[^}]*placement:[^}]*lang:document\.documentElement\.lang\|\|'da',transport_type:'beacon'\}\)/.test(src), 'event name and the four parameters, beacon transport');
+  assert.ok(/'app_store'/.test(src) && /'google_play'/.test(src) && /apps\\\.apple\\\.com/.test(src) && /org\\\.elpriser\\\.app/.test(src), 'both stores, the Google one only for our own app');
+  const ev = src.slice(src.indexOf("gtag('event'"));
+  assert.ok(!/localStorage|sessionStorage|cookie|userAgent|navigator\.|location\.|link_url|\bh\b/.test(ev), 'the event carries no visitor data, no URL, no user agent');
+  assert.equal((INDEX.match(/googletagmanager\.com/g) || []).length, 1, 'still only the one existing Google tag; no new tracker or third party');
+  const m = mainOf('download');
+  assert.ok(/data-placement="hero"><div class="dl-stores">/.test(m) && (m.match(/class="dl-more"[^>]*data-placement="card"/g) || []).length === 4, 'the hero badges and the four store cards are tagged');
 });
 
 test('header: "Hent appen" is a plain link to /download — the dialog, its script and its event are gone; the smart banner stays', () => {

@@ -2165,23 +2165,25 @@ async function startServer() {
     .map(a => ({ id: a.classList.contains('dl-apple') ? 'apple' : 'play', x: a.getBoundingClientRect().x, y: a.getBoundingClientRect().y }))
     .sort((a, b) => a.y - b.y || a.x - b.x).map(b => b.id));
 
-  await test('/download: H1, the honest lead, both badges with the exact links and Danish accessible names, in the same size', async () => {
+  await test('/download: H1, the honest lead, both badges with the exact links and Danish accessible names, both 52 px high', async () => {
     await page.goto(BASE + '/download');
     await page.waitForSelector('main[data-page="download"].active');
     assert.equal((await page.locator('main[data-page="download"] .page-title').textContent()).trim(), 'Hent Elpriser-appen');
     const main = await page.locator('main[data-page="download"]').innerText();
     assert.match(main, /i morgen og de næste 5 døgn/);
     assert.doesNotMatch(main, /10 døgn/);
-    const apple = page.getByRole('link', { name: 'Hent i App Store — iPhone og iPad' });
-    const play  = page.getByRole('link', { name: 'Hent på Google Play — Android' });
+    // scoped to the page: the footer carries the same two badges (it has since the official artwork went in)
+    const apple = page.locator('main[data-page="download"]').getByRole('link', { name: 'Hent i App Store — iPhone og iPad' });
+    const play  = page.locator('main[data-page="download"]').getByRole('link', { name: 'Hent på Google Play — Android' });
     assert.equal(await apple.getAttribute('href'), APPLE);
     assert.equal(await play.getAttribute('href'), PLAY);
     for (const l of [apple, play]) assert.equal(await l.getAttribute('rel'), 'noopener');
     const [a, p] = [await apple.boundingBox(), await play.boundingBox()];
-    assert.ok(a.height >= 44 && a.height === p.height && a.width === p.width, `badges differ: ${JSON.stringify([a, p])}`);
+    // the official artwork has its own proportions (Apple's is narrower than Google's): the same height, 52 px, is what "same size" means
+    assert.ok(a.height === 52 && p.height === 52, `badges differ: ${JSON.stringify([a, p])}`);
     assert.equal(await page.locator('header.site-nav a.app-btn').getAttribute('aria-current'), 'page', 'the header button marks the page it leads to');
     assert.equal(await page.locator('.site-links a.on').count(), 0, 'no main-menu item claims this page');
-    assert.equal(await page.evaluate(() => document.title), 'Hent Elpriser-appen — iPhone og Android, gratis');
+    assert.equal(await page.evaluate(() => document.title), 'Hent Elpriser-appen — til iPhone, iPad og Android, gratis');
   });
 
   await test('/download: header "Hent appen" navigates there from the front page, and the footer links it once', async () => {
@@ -2247,6 +2249,121 @@ async function startServer() {
     assert.equal(boxes[0][0], boxes[1][0], 'stacked, left-aligned');
     assert.ok(boxes[1][1] > boxes[0][1], 'one under the other');
     assert.ok(boxes.every(b => b[3] >= 44 && b[2] + b[0] <= 390), JSON.stringify(boxes));
+    await c.close();
+  });
+
+  // The overview page itself (2026-11-03): real screenshots, a reveal that never hides content for good, light and dark, a 360 px phone.
+  const dlMain = 'main[data-page="download"]';
+  const dlImgSel = `${dlMain} img[src*="/download/img/"]`;
+
+  await test('/download: every screenshot loads and is sharp — the 2x file on a 2x screen, nothing stretched — and the hero phone is the only eager image', async () => {
+    const c = await downloadCtx({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
+    const p = await c.newPage();
+    await p.goto(BASE + '/download');
+    await p.waitForSelector(`${dlMain}.active`);
+    assert.equal(await p.locator(dlImgSel).evaluateAll(l => l.filter(i => i.loading !== 'lazy').map(i => i.getAttribute('fetchpriority'))).then(a => a.join()), 'high', 'one eager image, high priority');
+    await p.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 450) { scrollTo(0, y); await new Promise(r => setTimeout(r, 70)); } scrollTo(0, 0); });
+    await p.waitForFunction(s => [...document.querySelectorAll(s)].every(i => i.complete && i.naturalWidth > 0), dlImgSel, { timeout: 15000 });
+    const imgs = await p.locator(dlImgSel).evaluateAll(l => l.map(i => ({ src: i.currentSrc.split('/').pop(), nat: +(i.currentSrc.match(/-(\d+)\.webp$/) || [])[1], w: i.getBoundingClientRect().width, h: i.getBoundingClientRect().height, nw: i.naturalWidth, nh: i.naturalHeight })));
+    assert.ok(imgs.length >= 11, `${imgs.length} screenshots`);
+    for (const i of imgs) {
+      assert.ok(i.nat >= i.w * 2 * 0.98, `${i.src}: a ${i.nat}px-wide file for ${Math.round(i.w)} CSS px on a 2x screen`);
+      assert.ok(Math.abs(i.w / i.h - i.nw / i.nh) < 0.01, `${i.src} keeps its proportions`);
+    }
+    await c.close();
+  });
+
+  await test('/download: with JS the lower sections fade in as they scroll into view; without JS, or with reduced motion, nothing is ever hidden', async () => {
+    const opacity = (p, sel) => p.locator(sel).first().evaluate(e => getComputedStyle(e).opacity);
+    const lower = `${dlMain} .dl-cards .dl-card`;
+    const c = await downloadCtx({ viewport: { width: 1440, height: 900 } });
+    const p = await c.newPage();
+    await p.goto(BASE + '/download');
+    await p.waitForSelector(`${dlMain}.active`);
+    assert.equal(await p.locator(dlMain).evaluate(m => m.classList.contains('dl-js')), true, 'the script switched the reveal on');
+    assert.equal(await opacity(p, `${dlMain} .page-title`), '1', 'the hero is shown at once');
+    assert.equal(await opacity(p, lower), '0', 'a card far below the fold waits for the scroll');
+    await p.locator(lower).first().scrollIntoViewIfNeeded();
+    await p.waitForFunction(s => getComputedStyle(document.querySelector(s)).opacity === '1', lower, { timeout: 5000 });
+    await c.close();
+    for (const [what, opts] of [['no JS', { javaScriptEnabled: false }], ['reduced motion', { reducedMotion: 'reduce' }]]) {
+      const c2 = await downloadCtx({ viewport: { width: 1440, height: 900 }, ...opts });
+      const p2 = await c2.newPage();
+      await p2.goto(BASE + '/download');
+      assert.deepEqual(await p2.locator(`${dlMain} .dl-rv`).evaluateAll(l => [...new Set(l.map(e => getComputedStyle(e).opacity + ' ' + getComputedStyle(e).transform))]), ['1 none'], `${what}: every block is fully shown, in place`);
+      await c2.close();
+    }
+  });
+
+  await test('/download: at 360 px — a 16 px gutter, no horizontal scroll, nothing wider than the screen, links at least 44 px, badges still 52 px', async () => {
+    const c = await downloadCtx({ viewport: { width: 360, height: 740 }, isMobile: true, hasTouch: true });
+    const p = await c.newPage();
+    await p.goto(BASE + '/download');
+    await p.waitForSelector(`${dlMain}.active`);
+    await p.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 400) { scrollTo(0, y); await new Promise(r => setTimeout(r, 40)); } scrollTo(0, 0); });
+    const r = await p.evaluate(() => {
+      const m = document.querySelector('main[data-page="download"]');
+      const wide = [...m.querySelectorAll('*')].filter(e => !e.closest('.dl-hero-dev') && e.getBoundingClientRect().width > 0 && (e.getBoundingClientRect().right > innerWidth + 0.5 || e.getBoundingClientRect().left < -0.5)).map(e => e.className || e.tagName);
+      const edge = Math.min(...[...m.querySelectorAll('.dl-lead,.dl-copy .dl-h,.dl-copy .dl-p,.dl-card,.dl-way')].map(e => e.getBoundingClientRect().left));
+      const small = [...m.querySelectorAll('.dl-more,.dl-way')].filter(e => e.getBoundingClientRect().height < 44).length;
+      const badges = [...m.querySelectorAll('.dl-badge')].map(e => Math.round(e.getBoundingClientRect().height));
+      const imgH = [...m.querySelectorAll('.dl-badge img')].map(e => Math.round(e.getBoundingClientRect().height));
+      return { sw: [document.documentElement.scrollWidth, innerWidth], wide, edge, small, badges, imgH };
+    });
+    assert.equal(r.sw[0], r.sw[1], `horizontal scroll ${r.sw}`);
+    assert.deepEqual(r.wide, [], 'nothing sticks out of the screen');
+    assert.ok(r.edge >= 16 - 0.5, `gutter ${r.edge}`);
+    assert.equal(r.small, 0, 'every card link and every "other way" is at least 44 px high');
+    assert.deepEqual([r.badges, r.imgH], [[52, 52], [52, 52]], 'the official badges keep their 52 px');
+    await c.close();
+  });
+
+  await test('/download: light and dark — the cards, headings and chips follow the Pris tokens, and the status chips tell live from coming', async () => {
+    const look = async scheme => {
+      const c = await downloadCtx({ colorScheme: scheme, viewport: { width: 1440, height: 900 } });
+      const p = await c.newPage();
+      await p.goto(BASE + '/download');
+      await p.waitForSelector(`${dlMain}.active`);
+      const out = await p.evaluate(() => {
+        const cs = (sel, prop) => getComputedStyle(document.querySelector(sel))[prop];
+        const m = 'main[data-page="download"]';
+        return { ground: getComputedStyle(document.body).backgroundColor, card: cs(`${m} .dl-card`, 'backgroundColor'), h: cs(`${m} .dl-h`, 'color'),
+          live: cs(`${m} [data-status="live"] .dl-chip`, 'color'), soon: cs(`${m} [data-status="soon"] .dl-chip`, 'color'), next: cs(`${m} [data-status="next"] .dl-chip`, 'backgroundColor'),
+          nextBorder: cs(`${m} [data-status="next"]`, 'borderTopStyle'), frame: cs(`${m} .dl-phone`, 'backgroundColor') };
+      });
+      await c.close();
+      return out;
+    };
+    const [l, d] = [await look('light'), await look('dark')];
+    assert.equal(l.card, 'rgb(255, 255, 255)'); assert.equal(d.card, 'rgb(22, 29, 48)');
+    assert.equal(l.h, 'rgb(14, 21, 48)'); assert.equal(d.h, 'rgb(238, 242, 249)');
+    assert.equal(l.ground, 'rgb(244, 246, 251)'); assert.equal(d.ground, 'rgb(13, 18, 33)');
+    assert.equal(l.live, 'rgb(19, 122, 67)'); assert.equal(d.live, 'rgb(95, 224, 160)');
+    assert.equal(l.soon, 'rgb(122, 82, 0)'); assert.equal(d.soon, 'rgb(247, 198, 103)');
+    assert.equal(l.nextBorder, 'dashed', 'what is not released yet is drawn dashed, not as a finished card');
+    assert.equal(l.frame, 'rgb(11, 15, 26)'); assert.equal(d.frame, 'rgb(11, 15, 26)', 'the device frame is the same in both themes');
+  });
+
+  await test('/download: a click on a store link sends one store_click to GA4 — hero, card and footer — with the store, page, placement and language, and nothing else', async () => {
+    const c = await downloadCtx({ viewport: { width: 1440, height: 900 } });
+    const p = await c.newPage();
+    await p.goto(BASE + '/download');
+    await p.waitForSelector(`${dlMain}.active`);
+    // Stay on the page (the stores are not reachable in a test): the listener under test runs in the capture phase, before this one.
+    await p.evaluate(() => document.addEventListener('click', e => { if (e.target.closest('a[href^="https://"]')) e.preventDefault(); }));
+    const sent = () => p.evaluate(() => [...window.dataLayer].filter(a => a[0] === 'event' && a[1] === 'store_click').map(a => a[2]));
+    await p.locator(`${dlMain} .dl-badge.dl-apple`).click();
+    await p.locator(`${dlMain} .dl-card .dl-more[href*="play.google.com"]`).first().click();
+    await p.locator('footer a[href*="apps.apple.com"]').first().scrollIntoViewIfNeeded();
+    await p.locator('footer a[href*="apps.apple.com"]').first().click();
+    assert.deepEqual(await sent(), [
+      { store: 'app_store', page: 'download', placement: 'hero', lang: 'da', transport_type: 'beacon' },
+      { store: 'google_play', page: 'download', placement: 'card', lang: 'da', transport_type: 'beacon' },
+      { store: 'app_store', page: 'footer', placement: 'footer', lang: 'da', transport_type: 'beacon' },
+    ]);
+    const before = (await sent()).length;
+    await p.locator(`${dlMain} .dl-way`).first().click();   // an ordinary link sends no store_click
+    assert.equal((await sent()).length, before);
     await c.close();
   });
 
