@@ -105,7 +105,7 @@ a Danish word, a missing placeholder in the accuracy line or a word about gas, c
     esth:'<Back-test, the missing hour: mean error {mae} {u} (the last settled hour alone: {base} {u}).>'},
 
 // CHROME_I18N — the words of the footer and the place dialog
-  xx:{home:'elpriser.org <home page>',land:'Countries',place:'Where are you?',area:'Price zone',oth:'Other countries',back:'Back',find:'Search',none:'No results',close:'Close',
+  xx:{home:'elpriser.org <home page>',app:'Get the app' /* the app page of this language: its title as a short button, = getApp in functions/_download_i18n.js */,land:'Countries',place:'Where are you?',area:'Price zone',oth:'Other countries',back:'Back',find:'Search',none:'No results',close:'Close',
     cn:{dk:'…',no:'…',sv:'…',fi:'…',nl:'…',de:'…',fr:'…',pl:'…',it:'…',at:'…',ch:'…',be:'…',ie:'…',cz:'…' /* every country that has a page; one missing falls back to its own name */},
     privacy:'Privacy (in Danish)' /* the policy at /privatliv is Danish */,src:'Source:',and:'and',open:'Open datasets on',
     chg:'Changed: hourly means calculated by elpriser.org'},

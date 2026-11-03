@@ -1755,7 +1755,7 @@ async function startServer() {
       lang: document.documentElement.lang, scroll: [document.documentElement.scrollWidth, innerWidth],
       navText: links.map(a => a.textContent), chipBox: r(q('#netChip')), logoBox: r(q('.site-logo')),
       logo: q('.site-logo')?.textContent.trim(), logoHref: q('.site-logo')?.getAttribute('href'),
-      chip: !!q('#netChip'), app: !!q('.app-btn'), tabbar: !!q('#tabBar'), dialog: !!q('#netDialog'), actions: [...document.querySelectorAll('.site-actions > *')].map(x => x.id),
+      chip: !!q('#netChip'), app: !!q('.app-btn'), appBtn: (a => a && [a.textContent, a.getAttribute('href')])(q('.site-actions .app-btn')), pill: (a => a && [a.textContent, a.getAttribute('href')])(q('footer .sf-getapp')), tabbar: !!q('#tabBar'), dialog: !!q('#netDialog'), actions: [...document.querySelectorAll('.site-actions > *')].map(x => x.id),
       picker: { title: q('#netDialogTitle')?.textContent, links: [...document.querySelectorAll('#plMain section:last-of-type .pl-grp a')].map(a => [a.textContent, '', a.getAttribute('href'), a.getAttribute('aria-current')]), label: q('#netChip')?.getAttribute('aria-label') },
       headText: q('.site-nav').innerText, footText: q('footer').innerText,
       footHeading: q('footer .sf-h')?.textContent, footLinks: [...document.querySelectorAll('footer .sf-chips a')].map(a => [a.textContent, a.getAttribute('href'), a.getAttribute('aria-current')]),
@@ -1767,7 +1767,7 @@ async function startServer() {
   });
   for (const [url, w] of Object.entries(CHROME)) {
     for (const [vw, vh] of [[1280, 800], [390, 844]]) {
-      await test(`${url} at ${vw} px: header and footer are ${w.lang} — the place chip instead of a menu, no app button/tab bar, slim footer, no overflow`, async () => {
+      await test(`${url} at ${vw} px: header and footer are ${w.lang} — the place chip instead of a menu, "Hent appen" in the page's language, no tab bar, slim footer, no overflow`, async () => {
         const c = await browser.newContext({ viewport: { width: vw, height: vh }, bypassCSP: true, ...(vw < 600 ? { isMobile: true, hasTouch: true } : {}) });
         await c.route('**/*', r => /googletagmanager|google-analytics/.test(r.request().url()) ? r.abort() : r.fallback());
         await c.route('**/api/nordic*', nordicRoute);
@@ -1779,8 +1779,12 @@ async function startServer() {
         assert.deepEqual(s.navText, [], 'no row of country links in the header: the place chip is the country navigation');
         assert.equal(s.picker.title, w.place); assert.equal(s.logo, 'Elpriser'); assert.equal(s.logoHref, '/');
         assert.ok(Math.abs((s.chipBox.t + s.chipBox.h / 2) - (s.logoBox.t + s.logoBox.h / 2)) < 4 && s.navBottom < 80, `the header is one row: logo ${JSON.stringify(s.logoBox)}, chip ${JSON.stringify(s.chipBox)}, height ${s.navBottom}`);
-        assert.deepEqual([s.chip, s.app, s.tabbar, s.dialog], [true, false, false, true], 'the place chip and its dialog, but no app button or tab bar');
-        assert.deepEqual(s.actions, ['netChip'], 'the action row holds the place chip and nothing Danish');
+        assert.deepEqual([s.chip, s.app, s.tabbar, s.dialog], [true, true, false, true], 'the place chip and its dialog and one app button, but no tab bar');
+        // "Hent appen", in this page's language, to the app page in that language: a button in the header (hidden on a phone, like the Danish one) and a pill in the footer
+        const dl = PB.dlHref(w.lang), appWord = PB.CHROME_I18N[w.lang].app;
+        assert.deepEqual(s.appBtn, [appWord, dl], 'the header button'); assert.deepEqual(s.pill, [appWord, dl], 'the footer pill');
+        assert.equal(await p.locator('.site-actions .app-btn').isVisible(), vw >= 700, 'the header button shows on a desktop and not on a phone');
+        assert.deepEqual(s.actions, ['netChip', ''], 'the action row holds the place chip and the app button, nothing Danish');
         // The picker: every country by its own name (Danmark first), in this page's language for its heading, this page's country marked.
         const multi = PB.PRIS_COUNTRIES[url.slice(1)].zones.length > 1;   // a country with several zones: its own country is the zone group, not a row of the list
         assert.equal(s.picker.links.length, PB.PRIS_PICK.length - (multi ? 1 : 0)); assert.equal(s.picker.title, s.picker.label, 'the dialog\'s heading is the chip\'s name');
@@ -2367,6 +2371,121 @@ async function startServer() {
     await c.close();
   });
 
+
+  // ── 10b. The app page in the other languages, and "Hent appen" on every localized page (docs/localized-download.md) ─────────────────────────
+  const DL = { en: ['Get the app'], de: ['App laden'], nb: ['Last ned appen'], fr: ['Obtenir l\'app'], da: ['Hent appen'] };
+
+  await test('/<lang>/download: da, en, de, nb and fr — the page, the language, sharp screenshots of that language, no horizontal scroll at 390 px', async () => {
+    for (const code of Object.keys(DL).filter(k => k !== 'da')) {
+      // a desktop-sized screen loads every image (the second hero phone is not drawn on a phone, so its lazy image never loads there); the phone is checked below
+      const c = await downloadCtx({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
+      const p = await c.newPage();
+      const r = await p.goto(BASE + `/${code}/download`);
+      assert.equal(r.status(), 200);
+      await p.waitForSelector(`${dlMain}.active`);
+      assert.equal(await p.evaluate(() => location.pathname), `/${code}/download`, `${code}: the router keeps the address (it did send /xx/download to / before the page was a route)`);
+      assert.equal(await p.evaluate(() => document.documentElement.lang), code);
+      assert.ok((await p.locator(`${dlMain} .page-title`).textContent()).trim().length > 5, `${code}: a title`);
+      assert.ok(await p.locator('h1').count() === 1, `${code}: one h1`);
+      await p.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 500) { scrollTo(0, y); await new Promise(r => setTimeout(r, 60)); } scrollTo(0, 0); });
+      await p.waitForFunction(s => [...document.querySelectorAll(s)].every(i => i.complete && i.naturalWidth > 0), dlImgSel, { timeout: 15000 });
+      const srcs = await p.locator(dlImgSel).evaluateAll(l => l.map(i => i.currentSrc));
+      assert.equal(srcs.length, 6, `${code}: six screenshots`);
+      assert.ok(srcs.filter(u => u.includes(`/download/img/${code}/`)).length >= 5, `${code}: the screenshots are the ones captured in ${code} (the iPad of a few languages is the English one)`);
+      for (const i of await p.locator(dlImgSel).evaluateAll(l => l.map(i => ({ src: i.currentSrc.split('/').pop(), nat: +(i.currentSrc.match(/-(\d+)\.webp$/) || [])[1], w: i.getBoundingClientRect().width })))) assert.ok(i.nat >= i.w * 2 * 0.98, `${code}: ${i.src} is ${i.nat}px for ${Math.round(i.w)} CSS px on a 2x screen`);
+      await c.close();
+      const m = await downloadCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+      const q = await m.newPage();
+      await q.goto(BASE + `/${code}/download`);
+      await q.waitForSelector(`${dlMain}.active`);
+      const wide = await q.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      assert.ok(wide <= 0, `${code}: ${wide}px of horizontal scroll at 390 px`);
+      await m.close();
+    }
+    // the Danish page is unchanged and now lists the others
+    const c = await downloadCtx({ viewport: { width: 1280, height: 800 } });
+    const p = await c.newPage();
+    await p.goto(BASE + '/download');
+    await p.waitForSelector(`${dlMain}.active`);
+    assert.equal(await p.evaluate(() => document.documentElement.lang), 'da');
+    assert.equal((await p.locator(`${dlMain} .page-title`).textContent()).trim(), 'Hent Elpriser-appen');
+    await c.close();
+  });
+
+  await test('"Hent appen" on the country pages: the header button and the footer pill go to the app page in the page\'s language — /no/strompris → /nb/download, /fr/prix-electricite → /fr/download, /de/strompreis → /de/download', async () => {
+    for (const [from, code] of [['/no/strompris', 'nb'], ['/fr/prix-electricite', 'fr'], ['/de/strompreis', 'de'], ['/gb/electricity-price', 'en']]) {
+      const c = await downloadCtx({ viewport: { width: 1280, height: 800 } });
+      const p = await c.newPage();
+      await p.goto(BASE + from);
+      await p.waitForSelector('footer.sf-x');
+      const [label] = DL[code];
+      const btn = p.locator('header.site-nav a.app-btn');
+      assert.equal(await btn.getAttribute('href'), `/${code}/download`, `${from}: header button`);
+      assert.equal((await btn.textContent()).trim(), label);
+      assert.equal(await p.locator('footer a.sf-getapp').getAttribute('href'), `/${code}/download`, `${from}: footer pill`);
+      assert.equal(await btn.isVisible(), true, `${from}: the header button is visible on a desktop`);
+      assert.ok((await btn.boundingBox()).height >= 40, 'a real target');
+      await btn.click();
+      await p.waitForSelector(`${dlMain}.active`);
+      assert.equal(await p.evaluate(() => location.pathname), `/${code}/download`, `${from}: lands on the language's page`);
+      assert.equal(await p.evaluate(() => document.documentElement.lang), code);
+      assert.equal(await p.locator('header.site-nav a.app-btn').getAttribute('aria-current'), 'page');
+      assert.equal(await p.locator('footer a.sf-getapp').count(), 1, 'the footer pill is on the app page too');
+      await c.close();
+    }
+    // on a phone the header button is hidden (like the Danish header's) and the footer pill is the way
+    const c = await downloadCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const p = await c.newPage();
+    await p.goto(BASE + '/no/strompris');
+    await p.waitForSelector('footer.sf-x');
+    assert.equal(await p.locator('header.site-nav a.app-btn').isVisible(), false);
+    await p.locator('footer a.sf-getapp').scrollIntoViewIfNeeded();
+    assert.ok((await p.locator('footer a.sf-getapp').boundingBox()).height >= 44, 'the pill is a 44 px target');
+    await p.locator('footer a.sf-getapp').click();
+    await p.waitForSelector(`${dlMain}.active`);
+    assert.equal(await p.evaluate(() => location.pathname), '/nb/download');
+    await c.close();
+  });
+
+  await test('/<lang>/download: the language links of the footer lead to the other versions, and store clicks are counted with the page\'s language', async () => {
+    const c = await downloadCtx({ viewport: { width: 1280, height: 800 } });
+    const p = await c.newPage();
+    await p.goto(BASE + '/de/download');
+    await p.waitForSelector(`${dlMain}.active`);
+    assert.equal(await p.locator('footer .sf-chips a[hreflang]').count(), 26);
+    await p.evaluate(() => document.addEventListener('click', e => { if (e.target.closest('a[href^="https://"]')) e.preventDefault(); }));
+    const sent = () => p.evaluate(() => [...window.dataLayer].filter(a => a[0] === 'event' && a[1] === 'store_click').map(a => a[2]));
+    await p.locator(`${dlMain} .dl-badge.dl-play`).click();
+    await p.locator(`${dlMain} .dl-card .dl-more[href*="apps.apple.com"]`).first().click();
+    assert.deepEqual(await sent(), [
+      { store: 'google_play', page: 'download', placement: 'hero', lang: 'de', transport_type: 'beacon' },
+      { store: 'app_store', page: 'download', placement: 'card', lang: 'de', transport_type: 'beacon' },
+    ]);
+    await p.locator('footer .sf-chips a[hreflang="fr"]').click();
+    await p.waitForSelector(`${dlMain}.active`);
+    assert.equal(await p.evaluate(() => location.pathname + ' ' + document.documentElement.lang), '/fr/download fr');
+    await c.close();
+  });
+
+  await test('/<lang>/download: without JavaScript the whole page is there; the Android banner is not shown on it, but is on a country page', async () => {
+    const c = await downloadCtx({ viewport: { width: 1280, height: 800 }, javaScriptEnabled: false });
+    const p = await c.newPage();
+    await p.goto(BASE + '/de/download');
+    assert.deepEqual(await p.locator(`${dlMain} .dl-rv`).evaluateAll(l => [...new Set(l.map(e => getComputedStyle(e).opacity))]), ['1']);
+    assert.equal(await p.locator(`${dlMain} .dl-card`).count(), 8);
+    assert.equal(await p.locator(`${dlMain} img[src*="/download/img/de/"]`).count() >= 5, true);
+    await c.close();
+    const a = await downloadCtx({ userAgent: ANDROID_UA, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const q = await a.newPage();
+    await q.goto(BASE + '/de/download');
+    await q.waitForSelector(`${dlMain}.active`);
+    await q.waitForTimeout(400);
+    assert.equal(await q.locator('#app-banner').count(), 0, 'no banner on the app page');
+    await q.goto(BASE + '/de/strompreis');
+    await q.waitForSelector('footer.sf-x');
+    await q.waitForSelector('#app-banner', { timeout: 5000 });
+    await a.close();
+  });
 
   // ── City pages: /elpris/<by> ─────────────────────────────────────────────────
 

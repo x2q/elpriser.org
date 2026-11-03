@@ -1684,6 +1684,10 @@ test('Danish pages: the footer chips and the place dialog list the countries of 
   run('sync-pris-block.mjs');
 });
 
+test('the Danish app page in index.html is derived from the one template and text table (functions/_download.js; scripts/sync-download-page.mjs)', () => {
+  try { require('node:child_process').execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'sync-download-page.mjs'), '--check'], { stdio: 'pipe' }); } catch (e) { assert.fail(String(e.stderr || e.message).trim()); }
+});
+
 test('footer: both app stores are linked with the official badges, rel=noopener, a name for screen readers', () => {
   for (const [url, label, img] of [
     ['https://apps.apple.com/dk/app/id6820474476', 'Hent i App Store — iPhone og iPad', '/badges/app-store-da.svg'],
@@ -1761,7 +1765,8 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
   // (v10: the four EU price pages joined, the Pris block gained PRIS_ACT and the footer the four links.)
   // (v17: per-country i18n (prisPageL), Austria, Switzerland, Belgium and Ireland joined.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v25'/.test(ROUTES), 'zone-ssr-v25');
+  // (v26: the header button and the footer pill "Hent appen" in the page's language, to the app page in that language.)
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v26'/.test(ROUTES), 'zone-ssr-v26');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
@@ -2063,7 +2068,9 @@ test('/download: screenshots are the real ones, optimised WebP at 1x and 2x, sma
   assert.equal(first, 1, 'exactly one image is fetched with high priority: the hero phone');
   assert.equal(eager.length, 1, 'and it is the only one not lazy');
   assert.ok(eager.reduce((n, f) => n + fs.statSync(path.join(ROOT, f.slice(1))).size, 0) <= 150 * 1024, 'what loads at once stays far under the 600 KB budget');
-  assert.ok(fs.readdirSync(DL_IMG).every(f => f.endsWith('.webp') && fs.statSync(path.join(DL_IMG, f)).size < 400 * 1024), 'nothing over 400 KB in download/img, nothing but WebP');
+  // download/img holds the Danish screenshots and one folder per other language (test-download-i18n.mjs pins those): nothing but WebP, nothing over 400 KB, at any depth.
+  const dlFiles = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? dlFiles(path.join(d, e.name)) : [path.join(d, e.name)]);
+  assert.ok(dlFiles(DL_IMG).every(f => f.endsWith('.webp') && fs.statSync(f).size < 400 * 1024), 'nothing over 400 KB in download/img, nothing but WebP');
   assert.ok(/"\/download\/img\/\*"/.test(fs.readFileSync(path.join(ROOT, '_routes.json'), 'utf8')), '_routes.json keeps /download/img off the function');
   assert.ok(/cp -R download\/img "\$DIST\/download\/img"/.test(fs.readFileSync(path.join(ROOT, 'scripts/build-dist.sh'), 'utf8')), 'build-dist.sh ships the images');
   assert.ok(/'\.webp': 'image\/webp'/.test(SERVER), 'the dev server types them');
@@ -2266,7 +2273,7 @@ test('app banner: one script, a text in every language a page can have, Android 
   const langs = new Set(['da', ...Object.values(PRIS.PRIS_COUNTRIES).map(C => C.lang)]);
   const T = require('node:vm').runInNewContext('(function(){' + BANNER_SRC.match(/var T=\{[\s\S]*?\n  \};/)[0] + ' return T;})()');
   for (const l of langs) assert.ok(T[l] && T[l].length === 3 && T[l].every(s => s && s.length > 1), `banner text for ${l}`);
-  assert.ok(/\/Android\/i\.test\(navigator\.userAgent\)/.test(BANNER_SRC) && /display-mode: standalone/.test(BANNER_SRC) && /\^\\\/download/.test(BANNER_SRC), 'Android only, not in the installed web app, not on /download');
+  assert.ok(/\/Android\/i\.test\(navigator\.userAgent\)/.test(BANNER_SRC) && /display-mode: standalone/.test(BANNER_SRC) && /\^\(\\\/\[a-z\]\{2\}\)\?\\\/download\$/.test(BANNER_SRC), 'Android only, not in the installed web app, not on /download or /<lang>/download');
   assert.ok(/play\.google\.com\/store\/apps\/details\?id=org\.elpriser\.app&hl=/.test(BANNER_SRC), 'links to the Play listing in the page language');
   assert.ok(!/gtag|fetch\(|XMLHttpRequest|sendBeacon/.test(BANNER_SRC), 'no tracking or network call of its own');
 });

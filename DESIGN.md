@@ -360,8 +360,11 @@ platform, "Uden app" links. Large type is Manrope at weight 300 with a bold tail
   `scripts/make-download-images.py` from the store renders. Static path: excluded in `_routes.json`, copied in
   `scripts/build-dist.sh`. Only the hero phone is eager (`fetchpriority="high"`); the rest are `loading="lazy"`.
 - **Status switch**: each platform card carries `data-status="live | soon | planned | next"` (colours the chip) and the chip
-  text next to it. Flip both together when a product is released; the comment above the cards is the legend. Live cards
-  are the only ones with a store link.
+  text next to it. Live cards are the only ones with a store link. Since 2026-11-03 the markup is DERIVED: the template and the
+  status table (`APPS`, `FACTS`) are in `functions/_download.js`, the words in `functions/_download_i18n.js`; change a status
+  there and run `node scripts/sync-download-page.mjs` (it rewrites this `<main>`; the gate checks it). The same template draws
+  the page in the 25 other languages (`/<lang>/download`, screenshots per language in `download/img/<lang>/`): see
+  `docs/localized-download.md`.
 - **Scroll reveal** is progressive enhancement: the inline script at the top of the main adds `.dl-js` only when
   `IntersectionObserver` exists and reduced motion is off; `.dl-js .dl-rv` is then hidden until it enters the viewport
   (fade and a 26 px rise, nothing else). Without JS, with reduced motion or in print everything is visible.

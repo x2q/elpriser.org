@@ -376,7 +376,10 @@ async function main() {
     if (unit) {
       const chrome = page.replace(/<!--[\s\S]*?-->/g, '');
       check(/<html lang="[A-Za-z-]+" class="xc">/.test(r.body) && !/class="site-links"/.test(chrome) && /id="netChip"/.test(chrome) && !/countryBtn/.test(chrome) && /<footer class="sf sf-x"/.test(chrome) && /<a href="\/privatliv" hreflang="da">/.test(chrome), `${p}: stedschip uden landerække i headeren, slank fod på sidens sprog`);
-      check(!/class="app-btn|class="tabbar|id="gpsBtn|netDlgDK|Smart hjem|Hent appen|Hovedmenu|Alle netselskaber/.test(chrome), `${p}: ingen dansk app-knap, menu, mobilbar eller netselskabsliste`);
+      check(!/class="tabbar|id="gpsBtn|netDlgDK|Smart hjem|Hent appen|Hovedmenu|Alle netselskaber/.test(chrome), `${p}: ingen dansk menu, mobilbar eller netselskabsliste, og ikke det danske "Hent appen"`);
+      // "Hent appen" in the page's own language: the header button and the footer pill, both to the app page in that language (/<code>/download), which the sitemap lists
+      const dl = (chrome.match(/<a href="(\/[a-z]{2}\/download)" class="app-btn">[^<]{4,}<\/a>/) || [])[1];
+      check(dl && chrome.includes('<a class="sf-getapp" href="' + dl + '">') && sitemap.includes(`<loc>${CANONICAL_ORIGIN}${dl}</loc>`), `${p}: "Hent appen" i header og fod peger på appsiden på sidens sprog (${dl})`);
     }
   }
   // The EU pages show settled prices (data CC BY 4.0 from Bundesnetzagentur | SMARD.de via Energy-Charts) and, when the zone has a forecast (the Spark job
@@ -488,6 +491,13 @@ async function main() {
   const apiPage = await get('/api');
   check(types(apiPage.body).includes('Dataset') && types(apiPage.body).includes('BreadcrumbList'), '/api: Dataset og brødkrummer');
   check(/hreflang="da" href="https:\/\/elpriser\.org\/api"/.test(apiPage.body) && !/7-dages/.test(apiPage.body), '/api: hreflang peger på sig selv, 10-dages prognose');
+  // The app page in 26 languages (docs/localized-download.md): each lists the whole set, x-default is English, the html lang is the page's, the page names its own language's store badge text.
+  for (const [p, lang] of [['/download', 'da'], ['/en/download', 'en'], ['/de/download', 'de'], ['/nb/download', 'nb'], ['/sr/download', 'sr-Latn']]) {
+    const r = await get(p);
+    const alts = [...r.body.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)">/g)];
+    check(r.status === 200 && alts.length === 27 && alts.some(a => a[1] === 'x-default' && a[2] === CANONICAL_ORIGIN + '/en/download') && alts.some(a => a[1] === lang && a[2] === CANONICAL_ORIGIN + p), `${p}: 200 og hele hreflang-sættet (26 sider + x-default)`, `${r.status} ${alts.length}`);
+    check(new RegExp(`<html lang="${lang}"`).test(r.body) && (r.body.match(/<img [^>]*\/download\/img\//g) || []).length >= 6, `${p}: html lang="${lang}" og skærmbillederne er med`);
+  }
   const full = await get('/llms-full.txt');
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Copenhagen' }).format(new Date());
   check(full.body.includes(`## Elpriser lige nu (${today}`) && /DK1 \(Vestdanmark\), kl\. \d\d:00: spotpris -?\d+,\d\d kr\/kWh/.test(full.body), 'llms-full.txt: dagens tal med dato');
