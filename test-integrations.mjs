@@ -53,7 +53,7 @@ for (const i of M.INTEGRATIONS) {
 const code = id => M.INTEGRATIONS.find(i => i.id === id).codes.map(c => c.text).join('\n');
 ok(code('python') === 'pip install "git+https://github.com/x2q/elpriser-python"', 'python: install line from the README');
 ok(code('javascript') === 'npm install elpriser-client', 'javascript: install line from the README');
-ok(code('node-red') === 'npm install x2q/node-red-contrib-elpriser', 'node-red: install line from the README');
+ok(code('node-red') === 'npm install node-red-contrib-elpriser', 'node-red: install line from the README');
 ok(/^npx -y elpriser-mcp\nhttps:\/\/elpriser\.org\/mcp$/.test(code('mcp')), 'mcp: npx line and the hosted URL');
 ok(code('home-assistant') === 'https://github.com/x2q/ha-elpriser', 'home-assistant: the custom-repository URL');
 ok(code('esphome').includes('github://x2q/esphome-elpriser/elpriser.yaml@main'), 'esphome: the package line');
