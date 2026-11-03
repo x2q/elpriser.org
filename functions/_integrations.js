@@ -101,14 +101,14 @@ export const INTEGRATIONS = [
   {
     id: 'evcc', group: 'smart-home', name: 'evcc', platform: 'Dynamisk tarif',
     blurb: 'Elprisen som dynamisk nettarif i evcc, så planlæggeren kan lade elbilen i de billigste timer. Prognosen er med.',
-    status: 'github', version: 'v0.1.0',
+    status: 'applied', version: 'v0.1.0',
     coverage: ZONES40,
     how: 'Kopiér en af eksempelfilerne ind i din evcc.yaml og genstart evcc. Der er eksempler for Danmark (også med netselskabets tarif), Tyskland og Sverige.',
     codes: [],
-    note: 'Endnu ikke en del af evcc. Testet mod evcc bygget fra master den 3. november 2026.',
+    note: 'Indsendt til evcc som skabelon den 3. november 2026 og afventer gennemgang; endnu ikke en del af evcc. Testet mod evcc bygget fra master samme dag.',
     repo: 'evcc-elpriser',
-    llms: 'kopiér et eksempel fra examples/ ind i evcc.yaml; endnu ikke en del af evcc',
-    links: [{ label: 'Eksempelfiler', href: GH + 'evcc-elpriser/tree/main/examples' }],
+    llms: 'kopiér et eksempel fra examples/ ind i evcc.yaml; indsendt til evcc (pull request 35753), endnu ikke en del af evcc',
+    links: [{ label: 'Eksempelfiler', href: GH + 'evcc-elpriser/tree/main/examples' }, { label: 'Pull request hos evcc', href: 'https://github.com/evcc-io/evcc/pull/35753' }],
   },
   {
     id: 'openhab', group: 'smart-home', name: 'openHAB', platform: 'Konfigurationspakke',
