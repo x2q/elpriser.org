@@ -2362,7 +2362,7 @@ async function startServer() {
       { store: 'app_store', page: 'footer', placement: 'footer', lang: 'da', transport_type: 'beacon' },
     ]);
     const before = (await sent()).length;
-    await p.locator(`${dlMain} .dl-way`).first().click();   // an ordinary link sends no store_click
+    await p.locator(`${dlMain} .dl-way[href*="github.com/x2q/elpriser-mcp"]`).click();   // another external link sends no store_click
     assert.equal((await sent()).length, before);
     await c.close();
   });
