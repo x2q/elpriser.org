@@ -290,6 +290,8 @@ Human-readable docs: [/api](https://elpriser.org/api).
 **MCP server**: [elpriser-mcp](https://github.com/x2q/elpriser-mcp) — a free Model Context
 Protocol server (run \`npx -y elpriser-mcp\`) gives Claude Desktop and other MCP clients
 native tools for current price, cheapest hours and the price forecast.
+remote: https://elpriser.org/mcp — the same tools as a hosted MCP server (Streamable HTTP, no key, nothing to install):
+add it as a custom connector in Claude or ChatGPT, or pass the URL to any MCP client. Discovery: [/mcp/server-card](https://elpriser.org/mcp/server-card).
 
 Send a User-Agent header: Cloudflare answers 403 to Python's default \`Python-urllib/3.x\`; any other value (curl, requests, \`my-app/1.0\`) works.
 
@@ -574,7 +576,7 @@ Slug bruges i URL-mønsteret \`https://elpriser.org/dk1/<slug>\` eller \`https:/
 ## Åbne datasæt og værktøjer
 
 - **Hugging Face** — [huggingface.co/Elpriser](https://huggingface.co/Elpriser): historiske pris-, produktions- og markedsdatasæt som parquet-filer, ét datasæt pr. land, licenseret under CC BY 4.0. Velegnet til backtesting, ML-træning og statistisk analyse uden at skulle scrape API'et for historik.
-- **MCP-server** — [github.com/x2q/elpriser-mcp](https://github.com/x2q/elpriser-mcp): en Model Context Protocol-server til LLM-agenter. Kør \`npx -y elpriser-mcp\` for at give Claude Desktop og andre MCP-klienter native værktøjer til aktuel pris, billigste timer og prisprognosen — uden selv at skulle bygge HTTP-kald.
+- **MCP-server** — [github.com/x2q/elpriser-mcp](https://github.com/x2q/elpriser-mcp): en Model Context Protocol-server til LLM-agenter. Kør \`npx -y elpriser-mcp\` for at give Claude Desktop og andre MCP-klienter native værktøjer til aktuel pris, billigste timer og prisprognosen — uden selv at skulle bygge HTTP-kald. Uden installation: den samme server findes hostet på \`https://elpriser.org/mcp\` (Streamable HTTP, ingen nøgle) — tilføj URL'en som connector i Claude eller ChatGPT.
 - **JS/TS-klient** — [github.com/x2q/elpriser-client](https://github.com/x2q/elpriser-client): en letvægts JavaScript/TypeScript-klient til elpriser.org's API, til brug i Node.js, browser eller edge-funktioner.
 `;
 
