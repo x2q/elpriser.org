@@ -1751,20 +1751,20 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // v81: the footer and the place dialog list the countries of PRIS_COUNTRIES (Østrig, Schweiz, Belgien, Irland joined).
   // v84: the footer and the place dialog list the United Kingdom and Kosovo; Ireland's source is SEMOpx.
   // v85: the Pris screen draws PRIS_EUF (forecast days of the EU zones: band, accuracy line, note) and the llms text says so.
-  assert.ok(/homepage-ssr-v85/.test(ROUTES), 'homepage-ssr-v85');
+  assert.ok(/homepage-ssr-v86/.test(ROUTES), 'homepage-ssr-v86');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
   // (v8: the shared Pris block changed with PRIS_FC.)
   // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
   // (v10: the four EU price pages joined, the Pris block gained PRIS_ACT and the footer the four links.)
   // (v17: per-country i18n (prisPageL), Austria, Switzerland, Belgium and Ireland joined.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v21'/.test(ROUTES), 'zone-ssr-v21');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v22'/.test(ROUTES), 'zone-ssr-v22');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
   // (v13: the four new country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v17'/.test(ROUTES), 'city-ssr-v17');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v18'/.test(ROUTES), 'city-ssr-v18');
   // /prognose shares the header and footer too (v4: the four EU country links).
-  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v15'/.test(ROUTES), 'prognose-ssr-v15');
+  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v16'/.test(ROUTES), 'prognose-ssr-v16');
 });
 
 

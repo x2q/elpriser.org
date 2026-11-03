@@ -982,7 +982,11 @@ var PRIS_I18N={
     fca:'Test på historiske data, D+{h}: middelfejl {mae} EUR/MWh, {g} % under en simpel metode ({r} % siden 1. sept. 2026).',
     fcae:'Test på historiske data, D+{h}: middelfejl {mae} EUR/MWh (en simpel metode: {base} EUR/MWh).',
     fcr:'Den udpeger de billigste timer {r} % bedre end en simpel metode.',
-    fcc:'I testen lå {c} % af timerne inden for båndet.'},
+    fcc:'I testen lå {c} % af timerne inden for båndet.',
+    est:'Skøn',
+    estn:'Timer markeret Skøn er ikke offentliggjorte priser. Det er elpriser.orgs eget statistiske skøn for timer uden pris endnu, beregnet ud fra de timer, der allerede er afgjort, vejrprognosen og kalenderen. Hvert skøn erstattes af den afgjorte pris, så snart den er offentliggjort.',
+    esta:'Test på historiske data, resten af dagen: middelfejl {mae} {u}, {g} % under en simpel metode ({r} % siden 1. sept. 2026).',
+    esth:'Test på historiske data, den manglende time: middelfejl {mae} {u} (sidste afgjorte time alene: {base} {u}).'},
   nb:{wd:['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'],ws:['søn','man','tir','ons','tor','fre','lør'],
     mon:['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'],dot:'.',
     now:'Strømpris akkurat nå',hourly:'Strømpris time for time',at:'kl.',today:'i dag',tomorrow:'i morgen',evening:'i kveld',
@@ -998,7 +1002,11 @@ var PRIS_I18N={
     fca:'Test på historiske data, D+{h}: gjennomsnittlig feil {mae} EUR/MWh, {g} % under en enkel metode ({r} % siden 1. sept. 2026).',
     fcae:'Test på historiske data, D+{h}: gjennomsnittlig feil {mae} EUR/MWh (en enkel metode: {base} EUR/MWh).',
     fcr:'Den peker ut de billigste timene {r} % bedre enn en enkel metode.',
-    fcc:'I testen lå {c} % av timene innenfor båndet.'},
+    fcc:'I testen lå {c} % av timene innenfor båndet.',
+    est:'Anslag',
+    estn:'Timer merket Anslag er ikke publiserte priser. Det er elpriser.orgs eget statistiske anslag for timer som ennå ikke har pris, beregnet ut fra timene som allerede er avgjort, værvarselet og kalenderen. Hvert anslag erstattes av den avgjorte prisen så snart den er publisert.',
+    esta:'Test på historiske data, resten av dagen: gjennomsnittlig feil {mae} {u}, {g} % under en enkel metode ({r} % siden 1. sept. 2026).',
+    esth:'Test på historiske data, den manglende timen: gjennomsnittlig feil {mae} {u} (bare siste avgjorte time: {base} {u}).'},
   sv:{wd:['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'],ws:['sön','mån','tis','ons','tors','fre','lör'],
     mon:['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'],dot:'',
     now:'Elpris just nu',hourly:'Elpris timme för timme',at:'kl.',today:'idag',tomorrow:'imorgon',evening:'ikväll',
@@ -1014,7 +1022,11 @@ var PRIS_I18N={
     fca:'Test på historiska data, D+{h}: genomsnittligt fel {mae} EUR/MWh, {g} % under en enkel metod ({r} % sedan 1 sept. 2026).',
     fcae:'Test på historiska data, D+{h}: genomsnittligt fel {mae} EUR/MWh (en enkel metod: {base} EUR/MWh).',
     fcr:'Den pekar ut de billigaste timmarna {r} % bättre än en enkel metod.',
-    fcc:'I testet låg {c} % av timmarna inom bandet.'},
+    fcc:'I testet låg {c} % av timmarna inom bandet.',
+    est:'Uppskattning',
+    estn:'Timmar markerade Uppskattning är inte publicerade priser. Det är elpriser.orgs egen statistiska uppskattning för timmar som ännu saknar pris, beräknad från timmarna som redan är avgjorda, väderprognosen och kalendern. Varje uppskattning ersätts av det avgjorda priset så snart det publiceras.',
+    esta:'Test på historiska data, resten av dagen: genomsnittligt fel {mae} {u}, {g} % under en enkel metod ({r} % sedan 1 sept. 2026).',
+    esth:'Test på historiska data, den saknade timmen: genomsnittligt fel {mae} {u} (enbart den senaste avgjorda timmen: {base} {u}).'},
   fi:{wd:['sunnuntai','maanantai','tiistai','keskiviikko','torstai','perjantai','lauantai'],ws:['su','ma','ti','ke','to','pe','la'],
     mon:['tammik.','helmik.','maalisk.','huhtik.','toukok.','kesäk.','heinäk.','elok.','syysk.','lokak.','marrask.','jouluk.'],dot:'.',
     now:'Sähkön hinta juuri nyt',hourly:'Sähkön hinta tunneittain',at:'klo',today:'tänään',tomorrow:'huomenna',evening:'illalla',
@@ -1030,7 +1042,11 @@ var PRIS_I18N={
     fca:'Testi historiatiedoilla, D+{h}: keskivirhe {mae} EUR/MWh, {g} % pienempi kuin yksinkertaisella menetelmällä ({r} % 1.9.2026 alkaen).',
     fcae:'Testi historiatiedoilla, D+{h}: keskivirhe {mae} EUR/MWh (yksinkertainen menetelmä: {base} EUR/MWh).',
     fcr:'Se osoittaa halvimmat tunnit {r} % paremmin kuin yksinkertainen menetelmä.',
-    fcc:'Testissä {c} % tunneista osui vaihteluvälin sisään.'},
+    fcc:'Testissä {c} % tunneista osui vaihteluvälin sisään.',
+    est:'Arvio',
+    estn:'Arvio-merkityt tunnit eivät ole julkaistuja hintoja. Ne ovat elpriser.orgin oma tilastollinen arvio tunneille, joilla ei vielä ole hintaa, laskettuna jo vahvistetuista tunneista, sääennusteesta ja kalenterista. Jokainen arvio korvataan vahvistetulla hinnalla heti, kun se julkaistaan.',
+    esta:'Testi historiatiedoilla, päivän loppuosa: keskivirhe {mae} {u}, {g} % pienempi kuin yksinkertaisella menetelmällä ({r} % 1.9.2026 alkaen).',
+    esth:'Testi historiatiedoilla, puuttuva tunti: keskivirhe {mae} {u} (pelkkä viimeisin vahvistettu tunti: {base} {u}).'},
   nl:{wd:['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'],ws:['zo','ma','di','wo','do','vr','za'],
     mon:['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'],dot:'',
     now:'Stroomprijs nu',hourly:'Stroomprijs per uur',at:'om',today:'vandaag',tomorrow:'morgen',evening:'vanavond',
@@ -1047,7 +1063,11 @@ var PRIS_I18N={
     fca:'Test op historische data, D+{h}: gemiddelde fout {mae} EUR/MWh, {g} % lager dan bij een eenvoudige methode ({r} % sinds 1 sept. 2026).',
     fcae:'Test op historische data, D+{h}: gemiddelde fout {mae} EUR/MWh (een eenvoudige methode: {base} EUR/MWh).',
     fcr:'Het wijst de goedkoopste uren {r} % beter aan dan een eenvoudige methode.',
-    fcc:'In de test viel {c} % van de uren binnen de band.'},
+    fcc:'In de test viel {c} % van de uren binnen de band.',
+    est:'Schatting',
+    estn:'Uren met het label Schatting zijn geen gepubliceerde prijzen. Het is de eigen statistische schatting van elpriser.org voor uren die nog geen prijs hebben, berekend uit de uren die al vaststaan, de weersverwachting en de kalender. Elke schatting wordt vervangen door de vastgestelde prijs zodra die is gepubliceerd.',
+    esta:'Test op historische data, de rest van de dag: gemiddelde fout {mae} {u}, {g} % lager dan bij een eenvoudige methode ({r} % sinds 1 sept. 2026).',
+    esth:'Test op historische data, het ontbrekende uur: gemiddelde fout {mae} {u} (alleen het laatste vastgestelde uur: {base} {u}).'},
   // The EU price pages (PRIS_COUNTRIES `act`) show settled day-ahead prices and, when their zone has one, a forecast (PRIS_EUF): `fc` is the
   // word "forecast" in every language, `actual` the day-ahead price. The table of a language used by such a page carries three more
   // keys: act1 / act2, the card title for one and for two days, and cheapRest, the sentence when only today is known (PRIS_ACT).
@@ -1074,7 +1094,11 @@ var PRIS_I18N={
     fca:'Rückblick-Test, D+{h}: mittlerer Fehler {mae} EUR/MWh, {g} % unter einer einfachen Methode ({r} % seit 1.9.2026).',
     fcae:'Rückblick-Test, D+{h}: mittlerer Fehler {mae} EUR/MWh (eine einfache Methode: {base} EUR/MWh).',
     fcr:'Die günstigsten Stunden erkennt es {r} % besser als eine einfache Methode.',
-    fcc:'Im Test lagen {c} % der Stunden innerhalb der Spanne.'},
+    fcc:'Im Test lagen {c} % der Stunden innerhalb der Spanne.',
+    est:'Schätzung',
+    estn:'Als Schätzung markierte Stunden sind keine veröffentlichten Preise. Es ist die eigene statistische Schätzung von elpriser.org für Stunden, die noch keinen Preis haben, berechnet aus den bereits feststehenden Stunden, der Wettervorhersage und dem Kalender. Jede Schätzung wird durch den festgestellten Preis ersetzt, sobald er veröffentlicht ist.',
+    esta:'Rückblick-Test, Rest des Tages: mittlerer Fehler {mae} {u}, {g} % unter einer einfachen Methode ({r} % seit 1.9.2026).',
+    esth:'Rückblick-Test, die fehlende Stunde: mittlerer Fehler {mae} {u} (allein die letzte feststehende Stunde: {base} {u}).'},
   fr:{wd:['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'],ws:['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'],
     mon:['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'],dot:'',hs:' h',
     now:'Prix de l’électricité maintenant',hourly:'Prix de l’électricité heure par heure',at:'à',today:'aujourd’hui',tomorrow:'demain',evening:'ce soir',
@@ -1091,7 +1115,11 @@ var PRIS_I18N={
     fca:'Test sur données passées, D+{h} : erreur moyenne {mae} EUR/MWh, {g} % de moins qu’une méthode simple ({r} % depuis le 1er sept. 2026).',
     fcae:'Test sur données passées, D+{h} : erreur moyenne {mae} EUR/MWh (méthode simple : {base} EUR/MWh).',
     fcr:'Il repère les heures les moins chères {r} % mieux qu’une méthode simple.',
-    fcc:'Lors du test, {c} % des heures sont tombées dans la fourchette.'},
+    fcc:'Lors du test, {c} % des heures sont tombées dans la fourchette.',
+    est:'Estimation',
+    estn:'Les heures marquées Estimation ne sont pas des prix publiés. C’est l’estimation statistique propre à elpriser.org pour les heures qui n’ont pas encore de prix, calculée à partir des heures déjà établies, des prévisions météo et du calendrier. Chaque estimation est remplacée par le prix établi dès sa publication.',
+    esta:'Test sur données passées, reste de la journée : erreur moyenne {mae} {u}, {g} % de moins qu’une méthode simple ({r} % depuis le 1er sept. 2026).',
+    esth:'Test sur données passées, l’heure manquante : erreur moyenne {mae} {u} (la dernière heure établie seule: {base} {u}).'},
   pl:{wd:['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'],ws:['niedz.','pon.','wt.','śr.','czw.','pt.','sob.'],
     mon:['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'],dot:'',
     now:'Cena prądu teraz',hourly:'Cena prądu godzina po godzinie',at:'godz.',today:'dziś',tomorrow:'jutro',evening:'dziś wieczorem',
@@ -1108,7 +1136,11 @@ var PRIS_I18N={
     fca:'Test na danych historycznych, D+{h}: średni błąd {mae} EUR/MWh, o {g} % niższy niż w prostej metodzie ({r} % od 1 wrz. 2026).',
     fcae:'Test na danych historycznych, D+{h}: średni błąd {mae} EUR/MWh (prosta metoda: {base} EUR/MWh).',
     fcr:'Najtańsze godziny wskazuje o {r} % lepiej niż prosta metoda.',
-    fcc:'W teście {c} % godzin mieściło się w przedziale.'},
+    fcc:'W teście {c} % godzin mieściło się w przedziale.',
+    est:'Szacunek',
+    estn:'Godziny oznaczone jako Szacunek nie są opublikowanymi cenami. To własny szacunek statystyczny elpriser.org dla godzin, które nie mają jeszcze ceny, obliczony na podstawie godzin już rozliczonych, prognozy pogody i kalendarza. Każdy szacunek jest zastępowany ustaloną ceną, gdy tylko zostanie opublikowana.',
+    esta:'Test na danych historycznych, reszta dnia: średni błąd {mae} {u}, o {g} % niższy niż w prostej metodzie ({r} % od 1 wrz. 2026).',
+    esth:'Test na danych historycznych, brakująca godzina: średni błąd {mae} {u} (sama ostatnia ustalona godzina: {base} {u}).'},
   it:{wd:['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'],ws:['dom','lun','mar','mer','gio','ven','sab'],
     mon:['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'],dot:'',
     now:'Prezzo della luce adesso',hourly:'Prezzo della luce ora per ora',at:'alle',today:'oggi',tomorrow:'domani',evening:'stasera',
@@ -1125,7 +1157,11 @@ var PRIS_I18N={
     fca:'Test sui dati storici, D+{h}: errore medio {mae} EUR/MWh, {g} % in meno di un metodo semplice ({r} % dal 1° set. 2026).',
     fcae:'Test sui dati storici, D+{h}: errore medio {mae} EUR/MWh (metodo semplice: {base} EUR/MWh).',
     fcr:'Individua le ore più economiche il {r} % meglio di un metodo semplice.',
-    fcc:'Nel test il {c} % delle ore è rientrato nell’intervallo.'},
+    fcc:'Nel test il {c} % delle ore è rientrato nell’intervallo.',
+    est:'Stima',
+    estn:'Le ore contrassegnate come Stima non sono prezzi pubblicati. Sono la stima statistica propria di elpriser.org per le ore che non hanno ancora un prezzo, calcolata dalle ore già definite, dalle previsioni meteo e dal calendario. Ogni stima viene sostituita dal prezzo definitivo non appena è pubblicato.',
+    esta:'Test sui dati storici, resto della giornata: errore medio {mae} {u}, {g} % in meno di un metodo semplice ({r} % dal 1° set. 2026).',
+    esth:'Test sui dati storici, l’ora mancante: errore medio {mae} {u} (la sola ultima ora definita: {base} {u}).'},
   en:{wd:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],ws:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
     mon:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],dot:'',hs:':00',hh:1,dec:'.',
     now:'Electricity price now',hourly:'Electricity price by the hour',at:'at',today:'today',tomorrow:'tomorrow',evening:'this evening',
@@ -1142,7 +1178,11 @@ var PRIS_I18N={
     fca:'Back-test, D+{h}: mean error {mae} EUR/MWh, {g} % lower than a simple method ({r} % since 1 Sept 2026).',
     fcae:'Back-test, D+{h}: mean error {mae} EUR/MWh (a simple method: {base} EUR/MWh).',
     fcr:'It ranks the cheapest hours {r} % better than a simple method.',
-    fcc:'In the back-test {c} % of the hours fell inside the range.'},
+    fcc:'In the back-test {c} % of the hours fell inside the range.',
+    est:'Estimate',
+    estn:'Hours marked Estimate are not published prices. They are elpriser.org’s own statistical estimate for hours that have no price yet, calculated from the hours already settled, the weather forecast and the calendar. Each one is replaced by the settled price as soon as it is published.',
+    esta:'Back-test, rest of the day: mean error {mae} {u}, {g} % lower than a simple method ({r} % since 1 Sept 2026).',
+    esth:'Back-test, the missing hour: mean error {mae} {u} (the last settled hour alone: {base} {u}).'},
   cs:{wd:['neděle','pondělí','úterý','středa','čtvrtek','pátek','sobota'],ws:['ne','po','út','st','čt','pá','so'],
     mon:['led','úno','bře','dub','kvě','čvn','čvc','srp','zář','říj','lis','pro'],dot:'.',hs:':00',hh:1,
     now:'Cena elektřiny právě teď',hourly:'Cena elektřiny po hodinách',at:'',today:'dnes',tomorrow:'zítra',evening:'dnes večer',
@@ -1159,7 +1199,11 @@ var PRIS_I18N={
     fca:'Test na historických datech, D+{h}: střední chyba {mae} EUR/MWh, o {g} % nižší než u jednoduché metody ({r} % od 1. 9. 2026).',
     fcae:'Test na historických datech, D+{h}: střední chyba {mae} EUR/MWh (jednoduchá metoda: {base} EUR/MWh).',
     fcr:'Nejlevnější hodiny určuje o {r} % lépe než jednoduchá metoda.',
-    fcc:'V testu leželo {c} % hodin uvnitř rozpětí.'},
+    fcc:'V testu leželo {c} % hodin uvnitř rozpětí.',
+    est:'Odhad',
+    estn:'Hodiny označené jako Odhad nejsou zveřejněné ceny. Je to vlastní statistický odhad elpriser.org pro hodiny, které ještě nemají cenu, vypočítaný z již stanovených hodin, předpovědi počasí a kalendáře. Každý odhad je nahrazen stanovenou cenou, jakmile je zveřejněna.',
+    esta:'Test na historických datech, zbytek dne: střední chyba {mae} {u}, o {g} % nižší než u jednoduché metody ({r} % od 1. 9. 2026).',
+    esth:'Test na historických datech, chybějící hodina: střední chyba {mae} {u} (samotná poslední stanovená hodina: {base} {u}).'},
   es:{wd:['domingo','lunes','martes','miércoles','jueves','viernes','sábado'],ws:['dom','lun','mar','mié','jue','vie','sáb'],
     mon:['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'],dot:'',hs:':00',hh:1,
     now:'Precio de la luz ahora',hourly:'Precio de la luz por horas',at:'',today:'hoy',tomorrow:'mañana',evening:'esta noche',
@@ -1176,7 +1220,11 @@ var PRIS_I18N={
     fca:'Prueba con datos históricos, D+{h}: error medio {mae} EUR/MWh, un {g} % menor que con un método simple ({r} % desde el 1 sept. 2026).',
     fcae:'Prueba con datos históricos, D+{h}: error medio {mae} EUR/MWh (método simple: {base} EUR/MWh).',
     fcr:'Acierta las horas más baratas un {r} % mejor que un método simple.',
-    fcc:'En la prueba, el {c} % de las horas cayó dentro del rango.'},
+    fcc:'En la prueba, el {c} % de las horas cayó dentro del rango.',
+    est:'Estimación',
+    estn:'Las horas marcadas como Estimación no son precios publicados. Es la estimación estadística propia de elpriser.org para las horas que aún no tienen precio, calculada a partir de las horas ya fijadas, la previsión meteorológica y el calendario. Cada estimación se sustituye por el precio fijado en cuanto se publica.',
+    esta:'Prueba con datos históricos, resto del día: error medio {mae} {u}, un {g} % menor que con un método simple ({r} % desde el 1 sept. 2026).',
+    esth:'Prueba con datos históricos, la hora que falta: error medio {mae} {u} (solo la última hora fijada: {base} {u}).'},
   pt:{wd:['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'],ws:['dom','seg','ter','qua','qui','sex','sáb'],
     mon:['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'],dot:'',hs:':00',hh:1,
     now:'Preço da eletricidade agora',hourly:'Preço da eletricidade hora a hora',at:'',today:'hoje',tomorrow:'amanhã',evening:'hoje à noite',
@@ -1193,7 +1241,11 @@ var PRIS_I18N={
     fca:'Teste com dados históricos, D+{h}: erro médio {mae} EUR/MWh, {g} % abaixo de um método simples ({r} % desde 1 set. 2026).',
     fcae:'Teste com dados históricos, D+{h}: erro médio {mae} EUR/MWh (método simples: {base} EUR/MWh).',
     fcr:'Identifica as horas mais baratas {r} % melhor do que um método simples.',
-    fcc:'No teste, {c} % das horas ficaram dentro do intervalo.'},
+    fcc:'No teste, {c} % das horas ficaram dentro do intervalo.',
+    est:'Estimativa',
+    estn:'As horas marcadas como Estimativa não são preços publicados. É a estimativa estatística própria da elpriser.org para horas que ainda não têm preço, calculada a partir das horas já apuradas, da previsão meteorológica e do calendário. Cada estimativa é substituída pelo preço apurado assim que for publicado.',
+    esta:'Teste com dados históricos, resto do dia: erro médio {mae} {u}, {g} % abaixo de um método simples ({r} % desde 1 set. 2026).',
+    esth:'Teste com dados históricos, a hora em falta: erro médio {mae} {u} (apenas a última hora apurada: {base} {u}).'},
   sk:{wd:['nedeľa','pondelok','utorok','streda','štvrtok','piatok','sobota'],ws:['ne','po','ut','st','št','pi','so'],
     mon:['jan.','feb.','mar.','apr.','máj','jún','júl','aug.','sep.','okt.','nov.','dec.'],dot:'.',hs:':00',hh:1,
     now:'Cena elektriny práve teraz',hourly:'Cena elektriny po hodinách',at:'',today:'dnes',tomorrow:'zajtra',evening:'dnes večer',
@@ -1210,7 +1262,11 @@ var PRIS_I18N={
     fca:'Test na historických dátach, D+{h}: stredná chyba {mae} EUR/MWh, o {g} % nižšia než pri jednoduchej metóde ({r} % od 1. 9. 2026).',
     fcae:'Test na historických dátach, D+{h}: stredná chyba {mae} EUR/MWh (jednoduchá metóda: {base} EUR/MWh).',
     fcr:'Najlacnejšie hodiny určuje o {r} % lepšie než jednoduchá metóda.',
-    fcc:'V teste ležalo {c} % hodín vnútri rozpätia.'},
+    fcc:'V teste ležalo {c} % hodín vnútri rozpätia.',
+    est:'Odhad',
+    estn:'Hodiny označené ako Odhad nie sú zverejnené ceny. Je to vlastný štatistický odhad elpriser.org pre hodiny, ktoré ešte nemajú cenu, vypočítaný z už určených hodín, predpovede počasia a kalendára. Každý odhad nahradí určená cena hneď, ako sa zverejní.',
+    esta:'Test na historických dátach, zvyšok dňa: stredná chyba {mae} {u}, o {g} % nižšia než pri jednoduchej metóde ({r} % od 1. 9. 2026).',
+    esth:'Test na historických dátach, chýbajúca hodina: stredná chyba {mae} {u} (samotná posledná určená hodina: {base} {u}).'},
   hu:{wd:['vasárnap','hétfő','kedd','szerda','csütörtök','péntek','szombat'],ws:['v','h','k','sze','cs','p','szo'],
     mon:['jan.','febr.','márc.','ápr.','máj.','jún.','júl.','aug.','szept.','okt.','nov.','dec.'],dot:'.',mf:1,hs:':00',hh:1,
     now:'Áramár most',hourly:'Áramár óránként',at:'',today:'ma',tomorrow:'holnap',evening:'ma este',
@@ -1227,7 +1283,11 @@ var PRIS_I18N={
     fca:'Visszatesztelés, D+{h}: átlagos hiba {mae} EUR/MWh, {g} %-kal kisebb, mint egy egyszerű módszeré ({r} % 2026. szept. 1. óta).',
     fcae:'Visszatesztelés, D+{h}: átlagos hiba {mae} EUR/MWh (egyszerű módszer: {base} EUR/MWh).',
     fcr:'A legolcsóbb órákat {r} %-kal jobban jelöli ki egy egyszerű módszernél.',
-    fcc:'A tesztben az órák {c} %-a a sávon belül maradt.'},
+    fcc:'A tesztben az órák {c} %-a a sávon belül maradt.',
+    est:'Becslés',
+    estn:'A Becslés jelölésű órák nem közzétett árak. Az elpriser.org saját statisztikai becslése azokra az órákra, amelyeknek még nincs áruk, a már megállapított órákból, az időjárás-előrejelzésből és a naptárból számítva. Minden becslést a megállapított ár vált fel, amint közzéteszik.',
+    esta:'Visszatesztelés, a nap hátralévő része: átlagos hiba {mae} {u}, {g} %-kal kisebb, mint egy egyszerű módszeré ({r} % 2026. szept. 1. óta).',
+    esth:'Visszatesztelés, a hiányzó óra: átlagos hiba {mae} {u} (csak az utolsó megállapított óra: {base} {u}).'},
   sl:{wd:['nedelja','ponedeljek','torek','sreda','četrtek','petek','sobota'],ws:['ned','pon','tor','sre','čet','pet','sob'],
     mon:['jan.','feb.','mar.','apr.','maj','jun.','jul.','avg.','sep.','okt.','nov.','dec.'],dot:'.',hs:':00',hh:1,
     now:'Cena elektrike zdaj',hourly:'Cena elektrike po urah',at:'',today:'danes',tomorrow:'jutri',evening:'danes zvečer',
@@ -1244,7 +1304,11 @@ var PRIS_I18N={
     fca:'Preizkus na preteklih podatkih, D+{h}: povprečna napaka {mae} EUR/MWh, {g} % manj kot pri preprosti metodi ({r} % od 1. 9. 2026).',
     fcae:'Preizkus na preteklih podatkih, D+{h}: povprečna napaka {mae} EUR/MWh (preprosta metoda: {base} EUR/MWh).',
     fcr:'Najcenejše ure določi {r} % bolje kot preprosta metoda.',
-    fcc:'V preizkusu je bilo {c} % ur znotraj razpona.'},
+    fcc:'V preizkusu je bilo {c} % ur znotraj razpona.',
+    est:'Ocena',
+    estn:'Ure, označene kot Ocena, niso objavljene cene. To je lastna statistična ocena elpriser.org za ure, ki še nimajo cene, izračunana iz že določenih ur, vremenske napovedi in koledarja. Vsako oceno nadomesti določena cena, takoj ko je objavljena.',
+    esta:'Preizkus na preteklih podatkih, preostanek dneva: povprečna napaka {mae} {u}, {g} % manj kot pri preprosti metodi ({r} % od 1. 9. 2026).',
+    esth:'Preizkus na preteklih podatkih, manjkajoča ura: povprečna napaka {mae} {u} (samo zadnja določena ura: {base} {u}).'},
   ro:{wd:['duminică','luni','marți','miercuri','joi','vineri','sâmbătă'],ws:['dum','lun','mar','mie','joi','vin','sâm'],
     mon:['ian.','feb.','mar.','apr.','mai','iun.','iul.','aug.','sept.','oct.','nov.','dec.'],dot:'',hs:':00',hh:1,
     now:'Prețul energiei acum',hourly:'Prețul energiei oră cu oră',at:'la',today:'azi',tomorrow:'mâine',evening:'diseară',
@@ -1261,7 +1325,11 @@ var PRIS_I18N={
     fca:'Test pe date istorice, D+{h}: eroare medie {mae} EUR/MWh, cu {g} % mai mică decât la o metodă simplă ({r} % din 1 sept. 2026).',
     fcae:'Test pe date istorice, D+{h}: eroare medie {mae} EUR/MWh (metodă simplă: {base} EUR/MWh).',
     fcr:'Alege orele cele mai ieftine cu {r} % mai bine decât o metodă simplă.',
-    fcc:'În test, {c} % dintre ore s-au aflat în interval.'},
+    fcc:'În test, {c} % dintre ore s-au aflat în interval.',
+    est:'Estimare',
+    estn:'Orele marcate ca Estimare nu sunt prețuri publicate. Este estimarea statistică proprie a elpriser.org pentru orele care nu au încă preț, calculată din orele deja stabilite, prognoza meteo și calendar. Fiecare estimare este înlocuită cu prețul stabilit imediat ce acesta este publicat.',
+    esta:'Test pe date istorice, restul zilei: eroare medie {mae} {u}, cu {g} % mai mică decât la o metodă simplă ({r} % din 1 sept. 2026).',
+    esth:'Test pe date istorice, ora lipsă: eroare medie {mae} {u} (doar ultima oră stabilită: {base} {u}).'},
   bg:{wd:['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'],ws:['нд','пн','вт','ср','чт','пт','сб'],
     mon:['яну','фев','март','апр','май','юни','юли','авг','сеп','окт','ное','дек'],dot:'',hs:':00',hh:1,
     now:'Цена на тока сега',hourly:'Цена на тока по часове',at:'',today:'днес',tomorrow:'утре',evening:'тази вечер',
@@ -1278,7 +1346,11 @@ var PRIS_I18N={
     fca:'Тест с исторически данни, D+{h}: средна грешка {mae} EUR/MWh, с {g} % по-малка от тази на прост метод ({r} % от 1 септ. 2026 г.).',
     fcae:'Тест с исторически данни, D+{h}: средна грешка {mae} EUR/MWh (прост метод: {base} EUR/MWh).',
     fcr:'Определя най-евтините часове с {r} % по-добре от прост метод.',
-    fcc:'При теста {c} % от часовете попаднаха в диапазона.'},
+    fcc:'При теста {c} % от часовете попаднаха в диапазона.',
+    est:'Оценка',
+    estn:'Часовете, означени като Оценка, не са публикувани цени. Това е собствената статистическа оценка на elpriser.org за часове, които още нямат цена, изчислена от вече определените часове, прогнозата за времето и календара. Всяка оценка се заменя с определената цена веднага щом бъде публикувана.',
+    esta:'Тест с исторически данни, остатъкът от деня: средна грешка {mae} {u}, с {g} % по-малка от тази на прост метод ({r} % от 1 септ. 2026 г.).',
+    esth:'Тест с исторически данни, липсващият час: средна грешка {mae} {u} (само последният определен час: {base} {u}).'},
   el:{wd:['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'],ws:['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'],
     mon:['Ιαν','Φεβ','Μαρ','Απρ','Μαΐ','Ιουν','Ιουλ','Αυγ','Σεπ','Οκτ','Νοε','Δεκ'],dot:'',hs:':00',hh:1,
     now:'Τιμή ρεύματος τώρα',hourly:'Τιμή ρεύματος ανά ώρα',at:'ώρα',today:'σήμερα',tomorrow:'αύριο',evening:'απόψε',
@@ -1295,7 +1367,11 @@ var PRIS_I18N={
     fca:'Δοκιμή σε ιστορικά δεδομένα, D+{h}: μέσο σφάλμα {mae} EUR/MWh, κατά {g} % χαμηλότερο από μια απλή μέθοδο ({r} % από 1 Σεπτ. 2026).',
     fcae:'Δοκιμή σε ιστορικά δεδομένα, D+{h}: μέσο σφάλμα {mae} EUR/MWh (απλή μέθοδος: {base} EUR/MWh).',
     fcr:'Εντοπίζει τις φθηνότερες ώρες κατά {r} % καλύτερα από μια απλή μέθοδο.',
-    fcc:'Στη δοκιμή, το {c} % των ωρών έπεσε μέσα στο εύρος.'},
+    fcc:'Στη δοκιμή, το {c} % των ωρών έπεσε μέσα στο εύρος.',
+    est:'Εκτίμηση',
+    estn:'Οι ώρες που σημειώνονται ως Εκτίμηση δεν είναι δημοσιευμένες τιμές. Είναι η στατιστική εκτίμηση του ίδιου του elpriser.org για ώρες που δεν έχουν ακόμη τιμή, υπολογισμένη από τις ώρες που έχουν ήδη οριστικοποιηθεί, την πρόγνωση καιρού και το ημερολόγιο. Κάθε εκτίμηση αντικαθίσταται από την οριστική τιμή μόλις δημοσιευτεί.',
+    esta:'Δοκιμή σε ιστορικά δεδομένα, το υπόλοιπο της ημέρας: μέσο σφάλμα {mae} {u}, κατά {g} % χαμηλότερο από μια απλή μέθοδο ({r} % από 1 Σεπτ. 2026).',
+    esth:'Δοκιμή σε ιστορικά δεδομένα, η ώρα που λείπει: μέσο σφάλμα {mae} {u} (μόνο η τελευταία οριστική ώρα: {base} {u}).'},
   hr:{wd:['nedjelja','ponedjeljak','utorak','srijeda','četvrtak','petak','subota'],ws:['ned','pon','uto','sri','čet','pet','sub'],
     mon:['sij','velj','ožu','tra','svi','lip','srp','kol','ruj','lis','stu','pro'],dot:'.',hs:':00',hh:1,
     now:'Cijena struje trenutno',hourly:'Cijena struje po satima',at:'',today:'danas',tomorrow:'sutra',evening:'večeras',
@@ -1312,7 +1388,11 @@ var PRIS_I18N={
     fca:'Test na povijesnim podacima, D+{h}: prosječna pogreška {mae} EUR/MWh, {g} % manja nego kod jednostavne metode ({r} % od 1. 9. 2026.).',
     fcae:'Test na povijesnim podacima, D+{h}: prosječna pogreška {mae} EUR/MWh (jednostavna metoda: {base} EUR/MWh).',
     fcr:'Najjeftinije sate određuje {r} % bolje od jednostavne metode.',
-    fcc:'U testu je {c} % sati bilo unutar raspona.'},
+    fcc:'U testu je {c} % sati bilo unutar raspona.',
+    est:'Procjena',
+    estn:'Sati označeni kao Procjena nisu objavljene cijene. To je vlastita statistička procjena elpriser.org za sate koji još nemaju cijenu, izračunana iz već utvrđenih sati, vremenske prognoze i kalendara. Svaka procjena zamjenjuje se utvrđenom cijenom čim se objavi.',
+    esta:'Test na povijesnim podacima, ostatak dana: prosječna pogreška {mae} {u}, {g} % manja nego kod jednostavne metode ({r} % od 1. 9. 2026.).',
+    esth:'Test na povijesnim podacima, sat koji nedostaje: prosječna pogreška {mae} {u} (samo posljednji utvrđeni sat: {base} {u}).'},
   'sr-Latn':{wd:['nedelja','ponedeljak','utorak','sreda','četvrtak','petak','subota'],ws:['ned','pon','uto','sre','čet','pet','sub'],
     mon:['jan','feb','mar','apr','maj','jun','jul','avg','sep','okt','nov','dec'],dot:'.',hs:':00',hh:1,
     now:'Cena struje trenutno',hourly:'Cena struje po satima',at:'',today:'danas',tomorrow:'sutra',evening:'večeras',
@@ -1329,7 +1409,11 @@ var PRIS_I18N={
     fca:'Test na istorijskim podacima, D+{h}: prosečna greška {mae} EUR/MWh, {g} % manja nego kod jednostavnog metoda ({r} % od 1. 9. 2026).',
     fcae:'Test na istorijskim podacima, D+{h}: prosečna greška {mae} EUR/MWh (jednostavan metod: {base} EUR/MWh).',
     fcr:'Najjeftinije sate određuje {r} % bolje od jednostavnog metoda.',
-    fcc:'U testu je {c} % sati bilo unutar opsega.'},
+    fcc:'U testu je {c} % sati bilo unutar opsega.',
+    est:'Procena',
+    estn:'Sati označeni kao Procena nisu objavljene cene. To je sopstvena statistička procena elpriser.org za sate koji još nemaju cenu, izračunata iz već utvrđenih sati, vremenske prognoze i kalendara. Svaka procena se zamenjuje utvrđenom cenom čim bude objavljena.',
+    esta:'Test na istorijskim podacima, ostatak dana: prosečna greška {mae} {u}, {g} % manja nego kod jednostavnog metoda ({r} % od 1. 9. 2026).',
+    esth:'Test na istorijskim podacima, sat koji nedostaje: prosečna greška {mae} {u} (samo poslednji utvrđeni sat: {base} {u}).'},
   'sr-ME':{wd:['nedjelja','ponedjeljak','utorak','srijeda','četvrtak','petak','subota'],ws:['ned','pon','uto','sri','čet','pet','sub'],
     mon:['jan','feb','mar','apr','maj','jun','jul','avg','sep','okt','nov','dec'],dot:'.',hs:':00',hh:1,
     now:'Cijena struje trenutno',hourly:'Cijena struje po satima',at:'',today:'danas',tomorrow:'sjutra',evening:'večeras',
@@ -1346,7 +1430,11 @@ var PRIS_I18N={
     fca:'Test na istorijskim podacima, D+{h}: prosječna greška {mae} EUR/MWh, {g} % manja nego kod jednostavnog metoda ({r} % od 1. 9. 2026).',
     fcae:'Test na istorijskim podacima, D+{h}: prosječna greška {mae} EUR/MWh (jednostavan metod: {base} EUR/MWh).',
     fcr:'Najjeftinije sate određuje {r} % bolje od jednostavnog metoda.',
-    fcc:'U testu je {c} % sati bilo unutar opsega.'},
+    fcc:'U testu je {c} % sati bilo unutar opsega.',
+    est:'Procjena',
+    estn:'Sati označeni kao Procjena nisu objavljene cijene. To je vlastita statistička procjena elpriser.org za sate koji još nemaju cijenu, izračunana iz već utvrđenih sati, vremenske prognoze i kalendara. Svaka procjena zamjenjuje se utvrđenom cijenom čim bude objavljena.',
+    esta:'Test na istorijskim podacima, ostatak dana: prosječna greška {mae} {u}, {g} % manja nego kod jednostavnog metoda ({r} % od 1. 9. 2026).',
+    esth:'Test na istorijskim podacima, sat koji nedostaje: prosječna greška {mae} {u} (samo posljednji utvrđeni sat: {base} {u}).'},
   et:{wd:['pühapäev','esmaspäev','teisipäev','kolmapäev','neljapäev','reede','laupäev'],ws:['P','E','T','K','N','R','L'],
     mon:['jaan','veebr','märts','apr','mai','juuni','juuli','aug','sept','okt','nov','dets'],dot:'.',hs:':00',hh:1,
     now:'Elektri hind praegu',hourly:'Elektri hind tundide kaupa',at:'kell',today:'täna',tomorrow:'homme',evening:'täna õhtul',
@@ -1363,7 +1451,11 @@ var PRIS_I18N={
     fca:'Test ajalooliste andmetega, D+{h}: keskmine viga {mae} EUR/MWh, {g} % väiksem kui lihtsal meetodil ({r} % alates 1. sept. 2026).',
     fcae:'Test ajalooliste andmetega, D+{h}: keskmine viga {mae} EUR/MWh (lihtne meetod: {base} EUR/MWh).',
     fcr:'Odavaimad tunnid leiab see {r} % paremini kui lihtne meetod.',
-    fcc:'Testis jäi {c} % tundidest vahemikku.'},
+    fcc:'Testis jäi {c} % tundidest vahemikku.',
+    est:'Hinnang',
+    estn:'Hinnang-märgisega tunnid ei ole avaldatud hinnad. See on elpriser.org enda statistiline hinnang tundidele, millel pole veel hinda, arvutatud juba kinnitatud tundide, ilmaprognoosi ja kalendri põhjal. Iga hinnang asendatakse kinnitatud hinnaga niipea, kui see avaldatakse.',
+    esta:'Test ajalooliste andmetega, ülejäänud päev: keskmine viga {mae} {u}, {g} % väiksem kui lihtsal meetodil ({r} % alates 1. sept. 2026).',
+    esth:'Test ajalooliste andmetega, puuduv tund: keskmine viga {mae} {u} (ainult viimane kinnitatud tund: {base} {u}).'},
   lv:{wd:['svētdiena','pirmdiena','otrdiena','trešdiena','ceturtdiena','piektdiena','sestdiena'],ws:['Sv','P','O','T','C','Pk','S'],
     mon:['janv.','febr.','marts','apr.','maijs','jūn.','jūl.','aug.','sept.','okt.','nov.','dec.'],dot:'.',hs:':00',hh:1,
     now:'Elektrības cena tagad',hourly:'Elektrības cena pa stundām',at:'plkst.',today:'šodien',tomorrow:'rīt',evening:'šovakar',
@@ -1380,7 +1472,11 @@ var PRIS_I18N={
     fca:'Tests ar vēsturiskiem datiem, D+{h}: vidējā kļūda {mae} EUR/MWh, par {g} % mazāka nekā vienkāršai metodei ({r} % kopš 2026. g. 1. sept.).',
     fcae:'Tests ar vēsturiskiem datiem, D+{h}: vidējā kļūda {mae} EUR/MWh (vienkārša metode: {base} EUR/MWh).',
     fcr:'Lētākās stundas tas atrod par {r} % labāk nekā vienkārša metode.',
-    fcc:'Testā {c} % stundu iekļuva diapazonā.'},
+    fcc:'Testā {c} % stundu iekļuva diapazonā.',
+    est:'Aplēse',
+    estn:'Stundas ar atzīmi Aplēse nav publicētas cenas. Tā ir elpriser.org paša statistiskā aplēse stundām, kurām vēl nav cenas, aprēķināta no jau apstiprinātajām stundām, laika prognozes un kalendāra. Katru aplēsi aizstāj apstiprinātā cena, tiklīdz tā ir publicēta.',
+    esta:'Tests ar vēsturiskiem datiem, atlikusī dienas daļa: vidējā kļūda {mae} {u}, par {g} % mazāka nekā vienkāršai metodei ({r} % kopš 2026. g. 1. sept.).',
+    esth:'Tests ar vēsturiskiem datiem, trūkstošā stunda: vidējā kļūda {mae} {u} (tikai pēdējā apstiprinātā stunda: {base} {u}).'},
   lt:{wd:['sekmadienis','pirmadienis','antradienis','trečiadienis','ketvirtadienis','penktadienis','šeštadienis'],ws:['Sk','Pr','An','Tr','Kt','Pn','Št'],
     mon:['saus.','vas.','kov.','bal.','geg.','birž.','liep.','rugp.','rugs.','spal.','lapkr.','gruod.'],dot:'',hs:':00',hh:1,
     now:'Elektros kaina dabar',hourly:'Elektros kaina pagal valandas',at:'',today:'šiandien',tomorrow:'rytoj',evening:'šį vakarą',
@@ -1397,7 +1493,11 @@ var PRIS_I18N={
     fca:'Bandymas su istoriniais duomenimis, D+{h}: vidutinė paklaida {mae} EUR/MWh, {g} % mažesnė nei paprasto metodo ({r} % nuo 2026-09-01).',
     fcae:'Bandymas su istoriniais duomenimis, D+{h}: vidutinė paklaida {mae} EUR/MWh (paprastas metodas: {base} EUR/MWh).',
     fcr:'Pigiausias valandas jis nurodo {r} % geriau nei paprastas metodas.',
-    fcc:'Bandyme {c} % valandų pateko į intervalą.'},
+    fcc:'Bandyme {c} % valandų pateko į intervalą.',
+    est:'Įvertis',
+    estn:'Valandos, pažymėtos Įvertis, nėra paskelbtos kainos. Tai paties elpriser.org statistinis įvertis valandoms, kurios dar neturi kainos, apskaičiuotas iš jau patvirtintų valandų, orų prognozės ir kalendoriaus. Kiekvieną įvertį pakeičia patvirtinta kaina, kai tik ji paskelbiama.',
+    esta:'Bandymas su istoriniais duomenimis, likusi dienos dalis: vidutinė paklaida {mae} {u}, {g} % mažesnė nei paprasto metodo ({r} % nuo 2026-09-01).',
+    esth:'Bandymas su istoriniais duomenimis, trūkstama valanda: vidutinė paklaida {mae} {u} (vien paskutinė patvirtinta valanda: {base} {u}).'},
   mk:{wd:['недела','понеделник','вторник','среда','четврток','петок','сабота'],ws:['нед','пон','вто','сре','чет','пет','саб'],
     mon:['јан','фев','мар','апр','мај','јун','јул','авг','сеп','окт','ное','дек'],dot:'.',hs:':00',hh:1,
     now:'Цена на струја сега',hourly:'Цена на струја по часови',at:'во',today:'денес',tomorrow:'утре',evening:'денес навечер',
@@ -1414,7 +1514,11 @@ var PRIS_I18N={
     fca:'Тест врз историски податоци, D+{h}: просечна грешка {mae} EUR/MWh, за {g} % помала отколку кај едноставен метод ({r} % од 1 септ. 2026).',
     fcae:'Тест врз историски податоци, D+{h}: просечна грешка {mae} EUR/MWh (едноставен метод: {base} EUR/MWh).',
     fcr:'Најевтините часови ги одредува за {r} % подобро од едноставен метод.',
-    fcc:'Во тестот {c} % од часовите паднаа во опсегот.'},
+    fcc:'Во тестот {c} % од часовите паднаа во опсегот.',
+    est:'Проценка',
+    estn:'Часовите означени како Проценка не се објавени цени. Тоа е сопствена статистичка проценка на elpriser.org за часови што сè уште немаат цена, пресметана од веќе утврдените часови, временската прогноза и календарот. Секоја проценка се заменува со утврдената цена штом таа ќе биде објавена.',
+    esta:'Тест врз историски податоци, остатокот од денот: просечна грешка {mae} {u}, за {g} % помала отколку кај едноставен метод ({r} % од 1 септ. 2026).',
+    esth:'Тест врз историски податоци, часот што недостасува: просечна грешка {mae} {u} (само последниот утврден час: {base} {u}).'},
   sq:{wd:['e diel','e hënë','e martë','e mërkurë','e enjte','e premte','e shtunë'],ws:['die','hën','mar','mër','enj','pre','sht'],
     mon:['jan','shk','mar','pri','maj','qer','kor','gsh','sht','tet','nën','dhj'],dot:'',hs:':00',hh:1,
     now:'Çmimi i energjisë tani',hourly:'Çmimi i energjisë çdo orë',at:'në orën',today:'sot',tomorrow:'nesër',evening:'sonte',
@@ -1431,7 +1535,11 @@ var PRIS_I18N={
     fca:'Provë me të dhëna historike, D+{h}: gabim mesatar {mae} EUR/MWh, {g} % më i vogël se me një metodë të thjeshtë ({r} % nga 1 sht. 2026).',
     fcae:'Provë me të dhëna historike, D+{h}: gabim mesatar {mae} EUR/MWh (metodë e thjeshtë: {base} EUR/MWh).',
     fcr:'I zgjedh orët më të lira {r} % më mirë se një metodë e thjeshtë.',
-    fcc:'Në provë, {c} % e orëve ranë brenda diapazonit.'}
+    fcc:'Në provë, {c} % e orëve ranë brenda diapazonit.',
+    est:'Vlerësim',
+    estn:'Orët e shënuara si Vlerësim nuk janë çmime të publikuara. Është vlerësimi statistikor i vetë elpriser.org për orët që ende nuk kanë çmim, i llogaritur nga orët e përcaktuara tashmë, parashikimi i motit dhe kalendari. Çdo vlerësim zëvendësohet me çmimin e përcaktuar sapo të publikohet.',
+    esta:'Provë me të dhëna historike, pjesa e mbetur e ditës: gabim mesatar {mae} {u}, {g} % më i vogël se me një metodë të thjeshtë ({r} % nga 1 sht. 2026).',
+    esth:'Provë me të dhëna historike, ora që mungon: gabim mesatar {mae} {u} (vetëm ora e fundit e përcaktuar: {base} {u}).'}
 };
 
 /** The price areas: the single source of names, cities, currency and sub-unit.
@@ -1734,7 +1842,8 @@ var PRIS_COUNTRIES={
       zonesH:'Electricity price in Great Britain',
       now:'Latest Market Index Price (within-day)',verdict:['Cheap hour today','Average hour today','Expensive hour today'],actual:'Market Index Price (within-day)',
       cap:'Market Index Price (within-day) excluding VAT, taxes, levies and network charges. This is not the day-ahead auction price',
-      note:'The Market Index Price (within-day) is the volume-weighted price of the within-day wholesale trades of each half hour (EPEX SPOT UK and N2EX, as reported to Elexon). It is not the day-ahead auction price, which is not free data for Great Britain, and there is no tomorrow: an hour is shown once both of its half hours have traded. Hourly means of the half-hourly prices, calculated by elpriser.org (changed from the original data). Great Britain only: Northern Ireland trades in the all-island market (see Ireland). Prices are in pence. Source:'}}
+      estn:'Hours marked Estimate are not the Elexon Market Index Price. They are elpriser.org’s own statistical model, not the Elexon number, an estimate for hours that have not traded yet, calculated from the hours already priced, the weather outlook and the calendar. Each one is replaced by the Elexon price as soon as it is published.',
+      note:'The Market Index Price (within-day) is the volume-weighted price of the within-day wholesale trades of each half hour (EPEX SPOT UK and N2EX, as reported to Elexon). It is not the day-ahead auction price, which is not free data for Great Britain, and there is no tomorrow: an hour is shown as a price once both of its half hours have traded. Hours that have not traded yet may be shown as an Estimate calculated by elpriser.org, not the Elexon number, replaced by the Elexon price as soon as it is published. Hourly means of the half-hourly prices, calculated by elpriser.org (changed from the original data). Great Britain only: Northern Ireland trades in the all-island market (see Ireland). Prices are in pence. Source:'}}
 };
 /** The countries the place dialog and the footers list, in the order of PRIS_COUNTRIES: [cc, the country's own name]. Denmark first. */
 var PRIS_PICK=[['dk','Danmark']];
@@ -2047,6 +2156,7 @@ function zoneToPrisDays(raw,info,todayStr,max){
   var src=(raw&&raw.days)||[],out=[];
   max=Math.min(max||5,8);
   var num=function(v){return typeof v==='number'&&isFinite(v);};
+  var est=raw&&raw.estimate&&raw.estimate.date&&raw.estimate.prices?raw.estimate:null;
   for(var k=0;k<src.length&&out.length<max;k++){
     var d=src[k];
     if(!d||!d.date||!d.prices||(todayStr&&d.date<todayStr))continue;
@@ -2056,6 +2166,17 @@ function zoneToPrisDays(raw,info,todayStr,max){
       if(fcd&&num(p.min_eur_mwh)&&num(p.max_eur_mwh)){q.lo=p.min_eur_mwh*rate/10;q.hi=p.max_eur_mwh*rate/10;}
       return q;})};
     if(fcd&&num(d.horizon))day.hz=d.horizon;
+    // The ESTIMATE of the hours of this settled day that have no price yet (/api/nordic `estimate`, elpriser.org's own model): each such hour is
+    // added with `e:1`, its P10-P90 band and nothing else; a settled price always wins. The day itself stays a day of settled prices.
+    if(est&&!fcd&&est.date===d.date)est.prices.forEach(function(p){
+      if(!(p&&Number.isInteger(p.hour)&&p.hour>=0&&p.hour<24&&num(p.eur_mwh)))return;
+      for(var i=0;i<day.prices.length;i++)if(day.prices[i]&&day.prices[i].hour===p.hour)return;
+      var q={hour:p.hour,price:p.eur_mwh*rate/10,e:1};
+      if(num(p.min_eur_mwh)&&num(p.max_eur_mwh)){q.lo=p.min_eur_mwh*rate/10;q.hi=p.max_eur_mwh*rate/10;}
+      var at=-1;
+      for(var j=0;j<d.prices.length;j++)if(d.prices[j]&&d.prices[j].hour===p.hour){at=j;break;}
+      if(at>=0)day.prices[at]=q;else day.prices.push(q);
+    });
     out.push(day);
   }
   return out;
@@ -2074,7 +2195,7 @@ function prisDays(days,todayStr,max){
     var n=dayNo(d.date);
     if(n<0)continue;
     if(n!==out.length)break;
-    var ps=[],bl=null,bh=null;
+    var ps=[],bl=null,bh=null,es=null;
     for(var h=0;h<24;h++)ps.push(null);
     for(var j=0;j<d.prices.length;j++){
       var p=d.prices[j];
@@ -2082,6 +2203,8 @@ function prisDays(days,todayStr,max){
       var hr=p.hour!=null?p.hour:j;
       if(hr>=0&&hr<24){
         ps[hr]=p.price;
+        // An estimated hour of a settled day (zoneToPrisDays, `e`): flagged per hour.
+        if(p.e){if(!es){es=[];for(var e0=0;e0<24;e0++)es.push(false);}es[hr]=true;}
         // The P10-P90 band of a forecast hour (zoneToPrisDays), kept beside the price.
         if(p.lo!=null&&p.hi!=null){
           if(!bl){bl=[];bh=[];for(var b=0;b<24;b++){bl.push(null);bh.push(null);}}
@@ -2100,11 +2223,22 @@ function prisDays(days,todayStr,max){
       }
     }
     var row={date:d.date,real:d.type==='actual',ps:ps,gt:gt};
+    if(es)row.es=es;
     if(bl){row.lo=bl;row.hi=bh;}
     if(d.hz!=null)row.hz=d.hz;
     out.push(row);
   }
   return out;
+}
+
+/** Is hour `h` of row `r` an ESTIMATE or a forecast, as against a settled price? A forecast day is one; so is an estimated hour (`es`) of a settled day. */
+function prisIsFc(r,h){return !!r&&(!r.real||!!(r.es&&r.es[h]));}
+/** The settled price of hour `h` of a row, null for an estimated hour (the hero and the "latest priced hour" never show an estimate as the price). */
+function prisSettledAt(r,h){return r&&!(r.es&&r.es[h])?r.ps[h]:null;}
+/** Does any of the first `n` rows carry an estimated hour? */
+function prisHasEst(rows,n){
+  for(var i=0;i<rows.length&&i<n;i++)if(rows[i].es)return true;
+  return false;
 }
 
 /** 0 cheap, 1 middle, 2 dear: by how many of the reference hours are cheaper —
@@ -2287,7 +2421,7 @@ function prisChart(rows,nDays,o){
   var ext=[];   // the P10 and P90 of the visible forecast hours: the axis must hold them, the tiers (vals) go by the median
   for(i=0;i<rows.length;i++)for(var h0=0;h0<24;h0++)if(rows[i].ps[h0]!=null&&i*24+h0>=st&&i*24+h0<st+n){
     vals.push(rows[i].ps[h0]);
-    if(C.band&&!rows[i].real&&rows[i].lo&&rows[i].lo[h0]!=null){ext.push(rows[i].lo[h0]);ext.push(rows[i].hi[h0]);}
+    if(C.band&&prisIsFc(rows[i],h0)&&rows[i].lo&&rows[i].lo[h0]!=null){ext.push(rows[i].lo[h0]);ext.push(rows[i].hi[h0]);}
   }
   var ax=prisAxis(ext.length?vals.concat(ext):vals,C.sc),span=ax.hi-ax.lo;
   var ref=o.ref||vals;
@@ -2298,10 +2432,10 @@ function prisChart(rows,nDays,o){
     grid+='<span class="pris-gl" style="top:'+top+'%"></span>';
     yl+='<span style="top:'+top+'%">'+prisNum(ax.ticks[i],ax.step%1?1:0,L)+'</span>';
   }
-  var cols='',seps='',fcAt=-1;
+  var cols='',seps='',fcAt=-1,fcEst=false;
   for(var s=0;s<n;s++){
     var a=st+s,r=rows[Math.floor(a/24)],h=a%24,p=r?r.ps[h]:null;
-    if(fcAt<0&&r&&!r.real)fcAt=s;
+    if(fcAt<0&&r&&prisIsFc(r,h)&&(!r.real||p!=null)){fcAt=s;fcEst=!!r.real;}
     if(a%24===0&&s>0&&o.seps)seps+='<span class="pris-sep" style="left:'+(s/n*100).toFixed(2)+'%"></span>';
     if(p==null){cols+='<span class="pc"></span>';continue;}
     var base=y(Math.min(p,0)),ht=Math.abs(p)/span*100,dt=prisDate(r.date,L);
@@ -2309,20 +2443,23 @@ function prisChart(rows,nDays,o){
     var tip=(dn===0?prisCap(L.today):dn===1?prisCap(L.tomorrow):dt.ws+' '+prisDM(dt,L))
       +' '+prisAt(L,h)+' · '+prisNum(p,C.d,L)+' '+C.u+'/kWh';
     // A forecast hour with a band (an EU zone): the P10-P90 block is the picture, the median a thin line across it, both in the tier's colour.
-    if(C.band&&!r.real&&r.lo&&r.lo[h]!=null){
+    // An ESTIMATED hour of a settled day (`es`) is drawn the same way but hatched (class `es`) and called an estimate, never a forecast or a price.
+    var isE=!!(r.es&&r.es[h]);
+    if(C.band&&prisIsFc(r,h)&&r.lo&&r.lo[h]!=null){
       var bt=prisTier(p,ref),yb=y(r.lo[h]),yh=y(r.hi[h]);
-      tip+=' ('+L.fc+', P10–P90 '+prisNum(r.lo[h],C.d,L)+'–'+prisNum(r.hi[h],C.d,L)+')';
-      cols+='<span class="pc fx'+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pbd t'+bt+'" style="bottom:'+yb.toFixed(1)
+      tip+=' ('+(isE?L.est:L.fc)+', P10–P90 '+prisNum(r.lo[h],C.d,L)+'–'+prisNum(r.hi[h],C.d,L)+')';
+      cols+='<span class="pc fx'+(isE?' es':'')+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pbd t'+bt+'" style="bottom:'+yb.toFixed(1)
         +'%;height:'+Math.max(yh-yb,0.8).toFixed(1)+'%"></i><i class="pb pm t'+bt+'" style="bottom:calc('+y(p).toFixed(1)+'% - 1px)"></i>'
         +(a===o.nowSlot?'<b class="pd" style="bottom:calc('+yh.toFixed(1)+'% + 3px)"></b>':'')+'</span>';
       continue;
     }
-    cols+='<span class="pc'+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
+    if(isE)tip+=' ('+L.est+')';
+    cols+='<span class="pc'+(isE?' es':'')+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
       +'" style="bottom:'+base.toFixed(1)+'%;height:'+ht.toFixed(1)+'%"></i>'
       +(a===o.nowSlot?'<b class="pd" style="bottom:calc('+(base+ht).toFixed(1)+'% + 3px)"></b>':'')+'</span>';
   }
   // "Prognose" where the settled prices end: a thin divider with its label.
-  var fc=fcAt>=0?'<span class="pris-fc'+(fcAt>0?' mid':'')+'" style="left:'+(fcAt/n*100).toFixed(2)+'%"><i></i>'+L.fc+'</span>':'';
+  var fc=fcAt>=0?'<span class="pris-fc'+(fcAt>0?' mid':'')+'" style="left:'+(fcAt/n*100).toFixed(2)+'%"><i></i>'+(fcEst?L.est:L.fc)+'</span>':'';
   var xl='';
   if(o.xDays){
     // One label per day, at the middle of the part of the day that is in the window (a day with under six hours of it has none).
@@ -2366,7 +2503,7 @@ function prisDayRows(all,C,cfg,wins){
     return '<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+name+'<small>'+prisDM(dt,L)+'</small></th>'
       +'<td>'+prisNum(lo,C.d,L)+'–'+prisNum(hi,C.d,L)+'</td>'
       +'<td>'+prisAt(L,loH,(loH+1)%24)+'</td>'
-      +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?L.actual:L.fc)+(!d.real&&C.acc&&C.acc[d.hz]&&C.acc[d.hz].low===true?'<small class="pris-low">'+L.fcl+'</small>':'')+'</td>'
+      +'<td class="'+(d.real?'real':'fc')+'">'+(d.real?L.actual+(d.es?' + '+L.est.toLowerCase():''):L.fc)+(!d.real&&C.acc&&C.acc[d.hz]&&C.acc[d.hz].low===true?'<small class="pris-low">'+L.fcl+'</small>':'')+'</td>'
       +(cfg.unc?'<td>'+prisUncertainty(i)+'</td>':'')+'</tr>';};
   var span=function(i,from,to){
     var d=all[i],lo=null,hi=null,loH=0;
@@ -2482,15 +2619,30 @@ function prisPct(x){var n=Math.round(x*100);return n<0?'\u2212'+(-n):String(n);}
  *  says so, the low-confidence label. A zone that quotes EUR (accuracy.showEur: EE, LV, LT) gets no percentages. '' without an entry. */
 function prisFcLine(all,end,C){
   if(!C.band)return '';
-  var L=C.L,d=null,i,band=false;
+  var L=C.L,d=null,i,band=false,parts=[],num=function(v){return typeof v==='number'&&isFinite(v);};
+  // The estimated hours of a settled day (C.est: /api/nordic `estimate`): their swatch, their band and what the back-test says they are worth.
+  var est=prisHasEst(all,end)?C.est:null,hasE=prisHasEst(all,end);
+  if(hasE){
+    parts.push('<span class="pris-bl pris-be"><i></i>'+L.est+'</span>');
+    for(i=0;i<end&&i<all.length;i++)if(all[i].es&&all[i].lo)band=true;
+    if(band)parts.push('<span class="pris-bl"><i></i>'+L.fcb+'</span>');
+    if(est&&num(est.mae)){
+      var u=est.unit||'EUR/MWh',em=prisNum(est.mae,est.mae>=100?0:1,L),eb=num(est.baseMae)?prisNum(est.baseMae,est.baseMae>=100?0:1,L):null;
+      if(est.hours===1&&eb!=null)parts.push(prisFill(L.esth,{mae:em,base:eb,u:u}));
+      else if(num(est.gain))parts.push(prisFill(L.esta,{mae:em,u:u,g:prisPct(est.gain),r:num(est.gainRecent)?prisPct(est.gainRecent):'–'}));
+      if(num(est.coverage))parts.push(prisFill(L.fcc,{c:Math.round(est.coverage*100)}));
+      if(est.low===true)parts.push('<b class="pris-low">'+L.fcl+'</b>');
+    }
+  }
   for(i=0;i<end&&i<all.length;i++)if(!all[i].real){d=all[i];if(all[i].lo)band=true;}
-  if(!d)return '';
-  var A=C.acc&&C.acc[d.hz],parts=[],eur=C.accAll&&C.accAll.showEur===true,num=function(v){return typeof v==='number'&&isFinite(v);};
-  if(band)parts.push('<span class="pris-bl"><i></i>'+L.fcb+'</span>');
+  if(!d)return parts.length?'<p class="pris-fca">'+parts.join(' ')+'</p>':'';
+  var A=C.acc&&C.acc[d.hz],eur=C.accAll&&C.accAll.showEur===true;
+  if(band&&!hasE)parts.push('<span class="pris-bl"><i></i>'+L.fcb+'</span>');
   if(A&&num(A.mae)){
     var mae=prisNum(A.mae,A.mae>=100?0:1,L);
-    if(eur&&num(A.baseMae))parts.push(prisFill(L.fcae,{h:d.hz,mae:mae,base:prisNum(A.baseMae,A.baseMae>=100?0:1,L)}));
-    else if(!eur&&num(A.gain))parts.push(prisFill(L.fca,{h:d.hz,mae:mae,g:prisPct(A.gain),r:num(A.gainRecent)?prisPct(A.gainRecent):'–'}));
+    var un=function(t){return C.accAll&&C.accAll.unit&&C.accAll.unit!=='EUR/MWh'?t.split('EUR/MWh').join(C.accAll.unit):t;};
+    if(eur&&num(A.baseMae))parts.push(un(prisFill(L.fcae,{h:d.hz,mae:mae,base:prisNum(A.baseMae,A.baseMae>=100?0:1,L)})));
+    else if(!eur&&num(A.gain))parts.push(un(prisFill(L.fca,{h:d.hz,mae:mae,g:prisPct(A.gain),r:num(A.gainRecent)?prisPct(A.gainRecent):'–'})));
     if(!eur&&A.rankOk===true&&num(A.rankGain))parts.push(prisFill(L.fcr,{r:prisPct(A.rankGain)}));
     if(num(A.coverage))parts.push(prisFill(L.fcc,{c:Math.round(A.coverage*100)}));
     if(A.low===true)parts.push('<b class="pris-low">'+L.fcl+'</b>');
@@ -2506,13 +2658,16 @@ function prisHTML(days,todayStr,nowHour,o){
   var cfg=o.cfg||PRIS_STD,view=o.view==='spot'?'spot':'din',period=prisPeriod(o.period,cfg);
   var all=prisDays(days||[],todayStr,cfg.days),C=prisCtx(o,all),L=C.L;
   C.act=!!cfg.act;   // an actual-prices page: no forecast wording, a title that follows how many days there are
-  C.band=!!cfg.eu;   // an EU zone with a forecast: the P10-P90 band, the accuracy line and the note
+  C.est=o.est||null;   // the accuracy of the estimated hours of a settled day (/api/nordic estimate.accuracy), when the answer has an estimate
+  C.hasEst=prisHasEst(all,all.length);
+  C.band=!!cfg.eu||C.hasEst;   // an EU zone with a forecast or with estimated hours: the P10-P90 band, the accuracy line and the note
   C.acc=(o.acc&&o.acc.byHorizon)||null;C.accAll=o.acc||null;
   var today=all.length?all[0]:null;
-  var nowP=today?today.ps[nowHour]:null,heroHour=nowHour;
+  // The hero is a SETTLED price: an estimated hour (a day's `es`) is never shown as the price now.
+  var nowP=today?prisSettledAt(today,nowHour):null,heroHour=nowHour;
   // A zone whose current hour is never priced yet (ZONES `last`, Great Britain's within-day index) shows its latest priced hour, with that hour's own time.
   if(nowP==null&&today&&C.z&&ZONES[o.zone]&&ZONES[o.zone].last)
-    for(var lh=nowHour-1;lh>=0;lh--)if(today.ps[lh]!=null){nowP=today.ps[lh];heroHour=lh;break;}
+    for(var lh=nowHour-1;lh>=0;lh--)if(prisSettledAt(today,lh)!=null){nowP=today.ps[lh];heroHour=lh;break;}
   var td=today?[]:null,i;
   if(today)for(i=0;i<24;i++)if(today.ps[i]!=null)td.push(today.ps[i]);
   var verdict=nowP!=null?prisTier(nowP,td):1;
@@ -2532,7 +2687,8 @@ function prisHTML(days,todayStr,nowHour,o){
   // One period is no choice: the pill is not drawn (not drawn disabled).
   var tabs=cfg.periods.length<2?'':'<div class="pris-period" role="tablist" aria-label="'+L.period+'">'+cfg.periods.map(function(p){
     return '<button type="button" role="tab" aria-selected="'+(period===p)+'" data-pris-period="'+p+'">'+L['p'+p]+'</button>';}).join('')+'</div>';
-  var legend='<div class="pris-legend"><span><i class="t0"></i>'+L.tier[0]+'</span><span><i class="t1"></i>'+L.tier[1]+'</span><span><i class="t2"></i>'+L.tier[2]+'</span></div>';
+  var legend='<div class="pris-legend"><span><i class="t0"></i>'+L.tier[0]+'</span><span><i class="t1"></i>'+L.tier[1]+'</span><span><i class="t2"></i>'+L.tier[2]+'</span>'
+    +(C.hasEst?'<span class="pris-lge"><i></i>'+L.est+'</span>':'')+'</div>';
   var head=function(t){
     return '<div class="pris-ch"><p class="pris-ct">'+t+'</p>'+legend+(C.z?'':prisSwitch(view,'pris-seg-card','Spotpris'))+'</div>'
       +prisCapHTML(true,caption,panel,o.open);};
@@ -2559,7 +2715,7 @@ function prisHTML(days,todayStr,nowHour,o){
   });
   return '<div class="pris" data-period="'+period+'" data-view="'+view+'" data-key="'+prisEsc(o.key||'')
     +'" data-hour="'+nowHour+'" data-date="'+todayStr+'">'+hero
-    +'<div class="pris-right">'+tabs+cards+tiles+(C.band&&all.some(function(d){return !d.real;})?'<p class="pris-fcn">'+L.fcn+'</p>':'')+'</div>'
+    +'<div class="pris-right">'+tabs+cards+tiles+(C.hasEst?'<p class="pris-fcn pris-estn">'+L.estn+'</p>':'')+(C.band&&all.some(function(d){return !d.real;})?'<p class="pris-fcn">'+L.fcn+'</p>':'')+'</div>'
     +cfg.periods.map(function(p){return prisSummary(all,p,cfg,C);}).join('')+prisDayRows(all,C,cfg,wins)+'</div>';
 }
 
@@ -2584,7 +2740,7 @@ function prisZoneList(pg,raws,todayStr,nowHour){
   var C=PRIS_COUNTRIES[pg],L=prisPageL(pg),rows='';
   C.zones.forEach(function(k){
     var z=ZONES[k],raw=raws[k],zn=prisZoneNow(k,todayStr,nowHour==null?12:nowHour),sub=prisSub(pg,k);
-    var all=raw?prisDays(zoneToPrisDays(raw,raw.zoneInfo,zn.date),zn.date):[];
+    var all=raw?prisDays(zoneToPrisDays(raw&&raw.estimate?Object.assign({},raw,{estimate:null}):raw,raw.zoneInfo,zn.date),zn.date):[];
     var v=[0,1].map(function(i){return all[i]?prisAvg(all[i].ps):null;});
     var mx=Math.max(Math.abs(v[0]||0),Math.abs(v[1]||0));
     var part=function(w,x){return x==null?'':L.avg+' '+w+' '+prisNum(x,prisDec(mx),L)+' '+sub+'/kWh';};
@@ -3051,7 +3207,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v85');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v86');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -3100,9 +3256,9 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v21';
-const CITY_SSR_VERSION = 'city-ssr-v17';
-const PROGNOSE_SSR_VERSION = 'prognose-ssr-v15';
+const ZONE_SSR_VERSION = 'zone-ssr-v22';
+const CITY_SSR_VERSION = 'city-ssr-v18';
+const PROGNOSE_SSR_VERSION = 'prognose-ssr-v16';
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);
@@ -3313,7 +3469,7 @@ async function renderSPA(context, pathname, meta, opts = {}) {
       // Forecast mode is decided by the answer: a zone whose days include forecast days draws PRIS_EUF (eight days, band, accuracy), any other PRIS_ACT.
       const cfg = raw && prisZoneCfg(pg, raw);
       if (raw) html = html.replace('<!--SSR_PRIS-->', () => prisHTML(zoneToPrisDays(raw, raw.zoneInfo, zn.date, cfg.zd), zn.date, zn.hour,
-        { zone: C.def, pg, period: 2, cfg, acc: raw.accuracy, key: C.def, where: `${ZONES[C.def].name} ${prisCity(pg, C.def)}` }));
+        { zone: C.def, pg, period: 2, cfg, acc: raw.accuracy, est: raw.estimate && raw.estimate.accuracy, key: C.def, where: `${ZONES[C.def].name} ${prisCity(pg, C.def)}` }));
       html = html.replace('<!--SSR_ZONE_LIST-->', prisZoneList(pg, raws, todayDk, nowH));
       html = withCountryChrome(html, pg);
     } else {

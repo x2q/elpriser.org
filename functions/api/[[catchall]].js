@@ -12,6 +12,7 @@
 
 import { activateDataPage, stripInactiveMains, promoteSectionTitle } from '../_spa.js';
 import { recordUsage } from '../_usage.js';
+import { ESTIMATE_ZONES, withEstimate } from '../_estimate.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -1355,6 +1356,12 @@ const OPENAPI_SPEC = {
           'but holds pounds here, `unit` is `GBP/MWh` and `zoneInfo.currency` is `GBP` with `rate` 1, so `eur_mwh` * `rate` / 10 is pence per kWh like every other zone\'s sub-unit.',
           'Contains BMRS data © Elexon Limited copyright and database right (licence: https://www.elexon.co.uk/bsc/data/balancing-mechanism-reporting-agent/copyright-licence-bmrs-data/).',
           'Northern Ireland is not in `gb`: it trades in the SEM (`ie`).',
+          '',
+          '**Estimate (`gb`, `pt`, `ie`).** Where a settled day has hours without a price yet - the hours of today that have not traded in `gb`; the last local hour (23) of the newest day in `pt` and `ie`, one hour behind CET -',
+          'the answer may carry a top-level `estimate`: `{ date, type: "forecast", scope: "partial-day", model, generatedAt, prices: [{ hour, eur_mwh, min_eur_mwh, max_eur_mwh }], accuracy }`.',
+          'It is elpriser.org\'s own statistical estimate (min/max are P10/P90, `accuracy` the back-test), only for hours the settled day lists as null; `days` itself is never changed, so a client',
+          'that ignores `estimate` sees exactly the settled prices. An estimate older than three hours is not served. In `gb` the days after today may follow as `type: "forecast"` days (D+1 .. D+7, with `horizon`',
+          'and `accuracy` in GBP/MWh) like the other EU zones\' forecast days.',
         ].join('\n'),
         parameters: [{ name: 'zone', in: 'query', schema: { type: 'string', enum: [...NORDIC_ZONES, ...EU_ZONES], default: 'dk1' }, description: 'The bidding zone. Unknown values answer 400.' }],
         responses: { '200': { description: 'Days of hourly prices in EUR/MWh (GBP/MWh for `gb`) plus zoneInfo.' }, '400': { description: 'Unknown zone.' }, '404': { description: 'No data for that zone (yet).' } },
@@ -1555,18 +1562,19 @@ async function handleApi(context) {
     }
     if (!context.env || !context.env.PRICE_CACHE) return fail(503, 'forecast store unavailable');
     try {
-      const [priced, fc] = await Promise.all([
+      const [priced, fc, est] = await Promise.all([
         kvJson(context.env, eu ? `eu-prices-${zone}` : `nordic-forecast-${zone}`, { ttl: 900 }),
         eu ? kvJson(context.env, `eu-forecast-${zone}`, { ttl: 900 }) : null,
+        ESTIMATE_ZONES.includes(zone) ? kvJson(context.env, `eu-estimate-${zone}`, { ttl: 300 }) : null,     // the hours of a day that have no price yet (functions/_estimate.js)
       ]);
       if (!priced) return fail(404, eu ? `no prices available for ${zone}` : `no forecast available for ${zone}`);
-      const raw = eu ? withEuForecast(priced, fc) : priced;
+      const raw = eu ? withEstimate(withEuForecast(priced, fc), est, Date.now()) : priced;
       const fx = await ecbRates();
       const info = eu ? EU_ZONE_INFO[zone] : NORDIC_ZONE_INFO[zone];
       return jsonResponse({ ...raw, zoneInfo: { ...info,
                             rate: fx.rates[info.currency] ?? info.rate,
                             rateDate: fx.date, rateSource: fx.source } },
-                          { maxAge: 1800, request });
+                          { maxAge: ESTIMATE_ZONES.includes(zone) ? 300 : 1800, request });     // an estimate is replaced hour by hour: short cache
     } catch (e) {
       console.error(e);
       return fail(500, String(e.message || e));

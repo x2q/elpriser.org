@@ -132,3 +132,58 @@ test('the run scripts serialise runs, run at the lowest priority and need no ext
   assert.ok(/flock -n \/tmp\/eu-forecast-refresh\.lock/.test(rf) && /quantile_backtest\.py/.test(rf) && /calibrate_bands\.py/.test(rf) && /nice -n 10/.test(rf));
   assert.ok(!/kv\.put|api\.cloudflare/.test(rf), 'the refresh writes nothing to KV');
 });
+
+// ── The ESTIMATE of hours that have no price yet: Great Britain (rest of today, D+1..D+7), Portugal and Ireland (the missing last hour) — scripts/forecast_model/gb ──
+const GB = path.join(ROOT, 'scripts/forecast_model/gb');
+const readGb = f => fs.readFileSync(path.join(GB, f), 'utf8');
+const stripPy = t => t.replace(/"""[\s\S]*?"""/g, '').replace(/#.*$/gm, '');
+
+test('python unit tests: scripts/forecast_model/gb/test_gb.py passes (leakage rule of the rows, baselines, models, hour 23, payloads, the checked-in gate files)', { skip: havePandas ? false : 'pandas/numpy not installed here' }, () => {
+  const r = spawnSync('python3', [path.join(GB, 'test_gb.py')], { encoding: 'utf8' });
+  assert.equal(r.status, 0, 'test_gb.py failed:\n' + r.stdout + r.stderr);
+  assert.match(r.stderr, /Ran \d{2,} tests/, 'the estimate suite ran suspiciously few tests');
+});
+
+test('estimate: ONE list of zones — the API\'s ESTIMATE_ZONES, the job\'s ZONES and the zones of the hour-23 gate (plus gb) are the same three', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'functions/_estimate.js'), 'utf8');
+  const jsZones = ((js.match(/export const ESTIMATE_ZONES = \[([^\]]*)\]/) || [])[1] || '').split(',').map(x => x.trim().replace(/'/g, '')).filter(Boolean);
+  const pyZones = ((readGb('run_estimate.py').match(/^ZONES = \(([^)]*)\)/m) || [])[1] || '').split(',').map(x => x.trim().replace(/"/g, '')).filter(Boolean);
+  assert.deepEqual(jsZones, ['gb', 'pt', 'ie']);
+  assert.deepEqual(pyZones, jsZones);
+  const h23 = JSON.parse(readGb('hour23_gate.json'));
+  assert.deepEqual(Object.keys(h23.zones).sort(), jsZones.filter(z => z !== 'gb').sort());
+  const euAll = [...apiArray('EU_ZONES_ELEXON'), ...apiArray('EU_ZONES_ENTSOE'), ...apiArray('EU_ZONES_SEMOPX')];
+  for (const z of jsZones) assert.ok(euAll.includes(z), `${z} is an EU zone of the API`);
+  assert.ok(/ESTIMATE_ZONES\.includes\(zone\)/.test(api) && /eu-estimate-\$\{zone\}/.test(api), 'the API reads eu-estimate-<zone> for those zones only');
+});
+
+test('estimate: the job writes only its own keys, serves each for no longer than the API accepts, and holds no credential', () => {
+  const code = stripPy(readGb('run_estimate.py'));
+  const keys = [...code.matchAll(/sink\.put\(\s*f?"([^"]+)"/g)].map(m => m[1].replace(/\{[^}]*\}/g, '<x>'));
+  assert.deepEqual([...new Set(keys)].sort(), ['eu-estimate-<x>', 'eu-estimate-archive-gb-<x>', 'eu-estimate-gb', 'eu-forecast-gb']);
+  assert.ok(!/eu-prices|nordic-forecast|forecast-v3|eu-forecast-(?!gb)/.test(code), 'it never writes a settled-price, Nordic or another zone\'s forecast key');
+  assert.ok(!/ENTSOE_TOKEN|GIE_API_KEY/.test(code) && !/Bearer|api\.cloudflare\.com/.test(code), 'no credential in the code; kv.py carries the (env-supplied) write');
+  assert.ok(/if self\.dry:\n\s+return "would write"/.test(code), 'a dry run returns before the KV write');
+  const ttl = n => +(readGb('run_estimate.py').match(new RegExp(`${n} = (\\d+) \\* 3600`)) || [])[1];
+  const js = fs.readFileSync(path.join(ROOT, 'functions/_estimate.js'), 'utf8');
+  const maxAgeH = +(js.match(/ESTIMATE_MAX_AGE_MS = (\d+) \* 3600/) || [])[1];
+  assert.ok(ttl('ESTIMATE_TTL') > 0 && ttl('ESTIMATE_TTL') <= maxAgeH, 'the estimate key never outlives what the API accepts');
+  assert.ok(ttl('FORECAST_TTL') <= 12, 'the forecast days of gb are hours old at most, not days');
+});
+
+test('estimate: the run scripts serialise runs, run at the lowest priority, share the lock with the training, and write nothing to KV from the refresh', () => {
+  const run = readGb('run_hourly.sh'), tr = readGb('train_daily.sh'), rf = readGb('refresh_gate.sh');
+  assert.ok(/flock -n \/tmp\/gb-estimate\.lock/.test(run) && /nice -n 10/.test(run) && /timeout 20m/.test(run) && /run_estimate\.py/.test(run) && /12 \* \* \* \*/.test(run), 'hourly at :12, five minutes after the Elexon job');
+  assert.ok(/flock -w \d+ \/tmp\/gb-estimate\.lock/.test(tr) && /nice -n 10/.test(tr) && /train_gb\.py/.test(tr));
+  assert.ok(/backtest_gb\.py/.test(rf) && /build_gate_gb\.py/.test(rf) && /backtest_hour23\.py/.test(rf) && !/kv\.put|api\.cloudflare|run_estimate/.test(rf));
+  for (const f of ['run_hourly.sh', 'train_daily.sh', 'refresh_gate.sh']) assert.ok(fs.statSync(path.join(GB, f)).mode & 0o111, `${f} is executable`);
+});
+
+test('estimate: no fuel input anywhere in the estimate code, and what is published passed the 5 % rule', () => {
+  for (const f of fs.readdirSync(GB).filter(f => f.endsWith('.py') && !f.startsWith('test_'))) {
+    assert.ok(!/mibgas|\beex\b|\bTTF\b|fuel_daily|ccgt|\bNBP\b|\bgas\b/i.test(stripPy(readGb(f))), `${f} uses no fuel input (GB gas is NBP: no licence, no input)`);
+  }
+  const gate = JSON.parse(readGb('gb_gate.json'));
+  assert.ok(!/80 ?%/.test(JSON.stringify(gate)) && gate.unit === 'GBP/MWh' && gate.baseline === 'level+shape');
+  for (const k of ['rest', 'days']) for (const [h, c] of Object.entries(gate[k])) if (c.publish) assert.ok(c.gain >= 0.05 && c.gainHold >= 0.05 && c.mae <= c.persistMae, `${k} ${h} is published with gain ${c.gain} / hold-out ${c.gainHold}`);
+});

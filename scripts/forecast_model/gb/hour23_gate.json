@@ -1,0 +1,48 @@
+{
+ "version": 1,
+ "built": "2026-11-03",
+ "period": "2025-04-01..",
+ "holdOut": "2026-07-01..",
+ "recent": "2026-09-01",
+ "model": "hour23-v1",
+ "baseline": "persistence of hour 22",
+ "rule": "published only if the method's MAE is not worse than the best naive method (hour 22, yesterday's hour 23, last week's hour 23) on the whole backtest and on the hold-out; the method is chosen before the hold-out",
+ "zones": {
+  "pt": {
+   "method": "persist",
+   "publish": true,
+   "mae": 8.5267,
+   "baseMae": 8.5267,
+   "bestNaiveMae": 8.5267,
+   "gain": 0.0,
+   "gainHold": 0.0,
+   "gainRecent": 0.0,
+   "maeHold": 8.7408,
+   "maeSince": 10.6012,
+   "coverage": 0.8338,
+   "coverageRecent": 0.7143,
+   "bandLo": -19.74,
+   "bandHi": 11.67,
+   "days": 580,
+   "meanPrice": 98.4147
+  },
+  "ie": {
+   "method": "med28",
+   "publish": true,
+   "mae": 16.493,
+   "baseMae": 18.273,
+   "bestNaiveMae": 18.273,
+   "gain": 0.0974,
+   "gainHold": 0.0709,
+   "gainRecent": 0.0261,
+   "maeHold": 20.8305,
+   "maeSince": 23.3107,
+   "coverage": 0.8101,
+   "coverageRecent": 0.7541,
+   "bandLo": -39.5,
+   "bandHi": 35.22,
+   "days": 578,
+   "meanPrice": 125.216
+  }
+ }
+}
