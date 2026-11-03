@@ -38,5 +38,8 @@ for f in "${FILES[@]}"; do
 done
 cp -R functions "$DIST/functions"
 cp -R badges "$DIST/badges"
+# /download: the real app screenshots (WebP, 1x and 2x). The page itself is /download (the Function); only /download/img/* is static.
+mkdir -p "$DIST/download"
+cp -R download/img "$DIST/download/img"
 
 echo "$DIST: $(find "$DIST" -type f | wc -l | tr -d ' ') files, $(du -sh "$DIST" | cut -f1)"

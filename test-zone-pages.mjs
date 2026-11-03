@@ -866,6 +866,29 @@ for (const [from, to] of Object.entries(OLD)) {
   }
 }
 
+// /download as served (the real Function, no JS): the whole overview is in the HTML response — one h1, the two badges, every card with its status, every screenshot with a size — and the head says the same.
+{
+  store.clear();
+  const r = await get('/download'), b = r.body;
+  const mains = b.match(/<main[^>]*data-page=/g) || [];
+  ok(r.status === 200 && mains.length === 1 && /<main data-page="download" class="active dl-page">/.test(b), '/download: 200, ét <main>, aktiv og synlig i den serverede HTML (ingen display:none)');
+  ok((b.match(/<h1[\s>]/g) || []).length === 1 && /<h1 class="page-title">Hent Elpriser-appen<\/h1>/.test(b), '/download: præcis én h1');
+  const title = (b.match(/<title>([^<]*)<\/title>/) || [])[1] || '', desc = (b.match(/<meta name="description" content="([^"]*)"/) || [])[1] || '';
+  ok(title.length >= 55 && title.length <= 60 && /^Hent Elpriser-appen/.test(title), '/download: titlen er 55-60 tegn og begynder med handlingen', `${title.length}: ${title}`);
+  ok(desc.length >= 140 && desc.length <= 155 && /5 døgn/.test(desc) && !/10 døgn/.test(desc), '/download: beskrivelsen er 140-155 tegn og nævner 5 døgn', `${desc.length}`);
+  ok(/<meta property="og:image" content="https:\/\/elpriser\.org\/og-image\.png">/.test(b), '/download: og:image er uændret');
+  ok((b.match(/class="dl-badge /g) || []).length === 2 && (b.match(/<li class="dl-card dl-rv" data-status="/g) || []).length === 8 && (b.match(/<li class="dl-way|<a class="dl-way"/g) || []).length === 5, '/download: begge badges, otte kort og fem andre veje står i HTML\'en');
+  ok((b.match(/<img [^>]*\/download\/img\/[^>]*width="\d+" height="\d+"/g) || []).length >= 10 && !/\.(png|jpe?g)"/.test(b.match(/<main[\s\S]*<\/main>/)[0].replace(/\/badges\/[^"]+/g, '')), '/download: skærmbillederne er WebP med bredde og højde');
+  ok(/"@type": "MobileApplication"/.test(b) && /"featureList"/.test(b) && (b.match(/"@type": "MobileApplication"/g) || []).length === 1, '/download: MobileApplication-markup, én gang');
+  const text = b.match(/<main[\s\S]*<\/main>/)[0].replace(/<script[\s\S]*?<\/script>/g, ' ').replace(/<[^>]+>/g, ' ');
+  ok(/Kommer snart/.test(text) && /Kommer i næste version/.test(text) && !/10 døgn/.test(text), '/download: statuschippene står som tekst, ikke kun som CSS');
+  store.clear();
+  const llms = (await get('/llms.txt')).body, line = (llms.match(/- \[Hent appen\][^\n]*/) || [''])[0];
+  ok(/iPhone og iPad/.test(line) && /Android-telefon og -tablet/.test(line) && /Kommer: Mac/.test(line) && /Apple Watch/.test(line) && line.includes('apps.apple.com/dk/app/id6820474476') && line.includes('play.google.com/store/apps/details?id=org.elpriser.app') && !/prognose|Hugging/.test(line), '/download: llms.txt siger hvad der findes og hvad der kommer, med begge butikslinks');
+  const sm = (await get('/sitemap.xml')).body;
+  ok(/<loc>https:\/\/elpriser\.org\/download<\/loc>\s*<lastmod>2026-11-03<\/lastmod>/.test(sm), '/download: sitemap med lastmod 2026-11-03');
+}
+
 console.log(`${pass} beståede, ${fails.length} fejl`);
 fails.forEach(f => console.log('  ✗ ' + f));
 process.exit(fails.length ? 1 : 0);

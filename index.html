@@ -348,13 +348,139 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 
   /* ── /download: the two official store badges (Apple's and Google's own artwork, unaltered, in /badges), both 52 px high ── */
   .dl-stores{display:flex;flex-direction:column;align-items:flex-start;gap:.75rem;margin:1.25rem 0 0}
-  .dl-stores~section{margin-top:2.5rem}
   @media (min-width:520px){.dl-stores{flex-direction:row;flex-wrap:wrap;gap:1rem}}
   .dl-badge{display:block;height:52px;border-radius:11px;line-height:0;-webkit-tap-highlight-color:transparent}
   .dl-badge img{display:block;height:52px;width:auto}
   .dl-badge:hover{opacity:.88}
   .dl-badge:focus-visible{outline:2px solid var(--p-brand);outline-offset:3px}
   .dl-stores.is-android .dl-play{order:-1}
+
+  /* ── /download: the overview of the apps. Calm, large and light; every class is dl-prefixed. Colours are the --p-* tokens, so the dark ramp comes for free.
+     Content is fully visible without JS: the reveal only hides things once the inline script has put .dl-js on the main (and never under prefers-reduced-motion). ── */
+  .dl-page{color:var(--p-ink);overflow-x:clip}
+  .dl-in{max-width:1120px;margin:0 auto;padding:0 16px}
+  @media (min-width:720px){.dl-in{padding:0 32px}}
+  .dl-sec{padding:3.75rem 0}
+  @media (min-width:860px){.dl-sec{padding:5.5rem 0}}
+  .dl-band{background:var(--p-card);border-block:1px solid var(--p-line)}
+  .dl-kicker{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--p-brand);margin:0 0 .75rem}
+  .dl-h{font-size:clamp(1.85rem,4.4vw,3rem);font-weight:300;letter-spacing:-.03em;line-height:1.1;color:var(--p-ink);margin:0;text-wrap:balance}
+  .dl-h b{font-weight:700}
+  .dl-p{font-size:1.0625rem;line-height:1.6;color:var(--p-ink2);margin:1rem 0 0;max-width:30rem}
+  @media (min-width:860px){.dl-p{font-size:1.1875rem}}
+  .dl-p a,.dl-note a{color:var(--p-brand);text-decoration:underline;text-underline-offset:2px}
+
+  /* hero */
+  .dl-hero{position:relative;text-align:center;padding:3rem 0 0}
+  .dl-hero::before{content:"";position:absolute;left:0;right:0;top:0;height:38rem;background:radial-gradient(ellipse at 50% 32%,rgba(27,87,245,.11) 0%,transparent 58%);pointer-events:none}
+  .dark .dl-hero::before{background:radial-gradient(ellipse at 50% 32%,rgba(109,154,255,.17) 0%,transparent 58%)}
+  .dl-hero .dl-in{position:relative}
+  .dl-page .page-title{font-size:clamp(2.6rem,8vw,4.9rem);font-weight:300;letter-spacing:-.04em;line-height:1.03;margin:.7rem 0 0}
+  .dl-lead{font-size:clamp(1.0625rem,2.4vw,1.4rem);line-height:1.5;font-weight:400;color:var(--p-ink2);max-width:36rem;margin:1.25rem auto 0}
+  .dl-hero .dl-stores{width:fit-content;margin:2rem auto 0;justify-content:center}
+  /* stacked on a phone the two links get the same width, so the pair is centred and still shares one left edge; the artwork inside keeps its size */
+  @media (max-width:519px){.dl-hero .dl-badge{width:175px;display:flex;justify-content:center;align-items:center}}
+  .dl-req{font-size:.875rem;color:var(--p-muted);margin:1rem 0 0}
+  .dl-hero-dev{position:relative;display:flex;justify-content:center;align-items:flex-start;gap:1.5rem;margin:2.75rem auto 0;height:25rem;overflow:hidden;
+    -webkit-mask-image:linear-gradient(#000 78%,transparent);mask-image:linear-gradient(#000 78%,transparent)}
+  .dl-hero-dev .dl-phone{--w:230px}
+  .dl-hero-dev .dl-phone+.dl-phone{display:none}
+  @media (min-width:640px){
+    .dl-hero-dev{height:36rem;gap:2rem}
+    .dl-hero-dev .dl-phone{--w:300px}
+    .dl-hero-dev .dl-phone+.dl-phone{display:block;margin-top:4.5rem}
+  }
+
+  /* the phone: a rounded frame drawn in CSS around the real screenshot */
+  .dl-phone{--w:260px;--bz:calc(var(--w)*.03);position:relative;flex:none;width:var(--w);box-sizing:border-box;padding:var(--bz);border-radius:calc(var(--w)*.155);
+    background:#0b0f1a;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14),0 0 0 1px rgba(14,21,48,.5),0 2px 4px rgba(14,21,48,.12),0 28px 60px -18px rgba(14,21,48,.42),0 60px 90px -40px rgba(14,21,48,.3)}
+  .dark .dl-phone{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.16),0 0 0 1px rgba(255,255,255,.1),0 30px 70px -20px rgba(0,0,0,.75),0 0 80px -30px rgba(109,154,255,.25)}
+  .dl-phone img{display:block;width:100%;height:auto;border-radius:calc(var(--w)*.125);background:var(--p-card)}
+  .dl-ios::after{content:"";position:absolute;left:50%;top:calc(var(--bz) + var(--w)*.032);width:calc(var(--w)*.27);height:calc(var(--w)*.08);transform:translateX(-50%);border-radius:99px;background:#05070d}
+
+  /* feature sections: big screenshot one side, short copy on the other, alternating, stacked on a phone */
+  .dl-feat{display:grid;grid-template-columns:minmax(0,1fr);gap:2.5rem;align-items:center}
+  .dl-feat .dl-media{display:flex;justify-content:center;align-items:flex-start;gap:1.25rem}
+  .dl-feat .dl-phone{--w:min(250px,calc(50vw - 28px))}
+  .dl-feat .dl-media-one .dl-phone{--w:min(270px,calc(100vw - 64px))}
+  .dl-feat .dl-media .dl-phone+.dl-phone{margin-top:3rem}
+  @media (min-width:860px){
+    .dl-feat{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4.5rem}
+    .dl-feat.dl-rev .dl-media{order:-1}
+    .dl-feat .dl-phone{--w:260px}
+    .dl-feat .dl-media-one .dl-phone{--w:300px}
+    .dl-feat .dl-copy{padding:0 1rem}
+  }
+
+  /* the basics: five short promises */
+  .dl-basics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.75rem 1.25rem;margin:0;padding:0;list-style:none}
+  .dl-basics li{border-top:1px solid var(--p-line);padding-top:1.1rem}
+  .dl-basics strong{display:block;font-size:clamp(1.4rem,3vw,1.9rem);font-weight:300;letter-spacing:-.02em;color:var(--p-ink);line-height:1.15}
+  .dl-basics span{display:block;margin-top:.4rem;font-size:.9375rem;line-height:1.45;color:var(--p-muted)}
+  @media (min-width:860px){.dl-basics{grid-template-columns:repeat(5,minmax(0,1fr));gap:1.5rem}}
+  .dl-basics li:last-child{grid-column:1/-1}
+  @media (min-width:860px){.dl-basics li:last-child{grid-column:auto}}
+
+  /* Europe */
+  .dl-eu{display:grid;grid-template-columns:minmax(0,1fr);gap:1.5rem;align-items:center}
+  .dl-big{font-size:clamp(6rem,22vw,13rem);font-weight:200;letter-spacing:-.06em;line-height:.9;color:var(--p-brand);margin:0}
+  .dl-big small{display:block;font-size:clamp(1.1rem,2.4vw,1.5rem);font-weight:400;letter-spacing:-.01em;color:var(--p-ink2);margin-top:.6rem}
+  @media (min-width:860px){.dl-eu{grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:4.5rem}}
+
+  /* tablets */
+  .dl-tabs{display:grid;grid-template-columns:minmax(0,1fr);gap:2.5rem;margin-top:3rem}
+  @media (min-width:860px){.dl-tabs{grid-template-columns:repeat(2,minmax(0,1fr));gap:3rem}}
+  .dl-tab{margin:0}
+  .dl-tab .dl-frame{padding:10px;border-radius:26px;background:#0b0f1a;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14),0 0 0 1px rgba(14,21,48,.5),0 28px 60px -22px rgba(14,21,48,.4)}
+  .dark .dl-tab .dl-frame{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.16),0 0 0 1px rgba(255,255,255,.1),0 30px 70px -24px rgba(0,0,0,.75)}
+  .dl-tab img{display:block;width:100%;height:auto;border-radius:17px;background:var(--p-card)}
+  .dl-tab figcaption{margin-top:1.1rem;text-align:center;font-size:.9375rem;color:var(--p-muted)}
+  .dl-tab figcaption b{color:var(--p-ink);font-weight:600}
+  .dl-head{max-width:40rem}
+  .dl-head.dl-mid{margin:0 auto;text-align:center}
+  .dl-head.dl-mid .dl-p{margin-left:auto;margin-right:auto}
+
+  /* the overview: one card per platform, each with a status chip (data-status on the card is the single switch: live | soon | planned | next) */
+  .dl-cards{display:grid;grid-template-columns:minmax(0,1fr);gap:1rem;margin:2.5rem 0 0;padding:0;list-style:none}
+  @media (min-width:600px){.dl-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (min-width:960px){.dl-cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.25rem}}
+  .dl-card{display:flex;flex-direction:column;align-items:flex-start;background:var(--p-card);border:1px solid var(--p-line);border-radius:24px;padding:1.5rem;box-shadow:var(--ring)}
+  .dl-card .dl-ico{width:44px;height:44px;padding:10px;border-radius:12px;background:var(--p-seg);color:var(--p-ink);box-sizing:border-box;flex:none}
+  .dl-card h3{font-size:1.25rem;font-weight:600;letter-spacing:-.01em;color:var(--p-ink);margin:1rem 0 0}
+  .dl-card p{font-size:.9375rem;line-height:1.55;color:var(--p-ink2);margin:.5rem 0 0}
+  .dl-card .dl-os{font-size:.8125rem;color:var(--p-muted);margin-top:.75rem}
+  .dl-chip{display:inline-block;margin-top:.7rem;font-size:.75rem;font-weight:700;letter-spacing:.02em;line-height:1;padding:.4rem .65rem;border-radius:99px;border:1px solid var(--p-chip-line);background:var(--p-seg);color:var(--p-ink2)}
+  .dl-page [data-status="live"] .dl-chip,.dl-page [data-status="soon"] .dl-chip,.dl-page [data-status="next"] .dl-chip{border-color:transparent}
+  .dl-page [data-status="live"] .dl-chip{background:var(--p-lo-bg);color:var(--p-lo-ink)}
+  .dl-page [data-status="soon"] .dl-chip{background:var(--p-mi-bg);color:#7a5200}
+  .dark .dl-page [data-status="soon"] .dl-chip{color:var(--p-mi-ink)}
+  .dl-page [data-status="next"] .dl-chip{background:rgba(27,87,245,.1);color:var(--p-pill-ink)}
+  .dark .dl-page [data-status="next"] .dl-chip{background:rgba(109,154,255,.16)}
+  .dl-more{display:inline-flex;align-items:center;gap:.35rem;min-height:44px;margin-top:auto;padding-top:.5rem;font-size:.9375rem;font-weight:600;color:var(--p-brand);text-decoration:none}
+  .dl-more:hover{text-decoration:underline;text-underline-offset:3px}
+  .dl-more:focus-visible,.dl-way:focus-visible,.dl-page a:focus-visible{outline:2px solid var(--p-brand);outline-offset:3px;border-radius:6px}
+  .dl-card .dl-more{margin-top:.75rem}
+  .dl-card[data-status="next"],.dl-card[data-status="planned"]{background:transparent;box-shadow:none;border-style:dashed}
+  .dl-soon{display:grid;grid-template-columns:minmax(0,1fr);gap:1rem;margin:3rem 0 0;padding:0;list-style:none}
+  @media (min-width:700px){.dl-soon{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .dl-sub{font-size:1.0625rem;font-weight:600;color:var(--p-ink);margin:3.5rem 0 0}
+
+  /* other ways to get the prices */
+  .dl-ways{display:grid;grid-template-columns:minmax(0,1fr);gap:.75rem;margin:2.25rem 0 0;padding:0;list-style:none}
+  @media (min-width:700px){.dl-ways{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (min-width:1000px){.dl-ways{grid-template-columns:repeat(5,minmax(0,1fr))}}
+  .dl-way{display:flex;flex-direction:column;height:100%;box-sizing:border-box;min-height:44px;padding:1.1rem 1.25rem;background:var(--p-card);border:1px solid var(--p-line);border-radius:18px;text-decoration:none;color:var(--p-ink);transition:transform .18s cubic-bezier(.4,0,.2,1),box-shadow .18s cubic-bezier(.4,0,.2,1)}
+  .dl-way:hover{transform:translateY(-1px);box-shadow:var(--ring-hover)}
+  .dl-way b{font-size:1rem;font-weight:600;display:flex;justify-content:space-between;gap:.5rem}
+  .dl-way b i{font-style:normal;color:var(--p-brand)}
+  .dl-way span{font-size:.875rem;line-height:1.45;color:var(--p-muted);margin-top:.4rem}
+  .dl-note{font-size:.875rem;line-height:1.6;color:var(--p-muted);max-width:44rem;margin:0 auto}
+
+  /* scroll reveal: fade and a short rise, nothing else */
+  .dl-js .dl-rv{opacity:0;transform:translateY(26px);transition:opacity .75s cubic-bezier(.2,.7,.2,1),transform .75s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0s)}
+  .dl-js .dl-rv.is-in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.dl-js .dl-rv{opacity:1;transform:none;transition:none}.dl-way{transition:none}}
+  @media print{.dl-js .dl-rv{opacity:1;transform:none}}
 
   /* ── The net chip opens a dialog ── */
   .pris-dialog{border:0;padding:0;border-radius:22px;width:calc(100% - 2rem);max-width:34rem;max-height:calc(100vh - 2rem);overflow:auto;
@@ -1714,48 +1840,245 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
   </article>
 </main>
 
-<!-- ═══════ DOWNLOAD PAGE: the two store badges (code-drawn, in the style of the OG image) ═══════ -->
-<main style="display:none" data-page="download" class="max-w-2xl mx-auto px-4 py-6">
-  <!-- The app these badges install; scoped to this page like the other pages' structured data. -->
+<!-- ═══════ DOWNLOAD PAGE: an overview of the apps, with real screenshots (the two store badges are the official artwork in /badges) ═══════ -->
+<main style="display:none" data-page="download" class="dl-page">
+  <!-- Reveal-on-scroll switch. It runs first so the class is on before anything is painted; without JS, with reduced motion or without IntersectionObserver nothing is ever hidden. -->
+  <script>(function(){var m=document.currentScript.parentNode;if(!('IntersectionObserver' in window)||(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches))return;m.classList.add('dl-js');function go(){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target);}});},{rootMargin:'0px 0px -6% 0px',threshold:.06});m.querySelectorAll('.dl-rv').forEach(function(el){io.observe(el);});addEventListener('beforeprint',function(){m.querySelectorAll('.dl-rv').forEach(function(el){el.classList.add('is-in');});});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go();})();</script>
+  <!-- The live apps (iPhone and iPad in App Store, Android phone and tablet on Google Play; the same two store pages), described once. Mac, Apple Watch, reminders and widget are not released and are not in the markup below as applications. -->
   <script type="application/ld+json">{
   "@context": "https://schema.org",
   "@type": "MobileApplication",
   "name": "Elpriser – time for time",
   "url": "https://elpriser.org/download",
-  "description": "Elprisen lige nu, i morgen og de næste 5 døgn — med dit netselskab, nettarif, afgifter og moms.",
+  "description": "Elprisen lige nu, i morgen og de næste 5 døgn — med dit netselskab, nettarif, afgifter og moms. Til iPhone, iPad, Android-telefon og Android-tablet.",
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "iOS 18 eller nyere, Android 8 eller nyere",
   "inLanguage": "da",
   "isAccessibleForFree": true,
   "offers": {"@type": "Offer", "price": "0", "priceCurrency": "DKK"},
   "downloadUrl": ["https://apps.apple.com/dk/app/id6820474476", "https://play.google.com/store/apps/details?id=org.elpriser.app"],
+  "featureList": ["Prisen lige nu med vurdering: billig, middel eller dyr", "Prisen time for time, 2 døgn eller 5 døgn frem, med prognose", "Din pris med nettarif, Energinets tariffer, afgifter og moms, eller Spotpris", "Find netselskabet med din position eller vælg det på listen", "Smart hjem: de billigste timer til varmepumpe, elbil og vandvarmer", "Børspriser for 30 europæiske lande", "Lys og mørk tilstand, ingen reklamer, ingen konto"],
+  "screenshot": ["https://elpriser.org/download/img/iphone-nu-720.webp", "https://elpriser.org/download/img/iphone-opdeling-720.webp", "https://elpriser.org/download/img/iphone-5dage-720.webp", "https://elpriser.org/download/img/android-nu-720.webp"],
   "publisher": {"@type": "Organization", "name": "elpriser.org", "url": "https://elpriser.org"}
 }</script>
-  <div class="flex items-center justify-between mb-6">
-    <div><div class="page-eyebrow">Gratis app til iPhone, iPad og Android</div><h2 class="page-title">Hent Elpriser-appen</h2></div>
-  </div>
-  <div class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-    <p class="text-base text-gray-700 dark:text-gray-300">Elprisen lige nu, i morgen og de næste 5 døgn — med dit netselskab — direkte på telefonen. Appen er gratis, kræver ingen konto og har ingen reklamer.</p>
-    <div class="dl-stores">
-      <a class="dl-badge dl-apple" href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Hent i App Store — iPhone og iPad"><img src="/badges/app-store-da.svg" alt="" width="156" height="52"></a>
-      <a class="dl-badge dl-play" href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener" aria-label="Hent på Google Play — Android"><img src="/badges/google-play-da.png" alt="" width="175" height="52"></a>
+
+  <!-- ── Hero ── -->
+  <section class="dl-hero">
+    <div class="dl-in">
+      <div class="page-eyebrow dl-rv">Gratis app til iPhone, iPad og Android</div>
+      <div class="dl-rv" style="--d:.05s"><h2 class="page-title">Hent Elpriser-appen</h2></div>
+      <p class="dl-lead dl-rv" style="--d:.1s">Elprisen lige nu, i morgen og de næste 5 døgn — med dit netselskab. Gratis, uden konto og uden reklamer.</p>
+      <div class="dl-rv" style="--d:.15s" data-placement="hero"><div class="dl-stores">
+        <a class="dl-badge dl-apple" href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Hent i App Store — iPhone og iPad"><img src="/badges/app-store-da.svg" alt="" width="156" height="52"></a>
+        <a class="dl-badge dl-play" href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener" aria-label="Hent på Google Play — Android"><img src="/badges/google-play-da.png" alt="" width="175" height="52"></a>
+      </div>
+      <script>(function(){var b=document.currentScript.previousElementSibling,u=navigator.userAgent;if(/Android/i.test(u))b.className+=' is-android';else if(/iPhone|iPad|iPod/.test(u)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))b.className+=' is-ios';})();</script></div>
+      <p class="dl-req">Kræver iOS 18 eller nyere, eller Android 8 eller nyere.</p>
+      <div class="dl-hero-dev">
+        <div class="dl-phone dl-ios"><img src="/download/img/iphone-nu-720.webp" srcset="/download/img/iphone-nu-360.webp 360w, /download/img/iphone-nu-720.webp 720w" sizes="(min-width:640px) 300px, 230px" width="360" height="782" fetchpriority="high" alt="Elpriser på iPhone: prisen lige nu, 2,90 kr/kWh, vurderet som dyr, og en graf over de næste to døgn."></div>
+        <div class="dl-phone dl-ios"><img src="/download/img/iphone-moerk-720.webp" srcset="/download/img/iphone-moerk-360.webp 360w, /download/img/iphone-moerk-720.webp 720w" sizes="300px" width="360" height="782" loading="lazy" alt="Elpriser på iPhone i mørk tilstand: prisen lige nu og prisen foldet ud i spotpris, tariffer, afgift og moms."></div>
+      </div>
     </div>
-    <script>(function(){var b=document.currentScript.previousElementSibling,u=navigator.userAgent;if(/Android/i.test(u))b.className+=' is-android';else if(/iPhone|iPad|iPod/.test(u)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))b.className+=' is-ios';})();</script>
-    <section>
-      <h3 class="font-bold text-gray-900 dark:text-white mb-2">Det får du i appen</h3>
-      <ul class="mt-2 space-y-1 ml-4 list-disc">
-        <li><strong class="text-gray-800 dark:text-gray-200">Prisen lige nu</strong> &mdash; den store pris i kr/kWh og en vurdering: billig, middel eller dyr lige nu.</li>
-        <li><strong class="text-gray-800 dark:text-gray-200">2 døgn eller 5 døgn</strong> &mdash; prisen time for time som graf, for i dag og i morgen eller for de næste fem døgn.</li>
-        <li><strong class="text-gray-800 dark:text-gray-200">Din pris eller Spotpris</strong> &mdash; Din pris er med dit netselskab: nettarif, afgifter og moms. Fold den ud og se, hvad hver del koster. Spotpris er børsprisen inkl. moms.</li>
-        <li><strong class="text-gray-800 dark:text-gray-200">Dit netselskab</strong> &mdash; find det med din position, eller vælg det på listen. Positionen bruges kun, når du trykker, og kun netselskabet gemmes.</li>
-        <li><strong class="text-gray-800 dark:text-gray-200">DK1 eller DK2</strong> &mdash; vælg Vestdanmark eller Østdanmark.</li>
+  </section>
+
+  <!-- ── Features ── -->
+  <section class="dl-sec">
+    <div class="dl-in dl-feat">
+      <div class="dl-copy dl-rv">
+        <p class="dl-kicker">Lige nu</p>
+        <h2 class="dl-h">Billig, middel eller dyr. <b>Med det samme.</b></h2>
+        <p class="dl-p">Den store pris står øverst i kr/kWh, og ved siden af står en vurdering: er strømmen billig, middel eller dyr lige nu? Du kan også se, hvornår den bliver billigere.</p>
+      </div>
+      <div class="dl-media dl-rv" style="--d:.1s">
+        <div class="dl-phone"><img src="/download/img/android-nu-720.webp" srcset="/download/img/android-nu-360.webp 360w, /download/img/android-nu-720.webp 720w" sizes="(min-width:860px) 260px, 50vw" width="360" height="720" loading="lazy" alt="Elpriser på Android: prisen lige nu, 1,86 kr/kWh, med vurderingen billig lige nu og en graf over dagen."></div>
+        <div class="dl-phone"><img src="/download/img/android-moerk-720.webp" srcset="/download/img/android-moerk-360.webp 360w, /download/img/android-moerk-720.webp 720w" sizes="(min-width:860px) 260px, 50vw" width="360" height="720" loading="lazy" alt="Den samme skærm på Android i mørk tilstand."></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dl-sec dl-band">
+    <div class="dl-in dl-feat dl-rev">
+      <div class="dl-copy dl-rv">
+        <p class="dl-kicker">Din pris</p>
+        <h2 class="dl-h">Prisen med <b>alt det, du betaler for.</b></h2>
+        <p class="dl-p">Din pris er spotprisen, nettariffen, Energinets tariffer, afgifter og moms lagt sammen. Fold den ud og se, hvad hver del koster. Vil du kun se børsprisen, skifter du til Spotpris.</p>
+      </div>
+      <div class="dl-media dl-media-one dl-rv" style="--d:.1s">
+        <div class="dl-phone dl-ios"><img src="/download/img/iphone-opdeling-720.webp" srcset="/download/img/iphone-opdeling-360.webp 360w, /download/img/iphone-opdeling-720.webp 720w" sizes="(min-width:860px) 300px, 270px" width="360" height="782" loading="lazy" alt="Prisen er foldet ud: spotpris, systemtarif, transmissionstarif, nettarif, elafgift og moms giver tilsammen 2,90 kr/kWh."></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dl-sec">
+    <div class="dl-in dl-feat">
+      <div class="dl-copy dl-rv">
+        <p class="dl-kicker">2 døgn eller 5 døgn</p>
+        <h2 class="dl-h">Se de billige timer <b>i god tid.</b></h2>
+        <p class="dl-p">Skift mellem 2 døgn og 5 døgn. Grafen viser hver time, og farverne fortæller, om den er billig, middel eller dyr. Det, børsen endnu ikke har sat pris på, er en prognose: elpriser.orgs egen statistiske model, ikke en officiel.</p>
+      </div>
+      <div class="dl-media dl-media-one dl-rv" style="--d:.1s">
+        <div class="dl-phone dl-ios"><img src="/download/img/iphone-5dage-720.webp" srcset="/download/img/iphone-5dage-360.webp 360w, /download/img/iphone-5dage-720.webp 720w" sizes="(min-width:860px) 300px, 270px" width="360" height="782" loading="lazy" alt="Graf over de næste fem døgn, time for time, med billige timer i grønt, middel i gult og dyre i rødt."></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dl-sec dl-band">
+    <div class="dl-in dl-feat dl-rev">
+      <div class="dl-copy dl-rv">
+        <p class="dl-kicker">Dit netselskab</p>
+        <h2 class="dl-h">Find det. <b>Uden besvær.</b></h2>
+        <p class="dl-p">Tryk på knappen, og appen finder netselskabet ud fra din position. Positionen bruges kun, når du trykker, og kun netselskabets navn gemmes. Du kan også vælge det selv på listen og vælge mellem Vestdanmark (DK1) og Østdanmark (DK2).</p>
+      </div>
+      <div class="dl-media dl-rv" style="--d:.1s">
+        <div class="dl-phone"><img src="/download/img/android-velkommen-720.webp" srcset="/download/img/android-velkommen-360.webp 360w, /download/img/android-velkommen-720.webp 720w" sizes="(min-width:860px) 260px, 50vw" width="360" height="720" loading="lazy" alt="Find dit netselskab: appen spørger kun, når du trykker på knappen, og gemmer netselskabet, ikke din position."></div>
+        <div class="dl-phone dl-ios"><img src="/download/img/iphone-netselskab-720.webp" srcset="/download/img/iphone-netselskab-360.webp 360w, /download/img/iphone-netselskab-720.webp 720w" sizes="(min-width:860px) 260px, 50vw" width="360" height="782" loading="lazy" alt="Listen over netselskaber i Vestdanmark med N1 valgt."></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dl-sec">
+    <div class="dl-in dl-feat">
+      <div class="dl-copy dl-rv">
+        <p class="dl-kicker">Smart hjem</p>
+        <h2 class="dl-h">Planlæg efter <b>de billigste timer.</b></h2>
+        <p class="dl-p">Se de billigste timer til varmepumpe, elbil og vandvarmer, og hvor meget du sparer. Planen kan du kopiere til Home Assistant eller Shelly.</p>
+      </div>
+      <div class="dl-media dl-media-one dl-rv" style="--d:.1s">
+        <div class="dl-phone dl-ios"><img src="/download/img/iphone-smart-hjem-720.webp" srcset="/download/img/iphone-smart-hjem-360.webp 360w, /download/img/iphone-smart-hjem-720.webp 720w" sizes="(min-width:860px) 300px, 270px" width="360" height="782" loading="lazy" alt="Smart hjem: de billigste timer til varmepumpe, elbil og vandvarmer og hvad du sparer."></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── The basics ── -->
+  <section class="dl-sec dl-band" aria-labelledby="dlBasics">
+    <div class="dl-in">
+      <div class="dl-head dl-rv"><p class="dl-kicker">Det grundlæggende</p><h2 class="dl-h" id="dlBasics">Enkelt, <b>som det skal være.</b></h2></div>
+      <ul class="dl-basics" style="margin-top:2.5rem">
+        <li class="dl-rv"><strong>Gratis</strong><span>Appen koster ikke noget.</span></li>
+        <li class="dl-rv" style="--d:.05s"><strong>Ingen konto</strong><span>Du kommer i gang uden at logge ind.</span></li>
+        <li class="dl-rv" style="--d:.1s"><strong>Ingen reklamer</strong><span>Kun priserne.</span></li>
+        <li class="dl-rv" style="--d:.15s"><strong>26 sprog</strong><span>Appen findes på dansk og 25 andre sprog.</span></li>
+        <li class="dl-rv" style="--d:.2s"><strong>Lys og mørk</strong><span>Følger din telefon, eller du vælger selv.</span></li>
       </ul>
-    </section>
-    <section>
-      <h3 class="font-bold text-gray-900 dark:text-white mb-2">Til telefon og tablet</h3>
-      <p>Appen findes til iPhone og iPad (iOS 18 eller nyere) og til Android (Android 8 eller nyere). Den viser de samme priser som elpriser.org, som du stadig kan bruge i browseren uden at installere noget. Hvad prisen består af, står under <a href="/om-elpriser" class="text-brand-500 underline">Forstå din elpris</a>, og hvordan appen behandler din position, står under <a href="/privatliv" class="text-brand-500 underline">Privatliv</a>.</p>
-    </section>
-  </div>
+    </div>
+  </section>
+
+  <!-- ── Europe ── -->
+  <section class="dl-sec" data-status="live" aria-labelledby="dlEu">
+    <div class="dl-in dl-eu">
+      <p class="dl-big dl-rv" aria-hidden="true">30<small>lande</small></p>
+      <div class="dl-copy dl-rv" style="--d:.1s">
+        <p class="dl-kicker">Europa</p>
+        <h2 class="dl-h" id="dlEu">Danmark i detaljen. <b>Og 29 lande mere.</b></h2>
+        <p class="dl-p">For Danmark får du Din pris med netselskab, tariffer, afgifter og moms. I alle 30 lande, fra Norge til Portugal og fra Irland til Grækenland, viser appen børsprisen for i dag og i morgen og peger på den billigste og den dyreste time.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Tablets ── -->
+  <section class="dl-sec dl-band" aria-labelledby="dlTablet">
+    <div class="dl-in">
+      <div class="dl-head dl-mid dl-rv">
+        <p class="dl-kicker">iPad og Android-tablet</p>
+        <h2 class="dl-h" id="dlTablet">Plads til <b>hele overblikket.</b></h2>
+        <p class="dl-p">På en tablet står prisen ved siden af grafen, og menuen ligger i siden. Det er den samme app og de samme priser.</p>
+      </div>
+      <div class="dl-tabs">
+        <figure class="dl-tab dl-rv">
+          <div class="dl-frame"><img src="/download/img/ipad-nu-1280.webp" srcset="/download/img/ipad-nu-640.webp 640w, /download/img/ipad-nu-1280.webp 1280w" sizes="(min-width:860px) 520px, calc(100vw - 52px)" width="640" height="480" loading="lazy" alt="Elpriser på iPad: prisen lige nu til venstre og en graf over de næste to døgn til højre."></div>
+          <figcaption><b>iPad</b> · iPadOS 18 eller nyere</figcaption>
+        </figure>
+        <figure class="dl-tab dl-rv" style="--d:.1s">
+          <div class="dl-frame"><img src="/download/img/android-tablet-nu-1280.webp" srcset="/download/img/android-tablet-nu-640.webp 640w, /download/img/android-tablet-nu-1280.webp 1280w" sizes="(min-width:860px) 520px, calc(100vw - 52px)" width="640" height="400" loading="lazy" alt="Elpriser på en Android-tablet: prisen lige nu, de næste dage og en graf over dagen."></div>
+          <figcaption><b>Android-tablet</b> · Android 8 eller nyere</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Overview of all the apps ──
+       STATUS SWITCH: each card carries data-status="live | soon | planned | next". Flip the attribute AND the chip text together when a product changes.
+       Today: iPhone, iPad, Android phone and tablet live; Mac soon (with Apple for review); Apple Watch planned; reminders and widget next (version 1.3.0). -->
+  <section class="dl-sec" aria-labelledby="dlApps">
+    <div class="dl-in">
+      <div class="dl-head dl-rv"><p class="dl-kicker">Alle vores apps</p><h2 class="dl-h" id="dlApps">Én app. <b>Flere skærme.</b></h2>
+        <p class="dl-p">Samme priser, uanset hvor du ser dem. Her er det, der findes i dag, og det, der er på vej.</p></div>
+      <ul class="dl-cards">
+        <li class="dl-card dl-rv" data-status="live">
+          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+          <h3>iPhone</h3><span class="dl-chip">Tilgængelig</span>
+          <p>Prisen lige nu, 2 og 5 døgn frem, Din pris og Spotpris, med dit netselskab.</p>
+          <p class="dl-os">iOS 18 eller nyere</p>
+          <a class="dl-more" href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Åbn iPhone-appen i App Store" data-placement="card">App Store <span aria-hidden="true">&rarr;</span></a>
+        </li>
+        <li class="dl-card dl-rv" data-status="live" style="--d:.05s">
+          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M11 17h2"/></svg>
+          <h3>iPad</h3><span class="dl-chip">Tilgængelig</span>
+          <p>Samme app med plads til en stor graf, og menuen i siden.</p>
+          <p class="dl-os">iPadOS 18 eller nyere</p>
+          <a class="dl-more" href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Åbn iPad-appen i App Store" data-placement="card">App Store <span aria-hidden="true">&rarr;</span></a>
+        </li>
+        <li class="dl-card dl-rv" data-status="live" style="--d:.1s">
+          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+          <h3>Android-telefon</h3><span class="dl-chip">Tilgængelig</span>
+          <p>De samme priser og den samme Din pris, med lys og mørk tilstand.</p>
+          <p class="dl-os">Android 8 eller nyere</p>
+          <a class="dl-more" href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener" aria-label="Åbn Android-appen på Google Play" data-placement="card">Google Play <span aria-hidden="true">&rarr;</span></a>
+        </li>
+        <li class="dl-card dl-rv" data-status="live">
+          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M11 17h2"/></svg>
+          <h3>Android-tablet</h3><span class="dl-chip">Tilgængelig</span>
+          <p>Tilpasset den store skærm, med menuen i siden.</p>
+          <p class="dl-os">Android 8 eller nyere</p>
+          <a class="dl-more" href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener" aria-label="Åbn Android-appen til tablet på Google Play" data-placement="card">Google Play <span aria-hidden="true">&rarr;</span></a>
+        </li>
+        <li class="dl-card dl-rv" data-status="soon" style="--d:.05s">
+          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="10" rx="1.5"/><path d="M3 19h18"/></svg>
+          <h3>Mac</h3><span class="dl-chip">Kommer snart</span>
+          <p>Prisen i menulinjen og et vindue, når du vil se mere. Er sendt til Apple til godkendelse.</p>
+          <p class="dl-os">macOS 15 eller nyere</p>
+        </li>
+        <li class="dl-card dl-rv" data-status="planned" style="--d:.1s">
+          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="6.5" width="10" height="11" rx="3"/><path d="M9 6.5l.7-3h4.6l.7 3M9 17.5l.7 3h4.6l.7-3"/></svg>
+          <h3>Apple Watch</h3><span class="dl-chip">Kommer</span>
+          <p>Prisen på håndleddet, også som komplikation på urskiven.</p>
+        </li>
+      </ul>
+      <p class="dl-sub dl-rv">På vej i næste version</p>
+      <ul class="dl-soon">
+        <li class="dl-card dl-rv" data-status="next">
+          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+          <h3>Påmindelser</h3><span class="dl-chip">Kommer i næste version</span>
+          <p>Få besked, når strømmen er billigst. Påmindelserne ligger kun på din telefon: ingen konto og ingen server.</p>
+        </li>
+        <li class="dl-card dl-rv" data-status="next" style="--d:.05s">
+          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>
+          <h3>Widget</h3><span class="dl-chip">Kommer i næste version</span>
+          <p>Prisen lige nu på hjemmeskærmen og låseskærmen på iPhone.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── Other ways to get the prices ── -->
+  <section class="dl-sec dl-band" aria-labelledby="dlWays">
+    <div class="dl-in">
+      <div class="dl-head dl-rv"><p class="dl-kicker">Uden app</p><h2 class="dl-h" id="dlWays">Flere måder at få <b>priserne på.</b></h2></div>
+      <ul class="dl-ways">
+        <li class="dl-rv"><a class="dl-way" href="/"><b>Hjemmesiden <i aria-hidden="true">&rarr;</i></b><span>elpriser.org i browseren, uden at installere noget.</span></a></li>
+        <li class="dl-rv" style="--d:.05s"><a class="dl-way" href="https://github.com/x2q/ha-elpriser" rel="noopener"><b>Home Assistant <i aria-hidden="true">&rarr;</i></b><span>Priserne i dit smarte hjem.</span></a></li>
+        <li class="dl-rv" style="--d:.1s"><a class="dl-way" href="/automation#shelly"><b>Shelly <i aria-hidden="true">&rarr;</i></b><span>Kode til relæer, der tænder på de billigste timer.</span></a></li>
+        <li class="dl-rv" style="--d:.15s"><a class="dl-way" href="/api"><b>API <i aria-hidden="true">&rarr;</i></b><span>Gratis JSON-API til danske elpriser.</span></a></li>
+        <li class="dl-rv" style="--d:.2s"><a class="dl-way" href="https://github.com/x2q/elpriser-mcp" rel="noopener"><b>MCP <i aria-hidden="true">&rarr;</i></b><span>Lad en AI-assistent slå elprisen op.</span></a></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="dl-sec" style="padding-top:3rem;padding-bottom:3rem">
+    <div class="dl-in">
+      <p class="dl-note dl-rv" style="text-align:center">Priserne kommer fra Energi Data Service (Energinet) og ENTSO-E. Elpriser er en uafhængig tjeneste og er ikke tilknyttet Energinet eller dit netselskab, og priserne er vejledende. Hvad prisen består af, står under <a href="/om-elpriser">Forstå din elpris</a>, og hvordan appen behandler din position, står under <a href="/privatliv">Privatliv</a>.</p>
+    </div>
+  </section>
 </main>
 
 <!-- ═══════ ABOUT PAGE ═══════ -->
@@ -3048,6 +3371,21 @@ function initBehaviorTracking(){
     if(ctx)track('nav_click',{link_url:href,link_text:(a.textContent||'').trim().slice(0,40),component:ctx});
   },{passive:true});
 
+  // App-store clicks (GA4 event store_click): links to Elpriser in the App Store or on Google Play, wherever they sit (the /download hero and cards,
+  // the footer badges on every page). Capture phase so it fires before the browser leaves; the beacon transport lets the hit survive the navigation.
+  // Sends the store, the page section, the placement and the page language, nothing about the visitor. Same gtag, same property, no new tracker or cookie.
+  document.addEventListener('click',e=>{
+    try{
+      const a=e.target.closest&&e.target.closest('a[href]');
+      if(!a||typeof gtag!=='function')return;
+      const h=a.getAttribute('href')||'';
+      const store=/^https:\/\/apps\.apple\.com\//.test(h)?'app_store':/^https:\/\/play\.google\.com\/store\/apps\/details\?id=org\.elpriser\.app/.test(h)?'google_play':null;
+      if(!store)return;
+      const pl=a.closest('[data-placement]'),pg=a.closest('[data-page]');
+      gtag('event','store_click',{store,page:pg?pg.getAttribute('data-page'):'footer',placement:pl?pl.getAttribute('data-placement'):a.closest('footer')?'footer':'other',lang:document.documentElement.lang||'da',transport_type:'beacon'});
+    }catch(_){/* analytics must never break the app */}
+  },true);
+
   // FAQ engagement — which questions do people actually open?
   document.addEventListener('toggle',e=>{
     const d=e.target;
@@ -3303,7 +3641,7 @@ function route(){
   if(h==='automation'){document.querySelector('[data-page="automation"]').classList.add('active');document.title='Elpriser API til Home Assistant og Shelly — gratis, med kode';pv('Automation','/automation');loadAutomationPage().finally(scrollToAnchor);scrollToAnchor();return;}
   if(h==='api'){document.querySelector('[data-page="api"]').classList.add('active');document.title='elpriser.org API — Gratis JSON API for danske elpriser';pv('API','/api');return;}
   if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — Tibber-kompatibel elpris-JSON';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}
-  if(h==='download'){document.querySelector('[data-page="download"]').classList.add('active');document.title='Hent Elpriser-appen — iPhone og Android, gratis';pv('Hent appen','/download');return;}
+  if(h==='download'){document.querySelector('[data-page="download"]').classList.add('active');document.title='Hent Elpriser-appen — til iPhone, iPad og Android, gratis';pv('Hent appen','/download');return;}
   if(h==='om-elpriser'){document.querySelector('[data-page="om-elpriser"]').classList.add('active');document.title='Om elpriser i Danmark — Spotpris, tariffer og afgifter';pv('Om elpriser','/om-elpriser');return;}
   if(h==='blog'){document.querySelector('[data-page="blog"]').classList.add('active');document.title='Blog — Guides og analyser om elpriser';pv('Blog','/blog');return;}
   if(h==='blog/hvornaar-er-stroemmen-billigst'){document.querySelector('[data-page="blog-hvornaar-er-stroemmen-billigst"]').classList.add('active');document.title='Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret';pv('Blog: Hvornår billigst','/blog/hvornaar-er-stroemmen-billigst');return;}

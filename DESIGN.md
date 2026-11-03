@@ -344,3 +344,26 @@ an exact-price tooltip, two stat tiles, and a day list as text. Tokens are the
 self-hosted as `/manrope.woff2`. Wide layout (>= 900 px) is two columns; below it
 is the phone layout with the bottom bar (Pris, Smart hjem). The net chip in the
 header opens the "Netselskab og indstillinger" dialog.
+
+---
+
+## 12. /download — the overview of the apps (2026-11)
+
+`<main data-page="download" class="dl-page">`, every class `dl-` prefixed, colours from the `--p-*` tokens (so `.dark` flips it).
+Calm hero (title, one sentence, the two official badges, two CSS phones cropped by a fade), then alternating feature
+sections (screenshot one side, short copy the other, stacked on a phone), the basics, Europe, tablets, one card per
+platform, "Uden app" links. Large type is Manrope at weight 300 with a bold tail; no emoji, no stock photos.
+
+- **Phones/tablets** are drawn in CSS (`.dl-phone`, `.dl-tab .dl-frame`): rounded dark frame, soft shadow, a pill for the
+  island; the screenshot inside is a real app render, never product artwork. `--w` sets the phone's width, radii follow it.
+- **Screenshots** live in `download/img/*.webp` (phone 360/720 px, tablet 640/1280 px, q88), rebuilt by
+  `scripts/make-download-images.py` from the store renders. Static path: excluded in `_routes.json`, copied in
+  `scripts/build-dist.sh`. Only the hero phone is eager (`fetchpriority="high"`); the rest are `loading="lazy"`.
+- **Status switch**: each platform card carries `data-status="live | soon | planned | next"` (colours the chip) and the chip
+  text next to it. Flip both together when a product is released; the comment above the cards is the legend. Live cards
+  are the only ones with a store link.
+- **Scroll reveal** is progressive enhancement: the inline script at the top of the main adds `.dl-js` only when
+  `IntersectionObserver` exists and reduced motion is off; `.dl-js .dl-rv` is then hidden until it enters the viewport
+  (fade and a 26 px rise, nothing else). Without JS, with reduced motion or in print everything is visible.
+- The two `.dl-badge` links (52 px high, Apple's and Google's own files) and the OS-detecting script after them are pinned
+  by test-static.js / test-e2e.js; do not add a second set of badges to the page.
