@@ -321,9 +321,11 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .sf-chev{flex:none;width:7px;height:7px;margin:-3px 2px 0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .15s}
   .sf details[open]>summary .sf-chev{margin:3px 2px 0;transform:rotate(-135deg)}
   @media (prefers-reduced-motion:reduce){.sf-chev{transition:none}}
-  .sf-apps{display:flex;flex-direction:column;gap:.5rem;margin-top:.75rem}
-  .sf-apps a{display:flex;align-items:center;justify-content:center;min-height:44px;padding:.5rem .6rem;line-height:1.25;border:1px solid var(--p-chip-line);border-radius:22px;background:var(--p-card);color:var(--p-ink);font-weight:800;text-align:center;text-decoration:none}
-  .sf-apps a:hover{border-color:var(--p-brand);color:var(--p-brand);text-decoration:none}
+  .sf-apps{display:flex;flex-direction:column;align-items:flex-start;gap:.5rem;margin-top:.75rem}
+  .sf-apps a{display:block;min-height:44px;line-height:0;border-radius:8px;-webkit-tap-highlight-color:transparent}
+  .sf-apps a:hover{opacity:.88}
+  .sf-apps a:focus-visible{outline:2px solid var(--p-brand);outline-offset:3px}
+  .sf-apps img{display:block;height:44px;width:auto}
   .sf-all{margin-top:1.25rem;padding-top:.25rem;border-top:1px solid var(--p-line)}
   .sf-nets{display:grid;gap:1rem;padding:.5rem 0 .75rem}
   .sf-nets .sf-h{margin-bottom:.45rem}
@@ -344,12 +346,12 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     .xc .pris-week th,.xc .pris-week td{white-space:normal}
   }
 
-  /* ── /download: two store badges, drawn in the SVG itself so both are exactly the same size ── */
+  /* ── /download: the two official store badges (Apple's and Google's own artwork, unaltered, in /badges), both 52 px high ── */
   .dl-stores{display:flex;flex-direction:column;align-items:flex-start;gap:.75rem;margin:1.25rem 0 0}
   .dl-stores~section{margin-top:2.5rem}
   @media (min-width:520px){.dl-stores{flex-direction:row;flex-wrap:wrap;gap:1rem}}
   .dl-badge{display:block;height:52px;border-radius:11px;line-height:0;-webkit-tap-highlight-color:transparent}
-  .dl-badge svg{display:block;height:52px;width:auto}
+  .dl-badge img{display:block;height:52px;width:auto}
   .dl-badge:hover{opacity:.88}
   .dl-badge:focus-visible{outline:2px solid var(--p-brand);outline-offset:3px}
   .dl-stores.is-android .dl-play{order:-1}
@@ -1735,26 +1737,8 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
   <div class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
     <p class="text-base text-gray-700 dark:text-gray-300">Elprisen lige nu, i morgen og de næste 5 døgn — med dit netselskab — direkte på telefonen. Appen er gratis, kræver ingen konto og har ingen reklamer.</p>
     <div class="dl-stores">
-      <a class="dl-badge dl-apple" href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Hent i App Store — iPhone og iPad">
-        <svg viewBox="0 0 190 54" width="183" height="52" aria-hidden="true" focusable="false">
-          <rect x=".5" y=".5" width="189" height="53" rx="10" fill="#000" stroke="#a6a6a6"/>
-          <rect x="12" y="11" width="32" height="32" rx="7.5" fill="#1a8cff"/>
-          <path d="M20.5 36.5 28 18l7.5 18.5M23.6 30.5h8.8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-          <text x="54" y="23" fill="#fff" font-size="11.5" font-weight="600" font-family="Manrope,system-ui,sans-serif">Hent i</text>
-          <text x="54" y="42" fill="#fff" font-size="19" font-weight="700" font-family="Manrope,system-ui,sans-serif">App Store</text>
-        </svg>
-      </a>
-      <a class="dl-badge dl-play" href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener" aria-label="Hent på Google Play — Android">
-        <svg viewBox="0 0 190 54" width="183" height="52" aria-hidden="true" focusable="false">
-          <rect x=".5" y=".5" width="189" height="53" rx="10" fill="#000" stroke="#a6a6a6"/>
-          <path d="M13 10 28 27 13 44Z" fill="#00c3ff"/>
-          <path d="M13 10 28 27 34 21Z" fill="#00f076"/>
-          <path d="M34 21 43 27 34 33 28 27Z" fill="#ffce00"/>
-          <path d="M13 44 28 27 34 33Z" fill="#ff3a44"/>
-          <text x="54" y="23" fill="#fff" font-size="11.5" font-weight="600" font-family="Manrope,system-ui,sans-serif">Hent på</text>
-          <text x="54" y="42" fill="#fff" font-size="19" font-weight="700" font-family="Manrope,system-ui,sans-serif">Google Play</text>
-        </svg>
-      </a>
+      <a class="dl-badge dl-apple" href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Hent i App Store — iPhone og iPad"><img src="/badges/app-store-da.svg" alt="" width="156" height="52"></a>
+      <a class="dl-badge dl-play" href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener" aria-label="Hent på Google Play — Android"><img src="/badges/google-play-da.png" alt="" width="175" height="52"></a>
     </div>
     <script>(function(){var b=document.currentScript.previousElementSibling,u=navigator.userAgent;if(/Android/i.test(u))b.className+=' is-android';else if(/iPhone|iPad|iPod/.test(u)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))b.className+=' is-ios';})();</script>
     <section>
@@ -2568,8 +2552,8 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
           <li><a href="/download">Hent appen</a></li>
         </ul>
         <div class="sf-apps">
-          <a href="https://apps.apple.com/dk/app/id6820474476" rel="noopener">Hent til iPhone og iPad<span class="vh"> i App Store</span></a>
-          <a href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener">Hent til Android<span class="vh"> i Google Play</span></a>
+          <a href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Hent i App Store — iPhone og iPad"><img src="/badges/app-store-da.svg" alt="" width="132" height="44"></a>
+          <a href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener" aria-label="Hent på Google Play — Android"><img src="/badges/google-play-da.png" alt="" width="148" height="44"></a>
         </div>
       </nav>
     </div>

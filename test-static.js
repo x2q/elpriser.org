@@ -1684,15 +1684,17 @@ test('Danish pages: the footer chips and the place dialog list the countries of 
   run('sync-pris-block.mjs');
 });
 
-test('footer: both app stores are linked, rel=noopener, with the Danish button wording', () => {
-  for (const [url, text] of [
-    ['https://apps.apple.com/dk/app/id6820474476', 'Hent til iPhone og iPad'],
-    ['https://play.google.com/store/apps/details?id=org.elpriser.app', 'Hent til Android'],
+test('footer: both app stores are linked with the official badges, rel=noopener, a name for screen readers', () => {
+  for (const [url, label, img] of [
+    ['https://apps.apple.com/dk/app/id6820474476', 'Hent i App Store — iPhone og iPad', '/badges/app-store-da.svg'],
+    ['https://play.google.com/store/apps/details?id=org.elpriser.app', 'Hent på Google Play — Android', '/badges/google-play-da.png'],
   ]) {
     const a = FOOTER.match(new RegExp(`<a href="${url.replace(/[.?]/g, '\\$&')}"([^>]*)>([^]*?)</a>`));
     assert.ok(a, `footer links ${url}`);
     assert.ok(/rel="noopener"/.test(a[1]), `${url} has rel=noopener`);
-    assert.ok(a[2].startsWith(text), `${url} reads "${text}"`);
+    assert.ok(a[1].includes(`aria-label="${label}"`), `${url} is named "${label}"`);
+    assert.ok(a[2].includes(`<img src="${img}" alt=""`), `${url} shows ${img}, hidden from the accessibility tree (the link carries the name)`);
+    assert.ok(fs.existsSync(path.join(__dirname, img.slice(1))), `${img} exists in the repo`);
   }
   assert.equal((FOOTER.match(/apps\.apple\.com/g) || []).length, 1, 'App Store linked once');
   assert.equal((FOOTER.match(/play\.google\.com/g) || []).length, 1, 'Google Play linked once');
@@ -1985,12 +1987,14 @@ test('/download: H1, honest copy, two identical store badges with the exact link
   assert.equal(apple[2], APPLE_URL); assert.equal(play[2], PLAY_URL);
   assert.ok(/aria-label="Hent i App Store — iPhone og iPad"/.test(apple[3]), 'App Store accessible name');
   assert.ok(/aria-label="Hent på Google Play — Android"/.test(play[3]), 'Google Play accessible name');
-  for (const b of badges) {
+  for (const [b, src] of [[apple, '/badges/app-store-da.svg'], [play, '/badges/google-play-da.png']]) {
     assert.ok(/rel="noopener"/.test(b[3]), 'rel=noopener');
-    assert.ok(/<svg viewBox="0 0 190 54" width="183" height="52" aria-hidden="true"/.test(b[4]), 'drawn inline, same size, hidden from the accessibility tree (the link carries the name)');
-    assert.ok(/<rect[^>]*fill="#000"/.test(b[4]), 'black rounded badge');
+    assert.ok(b[4].trim() === `<img src="${src}" alt="" width="${src.endsWith('svg') ? 156 : 175}" height="52">`, `the official badge ${src}, unaltered, hidden from the accessibility tree (the link carries the name)`);
   }
-  assert.ok(/Hent i<\/text>[\s\S]*App Store<\/text>/.test(apple[4]) && /Hent på<\/text>[\s\S]*Google Play<\/text>/.test(play[4]), 'the visible words are inside the accessible names');
+  // Apple's and Google's artwork is theirs: the files are the downloaded ones, in both languages, never redrawn here.
+  for (const f of ['app-store-da.svg', 'app-store-en.svg', 'google-play-da.png', 'google-play-en.png']) assert.ok(fs.existsSync(path.join(__dirname, 'badges', f)), `badges/${f}`);
+  assert.ok(/Download_on_the_App_Store_Badge/.test(fs.readFileSync(path.join(__dirname, 'badges/app-store-da.svg'), 'utf8')), 'the Apple badge is Apple\'s own file');
+  assert.ok(!/<svg viewBox="0 0 190 54"/.test(INDEX), 'no hand-drawn look-alike badge is left');
   const css = INDEX.match(/\.dl-badge\{([^}]*)\}/)[1];
   assert.ok(/height:5\d px|height:52px/.test(css) && parseInt(css.match(/height:(\d+)px/)[1], 10) >= 44, 'badge target is at least 44 px high');
   assert.ok(/\.dl-badge:focus-visible\{outline:2px solid var\(--p-brand\)/.test(INDEX), 'visible focus ring');

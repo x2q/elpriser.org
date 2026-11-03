@@ -37,5 +37,6 @@ for f in "${FILES[@]}"; do
   cp "$f" "$DIST/$f"
 done
 cp -R functions "$DIST/functions"
+cp -R badges "$DIST/badges"
 
 echo "$DIST: $(find "$DIST" -type f | wc -l | tr -d ' ') files, $(du -sh "$DIST" | cut -f1)"
