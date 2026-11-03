@@ -3,6 +3,8 @@ import { CITIES } from './_cities.js';
 import { cityLocation } from './_city-location.js';
 import { netLocation, netSourceNote, netAreasGeoJSON } from './_net-location.js';
 import { zoneLocation } from './_zone-location.js';
+import { downloadMain, downloadMeta, dlLang, dlLangOfPath, DL_LANGS, dlPath, dlAlternates, dlSitemapLinks, dlLlmsLine } from './_download.js';
+import { DL_TEXT } from './_download_i18n.js';   // the app page in 26 languages: one template, one text table, one status table
 import { integrationsHTML, integrationsLd, integrationsLlms, integrationsNames } from './_integrations.js';   // /integrationer: the table of items and their true status is in that file
 
 const OG_IMAGE = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
@@ -62,6 +64,7 @@ const SEO_PAGES = {
     title: 'Hent Elpriser-appen — til iPhone, iPad og Android, gratis',
     description: 'Elprisen lige nu og de næste 5 døgn, med dit netselskab. Gratis app til iPhone, iPad og Android uden konto og reklamer, i App Store og Google Play.',
     hash: '#download',
+    download: 'da',   // the other 25 languages are /<code>/download: added from DL_LANGS below the SEO table
   },
   // The country pages (/no/strompris … /ie/electricity-price) are not listed here: each is ONE entry of PRIS_COUNTRIES (title, description,
   // language, locale, text) and the loop after that table adds it to SEO_PAGES, the sitemap, HASH_TO_DATA_PAGE and llms.txt.
@@ -236,6 +239,17 @@ const CONTENT_LASTMOD = {
   '/blog': '2026-10-17',   // the newest post it lists
 };
 
+// The app page in the other 25 languages, /<code>/download: one entry each (title, description, language and locale come from the text table in
+// functions/_download_i18n.js), the sitemap and a real lastmod. All 26 pages, Danish included, list each other with hreflang (the head of each page and the
+// sitemap below): they are translations of one page, unlike the country pages. Bump the date when the page's content changes.
+const DOWNLOAD_LASTMOD = '2026-11-03';
+for (const l of DL_LANGS) {
+  if (l.code === 'da') continue;
+  SEO_PAGES[dlPath(l.code)] = downloadMeta(l.code);
+  SITEMAP_URLS.push(dlPath(l.code));
+  CONTENT_LASTMOD[dlPath(l.code)] = DOWNLOAD_LASTMOD;
+}
+
 function buildSitemap() {
   const today = new Date().toISOString().split('T')[0];
   // Crawl budget follows priority. The foreign-area pages stay below the
@@ -243,19 +257,22 @@ function buildSitemap() {
   const priorityFor = p => {
     if (p === '/') return '1.0';
     if (p === '/norden' || prisIsPage(p.slice(1))) return '0.5';   // foreign-market pages
+    if (dlLangOfPath(p) && p !== '/download') return '0.6';       // the app page in the other languages
     if (/^\/(dk[12])\/[a-z0-9-]+$/.test(p)) return '0.6'; // per-net long-tail pages
     if (CITY_PATH.test(p)) return '0.5';                    // the pilot city pages: a test, not yet a bet
     return '0.8';
   };
   return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${SITEMAP_URLS.map(p => {
     const isDaily = !CONTENT_LASTMOD[p];
+    // The 26 app pages carry the whole hreflang set (every language, itself included, and x-default = English).
+    const alts = dlLangOfPath(p) ? dlSitemapLinks().map(a => '\n    <xhtml:link rel="alternate" hreflang="' + a.hl + '" href="' + a.href + '"/>').join('') : '';
     return `  <url>
     <loc>https://elpriser.org${p}</loc>
     <lastmod>${CONTENT_LASTMOD[p] || today}</lastmod>
     <changefreq>${isDaily ? 'daily' : 'monthly'}</changefreq>
-    <priority>${priorityFor(p)}</priority>
+    <priority>${priorityFor(p)}</priority>${alts}
   </url>`;
   }).join('\n')}
 </urlset>`;
@@ -282,6 +299,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Integrationer](https://elpriser.org/integrationer): den ene oversigt over alle plugins, API-biblioteker og MCP-serveren, med den rigtige installationsstatus for hver (I registeret = ligger i npm eller MCP-registret; Fra GitHub = installeres direkte fra GitHub; Ansøgt = ansøgt om optagelse, svar afventes; Kommer = findes ikke endnu). Tjekket den 3. november 2026:
 ${integrationsLlms()}
 - [Hent appen](https://elpriser.org/download): Oversigt over Elpriser-appen med skærmbilleder og funktioner. Gratis, uden konto og uden reklamer. Findes i dag til iPhone og iPad (iOS 18 eller nyere, App Store) og til Android-telefon og -tablet (Android 8 eller nyere, Google Play), med elprisen lige nu, 2 og 5 døgn frem, Din pris med netselskab, tariffer, afgifter og moms, og børspriser for 30 europæiske lande. Kommer: Mac (macOS 15 eller nyere), Apple Watch, påmindelser om billige timer og en widget. Links til [App Store](https://apps.apple.com/dk/app/id6820474476) og [Google Play](https://play.google.com/store/apps/details?id=org.elpriser.app).
+${dlLlmsLine()}
 - [Forstå din elpris](https://elpriser.org/om-elpriser): Hvad elprisen består af (spotpris, nettarif, systemtarif og transmissionstarif, elafgift, moms), DK1 og DK2, hvornår strømmen er billigst, negative priser, sparetips og datakilder.
 - [Hvornår er strømmen billigst](https://elpriser.org/blog/hvornaar-er-stroemmen-billigst): Analyse af 48.594 timers data — døgnets billigste time ligger nu midt på dagen på 68 % af dagene mod 23 % om natten; danske husholdninger flytter forbrug efter et forældet natte-mønster.
 - [Grønnest og dyrest på samme tid](https://elpriser.org/blog/groennest-og-dyrest): Hvorfor døgnets dyreste time ofte er den grønneste — pris sættes marginalt på et europæisk marked, CO₂ er et gennemsnit der følger hvem Danmark importerer fra (norsk vandkraft om aftenen, tysk strøm midt på dagen).
@@ -821,6 +839,7 @@ export async function onRequest(context) {
     }
     if (url.pathname === '/tariffer') opts.tariffFacts = true;
     if (url.pathname === '/integrationer') opts.integrationer = true;
+    if (page.download) opts.download = page.download;
     if (url.pathname === '/prognose') opts.prognose = true;
     if (page.zonePage) opts.zonePage = page.zonePage;
     if (page.norden) opts.norden = true;
@@ -1875,6 +1894,12 @@ function prisPageFor(cc,lang){
 }
 /** Is `p` ('no/strompris') a country page? An own-property test: a hash like "constructor" must not be one. */
 function prisIsPage(p){return Object.prototype.hasOwnProperty.call(PRIS_COUNTRIES,p);}
+/** The app page ("Hent appen") in the other languages lives at /<code>/download (Danish: /download). DL_CODES are the languages that have one — the
+ *  list of DL_LANGS in functions/_download.js, which test-download-i18n.mjs keeps equal. A page's language tag (nb, sr-Latn, sr-ME …) maps to its
+ *  code by dlCode, and a language without a page is sent to the English one. */
+var DL_CODES=['en','de','fr','nl','it','pl','sv','nb','fi','cs','hu','sl','es','pt','sk','el','ro','bg','hr','sr','et','lv','lt','mk','sq'];
+function dlCode(lang){var c=/^sr/.test(lang)?'sr':lang;return DL_CODES.indexOf(c)<0?'en':c;}
+function dlHref(lang){return '/'+dlCode(lang)+'/download';}
 /** A country's name in the language of `X` (an entry of CHROME_I18N): its own, or — until that language has translated it — the country's own name. */
 function prisCn(X,cc){
   if(X.cn[cc])return X.cn[cc];
@@ -1909,104 +1934,104 @@ function prisZoneNow(k,todayStr,nowHour){
  *  the policy is in Danish; `chg` (languages that have an `act` page): the note that the site changed the data, which a page
  *  may override in its `tx`. */
 var CHROME_I18N={
-  nb:{home:'elpriser.org forside',land:'Land',place:'Hvor er du?',area:'Prisområde',oth:'Andre land',back:'Tilbake',find:'Søk',none:'Ingen resultater',close:'Lukk',
+  nb:{home:'elpriser.org forside',app:'Last ned appen',land:'Land',place:'Hvor er du?',area:'Prisområde',oth:'Andre land',back:'Tilbake',find:'Søk',none:'Ingen resultater',close:'Lukk',
     cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederland',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italia',at:'Østerrike',ch:'Sveits',be:'Belgia',ie:'Irland',cz:'Tsjekkia'},
     privacy:'Personvern (på dansk)',src:'Data fra',and:'og',open:'Åpne datasett på'},
-  sv:{home:'elpriser.org startsida',land:'Länder',place:'Var är du?',area:'Elområde',oth:'Andra länder',back:'Tillbaka',find:'Sök',none:'Inga resultat',close:'Stäng',
+  sv:{home:'elpriser.org startsida',app:'Hämta appen',land:'Länder',place:'Var är du?',area:'Elområde',oth:'Andra länder',back:'Tillbaka',find:'Sök',none:'Inga resultat',close:'Stäng',
     cn:{dk:'Danmark',no:'Norge',sv:'Sverige',fi:'Finland',nl:'Nederländerna',de:'Tyskland',fr:'Frankrike',pl:'Polen',it:'Italien',at:'Österrike',ch:'Schweiz',be:'Belgien',ie:'Irland',cz:'Tjeckien'},
     privacy:'Integritet (på danska)',src:'Data från',and:'och',open:'Öppna datamängder på'},
-  fi:{home:'elpriser.org etusivu',land:'Maat',place:'Missä olet?',area:'Hinta-alue',oth:'Muut maat',back:'Takaisin',find:'Haku',none:'Ei tuloksia',close:'Sulje',
+  fi:{home:'elpriser.org etusivu',app:'Lataa sovellus',land:'Maat',place:'Missä olet?',area:'Hinta-alue',oth:'Muut maat',back:'Takaisin',find:'Haku',none:'Ei tuloksia',close:'Sulje',
     cn:{dk:'Tanska',no:'Norja',sv:'Ruotsi',fi:'Suomi',nl:'Alankomaat',de:'Saksa',fr:'Ranska',pl:'Puola',it:'Italia',at:'Itävalta',ch:'Sveitsi',be:'Belgia',ie:'Irlanti',cz:'Tšekki'},
     privacy:'Tietosuoja (tanskaksi)',src:'Tietolähteet:',and:'ja',open:'Avoimet aineistot:'},
-  nl:{home:'elpriser.org startpagina',land:'Landen',place:'Waar ben je?',area:'Biedzone',oth:'Andere landen',back:'Terug',find:'Zoeken',none:'Geen resultaten',close:'Sluiten',
+  nl:{home:'elpriser.org startpagina',app:'Download de app',land:'Landen',place:'Waar ben je?',area:'Biedzone',oth:'Andere landen',back:'Terug',find:'Zoeken',none:'Geen resultaten',close:'Sluiten',
     cn:{dk:'Denemarken',no:'Noorwegen',sv:'Zweden',fi:'Finland',nl:'Nederland',de:'Duitsland',fr:'Frankrijk',pl:'Polen',it:'Italië',at:'Oostenrijk',ch:'Zwitserland',be:'België',ie:'Ierland',cz:'Tsjechië'},
     privacy:'Privacy (in het Deens)',src:'Gegevens van',and:'en',open:'Open datasets op',
     chg:'Wijziging: uurgemiddelden berekend door elpriser.org'},
-  de:{home:'elpriser.org Startseite',land:'Länder',place:'Wo bist du?',area:'Preiszone',oth:'Andere Länder',back:'Zurück',find:'Suchen',none:'Keine Ergebnisse',close:'Schließen',
+  de:{home:'elpriser.org Startseite',app:'App laden',land:'Länder',place:'Wo bist du?',area:'Preiszone',oth:'Andere Länder',back:'Zurück',find:'Suchen',none:'Keine Ergebnisse',close:'Schließen',
     cn:{dk:'Dänemark',no:'Norwegen',sv:'Schweden',fi:'Finnland',nl:'Niederlande',de:'Deutschland',fr:'Frankreich',pl:'Polen',it:'Italien',at:'Österreich',ch:'Schweiz',be:'Belgien',ie:'Irland',cz:'Tschechien'},
     privacy:'Datenschutz (auf Dänisch)',src:'Quelle:',and:'und',open:'Offene Datensätze auf',
     chg:'Änderung: Stundenmittel von elpriser.org berechnet'},
-  fr:{home:'elpriser.org accueil',land:'Pays',place:'Où êtes-vous ?',area:'Zone de prix',oth:'Autres pays',back:'Retour',find:'Rechercher',none:'Aucun résultat',close:'Fermer',
+  fr:{home:'elpriser.org accueil',app:'Obtenir l\'app',land:'Pays',place:'Où êtes-vous ?',area:'Zone de prix',oth:'Autres pays',back:'Retour',find:'Rechercher',none:'Aucun résultat',close:'Fermer',
     cn:{dk:'Danemark',no:'Norvège',sv:'Suède',fi:'Finlande',nl:'Pays-Bas',de:'Allemagne',fr:'France',pl:'Pologne',it:'Italie',at:'Autriche',ch:'Suisse',be:'Belgique',ie:'Irlande',cz:'Tchéquie'},
     privacy:'Confidentialité (en danois)',src:'Source\u00a0:',and:'et',open:'Jeux de données ouverts sur',
     chg:'Modifié\u00a0: moyennes horaires calculées par elpriser.org'},
-  pl:{home:'elpriser.org – strona główna',land:'Kraje',place:'Gdzie jesteś?',area:'Strefa cenowa',oth:'Inne kraje',back:'Wstecz',find:'Szukaj',none:'Brak wyników',close:'Zamknij',
+  pl:{home:'elpriser.org – strona główna',app:'Pobierz aplikację',land:'Kraje',place:'Gdzie jesteś?',area:'Strefa cenowa',oth:'Inne kraje',back:'Wstecz',find:'Szukaj',none:'Brak wyników',close:'Zamknij',
     cn:{dk:'Dania',no:'Norwegia',sv:'Szwecja',fi:'Finlandia',nl:'Holandia',de:'Niemcy',fr:'Francja',pl:'Polska',it:'Włochy',at:'Austria',ch:'Szwajcaria',be:'Belgia',ie:'Irlandia',cz:'Czechy'},
     privacy:'Prywatność (po duńsku)',src:'Źródło:',and:'i',open:'Otwarte zbiory danych na',
     chg:'Zmiany: średnie godzinowe i przeliczenie na grosze wykonane przez elpriser.org'},
-  it:{home:'elpriser.org pagina iniziale',land:'Paesi',place:'Dove sei?',area:'Zona di prezzo',oth:'Altri paesi',back:'Indietro',find:'Cerca',none:'Nessun risultato',close:'Chiudi',
+  it:{home:'elpriser.org pagina iniziale',app:'Scarica l\'app',land:'Paesi',place:'Dove sei?',area:'Zona di prezzo',oth:'Altri paesi',back:'Indietro',find:'Cerca',none:'Nessun risultato',close:'Chiudi',
     cn:{dk:'Danimarca',no:'Norvegia',sv:'Svezia',fi:'Finlandia',nl:'Paesi Bassi',de:'Germania',fr:'Francia',pl:'Polonia',it:'Italia',at:'Austria',ch:'Svizzera',be:'Belgio',ie:'Irlanda',cz:'Repubblica Ceca'},
     privacy:'Privacy (in danese)',src:'Fonte:',and:'e',open:'Dataset aperti su',
     chg:'Modifiche: medie orarie calcolate da elpriser.org'},
-  en:{home:'elpriser.org home page',land:'Countries',place:'Where are you?',area:'Price zone',oth:'Other countries',back:'Back',find:'Search',none:'No results',close:'Close',
+  en:{home:'elpriser.org home page',app:'Get the app',land:'Countries',place:'Where are you?',area:'Price zone',oth:'Other countries',back:'Back',find:'Search',none:'No results',close:'Close',
     cn:{dk:'Denmark',no:'Norway',sv:'Sweden',fi:'Finland',nl:'Netherlands',de:'Germany',fr:'France',pl:'Poland',it:'Italy',at:'Austria',ch:'Switzerland',be:'Belgium',ie:'Ireland',cz:'Czechia',gb:'United Kingdom',xk:'Kosovo'},
     privacy:'Privacy (in Danish)',src:'Source:',and:'and',open:'Open datasets on',
     chg:'Changed: hourly means calculated by elpriser.org'},
-  cs:{home:'elpriser.org – úvodní stránka',land:'Země',place:'Kde jste?',area:'Cenová zóna',oth:'Další země',back:'Zpět',find:'Hledat',none:'Žádné výsledky',close:'Zavřít',
+  cs:{home:'elpriser.org – úvodní stránka',app:'Stáhnout aplikaci',land:'Země',place:'Kde jste?',area:'Cenová zóna',oth:'Další země',back:'Zpět',find:'Hledat',none:'Žádné výsledky',close:'Zavřít',
     cn:{dk:'Dánsko',no:'Norsko',sv:'Švédsko',fi:'Finsko',nl:'Nizozemsko',de:'Německo',fr:'Francie',pl:'Polsko',it:'Itálie',at:'Rakousko',ch:'Švýcarsko',be:'Belgie',ie:'Irsko',cz:'Česko'},
     privacy:'Ochrana soukromí (dánsky)',src:'Zdroj:',and:'a',open:'Otevřené datové sady na',
     chg:'Změna: hodinové průměry vypočítal elpriser.org'},
-  es:{home:'elpriser.org – página de inicio',land:'Países',place:'¿Dónde estás?',area:'Zona de precio',oth:'Otros países',back:'Atrás',find:'Buscar',none:'Sin resultados',close:'Cerrar',
+  es:{home:'elpriser.org – página de inicio',app:'Descargar la app',land:'Países',place:'¿Dónde estás?',area:'Zona de precio',oth:'Otros países',back:'Atrás',find:'Buscar',none:'Sin resultados',close:'Cerrar',
     cn:{dk:'Dinamarca',no:'Noruega',sv:'Suecia',fi:'Finlandia',nl:'Países Bajos',de:'Alemania',fr:'Francia',pl:'Polonia',it:'Italia',at:'Austria',ch:'Suiza',be:'Bélgica',ie:'Irlanda',cz:'Chequia',es:'España',pt:'Portugal'},
     privacy:'Privacidad (en danés)',src:'Fuente:',and:'y',open:'Conjuntos de datos abiertos en',
     chg:'Datos modificados: medias horarias calculadas por elpriser.org'},
-  pt:{home:'elpriser.org – página inicial',land:'Países',place:'Onde está?',area:'Zona de preço',oth:'Outros países',back:'Voltar',find:'Pesquisar',none:'Sem resultados',close:'Fechar',
+  pt:{home:'elpriser.org – página inicial',app:'Obter a app',land:'Países',place:'Onde está?',area:'Zona de preço',oth:'Outros países',back:'Voltar',find:'Pesquisar',none:'Sem resultados',close:'Fechar',
     cn:{dk:'Dinamarca',no:'Noruega',sv:'Suécia',fi:'Finlândia',nl:'Países Baixos',de:'Alemanha',fr:'França',pl:'Polónia',it:'Itália',at:'Áustria',ch:'Suíça',be:'Bélgica',ie:'Irlanda',cz:'Chéquia',es:'Espanha',pt:'Portugal'},
     privacy:'Privacidade (em dinamarquês)',src:'Fonte:',and:'e',open:'Conjuntos de dados abertos em',
     chg:'Dados alterados: médias horárias calculadas por elpriser.org'},
-  sk:{home:'elpriser.org – úvodná stránka',land:'Krajiny',place:'Kde ste?',area:'Cenová zóna',oth:'Ďalšie krajiny',back:'Späť',find:'Hľadať',none:'Žiadne výsledky',close:'Zavrieť',
+  sk:{home:'elpriser.org – úvodná stránka',app:'Stiahnuť aplikáciu',land:'Krajiny',place:'Kde ste?',area:'Cenová zóna',oth:'Ďalšie krajiny',back:'Späť',find:'Hľadať',none:'Žiadne výsledky',close:'Zavrieť',
     cn:{dk:'Dánsko',no:'Nórsko',sv:'Švédsko',fi:'Fínsko',nl:'Holandsko',de:'Nemecko',fr:'Francúzsko',pl:'Poľsko',it:'Taliansko',at:'Rakúsko',ch:'Švajčiarsko',be:'Belgicko',ie:'Írsko',cz:'Česko',sk:'Slovensko',hu:'Maďarsko',si:'Slovinsko'},
     privacy:'Ochrana súkromia (po dánsky)',src:'Zdroj:',and:'a',open:'Otvorené súbory údajov na',
     chg:'Zmena: hodinové priemery vypočítal elpriser.org'},
-  hu:{home:'elpriser.org – kezdőlap',land:'Országok',place:'Hol vagy?',area:'Árzóna',oth:'További országok',back:'Vissza',find:'Keresés',none:'Nincs találat',close:'Bezárás',
+  hu:{home:'elpriser.org – kezdőlap',app:'Alkalmazás letöltése',land:'Országok',place:'Hol vagy?',area:'Árzóna',oth:'További országok',back:'Vissza',find:'Keresés',none:'Nincs találat',close:'Bezárás',
     cn:{dk:'Dánia',no:'Norvégia',sv:'Svédország',fi:'Finnország',nl:'Hollandia',de:'Németország',fr:'Franciaország',pl:'Lengyelország',it:'Olaszország',at:'Ausztria',ch:'Svájc',be:'Belgium',ie:'Írország',cz:'Csehország',sk:'Szlovákia',hu:'Magyarország',si:'Szlovénia'},
     privacy:'Adatvédelem (dánul)',src:'Forrás:',and:'és',open:'Nyílt adatkészletek:',
     chg:'Módosítás: az óránkénti átlagokat az elpriser.org számította ki'},
-  sl:{home:'elpriser.org – domača stran',land:'Države',place:'Kje ste?',area:'Cenovno območje',oth:'Druge države',back:'Nazaj',find:'Iskanje',none:'Ni rezultatov',close:'Zapri',
+  sl:{home:'elpriser.org – domača stran',app:'Namesti aplikacijo',land:'Države',place:'Kje ste?',area:'Cenovno območje',oth:'Druge države',back:'Nazaj',find:'Iskanje',none:'Ni rezultatov',close:'Zapri',
     cn:{dk:'Danska',no:'Norveška',sv:'Švedska',fi:'Finska',nl:'Nizozemska',de:'Nemčija',fr:'Francija',pl:'Poljska',it:'Italija',at:'Avstrija',ch:'Švica',be:'Belgija',ie:'Irska',cz:'Češka',sk:'Slovaška',hu:'Madžarska',si:'Slovenija'},
     privacy:'Zasebnost (v danščini)',src:'Vir:',and:'in',open:'Odprti nabori podatkov na',
     chg:'Sprememba: urna povprečja je izračunal elpriser.org'},
-  ro:{home:'elpriser.org – pagina principală',land:'Țări',place:'Unde vă aflați?',area:'Zonă de preț',oth:'Alte țări',back:'Înapoi',find:'Căutare',none:'Niciun rezultat',close:'Închide',
+  ro:{home:'elpriser.org – pagina principală',app:'Descarcă aplicația',land:'Țări',place:'Unde vă aflați?',area:'Zonă de preț',oth:'Alte țări',back:'Înapoi',find:'Căutare',none:'Niciun rezultat',close:'Închide',
     cn:{dk:'Danemarca',no:'Norvegia',sv:'Suedia',fi:'Finlanda',nl:'Țările de Jos',de:'Germania',fr:'Franța',pl:'Polonia',it:'Italia',at:'Austria',ch:'Elveția',be:'Belgia',ie:'Irlanda',cz:'Cehia',ro:'România',bg:'Bulgaria',gr:'Grecia'},
     privacy:'Confidențialitate (în daneză)',src:'Sursa:',and:'și',open:'Seturi de date deschise pe',
     chg:'Modificare: mediile orare calculate de elpriser.org'},
-  bg:{home:'elpriser.org – начална страница',land:'Държави',place:'Къде се намирате?',area:'Ценова зона',oth:'Други държави',back:'Назад',find:'Търсене',none:'Няма резултати',close:'Затвори',
+  bg:{home:'elpriser.org – начална страница',app:'Изтеглете приложението',land:'Държави',place:'Къде се намирате?',area:'Ценова зона',oth:'Други държави',back:'Назад',find:'Търсене',none:'Няма резултати',close:'Затвори',
     cn:{dk:'Дания',no:'Норвегия',sv:'Швеция',fi:'Финландия',nl:'Нидерландия',de:'Германия',fr:'Франция',pl:'Полша',it:'Италия',at:'Австрия',ch:'Швейцария',be:'Белгия',ie:'Ирландия',cz:'Чехия',ro:'Румъния',bg:'България',gr:'Гърция'},
     privacy:'Поверителност (на датски)',src:'Източник:',and:'и',open:'Отворени набори от данни в',
     chg:'Промяна: средните часови стойности са изчислени от elpriser.org'},
-  el:{home:'elpriser.org – αρχική σελίδα',land:'Χώρες',place:'Πού βρίσκεστε;',area:'Ζώνη τιμών',oth:'Άλλες χώρες',back:'Πίσω',find:'Αναζήτηση',none:'Κανένα αποτέλεσμα',close:'Κλείσιμο',
+  el:{home:'elpriser.org – αρχική σελίδα',app:'Λήψη εφαρμογής',land:'Χώρες',place:'Πού βρίσκεστε;',area:'Ζώνη τιμών',oth:'Άλλες χώρες',back:'Πίσω',find:'Αναζήτηση',none:'Κανένα αποτέλεσμα',close:'Κλείσιμο',
     cn:{dk:'Δανία',no:'Νορβηγία',sv:'Σουηδία',fi:'Φινλανδία',nl:'Κάτω Χώρες',de:'Γερμανία',fr:'Γαλλία',pl:'Πολωνία',it:'Ιταλία',at:'Αυστρία',ch:'Ελβετία',be:'Βέλγιο',ie:'Ιρλανδία',cz:'Τσεχία',ro:'Ρουμανία',bg:'Βουλγαρία',gr:'Ελλάδα'},
     privacy:'Απόρρητο (στα δανικά)',src:'Πηγή:',and:'και',open:'Ανοιχτά σύνολα δεδομένων στο',
     chg:'Τροποποίηση: οι ωριαίοι μέσοι όροι υπολογίστηκαν από το elpriser.org'},
-  hr:{home:'elpriser.org – početna stranica',land:'Zemlje',place:'Gdje se nalazite?',area:'Cjenovna zona',oth:'Druge zemlje',back:'Natrag',find:'Traži',none:'Nema rezultata',close:'Zatvori',
+  hr:{home:'elpriser.org – početna stranica',app:'Preuzmi aplikaciju',land:'Zemlje',place:'Gdje se nalazite?',area:'Cjenovna zona',oth:'Druge zemlje',back:'Natrag',find:'Traži',none:'Nema rezultata',close:'Zatvori',
     cn:{dk:'Danska',no:'Norveška',sv:'Švedska',fi:'Finska',nl:'Nizozemska',de:'Njemačka',fr:'Francuska',pl:'Poljska',it:'Italija',at:'Austrija',ch:'Švicarska',be:'Belgija',ie:'Irska',cz:'Češka',hr:'Hrvatska',rs:'Srbija',me:'Crna Gora'},
     privacy:'Zaštita privatnosti (na danskom)',src:'Izvor:',and:'i',open:'Otvoreni skupovi podataka na',
     chg:'Izmjena: satne prosjeke izračunao je elpriser.org'},
-  'sr-Latn':{home:'elpriser.org – početna stranica',land:'Zemlje',place:'Gde se nalazite?',area:'Cenovna zona',oth:'Druge zemlje',back:'Nazad',find:'Pretraga',none:'Nema rezultata',close:'Zatvori',
+  'sr-Latn':{home:'elpriser.org – početna stranica',app:'Preuzmi aplikaciju',land:'Zemlje',place:'Gde se nalazite?',area:'Cenovna zona',oth:'Druge zemlje',back:'Nazad',find:'Pretraga',none:'Nema rezultata',close:'Zatvori',
     cn:{dk:'Danska',no:'Norveška',sv:'Švedska',fi:'Finska',nl:'Holandija',de:'Nemačka',fr:'Francuska',pl:'Poljska',it:'Italija',at:'Austrija',ch:'Švajcarska',be:'Belgija',ie:'Irska',cz:'Češka',hr:'Hrvatska',rs:'Srbija',me:'Crna Gora'},
     privacy:'Privatnost (na danskom)',src:'Izvor:',and:'i',open:'Otvoreni skupovi podataka na',
     chg:'Izmena: satne proseke izračunao je elpriser.org'},
-  'sr-ME':{home:'elpriser.org – početna stranica',land:'Države',place:'Gdje ste?',area:'Cjenovna zona',oth:'Druge države',back:'Nazad',find:'Pretraga',none:'Nema rezultata',close:'Zatvori',
+  'sr-ME':{home:'elpriser.org – početna stranica',app:'Preuzmi aplikaciju',land:'Države',place:'Gdje ste?',area:'Cjenovna zona',oth:'Druge države',back:'Nazad',find:'Pretraga',none:'Nema rezultata',close:'Zatvori',
     cn:{dk:'Danska',no:'Norveška',sv:'Švedska',fi:'Finska',nl:'Holandija',de:'Njemačka',fr:'Francuska',pl:'Poljska',it:'Italija',at:'Austrija',ch:'Švajcarska',be:'Belgija',ie:'Irska',cz:'Češka',hr:'Hrvatska',rs:'Srbija',me:'Crna Gora'},
     privacy:'Privatnost (na danskom jeziku)',src:'Izvor:',and:'i',open:'Otvoreni skupovi podataka na',
     chg:'Izmjena: satne prosjeke izračunao je elpriser.org'},
-  et:{home:'elpriser.org avaleht',land:'Riigid',place:'Kus te asute?',area:'Hinnapiirkond',oth:'Muud riigid',back:'Tagasi',find:'Otsi',none:'Tulemusi ei leitud',close:'Sulge',
+  et:{home:'elpriser.org avaleht',app:'Hangi rakendus',land:'Riigid',place:'Kus te asute?',area:'Hinnapiirkond',oth:'Muud riigid',back:'Tagasi',find:'Otsi',none:'Tulemusi ei leitud',close:'Sulge',
     cn:{dk:'Taani',no:'Norra',sv:'Rootsi',fi:'Soome',nl:'Madalmaad',de:'Saksamaa',fr:'Prantsusmaa',pl:'Poola',it:'Itaalia',at:'Austria',ch:'Šveits',be:'Belgia',ie:'Iirimaa',cz:'Tšehhi',ee:'Eesti',lv:'Läti',lt:'Leedu'},
     privacy:'Privaatsus (taani keeles)',src:'Allikas:',and:'ja',open:'Avatud andmestikud:',
     chg:'Muudatus: tunnikeskmised arvutas elpriser.org'},
-  lv:{home:'elpriser.org – sākumlapa',land:'Valstis',place:'Kur jūs atrodaties?',area:'Cenu zona',oth:'Citas valstis',back:'Atpakaļ',find:'Meklēt',none:'Nav rezultātu',close:'Aizvērt',
+  lv:{home:'elpriser.org – sākumlapa',app:'Iegūt lietotni',land:'Valstis',place:'Kur jūs atrodaties?',area:'Cenu zona',oth:'Citas valstis',back:'Atpakaļ',find:'Meklēt',none:'Nav rezultātu',close:'Aizvērt',
     cn:{dk:'Dānija',no:'Norvēģija',sv:'Zviedrija',fi:'Somija',nl:'Nīderlande',de:'Vācija',fr:'Francija',pl:'Polija',it:'Itālija',at:'Austrija',ch:'Šveice',be:'Beļģija',ie:'Īrija',cz:'Čehija',ee:'Igaunija',lv:'Latvija',lt:'Lietuva'},
     privacy:'Privātums (dāņu valodā)',src:'Avots:',and:'un',open:'Atvērtie datu kopumi vietnē',
     chg:'Izmaiņas: stundu vidējās vērtības aprēķinājis elpriser.org'},
-  lt:{home:'elpriser.org – pradžios puslapis',land:'Šalys',place:'Kur esate?',area:'Kainų zona',oth:'Kitos šalys',back:'Atgal',find:'Ieškoti',none:'Rezultatų nėra',close:'Uždaryti',
+  lt:{home:'elpriser.org – pradžios puslapis',app:'Gauti programėlę',land:'Šalys',place:'Kur esate?',area:'Kainų zona',oth:'Kitos šalys',back:'Atgal',find:'Ieškoti',none:'Rezultatų nėra',close:'Uždaryti',
     cn:{dk:'Danija',no:'Norvegija',sv:'Švedija',fi:'Suomija',nl:'Nyderlandai',de:'Vokietija',fr:'Prancūzija',pl:'Lenkija',it:'Italija',at:'Austrija',ch:'Šveicarija',be:'Belgija',ie:'Airija',cz:'Čekija',ee:'Estija',lv:'Latvija',lt:'Lietuva'},
     privacy:'Privatumas (daniškai)',src:'Šaltinis:',and:'ir',open:'Atviri duomenų rinkiniai svetainėje',
     chg:'Pakeitimas: valandų vidurkius apskaičiavo elpriser.org'},
-  mk:{home:'elpriser.org – почетна страница',land:'Земји',place:'Каде сте?',area:'Ценовна зона',oth:'Други земји',back:'Назад',find:'Пребарај',none:'Нема резултати',close:'Затвори',
+  mk:{home:'elpriser.org – почетна страница',app:'Преземи апликација',land:'Земји',place:'Каде сте?',area:'Ценовна зона',oth:'Други земји',back:'Назад',find:'Пребарај',none:'Нема резултати',close:'Затвори',
     cn:{dk:'Данска',no:'Норвешка',sv:'Шведска',fi:'Финска',nl:'Холандија',de:'Германија',fr:'Франција',pl:'Полска',it:'Италија',at:'Австрија',ch:'Швајцарија',be:'Белгија',ie:'Ирска',cz:'Чешка',mk:'Северна Македонија',al:'Албанија'},
     privacy:'Приватност (на дански)',src:'Извор:',and:'и',open:'Отворени збирки на податоци на',
     chg:'Измена: часовните просеци ги пресметува elpriser.org'},
-  sq:{home:'elpriser.org – faqja kryesore',land:'Vendet',place:'Ku jeni?',area:'Zona e çmimit',oth:'Vende të tjera',back:'Prapa',find:'Kërko',none:'Asnjë rezultat',close:'Mbyll',
+  sq:{home:'elpriser.org – faqja kryesore',app:'Merrni aplikacionin',land:'Vendet',place:'Ku jeni?',area:'Zona e çmimit',oth:'Vende të tjera',back:'Prapa',find:'Kërko',none:'Asnjë rezultat',close:'Mbyll',
     cn:{dk:'Danimarka',no:'Norvegjia',sv:'Suedia',fi:'Finlanda',nl:'Holanda',de:'Gjermania',fr:'Franca',pl:'Polonia',it:'Italia',at:'Austria',ch:'Zvicra',be:'Belgjika',ie:'Irlanda',cz:'Çekia',mk:'Maqedonia e Veriut',al:'Shqipëria',gb:'Mbretëria e Bashkuar',xk:'Kosova'},
     privacy:'Privatësia (në danisht)',src:'Burimi:',and:'dhe',open:'Të dhëna të hapura në',
     chg:'Ndryshim: mesataret orare të llogaritura nga elpriser.org'}
@@ -2023,10 +2048,13 @@ function chromeHTML(pg){
   for(i=1;i<PRIS_PICK.length;i++){q=prisPageFor(PRIS_PICK[i][0],C.lang);items.push({cc:PRIS_PICK[i][0],href:'/'+q,cur:q===pg});}
   var a=function(it,cls){return '<a href="'+it.href+'"'+(it.cur?(cls?' class="'+cls+'"':'')+' aria-current="page"':'')+'>'+prisCn(X,it.cc)+'</a>';};
   var lk=function(href,t){return '<a href="'+href+'" target="_blank" rel="noopener">'+t+'</a>';};
-  var P=placeHTML(C.lang,C.cc,pg);
-  return {home:X.home,btn:P.btn,place:P.dialog,
+  var P=placeHTML(C.lang,C.cc,pg),dl=dlHref(C.lang);
+  /* "Get the app", in the page's language, to the app page in that language: a button beside the place chip (like the Danish header's, hidden on a phone)
+     and a pill in the footer (every width). */
+  return {home:X.home,btn:P.btn+'<a href="'+dl+'" class="app-btn">'+X.app+'</a>',place:P.dialog,
     foot:'<footer class="sf sf-x" data-pg="'+pg+'"><div class="sf-in"><nav class="sf-col" aria-labelledby="sfLand"><p class="sf-h" id="sfLand">'+X.land+'</p>'
       +'<ul class="sf-chips">'+items.map(function(it){return '<li>'+a(it,'')+'</li>';}).join('')+'</ul></nav>'
+      +'<p class="sf-app"><a class="sf-getapp" href="'+dl+'">'+X.app+'</a></p>'
       +'<p class="sf-legal">&copy; Elpriser.org &mdash; '+X.src+' '+(C.act?prisCredit(ZONES[C.def].src)+' &mdash; '+(C.tx.chg||X.chg)
         :lk('https://transparency.entsoe.eu','ENTSO-E')+' '+X.and+' '+lk('https://www.energidataservice.dk','Energi Data Service'))
       +'. '+X.open+' '+lk('https://huggingface.co/Elpriser','Hugging Face')+'. <a href="/privatliv" hreflang="da">'+X.privacy+'</a></p></div></footer>'};
@@ -3219,7 +3247,7 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v25';
+const ZONE_SSR_VERSION = 'zone-ssr-v26';
 const CITY_SSR_VERSION = 'city-ssr-v19';
 const PROGNOSE_SSR_VERSION = 'prognose-ssr-v17';
 async function renderCachedPage(context, pathname, meta, opts, version) {
@@ -3353,6 +3381,41 @@ function withNetChip(html, pre, area) {
  *  the app button, the phone tab bar and the Danish footer are dropped, and the net chip and dialog become the place chip and dialog — they
  *  describe the Danish site. The Danish markup in index.html is untouched; index.html's localiseChrome() does
  *  the same to the DOM for the browser. `xc` on <html> is the stylesheet's hook. */
+/** The footer of the app page in language `code`: the countries (to their price pages in this language, Denmark to /dk1), the 26 versions of this page by
+ *  the language's own name, and the data line and privacy link of chromeHTML (without its line about open data sets: this page makes no claim about models).
+ *  Links are built by concatenation (test-static.js: no templated href literal). */
+function downloadFooter(code) {
+  const l = dlLang(code), X = CHROME_I18N[l.chrome];
+  const a = (href, text, attrs) => '<a href="' + href + '"' + (attrs || '') + '>' + text + '</a>';
+  const lk = (href, t) => a(href, t, ' target="_blank" rel="noopener"');
+  const countries = [['dk', '/dk1'], ...PRIS_PICK.slice(1).map(([cc]) => [cc, '/' + prisPageFor(cc, l.html)])];
+  const chips = list => '<ul class="sf-chips">' + list.map(x => '<li>' + x + '</li>').join('') + '</ul>';
+  return '<footer class="sf sf-x" data-pg="download-' + code + '"><div class="sf-in">'
+    + '<nav class="sf-col" aria-labelledby="sfLand"><p class="sf-h" id="sfLand">' + X.land + '</p>' + chips(countries.map(([cc, href]) => a(href, prisCn(X, cc)))) + '</nav>'
+    + '<nav class="sf-col" aria-labelledby="sfLangs"><p class="sf-h" id="sfLangs">' + DL_TEXT[code].langsLabel + '</p>'
+    + chips(DL_LANGS.map(o => a(dlPath(o.code), o.name, ' hreflang="' + o.html + '" lang="' + o.html + '"' + (o.code === code ? ' aria-current="page"' : '')))) + '</nav>'
+    + '<p class="sf-app">' + a(dlPath(code), X.app, ' class="sf-getapp" aria-current="page"') + '</p>'
+    + '<p class="sf-legal">&copy; Elpriser.org &mdash; ' + X.src + ' ' + lk('https://transparency.entsoe.eu', 'ENTSO-E') + ' ' + X.and + ' ' + lk('https://www.energidataservice.dk', 'Energi Data Service')
+    + '. ' + a('/privatliv', X.privacy, ' hreflang="da"') + '</p></div></footer>';
+}
+
+/** The app page of language `code` in the shell of index.html: the Danish section swapped for the template's, and the header and footer in the language
+ *  (the logo's name, one button "Get the app" that is this page, no Danish menu, place chip, phone tab bar or net dialog). The language's own country
+ *  page is where "the website" goes. */
+function withDownloadPage(html, code) {
+  const l = dlLang(code), X = CHROME_I18N[l.chrome];
+  const home = Object.keys(PRIS_COUNTRIES).find(pg => PRIS_COUNTRIES[pg].lang === l.html);
+  return html
+    .replace(/<main style="display:none" data-page="download"[\s\S]*?<\/main>/, () => downloadMain(code, { homeHref: home ? '/' + home : '/', privacy: X.privacy }))
+    .replace('<html lang="da">', '<html lang="da" class="xc">')
+    .replace('aria-label="elpriser.org forside"', () => `aria-label="${X.home}"`)
+    .replace(/\s*<nav class="site-links"[\s\S]*?<\/nav>/, '')
+    .replace(/\s*<div class="site-actions">[\s\S]*?<\/div>/, () => '<div class="site-actions"><a href="' + dlPath(code) + '" class="app-btn" aria-current="page">' + X.app + '</a></div>')
+    .replace(/<nav class="tabbar"[\s\S]*?<\/nav>/, '')
+    .replace(/<footer class="sf">[\s\S]*?<\/footer>/, () => downloadFooter(code))
+    .replace(/<dialog id="netDialog"[\s\S]*?<\/dialog>/, '');
+}
+
 function withCountryChrome(html, pg) {
   const c = chromeHTML(pg);
   return html
@@ -3371,6 +3434,9 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   const indexUrl = new URL('/', context.request.url);
   const res = await context.env.ASSETS.fetch(indexUrl);
   let html = await res.text();
+  // The app page in another language: the same section, drawn from the one template and the language's entry of the text table, before the
+  // other sections are stripped. The Danish page is the section index.html carries.
+  if (opts.download && opts.download !== 'da') html = withDownloadPage(html, opts.download);
   const dataPage = dataPageForHash(meta.hash);
   html = activateDataPage(html, dataPage);
   html = stripInactiveMains(html, dataPage);
@@ -3506,6 +3572,12 @@ async function renderSPA(context, pathname, meta, opts = {}) {
     /<link rel="alternate" hreflang="da" href="[^"]*">/,
     '<link rel="alternate" hreflang="da" href="' + pageUrl + '">'
   );
+  if (opts.download) {
+    // All 26 pages are translations of one another: each lists the whole set (itself included), x-default is English. The template's single
+    // hreflang="da" gives way to the set, so the Danish page lists the 25 others too.
+    html = html.replace(/\s*<link rel="alternate" hreflang="[^"]*" href="[^"]*">/g, '');
+    html = html.replace(/(<link rel="canonical" href="[^"]*">)/, (m, c) => `${c}\n${dlAlternates().join('\n')}`);
+  }
   html = html.replace(
     /<meta property="og:title" content="[^"]*">/,
     `<meta property="og:title" content="${meta.title}">`

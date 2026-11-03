@@ -477,6 +477,16 @@ function serveSPA(res, _hash) {
   });
 }
 
+async function serveDownload(res, pathname) {
+  try {
+    const shell = await fs.promises.readFile(path.join(__dir, 'index.html'), 'utf8');
+    const m = await import('./functions/[[path]].js');
+    const r = await m.onRequest({ request: new Request('http://localhost' + pathname), env: { ASSETS: { fetch: async () => new Response(shell) } } });
+    res.writeHead(r.status, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(await r.text());
+  } catch (e) { res.writeHead(500); res.end(String(e)); }
+}
+
 function serveStatic(req, res) {
   const pathname = req.url.split('?')[0];
 
@@ -490,6 +500,10 @@ function serveStatic(req, res) {
     });
     return res.end();
   }
+
+  // The app page in the other languages, /<lang>/download: drawn by the production Function itself (template, text table, header and footer in the
+  // language), fed index.html as its shell, so the dev server shows exactly what Pages serves.
+  if (/^\/[a-z]{2}\/download$/.test(pathname)) return serveDownload(res, pathname);
 
   // Clean-URL SPA routes — inject hash redirect (same as production functions)
   if (SPA_ROUTES[pathname]) return serveSPA(res, SPA_ROUTES[pathname]);

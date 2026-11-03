@@ -172,7 +172,11 @@ for (const [p, w] of Object.entries(PAGES)) {
     ok(/<html lang="[A-Za-z-]+" class="xc">/.test(h) && /<a href="\/" class="site-logo" aria-label="[^"]+">[\s\S]*<\/svg><\/span>Elpriser<\/a>/.test(hd), `${p}: logoet viser ordmærket Elpriser og linker til /`);
     ok(!/class="site-links"|<nav|countryBtn/.test(hd) && /id="netChip"/.test(hd) && !/Vestdanmark|DK1|Netselskab|netselskab/.test(hd), `${p}: headeren har stedschippen, ingen globus og ingen landerække`);
     ok(hd.includes(`aria-label="${X.home}"`) && hd.includes(`aria-label="${X.place}"`), `${p}: logoets og vælgerens navne på ${w.lang}`);
-    ok(!/app-btn|Hent appen|Smart hjem|>Om<|Hovedmenu|href="\/automation"|href="\/om-elpriser"|href="\/download"/.test(hd), `${p}: ingen netchip, ingen app-knap, ingen dansk menu i headeren`);
+    ok(!/Hent appen|Smart hjem|>Om<|Hovedmenu|href="\/automation"|href="\/om-elpriser"|href="\/download"/.test(hd), `${p}: ingen dansk app-knap, ingen dansk menu i headeren`);
+    // "Hent appen" on every country page: a button in the page's own language to the app page in that language (the footer carries the same link, below).
+    const dl = PB.dlHref(w.lang);
+    ok(hd.includes(`<a href="${dl}" class="app-btn">${X.app}</a>`) && dl === '/' + PB.dlCode(w.lang) + '/download' && /^\/[a-z]{2}\/download$/.test(dl), `${p}: headerens app-knap hedder "${X.app}" og peger på ${dl}`);
+    ok(ft.includes(`<p class="sf-app"><a class="sf-getapp" href="${dl}">${X.app}</a></p>`), `${p}: sidefoden har samme link ("${X.app}" → ${dl})`);
     ok(!/class="tabbar|Mobilnavigation|Netselskab og indstillinger|id="gpsBtn|netDlgDK/.test(h.replace(/<!--[\s\S]*?-->/g, '')) && (h.match(/<dialog id="netDialog"/g) || []).length === 1 && h.includes(`id="netDialogTitle">${X.place}</h2>`), `${p}: ingen dansk mobilbar og ingen danske netselskaber, men stedsdialogen på ${w.lang}`);
     ok((h.match(/<footer\b/g) || []).length === 1 && ft.includes('class="sf sf-x"') && ft.includes(`id="sfLand">${X.land}<`) && ft.includes(X.privacy) && !/Privatliv|Hent appen|Hent til|Netselskab|Alle guides|Tariffer|Prognose<|Forstå din elpris|Åbne datasæt|class="sf-apps|class="sf-all|<details/.test(ft), `${p}: sidefoden er den slanke på ${w.lang}`);
     ok(ft.includes('&copy; Elpriser.org') && ft.includes(X.src) && ft.includes(X.open) && /href="\/privatliv" hreflang="da"/.test(ft), `${p}: ophavsret, kilder og privatlivslink på ${w.lang}`);
@@ -470,7 +474,7 @@ for (const [p, w] of Object.entries(ACT)) {
   const l7 = h7;   // no accuracy line under the chart any more
   ok(!/pris-fca|pris-bl|Back-test/.test(l7) && h.includes(PL.fcl) === (hz === 7) && !/\b80 ?%/.test(h.replace(/<[^>]*>/g, ' ')) && !/NaN|undefined|\{[a-z]+\}/.test(main), `${p}: med prognose: ingen nøjagtighedslinje under kortet, lav sikkerhed kun i dagslisten på horisont 7, ingen skabelon-rester`);
   ok(!NOFUEL.test(raw.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), `${p}: med prognose: ingen ord om gas, kul eller brændstof på siden`);
-  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v25${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v24`);
+  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v26${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v24`);
   // the text block says the forecast exists only while there is one; the plain page stays as before
   ok(!plain.page.includes(PL.fcn) && !plain.page.includes('pris-fca') && (plain.page.match(/data-pris-period="/g) || []).length === 0, `${p}: uden prognose i svaret er siden som før (ingen note, ingen periodeknapper)`);
   fcZones = new Set();

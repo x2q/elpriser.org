@@ -628,7 +628,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
       const zs = [...P.dialog.matchAll(/data-zone="([^"]+)"/g)].map(m => m[1]).join();
       ok(zs === (ZN[pg] || '') && (multi ? P.dialog.includes(`<p class="pd-gt">${pctx.PRIS_PICK.filter(c => c[0] === C.cc)[0][1]}</p>`) && (P.dialog.match(/aria-current="true"/g) || []).length === 1 : !/data-go|aria-current="true"/.test(P.dialog)), `${pg}: ${multi ? 'zonerne som links, standardzonen markeret' : 'ét prisområde uden valg'}`, zs);
       ok(!/gpsBtn|netDlgDK|Netselskab|data-go|details/.test(P.dialog), `${pg}: ingen danske netselskaber, intet positionsopslag og ingen drill-in`);
-      ok(!/hreflang|\$\{|undefined|NaN/.test(P.dialog + P.btn) && pctx.chromeHTML(pg).btn === P.btn && pctx.chromeHTML(pg).place === P.dialog, `${pg}: ingen hreflang-klynge eller skabelonrester, og chromeHTML bruger den samme stedsvælger`);
+      ok(!/hreflang|\$\{|undefined|NaN/.test(P.dialog + P.btn) && pctx.chromeHTML(pg).btn === P.btn + `<a href="${pctx.dlHref(C.lang)}" class="app-btn">${x.app}</a>` && pctx.chromeHTML(pg).place === P.dialog, `${pg}: ingen hreflang-klynge eller skabelonrester, og chromeHTML bruger den samme stedsvælger (og lægger "Hent appen" på sidens sprog, til appsiden på det sprog, ved siden af)`);
     }
     const used = [...new Set(Object.values(CT).map(c => c.lang))];
     ok(titles.size === used.length + 1 - (used.includes('nb') ? 1 : 0) && new Set(used.map(l => X[l].place)).size === used.length, 'stedsvælgerens overskrift er forskellig på alle sprog (norsk bokmål og dansk deler den)', [...titles].join());
