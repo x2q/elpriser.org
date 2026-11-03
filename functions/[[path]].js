@@ -2420,12 +2420,10 @@ function prisSwitch(view,cls,spotLabel){
  *  days read "I dag" / "I morgen", later ones "søn 17. okt". */
 function prisChart(rows,nDays,o){
   var C=o.C,L=C.L,n=o.len||nDays*24,st=o.start||0,vals=[],i;
-  var ext=[];   // the P10 and P90 of the visible forecast hours: the axis must hold them, the tiers (vals) go by the median
   for(i=0;i<rows.length;i++)for(var h0=0;h0<24;h0++)if(rows[i].ps[h0]!=null&&i*24+h0>=st&&i*24+h0<st+n){
     vals.push(rows[i].ps[h0]);
-    if(C.band&&prisIsFc(rows[i],h0)&&rows[i].lo&&rows[i].lo[h0]!=null){ext.push(rows[i].lo[h0]);ext.push(rows[i].hi[h0]);}
   }
-  var ax=prisAxis(ext.length?vals.concat(ext):vals,C.sc),span=ax.hi-ax.lo;
+  var ax=prisAxis(vals,C.sc),span=ax.hi-ax.lo;
   var ref=o.ref||vals;
   var y=function(v){return (v-ax.lo)/span*100;};
   var grid='',yl='';
@@ -2444,19 +2442,10 @@ function prisChart(rows,nDays,o){
     var dn=Math.floor(a/24);
     var tip=(dn===0?prisCap(L.today):dn===1?prisCap(L.tomorrow):dt.ws+' '+prisDM(dt,L))
       +' '+prisAt(L,h)+' · '+prisNum(p,C.d,L)+' '+C.u+'/kWh';
-    // A forecast hour with a band (an EU zone): the P10-P90 block is the picture, the median a thin line across it, both in the tier's colour.
-    // An ESTIMATED hour of a settled day (`es`) is drawn the same way but hatched (class `es`) and called an estimate, never a forecast or a price.
+    // Every hour is a plain bar, a forecast or an estimated hour like a settled one (the divider says where the prices end); only an estimate is called one in the tooltip.
     var isE=!!(r.es&&r.es[h]);
-    if(C.band&&prisIsFc(r,h)&&r.lo&&r.lo[h]!=null){
-      var bt=prisTier(p,ref),yb=y(r.lo[h]),yh=y(r.hi[h]);
-      tip+=' ('+(isE?L.est:L.fc)+', P10–P90 '+prisNum(r.lo[h],C.d,L)+'–'+prisNum(r.hi[h],C.d,L)+')';
-      cols+='<span class="pc fx'+(isE?' es':'')+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pbd t'+bt+'" style="bottom:'+yb.toFixed(1)
-        +'%;height:'+Math.max(yh-yb,0.8).toFixed(1)+'%"></i><i class="pb pm t'+bt+'" style="bottom:calc('+y(p).toFixed(1)+'% - 1px)"></i>'
-        +(a===o.nowSlot?'<b class="pd" style="bottom:calc('+yh.toFixed(1)+'% + 3px)"></b>':'')+'</span>';
-      continue;
-    }
     if(isE)tip+=' ('+L.est+')';
-    cols+='<span class="pc'+(isE?' es':'')+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
+    cols+='<span class="pc'+(a<o.nowSlot?' past':'')+'" data-tip="'+prisEsc(tip)+'"><i class="pb t'+prisTier(p,ref)
       +'" style="bottom:'+base.toFixed(1)+'%;height:'+ht.toFixed(1)+'%"></i>'
       +(a===o.nowSlot?'<b class="pd" style="bottom:calc('+(base+ht).toFixed(1)+'% + 3px)"></b>':'')+'</span>';
   }
@@ -2621,32 +2610,26 @@ function prisPct(x){var n=Math.round(x*100);return n<0?'\u2212'+(-n):String(n);}
  *  says so, the low-confidence label. A zone that quotes EUR (accuracy.showEur: EE, LV, LT) gets no percentages. '' without an entry. */
 function prisFcLine(all,end,C){
   if(!C.band)return '';
-  var L=C.L,d=null,i,band=false,parts=[],num=function(v){return typeof v==='number'&&isFinite(v);};
+  var L=C.L,d=null,i,parts=[],num=function(v){return typeof v==='number'&&isFinite(v);};
   // The estimated hours of a settled day (C.est: /api/nordic `estimate`): their swatch, their band and what the back-test says they are worth.
   var est=prisHasEst(all,end)?C.est:null,hasE=prisHasEst(all,end);
   if(hasE){
-    parts.push('<span class="pris-bl pris-be"><i></i>'+L.est+'</span>');
-    for(i=0;i<end&&i<all.length;i++)if(all[i].es&&all[i].lo)band=true;
-    if(band)parts.push('<span class="pris-bl"><i></i>'+L.fcb+'</span>');
     if(est&&num(est.mae)){
       var u=est.unit||'EUR/MWh',em=prisNum(est.mae,est.mae>=100?0:1,L),eb=num(est.baseMae)?prisNum(est.baseMae,est.baseMae>=100?0:1,L):null;
       if(est.hours===1&&eb!=null)parts.push(prisFill(L.esth,{mae:em,base:eb,u:u}));
       else if(num(est.gain))parts.push(prisFill(L.esta,{mae:em,u:u,g:prisPct(est.gain),r:num(est.gainRecent)?prisPct(est.gainRecent):'–'}));
-      if(num(est.coverage))parts.push(prisFill(L.fcc,{c:Math.round(est.coverage*100)}));
       if(est.low===true)parts.push('<b class="pris-low">'+L.fcl+'</b>');
     }
   }
-  for(i=0;i<end&&i<all.length;i++)if(!all[i].real){d=all[i];if(all[i].lo)band=true;}
+  for(i=0;i<end&&i<all.length;i++)if(!all[i].real)d=all[i];
   if(!d)return parts.length?'<p class="pris-fca">'+parts.join(' ')+'</p>':'';
   var A=C.acc&&C.acc[d.hz],eur=C.accAll&&C.accAll.showEur===true;
-  if(band&&!hasE)parts.push('<span class="pris-bl"><i></i>'+L.fcb+'</span>');
   if(A&&num(A.mae)){
     var mae=prisNum(A.mae,A.mae>=100?0:1,L);
     var un=function(t){return C.accAll&&C.accAll.unit&&C.accAll.unit!=='EUR/MWh'?t.split('EUR/MWh').join(C.accAll.unit):t;};
     if(eur&&num(A.baseMae))parts.push(un(prisFill(L.fcae,{h:d.hz,mae:mae,base:prisNum(A.baseMae,A.baseMae>=100?0:1,L)})));
     else if(!eur&&num(A.gain))parts.push(un(prisFill(L.fca,{h:d.hz,mae:mae,g:prisPct(A.gain),r:num(A.gainRecent)?prisPct(A.gainRecent):'–'})));
     if(!eur&&A.rankOk===true&&num(A.rankGain))parts.push(prisFill(L.fcr,{r:prisPct(A.rankGain)}));
-    if(num(A.coverage))parts.push(prisFill(L.fcc,{c:Math.round(A.coverage*100)}));
     if(A.low===true)parts.push('<b class="pris-low">'+L.fcl+'</b>');
   }
   return parts.length?'<p class="pris-fca">'+parts.join(' ')+'</p>':'';
@@ -2689,8 +2672,7 @@ function prisHTML(days,todayStr,nowHour,o){
   // One period is no choice: the pill is not drawn (not drawn disabled).
   var tabs=cfg.periods.length<2?'':'<div class="pris-period" role="tablist" aria-label="'+L.period+'">'+cfg.periods.map(function(p){
     return '<button type="button" role="tab" aria-selected="'+(period===p)+'" data-pris-period="'+p+'">'+L['p'+p]+'</button>';}).join('')+'</div>';
-  var legend='<div class="pris-legend"><span><i class="t0"></i>'+L.tier[0]+'</span><span><i class="t1"></i>'+L.tier[1]+'</span><span><i class="t2"></i>'+L.tier[2]+'</span>'
-    +(C.hasEst?'<span class="pris-lge"><i></i>'+L.est+'</span>':'')+'</div>';
+  var legend='<div class="pris-legend"><span><i class="t0"></i>'+L.tier[0]+'</span><span><i class="t1"></i>'+L.tier[1]+'</span><span><i class="t2"></i>'+L.tier[2]+'</span>'+'</div>';
   var head=function(t){
     return '<div class="pris-ch"><p class="pris-ct">'+t+'</p>'+legend+(C.z?'':prisSwitch(view,'pris-seg-card','Spotpris'))+'</div>'
       +prisCapHTML(true,caption,panel,o.open);};
@@ -3258,7 +3240,7 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v22';
+const ZONE_SSR_VERSION = 'zone-ssr-v23';
 const CITY_SSR_VERSION = 'city-ssr-v18';
 const PROGNOSE_SSR_VERSION = 'prognose-ssr-v16';
 async function renderCachedPage(context, pathname, meta, opts, version) {
