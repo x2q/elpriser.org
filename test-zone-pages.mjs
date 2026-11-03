@@ -467,10 +467,10 @@ for (const [p, w] of Object.entries(ACT)) {
   ok((tb7.match(/<tr[ >]/g) || []).length === 8 && (tb7.match(/<td class="fc">/g) || []).length === 6 && (tb7.match(/<td class="real">/g) || []).length === 2 && (zoneHour(zone) > 0 || /<tr class="r10">/.test(tb7)), `${p}: med prognose: dagslisten har otte dage, seks af dem prognose`);
   ok(h.includes(`<td class="fc">${PL.fc}`) && h.includes(`</i>${PL.fc}</span>`) && PL.fc !== PL.actual && w.kind === PL.actual, `${p}: med prognose: prognosedøgn hedder "${PL.fc}", de afgjorte "${PL.actual}"`);
   ok(h.includes(`<p class="pris-fcn">${PL.fcn}</p>`) && h.includes(`${PL.fcn}</p></section>`), `${p}: med prognose: den ærlige note står på skærmen og i tekstblokken, på sidens sprog`);
-  const l7 = (h7.match(/<p class="pris-fca">([^]*?)<\/p>/) || [])[1] || '';
-  ok(!l7.includes('pris-bl') && l7.includes(`D+${hz}`) && !/\b76\b/.test(l7) && l7.includes(PL.fcl) === (hz === 7) && !/\b80 ?%/.test(h.replace(/<[^>]*>/g, ' ')) && !/NaN|undefined|\{[a-z]+\}/.test(main), `${p}: med prognose: nøjagtighedslinjen har de målte tal (uden dækning af et bånd, ikke 80), lav sikkerhed og ingen skabelon-rester`, l7.slice(0, 200));
+  const l7 = h7;   // no accuracy line under the chart any more
+  ok(!/pris-fca|pris-bl|Back-test/.test(l7) && h.includes(PL.fcl) === (hz === 7) && !/\b80 ?%/.test(h.replace(/<[^>]*>/g, ' ')) && !/NaN|undefined|\{[a-z]+\}/.test(main), `${p}: med prognose: ingen nøjagtighedslinje under kortet, lav sikkerhed kun i dagslisten på horisont 7, ingen skabelon-rester`);
   ok(!NOFUEL.test(raw.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), `${p}: med prognose: ingen ord om gas, kul eller brændstof på siden`);
-  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v23${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v23`);
+  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v24${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v24`);
   // the text block says the forecast exists only while there is one; the plain page stays as before
   ok(!plain.page.includes(PL.fcn) && !plain.page.includes('pris-fca') && (plain.page.match(/data-pris-period="/g) || []).length === 0, `${p}: uden prognose i svaret er siden som før (ingen note, ingen periodeknapper)`);
   fcZones = new Set();
@@ -479,8 +479,8 @@ for (const [p, w] of Object.entries(ACT)) {
 for (const [p, zone] of [['/ee/elektri-hind', 'ee'], ['/lv/elektribas-cena', 'lv'], ['/lt/elektros-kaina', 'lt']]) {
   store.clear(); upstream = []; noTomorrow = false; fcZones = new Set([zone]);
   const r = await get(p), h = r.page, c7 = h.slice(h.indexOf('pris-card pp7'), h.indexOf('</section>', h.indexOf('pris-card pp7')));
-  const l = (c7.match(/<p class="pris-fca">([^]*?)<\/p>/) || [])[1] || '';
-  ok(/EUR\/MWh \(/.test(l) && !/\b(16|18|20|25) ?%/.test(l) && !/\b76 ?%/.test(l), `${p}: showEur: fejlen står i EUR/MWh mod den simple metode, ingen procent-forbedring`, l);
+  const l = c7;
+  ok(!/pris-fca|EUR\/MWh \(/.test(l), `${p}: showEur: ingen nøjagtighedslinje under kortet`);
   fcZones = new Set();
 }
 // A page added to PRIS_COUNTRIES without a row above (docs/add-a-country.md) is still checked, from its own entry: 200, title, language, h1, locale, canonical,
@@ -586,7 +586,7 @@ for (const pg of Object.keys(PB.PRIS_COUNTRIES)) {
   ok(esBars === estHours && (plot.match(/<span class="pc[ "]/g) || []).length === 24, `GB estimat: ${estHours} skønnede timer (kaldt Estimate i tooltippen, ellers almindelige søjler) i et dagsdiagram på 24 søjler (gb har ingen i morgen)`, `${esBars}`);
   ok(!/pris-lge|pris-be|pc fx|pc es|pbd/.test(m) && /class="pris-fc[^"]*" style="left:[\d.]+%"><i><\/i>Estimate</.test(m), 'GB estimat: skillelinjen hedder "Estimate" (ikke Forecast); ingen skravering, intet bånd, ingen særlig forklaring');
   ok(/<p class="pris-fcn pris-estn">Hours marked Estimate are not the Elexon Market Index Price\. They are elpriser\.org’s own statistical model, not the Elexon number/.test(m) && /replaced by the Elexon price as soon as it is published/.test(m), 'GB estimat: noten siger at det er elpriser.orgs egen statistiske model, ikke Elexons tal, og at det afgjorte tal erstatter det');
-  ok(/Back-test, rest of the day: mean error 18\.4 GBP\/MWh, 28 % lower than a simple method \(33 % since 1 Sept 2026\)\./.test(m) && !/inside the range/.test(m) && !/EUR\/MWh/.test(m), 'GB estimat: det målte i pund (GBP/MWh), uden dækning af et bånd og uden euro');
+  ok(!/pris-fca|Back-test|mean error/.test(m) && !/EUR\/MWh/.test(m), 'GB estimat: ingen nøjagtighedslinje under kortet, og intet euro');
   ok(/data-tip="Today at \d\d:00 · [\d.]+ p\/kWh \(Estimate\)"/.test(plot) && !/P10–P90/.test(plot), 'GB estimat: tooltip siger Estimate, uden bånd');
   // The hero is the latest SETTLED hour, not the estimate for the hour that is running.
   const want = nordic('gb').days[1].prices[through].eur_mwh / 10, dec = Math.max(...nordic('gb').days.flatMap(d => d.prices.map(q => q.eur_mwh == null ? 0 : q.eur_mwh / 10))) >= 10 ? 1 : 2;
@@ -605,7 +605,7 @@ for (const pg of Object.keys(PB.PRIS_COUNTRIES)) {
   // With forecast days after today as well (D+1..D+7 pass the gate): both notes, the estimate's hours and the forecast days' band.
   estZones.add('gb'); fcZones.add('gb'); store.clear();
   const both = mainOf((await get('/gb/electricity-price')).page);
-  ok(/pris-estn/.test(both) && /<p class="pris-fcn">/.test(both) && (both.match(/role="tab"/g) || []).length === 3 && /Back-test, rest of the day/.test(both) && /Back-test, D\+\d: mean error [\d.]+ GBP\/MWh/.test(both) && !/EUR\/MWh/.test(both), 'GB estimat + prognosedage: begge noter, tre perioder, begge målinger i GBP/MWh', JSON.stringify({ e: /pris-estn/.test(both), f: /<p class="pris-fcn">/.test(both), tabs: (both.match(/role="tab"/g) || []).length, rest: /Back-test, rest of the day/.test(both), d: (both.match(/Back-test, D[^<]{0,90}/) || [])[0] }));
+  ok(/pris-estn/.test(both) && /<p class="pris-fcn">/.test(both) && (both.match(/role="tab"/g) || []).length === 3 && !/pris-fca|Back-test/.test(both) && !/EUR\/MWh/.test(both), 'GB estimat + prognosedage: begge noter, tre perioder, ingen nøjagtighedslinje, intet euro');
   estZones.delete('gb'); fcZones.delete('gb'); gbThrough = null; store.clear();
 }
 for (const [z, page, label] of [['pt', '/pt/preco-eletricidade', 'PT'], ['ie', '/ie/electricity-price', 'IE']]) {
@@ -615,7 +615,7 @@ for (const [z, page, label] of [['pt', '/pt/preco-eletricidade', 'PT'], ['ie', '
   const plot = m.slice(m.indexOf('pris-card pp2'), m.indexOf('pris-tiles pp2'));
   ok((plot.match(/data-tip="[^"]*\(Estimate\)"|data-tip="[^"]*\(Estimativa\)"/g) || []).length === 1 && (plot.match(/<span class="pc[ "]/g) || []).length === 48 && !/NaN|undefined|Infinity|null/.test(m), `${label} estimat: den ene manglende time (23) er skønnet (kaldt skøn i tooltippen), 48 søjler`);
   ok(/pris-fcn pris-estn/.test(m) && !/pris-lge|pc fx|pbd/.test(m), `${label} estimat: noten, ingen skravering`);
-  ok(/(mean error|erro médio) [\d.,]+ EUR\/MWh/.test(m) && !/GBP/.test(m), `${label} estimat: målingen er i EUR/MWh`, (m.match(/pris-fca[^]{0,400}/) || [])[0]);
+  ok(!/pris-fca|mean error|erro médio/.test(m) && !/GBP/.test(m), `${label} estimat: ingen nøjagtighedslinje, ingen pund`);
   estZones.delete(z); nullHours = {}; store.clear();
 }
 // Kosovo: ENTSO-E, Albanian, CET (no shift), euro cent. The words are the Albanian table's; the page names Kosovo, never Albania.

@@ -422,7 +422,6 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     const drawF = (raw, hour = 21, period = 2) => { const pg = pgOf(raw.zone), cfg = pctx.prisZoneCfg(pg, raw);
       return pris(pctx.zoneToPrisDays(raw, raw.zoneInfo, D0, cfg.zd), D0, hour, { zone: raw.zone, pg, key: raw.zone, period, cfg, acc: raw.accuracy, where: raw.zone }); };
     const card = (h, p) => h.slice(h.indexOf(`pris-card pp${p}`), h.indexOf('</section>', h.indexOf(`pris-card pp${p}`)));
-    const fcaOf = c => (c.match(/<p class="pris-fca">([^]*?)<\/p>/) || [])[1] || '';
     // The configuration follows the DATA: forecast days give PRIS_EUF on an `act` page, none give PRIS_ACT, a Nordic page never changes.
     ok(pctx.prisZoneCfg('de/strompreis', euF('de')) === pctx.PRIS_EUF && pctx.prisZoneCfg('de/strompreis', euF('de', { nFc: 0 })) === pctx.PRIS_ACT && pctx.prisZoneCfg('de/strompreis', null) === pctx.PRIS_ACT && pctx.prisZoneCfg('de/strompreis', { days: [] }) === pctx.PRIS_ACT, 'prisZoneCfg: prognosedøgn i svaret giver PRIS_EUF, ingen giver PRIS_ACT');
     ok(pctx.prisZoneCfg('no/strompris', euF('no1')) === pctx.PRIS_STD && pctx.prisCountryCfg('de/strompreis') === pctx.PRIS_ACT && pctx.PRIS_EUF.periods.join() === '2,5,7' && pctx.PRIS_EUF.def === 2 && pctx.PRIS_EUF.days === 8 && pctx.PRIS_EUF.zd === 8, 'en nordisk side får aldrig PRIS_EUF; PRIS_EUF er 2/5/7 døgn og otte dage');
@@ -456,17 +455,10 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     const rows7 = tb(h, 7);
     ok(nrows(rows7) === 8 && (rows7.match(/<td class="fc">/g) || []).length === 6 && (rows7.match(/<td class="real">Day-Ahead-Preis<\/td>/g) || []).length === 2, 'dagslisten: 8 rækker, 6 med typen Prognose og 2 afgjorte');
     ok((h.match(/<small class="pris-low">Geringe Zuverlässigkeit<\/small>/g) || []).length === 1 && /<td class="fc">Prognose<small class="pris-low">/.test(rows7), 'lav sikkerhed står kun på horisont 7 i dagslisten');
-    // The accuracy line: measured numbers from the answer, per period's last forecast day.
-    const l7 = fcaOf(c7), l2 = fcaOf(c2);
-    ok(!/pris-bl|Spanne/.test(l7) && l7.includes('D+7: mittlerer Fehler 27,0 EUR/MWh, 16 % unter einer einfachen Methode (20 % seit 1.9.2026).') && l7.includes('Die günstigsten Stunden erkennt es 25 % besser') && !/Im Test lagen/.test(l7) && l7.includes('<b class="pris-low">Geringe Zuverlässigkeit</b>'), '7 døgn: linjen har D+7, fejl 27,0, 16 % og 20 % siden 1.9., ranking 25 % og lav sikkerhed, ingen band-etiket og ingen dækning', l7);
-    ok(l2.includes('D+2: mittlerer Fehler 22,0 EUR/MWh, 26 % unter') && !/pris-low/.test(l2) && !/80 ?%/.test(l2 + l7), '2 døgn: horisont 2 uden lav sikkerhed; aldrig 80 %');
-    // A rank gain under 5 % is never claimed; a coverage that is not a number is left out; a loss since September has its minus.
-    const rawNoRank = euF('de'); rawNoRank.accuracy.byHorizon['7'].rankOk = false; rawNoRank.accuracy.byHorizon['7'].coverage = null; rawNoRank.accuracy.byHorizon['7'].gainRecent = -0.034;
-    const lN = fcaOf(card(drawF(rawNoRank), 7));
-    ok(!/Die günstigsten Stunden/.test(lN) && !/Im Test lagen/.test(lN) && lN.includes('(−3 % seit 1.9.2026)'), 'rankOk falsk: ingen påstand om billigste timer; ingen dækning uden tal; et tab siden september står med minus');
-    // EUR instead of per cent for EE / LV / LT.
-    const ee = drawF(euF('ee', { showEur: true })), le = fcaOf(card(ee, 7));
-    ok(/keskmine viga 27,0 EUR\/MWh \(lihtne meetod: 37,0 EUR\/MWh\)/.test(le) && !/16 %|20 %|25 %/.test(le) && !/76 %/.test(le) && /<b class="pris-low">Madal kindlus<\/b>/.test(le), 'EE (showEur): fejl i EUR/MWh mod den simple metode, ingen procent-forbedring, ingen rank-procent, ingen dækning');
+    // No accuracy line under the chart (nor a band legend, nor a back-test sentence): the divider says it is a forecast, as in Denmark.
+    const noLine = x => !/pris-fca|pris-bl|Rückblick-Test|Back-test|mean error/.test(x);
+    ok(noLine(c2) && noLine(c7) && noLine(card(drawF(euF('ee', { showEur: true })), 7)), 'ingen nøjagtighedslinje under kortet (hverken 2 eller 7 døgn, heller ikke for EUR-zoner)');
+    ok((h.match(/<small class="pris-low">Geringe Zuverlässigkeit<\/small>/g) || []).length === 1, 'lav sikkerhed står stadig kun i dagslisten');
     // The honest note: in the markup, once, under the cards; absent without a forecast and on the Nordic pages.
     ok((h.match(/<p class="pris-fcn">/g) || []).length === 1 && h.includes('<p class="pris-fcn">' + pctx.PRIS_I18N.de.fcn + '</p>'), 'noten står én gang i markup');
     const nordicFeed = euF('no3'); nordicFeed.zoneInfo.rate = 10;
@@ -511,11 +503,11 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     }
     ok(new Set(langs.map(l => L[l].estn)).size === langs.length && new Set(langs.map(l => L[l].est)).size >= 20, 'alle 27 sprog har hver deres tekst til skønsnoten');
     for (const [pg, C] of Object.entries(CT)) if (C.act) {
-      const PL = pctx.prisPageL(pg), raw = estRaw(C.def, { gb: C.def === 'gb' }), out = drawE(raw, 21, pg), u = C.def === 'gb' ? 'GBP/MWh' : 'EUR/MWh';
-      const bars = (out.match(new RegExp(`data-tip="[^"]*\\(${PL.est}\\)"`, 'g')) || []).length, line = fcaOf(out);
+      const PL = pctx.prisPageL(pg), raw = estRaw(C.def, { gb: C.def === 'gb' }), out = drawE(raw, 21, pg);
+      const bars = (out.match(new RegExp(`data-tip="[^"]*\\(${PL.est}\\)"`, 'g')) || []).length;
       ok(bars === 4 && !/pc fx|pc es|pbd|pris-lge|pris-bl|P10–P90/.test(out) && out.includes(`<p class="pris-fcn pris-estn">${PL.estn}</p>`)
-        && line.includes(u) && !(C.def === 'gb' ? /EUR\/MWh/ : /GBP/).test(line) && !/NaN|undefined|Infinity|\{[a-z]+\}/.test(out) && !FUEL.test(out)
-        && !/<td class="fc">/.test(out) && !/role="tab"/.test(out), `${pg}: skønnet på ${C.lang}: fire søjler kaldt ${PL.est} i tooltippen, ingen skravering, noten, målingen i ${u}, ingen faner, ingen prognoserække`, `${bars} ${line.slice(0, 160)}`);
+        && !/pris-fca|Back-test|mean error/.test(out) && !/NaN|undefined|Infinity|\{[a-z]+\}/.test(out) && !FUEL.test(out)
+        && !/<td class="fc">/.test(out) && !/role="tab"/.test(out), `${pg}: skønnet på ${C.lang}: fire søjler kaldt ${PL.est} i tooltippen, ingen skravering, noten, ingen nøjagtighedslinje, ingen faner, ingen prognoserække`, `${bars}`);
       // The hero is a settled price: with the estimate on TODAY's day, the hour that is running (21) is an estimate, so the big number is "—" (and, where the zone shows its latest priced hour,
       // that hour's own time), never the estimate.
       const rt = estRaw(C.def, { gb: C.def === 'gb', day: 0 }), ot = drawE(rt, 21, pg);

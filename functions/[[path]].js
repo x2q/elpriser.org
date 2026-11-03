@@ -2600,41 +2600,6 @@ function prisSummary(all,p,cfg,C){
     +li.map(function(x){return '<li><strong>'+x[0]+':</strong> '+x[1]+'</li>';}).join('')+'</ul></section>';
 }
 
-/** Fills {name} places of a language's text with the numbers of the accuracy block. */
-function prisFill(t,m){return String(t).replace(/\{(\w+)\}/g,function(_,k){return m[k]==null?'':m[k];});}
-/** A percentage with the language's own minus sign for a loss ("−3"). */
-function prisPct(x){var n=Math.round(x*100);return n<0?'\u2212'+(-n):String(n);}
-/** What the model has been worth at horizon `hz` in this zone, as one short line of MEASURED numbers (accuracy.byHorizon[hz] of the answer):
- *  the band legend, the mean error against the simple level-and-shape method, how much better it picks the cheapest hours (only when that
- *  was at least 5 %), the share of hours that really fell inside the band (as measured, never a promised 80 %) and, where the back-test
- *  says so, the low-confidence label. A zone that quotes EUR (accuracy.showEur: EE, LV, LT) gets no percentages. '' without an entry. */
-function prisFcLine(all,end,C){
-  if(!C.band)return '';
-  var L=C.L,d=null,i,parts=[],num=function(v){return typeof v==='number'&&isFinite(v);};
-  // The estimated hours of a settled day (C.est: /api/nordic `estimate`): their swatch, their band and what the back-test says they are worth.
-  var est=prisHasEst(all,end)?C.est:null,hasE=prisHasEst(all,end);
-  if(hasE){
-    if(est&&num(est.mae)){
-      var u=est.unit||'EUR/MWh',em=prisNum(est.mae,est.mae>=100?0:1,L),eb=num(est.baseMae)?prisNum(est.baseMae,est.baseMae>=100?0:1,L):null;
-      if(est.hours===1&&eb!=null)parts.push(prisFill(L.esth,{mae:em,base:eb,u:u}));
-      else if(num(est.gain))parts.push(prisFill(L.esta,{mae:em,u:u,g:prisPct(est.gain),r:num(est.gainRecent)?prisPct(est.gainRecent):'–'}));
-      if(est.low===true)parts.push('<b class="pris-low">'+L.fcl+'</b>');
-    }
-  }
-  for(i=0;i<end&&i<all.length;i++)if(!all[i].real)d=all[i];
-  if(!d)return parts.length?'<p class="pris-fca">'+parts.join(' ')+'</p>':'';
-  var A=C.acc&&C.acc[d.hz],eur=C.accAll&&C.accAll.showEur===true;
-  if(A&&num(A.mae)){
-    var mae=prisNum(A.mae,A.mae>=100?0:1,L);
-    var un=function(t){return C.accAll&&C.accAll.unit&&C.accAll.unit!=='EUR/MWh'?t.split('EUR/MWh').join(C.accAll.unit):t;};
-    if(eur&&num(A.baseMae))parts.push(un(prisFill(L.fcae,{h:d.hz,mae:mae,base:prisNum(A.baseMae,A.baseMae>=100?0:1,L)})));
-    else if(!eur&&num(A.gain))parts.push(un(prisFill(L.fca,{h:d.hz,mae:mae,g:prisPct(A.gain),r:num(A.gainRecent)?prisPct(A.gainRecent):'–'})));
-    if(!eur&&A.rankOk===true&&num(A.rankGain))parts.push(prisFill(L.fcr,{r:prisPct(A.rankGain)}));
-    if(A.low===true)parts.push('<b class="pris-low">'+L.fcl+'</b>');
-  }
-  return parts.length?'<p class="pris-fca">'+parts.join(' ')+'</p>':'';
-}
-
 /** The whole screen. `o`: {view:'din'|'spot', period:2|5|7 as the page's cfg offers (legacy 10 reads as its longest), cfg:PRIS_STD (default) or PRIS_FC, net:name|null, where:'DK1 Vest', key,
  *  charges:{sys,trans,afg,vat} from the same response (without it the caption stays plain), open:true to draw the breakdown unfolded,
  *  zone:key of ZONES for a foreign area — its language, its unit, spot only, no switch}. */
@@ -2694,7 +2659,7 @@ function prisHTML(days,todayStr,nowHour,o){
     var shown=all.slice(0,win?Math.ceil((st+len)/24):n);
     cards+='<section class="pris-card pp'+p+'" aria-label="'+t+'">'+head(t)
       +prisChart(shown,n,p===2?{ref:td||[],nowSlot:nowSlot,start:st,len:len,title:C.act?L.hourly+', '+actT.toLowerCase():ttl+L.p2,C:C}
-        :{nowSlot:nowSlot,start:st,len:len,xDays:true,seps:true,title:ttl+L['p'+p],C:C})+prisFcLine(all,shown.length,C)+'</section>';
+        :{nowSlot:nowSlot,start:st,len:len,xDays:true,seps:true,title:ttl+L['p'+p],C:C})+'</section>';
     tiles+=prisTiles(all,nowHour,p,'pp'+p,C);
   });
   return '<div class="pris" data-period="'+period+'" data-view="'+view+'" data-key="'+prisEsc(o.key||'')
@@ -3240,7 +3205,7 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v23';
+const ZONE_SSR_VERSION = 'zone-ssr-v24';
 const CITY_SSR_VERSION = 'city-ssr-v18';
 const PROGNOSE_SSR_VERSION = 'prognose-ssr-v16';
 async function renderCachedPage(context, pathname, meta, opts, version) {
