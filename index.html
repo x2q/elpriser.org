@@ -774,6 +774,62 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .dark .hl-com{color:#8b949e}
   .dark .hl-tpl{color:#ffa657}
   .dark .hl-type{color:#ff9e64}
+
+  /* ═══ /integrationer (.ig-*) ═══
+     Hand-written on purpose: the list is drawn by integrationsHTML() in functions/_integrations.js, which Tailwind never
+     scans. Colours are the --p-* roles of the Pris screen; the status chips pair a tint with its own ink in both themes. */
+  .ig-page{--ig-b-bg:#e8eeff;--ig-b-ink:#14308f;color:var(--p-ink)}
+  .dark .ig-page{--ig-b-bg:rgba(109,154,255,.16);--ig-b-ink:#b4c4ff}
+  .ig-intro{max-width:40rem;margin:.7rem 0 0;font-size:1.05rem;line-height:1.55;color:var(--p-ink2)}
+  .ig-sec{margin-top:2.75rem}
+  .ig-h{margin:0;font-size:1.3rem;font-weight:800;letter-spacing:-.015em;line-height:1.2;color:var(--p-ink)}
+  .ig-lead{margin:.3rem 0 1rem;max-width:40rem;font-size:.95rem;line-height:1.5;color:var(--p-muted)}
+  .ig-lead a,.ig-howt a{color:var(--p-brand);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+  .ig-chip{display:inline-flex;align-items:center;padding:.35rem .7rem;border-radius:9999px;font-size:.75rem;font-weight:700;line-height:1;white-space:nowrap}
+  .ig-ok{background:var(--p-lo-bg);color:var(--p-lo-ink)}
+  .ig-wait{background:var(--p-mi-bg);color:var(--p-mi-ink)}
+  .ig-brand{background:var(--ig-b-bg);color:var(--ig-b-ink)}
+  .ig-soon{background:var(--p-seg);color:var(--p-muted);box-shadow:inset 0 0 0 1px var(--p-chip-line)}
+  .ig-legend{display:grid;gap:.75rem 2rem;margin:1rem 0 0}
+  .ig-lg{display:flex;align-items:flex-start;gap:.75rem}
+  .ig-lg dt{flex:0 0 8.6rem}
+  .ig-lg dd{margin:0;font-size:.9rem;line-height:1.45;color:var(--p-ink2)}
+  .ig-asof{margin:.9rem 0 0;font-size:.8rem;color:var(--p-muted)}
+  .ig-list{list-style:none;margin:0;padding:0;overflow:hidden;background:var(--p-card);border:1px solid var(--p-line);border-radius:1.25rem}
+  .ig-item{display:grid;grid-template-columns:minmax(0,1fr);gap:1rem;padding:1.25rem 1.1rem;border-top:1px solid var(--p-hair)}
+  .ig-item:first-child{border-top:0}
+  .ig-main,.ig-how{min-width:0}
+  .ig-head{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .75rem}
+  .ig-name{margin:0;font-size:1.1rem;font-weight:800;letter-spacing:-.01em;line-height:1.25;color:var(--p-ink)}
+  .ig-plat{margin:.25rem 0 0;font-size:.8rem;font-weight:600;color:var(--p-muted)}
+  .ig-blurb{margin:.6rem 0 0;line-height:1.5;color:var(--p-ink)}
+  .ig-meta{margin:.5rem 0 0;font-size:.85rem;line-height:1.45;color:var(--p-muted)}
+  .ig-note{margin:.7rem 0 0;padding-left:.75rem;border-left:3px solid var(--p-line);font-size:.85rem;line-height:1.45;color:var(--p-ink2)}
+  .ig-links{display:flex;flex-wrap:wrap;gap:0 1.25rem;margin:.5rem 0 0}
+  .ig-links a{display:inline-flex;align-items:center;min-height:44px;font-size:.9rem;font-weight:600;color:var(--p-brand);text-decoration:underline;text-underline-offset:3px}
+  .ig-howt{margin:0;font-size:.9rem;line-height:1.5;color:var(--p-ink2)}
+  .ig-code{margin:.7rem 0 0;overflow:hidden;background:var(--p-seg);border:1px solid var(--p-chip-line);border-radius:.8rem}
+  .ig-howt:first-child+.ig-code,.ig-how>.ig-code:first-child{margin-top:0}
+  .ig-codel{margin:0;padding:.6rem 1rem 0;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--p-muted)}
+  .ig-code pre{margin:0;padding:.8rem 1rem;overflow-x:auto;white-space:pre;color:var(--p-ink);font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;-webkit-overflow-scrolling:touch}
+  .ig-code pre:focus-visible{outline:2px solid var(--p-brand);outline-offset:-2px}
+  .ig-copy{display:none}
+  .ig-ready .ig-copy{display:flex;align-items:center;justify-content:flex-end;box-sizing:border-box;width:100%;min-height:44px;padding:0 1rem;border:0;border-top:1px solid var(--p-chip-line);background:transparent;color:var(--p-brand);font:inherit;font-size:.85rem;font-weight:700;cursor:pointer}
+  .ig-ready .ig-copy:hover{background:var(--ig-b-bg)}
+  .ig-copy:focus-visible{outline:2px solid var(--p-brand);outline-offset:-2px}
+  .ig-wide{max-width:38rem}
+  .ig-links-solo{margin-top:.4rem}
+  .ig-box{display:block;margin:0 0 1.25rem;padding:1rem 1.15rem;color:var(--p-ink);text-decoration:none;background:var(--p-card);border:1px solid var(--p-line);border-radius:1rem;box-shadow:var(--ring);transition:border-color .15s,box-shadow .15s}
+  .ig-box strong{display:block;font-weight:800;color:var(--p-brand)}
+  .ig-box strong::after{content:" \2192"}
+  .ig-box span{display:block;margin-top:.15rem;font-size:.875rem;line-height:1.45;color:var(--p-muted)}
+  .ig-box:hover{border-color:var(--p-brand);box-shadow:var(--ring-hover)}
+  .ig-box:focus-visible{outline:2px solid var(--p-brand);outline-offset:3px}
+  @media (min-width:640px){.ig-legend{grid-template-columns:1fr 1fr}}
+  @media (min-width:760px){
+    .ig-item{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.75rem;padding:1.5rem}
+    .ig-item-soon{grid-template-columns:minmax(0,1fr)}
+  }
 </style>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-950 dark:text-gray-100 min-h-screen font-sans transition-colors">
@@ -1197,6 +1253,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <h2 class="page-title">Smart hjem</h2>
     </div>
   </div>
+  <a href="/integrationer" class="ig-box"><strong>Alle integrationer og biblioteker</strong><span>Home Assistant, Node-RED, Homey, Python, MCP og flere, med status for hver.</span></a>
   <!-- Strategy config — all fields auto-update on change -->
   <div class="subcard mb-4">
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -1430,6 +1487,19 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   <div class="text-center text-xs text-gray-400 dark:text-gray-500">
     Se også: <a href="/shelly-tariff" class="text-brand-500 underline">Shelly Live Tariff</a> — Tibber-kompatibelt API til Shelly med timepriser
   </div>
+</main>
+
+<!-- ═══════ INTEGRATIONER PAGE ═══════
+     The one overview of plugins, API libraries and the MCP server. The list itself is NOT written here: every item and its
+     true install status live in functions/_integrations.js (INTEGRATIONS), and the Function (and server.js in development)
+     writes the finished HTML in place of the comment below, so the page reads without JavaScript. -->
+<main style="display:none" data-page="integrationer" class="ig-page max-w-4xl mx-auto px-4 py-6">
+  <div class="mb-4">
+    <div class="page-eyebrow">Plugins og kode til elpriser.org</div>
+    <h2 class="page-title">Integrationer og API-biblioteker</h2>
+    <p class="ig-intro">Samme priser som på hjemmesiden og i apperne. Gratis og uden nøgle. Find din platform her, og se hvad der er klar, og hvad der stadig er på vej.</p>
+  </div>
+  <!--SSR_INTEGRATIONER-->
 </main>
 
 <!-- ═══════ SHELLY LIVE TARIFF PAGE ═══════ -->
@@ -1697,6 +1767,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <h2 class="page-title">elpriser.org API</h2>
     </div>
   </div>
+  <a href="/integrationer" class="ig-box"><strong>Alle integrationer og biblioteker</strong><span>Færdige plugins og klienter i Python, JavaScript og MCP, så du slipper for selv at kalde API’et.</span></a>
 
   <article class="prose-article text-sm leading-relaxed text-gray-600 dark:text-gray-400">
     <p class="text-base text-gray-700 dark:text-gray-300">Alle data på elpriser.org er tilgængelige via et public JSON API. Kalder du fra en browser, Shelly, Home Assistant, en LLM-agent eller et eget script, så slipper du for et abonnement — bare hit en URL.</p>
@@ -2070,6 +2141,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
         <li class="dl-rv" style="--d:.1s"><a class="dl-way" href="/automation#shelly"><b>Shelly <i aria-hidden="true">&rarr;</i></b><span>Kode til relæer, der tænder på de billigste timer.</span></a></li>
         <li class="dl-rv" style="--d:.15s"><a class="dl-way" href="/api"><b>API <i aria-hidden="true">&rarr;</i></b><span>Gratis JSON-API til danske elpriser.</span></a></li>
         <li class="dl-rv" style="--d:.2s"><a class="dl-way" href="https://github.com/x2q/elpriser-mcp" rel="noopener"><b>MCP <i aria-hidden="true">&rarr;</i></b><span>Lad en AI-assistent slå elprisen op.</span></a></li>
+        <li class="dl-rv" style="--d:.25s"><a class="dl-way" href="/integrationer"><b>Alle integrationer <i aria-hidden="true">&rarr;</i></b><span>Plugins og biblioteker til Node-RED, Homey, Python og flere.</span></a></li>
       </ul>
     </div>
   </section>
@@ -2855,6 +2927,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
           <li><a href="/automation">Smart hjem</a></li>
           <li><a href="/shelly-tariff">Shelly Live Tariff</a></li>
           <li><a href="/api">Åbent API</a></li>
+          <li><a href="/integrationer">Integrationer</a></li>
         </ul>
       </nav>
       <nav class="sf-col" aria-labelledby="sfViden">
@@ -3330,7 +3403,7 @@ function markNetDialog(){
 // Highlight the current destination in the header: Pris, Smart hjem or Om.
 function updateNavActive(){
   const dp=document.querySelector('[data-page].active')?.getAttribute('data-page')||'start';
-  const key=dp==='automation'||dp==='shelly-tariff'?'automation':dp==='om-elpriser'?'om'
+  const key=dp==='automation'||dp==='shelly-tariff'||dp==='integrationer'?'automation':dp==='om-elpriser'?'om'
     :dp.startsWith('blog')||dp==='api'||dp==='download'?'':'pris';
   const ab=document.querySelector('.app-btn');
   if(ab){if(dp==='download')ab.setAttribute('aria-current','page');else ab.removeAttribute('aria-current');}
@@ -3415,6 +3488,7 @@ const PATH_ROUTES={
   '/dk1':'DK1/inkl_alt','/dk2':'DK2/inkl_alt',
   '/tariffer':'tariffer','/automation':'automation','/api':'api','/shelly-tariff':'shelly-tariff',
   '/om-elpriser':'om-elpriser','/prognose':'prognose','/download':'download',
+  '/integrationer':'integrationer',
   '/norden':'norden',
   '/blog':'blog',
   '/blog/elafgift-2028':'blog/elafgift-2028',
@@ -3562,7 +3636,7 @@ function dataPageFor(h){
   return h.replace(/\//g,'-'); // blog/x -> blog-x; others map 1:1
 }
 function markTab(){
-  const p=location.pathname,auto=p==='/automation'||p==='/shelly-tariff';
+  const p=location.pathname,auto=p==='/automation'||p==='/shelly-tariff'||p==='/integrationer';
   document.querySelectorAll('#tabBar a[data-tab]').forEach(a=>{
     // Smart hjem is the automation pages; Pris is everything else.
     const on=a.dataset.tab==='/automation'?auto:!auto;
@@ -3642,6 +3716,7 @@ function route(){
   if(h==='api'){document.querySelector('[data-page="api"]').classList.add('active');document.title='elpriser.org API — Gratis JSON API for danske elpriser';pv('API','/api');return;}
   if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — Tibber-kompatibel elpris-JSON';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}
   if(h==='download'){document.querySelector('[data-page="download"]').classList.add('active');document.title='Hent Elpriser-appen — til iPhone, iPad og Android, gratis';pv('Hent appen','/download');return;}
+  if(h==='integrationer'){document.querySelector('[data-page="integrationer"]').classList.add('active');document.title='Integrationer og API-biblioteker til elpriser — med status';pv('Integrationer','/integrationer');return;}
   if(h==='om-elpriser'){document.querySelector('[data-page="om-elpriser"]').classList.add('active');document.title='Om elpriser i Danmark — Spotpris, tariffer og afgifter';pv('Om elpriser','/om-elpriser');return;}
   if(h==='blog'){document.querySelector('[data-page="blog"]').classList.add('active');document.title='Blog — Guides og analyser om elpriser';pv('Blog','/blog');return;}
   if(h==='blog/hvornaar-er-stroemmen-billigst'){document.querySelector('[data-page="blog-hvornaar-er-stroemmen-billigst"]').classList.add('active');document.title='Hvornår er strømmen billigst? Nattestrøm er ikke længere svaret';pv('Blog: Hvornår billigst','/blog/hvornaar-er-stroemmen-billigst');return;}
@@ -6523,6 +6598,19 @@ function copyApiUrl(){
   const el=document.getElementById('apiUrlDisplay');
   navigator.clipboard?.writeText(el.dataset.raw||el.textContent);
 }
+// /integrationer: "Kopiér" on the install lines. The buttons stay hidden until this class is set, so without
+// JavaScript the lines are plain selectable text and there is no button that does nothing.
+document.documentElement.classList.add('ig-ready');
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('[data-ig-copy]');
+  const code=b&&b.parentNode.querySelector('code');
+  if(!code)return;
+  const say=t=>{b.textContent=t;setTimeout(()=>{b.textContent='Kopiér';},2000);};
+  try{
+    navigator.clipboard.writeText(code.textContent).then(()=>say('Kopieret'),()=>say('Markér teksten og kopiér selv'));
+    try{gtag('event','copy_integration',{item:(b.closest('li')||{}).id||'api'});}catch(_){}
+  }catch(_){say('Markér teksten og kopiér selv');}
+});
 // ═══ Light syntax highlighting — no dependencies ═══
 // Tokenizes first, then wraps — avoids the "regex eats its own output" bug
 // where `<span class="hl-com">` gets re-matched as a YAML string.

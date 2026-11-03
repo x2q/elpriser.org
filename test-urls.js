@@ -241,6 +241,12 @@ async function main() {
   check(/"@type": "MobileApplication"/.test(dl.body) && !/10 døgn/.test(dl.body.replace(/<script[\s\S]*?<\/script>/g, '')), '/download: MobileApplication-markup, og ingen "10 døgn"-påstand');
   check(/<a href="\/download" class="app-btn">Hent appen<\/a>/.test((await get('/')).body) && !/appDialog/.test((await get('/')).body), 'forside: "Hent appen" er et link til /download, ingen dialog');
   check(sitemap.includes('/download'), '/download: i sitemap');
+  // /integrationer: the one overview of plugins and API libraries; its list is in the HTML, not drawn by script.
+  const ig = await get('/integrationer');
+  check(ig.status === 200 && /<h1 class="page-title">Integrationer og API-biblioteker<\/h1>/.test(ig.body), '/integrationer: 200 og h1', String(ig.status));
+  check(sitemap.includes('/integrationer'), '/integrationer: i sitemap');
+  check(/<h3 class="ig-name">Home Assistant<\/h3>/.test(ig.body) && /<h3 class="ig-name">MCP-server<\/h3>/.test(ig.body) && /<pre tabindex="0"[^>]*><code>npm install elpriser-client<\/code>/.test(ig.body), '/integrationer: punkterne og installationslinjerne står i HTML\'en');
+  check(/href="\/integrationer"/.test((await get('/automation')).body) && /href="\/integrationer"/.test((await get('/api')).body), '/automation og /api linker til /integrationer');
   const blogIdx = await get('/blog');
   check(JSON.stringify(all(blogIdx.body, /<a href="(\/blog\/[^"]+)" class="card/g).sort()) ===
         JSON.stringify(['/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/blog/groennest-og-dyrest', '/blog/hvornaar-er-stroemmen-billigst']), '/blog: kun de fire tilbageværende indlæg');

@@ -176,7 +176,7 @@ for (const [p, w] of Object.entries(PAGES)) {
     ok(!/class="tabbar|Mobilnavigation|Netselskab og indstillinger|id="gpsBtn|netDlgDK/.test(h.replace(/<!--[\s\S]*?-->/g, '')) && (h.match(/<dialog id="netDialog"/g) || []).length === 1 && h.includes(`id="netDialogTitle">${X.place}</h2>`), `${p}: ingen dansk mobilbar og ingen danske netselskaber, men stedsdialogen på ${w.lang}`);
     ok((h.match(/<footer\b/g) || []).length === 1 && ft.includes('class="sf sf-x"') && ft.includes(`id="sfLand">${X.land}<`) && ft.includes(X.privacy) && !/Privatliv|Hent appen|Hent til|Netselskab|Alle guides|Tariffer|Prognose<|Forstå din elpris|Åbne datasæt|class="sf-apps|class="sf-all|<details/.test(ft), `${p}: sidefoden er den slanke på ${w.lang}`);
     ok(ft.includes('&copy; Elpriser.org') && ft.includes(X.src) && ft.includes(X.open) && /href="\/privatliv" hreflang="da"/.test(ft), `${p}: ophavsret, kilder og privatlivslink på ${w.lang}`);
-    ok(!/href="\/(automation|om-elpriser|download|tariffer|prognose|blog|api|shelly-tariff|norden)"/.test(hd + ft) && !/href="\/(dk[12]|elpris)\/[a-z]/.test(hd + ft), `${p}: header og fod linker ingen danske undersider, kun landesiderne og /privatliv`);
+    ok(!/href="\/(automation|om-elpriser|download|tariffer|prognose|blog|api|shelly-tariff|integrationer|norden)"/.test(hd + ft) && !/href="\/(dk[12]|elpris)\/[a-z]/.test(hd + ft), `${p}: header og fod linker ingen danske undersider, kun landesiderne og /privatliv`);
   }
   ok(upstream.length === (PAGES[p].tabs || 1) && upstream.every(x => x.startsWith('/api/nordic?zone=')), `${p}: serveren henter præcis landets zoner`, upstream.join(' '));
   // The edge cache: a second request is served without touching the feed again, under its own versioned key.
@@ -470,7 +470,7 @@ for (const [p, w] of Object.entries(ACT)) {
   const l7 = h7;   // no accuracy line under the chart any more
   ok(!/pris-fca|pris-bl|Back-test/.test(l7) && h.includes(PL.fcl) === (hz === 7) && !/\b80 ?%/.test(h.replace(/<[^>]*>/g, ' ')) && !/NaN|undefined|\{[a-z]+\}/.test(main), `${p}: med prognose: ingen nøjagtighedslinje under kortet, lav sikkerhed kun i dagslisten på horisont 7, ingen skabelon-rester`);
   ok(!NOFUEL.test(raw.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), `${p}: med prognose: ingen ord om gas, kul eller brændstof på siden`);
-  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v24${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v24`);
+  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v25${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v24`);
   // the text block says the forecast exists only while there is one; the plain page stays as before
   ok(!plain.page.includes(PL.fcn) && !plain.page.includes('pris-fca') && (plain.page.match(/data-pris-period="/g) || []).length === 0, `${p}: uden prognose i svaret er siden som før (ingen note, ingen periodeknapper)`);
   fcZones = new Set();
@@ -877,7 +877,7 @@ for (const [from, to] of Object.entries(OLD)) {
   ok(title.length >= 55 && title.length <= 60 && /^Hent Elpriser-appen/.test(title), '/download: titlen er 55-60 tegn og begynder med handlingen', `${title.length}: ${title}`);
   ok(desc.length >= 140 && desc.length <= 155 && /5 døgn/.test(desc) && !/10 døgn/.test(desc), '/download: beskrivelsen er 140-155 tegn og nævner 5 døgn', `${desc.length}`);
   ok(/<meta property="og:image" content="https:\/\/elpriser\.org\/og-image\.png">/.test(b), '/download: og:image er uændret');
-  ok((b.match(/class="dl-badge /g) || []).length === 2 && (b.match(/<li class="dl-card dl-rv" data-status="/g) || []).length === 8 && (b.match(/<li class="dl-way|<a class="dl-way"/g) || []).length === 5, '/download: begge badges, otte kort og fem andre veje står i HTML\'en');
+  ok((b.match(/class="dl-badge /g) || []).length === 2 && (b.match(/<li class="dl-card dl-rv" data-status="/g) || []).length === 8 && (b.match(/<li class="dl-way|<a class="dl-way"/g) || []).length === 6, '/download: begge badges, otte kort og seks andre veje står i HTML\'en');
   ok((b.match(/<img [^>]*\/download\/img\/[^>]*width="\d+" height="\d+"/g) || []).length >= 10 && !/\.(png|jpe?g)"/.test(b.match(/<main[\s\S]*<\/main>/)[0].replace(/\/badges\/[^"]+/g, '')), '/download: skærmbillederne er WebP med bredde og højde');
   ok(/"@type": "MobileApplication"/.test(b) && /"featureList"/.test(b) && (b.match(/"@type": "MobileApplication"/g) || []).length === 1, '/download: MobileApplication-markup, én gang');
   const text = b.match(/<main[\s\S]*<\/main>/)[0].replace(/<script[\s\S]*?<\/script>/g, ' ').replace(/<[^>]+>/g, ' ');

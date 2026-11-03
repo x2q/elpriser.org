@@ -397,6 +397,7 @@ const SPA_ROUTES = {
   '/norden': '#norden',
   '/prognose': '#prognose',
   '/api': '#api',
+  '/integrationer': '#integrationer',
   '/shelly-tariff': '#shelly-tariff',
   '/blog': '#blog',
   '/blog/hvornaar-er-stroemmen-billigst': '#blog/hvornaar-er-stroemmen-billigst',
@@ -464,8 +465,13 @@ let CITY_SLUGS = new Set();
 import('./functions/_cities.js').then(m => { CITY_SLUGS = new Set(m.CITIES.map(c => c.slug)); }).catch(() => {});
 
 function serveSPA(res, _hash) {
-  fs.readFile(path.join(__dir, 'index.html'), 'utf8', (err, html) => {
+  fs.readFile(path.join(__dir, 'index.html'), 'utf8', async (err, html) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
+    // /integrationer is drawn from the status table in functions/_integrations.js, as in production.
+    if (_hash === '#integrationer') {
+      const m = await import('./functions/_integrations.js');
+      html = html.replace('<!--SSR_INTEGRATIONER-->', () => m.integrationsHTML());
+    }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(html);
   });
