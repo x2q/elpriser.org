@@ -138,7 +138,7 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="settings_about_label">About the app</string>
-    <string name="about_text">Prices from Energi Data Service and ENTSO-E · the forecast comes from an open model on Hugging Face · elpriser %1$s</string>
+    <string name="about_text">Prices from Energi Data Service and ENTSO-E · the forecast comes from open models on Hugging Face (elsewhere in Europe a variant without two of its price inputs) · elpriser %1$s</string>
     <string name="about_sources_eu">Prices outside Denmark: ENTSO-E Transparency Platform and Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), converted to hourly averages by elpriser.org.</string>
     <string name="action_privacy">Privacy</string>
 

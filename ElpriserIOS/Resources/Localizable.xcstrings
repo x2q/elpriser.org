@@ -728,13 +728,13 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra en åben model på Hugging Face · elpriser %1$@"
+            "value" : "Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra åbne modeller på Hugging Face (i resten af Europa en variant uden to af dens prisinput) · elpriser %1$@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prices from Energi Data Service and ENTSO-E · the forecast comes from an open model on Hugging Face · elpriser %1$@"
+            "value" : "Prices from Energi Data Service and ENTSO-E · the forecast comes from open models on Hugging Face (elsewhere in Europe a variant without two of its price inputs) · elpriser %1$@"
           }
         },
         "de" : {

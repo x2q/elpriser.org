@@ -144,6 +144,13 @@ test('python unit tests: scripts/forecast_model/gb/test_gb.py passes (leakage ru
   assert.match(r.stderr, /Ran \d{2,} tests/, 'the estimate suite ran suspiciously few tests');
 });
 
+// ── Open weights on Hugging Face — scripts/forecast_model/hf: the guard that keeps fuel-trained weights, data and credentials off the Hub, the stripped gate files, the cards' tables ──
+test('python unit tests: scripts/forecast_model/hf/test_hf.py passes (the Hub guard refuses fuel weights, pickles, tables and credentials; fuel entries stripped; cards and tables)', { skip: havePandas ? false : 'pandas/numpy not installed here' }, () => {
+  const r = spawnSync('python3', [path.join(ROOT, 'scripts/forecast_model/hf/test_hf.py')], { encoding: 'utf8' });
+  assert.equal(r.status, 0, 'test_hf.py failed:\n' + r.stdout + r.stderr);
+  assert.match(r.stderr, /Ran \d+ tests/, 'the Hub suite did not run');
+});
+
 test('estimate: ONE list of zones — the API\'s ESTIMATE_ZONES, the job\'s ZONES and the zones of the hour-23 gate (plus gb) are the same three', () => {
   const js = fs.readFileSync(path.join(ROOT, 'functions/_estimate.js'), 'utf8');
   const jsZones = ((js.match(/export const ESTIMATE_ZONES = \[([^\]]*)\]/) || [])[1] || '').split(',').map(x => x.trim().replace(/'/g, '')).filter(Boolean);

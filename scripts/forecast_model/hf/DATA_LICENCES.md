@@ -1,0 +1,28 @@
+# Data licences behind the elpriser.org forecast models
+
+Audit of every training and input source of the four model families (DK1/DK2 v3, Nordic pooled, EU eu-ens-v2, GB/PT/IE estimate). Terms were read on
+**2026-11-03** from the URLs below. "Weights" means the numeric parameters of a trained model (tree thresholds and leaf values, regression coefficients), which
+contain no data series. This is a good-faith reading by the model's author, not legal advice.
+
+| Source | Used for | Terms | Weights trained on it published? | Raw data redistributed here? |
+|---|---|---|---|---|
+| **Energinet, Energi Data Service** (DayAheadPrices, ProductionConsumptionSettlement) | DK1/DK2 v3: prices, actual wind and solar | CC BY 4.0, commercial use and redistribution allowed with credit "Source: Energinet (www.energidataservice.dk)" and an indication of changes. <https://www.energidataservice.dk/terms-and-conditions> | **Yes** | Not in the model repos (the separate dataset repos carry it, with credit) |
+| **ENTSO-E Transparency Platform**: day-ahead prices (A44), actual generation per type (A75), weekly reservoir filling (A72) | Nordic pooled model, EU model (A44 only, all 25 zones), DK v3 (German generation, A75), PT/IE history of the hour-23 backtest | Terms of Use (version 2023-03-29): re-use "for any purpose" with the platform named as the source, no suggestion of endorsement, and no prejudice to the primary owner's rights. The platform's **list of data open for free re-use under CC BY 4.0** (version 2023-10-18) covers load forecasts, network data, cross-zonal capacities, flows and balancing, but **does not list day-ahead prices, actual generation or reservoir filling**. <https://transparencyplatform.zendesk.com/hc/en-us/articles/40921911218961-Legal-Terms-and-Conditions> | **Yes**: parameters are not a substitute for the data and cannot prejudice a primary owner. Residual risk: low, not zero. | **No, not cleared** for these three items. No ENTSO-E series is in any model repo |
+| **ENTSO-E**: offered cross-zonal capacity, month-ahead (A61, contract type A03) | DK1 v3 | On the CC BY 4.0 list (same page, Article 11.1.a) with credit to the platform | **Yes** | Yes, with credit |
+| **Elexon BMRS** (Market Index Price) | GB estimate | Elexon licence for anyone who is not a BSC Party: worldwide, royalty-free, perpetual; commercial use, redistribution and adaptation allowed; attribution "Contains BMRS data (c) Elexon Limited copyright and database right [year]". <https://www.elexon.co.uk/bsc/data/balancing-mechanism-reporting-agent/copyright-licence-bmrs-data/> | **Yes** | Allowed with attribution, but not done |
+| **Open-Meteo** (weather forecasts as issued, `previous-runs` API; live forecast) | all models | Data: CC BY 4.0 with the credit "Weather data by Open-Meteo.com". The **free API is for non-commercial use only** (no advertising, no subscriptions); commercial use needs a paid plan. The upstream weather models carry their own licences. <https://open-meteo.com/en/terms>, <https://open-meteo.com/en/licence> | **Yes** (CC BY allows adaptations; credit is given in every model card) | Allowed by CC BY, not done |
+| **Energy-Charts / SMARD** (Bundesnetzagentur, Fraunhofer ISE) | Only the elpriser.org price pages (DE, FR, PL, IT-N, AT, BE, CH, CZ, HU, SI). **Not a training input of any published model** (all 25 EU training series are ENTSO-E) | CC BY 4.0, credit "Bundesnetzagentur / SMARD.de" (the licence line the API sends with the data) | Not applicable | Not applicable |
+| **SEMOpx** (Irish all-island day-ahead results) | Only the live input of the Irish hour-23 rule and the elpriser.org Irish price page. The hour-23 rule has no trained weights; its backtest used ENTSO-E prices | **No licence stated** on the site (its only legal text is a general disclaimer) | Not applicable (nothing trained on it) | **No**: nothing uploaded |
+| **JAO** (Nordic flow-based publication tool) | Investigated, **not used by any model** | Terms prohibit redistribution without written authorisation | Not applicable | **No** |
+| **MIBGAS** (Iberian gas day-ahead index) and **EEX** (EU carbon allowance auction price) | Inputs of the **production** EU model: the central estimate of 22 of 25 zones and the P10/P90 band of all 25 (the fuel-free variant published here does not use them) | **Licences not confirmed.** MIBGAS publishes no dataset licence (its legal text asks to keep content intact and cite the source); EEX's licensing page could not be read. Enquiries to info@mibgas.es and auctions@eex.com are open | **Held back.** The fuel-trained weights are staged locally and will be published only after written confirmation | **No.** No gas or carbon number, series or derived feature table is in any repo |
+| Public-holiday calendar | All models | Computed in code (Easter algorithm plus fixed-date tables); no external source | Not applicable | Not applicable |
+
+Consequences for what is published:
+
+* DK1/DK2 v3 and Nordic pooled (already on the Hub, retrained and re-uploaded daily): weights and code; trained on Energinet (CC BY 4.0), ENTSO-E and Open-Meteo data.
+* **EU eu-ens-v2 fuel-free variant** and **GB gb-est-v1 / hour23-v1**: weights, gates, calibration offsets and the inference code; no price series of any provider.
+* **EU eu-ens-v2 as it runs in production (with gas and carbon inputs)**: not published.
+
+Open points a lawyer or the data providers should settle: (1) written confirmation from ENTSO-E (or the primary owners) that day-ahead prices, generation and reservoir
+data may be re-used and redistributed under CC BY 4.0 like the listed items; (2) MIBGAS and EEX; (3) SEMOpx; (4) whether elpriser.org counts as commercial use of the
+Open-Meteo free API.

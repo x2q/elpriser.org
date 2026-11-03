@@ -142,6 +142,9 @@ the API text do not name them (`test-eu-forecast.mjs` pins that). Their licences
 report says to credit them wherever the methodology is described, so do that in any public methodology text once they have answered. If either says no: put
 `EU_FORECAST_NO_FUEL=1` in `~/.config/elpriser.env` (the job then neither fetches nor reads the fuel data and runs every zone without fuel, `FUEL off: switched off`) and delete `fuel_daily.csv`.
 
+**Open weights (2026-11-03).** The fuel-FREE variant of this recipe is published on Hugging Face (`Elpriser/eu-price-forecast`, refreshed by a weekly snapshot job); the fuel-trained weights are held back for exactly this licence
+question and a guard keeps them off the Hub. How, why and the licence audit of every source: [hf-publishing.md](hf-publishing.md). The estimate job's models (`Elpriser/gb-price-estimate`) are published the same way.
+
 ---
 
 # The estimate job: hours that have no price yet (Great Britain, Portugal, Ireland)
