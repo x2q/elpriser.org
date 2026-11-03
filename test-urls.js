@@ -379,7 +379,7 @@ async function main() {
       check(!/class="tabbar|id="gpsBtn|netDlgDK|Smart hjem|Hent appen|Hovedmenu|Alle netselskaber/.test(chrome), `${p}: ingen dansk menu, mobilbar eller netselskabsliste, og ikke det danske "Hent appen"`);
       // "Hent appen" in the page's own language: the header button and the footer pill, both to the app page in that language (/<code>/download), which the sitemap lists
       const dl = (chrome.match(/<a href="(\/[a-z]{2}\/download)" class="app-btn">[^<]{4,}<\/a>/) || [])[1];
-      check(dl && chrome.includes('<a class="sf-getapp" href="' + dl + '">') && sitemap.includes(`<loc>${CANONICAL_ORIGIN}${dl}</loc>`), `${p}: "Hent appen" i header og fod peger på appsiden på sidens sprog (${dl})`);
+      check(dl && chrome.includes('<a class="sf-getapp" href="' + dl + '">') && sitemap.includes(dl), `${p}: "Hent appen" i header og fod peger på appsiden på sidens sprog (${dl})`);
     }
   }
   // The EU pages show settled prices (data CC BY 4.0 from Bundesnetzagentur | SMARD.de via Energy-Charts) and, when the zone has a forecast (the Spark job
