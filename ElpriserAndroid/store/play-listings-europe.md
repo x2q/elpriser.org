@@ -94,7 +94,7 @@ AUSSERDEM
 • Für Smartphone und Tablet, heller und dunkler Modus
 • Keine Werbung, kein Konto
 
-Die Preise sind Börsen-Spotpreise (Day-Ahead-Markt) ohne Steuern, Netzentgelte und Lieferantenmarge – außer in Dänemark, wo Steuern und Tarife hinzukommen. Daten: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, von elpriser.org in Stundenmittelwerte umgerechnet), Energi Data Service. Das Prognosemodell ist offen auf Hugging Face verfügbar.
+Die Preise sind Börsen-Spotpreise (Day-Ahead-Markt) ohne Steuern, Netzentgelte und Lieferantenmarge – außer in Dänemark, wo Steuern und Tarife hinzukommen. Daten: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, von elpriser.org in Stundenmittelwerte umgerechnet), Energi Data Service. Die Prognosemodelle sind offen auf Hugging Face verfügbar (im übrigen Europa als Variante ohne zwei Preiseingaben des Produktionsmodells).
 
 Elpriser ist ein unabhängiger Dienst und steht in keiner Verbindung zu Netzbetreibern, Energieversorgern oder Marktbetreibern. Die Preise sind Richtwerte; die tatsächliche Abrechnung kann abweichen.
 
@@ -126,7 +126,7 @@ ET AUSSI
 • Pour smartphone et tablette, mode clair et mode sombre
 • Sans publicité, sans compte
 
-Les prix sont des prix spot de gros (marché day-ahead), hors taxes, frais de réseau et marge du fournisseur, sauf au Danemark où taxes et tarifs sont ajoutés. Données : ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, converties en moyennes horaires par elpriser.org), Energi Data Service. Le modèle de prévision est ouvert sur Hugging Face.
+Les prix sont des prix spot de gros (marché day-ahead), hors taxes, frais de réseau et marge du fournisseur, sauf au Danemark où taxes et tarifs sont ajoutés. Données : ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, converties en moyennes horaires par elpriser.org), Energi Data Service. Les modèles de prévision sont ouverts sur Hugging Face (dans le reste de l'Europe, sous la forme d'une variante sans deux des entrées de prix du modèle de production).
 
 Elpriser est un service indépendant, sans lien avec un gestionnaire de réseau, un fournisseur d'énergie ou un opérateur de marché. Les prix sont indicatifs ; votre facturation réelle peut différer.
 
@@ -158,7 +158,7 @@ EN VERDER
 • Voor telefoon en tablet, lichte en donkere modus
 • Geen reclame, geen account
 
-De prijzen zijn groothandels-spotprijzen (day-ahead-markt) zonder belastingen, netkosten en leveranciersmarge, behalve in Denemarken, waar belastingen en tarieven worden toegevoegd. Gegevens: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, door elpriser.org omgerekend naar uurgemiddelden), Energi Data Service. Het voorspellingsmodel is open beschikbaar op Hugging Face.
+De prijzen zijn groothandels-spotprijzen (day-ahead-markt) zonder belastingen, netkosten en leveranciersmarge, behalve in Denemarken, waar belastingen en tarieven worden toegevoegd. Gegevens: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, door elpriser.org omgerekend naar uurgemiddelden), Energi Data Service. De voorspellingsmodellen zijn open beschikbaar op Hugging Face (in de rest van Europa als variant zonder twee prijsinvoeren van het productiemodel).
 
 Elpriser is een onafhankelijke dienst en is niet verbonden aan netbeheerders, energieleveranciers of marktoperators. De prijzen zijn indicatief; je werkelijke afrekening kan afwijken.
 
@@ -190,7 +190,7 @@ INOLTRE
 • Per smartphone e tablet, modalità chiara e scura
 • Nessuna pubblicità, nessun account
 
-I prezzi sono prezzi spot all'ingrosso (mercato day-ahead) senza imposte, costi di rete e margine del fornitore, tranne in Danimarca dove vengono aggiunte imposte e tariffe. Dati: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertiti in medie orarie da elpriser.org), Energi Data Service. Il modello di previsione è aperto su Hugging Face.
+I prezzi sono prezzi spot all'ingrosso (mercato day-ahead) senza imposte, costi di rete e margine del fornitore, tranne in Danimarca dove vengono aggiunte imposte e tariffe. Dati: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertiti in medie orarie da elpriser.org), Energi Data Service. I modelli di previsione sono aperti su Hugging Face (nel resto d'Europa come variante senza due input di prezzo del modello di produzione).
 
 Elpriser è un servizio indipendente e non è affiliato ad alcun gestore di rete, fornitore di energia o operatore di mercato. I prezzi sono indicativi; la fatturazione effettiva può differire.
 
@@ -222,7 +222,7 @@ PONADTO
 • Na telefon i tablet, jasny i ciemny motyw
 • Bez reklam, bez konta
 
-Ceny to hurtowe ceny giełdowe (rynek day-ahead) bez podatków, opłat sieciowych i marży sprzedawcy — z wyjątkiem Danii, gdzie doliczane są podatki i taryfy. Dane: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, przeliczone na średnie godzinowe przez elpriser.org), Energi Data Service. Model prognozy jest otwarty na Hugging Face.
+Ceny to hurtowe ceny giełdowe (rynek day-ahead) bez podatków, opłat sieciowych i marży sprzedawcy — z wyjątkiem Danii, gdzie doliczane są podatki i taryfy. Dane: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, przeliczone na średnie godzinowe przez elpriser.org), Energi Data Service. Modele prognoz są otwarte na Hugging Face (w reszcie Europy jako wariant bez dwóch danych wejściowych o cenach modelu produkcyjnego).
 
 Elpriser to niezależna usługa niepowiązana z żadnym operatorem sieci, sprzedawcą energii ani operatorem rynku. Ceny mają charakter orientacyjny; faktyczne rozliczenie może się różnić.
 
@@ -254,7 +254,7 @@ OCH DESSUTOM
 • För mobil och surfplatta, ljust och mörkt läge
 • Ingen reklam, inget konto
 
-Priserna är grossistpriser på spotmarknaden (day-ahead) utan skatter, nätavgifter och elhandlarens påslag, utom i Danmark, där skatter och tariffer läggs till. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, omräknat till timmedelvärden av elpriser.org), Energi Data Service. Prognosmodellen är öppen på Hugging Face.
+Priserna är grossistpriser på spotmarknaden (day-ahead) utan skatter, nätavgifter och elhandlarens påslag, utom i Danmark, där skatter och tariffer läggs till. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, omräknat till timmedelvärden av elpriser.org), Energi Data Service. Prognosmodellerna är öppna på Hugging Face (i resten av Europa som en variant utan två av produktionsmodellens prisinmatningar).
 
 Elpriser är en oberoende tjänst och har ingen koppling till några nätbolag, elleverantörer eller marknadsoperatörer. Priserna är vägledande; din faktiska avräkning kan avvika.
 
@@ -286,7 +286,7 @@ OG DESSUTEN
 • For mobil og nettbrett, lys og mørk modus
 • Ingen reklame, ingen konto
 
-Prisene er engrospriser på spotmarkedet (day-ahead) uten avgifter, nettleie og strømleverandørens påslag, unntatt i Danmark, der avgifter og tariffer legges til. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, regnet om til timesgjennomsnitt av elpriser.org), Energi Data Service. Prognosemodellen er åpen på Hugging Face.
+Prisene er engrospriser på spotmarkedet (day-ahead) uten avgifter, nettleie og strømleverandørens påslag, unntatt i Danmark, der avgifter og tariffer legges til. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, regnet om til timesgjennomsnitt av elpriser.org), Energi Data Service. Prognosemodellene er åpne på Hugging Face (i resten av Europa som en variant uten to av produksjonsmodellens prisinndata).
 
 Elpriser er en uavhengig tjeneste og har ingen tilknytning til nettselskaper, strømleverandører eller markedsoperatører. Prisene er veiledende; det faktiske oppgjøret ditt kan avvike.
 
@@ -318,7 +318,7 @@ LISÄKSI
 • Puhelimelle ja tabletille, vaalea ja tumma tila
 • Ei mainoksia, ei tiliä
 
-Hinnat ovat tukkumarkkinoiden pörssihintoja (day-ahead-markkina) ilman veroja, siirtomaksuja ja sähkönmyyjän katetta, paitsi Tanskassa, jossa verot ja tariffit lisätään. Tiedot: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org on muuntanut tuntikeskiarvoiksi), Energi Data Service. Ennustemalli on avoin Hugging Facessa.
+Hinnat ovat tukkumarkkinoiden pörssihintoja (day-ahead-markkina) ilman veroja, siirtomaksuja ja sähkönmyyjän katetta, paitsi Tanskassa, jossa verot ja tariffit lisätään. Tiedot: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org on muuntanut tuntikeskiarvoiksi), Energi Data Service. Ennustemallit ovat avoimia Hugging Facessa (muualla Euroopassa versiona ilman kahta tuotantomallin hintasyötettä).
 
 Elpriser on riippumaton palvelu, eikä sillä ole yhteyttä verkkoyhtiöihin, sähköntoimittajiin tai markkinaoperaattoreihin. Hinnat ovat suuntaa antavia; todellinen laskutuksesi voi poiketa niistä.
 
@@ -350,7 +350,7 @@ A DÁLE
 • Pro telefon i tablet, světlý i tmavý režim
 • Bez reklam, bez účtu
 
-Ceny jsou velkoobchodní spotové ceny (denní trh) bez daní, distribučních plateb a marže dodavatele, kromě Dánska, kde se daně a sazby přičítají. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, přepočteno na hodinové průměry serverem elpriser.org), Energi Data Service. Předpovědní model je otevřený na Hugging Face.
+Ceny jsou velkoobchodní spotové ceny (denní trh) bez daní, distribučních plateb a marže dodavatele, kromě Dánska, kde se daně a sazby přičítají. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, přepočteno na hodinové průměry serverem elpriser.org), Energi Data Service. Předpovědní modely jsou otevřené na Hugging Face (jinde v Evropě jako varianta bez dvou cenových vstupů produkčního modelu).
 
 Elpriser je nezávislá služba a není spojena s žádným distributorem, dodavatelem energie ani operátorem trhu. Ceny jsou orientační; skutečné vyúčtování se může lišit.
 
@@ -382,7 +382,7 @@ Nézze meg a legolcsóbb órákat a hőszivattyúhoz, az elektromos autóhoz és
 • Telefonra és táblagépre, világos és sötét módban
 • Reklámok és regisztráció nélkül
 
-Az árak nagykereskedelmi tőzsdei árak (másnapi piac), adók, hálózati díjak és a szolgáltatói árrés nélkül; Dániában az adók és a díjak hozzáadódnak. Adatok: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, az elpriser.org órás átlagokká alakította át), Energi Data Service. Az előrejelző modell nyílt a Hugging Face-en.
+Az árak nagykereskedelmi tőzsdei árak (másnapi piac), adók, hálózati díjak és a szolgáltatói árrés nélkül; Dániában az adók és a díjak hozzáadódnak. Adatok: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, az elpriser.org órás átlagokká alakította át), Energi Data Service. Az előrejelző modellek nyíltak a Hugging Face-en (Európa többi részén az éles modell két árbemenete nélküli változataként).
 
 Az Elpriser független szolgáltatás, amely nem áll kapcsolatban hálózatüzemeltetőkkel, energiakereskedőkkel vagy piacüzemeltetőkkel. Az árak tájékoztató jellegűek; a tényleges elszámolás eltérhet.
 
@@ -414,7 +414,7 @@ IN ŠE
 • Za telefon in tablico, svetli in temni način
 • Brez oglasov, brez računa
 
-Cene so veleprodajne borzne cene (trg na dan vnaprej) brez davkov, omrežnine in marže dobavitelja, razen na Danskem, kjer so davki in tarife dodani. Podatki: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org jih je pretvoril v urna povprečja), Energi Data Service. Model napovedi je odprt na Hugging Face.
+Cene so veleprodajne borzne cene (trg na dan vnaprej) brez davkov, omrežnine in marže dobavitelja, razen na Danskem, kjer so davki in tarife dodani. Podatki: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org jih je pretvoril v urna povprečja), Energi Data Service. Modeli napovedi so odprti na Hugging Face (drugod po Evropi kot različica brez dveh cenovnih vhodov produkcijskega modela).
 
 Elpriser je neodvisna storitev in ni povezan z nobenim operaterjem omrežja, dobaviteljem energije ali operaterjem trga. Cene so okvirne; vaš dejanski obračun se lahko razlikuje.
 
@@ -448,7 +448,7 @@ ADEMÁS
 • Para móvil y tableta, con modo claro y oscuro
 • Sin anuncios ni cuenta
 
-Los precios son precios spot mayoristas (mercado diario) sin impuestos, peajes ni margen de la comercializadora, salvo en Dinamarca, donde se añaden impuestos y tarifas. Datos: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertidos a medias horarias por elpriser.org) y Energi Data Service. El modelo de previsión es abierto y está en Hugging Face.
+Los precios son precios spot mayoristas (mercado diario) sin impuestos, peajes ni margen de la comercializadora, salvo en Dinamarca, donde se añaden impuestos y tarifas. Datos: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertidos a medias horarias por elpriser.org) y Energi Data Service. Los modelos de previsión son abiertos y están en Hugging Face (en el resto de Europa, como variante sin dos de las entradas de precios del modelo de producción).
 
 Elpriser es un servicio independiente y no está vinculado a ninguna distribuidora, comercializadora ni operador de mercado. Los precios son orientativos; tu liquidación real puede diferir.
 
@@ -480,7 +480,7 @@ E AINDA
 • Para telemóvel e tablet, com modo claro e escuro
 • Sem anúncios nem conta
 
-Os preços são preços spot grossistas (mercado diário) sem impostos, tarifas de rede nem margem do comercializador, exceto na Dinamarca, onde são acrescentados impostos e tarifas. Dados: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertidos em médias horárias por elpriser.org) e Energi Data Service. O modelo de previsão é aberto e está na Hugging Face.
+Os preços são preços spot grossistas (mercado diário) sem impostos, tarifas de rede nem margem do comercializador, exceto na Dinamarca, onde são acrescentados impostos e tarifas. Dados: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertidos em médias horárias por elpriser.org) e Energi Data Service. Os modelos de previsão são abertos e estão na Hugging Face (no resto da Europa, como variante sem duas das entradas de preços do modelo de produção).
 
 A Elpriser é um serviço independente e não está associada a nenhum operador de rede, comercializador de energia ou operador de mercado. Os preços são indicativos; o acerto real pode diferir.
 
@@ -512,7 +512,7 @@ A TIEŽ
 • Pre telefón aj tablet, svetlý aj tmavý režim
 • Bez reklám, bez účtu
 
-Ceny sú veľkoobchodné spotové ceny (denný trh) bez daní, distribučných poplatkov a marže dodávateľa, okrem Dánska, kde sa dane a tarify pripočítavajú. Údaje: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, prepočítané na hodinové priemery serverom elpriser.org), Energi Data Service. Predpovedný model je otvorený na Hugging Face.
+Ceny sú veľkoobchodné spotové ceny (denný trh) bez daní, distribučných poplatkov a marže dodávateľa, okrem Dánska, kde sa dane a tarify pripočítavajú. Údaje: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, prepočítané na hodinové priemery serverom elpriser.org), Energi Data Service. Predpovedné modely sú otvorené na Hugging Face (inde v Európe ako variant bez dvoch cenových vstupov produkčného modelu).
 
 Elpriser je nezávislá služba a nie je prepojená so žiadnym distribútorom, dodávateľom energie ani operátorom trhu. Ceny sú orientačné; skutočné vyúčtovanie sa môže líšiť.
 
@@ -544,7 +544,7 @@ Elpriser – Τιμή ρεύματος
 • Για κινητό και tablet, φωτεινή και σκούρα εμφάνιση
 • Χωρίς διαφημίσεις, χωρίς λογαριασμό
 
-Οι τιμές είναι τιμές spot χονδρικής (αγορά επόμενης ημέρας) χωρίς φόρους, χρεώσεις δικτύου και περιθώριο προμηθευτή, εκτός από τη Δανία, όπου προστίθενται φόροι και χρεώσεις. Δεδομένα: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, μετατρεπόμενα σε ωριαίους μέσους όρους από το elpriser.org), Energi Data Service. Το μοντέλο πρόγνωσης είναι ανοιχτό στο Hugging Face.
+Οι τιμές είναι τιμές spot χονδρικής (αγορά επόμενης ημέρας) χωρίς φόρους, χρεώσεις δικτύου και περιθώριο προμηθευτή, εκτός από τη Δανία, όπου προστίθενται φόροι και χρεώσεις. Δεδομένα: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, μετατρεπόμενα σε ωριαίους μέσους όρους από το elpriser.org), Energi Data Service. Τα μοντέλα πρόγνωσης είναι ανοιχτά στο Hugging Face (στην υπόλοιπη Ευρώπη ως παραλλαγή χωρίς δύο από τις εισόδους τιμών του μοντέλου παραγωγής).
 
 Το Elpriser είναι μια ανεξάρτητη υπηρεσία και δεν σχετίζεται με κανένα διαχειριστή δικτύου, προμηθευτή ενέργειας ή διαχειριστή αγοράς. Οι τιμές είναι ενδεικτικές· η πραγματική σας χρέωση μπορεί να διαφέρει.
 
@@ -576,7 +576,7 @@ Vezi cele mai ieftine ore pentru o pompă de căldură, o mașină electrică ș
 • Pentru telefon și tabletă, mod luminos și întunecat
 • Fără reclame, fără cont
 
-Prețurile sunt prețuri spot angro (piața pentru ziua următoare), fără taxe, tarife de rețea și marja furnizorului, cu excepția Danemarcei, unde se adaugă taxele și tarifele. Date: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertite în medii orare de elpriser.org), Energi Data Service. Modelul de prognoză este deschis pe Hugging Face.
+Prețurile sunt prețuri spot angro (piața pentru ziua următoare), fără taxe, tarife de rețea și marja furnizorului, cu excepția Danemarcei, unde se adaugă taxele și tarifele. Date: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertite în medii orare de elpriser.org), Energi Data Service. Modelele de prognoză sunt deschise pe Hugging Face (în restul Europei ca variantă fără două dintre intrările de preț ale modelului de producție).
 
 Elpriser este un serviciu independent și nu are legături cu niciun operator de rețea, furnizor de energie sau operator de piață. Prețurile sunt orientative; decontarea ta reală poate diferi.
 
@@ -608,7 +608,7 @@ Elpriser показва колко струва токът в момента, ч
 • За телефон и таблет, светъл и тъмен режим
 • Без реклами, без акаунт
 
-Цените са борсови спот цени на едро (пазар „ден напред“), без данъци, мрежови такси и марж на доставчика, освен в Дания, където са добавени данъците и тарифите. Данни: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, преобразувани в средночасови стойности от elpriser.org), Energi Data Service. Моделът за прогнозата е отворен в Hugging Face.
+Цените са борсови спот цени на едро (пазар „ден напред“), без данъци, мрежови такси и марж на доставчика, освен в Дания, където са добавени данъците и тарифите. Данни: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, преобразувани в средночасови стойности от elpriser.org), Energi Data Service. Моделите за прогнозата са отворени в Hugging Face (в останалата част на Европа като вариант без два от ценовите входове на производствения модел).
 
 Elpriser е независима услуга и не е свързана с никое мрежов оператор, доставчик на енергия или пазарен оператор. Цените са ориентировъчни; реалното ви отчитане може да се различава.
 
@@ -640,7 +640,7 @@ I JOŠ
 • Za telefon i tablet, svijetli i tamni način rada
 • Bez oglasa, bez računa
 
-Cijene su veleprodajne burzovne cijene (tržište za dan unaprijed) bez poreza, mrežarine i marže dobavljača, osim u Danskoj, gdje su porezi i tarife dodani. Podaci: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org preračunao ih je u satne prosjeke), Energi Data Service. Model prognoze otvoren je na platformi Hugging Face.
+Cijene su veleprodajne burzovne cijene (tržište za dan unaprijed) bez poreza, mrežarine i marže dobavljača, osim u Danskoj, gdje su porezi i tarife dodani. Podaci: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org preračunao ih je u satne prosjeke), Energi Data Service. Modeli prognoze otvoreni su na platformi Hugging Face (u ostatku Europe kao varijanta bez dva cjenovna ulaza proizvodnog modela).
 
 Elpriser je neovisna usluga i nije povezan ni s jednim operatorom mreže, opskrbljivačem energijom ili operatorom tržišta. Cijene su okvirne; vaš stvarni obračun može se razlikovati.
 
@@ -672,7 +672,7 @@ Elpriser приказује колико струја кошта управо с
 • За телефон и таблет, светли и тамни режим
 • Без реклама, без налога
 
-Цене су велепродајне берзанске цене (тржиште за дан унапред) без пореза, накнаде за мрежу и марже добављача, осим у Данској, где су порези и тарифе додати. Подаци: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org их је прерачунао у просеке по сатима), Energi Data Service. Модел прогнозе је отворен на платформи Hugging Face.
+Цене су велепродајне берзанске цене (тржиште за дан унапред) без пореза, накнаде за мрежу и марже добављача, осим у Данској, где су порези и тарифе додати. Подаци: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org их је прерачунао у просеке по сатима), Energi Data Service. Модели прогнозе су отворени на платформи Hugging Face (у остатку Европе као варијанта без два улаза за цене производног модела).
 
 Elpriser је независна услуга и није повезан ни са једним оператором мреже, снабдевачем енергије или оператором тржишта. Цене су оквирне; ваш стварни обрачун може се разликовати.
 
@@ -704,7 +704,7 @@ JA VEEL
 • Telefonile ja tahvelarvutile, hele ja tume režiim
 • Ilma reklaamita, ilma kontota
 
-Hinnad on hulgimüügi börsihinnad (päev-ette turg) ilma maksude, võrgutasude ja elektrimüüja marginaalita, välja arvatud Taanis, kus lisatakse maksud ja tariifid. Andmed: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org on teisendanud tunnikeskmisteks), Energi Data Service. Prognoosimudel on avatud ja asub Hugging Face'is.
+Hinnad on hulgimüügi börsihinnad (päev-ette turg) ilma maksude, võrgutasude ja elektrimüüja marginaalita, välja arvatud Taanis, kus lisatakse maksud ja tariifid. Andmed: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org on teisendanud tunnikeskmisteks), Energi Data Service. Prognoosimudelid on avatud ja asuvad Hugging Face'is (mujal Euroopas variandina ilma kahe tootmismudeli hinnasisendita).
 
 Elpriser on sõltumatu teenus ega ole seotud ühegi võrguettevõtte, elektrimüüja ega turuoperaatoriga. Hinnad on orienteeruvad; sinu tegelik arveldus võib erineda.
 
@@ -736,7 +736,7 @@ UN VĒL
 • Tālrunim un planšetdatoram, gaišais un tumšais režīms
 • Bez reklāmām, bez konta
 
-Cenas ir vairumtirdzniecības biržas cenas (nākamās dienas tirgus) bez nodokļiem, tīkla maksas un elektrības tirgotāja uzcenojuma, izņemot Dāniju, kur tiek pieskaitīti nodokļi un tarifi. Dati: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org pārrēķinājis stundu vidējos lielumos), Energi Data Service. Prognozes modelis ir atvērts un pieejams platformā Hugging Face.
+Cenas ir vairumtirdzniecības biržas cenas (nākamās dienas tirgus) bez nodokļiem, tīkla maksas un elektrības tirgotāja uzcenojuma, izņemot Dāniju, kur tiek pieskaitīti nodokļi un tarifi. Dati: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org pārrēķinājis stundu vidējos lielumos), Energi Data Service. Prognozes modeļi ir atvērti un pieejami platformā Hugging Face (pārējā Eiropā kā variants bez diviem ražošanas modeļa cenu ievadiem).
 
 Elpriser ir neatkarīgs pakalpojums, un tas nav saistīts ne ar vienu tīkla operatoru, elektrības tirgotāju vai tirgus operatoru. Cenas ir orientējošas; jūsu faktiskais norēķins var atšķirties.
 
@@ -768,7 +768,7 @@ DAR
 • Telefonui ir planšetei, šviesi ir tamsi tema
 • Be reklamos, be paskyros
 
-Kainos yra didmeninės biržos kainos (kitos paros rinka) be mokesčių, tinklo tarifų ir elektros tiekėjo antkainio, išskyrus Daniją, kur pridedami mokesčiai ir tarifai. Duomenys: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org perskaičiavo į valandų vidurkius), Energi Data Service. Prognozės modelis yra atviras ir skelbiamas Hugging Face.
+Kainos yra didmeninės biržos kainos (kitos paros rinka) be mokesčių, tinklo tarifų ir elektros tiekėjo antkainio, išskyrus Daniją, kur pridedami mokesčiai ir tarifai. Duomenys: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org perskaičiavo į valandų vidurkius), Energi Data Service. Prognozių modeliai yra atviri ir skelbiami Hugging Face (likusioje Europoje – kaip variantas be dviejų gamybinio modelio kainų įvesčių).
 
 Elpriser yra nepriklausoma paslauga, nesusijusi su jokiu tinklo operatoriumi, elektros tiekėju ar rinkos operatoriumi. Kainos yra orientacinės; jūsų faktinis atsiskaitymas gali skirtis.
 
@@ -800,7 +800,7 @@ Elpriser покажува колку чини струјата во момент
 • За телефон и таблет, светол и темен режим
 • Без реклами, без профил
 
-Цените се берзански спот цени на големо (пазар „ден однапред“), без даноци, мрежни надоместоци и маржа на снабдувачот, освен во Данска, каде што се додадени даноците и тарифите. Податоци: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, претворени во часовни просеци од elpriser.org), Energi Data Service. Моделот за прогнозата е отворен на Hugging Face.
+Цените се берзански спот цени на големо (пазар „ден однапред“), без даноци, мрежни надоместоци и маржа на снабдувачот, освен во Данска, каде што се додадени даноците и тарифите. Податоци: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, претворени во часовни просеци од elpriser.org), Energi Data Service. Моделите за прогнозата се отворени на Hugging Face (во остатокот од Европа како варијанта без два од ценовните влезови на производствениот модел).
 
 Elpriser е независна услуга и не е поврзана со ниту еден мрежен оператор, снабдувач на енергија или пазарен оператор. Цените се ориентациони; вашето вистинско пресметување може да се разликува.
 
@@ -832,6 +832,6 @@ DHE GJITHASHTU
 • Për telefon dhe tablet, me mënyrë të çelët dhe të errët
 • Pa reklama, pa llogari
 
-Çmimet janë çmime shumicë të bursës (tregu i ditës në avancë), pa taksa, tarifa rrjeti dhe marzhin e furnizuesit, përveç Danimarkës, ku shtohen taksat dhe tarifat. Të dhënat: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, të konvertuara në mesatare orare nga elpriser.org), Energi Data Service. Modeli i parashikimit është i hapur në Hugging Face.
+Çmimet janë çmime shumicë të bursës (tregu i ditës në avancë), pa taksa, tarifa rrjeti dhe marzhin e furnizuesit, përveç Danimarkës, ku shtohen taksat dhe tarifat. Të dhënat: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, të konvertuara në mesatare orare nga elpriser.org), Energi Data Service. Modelet e parashikimit janë të hapura në Hugging Face (në pjesën tjetër të Evropës si variant pa dy të dhëna hyrëse çmimesh të modelit të prodhimit).
 
 Elpriser është një shërbim i pavarur dhe nuk është i lidhur me asnjë operator rrjeti, furnizues energjie ose operator tregu. Çmimet janë orientuese; shlyerja juaj reale mund të ndryshojë.

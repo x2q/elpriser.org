@@ -136,7 +136,7 @@
     <string name="theme_light">Φωτεινό</string>
     <string name="theme_dark">Σκούρο</string>
     <string name="settings_about_label">Σχετικά με την εφαρμογή</string>
-    <string name="about_text">Τιμές από Energi Data Service και ENTSO-E · η πρόβλεψη προέρχεται από ένα ανοιχτό μοντέλο στο Hugging Face · elpriser %1$s</string>
+    <string name="about_text">Τιμές από Energi Data Service και ENTSO-E · η πρόβλεψη προέρχεται από ανοιχτά μοντέλα στο Hugging Face (στην υπόλοιπη Ευρώπη από παραλλαγή χωρίς δύο από τις εισόδους τιμών της) · elpriser %1$s</string>
     <string name="about_sources_eu">Τιμές εκτός Δανίας: ENTSO-E Transparency Platform και Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), που μετατρέπονται σε ωριαίους μέσους όρους από το elpriser.org.</string>
     <string name="action_privacy">Απόρρητο</string>
 

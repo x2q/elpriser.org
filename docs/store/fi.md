@@ -40,7 +40,7 @@ LISÄKSI
 • iPhonelle ja iPadille, vaalea ja tumma tila
 • Ei mainoksia, ei tiliä
 
-Hinnat ovat tukkumarkkinoiden pörssihintoja (day-ahead-markkina) ilman veroja, siirtomaksuja ja sähkönmyyjän katetta, paitsi Tanskassa, jossa verot ja tariffit lisätään. Tiedot: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org on muuntanut tuntikeskiarvoiksi), Energi Data Service. Ennustemalli on avoin Hugging Facessa.
+Hinnat ovat tukkumarkkinoiden pörssihintoja (day-ahead-markkina) ilman veroja, siirtomaksuja ja sähkönmyyjän katetta, paitsi Tanskassa, jossa verot ja tariffit lisätään. Tiedot: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org on muuntanut tuntikeskiarvoiksi), Energi Data Service. Ennustemallit ovat avoimia Hugging Facessa (muualla Euroopassa versiona ilman kahta tuotantomallin hintasyötettä).
 
 Elpriser on riippumaton palvelu, eikä sillä ole yhteyttä verkkoyhtiöihin, sähköntoimittajiin tai markkinaoperaattoreihin. Hinnat ovat suuntaa antavia; todellinen laskutuksesi voi poiketa niistä.
 
@@ -74,7 +74,7 @@ LISÄKSI
 • Puhelimelle ja tabletille, vaalea ja tumma tila
 • Ei mainoksia, ei tiliä
 
-Hinnat ovat tukkumarkkinoiden pörssihintoja (day-ahead-markkina) ilman veroja, siirtomaksuja ja sähkönmyyjän katetta, paitsi Tanskassa, jossa verot ja tariffit lisätään. Tiedot: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org on muuntanut tuntikeskiarvoiksi), Energi Data Service. Ennustemalli on avoin Hugging Facessa.
+Hinnat ovat tukkumarkkinoiden pörssihintoja (day-ahead-markkina) ilman veroja, siirtomaksuja ja sähkönmyyjän katetta, paitsi Tanskassa, jossa verot ja tariffit lisätään. Tiedot: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org on muuntanut tuntikeskiarvoiksi), Energi Data Service. Ennustemallit ovat avoimia Hugging Facessa (muualla Euroopassa versiona ilman kahta tuotantomallin hintasyötettä).
 
 Elpriser on riippumaton palvelu, eikä sillä ole yhteyttä verkkoyhtiöihin, sähköntoimittajiin tai markkinaoperaattoreihin. Hinnat ovat suuntaa antavia; todellinen laskutuksesi voi poiketa niistä.
 

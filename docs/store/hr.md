@@ -40,7 +40,7 @@ I JOŠ
 • Za iPhone i iPad, svijetli i tamni način rada
 • Bez oglasa, bez računa
 
-Cijene su veleprodajne burzovne cijene (tržište za dan unaprijed) bez poreza, mrežarine i marže dobavljača, osim u Danskoj, gdje su porezi i tarife dodani. Podaci: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org preračunao ih je u satne prosjeke), Energi Data Service. Model prognoze otvoren je na platformi Hugging Face.
+Cijene su veleprodajne burzovne cijene (tržište za dan unaprijed) bez poreza, mrežarine i marže dobavljača, osim u Danskoj, gdje su porezi i tarife dodani. Podaci: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org preračunao ih je u satne prosjeke), Energi Data Service. Modeli prognoze otvoreni su na platformi Hugging Face (u ostatku Europe kao varijanta bez dva cjenovna ulaza proizvodnog modela).
 
 Elpriser je neovisna usluga i nije povezan ni s jednim operatorom mreže, opskrbljivačem energijom ili operatorom tržišta. Cijene su okvirne; vaš stvarni obračun može se razlikovati.
 
@@ -74,7 +74,7 @@ I JOŠ
 • Za telefon i tablet, svijetli i tamni način rada
 • Bez oglasa, bez računa
 
-Cijene su veleprodajne burzovne cijene (tržište za dan unaprijed) bez poreza, mrežarine i marže dobavljača, osim u Danskoj, gdje su porezi i tarife dodani. Podaci: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org preračunao ih je u satne prosjeke), Energi Data Service. Model prognoze otvoren je na platformi Hugging Face.
+Cijene su veleprodajne burzovne cijene (tržište za dan unaprijed) bez poreza, mrežarine i marže dobavljača, osim u Danskoj, gdje su porezi i tarife dodani. Podaci: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org preračunao ih je u satne prosjeke), Energi Data Service. Modeli prognoze otvoreni su na platformi Hugging Face (u ostatku Europe kao varijanta bez dva cjenovna ulaza proizvodnog modela).
 
 Elpriser je neovisna usluga i nije povezan ni s jednim operatorom mreže, opskrbljivačem energijom ili operatorom tržišta. Cijene su okvirne; vaš stvarni obračun može se razlikovati.
 

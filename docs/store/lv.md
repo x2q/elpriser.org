@@ -52,7 +52,7 @@ UN VĒL
 • Tālrunim un planšetdatoram, gaišais un tumšais režīms
 • Bez reklāmām, bez konta
 
-Cenas ir vairumtirdzniecības biržas cenas (nākamās dienas tirgus) bez nodokļiem, tīkla maksas un elektrības tirgotāja uzcenojuma, izņemot Dāniju, kur tiek pieskaitīti nodokļi un tarifi. Dati: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org pārrēķinājis stundu vidējos lielumos), Energi Data Service. Prognozes modelis ir atvērts un pieejams platformā Hugging Face.
+Cenas ir vairumtirdzniecības biržas cenas (nākamās dienas tirgus) bez nodokļiem, tīkla maksas un elektrības tirgotāja uzcenojuma, izņemot Dāniju, kur tiek pieskaitīti nodokļi un tarifi. Dati: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org pārrēķinājis stundu vidējos lielumos), Energi Data Service. Prognozes modeļi ir atvērti un pieejami platformā Hugging Face (pārējā Eiropā kā variants bez diviem ražošanas modeļa cenu ievadiem).
 
 Elpriser ir neatkarīgs pakalpojums, un tas nav saistīts ne ar vienu tīkla operatoru, elektrības tirgotāju vai tirgus operatoru. Cenas ir orientējošas; jūsu faktiskais norēķins var atšķirties.
 

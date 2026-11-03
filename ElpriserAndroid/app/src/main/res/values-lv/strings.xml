@@ -136,7 +136,7 @@
     <string name="theme_light">Gaišs</string>
     <string name="theme_dark">Tumšs</string>
     <string name="settings_about_label">Par lietotni</string>
-    <string name="about_text">Cenas: Energi Data Service un ENTSO-E · prognoze nāk no atvērta modeļa platformā Hugging Face · elpriser %1$s</string>
+    <string name="about_text">Cenas: Energi Data Service un ENTSO-E · prognoze nāk no atvērtiem modeļiem platformā Hugging Face (pārējā Eiropā – no varianta bez diviem tā cenu ievadiem) · elpriser %1$s</string>
     <string name="about_sources_eu">Cenas ārpus Dānijas: ENTSO-E Transparency Platform un Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0); elpriser.org tās pārrēķinājis stundu vidējos lielumos.</string>
     <string name="action_privacy">Privātums</string>
 

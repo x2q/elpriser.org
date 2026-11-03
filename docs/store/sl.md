@@ -51,7 +51,7 @@ IN ŠE
 • Za telefon in tablico, svetli in temni način
 • Brez oglasov, brez računa
 
-Cene so veleprodajne borzne cene (trg na dan vnaprej) brez davkov, omrežnine in marže dobavitelja, razen na Danskem, kjer so davki in tarife dodani. Podatki: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org jih je pretvoril v urna povprečja), Energi Data Service. Model napovedi je odprt na Hugging Face.
+Cene so veleprodajne borzne cene (trg na dan vnaprej) brez davkov, omrežnine in marže dobavitelja, razen na Danskem, kjer so davki in tarife dodani. Podatki: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org jih je pretvoril v urna povprečja), Energi Data Service. Modeli napovedi so odprti na Hugging Face (drugod po Evropi kot različica brez dveh cenovnih vhodov produkcijskega modela).
 
 Elpriser je neodvisna storitev in ni povezan z nobenim operaterjem omrežja, dobaviteljem energije ali operaterjem trga. Cene so okvirne; vaš dejanski obračun se lahko razlikuje.
 

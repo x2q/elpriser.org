@@ -40,7 +40,7 @@ ADEMÁS
 • Para iPhone y iPad, con modo claro y oscuro
 • Sin anuncios ni cuenta
 
-Los precios son precios spot mayoristas (mercado diario) sin impuestos, peajes ni margen de la comercializadora, salvo en Dinamarca, donde se añaden impuestos y tarifas. Datos: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertidos a medias horarias por elpriser.org) y Energi Data Service. El modelo de previsión es abierto y está en Hugging Face.
+Los precios son precios spot mayoristas (mercado diario) sin impuestos, peajes ni margen de la comercializadora, salvo en Dinamarca, donde se añaden impuestos y tarifas. Datos: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertidos a medias horarias por elpriser.org) y Energi Data Service. Los modelos de previsión son abiertos y están en Hugging Face (en el resto de Europa, como variante sin dos de las entradas de precios del modelo de producción).
 
 Elpriser es un servicio independiente y no está vinculado a ninguna distribuidora, comercializadora ni operador de mercado. Los precios son orientativos; tu liquidación real puede diferir.
 
@@ -74,7 +74,7 @@ ADEMÁS
 • Para móvil y tableta, con modo claro y oscuro
 • Sin anuncios ni cuenta
 
-Los precios son precios spot mayoristas (mercado diario) sin impuestos, peajes ni margen de la comercializadora, salvo en Dinamarca, donde se añaden impuestos y tarifas. Datos: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertidos a medias horarias por elpriser.org) y Energi Data Service. El modelo de previsión es abierto y está en Hugging Face.
+Los precios son precios spot mayoristas (mercado diario) sin impuestos, peajes ni margen de la comercializadora, salvo en Dinamarca, donde se añaden impuestos y tarifas. Datos: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertidos a medias horarias por elpriser.org) y Energi Data Service. Los modelos de previsión son abiertos y están en Hugging Face (en el resto de Europa, como variante sin dos de las entradas de precios del modelo de producción).
 
 Elpriser es un servicio independiente y no está vinculado a ninguna distribuidora, comercializadora ni operador de mercado. Los precios son orientativos; tu liquidación real puede diferir.
 

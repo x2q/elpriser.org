@@ -136,7 +136,7 @@
     <string name="theme_light">Ljust</string>
     <string name="theme_dark">Mörkt</string>
     <string name="settings_about_label">Om appen</string>
-    <string name="about_text">Priser från Energi Data Service och ENTSO-E · prognosen kommer från en öppen modell på Hugging Face · elpriser %1$s</string>
+    <string name="about_text">Priser från Energi Data Service och ENTSO-E · prognosen kommer från öppna modeller på Hugging Face (i resten av Europa från en variant utan två av dess prisinmatningar) · elpriser %1$s</string>
     <string name="about_sources_eu">Priser utanför Danmark: ENTSO-E Transparency Platform och Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), omräknade till timmedelvärden av elpriser.org.</string>
     <string name="action_privacy">Integritet</string>
 

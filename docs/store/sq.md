@@ -52,7 +52,7 @@ DHE GJITHASHTU
 • Për telefon dhe tablet, me mënyrë të çelët dhe të errët
 • Pa reklama, pa llogari
 
-Çmimet janë çmime shumicë të bursës (tregu i ditës në avancë), pa taksa, tarifa rrjeti dhe marzhin e furnizuesit, përveç Danimarkës, ku shtohen taksat dhe tarifat. Të dhënat: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, të konvertuara në mesatare orare nga elpriser.org), Energi Data Service. Modeli i parashikimit është i hapur në Hugging Face.
+Çmimet janë çmime shumicë të bursës (tregu i ditës në avancë), pa taksa, tarifa rrjeti dhe marzhin e furnizuesit, përveç Danimarkës, ku shtohen taksat dhe tarifat. Të dhënat: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, të konvertuara në mesatare orare nga elpriser.org), Energi Data Service. Modelet e parashikimit janë të hapura në Hugging Face (në pjesën tjetër të Evropës si variant pa dy të dhëna hyrëse çmimesh të modelit të prodhimit).
 
 Elpriser është një shërbim i pavarur dhe nuk është i lidhur me asnjë operator rrjeti, furnizues energjie ose operator tregu. Çmimet janë orientuese; shlyerja juaj reale mund të ndryshojë.
 

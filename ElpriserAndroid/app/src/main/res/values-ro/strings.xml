@@ -136,7 +136,7 @@
     <string name="theme_light">Luminos</string>
     <string name="theme_dark">Întunecat</string>
     <string name="settings_about_label">Despre aplicație</string>
-    <string name="about_text">Prețuri de la Energi Data Service și ENTSO-E · prognoza provine dintr-un model deschis de pe Hugging Face · elpriser %1$s</string>
+    <string name="about_text">Prețuri de la Energi Data Service și ENTSO-E · prognoza provine din modele deschise de pe Hugging Face (în restul Europei dintr-o variantă fără două dintre intrările sale de preț) · elpriser %1$s</string>
     <string name="about_sources_eu">Prețuri din afara Danemarcei: ENTSO-E Transparency Platform și Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), convertite în medii orare de elpriser.org.</string>
     <string name="action_privacy">Confidențialitate</string>
 

@@ -40,7 +40,7 @@ PONADTO
 • Na iPhone'a i iPada, jasny i ciemny motyw
 • Bez reklam, bez konta
 
-Ceny to hurtowe ceny giełdowe (rynek day-ahead) bez podatków, opłat sieciowych i marży sprzedawcy — z wyjątkiem Danii, gdzie doliczane są podatki i taryfy. Dane: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, przeliczone na średnie godzinowe przez elpriser.org), Energi Data Service. Model prognozy jest otwarty na Hugging Face.
+Ceny to hurtowe ceny giełdowe (rynek day-ahead) bez podatków, opłat sieciowych i marży sprzedawcy — z wyjątkiem Danii, gdzie doliczane są podatki i taryfy. Dane: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, przeliczone na średnie godzinowe przez elpriser.org), Energi Data Service. Modele prognoz są otwarte na Hugging Face (w reszcie Europy jako wariant bez dwóch danych wejściowych o cenach modelu produkcyjnego).
 
 Elpriser to niezależna usługa niepowiązana z żadnym operatorem sieci, sprzedawcą energii ani operatorem rynku. Ceny mają charakter orientacyjny; faktyczne rozliczenie może się różnić.
 
@@ -74,7 +74,7 @@ PONADTO
 • Na telefon i tablet, jasny i ciemny motyw
 • Bez reklam, bez konta
 
-Ceny to hurtowe ceny giełdowe (rynek day-ahead) bez podatków, opłat sieciowych i marży sprzedawcy — z wyjątkiem Danii, gdzie doliczane są podatki i taryfy. Dane: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, przeliczone na średnie godzinowe przez elpriser.org), Energi Data Service. Model prognozy jest otwarty na Hugging Face.
+Ceny to hurtowe ceny giełdowe (rynek day-ahead) bez podatków, opłat sieciowych i marży sprzedawcy — z wyjątkiem Danii, gdzie doliczane są podatki i taryfy. Dane: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, przeliczone na średnie godzinowe przez elpriser.org), Energi Data Service. Modele prognoz są otwarte na Hugging Face (w reszcie Europy jako wariant bez dwóch danych wejściowych o cenach modelu produkcyjnego).
 
 Elpriser to niezależna usługa niepowiązana z żadnym operatorem sieci, sprzedawcą energii ani operatorem rynku. Ceny mają charakter orientacyjny; faktyczne rozliczenie może się różnić.
 

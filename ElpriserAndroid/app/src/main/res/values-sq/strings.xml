@@ -136,7 +136,7 @@
     <string name="theme_light">E çelët</string>
     <string name="theme_dark">E errët</string>
     <string name="settings_about_label">Rreth aplikacionit</string>
-    <string name="about_text">Çmimet: Energi Data Service dhe ENTSO-E · parashikimi vjen nga një model i hapur në Hugging Face · elpriser %1$s</string>
+    <string name="about_text">Çmimet: Energi Data Service dhe ENTSO-E · parashikimi vjen nga modele të hapura në Hugging Face (në pjesën tjetër të Evropës nga një variant pa dy nga të dhënat e tij hyrëse të çmimeve) · elpriser %1$s</string>
     <string name="about_sources_eu">Çmimet jashtë Danimarkës: ENTSO-E Transparency Platform dhe Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), të konvertuara në mesatare orare nga elpriser.org.</string>
     <string name="action_privacy">Privatësia</string>
 

@@ -127,7 +127,7 @@
   "theme_light": "Hele",
   "theme_dark": "Tume",
   "settings_about_label": "Rakenduse info",
-  "about_text": "Hinnad: Energi Data Service ja ENTSO-E · prognoos pärineb Hugging Face'i avatud mudelist · elpriser %1$s",
+  "about_text": "Hinnad: Energi Data Service ja ENTSO-E · prognoos pärineb Hugging Face'i avatud mudelitest (mujal Euroopas variandist, millel puudub kaks hinnasisendit) · elpriser %1$s",
   "about_sources_eu": "Hinnad väljaspool Taanit: ENTSO-E Transparency Platform ja Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0); elpriser.org on need teisendanud tunnikeskmisteks.",
   "action_privacy": "Privaatsus",
   "smart_subtitle": "Kasuta täna odavaimaid tunde",

@@ -40,7 +40,7 @@ A TIEŽ
 • Pre iPhone a iPad, svetlý aj tmavý režim
 • Bez reklám, bez účtu
 
-Ceny sú veľkoobchodné spotové ceny (denný trh) bez daní, distribučných poplatkov a marže dodávateľa, okrem Dánska, kde sa dane a tarify pripočítavajú. Údaje: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, prepočítané na hodinové priemery serverom elpriser.org), Energi Data Service. Predpovedný model je otvorený na Hugging Face.
+Ceny sú veľkoobchodné spotové ceny (denný trh) bez daní, distribučných poplatkov a marže dodávateľa, okrem Dánska, kde sa dane a tarify pripočítavajú. Údaje: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, prepočítané na hodinové priemery serverom elpriser.org), Energi Data Service. Predpovedné modely sú otvorené na Hugging Face (inde v Európe ako variant bez dvoch cenových vstupov produkčného modelu).
 
 Elpriser je nezávislá služba a nie je prepojená so žiadnym distribútorom, dodávateľom energie ani operátorom trhu. Ceny sú orientačné; skutočné vyúčtovanie sa môže líšiť.
 
@@ -74,7 +74,7 @@ A TIEŽ
 • Pre telefón aj tablet, svetlý aj tmavý režim
 • Bez reklám, bez účtu
 
-Ceny sú veľkoobchodné spotové ceny (denný trh) bez daní, distribučných poplatkov a marže dodávateľa, okrem Dánska, kde sa dane a tarify pripočítavajú. Údaje: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, prepočítané na hodinové priemery serverom elpriser.org), Energi Data Service. Predpovedný model je otvorený na Hugging Face.
+Ceny sú veľkoobchodné spotové ceny (denný trh) bez daní, distribučných poplatkov a marže dodávateľa, okrem Dánska, kde sa dane a tarify pripočítavajú. Údaje: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, prepočítané na hodinové priemery serverom elpriser.org), Energi Data Service. Predpovedné modely sú otvorené na Hugging Face (inde v Európe ako variant bez dvoch cenových vstupov produkčného modelu).
 
 Elpriser je nezávislá služba a nie je prepojená so žiadnym distribútorom, dodávateľom energie ani operátorom trhu. Ceny sú orientačné; skutočné vyúčtovanie sa môže líšiť.
 

@@ -127,7 +127,7 @@
   "theme_light": "Chiaro",
   "theme_dark": "Scuro",
   "settings_about_label": "Info sull'app",
-  "about_text": "Prezzi da Energi Data Service ed ENTSO-E · la previsione proviene da un modello aperto su Hugging Face · elpriser %1$s",
+  "about_text": "Prezzi da Energi Data Service ed ENTSO-E · la previsione proviene da modelli aperti su Hugging Face (nel resto d'Europa da una variante senza due dei suoi input di prezzo) · elpriser %1$s",
   "about_sources_eu": "Prezzi fuori dalla Danimarca: ENTSO-E Transparency Platform ed Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), convertiti in medie orarie da elpriser.org.",
   "action_privacy": "Privacy",
   "smart_subtitle": "Funziona nelle ore più economiche di oggi",

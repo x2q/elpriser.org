@@ -40,7 +40,7 @@ INOLTRE
 • Per iPhone e iPad, modalità chiara e scura
 • Nessuna pubblicità, nessun account
 
-I prezzi sono prezzi spot all'ingrosso (mercato day-ahead) senza imposte, costi di rete e margine del fornitore, tranne in Danimarca dove vengono aggiunte imposte e tariffe. Dati: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertiti in medie orarie da elpriser.org), Energi Data Service. Il modello di previsione è aperto su Hugging Face.
+I prezzi sono prezzi spot all'ingrosso (mercato day-ahead) senza imposte, costi di rete e margine del fornitore, tranne in Danimarca dove vengono aggiunte imposte e tariffe. Dati: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertiti in medie orarie da elpriser.org), Energi Data Service. I modelli di previsione sono aperti su Hugging Face (nel resto d'Europa come variante senza due input di prezzo del modello di produzione).
 
 Elpriser è un servizio indipendente e non è affiliato ad alcun gestore di rete, fornitore di energia o operatore di mercato. I prezzi sono indicativi; la fatturazione effettiva può differire.
 
@@ -74,7 +74,7 @@ INOLTRE
 • Per smartphone e tablet, modalità chiara e scura
 • Nessuna pubblicità, nessun account
 
-I prezzi sono prezzi spot all'ingrosso (mercato day-ahead) senza imposte, costi di rete e margine del fornitore, tranne in Danimarca dove vengono aggiunte imposte e tariffe. Dati: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertiti in medie orarie da elpriser.org), Energi Data Service. Il modello di previsione è aperto su Hugging Face.
+I prezzi sono prezzi spot all'ingrosso (mercato day-ahead) senza imposte, costi di rete e margine del fornitore, tranne in Danimarca dove vengono aggiunte imposte e tariffe. Dati: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertiti in medie orarie da elpriser.org), Energi Data Service. I modelli di previsione sono aperti su Hugging Face (nel resto d'Europa come variante senza due input di prezzo del modello di produzione).
 
 Elpriser è un servizio indipendente e non è affiliato ad alcun gestore di rete, fornitore di energia o operatore di mercato. I prezzi sono indicativi; la fatturazione effettiva può differire.
 

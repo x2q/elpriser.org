@@ -120,7 +120,7 @@
   "theme_light": "Vaalea",
   "theme_dark": "Tumma",
   "settings_about_label": "Tietoja sovelluksesta",
-  "about_text": "Hinnat: Energi Data Service ja ENTSO-E · ennuste perustuu avoimeen malliin Hugging Facessa · elpriser %1$s",
+  "about_text": "Hinnat: Energi Data Service ja ENTSO-E · ennuste perustuu avoimiin malleihin Hugging Facessa (muualla Euroopassa versioon ilman kahta hintasyötettä) · elpriser %1$s",
   "action_privacy": "Tietosuoja",
   "smart_subtitle": "Aja halvimpien tuntien mukaan tänään",
   "savings_today": "Säästö tänään",

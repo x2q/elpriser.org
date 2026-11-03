@@ -40,7 +40,7 @@ E AINDA
 • Para iPhone e iPad, com modo claro e escuro
 • Sem anúncios nem conta
 
-Os preços são preços spot grossistas (mercado diário) sem impostos, tarifas de rede nem margem do comercializador, exceto na Dinamarca, onde são acrescentados impostos e tarifas. Dados: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertidos em médias horárias por elpriser.org) e Energi Data Service. O modelo de previsão é aberto e está na Hugging Face.
+Os preços são preços spot grossistas (mercado diário) sem impostos, tarifas de rede nem margem do comercializador, exceto na Dinamarca, onde são acrescentados impostos e tarifas. Dados: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertidos em médias horárias por elpriser.org) e Energi Data Service. Os modelos de previsão são abertos e estão na Hugging Face (no resto da Europa, como variante sem duas das entradas de preços do modelo de produção).
 
 A Elpriser é um serviço independente e não está associada a nenhum operador de rede, comercializador de energia ou operador de mercado. Os preços são indicativos; o acerto real pode diferir.
 
@@ -74,7 +74,7 @@ E AINDA
 • Para telemóvel e tablet, com modo claro e escuro
 • Sem anúncios nem conta
 
-Os preços são preços spot grossistas (mercado diário) sem impostos, tarifas de rede nem margem do comercializador, exceto na Dinamarca, onde são acrescentados impostos e tarifas. Dados: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertidos em médias horárias por elpriser.org) e Energi Data Service. O modelo de previsão é aberto e está na Hugging Face.
+Os preços são preços spot grossistas (mercado diário) sem impostos, tarifas de rede nem margem do comercializador, exceto na Dinamarca, onde são acrescentados impostos e tarifas. Dados: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertidos em médias horárias por elpriser.org) e Energi Data Service. Os modelos de previsão são abertos e estão na Hugging Face (no resto da Europa, como variante sem duas das entradas de preços do modelo de produção).
 
 A Elpriser é um serviço independente e não está associada a nenhum operador de rede, comercializador de energia ou operador de mercado. Os preços são indicativos; o acerto real pode diferir.
 

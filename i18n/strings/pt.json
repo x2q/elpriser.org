@@ -98,7 +98,7 @@
   "theme_light": "Claro",
   "theme_dark": "Escuro",
   "settings_about_label": "Acerca da app",
-  "about_text": "Preços da Energi Data Service e da ENTSO-E · a previsão vem de um modelo aberto na Hugging Face · elpriser %1$s",
+  "about_text": "Preços da Energi Data Service e da ENTSO-E · a previsão vem de modelos abertos na Hugging Face (no resto da Europa, de uma variante sem duas das suas entradas de preços) · elpriser %1$s",
   "about_sources_eu": "Preços fora da Dinamarca: ENTSO-E Transparency Platform e Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), convertidos em médias horárias por elpriser.org.",
   "action_privacy": "Privacidade",
   "smart_subtitle": "Consuma nas horas mais baratas de hoje",

@@ -136,7 +136,7 @@
     <string name="theme_light">Hell</string>
     <string name="theme_dark">Dunkel</string>
     <string name="settings_about_label">Über die App</string>
-    <string name="about_text">Preise von Energi Data Service und ENTSO-E · die Prognose stammt aus einem offenen Modell auf Hugging Face · elpriser %1$s</string>
+    <string name="about_text">Preise von Energi Data Service und ENTSO-E · die Prognose stammt aus offenen Modellen auf Hugging Face (im übrigen Europa aus einer Variante ohne zwei ihrer Preiseingaben) · elpriser %1$s</string>
     <string name="about_sources_eu">Preise außerhalb Dänemarks: ENTSO-E Transparency Platform und Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), von elpriser.org in Stundenmittelwerte umgerechnet.</string>
     <string name="action_privacy">Datenschutz</string>
 

@@ -40,7 +40,7 @@ Vezi cele mai ieftine ore pentru o pompă de căldură, o mașină electrică ș
 • Pentru iPhone și iPad, mod luminos și întunecat
 • Fără reclame, fără cont
 
-Prețurile sunt prețuri spot angro (piața pentru ziua următoare), fără taxe, tarife de rețea și marja furnizorului, cu excepția Danemarcei, unde se adaugă taxele și tarifele. Date: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertite în medii orare de elpriser.org), Energi Data Service. Modelul de prognoză este deschis pe Hugging Face.
+Prețurile sunt prețuri spot angro (piața pentru ziua următoare), fără taxe, tarife de rețea și marja furnizorului, cu excepția Danemarcei, unde se adaugă taxele și tarifele. Date: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertite în medii orare de elpriser.org), Energi Data Service. Modelele de prognoză sunt deschise pe Hugging Face (în restul Europei ca variantă fără două dintre intrările de preț ale modelului de producție).
 
 Elpriser este un serviciu independent și nu are legături cu niciun operator de rețea, furnizor de energie sau operator de piață. Prețurile sunt orientative; decontarea ta reală poate diferi.
 
@@ -74,7 +74,7 @@ Vezi cele mai ieftine ore pentru o pompă de căldură, o mașină electrică ș
 • Pentru telefon și tabletă, mod luminos și întunecat
 • Fără reclame, fără cont
 
-Prețurile sunt prețuri spot angro (piața pentru ziua următoare), fără taxe, tarife de rețea și marja furnizorului, cu excepția Danemarcei, unde se adaugă taxele și tarifele. Date: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertite în medii orare de elpriser.org), Energi Data Service. Modelul de prognoză este deschis pe Hugging Face.
+Prețurile sunt prețuri spot angro (piața pentru ziua următoare), fără taxe, tarife de rețea și marja furnizorului, cu excepția Danemarcei, unde se adaugă taxele și tarifele. Date: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, convertite în medii orare de elpriser.org), Energi Data Service. Modelele de prognoză sunt deschise pe Hugging Face (în restul Europei ca variantă fără două dintre intrările de preț ale modelului de producție).
 
 Elpriser este un serviciu independent și nu are legături cu niciun operator de rețea, furnizor de energie sau operator de piață. Prețurile sunt orientative; decontarea ta reală poate diferi.
 

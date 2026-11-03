@@ -136,7 +136,7 @@
     <string name="theme_light">Šviesi</string>
     <string name="theme_dark">Tamsi</string>
     <string name="settings_about_label">Apie programėlę</string>
-    <string name="about_text">Kainos: Energi Data Service ir ENTSO-E · prognozė gaunama iš atviro modelio Hugging Face · elpriser %1$s</string>
+    <string name="about_text">Kainos: Energi Data Service ir ENTSO-E · prognozė gaunama iš atvirų modelių Hugging Face (likusioje Europoje – iš varianto be dviejų jo kainų įvesčių) · elpriser %1$s</string>
     <string name="about_sources_eu">Kainos už Danijos ribų: ENTSO-E Transparency Platform ir Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0); elpriser.org jas perskaičiavo į valandų vidurkius.</string>
     <string name="action_privacy">Privatumas</string>
 

@@ -127,7 +127,7 @@
   "theme_light": "Светла",
   "theme_dark": "Тъмна",
   "settings_about_label": "За приложението",
-  "about_text": "Цени от Energi Data Service и ENTSO-E · прогнозата идва от отворен модел в Hugging Face · elpriser %1$s",
+  "about_text": "Цени от Energi Data Service и ENTSO-E · прогнозата идва от отворени модели в Hugging Face (в останалата част на Европа — вариант без два от ценовите му входа) · elpriser %1$s",
   "about_sources_eu": "Цени извън Дания: ENTSO-E Transparency Platform и Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), преобразувани в средночасови стойности от elpriser.org.",
   "action_privacy": "Поверителност",
   "smart_subtitle": "Работи в най-евтините часове днес",

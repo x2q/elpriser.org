@@ -127,7 +127,7 @@
   "theme_light": "E çelët",
   "theme_dark": "E errët",
   "settings_about_label": "Rreth aplikacionit",
-  "about_text": "Çmimet: Energi Data Service dhe ENTSO-E · parashikimi vjen nga një model i hapur në Hugging Face · elpriser %1$s",
+  "about_text": "Çmimet: Energi Data Service dhe ENTSO-E · parashikimi vjen nga modele të hapura në Hugging Face (në pjesën tjetër të Evropës nga një variant pa dy nga të dhënat e tij hyrëse të çmimeve) · elpriser %1$s",
   "about_sources_eu": "Çmimet jashtë Danimarkës: ENTSO-E Transparency Platform dhe Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), të konvertuara në mesatare orare nga elpriser.org.",
   "action_privacy": "Privatësia",
   "smart_subtitle": "Përdorni orët më të lira sot",

@@ -740,163 +740,163 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preise von Energi Data Service und ENTSO-E · die Prognose stammt aus einem offenen Modell auf Hugging Face · elpriser %1$@"
+            "value" : "Preise von Energi Data Service und ENTSO-E · die Prognose stammt aus offenen Modellen auf Hugging Face (im übrigen Europa aus einer Variante ohne zwei ihrer Preiseingaben) · elpriser %1$@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prix : Energi Data Service et ENTSO-E · la prévision provient d'un modèle ouvert sur Hugging Face · elpriser %1$@"
+            "value" : "Prix : Energi Data Service et ENTSO-E · la prévision provient de modèles ouverts sur Hugging Face (dans le reste de l'Europe, d'une variante sans deux de ses entrées de prix) · elpriser %1$@"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prijzen van Energi Data Service en ENTSO-E · de prognose komt van een open model op Hugging Face · elpriser %1$@"
+            "value" : "Prijzen van Energi Data Service en ENTSO-E · de prognose komt van open modellen op Hugging Face (in de rest van Europa van een variant zonder twee van zijn prijsinvoeren) · elpriser %1$@"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prezzi da Energi Data Service ed ENTSO-E · la previsione proviene da un modello aperto su Hugging Face · elpriser %1$@"
+            "value" : "Prezzi da Energi Data Service ed ENTSO-E · la previsione proviene da modelli aperti su Hugging Face (nel resto d'Europa da una variante senza due dei suoi input di prezzo) · elpriser %1$@"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ceny: Energi Data Service i ENTSO-E · prognoza pochodzi z otwartego modelu na Hugging Face · elpriser %1$@"
+            "value" : "Ceny: Energi Data Service i ENTSO-E · prognoza pochodzi z otwartych modeli na Hugging Face (w reszcie Europy z wariantu bez dwóch jej danych wejściowych o cenach) · elpriser %1$@"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Priser från Energi Data Service och ENTSO-E · prognosen kommer från en öppen modell på Hugging Face · elpriser %1$@"
+            "value" : "Priser från Energi Data Service och ENTSO-E · prognosen kommer från öppna modeller på Hugging Face (i resten av Europa från en variant utan två av dess prisinmatningar) · elpriser %1$@"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra en åpen modell på Hugging Face · elpriser %1$@"
+            "value" : "Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra åpne modeller på Hugging Face (i resten av Europa fra en variant uten to av prisinndataene) · elpriser %1$@"
           }
         },
         "nn" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra en åpen modell på Hugging Face · elpriser %1$@"
+            "value" : "Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra åpne modeller på Hugging Face (i resten av Europa fra en variant uten to av prisinndataene) · elpriser %1$@"
           }
         },
         "no" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra en åpen modell på Hugging Face · elpriser %1$@"
+            "value" : "Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra åpne modeller på Hugging Face (i resten av Europa fra en variant uten to av prisinndataene) · elpriser %1$@"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hinnat: Energi Data Service ja ENTSO-E · ennuste perustuu avoimeen malliin Hugging Facessa · elpriser %1$@"
+            "value" : "Hinnat: Energi Data Service ja ENTSO-E · ennuste perustuu avoimiin malleihin Hugging Facessa (muualla Euroopassa versioon ilman kahta hintasyötettä) · elpriser %1$@"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ceny z Energi Data Service a ENTSO-E · předpověď pochází z otevřeného modelu na Hugging Face · elpriser %1$@"
+            "value" : "Ceny z Energi Data Service a ENTSO-E · předpověď pochází z otevřených modelů na Hugging Face (jinde v Evropě z varianty bez dvou jejích cenových vstupů) · elpriser %1$@"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Árak: Energi Data Service és ENTSO-E · az előrejelzés a Hugging Face egyik nyílt modelljéből származik · elpriser %1$@"
+            "value" : "Árak: Energi Data Service és ENTSO-E · az előrejelzés a Hugging Face nyílt modelljeiből származik (Európa többi részén két árbemenet nélküli változatból) · elpriser %1$@"
           }
         },
         "sl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cene: Energi Data Service in ENTSO-E · napoved izhaja iz odprtega modela na Hugging Face · elpriser %1$@"
+            "value" : "Cene: Energi Data Service in ENTSO-E · napoved izhaja iz odprtih modelov na Hugging Face (drugod po Evropi iz različice brez dveh njenih cenovnih vhodov) · elpriser %1$@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Precios de Energi Data Service y ENTSO-E · la previsión procede de un modelo abierto en Hugging Face · elpriser %1$@"
+            "value" : "Precios de Energi Data Service y ENTSO-E · la previsión procede de modelos abiertos en Hugging Face (en el resto de Europa, de una variante sin dos de sus entradas de precios) · elpriser %1$@"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preços da Energi Data Service e da ENTSO-E · a previsão vem de um modelo aberto na Hugging Face · elpriser %1$@"
+            "value" : "Preços da Energi Data Service e da ENTSO-E · a previsão vem de modelos abertos na Hugging Face (no resto da Europa, de uma variante sem duas das suas entradas de preços) · elpriser %1$@"
           }
         },
         "sk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ceny z Energi Data Service a ENTSO-E · predpoveď pochádza z otvoreného modelu na Hugging Face · elpriser %1$@"
+            "value" : "Ceny z Energi Data Service a ENTSO-E · predpoveď pochádza z otvorených modelov na Hugging Face (inde v Európe z variantu bez dvoch jeho cenových vstupov) · elpriser %1$@"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Τιμές από Energi Data Service και ENTSO-E · η πρόβλεψη προέρχεται από ένα ανοιχτό μοντέλο στο Hugging Face · elpriser %1$@"
+            "value" : "Τιμές από Energi Data Service και ENTSO-E · η πρόβλεψη προέρχεται από ανοιχτά μοντέλα στο Hugging Face (στην υπόλοιπη Ευρώπη από παραλλαγή χωρίς δύο από τις εισόδους τιμών της) · elpriser %1$@"
           }
         },
         "ro" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prețuri de la Energi Data Service și ENTSO-E · prognoza provine dintr-un model deschis de pe Hugging Face · elpriser %1$@"
+            "value" : "Prețuri de la Energi Data Service și ENTSO-E · prognoza provine din modele deschise de pe Hugging Face (în restul Europei dintr-o variantă fără două dintre intrările sale de preț) · elpriser %1$@"
           }
         },
         "bg" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Цени от Energi Data Service и ENTSO-E · прогнозата идва от отворен модел в Hugging Face · elpriser %1$@"
+            "value" : "Цени от Energi Data Service и ENTSO-E · прогнозата идва от отворени модели в Hugging Face (в останалата част на Европа — вариант без два от ценовите му входа) · elpriser %1$@"
           }
         },
         "hr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cijene: Energi Data Service i ENTSO-E · prognoza dolazi iz otvorenog modela na platformi Hugging Face · elpriser %1$@"
+            "value" : "Cijene: Energi Data Service i ENTSO-E · prognoza dolazi iz otvorenih modela na platformi Hugging Face (u ostatku Europe iz varijante bez dva njezina cjenovna ulaza) · elpriser %1$@"
           }
         },
         "sr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Цене: Energi Data Service и ENTSO-E · прогноза потиче из отвореног модела на платформи Hugging Face · elpriser %1$@"
+            "value" : "Цене: Energi Data Service и ENTSO-E · прогноза потиче из отворених модела на платформи Hugging Face (у остатку Европе из варијанте без два њена улаза за цене) · elpriser %1$@"
           }
         },
         "sr-Latn" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cene: Energi Data Service i ENTSO-E · prognoza potiče iz otvorenog modela na platformi Hugging Face · elpriser %1$@"
+            "value" : "Cene: Energi Data Service i ENTSO-E · prognoza potiče iz otvorenih modela na platformi Hugging Face (u ostatku Evrope iz varijante bez dva njena ulaza za cene) · elpriser %1$@"
           }
         },
         "et" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hinnad: Energi Data Service ja ENTSO-E · prognoos pärineb Hugging Face'i avatud mudelist · elpriser %1$@"
+            "value" : "Hinnad: Energi Data Service ja ENTSO-E · prognoos pärineb Hugging Face'i avatud mudelitest (mujal Euroopas variandist, millel puudub kaks hinnasisendit) · elpriser %1$@"
           }
         },
         "lv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cenas: Energi Data Service un ENTSO-E · prognoze nāk no atvērta modeļa platformā Hugging Face · elpriser %1$@"
+            "value" : "Cenas: Energi Data Service un ENTSO-E · prognoze nāk no atvērtiem modeļiem platformā Hugging Face (pārējā Eiropā – no varianta bez diviem tā cenu ievadiem) · elpriser %1$@"
           }
         },
         "lt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kainos: Energi Data Service ir ENTSO-E · prognozė gaunama iš atviro modelio Hugging Face · elpriser %1$@"
+            "value" : "Kainos: Energi Data Service ir ENTSO-E · prognozė gaunama iš atvirų modelių Hugging Face (likusioje Europoje – iš varianto be dviejų jo kainų įvesčių) · elpriser %1$@"
           }
         },
         "mk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Цени од Energi Data Service и ENTSO-E · прогнозата доаѓа од отворен модел на Hugging Face · elpriser %1$@"
+            "value" : "Цени од Energi Data Service и ENTSO-E · прогнозата доаѓа од отворени модели на Hugging Face (во остатокот од Европа од варијанта без два од нејзините ценовни влезови) · elpriser %1$@"
           }
         },
         "sq" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Çmimet: Energi Data Service dhe ENTSO-E · parashikimi vjen nga një model i hapur në Hugging Face · elpriser %1$@"
+            "value" : "Çmimet: Energi Data Service dhe ENTSO-E · parashikimi vjen nga modele të hapura në Hugging Face (në pjesën tjetër të Evropës nga një variant pa dy nga të dhënat e tij hyrëse të çmimeve) · elpriser %1$@"
           }
         }
       }

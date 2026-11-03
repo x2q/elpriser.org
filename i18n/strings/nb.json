@@ -120,7 +120,7 @@
   "theme_light": "Lys",
   "theme_dark": "Mørk",
   "settings_about_label": "Om appen",
-  "about_text": "Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra en åpen modell på Hugging Face · elpriser %1$s",
+  "about_text": "Priser fra Energi Data Service og ENTSO-E · prognosen kommer fra åpne modeller på Hugging Face (i resten av Europa fra en variant uten to av prisinndataene) · elpriser %1$s",
   "action_privacy": "Personvern",
   "smart_subtitle": "Kjør på de billigste timene i dag",
   "savings_today": "Besparelse i dag",

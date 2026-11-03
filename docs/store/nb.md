@@ -40,7 +40,7 @@ OG DESSUTEN
 • For iPhone og iPad, lys og mørk modus
 • Ingen reklame, ingen konto
 
-Prisene er engrospriser på spotmarkedet (day-ahead) uten avgifter, nettleie og strømleverandørens påslag, unntatt i Danmark, der avgifter og tariffer legges til. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, regnet om til timesgjennomsnitt av elpriser.org), Energi Data Service. Prognosemodellen er åpen på Hugging Face.
+Prisene er engrospriser på spotmarkedet (day-ahead) uten avgifter, nettleie og strømleverandørens påslag, unntatt i Danmark, der avgifter og tariffer legges til. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, regnet om til timesgjennomsnitt av elpriser.org), Energi Data Service. Prognosemodellene er åpne på Hugging Face (i resten av Europa som en variant uten to av produksjonsmodellens prisinndata).
 
 Elpriser er en uavhengig tjeneste og har ingen tilknytning til nettselskaper, strømleverandører eller markedsoperatører. Prisene er veiledende; det faktiske oppgjøret ditt kan avvike.
 
@@ -74,7 +74,7 @@ OG DESSUTEN
 • For mobil og nettbrett, lys og mørk modus
 • Ingen reklame, ingen konto
 
-Prisene er engrospriser på spotmarkedet (day-ahead) uten avgifter, nettleie og strømleverandørens påslag, unntatt i Danmark, der avgifter og tariffer legges til. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, regnet om til timesgjennomsnitt av elpriser.org), Energi Data Service. Prognosemodellen er åpen på Hugging Face.
+Prisene er engrospriser på spotmarkedet (day-ahead) uten avgifter, nettleie og strømleverandørens påslag, unntatt i Danmark, der avgifter og tariffer legges til. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, regnet om til timesgjennomsnitt av elpriser.org), Energi Data Service. Prognosemodellene er åpne på Hugging Face (i resten av Europa som en variant uten to av produksjonsmodellens prisinndata).
 
 Elpriser er en uavhengig tjeneste og har ingen tilknytning til nettselskaper, strømleverandører eller markedsoperatører. Prisene er veiledende; det faktiske oppgjøret ditt kan avvike.
 

@@ -136,7 +136,7 @@
     <string name="theme_light">Világos</string>
     <string name="theme_dark">Sötét</string>
     <string name="settings_about_label">Az alkalmazásról</string>
-    <string name="about_text">Árak: Energi Data Service és ENTSO-E · az előrejelzés a Hugging Face egyik nyílt modelljéből származik · elpriser %1$s</string>
+    <string name="about_text">Árak: Energi Data Service és ENTSO-E · az előrejelzés a Hugging Face nyílt modelljeiből származik (Európa többi részén két árbemenet nélküli változatból) · elpriser %1$s</string>
     <string name="about_sources_eu">Dánián kívüli árak: ENTSO-E Transparency Platform és Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0); az elpriser.org órás átlagokká alakította át.</string>
     <string name="action_privacy">Adatvédelem</string>
 

@@ -127,7 +127,7 @@
   "theme_light": "Svetla",
   "theme_dark": "Temna",
   "settings_about_label": "O aplikaciji",
-  "about_text": "Cene: Energi Data Service in ENTSO-E · napoved izhaja iz odprtega modela na Hugging Face · elpriser %1$s",
+  "about_text": "Cene: Energi Data Service in ENTSO-E · napoved izhaja iz odprtih modelov na Hugging Face (drugod po Evropi iz različice brez dveh njenih cenovnih vhodov) · elpriser %1$s",
   "about_sources_eu": "Cene zunaj Danske: ENTSO-E Transparency Platform in Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0); elpriser.org jih je pretvoril v urna povprečja.",
   "action_privacy": "Zasebnost",
   "smart_subtitle": "Zagon ob najcenejših urah danes",

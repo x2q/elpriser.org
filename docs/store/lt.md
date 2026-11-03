@@ -52,7 +52,7 @@ DAR
 • Telefonui ir planšetei, šviesi ir tamsi tema
 • Be reklamos, be paskyros
 
-Kainos yra didmeninės biržos kainos (kitos paros rinka) be mokesčių, tinklo tarifų ir elektros tiekėjo antkainio, išskyrus Daniją, kur pridedami mokesčiai ir tarifai. Duomenys: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org perskaičiavo į valandų vidurkius), Energi Data Service. Prognozės modelis yra atviras ir skelbiamas Hugging Face.
+Kainos yra didmeninės biržos kainos (kitos paros rinka) be mokesčių, tinklo tarifų ir elektros tiekėjo antkainio, išskyrus Daniją, kur pridedami mokesčiai ir tarifai. Duomenys: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org perskaičiavo į valandų vidurkius), Energi Data Service. Prognozių modeliai yra atviri ir skelbiami Hugging Face (likusioje Europoje – kaip variantas be dviejų gamybinio modelio kainų įvesčių).
 
 Elpriser yra nepriklausoma paslauga, nesusijusi su jokiu tinklo operatoriumi, elektros tiekėju ar rinkos operatoriumi. Kainos yra orientacinės; jūsų faktinis atsiskaitymas gali skirtis.
 

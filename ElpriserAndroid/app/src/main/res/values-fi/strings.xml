@@ -136,7 +136,7 @@
     <string name="theme_light">Vaalea</string>
     <string name="theme_dark">Tumma</string>
     <string name="settings_about_label">Tietoja sovelluksesta</string>
-    <string name="about_text">Hinnat: Energi Data Service ja ENTSO-E · ennuste perustuu avoimeen malliin Hugging Facessa · elpriser %1$s</string>
+    <string name="about_text">Hinnat: Energi Data Service ja ENTSO-E · ennuste perustuu avoimiin malleihin Hugging Facessa (muualla Euroopassa versioon ilman kahta hintasyötettä) · elpriser %1$s</string>
     <string name="about_sources_eu">Hinnat Tanskan ulkopuolella: ENTSO-E Transparency Platform ja Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), elpriser.org on laskenut niistä tuntikeskiarvot.</string>
     <string name="action_privacy">Tietosuoja</string>
 

@@ -136,7 +136,7 @@
     <string name="theme_light">Jasny</string>
     <string name="theme_dark">Ciemny</string>
     <string name="settings_about_label">O aplikacji</string>
-    <string name="about_text">Ceny: Energi Data Service i ENTSO-E · prognoza pochodzi z otwartego modelu na Hugging Face · elpriser %1$s</string>
+    <string name="about_text">Ceny: Energi Data Service i ENTSO-E · prognoza pochodzi z otwartych modeli na Hugging Face (w reszcie Europy z wariantu bez dwóch jej danych wejściowych o cenach) · elpriser %1$s</string>
     <string name="about_sources_eu">Ceny spoza Danii: ENTSO-E Transparency Platform i Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), przeliczone na średnie godzinowe przez elpriser.org.</string>
     <string name="action_privacy">Prywatność</string>
 

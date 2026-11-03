@@ -127,7 +127,7 @@
   "theme_light": "Hell",
   "theme_dark": "Dunkel",
   "settings_about_label": "Über die App",
-  "about_text": "Preise von Energi Data Service und ENTSO-E · die Prognose stammt aus einem offenen Modell auf Hugging Face · elpriser %1$s",
+  "about_text": "Preise von Energi Data Service und ENTSO-E · die Prognose stammt aus offenen Modellen auf Hugging Face (im übrigen Europa aus einer Variante ohne zwei ihrer Preiseingaben) · elpriser %1$s",
   "about_sources_eu": "Preise außerhalb Dänemarks: ENTSO-E Transparency Platform und Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), von elpriser.org in Stundenmittelwerte umgerechnet.",
   "action_privacy": "Datenschutz",
   "smart_subtitle": "Betrieb in den günstigsten Stunden von heute",

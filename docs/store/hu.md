@@ -40,7 +40,7 @@ Nézze meg a legolcsóbb órákat a hőszivattyúhoz, az elektromos autóhoz és
 • iPhone-ra és iPadre, világos és sötét módban
 • Reklámok és regisztráció nélkül
 
-Az árak nagykereskedelmi tőzsdei árak (másnapi piac), adók, hálózati díjak és a szolgáltatói árrés nélkül; Dániában az adók és a díjak hozzáadódnak. Adatok: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, az elpriser.org órás átlagokká alakította át), Energi Data Service. Az előrejelző modell nyílt a Hugging Face-en.
+Az árak nagykereskedelmi tőzsdei árak (másnapi piac), adók, hálózati díjak és a szolgáltatói árrés nélkül; Dániában az adók és a díjak hozzáadódnak. Adatok: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, az elpriser.org órás átlagokká alakította át), Energi Data Service. Az előrejelző modellek nyíltak a Hugging Face-en (Európa többi részén az éles modell két árbemenete nélküli változataként).
 
 Az Elpriser független szolgáltatás, amely nem áll kapcsolatban hálózatüzemeltetőkkel, energiakereskedőkkel vagy piacüzemeltetőkkel. Az árak tájékoztató jellegűek; a tényleges elszámolás eltérhet.
 
@@ -74,7 +74,7 @@ Nézze meg a legolcsóbb órákat a hőszivattyúhoz, az elektromos autóhoz és
 • Telefonra és táblagépre, világos és sötét módban
 • Reklámok és regisztráció nélkül
 
-Az árak nagykereskedelmi tőzsdei árak (másnapi piac), adók, hálózati díjak és a szolgáltatói árrés nélkül; Dániában az adók és a díjak hozzáadódnak. Adatok: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, az elpriser.org órás átlagokká alakította át), Energi Data Service. Az előrejelző modell nyílt a Hugging Face-en.
+Az árak nagykereskedelmi tőzsdei árak (másnapi piac), adók, hálózati díjak és a szolgáltatói árrés nélkül; Dániában az adók és a díjak hozzáadódnak. Adatok: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, az elpriser.org órás átlagokká alakította át), Energi Data Service. Az előrejelző modellek nyíltak a Hugging Face-en (Európa többi részén az éles modell két árbemenete nélküli változataként).
 
 Az Elpriser független szolgáltatás, amely nem áll kapcsolatban hálózatüzemeltetőkkel, energiakereskedőkkel vagy piacüzemeltetőkkel. Az árak tájékoztató jellegűek; a tényleges elszámolás eltérhet.
 

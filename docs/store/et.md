@@ -52,7 +52,7 @@ JA VEEL
 • Telefonile ja tahvelarvutile, hele ja tume režiim
 • Ilma reklaamita, ilma kontota
 
-Hinnad on hulgimüügi börsihinnad (päev-ette turg) ilma maksude, võrgutasude ja elektrimüüja marginaalita, välja arvatud Taanis, kus lisatakse maksud ja tariifid. Andmed: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org on teisendanud tunnikeskmisteks), Energi Data Service. Prognoosimudel on avatud ja asub Hugging Face'is.
+Hinnad on hulgimüügi börsihinnad (päev-ette turg) ilma maksude, võrgutasude ja elektrimüüja marginaalita, välja arvatud Taanis, kus lisatakse maksud ja tariifid. Andmed: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, elpriser.org on teisendanud tunnikeskmisteks), Energi Data Service. Prognoosimudelid on avatud ja asuvad Hugging Face'is (mujal Euroopas variandina ilma kahe tootmismudeli hinnasisendita).
 
 Elpriser on sõltumatu teenus ega ole seotud ühegi võrguettevõtte, elektrimüüja ega turuoperaatoriga. Hinnad on orienteeruvad; sinu tegelik arveldus võib erineda.
 

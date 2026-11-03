@@ -40,7 +40,7 @@ AUSSERDEM
 • Für iPhone und iPad, heller und dunkler Modus
 • Keine Werbung, kein Konto
 
-Die Preise sind Börsen-Spotpreise (Day-Ahead-Markt) ohne Steuern, Netzentgelte und Lieferantenmarge – außer in Dänemark, wo Steuern und Tarife hinzukommen. Daten: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, von elpriser.org in Stundenmittelwerte umgerechnet), Energi Data Service. Das Prognosemodell ist offen auf Hugging Face verfügbar.
+Die Preise sind Börsen-Spotpreise (Day-Ahead-Markt) ohne Steuern, Netzentgelte und Lieferantenmarge – außer in Dänemark, wo Steuern und Tarife hinzukommen. Daten: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, von elpriser.org in Stundenmittelwerte umgerechnet), Energi Data Service. Die Prognosemodelle sind offen auf Hugging Face verfügbar (im übrigen Europa als Variante ohne zwei Preiseingaben des Produktionsmodells).
 
 Elpriser ist ein unabhängiger Dienst und steht in keiner Verbindung zu Netzbetreibern, Energieversorgern oder Marktbetreibern. Die Preise sind Richtwerte; die tatsächliche Abrechnung kann abweichen.
 
@@ -74,7 +74,7 @@ AUSSERDEM
 • Für Smartphone und Tablet, heller und dunkler Modus
 • Keine Werbung, kein Konto
 
-Die Preise sind Börsen-Spotpreise (Day-Ahead-Markt) ohne Steuern, Netzentgelte und Lieferantenmarge – außer in Dänemark, wo Steuern und Tarife hinzukommen. Daten: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, von elpriser.org in Stundenmittelwerte umgerechnet), Energi Data Service. Das Prognosemodell ist offen auf Hugging Face verfügbar.
+Die Preise sind Börsen-Spotpreise (Day-Ahead-Markt) ohne Steuern, Netzentgelte und Lieferantenmarge – außer in Dänemark, wo Steuern und Tarife hinzukommen. Daten: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, von elpriser.org in Stundenmittelwerte umgerechnet), Energi Data Service. Die Prognosemodelle sind offen auf Hugging Face verfügbar (im übrigen Europa als Variante ohne zwei Preiseingaben des Produktionsmodells).
 
 Elpriser ist ein unabhängiger Dienst und steht in keiner Verbindung zu Netzbetreibern, Energieversorgern oder Marktbetreibern. Die Preise sind Richtwerte; die tatsächliche Abrechnung kann abweichen.
 

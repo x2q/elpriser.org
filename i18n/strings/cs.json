@@ -127,7 +127,7 @@
   "theme_light": "Světlý",
   "theme_dark": "Tmavý",
   "settings_about_label": "O aplikaci",
-  "about_text": "Ceny z Energi Data Service a ENTSO-E · předpověď pochází z otevřeného modelu na Hugging Face · elpriser %1$s",
+  "about_text": "Ceny z Energi Data Service a ENTSO-E · předpověď pochází z otevřených modelů na Hugging Face (jinde v Evropě z varianty bez dvou jejích cenových vstupů) · elpriser %1$s",
   "about_sources_eu": "Ceny mimo Dánsko: ENTSO-E Transparency Platform a Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), přepočteno na hodinové průměry serverem elpriser.org.",
   "action_privacy": "Soukromí",
   "smart_subtitle": "Provoz v nejlevnějších hodinách dneška",

@@ -127,7 +127,7 @@
   "theme_light": "Светла",
   "theme_dark": "Тамна",
   "settings_about_label": "О апликацији",
-  "about_text": "Цене: Energi Data Service и ENTSO-E · прогноза потиче из отвореног модела на платформи Hugging Face · elpriser %1$s",
+  "about_text": "Цене: Energi Data Service и ENTSO-E · прогноза потиче из отворених модела на платформи Hugging Face (у остатку Европе из варијанте без два њена улаза за цене) · elpriser %1$s",
   "about_sources_eu": "Цене ван Данске: ENTSO-E Transparency Platform и Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0); elpriser.org их је прерачунао у просеке по сатима.",
   "action_privacy": "Приватност",
   "smart_subtitle": "Рад у најјефтинијим сатима данас",

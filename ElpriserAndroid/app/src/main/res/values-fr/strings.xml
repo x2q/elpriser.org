@@ -136,7 +136,7 @@
     <string name="theme_light">Clair</string>
     <string name="theme_dark">Sombre</string>
     <string name="settings_about_label">À propos</string>
-    <string name="about_text">Prix : Energi Data Service et ENTSO-E · la prévision provient d\'un modèle ouvert sur Hugging Face · elpriser %1$s</string>
+    <string name="about_text">Prix : Energi Data Service et ENTSO-E · la prévision provient de modèles ouverts sur Hugging Face (dans le reste de l\'Europe, d\'une variante sans deux de ses entrées de prix) · elpriser %1$s</string>
     <string name="about_sources_eu">Prix hors Danemark : ENTSO-E Transparency Platform et Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), convertis en moyennes horaires par elpriser.org.</string>
     <string name="action_privacy">Confidentialité</string>
 

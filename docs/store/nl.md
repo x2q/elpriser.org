@@ -40,7 +40,7 @@ EN VERDER
 • Voor iPhone en iPad, lichte en donkere modus
 • Geen reclame, geen account
 
-De prijzen zijn groothandels-spotprijzen (day-ahead-markt) zonder belastingen, netkosten en leveranciersmarge, behalve in Denemarken, waar belastingen en tarieven worden toegevoegd. Gegevens: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, door elpriser.org omgerekend naar uurgemiddelden), Energi Data Service. Het voorspellingsmodel is open beschikbaar op Hugging Face.
+De prijzen zijn groothandels-spotprijzen (day-ahead-markt) zonder belastingen, netkosten en leveranciersmarge, behalve in Denemarken, waar belastingen en tarieven worden toegevoegd. Gegevens: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, door elpriser.org omgerekend naar uurgemiddelden), Energi Data Service. De voorspellingsmodellen zijn open beschikbaar op Hugging Face (in de rest van Europa als variant zonder twee prijsinvoeren van het productiemodel).
 
 Elpriser is een onafhankelijke dienst en is niet verbonden aan netbeheerders, energieleveranciers of marktoperators. De prijzen zijn indicatief; je werkelijke afrekening kan afwijken.
 
@@ -74,7 +74,7 @@ EN VERDER
 • Voor telefoon en tablet, lichte en donkere modus
 • Geen reclame, geen account
 
-De prijzen zijn groothandels-spotprijzen (day-ahead-markt) zonder belastingen, netkosten en leveranciersmarge, behalve in Denemarken, waar belastingen en tarieven worden toegevoegd. Gegevens: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, door elpriser.org omgerekend naar uurgemiddelden), Energi Data Service. Het voorspellingsmodel is open beschikbaar op Hugging Face.
+De prijzen zijn groothandels-spotprijzen (day-ahead-markt) zonder belastingen, netkosten en leveranciersmarge, behalve in Denemarken, waar belastingen en tarieven worden toegevoegd. Gegevens: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, door elpriser.org omgerekend naar uurgemiddelden), Energi Data Service. De voorspellingsmodellen zijn open beschikbaar op Hugging Face (in de rest van Europa als variant zonder twee prijsinvoeren van het productiemodel).
 
 Elpriser is een onafhankelijke dienst en is niet verbonden aan netbeheerders, energieleveranciers of marktoperators. De prijzen zijn indicatief; je werkelijke afrekening kan afwijken.
 

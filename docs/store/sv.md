@@ -40,7 +40,7 @@ OCH DESSUTOM
 • För iPhone och iPad, ljust och mörkt läge
 • Ingen reklam, inget konto
 
-Priserna är grossistpriser på spotmarknaden (day-ahead) utan skatter, nätavgifter och elhandlarens påslag, utom i Danmark, där skatter och tariffer läggs till. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, omräknat till timmedelvärden av elpriser.org), Energi Data Service. Prognosmodellen är öppen på Hugging Face.
+Priserna är grossistpriser på spotmarknaden (day-ahead) utan skatter, nätavgifter och elhandlarens påslag, utom i Danmark, där skatter och tariffer läggs till. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, omräknat till timmedelvärden av elpriser.org), Energi Data Service. Prognosmodellerna är öppna på Hugging Face (i resten av Europa som en variant utan två av produktionsmodellens prisinmatningar).
 
 Elpriser är en oberoende tjänst och har ingen koppling till några nätbolag, elleverantörer eller marknadsoperatörer. Priserna är vägledande; din faktiska avräkning kan avvika.
 
@@ -74,7 +74,7 @@ OCH DESSUTOM
 • För mobil och surfplatta, ljust och mörkt läge
 • Ingen reklam, inget konto
 
-Priserna är grossistpriser på spotmarknaden (day-ahead) utan skatter, nätavgifter och elhandlarens påslag, utom i Danmark, där skatter och tariffer läggs till. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, omräknat till timmedelvärden av elpriser.org), Energi Data Service. Prognosmodellen är öppen på Hugging Face.
+Priserna är grossistpriser på spotmarknaden (day-ahead) utan skatter, nätavgifter och elhandlarens påslag, utom i Danmark, där skatter och tariffer läggs till. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, omräknat till timmedelvärden av elpriser.org), Energi Data Service. Prognosmodellerna är öppna på Hugging Face (i resten av Europa som en variant utan två av produktionsmodellens prisinmatningar).
 
 Elpriser är en oberoende tjänst och har ingen koppling till några nätbolag, elleverantörer eller marknadsoperatörer. Priserna är vägledande; din faktiska avräkning kan avvika.
 

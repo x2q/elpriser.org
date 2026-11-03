@@ -136,7 +136,7 @@
     <string name="theme_light">Светла</string>
     <string name="theme_dark">Темна</string>
     <string name="settings_about_label">За апликацијата</string>
-    <string name="about_text">Цени од Energi Data Service и ENTSO-E · прогнозата доаѓа од отворен модел на Hugging Face · elpriser %1$s</string>
+    <string name="about_text">Цени од Energi Data Service и ENTSO-E · прогнозата доаѓа од отворени модели на Hugging Face (во остатокот од Европа од варијанта без два од нејзините ценовни влезови) · elpriser %1$s</string>
     <string name="about_sources_eu">Цени надвор од Данска: ENTSO-E Transparency Platform и Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), претворени во часовни просеци од elpriser.org.</string>
     <string name="action_privacy">Приватност</string>
 

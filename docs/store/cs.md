@@ -40,7 +40,7 @@ A DÁLE
 • Pro iPhone a iPad, světlý i tmavý režim
 • Bez reklam, bez účtu
 
-Ceny jsou velkoobchodní spotové ceny (denní trh) bez daní, distribučních plateb a marže dodavatele, kromě Dánska, kde se daně a sazby přičítají. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, přepočteno na hodinové průměry serverem elpriser.org), Energi Data Service. Předpovědní model je otevřený na Hugging Face.
+Ceny jsou velkoobchodní spotové ceny (denní trh) bez daní, distribučních plateb a marže dodavatele, kromě Dánska, kde se daně a sazby přičítají. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, přepočteno na hodinové průměry serverem elpriser.org), Energi Data Service. Předpovědní modely jsou otevřené na Hugging Face (jinde v Evropě jako varianta bez dvou cenových vstupů produkčního modelu).
 
 Elpriser je nezávislá služba a není spojena s žádným distributorem, dodavatelem energie ani operátorem trhu. Ceny jsou orientační; skutečné vyúčtování se může lišit.
 
@@ -74,7 +74,7 @@ A DÁLE
 • Pro telefon i tablet, světlý i tmavý režim
 • Bez reklam, bez účtu
 
-Ceny jsou velkoobchodní spotové ceny (denní trh) bez daní, distribučních plateb a marže dodavatele, kromě Dánska, kde se daně a sazby přičítají. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, přepočteno na hodinové průměry serverem elpriser.org), Energi Data Service. Předpovědní model je otevřený na Hugging Face.
+Ceny jsou velkoobchodní spotové ceny (denní trh) bez daní, distribučních plateb a marže dodavatele, kromě Dánska, kde se daně a sazby přičítají. Data: ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0, přepočteno na hodinové průměry serverem elpriser.org), Energi Data Service. Předpovědní modely jsou otevřené na Hugging Face (jinde v Evropě jako varianta bez dvou cenových vstupů produkčního modelu).
 
 Elpriser je nezávislá služba a není spojena s žádným distributorem, dodavatelem energie ani operátorem trhu. Ceny jsou orientační; skutečné vyúčtování se může lišit.
 
