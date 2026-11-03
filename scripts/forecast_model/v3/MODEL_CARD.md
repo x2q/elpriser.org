@@ -194,7 +194,7 @@ These figures are a **floor** in one respect: the backtest deliberately uses a w
 lead at least as old as the operational run would see. In another respect they are **not** a guide to
 today: the backtest ends on 2026-07-30, before the price rise of September 2026, so it says nothing about
 how the model behaves in the new price regime (a model trained on the older, calmer prices tends to run too low when the level rises).
-Live errors are logged daily on elpriser.org but are not part of this card.
+Live errors are logged daily by elpriser.org but are not published in this card.
 
 ## Why this exact configuration (Pareto analysis)
 

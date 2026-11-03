@@ -206,7 +206,7 @@ Weights, code and documentation: **CC BY 4.0**, credit "elpriser.org". The data 
 - **Energinet, Energi Data Service**: used to cross-check the Danish prices (CC BY 4.0, *Source: Energinet (www.energidataservice.dk)*).
 - **Weather data by [Open-Meteo.com](https://open-meteo.com)** (CC BY 4.0). Note that Open-Meteo's *free API* is for non-commercial use only.
 
-The backtest above ends in July 2026, before the price rise of September 2026; it says nothing about how the model behaves in the new price regime. Live errors are logged daily on
+The backtest above ends in July 2026, before the price rise of September 2026; it says nothing about how the model behaves in the new price regime. Live errors are logged daily by
 elpriser.org but are not part of this card.
 
 Code: [elpriser.org on GitHub](https://github.com/x2q/elpriser.org), `scripts/forecast_model/nordic/`.
