@@ -101,7 +101,8 @@ const col = lds.find(x => x['@type'] === 'CollectionPage');
 ok(col && col.mainEntity['@type'] === 'ItemList', '/integrationer: CollectionPage with an ItemList');
 const real = M.INTEGRATIONS.filter(i => i.status !== 'soon');
 ok(col && col.mainEntity.itemListElement.length === real.length && col.mainEntity.numberOfItems === real.length, '/integrationer: JSON-LD has exactly the items that exist');
-ok(col && !JSON.stringify(col).match(/Rust|Go\b/), '/integrationer: JSON-LD names no "Kommer" item');
+const soonNames = M.INTEGRATIONS.filter(i => i.status === 'soon').map(i => i.name);
+ok(col && soonNames.every(n => !JSON.stringify(col).includes(n)), '/integrationer: JSON-LD names no "Kommer" item');
 ok(lds.some(x => x['@type'] === 'BreadcrumbList'), '/integrationer: breadcrumbs');
 // Offline-readable: statuses are text, not colour only.
 ok(/<span class="vh">Status: <\/span>/.test(h), '/integrationer: the chip says "Status:" to a screen reader');
