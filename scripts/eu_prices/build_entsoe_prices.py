@@ -7,6 +7,10 @@ only, A03 blocks expanded, hourly means by the zone's wall clock), written to KV
 /api/nordic reads for every EU zone. Actual prices only: no forecast and no model. A day that is not published yet
 (tomorrow before ~13:00 CET) is simply absent.
 
+The Netherlands (`nl`, NORDIC_OVERLAY) is run by the same job: its settled days go to `eu-prices-nl` and /api/nordic lays them over
+the Nordic model's 9-day forecast (`nordic-forecast-nl`). An extra NL-only line may be added to catch a late publication:
+    5,35 12-16 * * *  cd ~/elpriser-eu && python3 build_entsoe_prices.py --zones nl >> entsoe_prices.log 2>&1
+
 Ireland (`ie`) is not here any more: build_semopx_prices.py writes eu-prices-ie from the SEMOpx day-ahead results.
 
 Credentials: ENTSOE_TOKEN (the Transparency Platform's security token) and the Cloudflare pair, from the environment or
@@ -63,6 +67,18 @@ ZONES = {
 }
 
 
+# A zone whose page is served from the Nordic forecast job's feed (KV `nordic-forecast-<zone>`, scripts/forecast_model/nordic), NOT an
+# EU_ZONES zone: /api/nordic overlays these settled days on the 9-day model forecast (overlayNordicSettled). The Nordic job reads
+# ENTSO-E once a day at 12:40 UTC and the Netherlands' day-ahead results had not reached ENTSO-E by then, so NL's today/tomorrow
+# were served as model forecast although the auction had settled. Same A44 request, same parser, same KV key `eu-prices-<zone>`;
+# Amsterdam is on CET/CEST like Copenhagen and Berlin. Kept apart from ZONES on purpose: test-eu-prices.mjs pins ZONES to the API's
+# EU_ZONES_ENTSOE (zones that have no nordic-forecast feed).
+NORDIC_OVERLAY = {
+    "nl":  ("10YNL----------L",    "Europe/Amsterdam"),
+}
+ALL_ZONES = {**ZONES, **NORDIC_OVERLAY}
+
+
 def interval(dates, tzname):
     """(periodStart, periodEnd) in the API's UTC format: local midnight of the first date to local midnight after the last."""
     tz = ZoneInfo(tzname)
@@ -100,7 +116,7 @@ def fetch_a44(token, eic, start, end):
 
 def run_zone(zone, now, token, kv=None, dry=False):
     """Fetch, parse and (unless dry) store one zone. Returns a one-line status."""
-    eic, tzname = ZONES[zone]
+    eic, tzname = ALL_ZONES[zone]
     dates = P.local_dates(now, tzname)
     start, end = interval(dates, tzname)
     payload = E.build_payload(zone, fetch_a44(token, eic, start, end), tzname, dates, now.date().isoformat())
@@ -133,10 +149,10 @@ def main(argv=None):
     if missing:
         B.log("missing environment: " + ", ".join(missing))
         return 2
-    zones = a.zones.split(",") if a.zones else list(ZONES)
-    unknown = [z for z in zones if z not in ZONES]
+    zones = a.zones.split(",") if a.zones else list(ALL_ZONES)
+    unknown = [z for z in zones if z not in ALL_ZONES]
     if unknown:
-        B.log("unknown zone(s): " + ", ".join(unknown) + " (known: " + ", ".join(ZONES) + ")")
+        B.log("unknown zone(s): " + ", ".join(unknown) + " (known: " + ", ".join(ALL_ZONES) + ")")
         return 2
     now = (datetime.fromisoformat(a.date).replace(hour=12, tzinfo=timezone.utc) if a.date else datetime.now(timezone.utc))
     B.log(f"=== entsoe prices {now:%Y-%m-%d %H:%M}Z{' (dry run)' if a.dry_run else ''} ===")

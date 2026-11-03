@@ -985,6 +985,44 @@ const NORDIC_ZONE_INFO = {
   nl:  { name: 'NL Nederland',     country: 'NL', currency: 'EUR', rate: 1 },
 };
 
+// Nordic-feed zones that ALSO have a settled-price key `eu-prices-<zone>` (scripts/eu_prices/build_entsoe_prices.py, NORDIC_OVERLAY, run
+// twice a day). The Nordic job (12:40 UTC, once a day) reads ENTSO-E before the Netherlands' day-ahead results are there on most days, so
+// `nordic-forecast-nl` serves today/tomorrow as model forecast although the auction has settled. Same source (ENTSO-E A44), same unit.
+const NORDIC_SETTLED_OVERLAY = ['nl'];
+/** `nordic-forecast-<zone>` with the settled days of `eu-prices-<zone>` laid over it. The contract is withEuForecast's: every settled day
+ *  is a complete `actual` day, and the forecast days that remain follow the LAST settled day without a hole (apps parse complete 24h days
+ *  and stop at the first missing day). A settled day replaces the same date of the feed (actual or forecast); only a day with all 24 hours
+ *  priced counts (23 on the spring-forward day, hour 2 missing), so a half-published day never displaces a forecast day. The feed's own
+ *  `actual` days stay; the feed's forecast days stay only from the day after the last settled day, consecutive. Without a usable overlay
+ *  the feed is returned untouched (the very same object). */
+function overlayNordicSettled(feed, settled) {
+  if (!feed || !Array.isArray(feed.days) || !settled || !Array.isArray(settled.days)) return feed;
+  const DATE = /^\d{4}-\d{2}-\d{2}$/;
+  const nextDay = d => new Date(Date.parse(`${d}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
+  const complete = d => {
+    if (!d || d.type !== 'actual' || typeof d.date !== 'string' || !DATE.test(d.date) || !Array.isArray(d.prices)) return false;
+    const rows = d.prices.filter(p => p && Number.isInteger(p.hour) && p.hour >= 0 && p.hour <= 23 && typeof p.eur_mwh === 'number' && Number.isFinite(p.eur_mwh));
+    const hours = new Set(rows.map(p => p.hour));
+    return hours.size === rows.length && (rows.length === 24 || (rows.length === 23 && !hours.has(2)));
+  };
+  const fresh = new Map();
+  for (const d of settled.days) if (complete(d)) fresh.set(d.date, { date: d.date, type: 'actual', prices: d.prices.map(p => ({ hour: p.hour, eur_mwh: p.eur_mwh })) });
+  if (!fresh.size) return feed;
+  const settledDays = new Map();
+  for (const d of feed.days) if (d && d.type === 'actual' && typeof d.date === 'string' && DATE.test(d.date)) settledDays.set(d.date, d);
+  for (const [date, d] of fresh) settledDays.set(date, d);
+  const last = [...settledDays.keys()].reduce((m, d) => (d > m ? d : m), '');
+  const ahead = feed.days.filter(d => d && d.type === 'forecast' && typeof d.date === 'string' && DATE.test(d.date) && d.date > last)
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+  const extra = [];
+  for (const d of ahead) {
+    if (d.date !== nextDay(extra.length ? extra[extra.length - 1].date : last)) break;     // sorted: nothing later can close the hole
+    extra.push(d);
+  }
+  const days = [...[...settledDays.values()].sort((a, b) => (a.date < b.date ? -1 : 1)), ...extra];
+  return { ...feed, days };
+}
+
 // The EU price zones (and Great Britain): written into KV `eu-prices-<zone>` as hourly means of the 15- or 30-minute prices (a change
 // of the data, which the pages say) in the very shape of a Nordic zone (days of type 'actual', no forecast), served here by the same
 // code path: same zoneInfo, same cache headers, same 404 for a zone without data. Four sources, four jobs in scripts/eu_prices/
@@ -1557,10 +1595,11 @@ async function handleApi(context) {
     try {
       const [priced, fc] = await Promise.all([
         kvJson(context.env, eu ? `eu-prices-${zone}` : `nordic-forecast-${zone}`, { ttl: 900 }),
-        eu ? kvJson(context.env, `eu-forecast-${zone}`, { ttl: 900 }) : null,
+        eu ? kvJson(context.env, `eu-forecast-${zone}`, { ttl: 900 })
+          : NORDIC_SETTLED_OVERLAY.includes(zone) ? kvJson(context.env, `eu-prices-${zone}`, { ttl: 900 }) : null,     // fc = the settled overlay for nl
       ]);
       if (!priced) return fail(404, eu ? `no prices available for ${zone}` : `no forecast available for ${zone}`);
-      const raw = eu ? withEuForecast(priced, fc) : priced;
+      const raw = eu ? withEuForecast(priced, fc) : overlayNordicSettled(priced, fc);
       const fx = await ecbRates();
       const info = eu ? EU_ZONE_INFO[zone] : NORDIC_ZONE_INFO[zone];
       return jsonResponse({ ...raw, zoneInfo: { ...info,
