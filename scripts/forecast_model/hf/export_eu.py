@@ -221,9 +221,11 @@ def main(argv=None):
             rows_f = RC.add_fuel_columns(rows, table)
             m, f_, tr = TD.fit_lgb(dff, "rel+fuel", a.jobs)
             m.booster_.save_model(os.path.join(held, "lgb_fuel.txt"))
+            qm = {}
             for alpha, name in ((0.1, "lgb_fuel_q10.txt"), (0.9, "lgb_fuel_q90.txt")):
                 mq, _, _ = TD.fit_lgb(dff, "rel+fuel", a.jobs, alpha)
                 mq.booster_.save_model(os.path.join(held, name))
+                qm[alpha] = mq
             del tr
             hist_f = RC.augment(dff[(dff["date"] >= cut) & (dff["h"] <= RC.H_MAX) & dff["y"].notna() & dff["zone"].isin(need_lear)].copy(), prices, tables)
             live_f = RC.augment(rows_f, prices, tables)
@@ -234,6 +236,27 @@ def main(argv=None):
                 json.dump({"model": "eu-ens-v2 (production recipe, WITH gas and carbon inputs)", "HELD": "do not upload: MIBGAS / EEX licences unconfirmed",
                            "snapshot": now.date().isoformat(), "trainedThrough": trained_through.isoformat(), "lgb_features": f_, "ridge_features": cols_f, "ridges": meta_f}, fh, indent=1)
             log(f"  held fuel models saved ({len(models_f)} ridges, {time.time() - t0:.0f}s)")
+            if a.reference:                      # the production recipe's numbers on the same frozen rows, for verify_eu_fuel.py (stays on the Spark)
+                Xf = rows_f.copy()
+                Xf["zone"] = pd.Categorical(Xf["zone"], categories=list(ZONES))
+                lgb_fuel = TD.lgb_predict(m, f_, Xf)
+                q10, q90 = TD.lgb_predict(qm[0.1], f_, Xf), TD.lgb_predict(qm[0.9], f_, Xf)
+                lear_f = np.full(len(live_f), np.nan)
+                lear_f[selr.to_numpy()] = RC.lear_predict(hist_f, live_f[selr], True).to_numpy()
+                point_f = np.full(len(live_f), np.nan)
+                zf = live_f.reset_index(drop=True)
+                for z in ZONES:
+                    mk = (zf["zone"] == z).to_numpy()
+                    part = {"lgb_base": lgb_base[mk], "lgb_fuel": lgb_fuel[mk], "lear_fuel": lear_f[mk]}
+                    point_f[mk] = RC.point_forecast(z, part, True, day_ids=(zf.loc[mk, "date"].dt.strftime("%Y-%m-%d") + "_" + zf.loc[mk, "h"].astype(str)).to_numpy())
+                refd = os.path.join(out, "ref")
+                os.makedirs(refd, exist_ok=True)
+                np.save(os.path.join(refd, "point_fuel.npy"), point_f)
+                np.save(os.path.join(refd, "q10_fuel.npy"), q10)
+                np.save(os.path.join(refd, "q90_fuel.npy"), q90)
+                with open(os.path.join(refd, "fuel_table.pkl"), "wb") as fh:          # the fuel inputs of this run: local to the Spark, never uploaded
+                    pickle.dump(table, fh)
+                log(f"  fuel reference saved ({np.isfinite(point_f).sum():,} finite hours)")
     log(f"DONE ({time.time() - t0:.0f}s)")
     return 0
 

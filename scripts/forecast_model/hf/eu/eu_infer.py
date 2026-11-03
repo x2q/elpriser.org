@@ -51,7 +51,7 @@ def load_weights(wdir):
             "cal": G.load_calibration(os.path.join(gdir, "calibration_residual.json"))}
 
 
-def ridge_predict_stored(models, cols, live, impute=True):
+def ridge_predict_stored(models, cols, live, impute=True, fuel=False):
     """recipe.lear_predict with the fitted ridges taken from `models` {(zone, h): (mu, sd, beta, intercept)} instead of fitted: the same design matrix,
     the same replacement of a missing hourly price lag by the training mean (at most RC.MAX_IMPUTED of the six per row), NaN where anything else is
     missing. Returns a Series aligned to live.index; `.attrs['imputed']` counts the replaced values."""
@@ -60,7 +60,7 @@ def ridge_predict_stored(models, cols, live, impute=True):
     out.attrs["imputed"] = 0
     if live.empty:
         return out
-    Xl = RC.lear_design(live, False)
+    Xl = RC.lear_design(live, fuel)
     if list(Xl.columns) != list(cols):
         raise ValueError("the ridge design matrix differs from the one the weights were fitted on")
     imp = [i for i, c in enumerate(cols) if c in RC.IMPUTABLE] if impute else []

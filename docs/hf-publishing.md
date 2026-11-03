@@ -20,10 +20,16 @@ do not name the two inputs (`test-api.mjs` pins that rule while the licences are
 
 ## What is held back, and the way out
 
-The fuel-trained EU weights (`lgb_fuel`, its P10/P90 models, `ridge_fuel`) are staged outside the repo and **never uploaded**; no gas, carbon or derived fuel number is in any repo, and
-`stage.py` refuses any file that looks like them (guard, run before every assemble and upload). To publish them after MIBGAS and EEX have confirmed in writing: export with
-`export_eu.py --with-fuel` (writes `held-fuel/`), put them in a separate repo `eu-price-forecast-fuel` (or a `fuel/` folder with its own card) and extend the guard on purpose; add the two sources to
-the card's attribution. If either says no, nothing changes here (`EU_FORECAST_NO_FUEL=1` in the job's environment, see the runbook).
+The fuel-trained EU weights (`lgb_fuel`, its P10/P90 models, `ridge_fuel`) are in the **private** repo `Elpriser/eu-price-forecast-fuel` (owner decision 2026-11-03; also staged in `~/hf-staging/HELD-eu-fuel-do-not-upload`):
+weights and inference code only (`predict_eu_fuel.py` needs a `fuel_daily.csv` the user builds themselves), verified exact against the production code path. No gas, carbon, MIBGAS or EEX number, series, fixture or table is in any
+repo, public or private: `stage.py` refuses any data file (`.csv`, `.xlsx`, `.parquet`, `.pkl`) for every kind, and the public kinds refuse the fuel weights too. The upload sets the repo private before anything is pushed and fails if it ever reads public.
+To publish them after MIBGAS and EEX have confirmed in writing: move `weights/fuel/` into the public repo with its card and attribution. If either says no, delete the private repo and set `EU_FORECAST_NO_FUEL=1` (see the runbook).
+
+**Datasets switched to private (2026-11-03, owner decision)**: `germany-power-market`, `netherlands-power-market`, `norway-power-market`, `sweden-power-market`, `finland-power-market`, `denmark-power-market` and
+`power-price-forecast-data` carry ENTSO-E day-ahead prices, generation per type, wind/solar forecasts, actual load, installed capacity or reservoir filling, none of which is on ENTSO-E's CC BY 4.0 free-re-use list, while the repos were
+labelled CC BY 4.0. Nothing was deleted or edited; only visibility changed (reversible in the Hub settings). Side effects: `denmark-power-market` and `power-price-forecast-data` also hold cleared Energinet and weather data,
+which are private for now (a public subset repo with only the cleared files is the way back); the site's links to the dataset repos (`index.html`, footer, llms.txt) and `nordic-power-market-data` (a public README
+that describes them) now point at private repos and need rewording when the owner decides.
 
 ## Keeping the weights current (weekly snapshot)
 

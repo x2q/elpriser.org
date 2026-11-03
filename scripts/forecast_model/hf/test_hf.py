@@ -83,8 +83,48 @@ class Guard(unittest.TestCase):
         with self.assertRaises(SystemExit):
             S.guard(self.d, "eu")
 
-    def test_the_two_repos_are_the_ones_the_docs_name(self):
-        self.assertEqual(S.REPOS, {"eu": "Elpriser/eu-price-forecast", "gb": "Elpriser/gb-price-estimate"})
+    def test_the_repos_are_the_ones_the_docs_name_and_only_the_fuel_repo_is_private(self):
+        self.assertEqual(S.REPOS, {"eu": "Elpriser/eu-price-forecast", "gb": "Elpriser/gb-price-estimate", "eu-fuel": "Elpriser/eu-price-forecast-fuel"})
+        self.assertEqual(S.PRIVATE, {"eu-fuel"})
+
+
+class PrivateFuelRepo(unittest.TestCase):
+    """The private repo may hold the fuel-trained weights, never a data file, and its card must say it is private."""
+
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        write(self.d, "weights/lgb_base.txt", "tree")
+        write(self.d, "weights/fuel/lgb_fuel.txt", "tree")
+        write(self.d, "weights/fuel/ridge_fuel.npz", "npz")
+        write(self.d, "weights/fuel/config.json", json.dumps({"model": "eu-ens-v2 (production recipe, WITH gas and carbon inputs)"}))
+        for f in ("publish_gate.json", "accuracy_eu.json", "calibration_eu.json"):
+            write(self.d, "gate_fuel/" + f, "{}")
+        write(self.d, "README.md", "# PRIVATE internal repo")
+
+    def tearDown(self):
+        shutil.rmtree(self.d)
+
+    def test_fuel_weights_pass_in_the_private_repo_only(self):
+        S.guard(self.d, "eu-fuel")
+        with self.assertRaises(SystemExit):
+            S.guard(self.d, "eu")
+
+    def test_data_files_of_any_kind_are_refused_even_in_the_private_repo(self):
+        for rel in ("fuel_daily.csv", "data/gas.csv", "code/fixtures/mibgas_sample.csv", "eex.xlsx", "weights/fuel/t.parquet", "weights/fuel/t.pkl", "held-fuel/x.txt"):
+            write(self.d, rel)
+            with self.assertRaises(SystemExit, msg=rel):
+                S.guard(self.d, "eu-fuel")
+            os.remove(os.path.join(self.d, rel))
+        S.guard(self.d, "eu-fuel")
+
+    def test_the_card_must_say_private_and_the_weights_must_be_the_fuel_model(self):
+        write(self.d, "README.md", "# a card")
+        with self.assertRaises(SystemExit):
+            S.guard(self.d, "eu-fuel")
+        write(self.d, "README.md", "PRIVATE")
+        write(self.d, "weights/fuel/config.json", json.dumps({"model": "eu-ens-v2-nofuel"}))
+        with self.assertRaises(SystemExit):
+            S.guard(self.d, "eu-fuel")
 
 
 class Export(unittest.TestCase):
