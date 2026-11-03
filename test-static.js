@@ -1361,6 +1361,38 @@ test('privacy: /privatliv is a shipped static page that states what happens to t
   assert.ok(/STATIC_ASSETS = new Set\(\[[^\]]*'\/privatliv'/.test(fn), 'the catch-all lets /privatliv through to the static file');
 });
 
+test('privacy: the policy covers every platform and every data flow we ship, and says what the code does', () => {
+  const page = fs.readFileSync(path.join(__dirname, 'privatliv.html'), 'utf8');
+  const text = page.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  // every platform and feature the stores will show
+  for (const w of ['Android', 'iPhone', 'iPad', 'Mac', 'Apple Watch', 'widget', 'App Group', 'Google Analytics', 'Besked, når strømmen er billigst', 'MCP', 'regulerbar kapacitet', 'Cloudflare', 'OpenStreetMap', 'Green Power Denmark', 'Datatilsynet', 'hello@elpriser.org']) {
+    assert.ok(text.includes(w), `the policy must mention "${w}"`);
+  }
+  assert.ok(/Senest opdateret \d{1,2}\. [a-zæøå]+ 20\d\d/.test(text), 'the policy carries its date');
+  // Google Analytics: the page that claims it must be true to index.html, and the policy page itself stays free of it
+  const index = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+  assert.ok(/googletagmanager\.com\/gtag\/js/.test(index), 'index.html loads Google Analytics, so the policy must say so');
+  assert.ok(!/ingen analyseværktøjer fra tredjepart;/.test(text), 'the old blanket "no third-party analytics" sentence is untrue for the website');
+  assert.ok(!/gtag|googletagmanager|<script/.test(page), 'the policy page loads no script, so it can say that it does not use Google Analytics');
+  assert.ok(/gtag\('event','store_click'/.test(index) && /store,page:/.test(index) && /placement:/.test(index) && /lang:document\.documentElement\.lang/.test(index), 'store_click carries store, page, placement and lang, as the policy says');
+  assert.ok(!/document\.cookie/.test(index), 'the site sets no cookie of its own (the policy names only Google Analytics cookies and localStorage)');
+  for (const k of ['dk_net_pick', 'gps_auto_declined', 'appBannerClosed']) assert.ok(index.includes(k), `localStorage key ${k} still exists`);
+  // the position: five decimals in the cache key (about a metre), the MCP tool four (about 11 m), no log of either
+  const api = fs.readFileSync(path.join(__dirname, 'functions', 'api', '[[catchall]].js'), 'utf8');
+  assert.ok(/gps-\$\{flat\.toFixed\(5\)\}-\$\{flng\.toFixed\(5\)\}/.test(api) && /fem decimaler/.test(text) && /ca\. 1 meter/.test(text), 'lookup cache key and policy agree on five decimals');
+  assert.ok(/24 \* 60 \* 60_000/.test(api) && /op til et døgn/.test(text), 'lookup cache lives a day, as the policy says');
+  assert.ok(/toFixed\(4\)/.test(fs.readFileSync(path.join(__dirname, 'functions', '_mcp.js'), 'utf8')) && /ca\. 11 meter/.test(text), 'MCP rounds to four decimals (about 11 m), as the policy says');
+  assert.ok(!/console\.\w+\([^)]*(lat|lng|coords?)\b/.test(api.slice(api.indexOf('async function handleSupplierLookup'), api.indexOf('function applyModelForecast'))), 'the lookup logs no coordinates');
+  // usage counts: what the policy lists is what _usage.js writes
+  const usage = fs.readFileSync(path.join(__dirname, 'functions', '_usage.js'), 'utf8');
+  assert.ok(/NOW_SAMPLE = 5/.test(usage) && /hvert femte kald/.test(text), 'Shelly/Home Assistant /api/now is sampled 1 in 5, as the policy says');
+  assert.ok(/area === 'DK1' \|\| area === 'DK2'/.test(usage) && /kun DK1 eller DK2/.test(text), 'only DK1/DK2 are written as the area');
+  assert.ok(!/request\.headers\.get\('cf-connecting-ip'\)|gln|ip:/i.test(usage.slice(usage.indexOf('env.USAGE.writeDataPoint'), usage.indexOf('doubles:'))), 'no IP and no grid company in the data point');
+  // reminders: no push service anywhere in the web-side code either, and the flex numbers match
+  assert.ok(/FLEX_RETENTION_DAYS = 90/.test(api) && /slettes efter 90 dage/.test(text), 'flex readings are kept 90 days, as the policy says');
+  assert.ok(/SHARE_FLEX = false/.test(index) && /elpriser_flex_id/.test(index) && text.includes('SHARE_FLEX = false') && text.includes('elpriser_flex_id') && /api\/flex\/forget/.test(text), 'the policy names the same off switch, id key and forget endpoint as /automation');
+});
+
 test('supplierlookup: reverse-geocodes with Nominatim, not the retired DAWA', () => {
   const api = fs.readFileSync(path.join(__dirname, 'functions', 'api', '[[catchall]].js'), 'utf8');
   assert.ok(!/fetch\(\s*`https:\/\/dawa\.aws\.dk/.test(api), 'DAWA was shut down on 2026-07-01 (410 Gone)');
