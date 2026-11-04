@@ -375,7 +375,7 @@ async function main() {
     check(sitemap.includes(p), `${p}: i sitemap`);
     if (unit) {
       const chrome = page.replace(/<!--[\s\S]*?-->/g, '');
-      check(/<html lang="[A-Za-z-]+" class="xc">/.test(r.body) && !/class="site-links"/.test(chrome) && /id="netChip"/.test(chrome) && !/countryBtn/.test(chrome) && /<footer class="sf sf-x"/.test(chrome) && /<a href="\/privatliv" hreflang="da">/.test(chrome), `${p}: stedschip uden landerække i headeren, slank fod på sidens sprog`);
+      check(/<html lang="[A-Za-z-]+" class="xc">/.test(r.body) && !/class="site-links"/.test(chrome) && /id="netChip"/.test(chrome) && !/countryBtn/.test(chrome) && /<footer class="sf sf-x"/.test(chrome) && /<a href="\/privacy" hreflang="en">/.test(chrome), `${p}: stedschip uden landerække i headeren, slank fod på sidens sprog`);
       check(!/class="tabbar|id="gpsBtn|netDlgDK|Smart hjem|Hent appen|Hovedmenu|Alle netselskaber/.test(chrome), `${p}: ingen dansk menu, mobilbar eller netselskabsliste, og ikke det danske "Hent appen"`);
       // "Hent appen" in the page's own language: the header button and the footer pill, both to the app page in that language (/<code>/download), which the sitemap lists
       const dl = (chrome.match(/<a href="(\/[a-z]{2}\/download)" class="app-btn">[^<]{4,}<\/a>/) || [])[1];
