@@ -2089,14 +2089,14 @@ test('/download: the overview — every platform has one card, and its status ch
     .map(c => ({ status: c[1], name: (c[2].match(/<h3>([^<]+)<\/h3>/) || [])[1], chip: (c[2].match(/<span class="dl-chip">([^<]+)<\/span>/) || [])[1], links: [...c[2].matchAll(/<a [^>]*href="([^"]+)"/g)].map(x => x[1]) }));
   assert.deepEqual(cards.map(c => [c.name, c.status, c.chip]), [
     ['iPhone', 'live', 'Tilgængelig'], ['iPad', 'live', 'Tilgængelig'], ['Android-telefon', 'live', 'Tilgængelig'], ['Android-tablet', 'live', 'Tilgængelig'],
-    ['Mac', 'soon', 'Kommer snart'], ['Apple Watch', 'planned', 'Kommer'],
+    ['Mac', 'soon', 'Kommer snart'], ['Apple Watch', 'live', 'Tilgængelig'],
     ['Påmindelser', 'next', 'Kommer i næste version'], ['Widget', 'next', 'Kommer i næste version'],
-  ], 'cards, in order, with the status the owner gave (iPhone/iPad/Android live; Mac with Apple for review; Watch built but unreleased; reminders and widget in the next version)');
+  ], 'cards, in order, with the status the owner gave (iPhone/iPad/Android live; Mac with Apple for review; Watch live since iOS 1.3.0 on 2026-11-04; reminders and widget in the next version)');
   for (const c of cards) {
     if (c.status === 'live') assert.equal(c.links.length, 1, `${c.name}: one store link`);
     else assert.deepEqual(c.links, [], `${c.name} is not released: no download link`);
   }
-  assert.deepEqual(cards.filter(c => c.status === 'live').map(c => c.links[0]), [APPLE_URL, APPLE_URL, PLAY_URL, PLAY_URL]);
+  assert.deepEqual(cards.filter(c => c.status === 'live').map(c => c.links[0]), [APPLE_URL, APPLE_URL, PLAY_URL, PLAY_URL, APPLE_URL]);
   // A card link must never take over the badges' accessible names (the badges are the only "Hent i App Store" / "Hent på Google Play" links on the page).
   assert.ok([...m.matchAll(/class="dl-more"[^>]*aria-label="([^"]+)"/g)].every(x => !/^Hent /.test(x[1])), 'card links are named differently from the two badges');
   assert.ok(/<!-- ── Overview of all the apps[\s\S]*STATUS SWITCH: each card carries data-status="live \| soon \| planned \| next"/.test(m), 'the one place that explains the status switch sits above the cards');
@@ -2153,7 +2153,7 @@ test('/download: the facts on the page match the code — language count, 30 cou
   assert.ok(/30 lande/.test(text) && /Og 29 lande mere/.test(text), 'Danmark and 29 more');
   assert.ok(/iOS 18 eller nyere/.test(text) && /Android 8 eller nyere/.test(text) && /macOS 15 eller nyere/.test(text), 'the minimum systems');
   assert.ok(!/\p{Extended_Pictographic}/u.test(m.replace(/<script[\s\S]*?<\/script>/g, '')), 'no emoji in the layout');
-  assert.ok(!/Hent (Mac|Watch)|App Store.{0,40}Mac|download.{0,20}Mac/i.test(text), 'no download for the Mac or the Watch');
+  assert.ok(!/Hent (Mac|Watch)|App Store.{0,40}Mac|download.{0,20}Mac/i.test(text), 'no download for the Mac (the Watch app comes with the iPhone app and links to the same App Store page)');
 });
 
 test('/download: the reveal is progressive enhancement — content is visible without JS and under reduced motion; colours are tokens', () => {
@@ -2202,7 +2202,7 @@ test('store clicks: one delegated GA4 listener in the shared script — store_cl
   assert.ok(!/localStorage|sessionStorage|cookie|userAgent|navigator\.|location\.|link_url|\bh\b/.test(ev), 'the event carries no visitor data, no URL, no user agent');
   assert.equal((INDEX.match(/googletagmanager\.com/g) || []).length, 1, 'still only the one existing Google tag; no new tracker or third party');
   const m = mainOf('download');
-  assert.ok(/data-placement="hero"><div class="dl-stores">/.test(m) && (m.match(/class="dl-more"[^>]*data-placement="card"/g) || []).length === 4, 'the hero badges and the four store cards are tagged');
+  assert.ok(/data-placement="hero"><div class="dl-stores">/.test(m) && (m.match(/class="dl-more"[^>]*data-placement="card"/g) || []).length === 5, 'the hero badges and the five store cards (iPhone, iPad, Android phone and tablet, Watch) are tagged');
 });
 
 test('header: "Hent appen" is a plain link to /download — the dialog, its script and its event are gone; the smart banner stays', () => {

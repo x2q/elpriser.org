@@ -1920,7 +1920,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 <main style="display:none" data-page="download" class="dl-page">
   <!-- Reveal-on-scroll switch. It runs first so the class is on before anything is painted; without JS, with reduced motion or without IntersectionObserver nothing is ever hidden. -->
   <script>(function(){var m=document.currentScript.parentNode;if(!('IntersectionObserver' in window)||(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches))return;m.classList.add('dl-js');function go(){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target);}});},{rootMargin:'0px 0px -6% 0px',threshold:.06});m.querySelectorAll('.dl-rv').forEach(function(el){io.observe(el);});addEventListener('beforeprint',function(){m.querySelectorAll('.dl-rv').forEach(function(el){el.classList.add('is-in');});});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go();})();</script>
-  <!-- The live apps (iPhone and iPad in App Store, Android phone and tablet on Google Play; the same two store pages), described once. Mac, Apple Watch, reminders and widget are not released and are not in the markup below as applications. -->
+  <!-- The live apps (iPhone and iPad in App Store, Android phone and tablet on Google Play; the same two store pages), described once. Mac, reminders and widget are not released and are not in the markup below as applications. -->
   <script type="application/ld+json">{
   "@context": "https://schema.org",
   "@type": "MobileApplication",
@@ -2074,7 +2074,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 
   <!-- ── Overview of all the apps ──
        STATUS SWITCH: each card carries data-status="live | soon | planned | next". The chip text and the store link follow the status: flip it in APPS in functions/_download.js, then run node scripts/sync-download-page.mjs.
-       Today: iPhone, iPad, Android phone and tablet live; Mac soon (with Apple for review); Apple Watch planned; reminders and widget next (version 1.3.0). -->
+       Today: iPhone, iPad, Android phone and tablet live; Mac soon (with Apple for review); Apple Watch live (it comes with the iPhone app); reminders and widget next (version 1.3.0). -->
   <section class="dl-sec" aria-labelledby="dlApps">
     <div class="dl-in">
       <div class="dl-head dl-rv"><p class="dl-kicker">Alle vores apps</p><h2 class="dl-h" id="dlApps">Én app. <b>Flere skærme.</b></h2>
@@ -2114,10 +2114,11 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
           <p>Prisen i menulinjen og et vindue, når du vil se mere. Er sendt til Apple til godkendelse.</p>
           <p class="dl-os">macOS 15 eller nyere</p>
         </li>
-        <li class="dl-card dl-rv" data-status="planned" style="--d:.1s">
+        <li class="dl-card dl-rv" data-status="live" style="--d:.1s">
           <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="6.5" width="10" height="11" rx="3"/><path d="M9 6.5l.7-3h4.6l.7 3M9 17.5l.7 3h4.6l.7-3"/></svg>
-          <h3>Apple Watch</h3><span class="dl-chip">Kommer</span>
+          <h3>Apple Watch</h3><span class="dl-chip">Tilgængelig</span>
           <p>Prisen på håndleddet, direkte på urskiven.</p>
+          <a class="dl-more" href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Åbn Apple Watch-appen i App Store" data-placement="card">App Store <span aria-hidden="true">&rarr;</span></a>
         </li>
       </ul>
       <p class="dl-sub dl-rv">På vej i næste version</p>

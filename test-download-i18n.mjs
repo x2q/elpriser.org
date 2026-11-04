@@ -175,7 +175,7 @@ for (const c of CODES) {
     ok(card.st === st && card.chip === t[STAT[st]] && card.name === t[nameKey], `${p}: ${key} is ${st} (the table), its chip is the language's "${t[STAT[st]]}"`, JSON.stringify(card));
     ok(st === 'live' ? card.links.length === 1 : card.links.length === 0, `${p}: ${key}: a store link if and only if it is live`);
   });
-  ok(cards.filter(x => x.st === 'live').map(x => x.links[0]).join() === [D.FACTS.appStore, D.FACTS.appStore, D.FACTS.play, D.FACTS.play].join(), `${p}: the live cards link to the right store`);
+  ok(cards.filter(x => x.st === 'live').map(x => x.links[0]).join() === [D.FACTS.appStore, D.FACTS.appStore, D.FACTS.play, D.FACTS.play, D.FACTS.appStore].join(), `${p}: the live cards link to the right store`);
   // counts and systems from the facts
   ok(text.includes(String(D.FACTS.langs)) && text.includes(String(D.FACTS.langs - 1)) && text.includes(String(D.FACTS.countries)), `${p}: says ${D.FACTS.langs} languages (${D.FACTS.langs - 1} others) and ${D.FACTS.countries} countries`);
   ok(text.includes(D.FACTS.ios) && text.includes(D.FACTS.android) && text.includes(D.FACTS.mac), `${p}: the minimum systems (${D.FACTS.ios}, ${D.FACTS.android}, ${D.FACTS.mac})`);
@@ -192,7 +192,7 @@ for (const c of CODES) {
   // badges, the official ones
   const badge = c === 'da' ? 'da' : 'en';
   ok(main.includes(`<img src="/badges/app-store-${badge}.svg" alt="" width="156" height="52">`) && main.includes(`<img src="/badges/google-play-${badge}.png" alt="" width="175" height="52">`) && main.includes(`aria-label="${t.appleLabel}"`) && main.includes(`aria-label="${t.playLabel}"`), `${p}: the official ${badge} badges, the name of each link in the language`);
-  ok(main.indexOf('dl-apple') < main.indexOf('dl-play') && main.includes('data-placement="hero"><div class="dl-stores">') && (main.match(/class="dl-more"[^>]*data-placement="card"/g) || []).length === 4, `${p}: store order script, hero and card placements (store_click)`);
+  ok(main.indexOf('dl-apple') < main.indexOf('dl-play') && main.includes('data-placement="hero"><div class="dl-stores">') && (main.match(/class="dl-more"[^>]*data-placement="card"/g) || []).length === 5, `${p}: store order script, hero and card placements (store_click)`);
   // store_click: the listener of index.html turns these links into events with lang = <html lang>
   ok(/lang:document\.documentElement\.lang\|\|'da'/.test(INDEX) && [...main.matchAll(/href="(https:\/\/(?:apps\.apple\.com|play\.google\.com)[^"]+)"/g)].every(m => /^https:\/\/apps\.apple\.com\//.test(m[1]) || /^https:\/\/play\.google\.com\/store\/apps\/details\?id=org\.elpriser\.app/.test(m[1])), `${p}: every store link is one the store_click listener counts, and the page reports ${L.html}`);
   // without JS: complete
