@@ -510,6 +510,14 @@ const PRICE_MODE_SET = new Set([
 
 const usesReducedTax = mode => mode.endsWith('_elvarme');
 
+// Until 2026-08-24 any mode the route did not recognise was priced as spot incl.
+// VAT, and home-made sensors out there still ask for `spot`. That one word keeps
+// meaning what it always returned; every other unknown mode is still a 400.
+const MODE_ALIASES = { spot: 'spot_inkl' };
+
+const GLN_HINT = 'Find the number at https://elpriser.org/automation (choose your net company) or ask /api/supplierlookup?lat=..&lng=..';
+const glnNeeded = mode => `mode "${mode}" needs gln — the grid tariff depends on the network company. ${GLN_HINT}`;
+
 function cvt(dkkMwh, h, mode, en, tariff) {
   const spot = dkkMwh / 1000;
   switch (mode) {
@@ -945,8 +953,8 @@ const MODE_PARAM     = { name: 'mode',     in: 'query', schema: { type: 'string'
   + 'tariff but no duty; `net_inkl_alt` is the full consumer price. The two '
   + '`_elvarme` variants substitute the reduced duty that applies above '
   + '4,000 kWh/year in electrically heated homes — 0.8 vs 72.0 øre/kWh in 2025. '
-  + 'The `net_` modes require `gln`. An unknown mode is rejected rather than '
-  + 'silently treated as spot incl. VAT.' };
+  + 'The `net_` modes require `gln`. `spot` is accepted as an alias of `spot_inkl`. '
+  + 'Any other unknown mode is rejected rather than silently treated as spot incl. VAT.' };
 const CHARGES_PARAM  = { name: 'charges',  in: 'query', schema: { type: 'string', enum: ['historical', 'current'], default: 'historical' }, description:
   'Which tax and tariff rates to apply to a historical date. `historical` (default) '
   + 'uses the rates actually in force on that date. `current` reprices the same '
@@ -1632,9 +1640,10 @@ async function handleApi(context) {
   const area = (q.get('area') || 'DK1').toUpperCase();
   if (!['DK1', 'DK2'].includes(area)) return fail(400, 'area must be DK1 or DK2');
 
-  const mode = q.get('mode') || 'inkl_alt';
+  const modeParam = q.get('mode') || 'inkl_alt';
+  const mode = MODE_ALIASES[modeParam] || modeParam;
   if (!PRICE_MODE_SET.has(mode)) {
-    return fail(400, `unknown mode "${mode}". Valid: ${[...PRICE_MODE_SET].join(', ')}`);
+    return fail(400, `unknown mode "${modeParam}". Valid: ${[...PRICE_MODE_SET].join(', ')}`);
   }
   const gln  = q.get('gln')  || null;
 
@@ -1665,7 +1674,7 @@ async function handleApi(context) {
   }
   if (seg1 === 'forecast') {
     if (mode.startsWith('net_')) {
-      if (!gln) return fail(400, `mode "${mode}" needs gln — the grid tariff depends on the network company`);
+      if (!gln) return fail(400, glnNeeded(mode));
       if (!/^\d{13}$/.test(gln)) return fail(400, 'gln must be 13 digits');
     }
     try {
@@ -1681,7 +1690,7 @@ async function handleApi(context) {
   // consumer price but is not one — which is precisely the failure that made
   // net_inkl_alt and inkl_alt identical for historical dates.
   if (mode.startsWith('net_') && !gln) {
-    return fail(400, `mode "${mode}" needs gln — the grid tariff depends on the network company`);
+    return fail(400, glnNeeded(mode));
   }
 
   // ── /api/geo ────────────────────────────────────────────────────────────

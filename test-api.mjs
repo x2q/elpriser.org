@@ -1060,3 +1060,29 @@ test('prices fetched after 13:00 without tomorrow are not kept until the next da
     assert.equal(tomorrowOf((await api.get(FC)).body).type, 'actual', 'a missing tomorrow was kept for hours');
   } finally { upstreamState.tomorrowPublished = true; clock.restore(); }
 });
+
+test('mode=spot is an alias of spot_inkl, every other unknown mode is still a 400 — guards the home-made sensors that ask for `spot`', async () => {
+  // Until 2026-08-24 an unknown mode was priced as spot incl. VAT and three Home Assistant installs still send
+  // `mode=spot` every few minutes; they have had a 400 ever since.
+  const api = await createApi();
+  for (const ep of ['prices', 'forecast']) {
+    const alias = await api.get(`/api/${ep}?area=DK1&mode=spot`);
+    const real  = await api.get(`/api/${ep}?area=DK1&mode=spot_inkl`);
+    assert.equal(alias.status, 200, `${ep}: mode=spot gave ${alias.status}`);
+    assert.equal(alias.body.mode, 'spot_inkl');
+    assert.deepEqual(alias.body, real.body, `${ep}: the alias priced something else`);
+    const bad = await api.get(`/api/${ep}?area=DK1&mode=spott`);
+    assert.equal(bad.status, 400);
+    assert.match(bad.body.error, /unknown mode "spott"/);
+  }
+});
+
+test('a net_ mode without gln answers 400 and says where to find the number', async () => {
+  const api = await createApi();
+  for (const ep of ['prices', 'forecast', 'now', 'schedule']) {
+    const r = await api.get(`/api/${ep}?area=DK1&mode=net_inkl_alt`);
+    assert.equal(r.status, 400, ep);
+    assert.match(r.body.error, /needs gln/);
+    assert.match(r.body.error, /elpriser\.org\/automation/);
+  }
+});
