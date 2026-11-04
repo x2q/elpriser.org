@@ -44,7 +44,7 @@ Los precios son precios spot mayoristas (mercado diario) sin impuestos, peajes n
 
 Elpriser es un servicio independiente y no está vinculado a ninguna distribuidora, comercializadora ni operador de mercado. Los precios son orientativos; tu liquidación real puede diferir.
 
-Política de privacidad: https://elpriser.org/privatliv (en danés). Contacto: hello@elpriser.org
+Política de privacidad: https://elpriser.org/privacy. Contacto: hello@elpriser.org
 
 ## Google Play (Android)
 

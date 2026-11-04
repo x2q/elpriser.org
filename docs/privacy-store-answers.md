@@ -1,6 +1,6 @@
 # Store privacy answers for iOS 1.3.0 (with Apple Watch) and Android 1.3.0
 
-Written 2026-11-03 to go with the rewritten policy at https://elpriser.org/privatliv (`privatliv.html`). Every answer below follows from the code, not from what the consoles currently say (they cannot be read from here). Compare each row with what is set in App Store Connect and Play Console; rows marked **CHECK** are where the existing declaration may have to change.
+Written 2026-11-03 to go with the rewritten policy at https://elpriser.org/privacy (`privacy.html`, English; the Danish original is https://elpriser.org/privatliv, `privatliv.html`). Every answer below follows from the code, not from what the consoles currently say (they cannot be read from here). Compare each row with what is set in App Store Connect and Play Console; rows marked **CHECK** are where the existing declaration may have to change.
 
 Code read for this: the iOS 1.3.0 tree (`ElpriserIOS/`: Sources, Mac, Watch, Widgets, WatchWidgets, Shared, Bridge, `project.yml`, the four `PrivacyInfo.xcprivacy`) from branch `worktree-agent-a721264424af3a7e8` (0aa7111), the Android 1.3.0 tree from `worktree-agent-a65b893571f8ff755` (b593b92), and the server (`functions/`) on main. Neither 1.3.0 tree is merged to main yet; if they change before release, re-check.
 
@@ -36,7 +36,7 @@ One label covers the iPhone/iPad app, the Mac app (same bundle id `org.elpriser.
 | **Diagnostics (Performance data, Other diagnostic data)** | **Judgement call, owner decides.** The anonymous per-call counts (app version, kind of call, DK1/DK2, status class) are server-side, carry no identifier and cannot be linked to a person. Apple's definition of "collect" is about data that leaves the device in a way that lets you read it for longer than the request, so they arguably count. Conservative answer: Diagnostics, Other Diagnostic Data, **not linked, not tracking, purpose Analytics (and App Functionality)**. Keep it consistent with how 1.0.x and 1.1.0 were declared (`docs/store/europe-release-checklist.md` row "Usage telemetry"). |
 | Notifications | Nothing to declare: local notifications only, no push token. |
 | Do you use data for tracking? | **No.** |
-| Privacy policy URL | https://elpriser.org/privatliv (Danish only; the policy now names iPhone, iPad, Mac, Apple Watch, widgets and the reminders). |
+| Privacy policy URL | https://elpriser.org/privacy (English; Danish listing: https://elpriser.org/privatliv). The policy names iPhone, iPad, Mac, Apple Watch, widgets and the reminders. |
 
 Things that are *not* new data collection for the 1.3.0 label: the Watch app (same lookup, same one-time fix, only zone and grid company kept), the reminders (local), the App Group (on the device), the background refresh (same price request).
 
@@ -63,7 +63,7 @@ Permission texts (`NSLocationWhenInUseUsageDescription`) in the app, Watch and M
 
 1. **Location precision** (App Store: Coarse listed in the repo's manifests and checklist; Play: confirm Precise is listed). Precise is what the code does.
 2. **Diagnostics** from the anonymous counts: decide once, and make the App Store and Play answers say the same thing. The counts now also cover the Watch, the widget and the Mac (all as `ios`), and the background refresh of the reminders.
-3. **Privacy policy URL**: unchanged (https://elpriser.org/privatliv), but the page was rewritten; if a store form shows the policy text or the update date, it is now 3 November 2026.
+3. **Privacy policy URL**: English listings now use https://elpriser.org/privacy (the Danish https://elpriser.org/privatliv keeps working). The page was rewritten; if a store form shows the policy text or the update date, it is now 3 November 2026.
 4. **Nothing new for the Watch, notifications, App Group or widget**: these add no data that leaves the device beyond what the app already sent.
 5. The **website** (Google Analytics, `store_click`) is outside both store forms; it is described in the policy only.
 6. The English listings link to a Danish-only policy (already an open owner decision in `docs/store/europe-release-checklist.md`).

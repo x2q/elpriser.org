@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="apple-itunes-app" content="app-id=6820474476">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy policy — Elpriser</title>
+<meta name="description" content="How the Elpriser apps (Android, iPhone, iPad, Mac and Apple Watch) and elpriser.org handle your information: your position is only used to find your grid company or price zone and is never stored; the website uses Google Analytics.">
+<link rel="canonical" href="https://elpriser.org/privacy">
+<link rel="alternate" hreflang="en" href="https://elpriser.org/privacy">
+<link rel="alternate" hreflang="da" href="https://elpriser.org/privatliv">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+  :root{color-scheme:light dark;--bg:#f4f7fc;--fg:#0e1421;--muted:#4d596b;--card:#fff;--line:#dbe3f0;--brand:#1747d6}
+  @media (prefers-color-scheme:dark){:root{--bg:#0b1220;--fg:#e8edf5;--muted:#a9b5c9;--card:#131b29;--line:#26324a;--brand:#7ea2ff}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  main{max-width:720px;margin:0 auto;padding:32px 20px 64px}
+  h1{font-size:30px;line-height:1.2;margin:0 0 4px;letter-spacing:-.02em}
+  h2{font-size:19px;margin:32px 0 6px}
+  p,li{color:var(--fg)}
+  .muted{color:var(--muted);font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:16px 0}
+  a{color:var(--brand)}
+  ul{padding-left:20px}
+  li{margin:4px 0}
+  code{font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<main>
+  <p class="muted"><a href="/">← elpriser.org</a> · <a href="/privatliv" hreflang="da" lang="da">Dansk version</a></p>
+  <h1>Privacy policy</h1>
+  <p class="muted">Applies to the Elpriser apps (Android, iPhone and iPad, Mac, and Apple Watch with widget), the website elpriser.org and our open API. Last updated 3 November 2026.</p>
+
+  <div class="card">
+    <strong>In short:</strong> We have no user accounts and no ads, and the apps contain no third-party analytics or advertising tools; we only count, anonymously, how many requests come from which version of the app. The apps only ask for your position when you tap “Use my position” (the Apple Watch app asks the first time, after an explanation, and you can skip it). The position is used once to find your grid company or your price zone and is never stored — neither in the app nor by us. Only the grid company and price zone are stored, on your own device. Reminders about cheap power are scheduled on your own device only. On the website elpriser.org we use Google Analytics to see how the site is used; we do not do that in the apps or on this page.
+  </div>
+
+  <h2>Who is responsible?</h2>
+  <p>Elpriser (elpriser.org) is run by Sandbox Ventures. Questions about privacy can be sent to <a href="mailto:hello@elpriser.org">hello@elpriser.org</a>.</p>
+
+  <h2>Position</h2>
+  <p>Elpriser can find your grid company (in Denmark) or your price zone (abroad) from where you are. This only happens if you want it, and only after your device or browser has asked you for permission. You can always choose a grid company or a country from a list without sharing your position.</p>
+  <p><strong>When are you asked?</strong></p>
+  <ul>
+    <li><strong>Android, iPhone, iPad and Mac:</strong> only when you yourself tap “Use my position”. You can choose approximate instead of precise position.</li>
+    <li><strong>Apple Watch:</strong> the first time you open the app you get an explanation and a button. Only when you tap the button does the watch ask for permission, take one position fix and look up the price zone. You can skip it. Later you can repeat it with “Use my position” when choosing a price zone.</li>
+    <li><strong>The website:</strong> on the front page we ask your browser for your position on your first visit, if you have not already chosen a grid company. The browser shows its own question; if you say no, we do not ask again for 30 days. You can also tap “Use my position” yourself. If your browser cannot give a position after you have tapped, we use an approximate position based on your IP address, which Cloudflare’s network knows; it is only sent back to your browser and is not stored, and a grid company found that way is not remembered.</li>
+    <li>None of the apps (including the widget and watch face) collect your position in the background.</li>
+  </ul>
+  <p><strong>What happens to the position?</strong></p>
+  <ul>
+    <li>The coordinates are sent from your device to our server (elpriser.org) — only for this lookup. The apps round them to five decimals, which is about one metre.</li>
+    <li>Our server looks up the nearest address at OpenStreetMap (Nominatim) and, for Danish addresses, asks Green Power Denmark which grid company the address belongs to (they receive the address, not the coordinates). OpenStreetMap receives the coordinates from our server, not your IP address.</li>
+    <li>The answer is sent back to your device: the name of the grid company. If the position is outside Denmark, the server instead answers that it is outside Denmark and sends the address that OpenStreetMap found. On iPhone, iPad, Mac and Apple Watch the app reads the country from the address on the device itself and chooses the price zone; Android asks you to choose a country from the list. The address is not shown and not stored.</li>
+    <li>Our own code does not write coordinates, addresses or grid companies to a log. The lookup itself may sit in a technical cache with us for up to a day, keyed on coordinates rounded to five decimals (about 1 metre), without being linked to a device or a person.</li>
+    <li>The device only stores <strong>the name of the grid company and the price zone</strong>, never the coordinates. On phone and Mac you can delete the grid company at any time with “Forget my grid company”; on the website and on the watch you simply choose another.</li>
+    <li>The processing is based on your consent: your permission and your tap.</li>
+  </ul>
+
+  <h2>What else the apps store on your device</h2>
+  <p>Your choice of price zone and grid company, price view and appearance, automation settings (which devices you have switched on and for how many hours they should run), your reminders (see below) and the latest prices the app has fetched, so that they can be shown offline. None of it leaves your device, apart from the price zone and grid company being part of the price request (see “What the server sees”).</p>
+
+  <h2>Notifications when power is cheapest</h2>
+  <p>From version 1.3.0 the Android app and the app for iPhone and iPad can notify you when power is cheapest. The Mac app and the Apple Watch app do not have reminders of their own.</p>
+  <ul>
+    <li>The notifications are scheduled <strong>on your own device</strong> from the prices the app has already fetched. There is no account, no push service (neither Apple’s nor Google’s) and no token with us; we are not told which reminders you have.</li>
+    <li>Your device asks for permission to send notifications the first time you save a reminder (on Android only from version 13).</li>
+    <li>To keep the prices fresh, the app fetches prices in the background while at least one reminder is switched on. It is the same price request the app makes itself (price zone, price view and grid company), and it counts in the anonymous version counts below. On iPhone, iOS decides when this happens; on Android it happens about every six hours and shortly after 1 pm, when tomorrow’s prices have arrived.</li>
+    <li>The reminders and the scheduled notifications only exist on your device. Delete the reminders in the app, switch notifications off in the device settings, or uninstall the app.</li>
+  </ul>
+
+  <h2>Widget, Apple Watch and Mac</h2>
+  <ul>
+    <li>The iPhone app writes your choice of price zone, grid company and price view into a shared App Group on your iPhone so that the widget can read it. It stays on the device.</li>
+    <li>iPhone and Apple Watch exchange your choice with each other through Apple’s own connection between the devices; it does not go through us.</li>
+    <li>The widget and the Apple Watch app (with watch face) fetch the prices from elpriser.org themselves, with the same request as the app, and remember the latest answer on the device. The Mac app (menu bar) stores its choice separately and fetches prices in the same way.</li>
+  </ul>
+
+  <h2>What the server sees</h2>
+  <p>When an app or the website fetches prices, our server (hosted by Cloudflare) receives an ordinary request with your IP address, which the network’s technical logs use for operation and abuse protection. The request contains the price zone and the grid company’s number (so that we can calculate your prices), but not your name, your e-mail or a device ID. We do not use the information for profiling or advertising and do not pass it on.</p>
+  <p>The apps (and the scripts for Shelly and Home Assistant that we provide at elpriser.org/automation) state their name and version number in the request, for example “ElpriserIOS/1.3.0”. From that our server stores one anonymous data point per request from a recognised client (the Android app, the Apple apps, Shelly or Home Assistant): which client and version, what kind of request (for example prices or a grid company lookup), the price zone (only DK1 or DK2), price view or strategy, and whether the request succeeded or failed. From Shelly and Home Assistant we only store every fifth request and count it as five. The Apple versions (iPhone, iPad, Mac, Apple Watch and widget) are counted together as iOS. Browsers and unknown clients are not recorded.</p>
+  <p>The count contains no IP address, device ID, grid company, position or other content of the request, and cannot be traced back to a person or a device. It is kept at Cloudflare (Analytics Engine) for three months. We use it to see which versions are in use and whether anything is failing.</p>
+
+  <h2>The website elpriser.org</h2>
+  <ul>
+    <li><strong>Google Analytics.</strong> When you open a page on elpriser.org (including the country pages and the app pages), Google Analytics 4 is loaded from Google. This does not apply to this page, the apps or the API. There is currently no consent choice on the site. Google Analytics sets cookies (<code>_ga</code> and <code>_ga_…</code>) in your browser with a random ID so that a returning visit can be recognised; it is not your name or your e-mail. Google receives your IP address, as with any connection, but according to Google does not store IP addresses in Google Analytics 4. Google Ireland Limited and Google LLC process data for us, and data may be processed outside the EU, including in the USA.</li>
+    <li><strong>What we measure:</strong> which pages you view, which language the page is in, what you click (menu, links to other sites and clicks on the App Store and Google Play buttons, which only tell us which store, which page and placement, and language), which questions you open, how far you scroll, whether you use light or dark view, which price zone you have chosen, and how a position lookup went (whether it succeeded, which grid company and price zone it gave, and a failure reason) — never coordinates or address. Google also calculates an approximate country and city from the IP address, plus browser and device type. We use it to understand usage and improve the site, not for advertising.</li>
+    <li><strong>How to avoid it:</strong> switch tracking off in your browser or use a content blocker, install Google’s opt-out add-on (tools.google.com/dlpage/gaoptout), or delete cookies for elpriser.org. The site works without it too.</li>
+    <li><strong>Stored in your browser (not cookies):</strong> your chosen grid company (so you do not have to choose again), when you last said no to position (30 days), and whether you have closed the banner about the app on Android (30 days). You delete it with “Forget my grid company” or by clearing the site’s data.</li>
+  </ul>
+
+  <h2>Open API and MCP server</h2>
+  <p>The API and the MCP server (elpriser.org/mcp, for AI assistants) require no key and no account. API requests are handled as described under “What the server sees”. The MCP server stores nothing and does not write what a user sends to any log, and the requests are not counted. If an AI assistant uses the tool “find_net_company”, the position the assistant provides (rounded to about 11 metres, Danish positions only) is passed on to the same lookup as in the apps (OpenStreetMap and Green Power Denmark).</p>
+
+  <h2>Share controllable capacity (optional, Shelly and Home Assistant)</h2>
+  <p>The script for Shelly and the block for Home Assistant at elpriser.org/automation can submit how much power elpriser.org controls on a device. It is <strong>switched off</strong> by default and only happens if you switch it on yourself. The apps do not do this.</p>
+  <ul>
+    <li><strong>What is sent:</strong> the device’s category (for example freezer or pump), price zone (DK1 or DK2), whether it is on, what elpriser.org asked it to do, measured or stated power in watts and a random ID that is generated on the device. Not name, address, e-mail, MAC address, serial number or IP address — our code does not store the IP address.</li>
+    <li><strong>Why:</strong> to work out the total flexible power that users together can shift. What is meant to be shared with others is only sums across many devices, never data about the individual device.</li>
+    <li><strong>How long:</strong> the individual measurements are deleted after 90 days, after which only hourly sums without an ID remain. The device’s own record (ID, category, price zone, stated power and the times of first and latest submission) stays until you delete it.</li>
+    <li><strong>Stop and delete:</strong> set <code>SHARE_FLEX = false</code> or remove the block. Everything about a device is deleted with a POST to <code>https://elpriser.org/api/flex/forget</code> with <code>{"id": "…"}</code>; the ID is in Shelly under KVS → <code>elpriser_flex_id</code>. Write to us if you need help.</li>
+  </ul>
+
+  <h2>Third parties</h2>
+  <ul>
+    <li><strong>Energi Data Service, ENTSO-E</strong> and other public sources of prices, exchange rates and data — fetched by our server, not by your device.</li>
+    <li><strong>OpenStreetMap (Nominatim)</strong> and <strong>Green Power Denmark</strong> — only when looking up a grid company, as described under “Position”. It is our server that calls them.</li>
+    <li><strong>Cloudflare</strong> — hosting and network for elpriser.org and our API, and storage of the anonymous counts.</li>
+    <li><strong>Google (Google Analytics)</strong> — only on the website, as described above.</li>
+    <li><strong>Apple and Google</strong> — the App Store, Google Play and the system’s own services for position and notifications. The apps do not use Apple’s or Google’s push services, advertising services or analytics tools.</li>
+  </ul>
+
+  <h2>Your rights</h2>
+  <p>In the apps we have no profile of you, so there is no personal data for us to give you access to or delete. What the app has stored is on your device, and you delete it by removing the grid company, the reminders or the app itself. On the website we cannot look you up by name or e-mail, because Google Analytics only knows a random browser ID; you delete it by deleting cookies for elpriser.org. If you have shared controllable capacity, you delete it as described above.</p>
+  <p>You have the right to access, rectification, erasure, restriction, objection and data portability, where that makes sense for the information we hold, and you can withdraw consent. Write to <a href="mailto:hello@elpriser.org">hello@elpriser.org</a>. You have the right to complain to the Danish Data Protection Agency (Datatilsynet, datatilsynet.dk).</p>
+
+  <h2>Children</h2>
+  <p>The apps and the website are not aimed at children and do not collect information about them.</p>
+
+  <h2>Changes</h2>
+  <p>If we change how information is processed, we update this page and the date at the top.</p>
+</main>
+</body>
+</html>

@@ -44,7 +44,7 @@ Hinnat ovat tukkumarkkinoiden pörssihintoja (day-ahead-markkina) ilman veroja, 
 
 Elpriser on riippumaton palvelu, eikä sillä ole yhteyttä verkkoyhtiöihin, sähköntoimittajiin tai markkinaoperaattoreihin. Hinnat ovat suuntaa antavia; todellinen laskutuksesi voi poiketa niistä.
 
-Tietosuojaseloste: https://elpriser.org/privatliv (tanskaksi). Yhteystiedot: hello@elpriser.org
+Tietosuojaseloste: https://elpriser.org/privacy. Yhteystiedot: hello@elpriser.org
 
 ## Google Play (Android)
 

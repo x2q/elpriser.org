@@ -1711,32 +1711,32 @@ async function startServer() {
     elexon: { text: BMRS, list: new RegExp(BMRS + '\\.$'), links: [[BMRS, 'https://www.elexon.co.uk/bsc/data/balancing-mechanism-reporting-agent/copyright-licence-bmrs-data/']], not: /Energi Data Service|ENTSO|SMARD|CC BY|SEMOpx/ },
   };
   const CHROME_WORDS = {
-    nb: { place: 'Hvor er du?', land: 'Land', privacy: 'Personvern (på dansk)' },
-    sv: { place: 'Var är du?', land: 'Länder', privacy: 'Integritet (på danska)' },
-    fi: { place: 'Missä olet?', land: 'Maat', privacy: 'Tietosuoja (tanskaksi)' },
-    nl: { place: 'Waar ben je?', land: 'Landen', privacy: 'Privacy (in het Deens)' },
-    de: { place: 'Wo bist du?', land: 'Länder', privacy: 'Datenschutz (auf Dänisch)' },
-    fr: { place: 'Où êtes-vous ?', land: 'Pays', privacy: 'Confidentialité (en danois)' },
-    pl: { place: 'Gdzie jesteś?', land: 'Kraje', privacy: 'Prywatność (po duńsku)' },
-    it: { place: 'Dove sei?', land: 'Paesi', privacy: 'Privacy (in danese)' },
-    en: { place: 'Where are you?', land: 'Countries', privacy: 'Privacy (in Danish)' },
-    cs: { place: 'Kde jste?', land: 'Země', privacy: 'Ochrana soukromí (dánsky)' },
-    es: { place: '¿Dónde estás?', land: 'Países', privacy: 'Privacidad (en danés)' },
-    pt: { place: 'Onde está?', land: 'Países', privacy: 'Privacidade (em dinamarquês)' },
-    sk: { place: 'Kde ste?', land: 'Krajiny', privacy: 'Ochrana súkromia (po dánsky)' },
-    hu: { place: 'Hol vagy?', land: 'Országok', privacy: 'Adatvédelem (dánul)' },
-    sl: { place: 'Kje ste?', land: 'Države', privacy: 'Zasebnost (v danščini)' },
-    ro: { place: 'Unde vă aflați?', land: 'Țări', privacy: 'Confidențialitate (în daneză)' },
-    bg: { place: 'Къде се намирате?', land: 'Държави', privacy: 'Поверителност (на датски)' },
-    el: { place: 'Πού βρίσκεστε;', land: 'Χώρες', privacy: 'Απόρρητο (στα δανικά)' },
-    hr: { place: 'Gdje se nalazite?', land: 'Zemlje', privacy: 'Zaštita privatnosti (na danskom)' },
-    'sr-Latn': { place: 'Gde se nalazite?', land: 'Zemlje', privacy: 'Privatnost (na danskom)' },
-    'sr-ME': { place: 'Gdje ste?', land: 'Države', privacy: 'Privatnost (na danskom jeziku)' },
-    et: { place: 'Kus te asute?', land: 'Riigid', privacy: 'Privaatsus (taani keeles)' },
-    lv: { place: 'Kur jūs atrodaties?', land: 'Valstis', privacy: 'Privātums (dāņu valodā)' },
-    lt: { place: 'Kur esate?', land: 'Šalys', privacy: 'Privatumas (daniškai)' },
-    mk: { place: 'Каде сте?', land: 'Земји', privacy: 'Приватност (на дански)' },
-    sq: { place: 'Ku jeni?', land: 'Vendet', privacy: 'Privatësia (në danisht)' },
+    nb: { place: 'Hvor er du?', land: 'Land', privacy: 'Personvern (på engelsk)' },
+    sv: { place: 'Var är du?', land: 'Länder', privacy: 'Integritet (på engelska)' },
+    fi: { place: 'Missä olet?', land: 'Maat', privacy: 'Tietosuoja (englanniksi)' },
+    nl: { place: 'Waar ben je?', land: 'Landen', privacy: 'Privacy (in het Engels)' },
+    de: { place: 'Wo bist du?', land: 'Länder', privacy: 'Datenschutz (auf Englisch)' },
+    fr: { place: 'Où êtes-vous ?', land: 'Pays', privacy: 'Confidentialité (en anglais)' },
+    pl: { place: 'Gdzie jesteś?', land: 'Kraje', privacy: 'Prywatność (po angielsku)' },
+    it: { place: 'Dove sei?', land: 'Paesi', privacy: 'Privacy (in inglese)' },
+    en: { place: 'Where are you?', land: 'Countries', privacy: 'Privacy' },
+    cs: { place: 'Kde jste?', land: 'Země', privacy: 'Ochrana soukromí (anglicky)' },
+    es: { place: '¿Dónde estás?', land: 'Países', privacy: 'Privacidad (en inglés)' },
+    pt: { place: 'Onde está?', land: 'Países', privacy: 'Privacidade (em inglês)' },
+    sk: { place: 'Kde ste?', land: 'Krajiny', privacy: 'Ochrana súkromia (po anglicky)' },
+    hu: { place: 'Hol vagy?', land: 'Országok', privacy: 'Adatvédelem (angolul)' },
+    sl: { place: 'Kje ste?', land: 'Države', privacy: 'Zasebnost (v angleščini)' },
+    ro: { place: 'Unde vă aflați?', land: 'Țări', privacy: 'Confidențialitate (în engleză)' },
+    bg: { place: 'Къде се намирате?', land: 'Държави', privacy: 'Поверителност (на английски)' },
+    el: { place: 'Πού βρίσκεστε;', land: 'Χώρες', privacy: 'Απόρρητο (στα αγγλικά)' },
+    hr: { place: 'Gdje se nalazite?', land: 'Zemlje', privacy: 'Zaštita privatnosti (na engleskom)' },
+    'sr-Latn': { place: 'Gde se nalazite?', land: 'Zemlje', privacy: 'Privatnost (na engleskom)' },
+    'sr-ME': { place: 'Gdje ste?', land: 'Države', privacy: 'Privatnost (na engleskom jeziku)' },
+    et: { place: 'Kus te asute?', land: 'Riigid', privacy: 'Privaatsus (inglise keeles)' },
+    lv: { place: 'Kur jūs atrodaties?', land: 'Valstis', privacy: 'Privātums (angļu valodā)' },
+    lt: { place: 'Kur esate?', land: 'Šalys', privacy: 'Privatumas (angliškai)' },
+    mk: { place: 'Каде сте?', land: 'Земји', privacy: 'Приватност (на англиски)' },
+    sq: { place: 'Ku jeni?', land: 'Vendet', privacy: 'Privatësia (në anglisht)' },
   };
   // One entry per page of PRIS_COUNTRIES: the footer's country names in the page's language (`prisCn`: a country without a translation shows its own name), the page each
   // country link leads to (the one in THIS language when the country has it: Belgium's French page from a French page), the page's own country marked, the credit's source.
@@ -1760,7 +1760,7 @@ async function startServer() {
       picker: { title: q('#netDialogTitle')?.textContent, links: [...document.querySelectorAll('#plMain section:last-of-type .pl-grp a')].map(a => [a.textContent, '', a.getAttribute('href'), a.getAttribute('aria-current')]), label: q('#netChip')?.getAttribute('aria-label') },
       headText: q('.site-nav').innerText, footText: q('footer').innerText,
       footHeading: q('footer .sf-h')?.textContent, footLinks: [...document.querySelectorAll('footer .sf-chips a')].map(a => [a.textContent, a.getAttribute('href'), a.getAttribute('aria-current')]),
-      privacy: (a => a && [a.textContent, a.getAttribute('href'), a.getAttribute('hreflang')])(q('footer .sf-legal a[href="/privatliv"]')),
+      privacy: (a => a && [a.textContent, a.getAttribute('href'), a.getAttribute('hreflang')])(q('footer .sf-legal a[href="/privacy"]')),
       footers: document.querySelectorAll('footer').length, details: document.querySelectorAll('footer details').length,
       navBottom: r(q('.site-nav')).h,
       bodyPad: getComputedStyle(document.body).paddingBottom,
@@ -1797,7 +1797,7 @@ async function startServer() {
         assert.equal(s.footHeading, w.land);
         assert.deepEqual(s.footLinks.map(x => x[0]), w.nav); assert.deepEqual(s.footLinks.map(x => x[1]), w.hrefs);
         assert.deepEqual(s.footLinks.filter(x => x[2]).map(x => x[0]), [w.cur]);
-        assert.deepEqual(s.privacy, [w.privacy, '/privatliv', 'da']);
+        assert.deepEqual(s.privacy, [w.privacy, '/privacy', 'en']);
         if (w.act) { assert.ok(s.footText.includes('© Elpriser.org — ') && s.footText.includes(CR[w.src].text + ' — ') && /elpriser\.org.*Hugging Face/s.test(s.footText), s.footText); assert.ok(!CR[w.src].not.test(s.footText), `the ${w.src} pages credit their own source only`); }
         else assert.match(s.footText, /© Elpriser\.org — .*ENTSO-E.*Energi Data Service.*Hugging Face/s);
         assert.equal(s.scroll[0], s.scroll[1], `horizontal page scroll ${s.scroll.join(' vs ')}`);

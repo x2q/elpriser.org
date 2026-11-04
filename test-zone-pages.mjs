@@ -142,7 +142,7 @@ for (const [p, w] of Object.entries(PAGES)) {
   ok(w.title.test(title) && title.length <= 62, `${p}: titel under 62 tegn`, `${title.length}: ${title}`);
   ok(desc.length >= 80 && desc.length <= 155, `${p}: beskrivelse 80-155 tegn`, String(desc.length));
   ok(new RegExp(`<html lang="${w.lang}"`).test(h), `${p}: <html lang="${w.lang}">`);
-  ok(!/<link rel="alternate"/.test(h.replace(/<!--[\s\S]*?-->/g, '')) && (h.match(/hreflang=/g) || []).length === 1 && /<a href="\/privatliv" hreflang="da">/.test(h), `${p}: ingen hreflang-klynge; det eneste hreflang er privatlivslinkets da`);
+  ok(!/<link rel="alternate"/.test(h.replace(/<!--[\s\S]*?-->/g, '')) && (h.match(/hreflang=/g) || []).length === 1 && /<a href="\/privacy" hreflang="en">/.test(h), `${p}: ingen hreflang-klynge; det eneste hreflang er privatlivslinkets en`);
   ok(new RegExp(`<link rel="canonical" href="https://elpriser.org${p}">`).test(h), `${p}: canonical peger på siden selv`);
   ok(/"@type":"WebPage"[^<]*"inLanguage":"/.test(raw) && raw.includes(`"@type":"WebPage"`) && /"inLanguage":"(nb|sv|fi|nl)"/.exec(raw.slice(raw.indexOf('"@type":"WebPage"')))[1] === w.lang, `${p}: JSON-LD WebPage med inLanguage ${w.lang}`);
   ok((h.match(/<h1[ >]/g) || []).length === 1 && new RegExp(`<h1 class="vh" id="zH1">[^<&]{20,}</h1>`).test(h), `${p}: én h1, skrevet af serveren`);
@@ -180,7 +180,7 @@ for (const [p, w] of Object.entries(PAGES)) {
     ok(ft.includes(`<p class="sf-app"><a class="sf-getapp" href="${dl}">${X.app}</a></p>`), `${p}: sidefoden har samme link ("${X.app}" → ${dl})`);
     ok(!/class="tabbar|Mobilnavigation|Netselskab og indstillinger|id="gpsBtn|netDlgDK/.test(h.replace(/<!--[\s\S]*?-->/g, '')) && (h.match(/<dialog id="netDialog"/g) || []).length === 1 && h.includes(`id="netDialogTitle">${X.place}</h2>`), `${p}: ingen dansk mobilbar og ingen danske netselskaber, men stedsdialogen på ${w.lang}`);
     ok((h.match(/<footer\b/g) || []).length === 1 && ft.includes('class="sf sf-x"') && ft.includes(`id="sfLand">${X.land}<`) && ft.includes(X.privacy) && !/Privatliv|Hent appen|Hent til|Netselskab|Alle guides|Tariffer|Prognose<|Forstå din elpris|Åbne datasæt|class="sf-apps|class="sf-all|<details/.test(ft), `${p}: sidefoden er den slanke på ${w.lang}`);
-    ok(ft.includes('&copy; Elpriser.org') && ft.includes(X.src) && ft.includes(X.open) && /href="\/privatliv" hreflang="da"/.test(ft), `${p}: ophavsret, kilder og privatlivslink på ${w.lang}`);
+    ok(ft.includes('&copy; Elpriser.org') && ft.includes(X.src) && ft.includes(X.open) && /href="\/privacy" hreflang="en"/.test(ft), `${p}: ophavsret, kilder og privatlivslink (engelsk side) på ${w.lang}`);
     ok(!/href="\/(automation|om-elpriser|download|tariffer|prognose|blog|api|shelly-tariff|integrationer|norden)"/.test(hd + ft) && !/href="\/(dk[12]|elpris)\/[a-z]/.test(hd + ft), `${p}: header og fod linker ingen danske undersider, kun landesiderne og /privatliv`);
   }
   ok(upstream.length === (PAGES[p].tabs || 1) && upstream.every(x => x.startsWith('/api/nordic?zone=')), `${p}: serveren henter præcis landets zoner`, upstream.join(' '));
@@ -475,7 +475,7 @@ for (const [p, w] of Object.entries(ACT)) {
   const l7 = h7;   // no accuracy line under the chart any more
   ok(!/pris-fca|pris-bl|Back-test/.test(l7) && h.includes(PL.fcl) === (hz === 7) && !/\b80 ?%/.test(h.replace(/<[^>]*>/g, ' ')) && !/NaN|undefined|\{[a-z]+\}/.test(main), `${p}: med prognose: ingen nøjagtighedslinje under kortet, lav sikkerhed kun i dagslisten på horisont 7, ingen skabelon-rester`);
   ok(!NOFUEL.test(raw.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), `${p}: med prognose: ingen ord om gas, kul eller brændstof på siden`);
-  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v26${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v24`);
+  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v27${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v24`);
   // the text block says the forecast exists only while there is one; the plain page stays as before
   ok(!plain.page.includes(PL.fcn) && !plain.page.includes('pris-fca') && (plain.page.match(/data-pris-period="/g) || []).length === 0, `${p}: uden prognose i svaret er siden som før (ingen note, ingen periodeknapper)`);
   fcZones = new Set();

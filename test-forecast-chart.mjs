@@ -581,7 +581,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
       const c = html(pg), C = CT[pg], x = X[C.lang], src = C.act ? pctx.ZONES[C.def].src : null;
       ok(!('nav' in c) && c.home === x.home, `${pg}: ingen landerække i headeren (globussen er vælgeren), og logoets navn er på ${C.lang}`);
       ok(c.foot.startsWith('<footer ') && (c.foot.match(/<footer/g) || []).length === 1 && c.foot.includes(`<p class="sf-h" id="sfLand">${x.land}</p>`) && (c.foot.match(/aria-current="page"/g) || []).length === 1, `${pg}: sidefoden har en landeliste med den aktuelle markeret`);
-      ok(c.foot.includes(`<a href="/privatliv" hreflang="da">${x.privacy}</a>`) && (c.foot.match(/hreflang/g) || []).length === 1, `${pg}: privatlivslinket peger på /privatliv med hreflang="da" og er mærket på ${C.lang}`);
+      ok(c.foot.includes(`<a href="/privacy" hreflang="en">${x.privacy}</a>`) && (c.foot.match(/hreflang/g) || []).length === 1, `${pg}: privatlivslinket peger på /privacy (engelsk) med hreflang="en" og er mærket på ${C.lang}`);
       // The Nordic pages credit ENTSO-E and Energi Data Service; an actual-price page credits its zone's source (Energy-Charts: Bundesnetzagentur | SMARD.de, CC BY 4.0 with the
       // licence link; ENTSO-E: the Transparency Platform) and says the data were changed — and names neither Energi Data Service nor the other source.
       ok(/&copy; Elpriser\.org &mdash; /.test(c.foot) && c.foot.includes('>Hugging Face</a>') && (C.act

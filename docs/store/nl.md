@@ -44,7 +44,7 @@ De prijzen zijn groothandels-spotprijzen (day-ahead-markt) zonder belastingen, n
 
 Elpriser is een onafhankelijke dienst en is niet verbonden aan netbeheerders, energieleveranciers of marktoperators. De prijzen zijn indicatief; je werkelijke afrekening kan afwijken.
 
-Privacybeleid: https://elpriser.org/privatliv (in het Deens). Contact: hello@elpriser.org
+Privacybeleid: https://elpriser.org/privacy. Contact: hello@elpriser.org
 
 ## Google Play (Android)
 

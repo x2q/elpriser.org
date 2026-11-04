@@ -44,7 +44,7 @@ Prețurile sunt prețuri spot angro (piața pentru ziua următoare), fără taxe
 
 Elpriser este un serviciu independent și nu are legături cu niciun operator de rețea, furnizor de energie sau operator de piață. Prețurile sunt orientative; decontarea ta reală poate diferi.
 
-Politica de confidențialitate: https://elpriser.org/privatliv (în daneză). Contact: hello@elpriser.org
+Politica de confidențialitate: https://elpriser.org/privacy. Contact: hello@elpriser.org
 
 ## Google Play (Android)
 

@@ -22,4 +22,4 @@ Ei mainoksia. Ei tiliä. Hinnat tulevat Energi Data Servicestä (Energinet) ja E
 
 Elpriser on riippumaton palvelu, eikä sillä ole yhteyttä Energinetiin tai verkkoyhtiöösi. Hinnat ovat suuntaa antavia; todellinen laskutus voi poiketa niistä. Sovellus näyttää vain Tanskan hinnat (DK1 ja DK2).
 
-**Category:** House & Home · **Contact:** hello@elpriser.org · **Website:** https://elpriser.org · **Privacy:** https://elpriser.org/privatliv (Danish only)
+**Category:** House & Home · **Contact:** hello@elpriser.org · **Website:** https://elpriser.org · **Privacy:** https://elpriser.org/privacy

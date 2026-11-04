@@ -355,7 +355,7 @@ async function main() {
   check(!/\bpp7\b|Usikkerhed/.test(home.body.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), 'forside: ingen 7 døgn og ingen Usikkerhed på de andre sider');
 
   const se3 = await get('/sv/elpris');
-  check(!/<link rel="alternate"/.test(se3.body.replace(/<!--[\s\S]*?-->/g, '')) && (se3.body.replace(/<script[\s\S]*?<\/script>/g, '').match(/hreflang=/g) || []).length === 1, '/sv/elpris: ingen hreflang-klynge (kun privatlivslinkets hreflang="da")');
+  check(!/<link rel="alternate"/.test(se3.body.replace(/<!--[\s\S]*?-->/g, '')) && (se3.body.replace(/<script[\s\S]*?<\/script>/g, '').match(/hreflang=/g) || []).length === 1, '/sv/elpris: ingen hreflang-klynge (kun privatlivslinkets hreflang="en")');
   check(/<html lang="sv"/.test(se3.body), '/sv/elpris: html lang="sv"');
   // The five foreign-area pages: own language, the canonical Pris screen drawn into the HTML, and only 2 and 5 døgn.
   // The four country pages also wear their own chrome (a country navigation and a slim footer in their language):

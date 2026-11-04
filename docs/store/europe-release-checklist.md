@@ -38,7 +38,7 @@ Language notes:
 | Ads, accounts | none | unchanged |
 | Encryption | HTTPS only | iOS `ITSAppUsesNonExemptEncryption` false (already in the build) |
 | DSA (EU Digital Services Act) | trader status | Apple: already approved for the Danish listing (trader information shows in every EU storefront, nothing new to enable). Google Play: the developer profile must have the trader/contact details verified (Play Console > Settings > Developer account > Contact details); needed for EU distribution |
-| Privacy policy | https://elpriser.org/privatliv exists in Danish only | both stores require a URL; consider an English version (owner decision). The apps' about card links to it |
+| Privacy policy | https://elpriser.org/privacy (English) and https://elpriser.org/privatliv (Danish; used by the Danish listing and by the apps' about card of 1.3.x and older) | both stores require a URL; every non-Danish listing points at the English page (2026-11-04) |
 | Attribution | CC BY 4.0 (Energy-Charts / Bundesnetzagentur | SMARD.de) and ENTSO-E named in the about card and in every listing | done in the build and the texts |
 
 ## 3. App Store Connect, manual steps (owner)

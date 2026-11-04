@@ -44,7 +44,7 @@ Cijene su veleprodajne burzovne cijene (tržište za dan unaprijed) bez poreza, 
 
 Elpriser je neovisna usluga i nije povezan ni s jednim operatorom mreže, opskrbljivačem energijom ili operatorom tržišta. Cijene su okvirne; vaš stvarni obračun može se razlikovati.
 
-Pravila privatnosti: https://elpriser.org/privatliv (na danskom). Kontakt: hello@elpriser.org
+Pravila privatnosti: https://elpriser.org/privacy. Kontakt: hello@elpriser.org
 
 ## Google Play (Android)
 

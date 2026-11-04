@@ -44,7 +44,7 @@ Die Preise sind Börsen-Spotpreise (Day-Ahead-Markt) ohne Steuern, Netzentgelte 
 
 Elpriser ist ein unabhängiger Dienst und steht in keiner Verbindung zu Netzbetreibern, Energieversorgern oder Marktbetreibern. Die Preise sind Richtwerte; die tatsächliche Abrechnung kann abweichen.
 
-Datenschutzerklärung: https://elpriser.org/privatliv (auf Dänisch). Kontakt: hello@elpriser.org
+Datenschutzerklärung: https://elpriser.org/privacy. Kontakt: hello@elpriser.org
 
 ## Google Play (Android)
 

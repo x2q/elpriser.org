@@ -44,7 +44,7 @@ Prisene er engrospriser på spotmarkedet (day-ahead) uten avgifter, nettleie og 
 
 Elpriser er en uavhengig tjeneste og har ingen tilknytning til nettselskaper, strømleverandører eller markedsoperatører. Prisene er veiledende; det faktiske oppgjøret ditt kan avvike.
 
-Personvernerklæring: https://elpriser.org/privatliv (på dansk). Kontakt: hello@elpriser.org
+Personvernerklæring: https://elpriser.org/privacy. Kontakt: hello@elpriser.org
 
 ## Google Play (Android)
 

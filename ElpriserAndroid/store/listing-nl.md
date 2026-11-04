@@ -22,4 +22,4 @@ Geen advertenties. Geen account. De prijzen komen van Energi Data Service (Energ
 
 Elpriser is een onafhankelijke dienst en is niet verbonden aan Energinet of je netbeheerder. De prijzen zijn indicatief; je werkelijke afrekening kan afwijken. De app toont alleen Deense prijzen (DK1 en DK2).
 
-**Category:** House & Home · **Contact:** hello@elpriser.org · **Website:** https://elpriser.org · **Privacy:** https://elpriser.org/privatliv (Danish only)
+**Category:** House & Home · **Contact:** hello@elpriser.org · **Website:** https://elpriser.org · **Privacy:** https://elpriser.org/privacy

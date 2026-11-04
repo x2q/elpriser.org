@@ -44,7 +44,7 @@ Ceny jsou velkoobchodní spotové ceny (denní trh) bez daní, distribučních p
 
 Elpriser je nezávislá služba a není spojena s žádným distributorem, dodavatelem energie ani operátorem trhu. Ceny jsou orientační; skutečné vyúčtování se může lišit.
 
-Zásady ochrany osobních údajů: https://elpriser.org/privatliv (v dánštině). Kontakt: hello@elpriser.org
+Zásady ochrany osobních údajů: https://elpriser.org/privacy. Kontakt: hello@elpriser.org
 
 ## Google Play (Android)
 

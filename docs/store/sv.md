@@ -44,7 +44,7 @@ Priserna är grossistpriser på spotmarknaden (day-ahead) utan skatter, nätavgi
 
 Elpriser är en oberoende tjänst och har ingen koppling till några nätbolag, elleverantörer eller marknadsoperatörer. Priserna är vägledande; din faktiska avräkning kan avvika.
 
-Integritetspolicy: https://elpriser.org/privatliv (på danska). Kontakt: hello@elpriser.org
+Integritetspolicy: https://elpriser.org/privacy. Kontakt: hello@elpriser.org
 
 ## Google Play (Android)
 

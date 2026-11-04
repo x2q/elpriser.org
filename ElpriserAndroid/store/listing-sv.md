@@ -22,4 +22,4 @@ Inga annonser. Inget konto. Priserna kommer från Energi Data Service (Energinet
 
 Elpriser är en oberoende tjänst och är inte knuten till Energinet eller ditt nätbolag. Priserna är vägledande; din faktiska avräkning kan avvika. Appen visar bara danska priser (DK1 och DK2).
 
-**Category:** House & Home · **Contact:** hello@elpriser.org · **Website:** https://elpriser.org · **Privacy:** https://elpriser.org/privatliv (Danish only)
+**Category:** House & Home · **Contact:** hello@elpriser.org · **Website:** https://elpriser.org · **Privacy:** https://elpriser.org/privacy

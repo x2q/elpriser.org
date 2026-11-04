@@ -28,6 +28,7 @@ FILES=(
   og-image.png
   manrope.woff2
   privatliv.html
+  privacy.html
 )
 
 rm -rf "$DIST"

@@ -44,7 +44,7 @@ Os preços são preços spot grossistas (mercado diário) sem impostos, tarifas 
 
 A Elpriser é um serviço independente e não está associada a nenhum operador de rede, comercializador de energia ou operador de mercado. Os preços são indicativos; o acerto real pode diferir.
 
-Política de privacidade: https://elpriser.org/privatliv (em dinamarquês). Contacto: hello@elpriser.org
+Política de privacidade: https://elpriser.org/privacy. Contacto: hello@elpriser.org
 
 ## Google Play (Android)
 

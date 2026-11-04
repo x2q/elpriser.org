@@ -365,7 +365,7 @@ export function downloadMain(code, opts = {}) {
       ways(t, [['wWeb', opts.homeHref || '/'], ['wHA', 'https://github.com/x2q/ha-elpriser', 1], ['wMcp', 'https://github.com/x2q/elpriser-mcp', 1]], true),
       `  <section class="dl-sec" style="padding-top:3rem;padding-bottom:3rem">
     <div class="dl-in">
-      <p class="dl-note dl-rv" style="text-align:center">${esc(T(t, 'note'))} <a href="/privatliv" hreflang="da">${esc(opts.privacy || '')}</a></p>
+      <p class="dl-note dl-rv" style="text-align:center">${esc(T(t, 'note'))} <a href="/privacy" hreflang="en">${esc(opts.privacy || '')}</a></p>
     </div>
   </section>`,
     ];

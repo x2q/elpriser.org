@@ -1361,6 +1361,38 @@ test('privacy: /privatliv is a shipped static page that states what happens to t
   assert.ok(/STATIC_ASSETS = new Set\(\[[^\]]*'\/privatliv'/.test(fn), 'the catch-all lets /privatliv through to the static file');
 });
 
+test('privacy: /privacy is the English policy, shipped beside the Danish one, linked both ways, and says the same things', () => {
+  const en = fs.readFileSync(path.join(__dirname, 'privacy.html'), 'utf8');
+  const da = fs.readFileSync(path.join(__dirname, 'privatliv.html'), 'utf8');
+  const text = en.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  assert.ok(/<html lang="en">/.test(en) && /<title>Privacy policy/.test(en), 'English page: lang and title');
+  assert.ok(/never stored/i.test(text), 'the English policy says the position is never stored');
+  assert.ok(!/\b(Privatlivspolitik|netselskab|Hvem er ansvarlig)\b/.test(text), 'no Danish left in the English policy');
+  assert.ok(/hreflang="da" href="https:\/\/elpriser\.org\/privatliv"/.test(en) && /hreflang="en" href="https:\/\/elpriser\.org\/privacy"/.test(da), 'the two versions point at each other (hreflang alternates)');
+  assert.ok(/href="\/privatliv" hreflang="da"/.test(en) && /href="\/privacy" hreflang="en"/.test(da), 'and have a visible link to each other');
+  assert.ok(!/gtag|googletagmanager|<script/.test(en), 'the English policy loads no script either');
+  // same facts as the Danish page: every platform/flow word, the date, the numbers
+  for (const w of ['Android', 'iPhone', 'iPad', 'Mac', 'Apple Watch', 'widget', 'App Group', 'Google Analytics', 'Notifications when power is cheapest', 'MCP', 'controllable capacity', 'Cloudflare', 'OpenStreetMap', 'Green Power Denmark', 'Datatilsynet', 'hello@elpriser.org', 'Sandbox Ventures']) assert.ok(text.includes(w), `the English policy must mention "${w}"`);
+  assert.ok(/Last updated 3 November 2026/.test(text) && /Senest opdateret 3\. november 2026/.test(da), 'both carry the same date');
+  assert.ok(/five decimals/.test(text) && /about 1 metre/.test(text) && /up to a day/.test(text) && /about 11 metres/.test(text) && /30 days/.test(text) && /90 days/.test(text) && /three months/.test(text), 'the numbers match the Danish page and the code');
+  assert.equal((en.match(/<h2>/g) || []).length, (da.match(/<h2>/g) || []).length, 'same number of sections in both languages');
+  assert.equal((en.match(/<li>/g) || []).length, (da.match(/<li>/g) || []).length, 'same number of list items in both languages');
+  const build = fs.readFileSync(path.join(__dirname, 'scripts', 'build-dist.sh'), 'utf8');
+  assert.ok(/^\s*privacy\.html$/m.test(build), 'privacy.html is in the dist manifest');
+  const fn = fs.readFileSync(path.join(__dirname, 'functions', '[[path]].js'), 'utf8');
+  assert.ok(/STATIC_ASSETS = new Set\(\[[^\]]*'\/privacy'[^\]]*'\/privacy\.html'/.test(fn), 'the catch-all lets /privacy through to the static file');
+});
+
+test('privacy: no store listing says the policy is Danish; only the Danish listing links the Danish page', () => {
+  const dir = path.join(__dirname, 'docs', 'store');
+  for (const f of fs.readdirSync(dir).filter(f => /^[a-z]{2}\.md$/.test(f))) {
+    const t = fs.readFileSync(path.join(dir, f), 'utf8');
+    const urls = t.match(/https:\/\/elpriser\.org\/priv[a-z]+(?: \([^)]*\))?/g) || [];
+    assert.ok(urls.length <= 1, `${f}: at most one policy line`);   // a few listings carry no policy line at all
+    for (const u of urls) assert.equal(u, f === 'da.md' ? 'https://elpriser.org/privatliv' : 'https://elpriser.org/privacy', `${f}: policy URL, no "(in Danish)" remark`);
+  }
+});
+
 test('privacy: the policy covers every platform and every data flow we ship, and says what the code does', () => {
   const page = fs.readFileSync(path.join(__dirname, 'privatliv.html'), 'utf8');
   const text = page.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
@@ -1798,7 +1830,8 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // (v10: the four EU price pages joined, the Pris block gained PRIS_ACT and the footer the four links.)
   // (v17: per-country i18n (prisPageL), Austria, Switzerland, Belgium and Ireland joined.)
   // (v26: the header button and the footer pill "Hent appen" in the page's language, to the app page in that language.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v26'/.test(ROUTES), 'zone-ssr-v26');
+  // (v27: the footer's privacy link goes to the English policy, /privacy, instead of the Danish one.)
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v27'/.test(ROUTES), 'zone-ssr-v27');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)

@@ -44,7 +44,7 @@ Les prix sont des prix spot de gros (marché day-ahead), hors taxes, frais de r�
 
 Elpriser est un service indépendant, sans lien avec un gestionnaire de réseau, un fournisseur d'énergie ou un opérateur de marché. Les prix sont indicatifs ; votre facturation réelle peut différer.
 
-Politique de confidentialité : https://elpriser.org/privatliv (en danois). Contact : hello@elpriser.org
+Politique de confidentialité : https://elpriser.org/privacy. Contact : hello@elpriser.org
 
 ## Google Play (Android)
 

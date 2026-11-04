@@ -44,7 +44,7 @@ Prices are wholesale spot prices (day-ahead market) without taxes, grid fees and
 
 Elpriser is an independent service and is not affiliated with any grid company, energy supplier or market operator. Prices are indicative; your actual settlement may differ.
 
-Privacy policy: https://elpriser.org/privatliv (in Danish). Contact: hello@elpriser.org
+Privacy policy: https://elpriser.org/privacy. Contact: hello@elpriser.org
 
 ## Google Play (Android)
 

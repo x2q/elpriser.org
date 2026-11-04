@@ -55,7 +55,7 @@ Cene so veleprodajne borzne cene (trg na dan vnaprej) brez davkov, omrežnine in
 
 Elpriser je neodvisna storitev in ni povezan z nobenim operaterjem omrežja, dobaviteljem energije ali operaterjem trga. Cene so okvirne; vaš dejanski obračun se lahko razlikuje.
 
-Pravilnik o zasebnosti: https://elpriser.org/privatliv (v danščini). Stik: hello@elpriser.org
+Pravilnik o zasebnosti: https://elpriser.org/privacy. Stik: hello@elpriser.org
 
 ### play.whatsnew
 Elpriser zdaj pokriva Evropo: izberite svojo državo in cenovno območje ter si oglejte borzno ceno elektrike po urah, za danes in jutri. Zdaj v 26 jezikih. Na Danskem deluje kot doslej.

@@ -17,7 +17,7 @@ if __name__=="__main__":
     for l in langs:
         f=fields(l); loc=LOC[l]
         va={"description":f['ios.description'],"keywords":f['ios.keywords'],"promotionalText":f['ios.promo'],"whatsNew":f['ios.whatsnew']}
-        ia={"name":f['ios.name'],"subtitle":f['ios.subtitle'],"privacyPolicyUrl":"https://elpriser.org/privatliv"}
+        ia={"name":f['ios.name'],"subtitle":f['ios.subtitle'],"privacyPolicyUrl":"https://elpriser.org/"+("privatliv" if l=="da" else "privacy")}   # Danish policy for da, the English one everywhere else
         print(l,loc,{k:len(v) for k,v in {**va,**ia}.items() if k!='privacyPolicyUrl'})
         if not apply: continue
         if loc in vl: r=call("PATCH",f"/v1/appStoreVersionLocalizations/{vl[loc]}",{"data":{"type":"appStoreVersionLocalizations","id":vl[loc],"attributes":va}})

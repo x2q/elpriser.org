@@ -44,7 +44,7 @@ Az árak nagykereskedelmi tőzsdei árak (másnapi piac), adók, hálózati díj
 
 Az Elpriser független szolgáltatás, amely nem áll kapcsolatban hálózatüzemeltetőkkel, energiakereskedőkkel vagy piacüzemeltetőkkel. Az árak tájékoztató jellegűek; a tényleges elszámolás eltérhet.
 
-Adatvédelmi tájékoztató: https://elpriser.org/privatliv (dán nyelven). Kapcsolat: hello@elpriser.org
+Adatvédelmi tájékoztató: https://elpriser.org/privacy. Kapcsolat: hello@elpriser.org
 
 ## Google Play (Android)
 

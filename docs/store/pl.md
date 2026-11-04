@@ -44,7 +44,7 @@ Ceny to hurtowe ceny giełdowe (rynek day-ahead) bez podatków, opłat sieciowyc
 
 Elpriser to niezależna usługa niepowiązana z żadnym operatorem sieci, sprzedawcą energii ani operatorem rynku. Ceny mają charakter orientacyjny; faktyczne rozliczenie może się różnić.
 
-Polityka prywatności: https://elpriser.org/privatliv (po duńsku). Kontakt: hello@elpriser.org
+Polityka prywatności: https://elpriser.org/privacy. Kontakt: hello@elpriser.org
 
 ## Google Play (Android)
 
