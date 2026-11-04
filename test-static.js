@@ -1831,7 +1831,8 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // (v17: per-country i18n (prisPageL), Austria, Switzerland, Belgium and Ireland joined.)
   // (v26: the header button and the footer pill "Hent appen" in the page's language, to the app page in that language.)
   // (v27: the footer's privacy link goes to the English policy, /privacy, instead of the Danish one.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v27'/.test(ROUTES), 'zone-ssr-v27');
+  // (v28: the logo links to the country's own page, not the Danish front page.)
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v28'/.test(ROUTES), 'zone-ssr-v28');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)

@@ -1778,7 +1778,7 @@ async function startServer() {
         const s = await chromeState(p);
         assert.equal(s.lang, w.lang);
         assert.deepEqual(s.navText, [], 'no row of country links in the header: the place chip is the country navigation');
-        assert.equal(s.picker.title, w.place); assert.equal(s.logo, 'Elpriser'); assert.equal(s.logoHref, '/');
+        assert.equal(s.picker.title, w.place); assert.equal(s.logo, 'Elpriser'); assert.equal(s.logoHref, url, 'the logo stays on the country page, not the Danish front page');
         assert.ok(Math.abs((s.chipBox.t + s.chipBox.h / 2) - (s.logoBox.t + s.logoBox.h / 2)) < 4 && s.navBottom < 80, `the header is one row: logo ${JSON.stringify(s.logoBox)}, chip ${JSON.stringify(s.chipBox)}, height ${s.navBottom}`);
         assert.deepEqual([s.chip, s.app, s.tabbar, s.dialog], [true, true, false, true], 'the place chip and its dialog and one app button, but no tab bar');
         // "Hent appen", in this page's language, to the app page in that language: a button in the header (hidden on a phone, like the Danish one) and a pill in the footer

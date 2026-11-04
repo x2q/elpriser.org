@@ -3247,7 +3247,7 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v27';
+const ZONE_SSR_VERSION = 'zone-ssr-v28';
 const CITY_SSR_VERSION = 'city-ssr-v19';
 const PROGNOSE_SSR_VERSION = 'prognose-ssr-v17';
 async function renderCachedPage(context, pathname, meta, opts, version) {
@@ -3408,7 +3408,7 @@ function withDownloadPage(html, code) {
   return html
     .replace(/<main style="display:none" data-page="download"[\s\S]*?<\/main>/, () => downloadMain(code, { homeHref: home ? '/' + home : '/', privacy: X.privacy }))
     .replace('<html lang="da">', '<html lang="da" class="xc">')
-    .replace('aria-label="elpriser.org forside"', () => `aria-label="${X.home}"`)
+    .replace('<a href="/" class="site-logo" aria-label="elpriser.org forside">', () => '<a href="' + (home ? '/' + home : '/') + '" class="site-logo" aria-label="' + X.home + '">')   // the logo stays in the language: its own country page, not the Danish front page
     .replace(/\s*<nav class="site-links"[\s\S]*?<\/nav>/, '')
     .replace(/\s*<div class="site-actions">[\s\S]*?<\/div>/, () => '<div class="site-actions"><a href="' + dlPath(code) + '" class="app-btn" aria-current="page">' + X.app + '</a></div>')
     .replace(/<nav class="tabbar"[\s\S]*?<\/nav>/, '')
@@ -3420,7 +3420,7 @@ function withCountryChrome(html, pg) {
   const c = chromeHTML(pg);
   return html
     .replace('<html lang="da">', '<html lang="da" class="xc">')
-    .replace('aria-label="elpriser.org forside"', () => `aria-label="${c.home}"`)
+    .replace('<a href="/" class="site-logo" aria-label="elpriser.org forside">', () => '<a href="/' + pg + '" class="site-logo" aria-label="' + c.home + '">')   // the logo stays on the country's own page, not the Danish front page
     .replace(/\s*<nav class="site-links"[\s\S]*?<\/nav>/, '')
     .replace(/\s*<div class="site-actions">[\s\S]*?<\/div>/, () => `<div class="site-actions">${c.btn}</div>`)
     .replace(/<nav class="tabbar"[\s\S]*?<\/nav>/, '')

@@ -170,7 +170,7 @@ for (const [p, w] of Object.entries(PAGES)) {
   // The chrome: the globe in the page's language, a slim footer, and none of the Danish site's.
   {
     const hd = h.slice(h.indexOf('<header'), h.indexOf('</header>')), ft = h.slice(h.indexOf('<footer'), h.indexOf('</footer>')), X = chromeI18n[w.lang];
-    ok(/<html lang="[A-Za-z-]+" class="xc">/.test(h) && /<a href="\/" class="site-logo" aria-label="[^"]+">[\s\S]*<\/svg><\/span>Elpriser<\/a>/.test(hd), `${p}: logoet viser ordmærket Elpriser og linker til /`);
+    ok(/<html lang="[A-Za-z-]+" class="xc">/.test(h) && new RegExp(`<a href="/${p.replace(/^\//, '')}" class="site-logo" aria-label="[^"]+">[\\s\\S]*<\\/svg><\\/span>Elpriser<\\/a>`).test(hd), `${p}: logoet viser ordmærket Elpriser og linker til landets egen side, ikke den danske forside`);
     ok(!/class="site-links"|<nav|countryBtn/.test(hd) && /id="netChip"/.test(hd) && !/Vestdanmark|DK1|Netselskab|netselskab/.test(hd), `${p}: headeren har stedschippen, ingen globus og ingen landerække`);
     ok(hd.includes(`aria-label="${X.home}"`) && hd.includes(`aria-label="${X.place}"`), `${p}: logoets og vælgerens navne på ${w.lang}`);
     ok(!/Hent appen|Smart hjem|>Om<|Hovedmenu|href="\/automation"|href="\/om-elpriser"|href="\/download"/.test(hd), `${p}: ingen dansk app-knap, ingen dansk menu i headeren`);
@@ -475,7 +475,7 @@ for (const [p, w] of Object.entries(ACT)) {
   const l7 = h7;   // no accuracy line under the chart any more
   ok(!/pris-fca|pris-bl|Back-test/.test(l7) && h.includes(PL.fcl) === (hz === 7) && !/\b80 ?%/.test(h.replace(/<[^>]*>/g, ' ')) && !/NaN|undefined|\{[a-z]+\}/.test(main), `${p}: med prognose: ingen nøjagtighedslinje under kortet, lav sikkerhed kun i dagslisten på horisont 7, ingen skabelon-rester`);
   ok(!NOFUEL.test(raw.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), `${p}: med prognose: ingen ord om gas, kul eller brændstof på siden`);
-  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v27${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v24`);
+  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v28${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v24`);
   // the text block says the forecast exists only while there is one; the plain page stays as before
   ok(!plain.page.includes(PL.fcn) && !plain.page.includes('pris-fca') && (plain.page.match(/data-pris-period="/g) || []).length === 0, `${p}: uden prognose i svaret er siden som før (ingen note, ingen periodeknapper)`);
   fcZones = new Set();

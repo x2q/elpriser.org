@@ -6746,7 +6746,7 @@ function localiseChrome(pg){
   const c=chromeHTML(pg);
   document.documentElement.classList.add('xc');
   const logo=document.querySelector('.site-logo');
-  if(logo)logo.setAttribute('aria-label',c.home);
+  if(logo){logo.setAttribute('aria-label',c.home);logo.setAttribute('href','/'+pg);}   // the logo stays on the country's own page, not the Danish front page
   const put=(sel,html)=>{
     const el=document.querySelector(sel);
     if(!el)return;
