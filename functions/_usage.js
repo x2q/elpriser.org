@@ -27,6 +27,25 @@ const VERSION = /^[0-9][0-9.]{0,15}(?: \([0-9]{1,5}\))?$/;
 const SCRIPT_CLIENT = /^(shelly-script|ha-plan)-([0-9]{1,3})$/;
 const NOW_SAMPLE = 5;
 
+/**
+ * Why a request got 400, as one fixed word, worked out from the shape of the query
+ * alone (the values are never written): a net_ mode without a gln is what the apps'
+ * and Home Assistant sensors most often get wrong. The checks mirror the API's own
+ * order (area, then mode/gln, then dates); anything else is 'other'.
+ */
+export function badRequestReason(q) {
+  const area = q.get('area');
+  if (area !== null && !['DK1', 'DK2'].includes(area.toUpperCase())) return 'area_invalid';
+  const mode = q.get('mode') || '';
+  const gln = q.get('gln');
+  if (mode.startsWith('net_') && !gln) return 'gln_missing';
+  if (gln && !/^\d{13}$/.test(gln)) return 'gln_invalid';
+  const DATE = /^\d{4}-\d{2}-\d{2}$/;
+  for (const k of ['date', 'start', 'end']) { const v = q.get(k); if (v && !DATE.test(v)) return 'date_invalid'; }
+  if (q.has('start') !== q.has('end')) return 'range_incomplete';
+  return 'other';
+}
+
 /** { client, version, host } for a recognised caller, else null. */
 export function usageClient(request, query) {
   const ua = request.headers.get('user-agent') || '';
@@ -74,6 +93,7 @@ export function recordUsage(env, request, status, random = Math.random) {
         area === 'DK1' || area === 'DK2' ? area : '',
         WORD.test(strat) ? strat : (strat ? 'other' : ''),
         status >= 500 ? '5xx' : status >= 400 ? '4xx' : status >= 300 ? '3xx' : '2xx',
+        ...(status === 400 ? [badRequestReason(u.searchParams)] : []),
       ],
       doubles: [weight],
     });

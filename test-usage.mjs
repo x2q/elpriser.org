@@ -63,6 +63,23 @@ test('status classes, odd values and a missing binding', () => {
   assert.equal(recordUsage({ USAGE: { writeDataPoint() { throw new Error('boom'); } } }, req('https://elpriser.org/api/forecast', 'ElpriserIOS/1.0.5 (7)'), 200, always), false);   // never breaks the response
 });
 
+test('a 400 carries one fixed reason word, derived from the shape of the query — never its values', () => {
+  const { points, env } = sink();
+  const ha = u => recordUsage(env, req(u, 'HomeAssistant/2026.8.3'), 400, always);
+  ha('https://elpriser.org/api/prices?area=DK1&mode=net_inkl_alt');
+  ha('https://elpriser.org/api/prices?area=DK1&mode=net_inkl_alt&gln=123');
+  ha('https://elpriser.org/api/prices?area=NO1');
+  ha('https://elpriser.org/api/prices?area=DK1&date=15-01-2025');
+  ha('https://elpriser.org/api/prices?area=DK1&start=2025-01-01');
+  ha('https://elpriser.org/api/prices?area=DK1&mode=bogus');
+  assert.deepEqual(points.map(p => p.blobs[7]), ['gln_missing', 'gln_invalid', 'area_invalid', 'date_invalid', 'range_incomplete', 'other']);
+  const written = JSON.stringify(points);
+  for (const never of ['123', 'NO1', '15-01-2025', '2025-01-01'])   // the mode word itself is already stored as 'strategy' (a short a-z word), as before
+    assert.ok(!written.includes(never), `${never} must not be stored`);
+  recordUsage(env, req('https://elpriser.org/api/prices?area=DK1&mode=inkl_alt', 'HomeAssistant/2026.8.3'), 200, always);
+  assert.equal(points[6].blobs.length, 7, 'only a 400 has a reason');
+});
+
 test('the clients send what the server recognises', () => {
   const html = fs.readFileSync(new URL('./index.html', import.meta.url), 'utf8');
   assert.ok(html.includes('&client=shelly-script-2"'), 'Shelly script no longer tags its version');

@@ -1170,6 +1170,8 @@ const OPENAPI_SPEC = {
       'Free, public API serving aktuelle elpriser (current electricity prices) for the Danish',
       'price zones DK1 (Vestdanmark) and DK2 (Østdanmark). Data is sourced daily from Energi',
       'Data Service (Energinet) and updated when Nord Pool publishes next-day prices.',
+      'The content may be used with attribution: name elpriser.org and link the page or endpoint used; the underlying',
+      'price sources keep their own terms and should be credited too (see https://elpriser.org/llms.txt).',
       '',
       '**No key, no rate limit, full CORS** (`Access-Control-Allow-Origin: *`). Responses are',
       'edge-cached at Cloudflare for 1–5 min so calling /api/now every minute from a Shelly',

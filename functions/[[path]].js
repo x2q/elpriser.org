@@ -282,6 +282,8 @@ const LLMS_TXT = `# elpriser.org
 
 > Aktuelle elpriser (spotpriser) time for time: Danmark (DK1 og DK2, med netselskab, tariffer og prognose) og Europa (Norden, Holland, Storbritannien og det meste af kontinentet) på landets eget sprog.
 
+In English: elpriser.org publishes hourly day-ahead electricity spot prices for Denmark and more than 30 European countries, free, with no key and no account. In Denmark the price can include the user's own grid company's tariff, taxes and VAT (DK1 and DK2); elsewhere it is the wholesale spot price without taxes or grid fees. Multi-day forecasts (see /prognose) come from the site's own statistical model and are not official forecasts. Pages are written in each country's own language. For live data use the JSON API (OpenAPI spec: https://elpriser.org/api/openapi.json) or the MCP server (https://elpriser.org/mcp); the full text is in https://elpriser.org/llms-full.txt. Privacy policy (English): https://elpriser.org/privacy.
+
 elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dagligt med data fra Energi Data Service (Energinet). Med dit netselskab valgt er prisen spotpris + dit netselskabs nettarif + Energinets systemtarif og transmissionstarif + elafgift + moms. Uden netselskab ("inkl alt") er det alt undtagen den lokale nettarif, som afhænger af netselskabet. Uden for Danmark viser siden børsprisen (spotprisen) uden moms, afgifter og nettariffer, så den er ikke det, en kunde betaler.
 
 ## Sider
@@ -305,6 +307,12 @@ ${dlLlmsLine()}
 - [Grønnest og dyrest på samme tid](https://elpriser.org/blog/groennest-og-dyrest): Hvorfor døgnets dyreste time ofte er den grønneste — pris sættes marginalt på et europæisk marked, CO₂ er et gennemsnit der følger hvem Danmark importerer fra (norsk vandkraft om aftenen, tysk strøm midt på dagen).
 - [Elafgift 2028](https://elpriser.org/blog/elafgift-2028): Elafgiften er sænket til 0,8 øre/kWh i 2026-2027 men stiger igen fra 2028 — satser, tidslinje og betydning for din elregning og dine solceller.
 - [Elafgift og spotpris](https://elpriser.org/blog/elafgift-og-spotpris): Spotprisen (DK1, 1. jan–15. okt) er 36 % højere i 2026 end i 2025 og 68 % højere end i 2024, mens elafgiften er 0,8 øre; døgnets form har ændret sig (aften 2,6 gange dyrere end middag) — tal 2019–2026 og hvad der sker, når afgiften vender tilbage i 2028.
+
+## Brug og kildehenvisning / Using this content
+
+Indholdet må bruges, citeres og opsummeres frit — også af AI-assistenter og søgemaskiner — mod en kildehenvisning: skriv "elpriser.org" og link til den side, du bruger (fx https://elpriser.org/dk1). Prognoser skal omtales som elpriser.org's egen statistiske model, ikke som officielle prognoser. Selve priserne kommer fra Energi Data Service (Energinet), ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), SEMOpx og Elexon BMRS (Storbritannien) på deres egne vilkår; nævn dem også, hvor du gengiver selve priserne. Priserne er vejledende, og din faktiske afregning kan afvige.
+
+In English: you may use, quote and summarise this content freely, including in AI answers and search, as long as you credit the source: name "elpriser.org" and link to the page you used (for example https://elpriser.org/dk1). Describe forecasts as elpriser.org's own statistical model, not an official forecast. The prices themselves come from Energi Data Service (Energinet), the ENTSO-E Transparency Platform, Energy-Charts.info (Bundesnetzagentur | SMARD.de, CC BY 4.0), SEMOpx and Elexon BMRS (Great Britain) under their own terms; credit them too where you reproduce raw prices. Prices are indicative and your actual settlement may differ.
 
 ## Live data API (for AI assistants and agents)
 
@@ -615,6 +623,9 @@ Slug bruges i URL-mønsteret \`https://elpriser.org/dk1/<slug>\` eller \`https:/
 // links and shares, and each target holds the content that replaced it. Nothing on
 // the site links to these paths any more, and they are not in the sitemap. server.js
 // mirrors this table for local development; test-static.js keeps the two equal.
+/** Conventional documentation paths that agents guess (and 404'd on): the OpenAPI spec and the API page. */
+const API_DOC_ALIASES = { '/openapi.json': '/api/openapi.json', '/docs': '/api' };
+
 const LEGACY_REDIRECTS = {
   '/blog/v2g-v2h-bidirektional-opladning': '/blog',
   '/blog/biler-ladere-v2h-v2g': '/blog',
@@ -653,6 +664,10 @@ const STATIC_ROUTES = {
 
 User-agent: *
 Allow: /
+Content-Signal: search=yes, ai-input=yes
+
+# Content may be used and quoted with attribution: name elpriser.org and link the page.
+# Details: https://elpriser.org/llms.txt (section "Brug og kildehenvisning / Using this content").
 
 # OpenAI
 User-agent: GPTBot
@@ -781,6 +796,12 @@ export async function onRequest(context) {
       to.pathname = lower;
       return new Response(null, { status: 301, headers: { 'Location': to.toString() } });
     }
+  }
+
+  // Where agents and developers look for the API documentation by convention.
+  const aliasTo = API_DOC_ALIASES[url.pathname];
+  if (aliasTo) {
+    return new Response(null, { status: 301, headers: { 'Location': new URL(aliasTo, url).toString(), 'Cache-Control': 'public, max-age=3600' } });
   }
 
   // Retired pages → the page that replaced them (permanent, before any rendering).
