@@ -1086,3 +1086,27 @@ test('a net_ mode without gln answers 400 and says where to find the number', as
     assert.match(r.body.error, /elpriser\.org\/automation/);
   }
 });
+
+// ── a day that is not priced yet never goes upstream ────────────────────────
+
+test('/api/prices for the day after tomorrow answers without calling Energi Data Service — a Worker is rate-limited (429) after a few calls, and each of these became a 503', async () => {
+  const api = await createApi();
+  const r = await api.get(`/api/prices?area=DK1&date=${day(3)}`);
+  assert.equal(r.status, 200);
+  assert.ok(r.body.prices.every(p => p.price === null), 'a day the market has not priced has no prices');
+  assert.equal(api.calls.filter(u => u.includes('DayAheadPrices')).length, 0, 'asked upstream for a day that cannot exist yet');
+});
+
+test('between 00:00 and 01:00 Danish time the Danish tomorrow is inside the default window — one shared fetch, not an upstream call per request for a day that is not published', async () => {
+  const clock = freezeClock('2026-11-03T23:30:00Z');          // 00:30 CET on 2026-11-04: the UTC date is still 11-03
+  try {
+    upstreamState.tomorrowPublished = false;
+    const api = await createApi();
+    for (let i = 0; i < 3; i++) {
+      const r = await api.get('/api/prices?area=DK1&date=2026-11-05');
+      assert.equal(r.status, 200);
+      assert.ok(r.body.prices.every(p => p.price === null), 'tomorrow is not published at 00:30');
+    }
+    assert.equal(api.calls.filter(u => u.includes('DayAheadPrices')).length, 1, 'each request for tomorrow went upstream on its own');
+  } finally { upstreamState.tomorrowPublished = true; clock.restore(); }
+});

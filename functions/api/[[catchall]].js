@@ -136,6 +136,16 @@ function danishNow() {
   return new Date(utc.getTime() + off * 3_600_000);
 }
 
+/** The days a request without a range covers: Danish yesterday, today and tomorrow (`end` exclusive). Danish dates, not UTC ones: between
+ *  00:00 and 01:00 (CET) the UTC date still lags by one, and a window cut on it left the Danish tomorrow outside, so every request for it
+ *  became its own upstream call for a day that is not published yet (an uncached empty answer each time, and a 503 once Energi Data Service
+ *  rate-limited the Worker: a burst of them every night at midnight). */
+function defaultWindow() {
+  const dk = danishNow();
+  const at = n => fmtUTC(new Date(dk.getTime() + n * 86_400_000));
+  return { start: at(-1), end: at(2) };
+}
+
 // ── Cache-freshness windows ──────────────────────────────────────────────────
 // Day-ahead prices for the next day are published around 13:00 (CET/CEST) and
 // are immutable until the next day's publication. So there is genuinely no new
@@ -689,7 +699,9 @@ async function loadPrices(area, from, to, env) {
   const missing = [];
   for (let t = Date.parse(from); t < Date.parse(to); t += 86_400_000) {
     const d = fmtUTC(new Date(t));
-    if (!archive[d]) missing.push(d);
+    // The day after tomorrow is not priced yet and cannot be asked for upstream: a request for it would only spend one
+    // of Energi Data Service's rate-limited calls (a Worker is answered 429 within a few of them) to learn that.
+    if (!archive[d] && d <= tomorrowDK()) missing.push(d);
   }
   if (!missing.length) return archive;
 
@@ -724,11 +736,9 @@ async function loadPrices(area, from, to, env) {
  * the market genuinely never priced.
  */
 async function loadData(area, mode, gln, env, range = null) {
-  const now = new Date();
-  const s = new Date(now); s.setUTCDate(s.getUTCDate() - 1);
-  const e = new Date(now); e.setUTCDate(e.getUTCDate() + 2);
-  const from = range ? range.start : fmtUTC(s);
-  const to   = range ? range.end   : fmtUTC(e);
+  const win  = defaultWindow();
+  const from = range ? range.start : win.start;
+  const to   = range ? range.end   : win.end;
   const needsEn    = !['spot_ex', 'spot_inkl'].includes(mode);
   const needsTarif = mode.startsWith('net_') && gln;
   const [priceData, chargeHistory, tariffRecords] = await Promise.all([
@@ -1929,8 +1939,7 @@ async function handleApi(context) {
     if (qDate < EARLIEST_PRICE_DATE) return fail(400, `no prices before ${EARLIEST_PRICE_DATE}`);
     // Only leave the default window when the date sits outside it — staying on
     // the shared key keeps today's requests hitting one warm cache entry.
-    const defStart = fmtUTC(new Date(Date.now() - 86_400_000));
-    const defEnd   = fmtUTC(new Date(Date.now() + 2 * 86_400_000));
+    const { start: defStart, end: defEnd } = defaultWindow();
     if (qDate < defStart || qDate >= defEnd) {
       range = { start: qDate, end: fmtUTC(new Date(Date.parse(qDate) + 86_400_000)) };
     }

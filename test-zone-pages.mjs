@@ -157,7 +157,7 @@ for (const [p, w] of Object.entries(PAGES)) {
   const zH = zoneHour(w.first);     // the hour of the page's zone on ITS clock (fi: Helsinki's)
   ok((five.match(/<span class="pc[ "]/g) || []).length === 120 - (zH > 0 ? zH - Math.min(6, zH) : 0), `${p}: 5 døgn er fem døgn fra seks timer før nu`, String((five.match(/<span class="pc[ "]/g) || []).length));
   // One <tbody> per period over the hours its chart shows: 2 døgn reaches into day three (from hour 1 on), 5 døgn is the five days there are.
-  ok((h.match(/<tr><th scope="row">/g) || []).length === (NOW_H > 0 ? 3 : 2) + 5 && !/class="r10"/.test(h), `${p}: dagslisten har tre (to) rækker for 2 døgn og fem for 5 døgn, ingen skjult dag seks-ti`);
+  ok((h.match(/<tr><th scope="row">/g) || []).length === (zH > 0 ? 3 : 2) + 5 && !/class="r10"/.test(h), `${p}: dagslisten har tre (to) rækker for 2 døgn og fem for 5 døgn, ingen skjult dag seks-ti`);
   ok(!TEN.test(h), `${p}: ingen tekst om 10 døgn`, (h.match(TEN) || [])[0]);
   // No tab row: the zone is picked in the place dialog (data-zone links there), the page itself carries no tablist.
   ok(!/id="zt-|id="zTabs"|class="zt"|id="zPanel" role="tabpanel"/.test(h.replace(/<script[\s\S]*?<\/script>/g, '')) && (h.match(/<dialog id="netDialog"[\s\S]*?<\/dialog>/)[0].match(/data-zone="/g) || []).length === w.tabs, `${p}: ingen zone-faner på siden, og ${w.tabs} zonelinks i stedsdialogen`);
@@ -473,7 +473,10 @@ for (const [p, w] of Object.entries(ACT)) {
   ok(h.includes(`<td class="fc">${PL.fc}`) && h.includes(`</i>${PL.fc}</span>`) && PL.fc !== PL.actual && w.kind === PL.actual, `${p}: med prognose: prognosedøgn hedder "${PL.fc}", de afgjorte "${PL.actual}"`);
   ok(h.includes(`<p class="pris-fcn">${PL.fcn}</p>`) && h.includes(`${PL.fcn}</p></section>`), `${p}: med prognose: den ærlige note står på skærmen og i tekstblokken, på sidens sprog`);
   const l7 = h7;   // no accuracy line under the chart any more
-  ok(!/pris-fca|pris-bl|Back-test/.test(l7) && h.includes(PL.fcl) === (hz === 7) && !/\b80 ?%/.test(h.replace(/<[^>]*>/g, ' ')) && !/NaN|undefined|\{[a-z]+\}/.test(main), `${p}: med prognose: ingen nøjagtighedslinje under kortet, lav sikkerhed kun i dagslisten på horisont 7, ingen skabelon-rester`);
+  // The low-confidence label belongs to the day list's D+7 row: visible with horizon 7, and in zone hour 0 (horizon 6) that row is the hidden one for crawlers - nowhere else.
+  const fclAll = h.split(PL.fcl).length - 1, fclHidden = (h.match(/<tr class="r10">[^]*?<\/tr>/g) || []).join('').split(PL.fcl).length - 1;
+  const fclOk = fclAll > 0 && (hz === 7 || fclAll === fclHidden);
+  ok(!/pris-fca|pris-bl|Back-test/.test(l7) && fclOk && !/\b80 ?%/.test(h.replace(/<[^>]*>/g, ' ')) && !/NaN|undefined|\{[a-z]+\}/.test(main), `${p}: med prognose: ingen nøjagtighedslinje under kortet, lav sikkerhed kun i dagslisten på horisont 7, ingen skabelon-rester`);
   ok(!NOFUEL.test(raw.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), `${p}: med prognose: ingen ord om gas, kul eller brændstof på siden`);
   ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v28${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v24`);
   // the text block says the forecast exists only while there is one; the plain page stays as before
