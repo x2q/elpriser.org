@@ -762,6 +762,18 @@ test('EU price pages: settled prices (one period) and, only where the answer has
   assert.deepEqual(readers, ['scripts/eu_prices/build_eu_prices.py'], 'the Energy-Charts API is read somewhere else than the one job');
 });
 
+test('hreflang: every Danish page names itself as x-default; the two-language legal pages default to English; Article and Organization markup exist', () => {
+  assert.ok(/<link rel="alternate" hreflang="da" href="https:\/\/elpriser\.org\/">\s*<link rel="alternate" hreflang="x-default" href="https:\/\/elpriser\.org\/">/.test(INDEX), 'the template carries da + x-default');
+  for (const [f, en] of [['privacy.html', 'privacy'], ['privatliv.html', 'privacy'], ['terms.html', 'terms'], ['vilkaar.html', 'terms']]) {
+    const h = fs.readFileSync(path.join(__dirname, f), 'utf8');
+    assert.ok(h.includes(`hreflang="x-default" href="https://elpriser.org/${en}"`), `${f}: x-default is the English page`);
+  }
+  const fn = fs.readFileSync(path.join(__dirname, 'functions', '[[path]].js'), 'utf8');
+  assert.ok(/ARTICLE_PAGES = \{[^}]*'\/prognose'[^}]*'\/tariffer'[^}]*'\/om-elpriser'/.test(fn), 'Article markup for the three explainer pages');
+  const head = INDEX.slice(INDEX.search(/<main[^>]*data-page="start"/));
+  assert.ok(/"@type": "Organization",\s*"@id": "https:\/\/elpriser\.org\/#organization"[\s\S]*?"logo"[\s\S]*?"email"[\s\S]*?"sameAs"/.test(head), 'a complete Organization block (logo, email, sameAs) is on the front page');
+});
+
 test('structured data: each block is served only on the page it describes', () => {
   // <head> goes to every URL, so FAQ, article and dataset markup there made
   // /se3 and every blog post claim content they do not have. Only the

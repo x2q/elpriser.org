@@ -76,7 +76,7 @@ ok(mains.length === 1 && mains[0].startsWith('<main data-page="prognose" class="
 // Structured data parses: the shared WebApplication and WebSite, the breadcrumb, and this page's FAQ — nothing invented.
 const lds = [...raw.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => m[1]);
 let parsed = []; try { parsed = lds.map(x => JSON.parse(x)); } catch (e) { fails.push(`/prognose: JSON-LD kan ikke læses: ${e.message}`); }
-ok(parsed.map(x => x['@type']).sort().join() === 'BreadcrumbList,FAQPage,WebApplication,WebPage,WebSite', '/prognose: JSON-LD er WebApplication, WebSite, WebPage (med dateModified), BreadcrumbList og FAQPage', parsed.map(x => x['@type']).join());
+ok(parsed.map(x => x['@type']).sort().join() === 'Article,BreadcrumbList,FAQPage,WebApplication,WebPage,WebSite', '/prognose: JSON-LD er WebApplication, WebSite, WebPage (med dateModified), Article, BreadcrumbList og FAQPage', parsed.map(x => x['@type']).join());
 ok(!TEN.test(lds.join(' ')), '/prognose: ingen 10 døgn i JSON-LD');
 const faq = parsed.find(x => x['@type'] === 'FAQPage') || { mainEntity: [] };
 const visibleQ = [...h.matchAll(/<summary[^>]*>([^<]*)<svg/g)].map(m => m[1]);

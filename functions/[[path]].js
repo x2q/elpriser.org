@@ -222,6 +222,9 @@ const SITEMAP_URLS = [
 // edit). Price-bearing pages legitimately change daily and use today's date.
 // Update these when a page's content actually changes — an always-today
 // lastmod for everything teaches Google to ignore the field.
+// First publication of the explainer pages that carry Article markup (the first commit of each page in index.html).
+const ARTICLE_PAGES = { '/prognose': '2026-04-15', '/tariffer': '2026-04-03', '/om-elpriser': '2026-04-15' };
+
 const CONTENT_LASTMOD = {
   '/automation': '2026-10-17',  // gained the Shelly and Home Assistant guides
   '/api': '2026-07-24',
@@ -3592,10 +3595,20 @@ async function renderSPA(context, pathname, meta, opts = {}) {
     /<link rel="canonical" href="[^"]*">/,
     '<link rel="canonical" href="' + pageUrl + '">'
   );
+  // Danish is the site's own language and the fallback for everyone else: x-default names the same URL (the foreign-area pages drop both below).
   html = html.replace(
-    /<link rel="alternate" hreflang="da" href="[^"]*">/,
-    '<link rel="alternate" hreflang="da" href="' + pageUrl + '">'
+    /<link rel="alternate" hreflang="da" href="[^"]*">\s*<link rel="alternate" hreflang="x-default" href="[^"]*">/,
+    '<link rel="alternate" hreflang="da" href="' + pageUrl + '">\n<link rel="alternate" hreflang="x-default" href="' + pageUrl + '">'
   );
+  // Article markup for the three long explainer pages (Ahrefs' crawl typed them as articles and found none). The blog posts have their own BlogPosting.
+  if (ARTICLE_PAGES[pathname]) {
+    const art = { '@context': 'https://schema.org', '@type': 'Article', headline: meta.title.slice(0, 110), description: meta.description,
+      mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl }, url: pageUrl, inLanguage: 'da',
+      datePublished: ARTICLE_PAGES[pathname], dateModified: CONTENT_LASTMOD[pathname] || danishClock().todayDk,
+      author: { '@type': 'Organization', name: 'elpriser.org', url: 'https://elpriser.org' },
+      publisher: { '@type': 'Organization', name: 'elpriser.org', url: 'https://elpriser.org', logo: { '@type': 'ImageObject', url: 'https://elpriser.org/favicon-512.png' } } };
+    html = html.replace('</head>', () => `  <script type="application/ld+json">${JSON.stringify(art).replace(/</g, '\\u003c')}</script>\n</head>`);
+  }
   if (opts.download) {
     // All 26 pages are translations of one another: each lists the whole set (itself included), x-default is English. The template's single
     // hreflang="da" gives way to the set, so the Danish page lists the 25 others too.

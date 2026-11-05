@@ -13,6 +13,7 @@
 <meta name="description" content="Se elprisen lige nu og i morgen time for time i DK1 (Vest) og DK2 (Øst) — inkl. tariffer, elafgift og moms. Find de billigste timer med prognose.">
 <link rel="canonical" href="https://elpriser.org/">
 <link rel="alternate" hreflang="da" href="https://elpriser.org/">
+<link rel="alternate" hreflang="x-default" href="https://elpriser.org/">
 <meta name="robots" content="index, follow">
 <!-- Open Graph -->
 <meta property="og:type" content="website">
@@ -869,7 +870,25 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 <!-- ═══════ START PAGE ═══════ -->
 <main data-page="start" class="active">
   <!-- The questions and answers in the FAQ further down this page. -->
-  <script type="application/ld+json">{
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://elpriser.org/#organization",
+  "name": "elpriser.org",
+  "alternateName": "Elpriser",
+  "url": "https://elpriser.org",
+  "logo": "https://elpriser.org/favicon-512.png",
+  "email": "hello@elpriser.org",
+  "description": "Elpriser time for time for Danmark og over 30 europæiske lande, gratis og uden konto.",
+  "sameAs": [
+    "https://apps.apple.com/dk/app/id6820474476",
+    "https://play.google.com/store/apps/details?id=org.elpriser.app",
+    "https://huggingface.co/Elpriser"
+  ]
+}
+</script>
+<script type="application/ld+json">{
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
