@@ -46,12 +46,13 @@ const print = (title, rows, cols) => {
   for (const r of rows) console.log('  ' + cols.map(([k, w]) => String(k === 'calls' ? num(+r.calls) : (r[k] || '–')).padEnd(w)).join(' '));
 };
 
-const [versions, hosts, endpoints, errors, strategies] = await Promise.all([
+const [versions, hosts, endpoints, errors, strategies, areas] = await Promise.all([
   sql(`SELECT blob1 AS client, blob2 AS version, ${calls} AS calls FROM elpriser_usage WHERE ${where} GROUP BY client, version ORDER BY client, calls DESC FORMAT JSON`),
   sql(`SELECT blob1 AS client, blob3 AS host, ${calls} AS calls FROM elpriser_usage WHERE ${where} AND blob3 != '' GROUP BY client, host ORDER BY client, calls DESC FORMAT JSON`),
   sql(`SELECT blob1 AS client, blob4 AS endpoint, ${calls} AS calls FROM elpriser_usage WHERE ${where} GROUP BY client, endpoint ORDER BY client, calls DESC FORMAT JSON`),
   sql(`SELECT blob1 AS client, blob2 AS version, blob7 AS status, blob8 AS reason, ${calls} AS calls FROM elpriser_usage WHERE ${where} AND blob7 != '2xx' GROUP BY client, version, status, reason ORDER BY calls DESC FORMAT JSON`),
   sql(`SELECT blob1 AS client, blob6 AS strategy, ${calls} AS calls FROM elpriser_usage WHERE ${where} AND blob1 IN ('shelly', 'homeassistant') AND blob4 IN ('now', 'schedule') GROUP BY client, strategy ORDER BY client, calls DESC FORMAT JSON`),
+  sql(`SELECT blob1 AS client, blob5 AS area, ${calls} AS calls FROM elpriser_usage WHERE ${where} GROUP BY client, area ORDER BY calls DESC LIMIT 60 FORMAT JSON`),
 ]);
 
 console.log(`Apps, Shelly og Home Assistant — sidste ${days} dage (kald, ikke enheder)`);
@@ -60,4 +61,5 @@ print('Platformens egen version (Shelly-firmware / Home Assistant)', hosts, [['c
 print('Endpoints', endpoints, [['client', 14], ['endpoint', 16], ['calls', 10]]);
 print('Fejl (4xx/5xx)', errors, [['client', 14], ['version', 14], ['status', 6], ['reason', 18], ['calls', 10]]);
 print('Strategi / visning (Shelly og HA)', strategies, [['client', 14], ['strategy', 22], ['calls', 10]]);
+print('Prisområde / zone (DK1, DK2 og, fra 2026-11-05, øvrige zoner via /api/nordic; tom = ingen zone i kaldet)', areas, [['client', 14], ['area', 10], ['calls', 10]]);
 console.log('\nKun kald tælles. Der gemmes intet id, ingen IP og intet netselskab, så et kald kan ikke føres tilbage til en enhed.');

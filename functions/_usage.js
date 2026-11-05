@@ -2,7 +2,7 @@
  * Anonymous usage counts for the apps and for Shelly / Home Assistant installs.
  *
  * One Analytics Engine data point per request from a recognised client: which
- * client and version, which endpoint, price area, strategy and whether it
+ * client and version, which endpoint, price area or zone, strategy and whether it
  * succeeded. Nothing that identifies a person or a device is written — no IP
  * address, no device id, no grid company (gln), no query string — so a count
  * cannot be traced back to anyone. Browsers and unknown clients are not
@@ -21,7 +21,9 @@
  * the free Analytics Engine plan caps writes at 100k points a day.
  */
 
-const ENDPOINTS = new Set(['now', 'prices', 'schedule', 'forecast', 'raw', 'supplierlookup', 'shelly', 'flex']);
+const ENDPOINTS = new Set(['now', 'prices', 'schedule', 'forecast', 'raw', 'supplierlookup', 'shelly', 'flex', 'nordic']);
+// A bidding-zone code as /api/nordic takes it (dk1, se3, de, gb, ...): a short word, never free text.
+const ZONE = /^[a-z]{2}[a-z0-9]?$/;
 const WORD = /^[a-z0-9_]{1,24}$/;
 const VERSION = /^[0-9][0-9.]{0,15}(?: \([0-9]{1,5}\))?$/;
 const SCRIPT_CLIENT = /^(shelly-script|ha-plan)-([0-9]{1,3})$/;
@@ -84,13 +86,17 @@ export function recordUsage(env, request, status, random = Math.random) {
       if (random() * NOW_SAMPLE >= 1) return false;
       weight = NOW_SAMPLE;
     }
+    // DK1/DK2 come in as ?area=, every other zone as /api/nordic?zone= — both are public codes, not a place.
     const area = u.searchParams.get('area');
+    const zone = (u.searchParams.get('zone') || '').toLowerCase();
+    const where = endpoint === 'nordic' && ZONE.test(zone) ? zone.toUpperCase()
+      : area === 'DK1' || area === 'DK2' ? area : '';
     const strat = u.searchParams.get('strategy') || u.searchParams.get('mode') || '';
     env.USAGE.writeDataPoint({
       indexes: [c.client],
       blobs: [
         c.client, c.version, c.host, endpoint,
-        area === 'DK1' || area === 'DK2' ? area : '',
+        where,
         WORD.test(strat) ? strat : (strat ? 'other' : ''),
         status >= 500 ? '5xx' : status >= 400 ? '4xx' : status >= 300 ? '3xx' : '2xx',
         ...(status === 400 ? [badRequestReason(u.searchParams)] : []),

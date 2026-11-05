@@ -55,6 +55,14 @@ test('/api/now from Shelly and Home Assistant is sampled 1 in 5 and weighted; ap
   assert.equal(points[1].doubles[0], 1);
 });
 
+test('/api/nordic records the zone code (and only a well-formed one)', () => {
+  const { points, env } = sink();
+  recordUsage(env, req('https://elpriser.org/api/nordic?zone=se3', 'ElpriserIOS/1.3.0 (11)'), 200, always);
+  recordUsage(env, req('https://elpriser.org/api/nordic?zone=de', 'ElpriserAndroid/1.3.0 (7)'), 200, always);
+  recordUsage(env, req('https://elpriser.org/api/nordic?zone=%3Cscript%3E', 'ElpriserIOS/1.3.0 (11)'), 400, always);
+  assert.deepEqual(points.map(p => p.blobs[3] + ':' + p.blobs[4]), ['nordic:SE3', 'nordic:DE', 'nordic:']);
+});
+
 test('status classes, odd values and a missing binding', () => {
   const { points, env } = sink();
   recordUsage(env, req('https://elpriser.org/api/schedule?area=DK9&strategy=DROP%20TABLE', 'Shelly/1.4.4'), 503, always);
