@@ -1093,7 +1093,7 @@ async function startServer() {
     await page.evaluate(() => localStorage.clear());
     await page.goto(BASE + '/prognose');
     await page.waitForSelector('main[data-page="prognose"].active .pris .pris-now');
-    assert.deepEqual(await page.locator('h1').allTextContents(), ['Elprisprognose']);
+    assert.deepEqual(await page.locator('h1').allTextContents(), ['Elpriser prognose']);
     assert.equal((await page.locator('main[data-page="prognose"] .page-eyebrow').textContent()).trim(), 'Forventede elpriser · DK1 Vest');
     assert.equal((await page.locator('main[data-page="prognose"] #fcPeriodDays').evaluate(e => e.parentElement.textContent)).trim(),
       'Nu og 7 døgn frem, time for time: faktiske børspriser, så langt de er afregnet, og en prognose for resten. Jo længere frem, jo mere usikker er den.');

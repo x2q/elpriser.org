@@ -212,6 +212,7 @@ for (const area of ['DK1', 'DK2']) {
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff', '/download',
   '/integrationer',
+  '/terms', '/vilkaar',
   '/blog',
   '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/norden', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
   ...NET_URLS,
@@ -228,6 +229,8 @@ const CONTENT_LASTMOD = {
   '/om-elpriser': '2026-10-17',  // absorbed the Forstå din elpris guide
   '/shelly-tariff': '2026-07-24',
   '/download': '2026-11-03',
+  '/terms': '2026-11-05',
+  '/vilkaar': '2026-11-05',
   '/integrationer': '2026-11-03',  // new; bump it when a status in functions/_integrations.js changes
   '/blog/elafgift-2028': '2026-07-24',
   '/blog/elafgift-og-spotpris': '2026-10-17',
@@ -971,11 +974,12 @@ function buildLivePriceMarkup(dk1, dk2) {
 
   const iso = new Date().toISOString();
   const priceLd = (name, price) => ({
-    "@type": "PriceSpecification",
+    "@type": "UnitPriceSpecification",   // PriceSpecification itself has no unitText (Ahrefs flagged it); this subtype does
     name,
     price: price.toFixed(4),
     priceCurrency: "DKK",
     unitText: "kWh",
+    unitCode: "KWH",
     validFrom: iso,
   });
   const jsonLd = `<script type="application/ld+json">
@@ -3047,7 +3051,7 @@ async function buildPricesIntro(context, area, net, fcPromise) {
 
   const h1 = net
     ? `Elpris hos ${net.name} i dag — ${areaLabel}`
-    : `Elpriser ${areaLabel} i dag — time for time`;
+    : `Elpris ${areaLabel.replace(/^(DK\d) (.+)$/, '$2 ($1)')} i dag — time for time`;   // "Elpris Vest (DK1)": the words people search for ("elpris vest"), area code in brackets
 
   // Always present, even empty: the browser rewrites it when the view changes.
   const ps = [(now && now.price != null)
@@ -3076,11 +3080,12 @@ async function buildPricesIntro(context, area, net, fcPromise) {
   const jsonLd = (now && now.price != null) ? `<script type="application/ld+json">
 ${JSON.stringify({
     '@context': 'https://schema.org',
-    '@type': 'PriceSpecification',
+    '@type': 'UnitPriceSpecification',
     name: net ? `Aktuel samlet elpris hos ${net.name} (${areaLabel}) inkl. alt` : `Aktuel elpris ${areaLabel} inkl. Energinets tariffer, elafgift og moms`,
     price: now.price.toFixed(4),
     priceCurrency: 'DKK',
     unitText: 'kWh',
+    unitCode: 'KWH',
     validFrom: new Date().toISOString(),
   })}
 </script>` : '';

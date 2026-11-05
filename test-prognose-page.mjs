@@ -5,7 +5,7 @@
  *
  * The page is the canonical Pris screen of the front page, configured with PRIS_FC (2, 5 and 7 døgn, opening on 7,
  * seven days, an extra column "Usikkerhed"), with a head above it and two text blocks below. What these tests guard:
- *  - 200, ONE h1 ("Elprisprognose"), <html lang="da">, canonical, a title with "7 dage", valid JSON-LD;
+ *  - 200, ONE h1 ("Elpriser prognose"), <html lang="da">, canonical, a title with "7 dage", valid JSON-LD;
  *  - the screen is drawn into the HTML for DK1, Din pris, no net — period 7, 168 bars, seven day rows, Usikkerhed;
  *  - the feed carries ten days, the page shows seven: "10 døgn" / "10 dage" is nowhere in what the page says
  *    (title, description, headings, text, dialogs, JSON-LD, llms.txt's line about it);
@@ -70,7 +70,7 @@ ok(/7 dage/.test(desc) && desc.length >= 80 && desc.length <= 155 && !TEN.test(d
 ok(h.includes('<link rel="canonical" href="https://elpriser.org/prognose">') && h.includes('<meta property="og:url" content="https://elpriser.org/prognose">'), '/prognose: canonical og og:url peger på siden selv');
 ok(new RegExp(`<meta property="og:title" content="${title}">`).test(h) && new RegExp(`<meta name="twitter:title" content="${title}">`).test(h), '/prognose: og- og twitter-titlen er sidens titel');
 const h1s = [...h.matchAll(/<h1[^>]*>([^<]*)<\/h1>/g)].map(m => m[1]);
-ok(h1s.length === 1 && h1s[0] === 'Elprisprognose', '/prognose: præcis én h1, "Elprisprognose"', JSON.stringify(h1s));
+ok(h1s.length === 1 && h1s[0] === 'Elpriser prognose', '/prognose: præcis én h1, "Elpriser prognose"', JSON.stringify(h1s));
 const mains = [...h.replace(/<!--[\s\S]*?-->/g, '').matchAll(/<main[^>]*>/g)].map(m => m[0]);
 ok(mains.length === 1 && mains[0].startsWith('<main data-page="prognose" class="active'), '/prognose: én <main data-page="prognose"> og den er aktiv', mains.join(' '));
 // Structured data parses: the shared WebApplication and WebSite, the breadcrumb, and this page's FAQ — nothing invented.
@@ -132,7 +132,7 @@ const again = await get('/prognose');
 ok(again.status === 200 && again.body === raw && upstream.length === 0, '/prognose: anden visning kommer fra cachen uden kald til prognosen', String(upstream.length));
 store.clear(); upstream = []; downFeed = true;
 const down = await get('/prognose');
-ok(down.status === 200 && store.size === 0 && /<h1[^>]*>Elprisprognose<\/h1>/.test(down.page) && /Sådan laves prognosen/.test(down.page), '/prognose: uden data serveres siden (hoved og tekst), men gemmes aldrig');
+ok(down.status === 200 && store.size === 0 && /<h1[^>]*>Elpriser prognose<\/h1>/.test(down.page) && /Sådan laves prognosen/.test(down.page), '/prognose: uden data serveres siden (hoved og tekst), men gemmes aldrig');
 downFeed = false;
 // The other pages are untouched by the configuration: the same screen, two periods, no Usikkerhed.
 store.clear();

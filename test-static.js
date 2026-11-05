@@ -524,7 +524,7 @@ test('/prognose: the canonical Pris screen with PRIS_FC, a head above it, two te
   const main = INDEX.slice(INDEX.indexOf('<main style="display:none" data-page="prognose"'), INDEX.indexOf('<!-- ═══════ API DOCS PAGE'));
   const at = x => main.indexOf(x);
   // Order: eyebrow, the page's one h1, lead, the screen's mount, then the two text blocks.
-  assert.ok(at('class="page-eyebrow"') > 0 && at('<h1 class="page-title">Elprisprognose</h1>') > at('class="page-eyebrow"') && at('id="fcPeriodDays"') > at('<h1 ')
+  assert.ok(at('class="page-eyebrow"') > 0 && at('<h1 class="page-title">Elpriser prognose</h1>') > at('class="page-eyebrow"') && at('id="fcPeriodDays"') > at('<h1 ')
     && at('data-pris-mount><!--SSR_PRIS--></div>') > at('id="fcPeriodDays"') && at('Sådan laves prognosen') > at('<!--SSR_PRIS-->') && at('Det kan prognosen ikke') > at('Sådan laves prognosen'),
     'the section is not head, Pris screen, "Sådan laves prognosen", "Det kan prognosen ikke" in that order');
   assert.equal((main.match(/<h1[\s>]/g) || []).length, 1, 'the /prognose section must carry exactly one h1');
