@@ -25,18 +25,23 @@ object Position {
         val providers = listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER, LocationManager.PASSIVE_PROVIDER)
             .filter { runCatching { lm.isProviderEnabled(it) }.getOrDefault(false) }
         for (p in providers) {
-            val fix = suspendCancellableCoroutine<Location?> { cont ->
-                val cancel = CancellationSignal()
-                cont.invokeOnCancellation { cancel.cancel() }
-                val timer = android.os.Handler(android.os.Looper.getMainLooper())
-                val timeout = Runnable { cancel.cancel() }
-                timer.postDelayed(timeout, 8_000)
-                LocationManagerCompat.getCurrentLocation(lm, p, cancel, ContextCompat.getMainExecutor(c)) { loc ->
-                    timer.removeCallbacks(timeout)
-                    if (cont.isActive) cont.resume(loc)
+            // The passive provider never produces a fix of its own; it only has a last known one.
+            if (p != LocationManager.PASSIVE_PROVIDER) {
+                val fix = suspendCancellableCoroutine<Location?> { cont ->
+                    val cancel = CancellationSignal()
+                    cont.invokeOnCancellation { cancel.cancel() }
+                    val timer = android.os.Handler(android.os.Looper.getMainLooper())
+                    // Cancelling the request does not call the consumer back, so the timeout has to resume the coroutine itself,
+                    // otherwise a provider without a fix keeps "Finder dit netselskab …" spinning for good.
+                    val timeout = Runnable { cancel.cancel(); if (cont.isActive) cont.resume(null) }
+                    timer.postDelayed(timeout, 6_000)
+                    LocationManagerCompat.getCurrentLocation(lm, p, cancel, ContextCompat.getMainExecutor(c)) { loc ->
+                        timer.removeCallbacks(timeout)
+                        if (cont.isActive) cont.resume(loc)
+                    }
                 }
+                if (fix != null) return fix
             }
-            if (fix != null) return fix
             runCatching { lm.getLastKnownLocation(p) }.getOrNull()?.let { return it }
         }
         return null
