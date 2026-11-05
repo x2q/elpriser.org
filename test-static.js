@@ -2418,6 +2418,19 @@ test('mcp: the remote MCP server and its discovery documents are routed, shipped
   assert.ok(SRV.includes('remote: https://elpriser.org/mcp'), 'llms.txt names the remote MCP endpoint');
 });
 
+test('/elpriser-i-morgen: one path through the SEO entry, sitemap, route maps, router, dev server, llms.txt and the generator', () => {
+  const entry = ROUTES.slice(ROUTES.indexOf(`'/elpriser-i-morgen': {`), ROUTES.indexOf('\n  },', ROUTES.indexOf(`'/elpriser-i-morgen': {`)));
+  assert.ok(/title: 'Elpriser i morgen — time for time, DK1 og DK2'/.test(entry) && /hash: '#elpriser-i-morgen'/.test(entry), 'SEO entry');
+  assert.ok(/SITEMAP_URLS = \[[^\]]*'\/elpriser-i-morgen'/.test(ROUTES), 'sitemap lists it (daily lastmod: it is drawn with live prices)');
+  assert.ok(/'elpriser-i-morgen': 'elpriser-i-morgen'/.test(ROUTES), 'HASH_TO_DATA_PAGE');
+  assert.ok(/opts\.imorgen\) return renderCachedPage\([^)]*IMORGEN_SSR_VERSION/.test(ROUTES) && ROUTES.includes("html.replace('<!--SSR_IMORGEN-->'"), 'cached SSR');
+  assert.ok(SERVER.includes("'/elpriser-i-morgen': '#elpriser-i-morgen'"), 'dev server route');
+  assert.ok(INDEX.includes("'/elpriser-i-morgen':'elpriser-i-morgen'") && /h==='elpriser-i-morgen'\)\{[^\n]*document\.title='Elpriser i morgen/.test(INDEX), 'client route and title');
+  assert.ok(/<main style="display:none" data-page="elpriser-i-morgen" class="im-page[^"]*">/.test(INDEX) && INDEX.includes('<!--SSR_IMORGEN-->') && INDEX.includes('<h2 class="page-title">Elpriser i morgen</h2>'), 'the section and its placeholder');
+  assert.ok(/\[Elpriser i morgen\]\(https:\/\/elpriser\.org\/elpriser-i-morgen\)/.test(ROUTES), 'llms.txt lists it');
+  assert.ok(ROUTES.includes('href="/elpriser-i-morgen"'), 'the area pages link to it');
+});
+
 test('/integrationer: one path through the SEO entry, sitemap, route maps, router, dev server and llms.txt; statuses live in one file', () => {
   const entry = ROUTES.slice(ROUTES.indexOf(`'/integrationer': {`), ROUTES.indexOf('\n  },', ROUTES.indexOf(`'/integrationer': {`)));
   const field = f => (entry.match(new RegExp(`${f}: '([^']*)'`)) || [])[1] || '';

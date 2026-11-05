@@ -304,6 +304,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - Per-netselskab priser: \`/dk1/<slug>\` eller \`/dk2/<slug>\` viser dagens pris inkl. nettarif for det valgte netselskab (fx https://elpriser.org/dk1/n1, https://elpriser.org/dk2/radius).
 - Elpris pr. by (pilot): \`/elpris/<by>\` viser elprisen time for time hos byens hyppigste netselskab, med dagens nettarif-profil og netselskabets andel af de adresser vi har tjekket — ${CITIES.map(c => `[${c.name}](https://elpriser.org/elpris/${c.slug})`).join(', ')}.
 - [Nettariffer](https://elpriser.org/tariffer): Sammenligning af nettariffer for alle danske netselskaber.
+- [Elpriser i morgen](https://elpriser.org/elpriser-i-morgen): Morgendagens elpris time for time for DK1 og DK2 med billigste og dyreste time; faktiske børspriser, så snart de er offentliggjort omkring kl. 13, før det prognose.
 - [Elprisprognose](https://elpriser.org/prognose): Forventede elpriser for DK1 og DK2 time for time de næste 7 døgn. Laves dagligt af en maskinlæringsmodel ud fra vejrprognoser (vind og sol) og prisen samme ugedag de seneste fire uger; skifter til faktiske børspriser, når de offentliggøres ca. kl. 13.
 - [Elpriser i Norden](https://elpriser.org/norden): Alle prisområder i Norge, Sverige, Finland og Holland side om side i kr/kWh uden moms, så de kan sammenlignes. Landesiderne er på landets eget sprog og viser spotpris time for time for i dag og i morgen og prognose for de næste 2 og 5 døgn: [Norge](https://elpriser.org/no/strompris) (NO1 Oslo, NO2 Kristiansand, NO3 Trondheim, NO4 Tromsø, NO5 Bergen), [Sverige](https://elpriser.org/sv/elpris) (SE1 Luleå, SE2 Sundsvall, SE3 Stockholm, SE4 Malmö), [Finland](https://elpriser.org/fi/sahkon-hinta) og [Holland](https://elpriser.org/nl/stroomprijs). Prognosen kommer fra én åben maskinlæringsmodel for alle 13 prisområder ([model på Hugging Face](https://huggingface.co/Elpriser/nordic-price-forecast)); omregnet til lokal valuta med Den Europæiske Centralbanks daglige referencekurs, uden moms, afgifter og nettariffer.
 {{EUROPE_PAGES}}
@@ -3032,7 +3033,7 @@ function areaForecastSentence(fc, area, todayDk) {
   const d = forecastFacts(fc, todayDk, 7);
   if (d.length < 2) return '';
   return `Prognose for de næste ${d.length} døgn: elprisen i ${FC_WHERE[area]} ligger ${fcClause(d)} (${FC_INCL}). ${fcSettledText(d)} `
-    + `<a href="/prognose" class="text-brand-500 underline">Se hele prognosen time for time</a>.`;
+    + `<a href="/prognose" class="text-brand-500 underline">Se hele prognosen time for time</a> eller <a href="/elpriser-i-morgen" class="text-brand-500 underline">elpriserne i morgen</a>.`;
 }
 
 /**
@@ -3299,7 +3300,7 @@ function imorgenHTML(fc1, fc2, todayDk) {
   const have = areas.filter(a => a[1] && a[1].ps.some(v => typeof v === 'number'));
   if (!have.length) return { body: '<p class="text-sm text-gray-600 dark:text-gray-400">Priserne for i morgen er ikke hentet endnu. <a href="/prognose" class="text-brand-500 underline">Se prognosen</a>.</p>', faq: [], full: false };
   const date = have[0][1].date, dt = new Date(date + 'T12:00:00Z');
-  const dayName = PRIS_I18N.da.wd[dt.getUTCDay()], dateText = `${dayName} den ${dt.getUTCDate()}. ${DA_MONTHS[dt.getUTCMonth()]}`;
+  const dayName = PRIS_I18N.da.wd[dt.getUTCDay()].replace(/^./, c => c.toUpperCase()), dateText = `${dayName} den ${dt.getUTCDate()}. ${DA_MONTHS[dt.getUTCMonth()]}`;
   const settled = have.every(a => a[1].real);
   const stat = a => {
     const ps = a[1].ps, idx = ps.map((v, h) => [v, h]).filter(x => typeof x[0] === 'number');
@@ -3309,7 +3310,8 @@ function imorgenHTML(fc1, fc2, todayDk) {
   const S = {}; for (const a of have) S[a[0]] = stat(a);
   const sentence = a => {
     const s = S[a[0]];
-    const cheap = [...s.cheap].sort((x, y) => x - y).map(h => fcHour(h).replace('kl. ', '')).join(', ');
+    const ch = [...s.cheap].sort((x, y) => x - y).map(h => fcHour(h).replace('kl. ', ''));
+    const cheap = ch.length > 1 ? `${ch.slice(0, -1).join(', ')} og ${ch[ch.length - 1]}` : ch[0];
     return `<p class="mt-2 text-sm text-gray-800 dark:text-gray-200 leading-relaxed"><strong>${FC_WHERE[a[0]]}:</strong> i gennemsnit ${prisNum(s.avg, 2)} kr/kWh, `
       + `billigst ${fcHour(s.lo[1])} (${prisNum(s.lo[0], 2)} kr/kWh) og dyrest ${fcHour(s.hi[1])} (${prisNum(s.hi[0], 2)} kr/kWh). De tre billigste timer er kl. ${cheap}.</p>`;
   };
