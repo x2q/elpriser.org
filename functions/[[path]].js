@@ -212,7 +212,6 @@ for (const area of ['DK1', 'DK2']) {
 const SITEMAP_URLS = [
   '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff', '/download',
   '/integrationer',
-  '/terms', '/vilkaar',
   '/blog',
   '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/norden', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
   ...NET_URLS,
@@ -229,8 +228,6 @@ const CONTENT_LASTMOD = {
   '/om-elpriser': '2026-10-17',  // absorbed the Forstå din elpris guide
   '/shelly-tariff': '2026-07-24',
   '/download': '2026-11-03',
-  '/terms': '2026-11-05',
-  '/vilkaar': '2026-11-05',
   '/integrationer': '2026-11-03',  // new; bump it when a status in functions/_integrations.js changes
   '/blog/elafgift-2028': '2026-07-24',
   '/blog/elafgift-og-spotpris': '2026-10-17',
