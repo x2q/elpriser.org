@@ -3287,7 +3287,7 @@ async function renderHomepage(context) {
 const ZONE_SSR_VERSION = 'zone-ssr-v28';
 const CITY_SSR_VERSION = 'city-ssr-v19';
 const PROGNOSE_SSR_VERSION = 'prognose-ssr-v17';
-const IMORGEN_SSR_VERSION = 'imorgen-ssr-v1';
+const IMORGEN_SSR_VERSION = 'imorgen-ssr-v2';
 
 /**
  * /elpriser-i-morgen: tomorrow's hourly prices for DK1 and DK2 (the feed's "inkl_alt": Energinet's tariffs, elafgift and moms, not the local nettarif), written
