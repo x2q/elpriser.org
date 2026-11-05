@@ -14,7 +14,7 @@ import { activateDataPage, stripInactiveMains, promoteSectionTitle } from '../_s
 import { recordUsage } from '../_usage.js';
 import { ESTIMATE_ZONES, withEstimate } from '../_estimate.js';
 import { NORDIC_LOCAL_SHIFT, rebucketToLocalDays } from '../_localdays.js';
-import { ZONE_TZ, FORECAST_KEYS, hourlySlots, storedSlots, mergeSlots, isoZ } from '../_slots.js';
+import { ZONE_TZ, FORECAST_KEYS, tzOffsetMin, hourlySlots, storedSlots, mergeSlots, isoZ } from '../_slots.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -1190,8 +1190,8 @@ async function zoneFeed(zone, eu, env) {
 // See functions/_slots.js for the idea. Two sources behind one shape:
 //   wholesale zones (every zone, `price` = the day-ahead price in the zone's currency per kWh): the same feed as /api/nordic, cut into UTC slots, with the
 //     15-minute prices of KV `eu-slots-<zone>` laid over the days that have them;
-//   Denmark with a `mode` (dk1/dk2): /api/forecast's price for the mode, the settled days at the market's 15-minute resolution (Energi Data Service
-//     DayAheadPrices), the forecast days hourly.
+//   Denmark with a `mode` (dk1/dk2): /api/forecast's price for the mode, the settled days at the market's 15-minute resolution (KV `eu-slots-dk1|dk2`),
+//     the forecast days hourly.
 const SLOT_ROUND = 5;            // decimals of a price per kWh
 const slotRound = v => +v.toFixed(SLOT_ROUND);
 const slotOut = (s, f) => {
@@ -1228,50 +1228,36 @@ async function handleZoneSlots(zone, q, request, env) {
 }
 
 /** Danish price modes as slots. The hourly days are /api/forecast's (so every mode, the tariff by date and the model days are exactly its numbers); a
- *  settled day is then refined to 15 minutes: a quarter's price is its hour's price plus the VAT-inclusive difference between the quarter's spot price
- *  and the hour's mean spot, which is how the hourly price is made. */
+ *  settled day is then refined to 15 minutes from KV `eu-slots-<area>` (the day-ahead results, written by scripts/eu_prices/build_entsoe_prices.py): a
+ *  quarter's price is its hour's price plus the VAT-inclusive difference between the quarter's spot price and the hour's mean spot, which is how the hourly
+ *  price is made (the hour is the mean of its quarters). Energi Data Service is not asked for them: it answers a Worker's calls with 429. */
+const EDS_EUR_DKK = 7.46038;       // Denmark's fixed central rate (ERM II): Energi Data Service's DKK price is the euro price times it
 async function handleDkSlots(area, mode, gln, q, request, env) {
   const currency = (q.get('currency') || 'local').toLowerCase();
   if (!['local', 'eur'].includes(currency)) return fail(400, 'currency must be local or eur');
-  const data = await forecastData(area, mode, gln, env);
+  const tz = ZONE_TZ[area.toLowerCase()];
+  const [data, stored] = await Promise.all([forecastData(area, mode, gln, env), kvJson(env, `eu-slots-${area.toLowerCase()}`, { ttl: 900 })]);
   if (data.fail) return data.fail;
   const { days } = data;
-  const today = fmtUTC(danishNow());
-  const settled = days.filter(d => d.type === 'actual');
-  let records = [];
-  if (settled.length) {
-    const from = settled[0].date;
-    const to = fmtUTC(new Date(Date.parse(settled[settled.length - 1].date) + 86_400_000));
-    try {
-      records = await edgeCached(`slots-eds-${area}-${from}-${to}`, priceTtl(to),
-        () => fetchEdsDataset('DayAheadPrices', area, from, to), from >= today ? env : undefined,
-        d => to > tomorrowDK() && tomorrowDue() && !(d && d.some(r => String(r.TimeDK).startsWith(tomorrowDK()))));
-    } catch (e) {
-      console.error('slots: 15-minute prices unavailable, serving the hourly ones', e);     // the hourly prices of /api/forecast stand in
-    }
-  }
   const vat = mode === 'spot_ex' ? 1 : 1.25;
-  const byHour = new Map();                                            // 'YYYY-MM-DD hh' (DK clock) -> quarter DKK/MWh values of that local hour
-  for (const r of records) {
-    if (typeof r.DayAheadPriceDKK !== 'number' || !r.TimeUTC || !r.TimeDK) continue;
-    const k = `${r.TimeDK.slice(0, 10)} ${r.TimeDK.slice(11, 13)}`;
-    (byHour.get(k) ?? byHour.set(k, []).get(k)).push(r);
+  // quarters of each local (date, hour) of the zone's wall clock; a group that is not whole (a quarter missing) is not used
+  const groups = new Map();
+  for (const s of storedSlots(stored, Date.now())) {
+    if (s.end - s.start !== 900_000) continue;
+    const local = new Date(s.start + tzOffsetMin(tz, s.start) * 60000).toISOString();
+    const k = `${local.slice(0, 10)} ${+local.slice(11, 13)}`;
+    (groups.get(k) ?? groups.set(k, []).get(k)).push(s);
   }
   const slots = [];
   for (const day of days) {
-    const hourlyDay = hourlySlots(day, ZONE_TZ[area.toLowerCase()], FORECAST_KEYS).map(h => ({ ...h, type: day.type === 'actual' ? 'actual' : 'forecast' }));
-    const prices = new Map(day.prices.filter(p => p && typeof p.price === 'number').map(p => [p.hour, p.price]));
+    const hourlyDay = hourlySlots(day, tz, FORECAST_KEYS).map(h => ({ ...h, type: day.type === 'actual' ? 'actual' : 'forecast' }));
     const quarters = [];
     if (day.type === 'actual') {
-      for (const [k, rows] of byHour) {
-        if (k.slice(0, 10) !== day.date) continue;
-        const base = prices.get(+k.slice(11));
-        if (base === undefined) continue;
-        const mean = rows.reduce((a, r) => a + r.DayAheadPriceDKK, 0) / rows.length;
-        for (const r of rows) {
-          const start = Date.parse(r.TimeUTC.endsWith('Z') ? r.TimeUTC : r.TimeUTC + 'Z');
-          quarters.push({ start, end: start + 900_000, value: base + vat * (r.DayAheadPriceDKK - mean) / 1000, type: 'actual' });
-        }
+      for (const p of day.prices) {
+        const rows = groups.get(`${day.date} ${p.hour}`);
+        if (!rows || typeof p.price !== 'number' || rows.length % 4) continue;
+        const mean = rows.reduce((a, r) => a + r.value, 0) / rows.length;
+        for (const r of rows) quarters.push({ ...r, value: p.price + vat * (r.value - mean) * EDS_EUR_DKK / 1000, type: 'actual' });
       }
       quarters.sort((a, b) => a.start - b.start);
     }
@@ -1551,7 +1537,7 @@ const OPENAPI_SPEC = {
           'Made for consumers that plan against the clock (evcc, schedulers): the zone\'s daylight-saving rule is applied here, once, so a client needs no time zone database and no assumption about the step.',
           '',
           '**Resolution.** The day-ahead market has settled in 15-minute slots since 2025-10-01 and a settled day is returned as 15-minute slots wherever the 15-minute prices are held (the EU zones from the',
-          'Energy-Charts and ENTSO-E jobs, Denmark from Energi Data Service). Everything else is returned as the slots it is: the model\'s forecast days hourly, a zone whose source is hourly or half-hourly with that step.',
+          'Energy-Charts and ENTSO-E jobs, Denmark and the Nordic zones from ENTSO-E). Everything else is returned as the slots it is: the model\'s forecast days hourly, a zone whose source is hourly or half-hourly with that step.',
           'Every slot has its own `start` and `end`, so never assume the step: `end - start` is the slot. Slots are sorted and never overlap.',
           '',
           '**Wholesale zones** (all 40 zones, `zone` as in `/api/nordic`): the day-ahead price, without VAT, taxes or grid fees, converted with the ECB reference rate (`rate`, `rateDate`, `rateSource`) unless `currency=eur`.',

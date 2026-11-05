@@ -155,16 +155,29 @@ test('/api/slots: unknown zone, mode on a wholesale zone, bad currency, gb in eu
   assert.equal((await get({ 'eu-prices-gb': feed('gb', [flatDay(day(0))]) }, '/api/slots?zone=gb')).body.currency, 'GBP');
 });
 
+/** The 15-minute record of dk1 for the Danish days of today and tomorrow: four quarters around each hour's mean, the euro price of the fake market's hour / 7.46. */
+const dkQuarters = async () => {
+  const { spotAt } = await import('./tests/upstream.mjs');
+  const rows = [];
+  for (const d of [day(0), day(1)]) {
+    const from = localMidnight(d, 'Europe/Copenhagen');
+    for (let t = from; t < localMidnight(iso(Date.parse(d + 'T00:00:00Z') + DAY), 'Europe/Copenhagen'); t += 3600000) {
+      const eur = spotAt(new Date(t)) / 7.46038;
+      [-6, -3, 3, 6].forEach((o, i) => rows.push([t / 1000 + i * 900, 15, +(eur + o).toFixed(2)]));
+    }
+  }
+  return { zone: 'dk1', generated: day(0), unit: 'EUR/MWh', slots: rows };
+};
+
 test('/api/slots for Denmark: settled days in 15-minute slots whose mean is the hour of /api/forecast, forecast days hourly, every mode', async () => {
-  const api = await createApi({ kv: makeKv({}), ecb: ECB });
+  const api = await createApi({ kv: makeKv({ 'eu-slots-dk1': await dkQuarters() }), ecb: ECB });
   const fc = await api.get('/api/forecast?area=DK1&mode=inkl_alt');
   const r = await api.get('/api/slots?zone=dk1&mode=inkl_alt');
   assert.equal(r.status, 200);
   assert.equal(r.body.currency, 'DKK');
   const settled = r.body.slots.filter(s => s.type === 'actual');
   const quarters = settled.filter(s => Date.parse(s.end) - Date.parse(s.start) === 900000);
-  // (the fake market reads `start` as a UTC date, so the first Danish hour of the window has no quarters: it stays one hourly slot, never a hole)
-  assert.ok(quarters.length >= 180 && settled.length - quarters.length <= 2, `today and tomorrow are 15-minute slots (${quarters.length} of ${settled.length})`);
+  assert.ok(quarters.length >= 180 && settled.length === quarters.length, `today and tomorrow are 15-minute slots (${quarters.length} of ${settled.length})`);
   assert.ok(r.body.slots.filter(s => s.type === 'forecast').every(s => Date.parse(s.end) - Date.parse(s.start) === 3600000), 'forecast days are hourly');
   // the four quarters of an hour average to the hour's forecast price (rounded to 4 decimals there)
   const hourOf = new Map(), want = new Map();
@@ -175,18 +188,19 @@ test('/api/slots for Denmark: settled days in 15-minute slots whose mean is the 
   }
   let checked = 0;
   for (const [k, v] of hourOf) {
-    if (v.length !== 4) continue;
+    assert.equal(v.length, 4, k);
     const local = new Date(Date.parse(k) + tzOffsetMin('Europe/Copenhagen', Date.parse(k)) * 60000).toISOString();
     const w = want.get(`${local.slice(0, 10)} ${+local.slice(11, 13)}`);
-    if (w === undefined) continue;
-    assert.ok(Math.abs(v.reduce((a, b) => a + b, 0) / 4 - w) < 0.0003, `${k}: mean of the quarters ${v} vs hour ${w}`);
+    assert.ok(w !== undefined && Math.abs(v.reduce((a, b) => a + b, 0) / 4 - w) < 0.0003, `${k}: mean of the quarters ${v} vs hour ${w}`);
     checked++;
   }
   assert.ok(checked >= 40, `compared ${checked} hours`);
-  // the quarter prices differ within the hour (the fake market has four different quarters)
-  assert.ok(new Set(settled.slice(0, 4).map(s => s.price)).size === 4);
-  const spot = await api.get('/api/slots?zone=dk2&mode=spot_ex');
+  // the quarters differ within the hour, by VAT times the spread of the euro prices in DKK: -6, -3, +3, +6 EUR/MWh -> 7.46038 * 1.25 / 1000 per EUR/MWh
+  const q = settled.slice(0, 4).map(s => s.price);
+  assert.ok(Math.abs((q[3] - q[0]) - 12 * 7.46038 * 1.25 / 1000) < 0.0002, `quarter spread ${q}`);
+  const spot = await api.get('/api/slots?zone=dk1&mode=spot_ex');
   assert.equal(spot.status, 200);
+  assert.ok(Math.abs(spot.body.slots[3].price - spot.body.slots[0].price - 12 * 7.46038 / 1000) < 0.0002, 'spot_ex has no VAT on the spread');
   assert.equal((await api.get('/api/slots?zone=dk1&mode=nope')).status, 400);
   assert.equal((await api.get('/api/slots?zone=dk1&mode=net_inkl_alt')).status, 400, 'a net_ mode needs a gln');
   assert.equal((await api.get('/api/slots?zone=dk1&gln=5790001089030')).status, 400);
@@ -197,6 +211,23 @@ test('/api/slots for Denmark: settled days in 15-minute slots whose mean is the 
   const eur = await api.get('/api/slots?zone=dk1&mode=spot_ex&currency=eur');
   assert.equal(eur.body.currency, 'EUR');
   assert.ok(Math.abs(eur.body.slots[0].price * 7.4748 - spot.body.slots[0].price) < 0.01);
+});
+
+test('/api/slots for Denmark: without a 15-minute record, or with a part-hour one, the hourly prices of /api/forecast stand in - never a hole', async () => {
+  const none = await createApi({ kv: makeKv({}), ecb: ECB });
+  const fc = (await none.get('/api/forecast?area=DK2&mode=inkl_alt')).body.days.filter(d => d.type === 'actual').reduce((n, d) => n + d.prices.filter(p => p.price !== null).length, 0);
+  const r = await none.get('/api/slots?zone=dk2&mode=inkl_alt');
+  assert.equal(r.status, 200);
+  const hourly = r.body.slots.filter(s => s.type === 'actual');
+  assert.equal(hourly.length, fc, 'one slot per priced hour');
+  assert.ok(hourly.every(s => Date.parse(s.end) - Date.parse(s.start) === 3600000));
+  // a record with one quarter of an hour missing: that hour stays one hourly slot, the others are quarters
+  const rec = await dkQuarters();
+  rec.slots.splice(10, 1);
+  const part = await (await createApi({ kv: makeKv({ 'eu-slots-dk1': rec }), ecb: ECB })).get('/api/slots?zone=dk1&mode=inkl_alt');
+  const sizes = part.body.slots.filter(s => s.type === 'actual').map(s => (Date.parse(s.end) - Date.parse(s.start)) / 60000);
+  assert.equal(sizes.filter(m => m === 60).length, 1, 'exactly the incomplete hour is hourly');
+  assert.ok(sizes.filter(m => m === 15).length >= 180);
 });
 
 test('the OpenAPI document describes /api/slots', async () => {

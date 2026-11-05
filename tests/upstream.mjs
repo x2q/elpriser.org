@@ -66,22 +66,15 @@ function chargeRecords() {
 /** Tests flip this to model the minutes around 13:00 when tomorrow's prices are not out yet. */
 export const upstreamState = { tomorrowPublished: true };
 
-/** Day-ahead rows for [start, end), published up to the end of tomorrow (or of today, until tomorrow is out).
- *  Elspotprices is hourly (until 2025-09-30); DayAheadPrices is the 15-minute market of today: four quarters per hour whose mean is the hour's price. */
-const QUARTER_OFFSET = [-40, -20, 20, 40];     // DKK/MWh around the hour's price, summing to zero
+/** Hourly day-ahead rows for [start, end), published up to the end of tomorrow (or of today, until tomorrow is out). */
 function priceRows(dataset, area, start, end) {
   const lastPublished = dkDayStart(Date.now(), upstreamState.tomorrowPublished ? 2 : 1);
   const rows = [];
   for (let t = Date.parse(start + 'T00:00:00Z'); t < Date.parse(end + 'T00:00:00Z') && t < lastPublished; t += 3_600_000) {
     const d = new Date(t), dkk = spotAt(d);
-    if (dataset === 'Elspotprices') {
-      rows.push({ HourUTC: iso(d), HourDK: toDK(d), PriceArea: area, SpotPriceEUR: +(dkk / 7.46).toFixed(2), SpotPriceDKK: dkk });
-      continue;
-    }
-    for (let i = 0; i < 4; i++) {
-      const q = new Date(t + i * 900_000), v = dkk + QUARTER_OFFSET[i];
-      rows.push({ TimeUTC: iso(q), TimeDK: toDK(q), PriceArea: area, DayAheadPriceEUR: +(v / 7.46).toFixed(2), DayAheadPriceDKK: v });
-    }
+    rows.push(dataset === 'Elspotprices'
+      ? { HourUTC: iso(d), HourDK: toDK(d), PriceArea: area, SpotPriceEUR: +(dkk / 7.46).toFixed(2), SpotPriceDKK: dkk }
+      : { TimeUTC: iso(d), TimeDK: toDK(d), PriceArea: area, DayAheadPriceEUR: +(dkk / 7.46).toFixed(2), DayAheadPriceDKK: dkk });
   }
   return rows;
 }
