@@ -3222,7 +3222,7 @@ function cityHTML(c, net, fc, todayDk, nowH) {
   const h2 = t => `<h2 class="text-lg font-semibold mt-8 mb-2 text-gray-800 dark:text-gray-200">${t}</h2>`;
   if (today && ex(0).lo && ex(0).hi) {
     const lo = ex(0).lo, hi = ex(0).hi;
-    const uses = [['Vaskemaskine', 1], ['Opvaskemaskine', 1.2], ['Tørretumbler', 2.5], ['Elbil, opladning af 30 kWh', 30]];
+    const uses = [['Vaskemaskine', 1], ['Opvaskemaskine', 1.2], ['Tørretumbler', 2.5], ['Opladning af elbil', 30]];
     const rows = uses.map(([name, kwh]) => `<tr><th scope="row">${name}</th><td class="im-n">${prisNum(kwh, kwh % 1 ? 1 : 0)} kWh</td><td class="im-n im-cheap">${kr(kwh * lo.p)} kr</td><td class="im-n">${kr(kwh * hi.p)} kr</td></tr>`);
     extra.push(h2(`Hvad koster strømmen til hverdagen i ${c.name} i dag?`)
       + p(`Hos ${net.name} koster en kWh i dag fra ${kr(lo.p)} kr (${slot(lo).replace(/ \(.*$/, '')}) til ${kr(hi.p)} kr (${slot(hi).replace(/ \(.*$/, '')}), inkl. nettarif, afgifter og moms. Det svarer til, at et typisk forbrug koster:`, 'mt-1')
@@ -3310,7 +3310,7 @@ async function renderHomepage(context) {
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
 const ZONE_SSR_VERSION = 'zone-ssr-v28';
-const CITY_SSR_VERSION = 'city-ssr-v20';
+const CITY_SSR_VERSION = 'city-ssr-v21';
 const PROGNOSE_SSR_VERSION = 'prognose-ssr-v17';
 const IMORGEN_SSR_VERSION = 'imorgen-ssr-v2';
 

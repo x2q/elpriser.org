@@ -1869,7 +1869,7 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
   // (v13: the four new country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v20'/.test(ROUTES), 'city-ssr-v19');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v21'/.test(ROUTES), 'city-ssr-v19');
   // /prognose shares the header and footer too (v4: the four EU country links).
   assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v17'/.test(ROUTES), 'prognose-ssr-v17');
 });
