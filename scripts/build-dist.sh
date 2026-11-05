@@ -29,6 +29,8 @@ FILES=(
   manrope.woff2
   privatliv.html
   privacy.html
+  terms.html
+  vilkaar.html
 )
 
 rm -rf "$DIST"

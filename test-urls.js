@@ -160,6 +160,7 @@ async function main() {
     ['/apple-touch-icon.png', 'image/png'], ['/og-image.png', 'image/png'],
     ['/og-image', 'image/svg'], ['/sitemap.xml', 'xml'], ['/robots.txt', 'text/plain'],
     ['/llms.txt', 'text/plain'], ['/llms-full.txt', 'text/plain'],
+    ['/terms', 'text/html'], ['/vilkaar', 'text/html'], ['/privacy', 'text/html'], ['/privatliv', 'text/html'],
   ];
   await pool(assets, async ([p, type]) => {
     const r = await get(p);

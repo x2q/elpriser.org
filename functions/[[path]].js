@@ -893,6 +893,7 @@ const STATIC_ASSETS = new Set([
   '/style.css', '/favicon.ico', '/favicon.svg', '/favicon-32.png',
   '/favicon-192.png', '/favicon-512.png', '/apple-touch-icon.png',
   '/og-image.png', '/manrope.woff2', '/privatliv', '/privatliv.html', '/privacy', '/privacy.html',
+  '/terms', '/terms.html', '/vilkaar', '/vilkaar.html',
 ]);
 
 /** Paths that resolve to a page, for the case-normalising redirect. */

@@ -1383,6 +1383,26 @@ test('privacy: /privacy is the English policy, shipped beside the Danish one, li
   assert.ok(/STATIC_ASSETS = new Set\(\[[^\]]*'\/privacy'[^\]]*'\/privacy\.html'/.test(fn), 'the catch-all lets /privacy through to the static file');
 });
 
+test('terms: /terms (English) and /vilkaar (Danish) are shipped, linked both ways, say the same things and load no script', () => {
+  const en = fs.readFileSync(path.join(__dirname, 'terms.html'), 'utf8');
+  const da = fs.readFileSync(path.join(__dirname, 'vilkaar.html'), 'utf8');
+  const text = en.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  assert.ok(/<html lang="en">/.test(en) && /<title>Terms of service/.test(en) && /<html lang="da">/.test(da) && /<title>Vilkår for brug/.test(da), 'lang and title of both pages');
+  assert.ok(!/\b(Vilkår|Hvem er vi|forbruger)\b/.test(text), 'no Danish left in the English terms');
+  assert.ok(/hreflang="da" href="https:\/\/elpriser\.org\/vilkaar"/.test(en) && /hreflang="en" href="https:\/\/elpriser\.org\/terms"/.test(da), 'hreflang alternates both ways');
+  assert.ok(/href="\/vilkaar" hreflang="da"/.test(en) && /href="\/terms" hreflang="en"/.test(da), 'visible link to the other language');
+  assert.ok(/href="\/privacy"/.test(en) && /href="\/privatliv"/.test(da), 'each links its own language of the privacy policy');
+  assert.ok(!/gtag|googletagmanager|<script/.test(en + da), 'the terms load no script');
+  for (const w of ['Sandbox Ventures', 'hello@elpriser.org', 'Apple', 'Google', 'Home Assistant']) assert.ok(text.includes(w) && da.includes(w), `both terms mention "${w}"`);
+  assert.ok(/Last updated 5 November 2026/.test(text) && /Senest opdateret 5\. november 2026/.test(da), 'both carry the same date');
+  assert.equal((en.match(/<h2>/g) || []).length, (da.match(/<h2>/g) || []).length, 'same number of sections in both languages');
+  assert.equal((en.match(/<li>/g) || []).length, (da.match(/<li>/g) || []).length, 'same number of list items in both languages');
+  const build = fs.readFileSync(path.join(__dirname, 'scripts', 'build-dist.sh'), 'utf8');
+  assert.ok(/^\s*terms\.html$/m.test(build) && /^\s*vilkaar\.html$/m.test(build), 'both files are in the dist manifest');
+  const fn = fs.readFileSync(path.join(__dirname, 'functions', '[[path]].js'), 'utf8');
+  assert.ok(/STATIC_ASSETS = new Set\(\[[^\]]*'\/terms'[^\]]*'\/terms\.html'[^\]]*'\/vilkaar'[^\]]*'\/vilkaar\.html'/.test(fn), 'the catch-all lets both through to the static files');
+});
+
 test('privacy: no store listing says the policy is Danish; only the Danish listing links the Danish page', () => {
   const dir = path.join(__dirname, 'docs', 'store');
   for (const f of fs.readdirSync(dir).filter(f => /^[a-z]{2}\.md$/.test(f))) {
