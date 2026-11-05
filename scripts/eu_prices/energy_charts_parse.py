@@ -114,6 +114,24 @@ def build_payload(zone, body, tzname, dates, generated):
             "unit": "EUR/MWh", "days": days}
 
 
+SLOT_MAX_MINUTES = 30      # a slot this long or shorter is worth keeping next to the hourly means (a 60-minute slot IS the hourly mean)
+
+
+def build_slots_payload(zone, slots, tzname, days, generated, unit="EUR/MWh"):
+    """The KV value `eu-slots-<zone>` that /api/slots lays over the hourly days: the settled price slots of the local
+    dates in `days` (the days the hourly payload kept) that are shorter than an hour, as [unix_seconds, minutes, price]
+    rows, sorted. A slot belongs to the local date it STARTS on. None when no slot is shorter than an hour (an hourly
+    zone: the hourly means already are its prices, and no key is written)."""
+    tz = ZoneInfo(tzname)
+    keep = {d["date"] for d in days}
+    rows = sorted([int(start.timestamp()), minutes, round(price, 2)]
+                  for start, minutes, price in slots
+                  if start.astimezone(tz).date().isoformat() in keep)
+    if not any(r[1] <= SLOT_MAX_MINUTES for r in rows):
+        return None
+    return {"zone": zone, "generated": generated, "unit": unit, "slots": rows}
+
+
 def canonical(value):
     """The one serialisation that is written to KV and compared against what is stored."""
     return json.dumps(value, separators=(",", ":"), ensure_ascii=False)

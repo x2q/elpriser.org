@@ -76,7 +76,23 @@ ZONES = {
 NORDIC_OVERLAY = {
     "nl":  ("10YNL----------L",    "Europe/Amsterdam"),
 }
-ALL_ZONES = {**ZONES, **NORDIC_OVERLAY}
+# The zones whose settled hourly prices come from the Nordic forecast job (KV `nordic-forecast-<zone>`) and stay there: this job writes ONLY their
+# 15-minute prices, KV `eu-slots-<zone>`, which /api/slots lays over those days. (Same A44 request as any zone; the hourly keys are not touched.)
+NORDIC_SLOTS_ONLY = {
+    "dk1": ("10YDK-1--------W",    "Europe/Copenhagen"),
+    "dk2": ("10YDK-2--------M",    "Europe/Copenhagen"),
+    "no1": ("10YNO-1--------2",    "Europe/Oslo"),
+    "no2": ("10YNO-2--------T",    "Europe/Oslo"),
+    "no3": ("10YNO-3--------J",    "Europe/Oslo"),
+    "no4": ("10YNO-4--------9",    "Europe/Oslo"),
+    "no5": ("10Y1001A1001A48H",    "Europe/Oslo"),
+    "se1": ("10Y1001A1001A44P",    "Europe/Stockholm"),
+    "se2": ("10Y1001A1001A45N",    "Europe/Stockholm"),
+    "se3": ("10Y1001A1001A46L",    "Europe/Stockholm"),
+    "se4": ("10Y1001A1001A47J",    "Europe/Stockholm"),
+    "fi":  ("10YFI-1--------U",    "Europe/Helsinki"),
+}
+ALL_ZONES = {**ZONES, **NORDIC_OVERLAY, **NORDIC_SLOTS_ONLY}
 
 
 def interval(dates, tzname):
@@ -119,19 +135,23 @@ def run_zone(zone, now, token, kv=None, dry=False):
     eic, tzname = ALL_ZONES[zone]
     dates = P.local_dates(now, tzname)
     start, end = interval(dates, tzname)
-    payload = E.build_payload(zone, fetch_a44(token, eic, start, end), tzname, dates, now.date().isoformat())
+    xml = fetch_a44(token, eic, start, end)
+    payload = E.build_payload(zone, xml, tzname, dates, now.date().isoformat())
     if not payload["days"]:
         return f"{zone}: no prices (nothing published for {dates[0]}..{dates[-1]}); KV untouched"
     summary = ", ".join(f"{d['date']} ({sum(1 for p in d['prices'] if p['eur_mwh'] is not None)} h)" for d in payload["days"])
     key = f"eu-prices-{zone}"
+    slots = B.store_slots(zone, E.parse_a44(xml), tzname, payload, now, kv, dry)
+    if zone in NORDIC_SLOTS_ONLY:      # the hourly prices of these zones are the Nordic job's, not ours
+        return f"{zone}: {summary}; {key} not ours{slots}"
     if dry:
-        return f"{zone}: {summary}; would write {key} ({len(P.canonical(payload))} bytes)"
+        return f"{zone}: {summary}; would write {key} ({len(P.canonical(payload))} bytes){slots}"
     account, cf_token = kv
     stored = B.kv_get(key, account, cf_token)
     if stored is not None and P.body_hash(stored) == P.body_hash(payload):
-        return f"{zone}: {summary}; unchanged, no write"
+        return f"{zone}: {summary}; unchanged, no write{slots}"
     B.kv_put(key, payload, B.KV_TTL, account, cf_token)
-    return f"{zone}: {summary}; wrote {key} ({len(P.canonical(payload))} bytes)"
+    return f"{zone}: {summary}; wrote {key} ({len(P.canonical(payload))} bytes){slots}"
 
 
 def main(argv=None):

@@ -71,8 +71,22 @@ test('the Netherlands is a Nordic-feed zone with an ENTSO-E settled overlay: the
   assert.ok(/const NORDIC_ZONES = \[[^\]]*'nl'\]/.test(api), 'nl stays a Nordic-feed zone (the 9-day model forecast)');
   for (const n of ['EU_ZONES_ENERGY_CHARTS', 'EU_ZONES_ENTSOE', 'EU_ZONES_ELEXON', 'EU_ZONES_SEMOPX']) assert.ok(!apiArray(api, n).includes('nl'), `nl is in ${n}: it would lose its nordic forecast and break the pinned zone lists`);
   assert.ok(!zoneBlock(en).includes('"nl"'), 'nl must stay out of ZONES: the zone list is pinned to EU_ZONES_ENTSOE');
-  assert.ok(/ALL_ZONES\s*=\s*\{\*\*ZONES, \*\*NORDIC_OVERLAY\}/.test(en) && /zones = a\.zones\.split\(","\) if a\.zones else list\(ALL_ZONES\)/.test(en), 'the job runs the overlay zone by default');
+  assert.ok(/ALL_ZONES\s*=\s*\{\*\*ZONES, \*\*NORDIC_OVERLAY, \*\*NORDIC_SLOTS_ONLY\}/.test(en) && /zones = a\.zones\.split\(","\) if a\.zones else list\(ALL_ZONES\)/.test(en), 'the job runs the overlay zone by default');
   assert.ok(!/Energy-Charts|energy-charts/i.test(block), 'the Netherlands comes from ENTSO-E, never from Energy-Charts (licence)');
+});
+
+test('the 15-minute prices: the jobs write eu-slots-<zone>, /api/slots reads it, and the zone clocks of the API cover every zone it serves', () => {
+  const en = readJob('build_entsoe_prices.py'), ec = readJob('build_eu_prices.py');
+  const api = fs.readFileSync(path.join(ROOT, 'functions/api/[[catchall]].js'), 'utf8');
+  const slots = fs.readFileSync(path.join(ROOT, 'functions/_slots.js'), 'utf8');
+  assert.ok(ec.includes('f"eu-slots-{zone}"'), 'the shared writer (build_eu_prices.store_slots) writes eu-slots-<zone>');
+  assert.ok(/`eu-slots-\$\{zone\}`/.test(api), '/api/slots reads the key the jobs write');
+  assert.ok(/B\.store_slots\(/.test(en) && /store_slots\(zone, P\.parse_price/.test(ec), 'both jobs write the 15-minute prices');
+  const nordicSlots = [...en.slice(en.indexOf('NORDIC_SLOTS_ONLY = {'), en.indexOf('\n}\n', en.indexOf('NORDIC_SLOTS_ONLY = {'))).matchAll(/^\s+"([a-z0-9]+)":/gm)].map(m => m[1]);
+  assert.deepEqual(nordicSlots.sort(), apiArray(api, 'NORDIC_ZONES').filter(z => z !== 'nl').sort(), 'every Nordic-feed zone (nl has its own overlay) gets its 15-minute prices from the ENTSO-E job');
+  const all = [...apiArray(api, 'NORDIC_ZONES'), ...apiArray(api, 'EU_ZONES_ENERGY_CHARTS'), ...apiArray(api, 'EU_ZONES_ENTSOE'), ...apiArray(api, 'EU_ZONES_ELEXON'), ...apiArray(api, 'EU_ZONES_SEMOPX')];
+  for (const z of all) assert.ok(new RegExp(`['"]?${z}['"]?:\\s*'Europe/`).test(slots), `${z} has no time zone in functions/_slots.js ZONE_TZ`);
+  assert.equal(all.length, 40);
 });
 
 test('each price source is read in ONE place: Energy-Charts from build_eu_prices.py, ENTSO-E from build_entsoe_prices.py — and never from the Worker', () => {

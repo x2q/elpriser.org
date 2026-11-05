@@ -192,6 +192,45 @@ class Job(unittest.TestCase):
             J.fetch_a44 = old
         self.assertIn("KV untouched", line)
 
+    def _run(self, zone, xml, dry=False):
+        import build_eu_prices as B
+        store, puts = {}, []
+        saved = (J.fetch_a44, B.kv_get, B.kv_put)
+        J.fetch_a44 = lambda token, eic, s, e: xml
+        B.kv_get = lambda key, acct, tok: store.get(key)
+        B.kv_put = lambda key, val, ttl, acct, tok: (puts.append(key), store.__setitem__(key, val))
+        try:
+            line = J.run_zone(zone, datetime(2026, 11, 2, 12, tzinfo=timezone.utc), "tok", None if dry else ("acc", "cf"), dry)
+        finally:
+            J.fetch_a44, B.kv_get, B.kv_put = saved
+        return line, store, puts
+
+    def test_a_quarter_hourly_zone_writes_its_15_minute_prices_next_to_the_hourly_ones(self):
+        line, store, puts = self._run("nl", fx("nl"))
+        self.assertEqual(puts, ["eu-slots-nl", "eu-prices-nl"])
+        rec = store["eu-slots-nl"]
+        self.assertTrue(rec["slots"] and all(r[1] == 15 for r in rec["slots"]))
+        self.assertIn("wrote eu-slots-nl", line)
+
+    def test_an_hourly_zone_writes_no_15_minute_record(self):
+        line, store, puts = self._run("xk", fx("xk"))
+        self.assertEqual(puts, ["eu-prices-xk"])
+        self.assertNotIn("eu-slots", line)
+
+    def test_nordic_zones_get_only_their_15_minute_prices_written_here(self):
+        # The hourly prices of dk1, no1, se3, fi ... are the Nordic job's (nordic-forecast-<zone>): this job must never write an eu-prices key for them.
+        for z in ("dk1", "dk2", "no1", "no5", "se1", "se4", "fi"):
+            line, store, puts = self._run(z, fx("nl"))
+            self.assertEqual(puts, [f"eu-slots-{z}"], z)
+            self.assertIn("not ours", line)
+        self.assertEqual(set(J.NORDIC_SLOTS_ONLY), {"dk1", "dk2", "no1", "no2", "no3", "no4", "no5", "se1", "se2", "se3", "se4", "fi"})
+        self.assertTrue(not set(J.NORDIC_SLOTS_ONLY) & set(J.ZONES), "an EU zone is never also a slots-only Nordic zone")
+
+    def test_dry_run_names_the_15_minute_key(self):
+        line, store, puts = self._run("dk1", fx("nl"), dry=True)
+        self.assertIn("would write eu-slots-dk1", line)
+        self.assertEqual(puts, [])
+
     def test_missing_environment_exits_2_before_any_fetch(self):
         for k in ("ENTSOE_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"):
             os.environ.pop(k, None)

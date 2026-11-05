@@ -14,6 +14,7 @@ import { activateDataPage, stripInactiveMains, promoteSectionTitle } from '../_s
 import { recordUsage } from '../_usage.js';
 import { ESTIMATE_ZONES, withEstimate } from '../_estimate.js';
 import { NORDIC_LOCAL_SHIFT, rebucketToLocalDays } from '../_localdays.js';
+import { ZONE_TZ, FORECAST_KEYS, hourlySlots, storedSlots, mergeSlots, isoZ } from '../_slots.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -1168,6 +1169,127 @@ async function ecbRates() {
   }
 }
 
+/** What /api/nordic serves for a zone before the ECB rate is laid over it: `raw` (days + the fields the job and the forecast add) and the zone's
+ *  `info`. null when the zone has no data. Shared by /api/nordic and /api/slots, so the two never disagree about a price. */
+async function zoneFeed(zone, eu, env) {
+  const [priced, fc, est] = await Promise.all([
+    kvJson(env, eu ? `eu-prices-${zone}` : `nordic-forecast-${zone}`, { ttl: 900 }),
+    eu ? kvJson(env, `eu-forecast-${zone}`, { ttl: 900 })
+      : NORDIC_SETTLED_OVERLAY.includes(zone) ? kvJson(env, `eu-prices-${zone}`, { ttl: 900 }) : null,     // fc = the settled overlay for nl
+    ESTIMATE_ZONES.includes(zone) ? kvJson(env, `eu-estimate-${zone}`, { ttl: 300 }) : null,     // the hours of a day that have no price yet (functions/_estimate.js)
+  ]);
+  if (!priced) return null;
+  // The Nordic feed is indexed by the COPENHAGEN hour for every zone; the API says "the zone's own wall clock", so Finland (an hour ahead) is re-cut
+  // into Helsinki days here, settled and forecast days alike (functions/_localdays.js). The settled overlay (nl) is on Copenhagen's clock: no shift.
+  const raw = eu ? withEstimate(withEuForecast(priced, fc), est, Date.now())
+    : rebucketToLocalDays(overlayNordicSettled(priced, fc), NORDIC_LOCAL_SHIFT[zone] || 0);
+  return { raw, info: eu ? EU_ZONE_INFO[zone] : NORDIC_ZONE_INFO[zone] };
+}
+
+// ── /api/slots — prices as absolute time slots ───────────────────────────────
+// See functions/_slots.js for the idea. Two sources behind one shape:
+//   wholesale zones (every zone, `price` = the day-ahead price in the zone's currency per kWh): the same feed as /api/nordic, cut into UTC slots, with the
+//     15-minute prices of KV `eu-slots-<zone>` laid over the days that have them;
+//   Denmark with a `mode` (dk1/dk2): /api/forecast's price for the mode, the settled days at the market's 15-minute resolution (Energi Data Service
+//     DayAheadPrices), the forecast days hourly.
+const SLOT_ROUND = 5;            // decimals of a price per kWh
+const slotRound = v => +v.toFixed(SLOT_ROUND);
+const slotOut = (s, f) => {
+  const o = { start: isoZ(s.start), end: isoZ(s.end), price: slotRound(f(s.value)), type: s.type };
+  if (s.type === 'forecast' && typeof s.min === 'number' && typeof s.max === 'number') { o.min = slotRound(f(s.min)); o.max = slotRound(f(s.max)); }
+  return o;
+};
+
+async function handleZoneSlots(zone, q, request, env) {
+  const eu = EU_ZONES.includes(zone);
+  const currency = (q.get('currency') || 'local').toLowerCase();
+  if (!['local', 'eur'].includes(currency)) return fail(400, 'currency must be local or eur');
+  if (zone === 'gb' && currency === 'eur') return fail(400, 'gb is priced in GBP; currency=eur is not available');
+  const [feed, stored] = await Promise.all([zoneFeed(zone, eu, env), kvJson(env, `eu-slots-${zone}`, { ttl: 900 })]);
+  if (!feed) return fail(404, eu ? `no prices available for ${zone}` : `no forecast available for ${zone}`);
+  const { raw, info } = feed;
+  const tz = ZONE_TZ[zone];
+  const hourly = [];
+  for (const d of raw.days || []) {
+    const type = d.type === 'actual' ? 'actual' : 'forecast';
+    for (const h of hourlySlots(d, tz)) hourly.push({ ...h, type });
+  }
+  let slots = mergeSlots(storedSlots(stored, Date.now()), hourly);
+  if (q.get('actualonly') === '1' || q.get('actualonly') === 'true') slots = slots.filter(s => s.type === 'actual');
+  const fx = await ecbRates();
+  const rate = currency === 'eur' ? 1 : (fx.rates[info.currency] ?? info.rate);
+  const cur = currency === 'eur' ? 'EUR' : info.currency;
+  return jsonResponse({
+    zone, currency: cur, unit: `${cur}/kWh`, generated: raw.generated || null,
+    note: 'Wholesale (day-ahead) price per kWh: no VAT, taxes or grid fees. Slots are UTC; a slot is 15 minutes where the 15-minute price is held and otherwise as long as its source (see end - start).',
+    rate, rateDate: fx.date, rateSource: fx.source,
+    slots: slots.map(s => slotOut(s, v => v * rate / 1000)),
+  }, { maxAge: ESTIMATE_ZONES.includes(zone) ? 300 : 900, request });
+}
+
+/** Danish price modes as slots. The hourly days are /api/forecast's (so every mode, the tariff by date and the model days are exactly its numbers); a
+ *  settled day is then refined to 15 minutes: a quarter's price is its hour's price plus the VAT-inclusive difference between the quarter's spot price
+ *  and the hour's mean spot, which is how the hourly price is made. */
+async function handleDkSlots(area, mode, gln, q, request, env) {
+  const currency = (q.get('currency') || 'local').toLowerCase();
+  if (!['local', 'eur'].includes(currency)) return fail(400, 'currency must be local or eur');
+  const data = await forecastData(area, mode, gln, env);
+  if (data.fail) return data.fail;
+  const { days } = data;
+  const today = fmtUTC(danishNow());
+  const settled = days.filter(d => d.type === 'actual');
+  let records = [];
+  if (settled.length) {
+    const from = settled[0].date;
+    const to = fmtUTC(new Date(Date.parse(settled[settled.length - 1].date) + 86_400_000));
+    try {
+      records = await edgeCached(`slots-eds-${area}-${from}-${to}`, priceTtl(to),
+        () => fetchEdsDataset('DayAheadPrices', area, from, to), from >= today ? env : undefined,
+        d => to > tomorrowDK() && tomorrowDue() && !(d && d.some(r => String(r.TimeDK).startsWith(tomorrowDK()))));
+    } catch (e) {
+      console.error('slots: 15-minute prices unavailable, serving the hourly ones', e);     // the hourly prices of /api/forecast stand in
+    }
+  }
+  const vat = mode === 'spot_ex' ? 1 : 1.25;
+  const byHour = new Map();                                            // 'YYYY-MM-DD hh' (DK clock) -> quarter DKK/MWh values of that local hour
+  for (const r of records) {
+    if (typeof r.DayAheadPriceDKK !== 'number' || !r.TimeUTC || !r.TimeDK) continue;
+    const k = `${r.TimeDK.slice(0, 10)} ${r.TimeDK.slice(11, 13)}`;
+    (byHour.get(k) ?? byHour.set(k, []).get(k)).push(r);
+  }
+  const slots = [];
+  for (const day of days) {
+    const hourlyDay = hourlySlots(day, ZONE_TZ[area.toLowerCase()], FORECAST_KEYS).map(h => ({ ...h, type: day.type === 'actual' ? 'actual' : 'forecast' }));
+    const prices = new Map(day.prices.filter(p => p && typeof p.price === 'number').map(p => [p.hour, p.price]));
+    const quarters = [];
+    if (day.type === 'actual') {
+      for (const [k, rows] of byHour) {
+        if (k.slice(0, 10) !== day.date) continue;
+        const base = prices.get(+k.slice(11));
+        if (base === undefined) continue;
+        const mean = rows.reduce((a, r) => a + r.DayAheadPriceDKK, 0) / rows.length;
+        for (const r of rows) {
+          const start = Date.parse(r.TimeUTC.endsWith('Z') ? r.TimeUTC : r.TimeUTC + 'Z');
+          quarters.push({ start, end: start + 900_000, value: base + vat * (r.DayAheadPriceDKK - mean) / 1000, type: 'actual' });
+        }
+      }
+      quarters.sort((a, b) => a.start - b.start);
+    }
+    slots.push(...(quarters.length ? mergeSlots(quarters, hourlyDay) : hourlyDay));
+  }
+  slots.sort((a, b) => a.start - b.start);
+  const fx = await ecbRates();
+  const rate = currency === 'eur' ? 1 / (fx.rates.DKK || FX_FALLBACK.DKK) : 1;
+  const cur = currency === 'eur' ? 'EUR' : 'DKK';
+  const kept = (q.get('actualonly') === '1' || q.get('actualonly') === 'true') ? slots.filter(s => s.type === 'actual') : slots;
+  return jsonResponse({
+    zone: area.toLowerCase(), mode, ...(mode.startsWith('net_') ? { gln } : {}), currency: cur, unit: `${cur}/kWh`, generated: fmtUTC(danishNow()),
+    note: 'The price of the mode (see /api/forecast) per kWh. Slots are UTC; a settled day is in 15-minute slots, the forecast days are hourly (see end - start).',
+    model: data.model, charges: data.charges,
+    slots: kept.map(s => slotOut(s, v => v * rate)),
+  }, { maxAge: ttlFor(days.some(d => d.date === tomorrowDK() && d.type === 'actual'), 900), request });
+}
+
 const OPENAPI_SPEC = {
   openapi: '3.1.0',
   info: {
@@ -1419,6 +1541,34 @@ const OPENAPI_SPEC = {
         responses: { '200': { description: 'Days of hourly prices in EUR/MWh (GBP/MWh for `gb`) plus zoneInfo.' }, '400': { description: 'Unknown zone.' }, '404': { description: 'No data for that zone (yet).' } },
       },
     },
+    '/api/slots': {
+      get: {
+        operationId: 'getPriceSlots',
+        summary: 'Prices as absolute UTC time slots, 15 minutes where the market has them',
+        description: [
+          'The same prices as `/api/nordic` (and, for Denmark with a `mode`, `/api/forecast`), but as `slots: [{ start, end, price, type, min?, max? }]` with `start` and `end` in UTC (ISO 8601, `...Z`),',
+          '`price` in the currency per kWh (`currency` and `unit` say which) and `type` `actual` (a settled day-ahead price) or `forecast` (elpriser.org\'s own model: NOT an official forecast; `min`/`max` are its P10/P90).',
+          'Made for consumers that plan against the clock (evcc, schedulers): the zone\'s daylight-saving rule is applied here, once, so a client needs no time zone database and no assumption about the step.',
+          '',
+          '**Resolution.** The day-ahead market has settled in 15-minute slots since 2025-10-01 and a settled day is returned as 15-minute slots wherever the 15-minute prices are held (the EU zones from the',
+          'Energy-Charts and ENTSO-E jobs, Denmark from Energi Data Service). Everything else is returned as the slots it is: the model\'s forecast days hourly, a zone whose source is hourly or half-hourly with that step.',
+          'Every slot has its own `start` and `end`, so never assume the step: `end - start` is the slot. Slots are sorted and never overlap.',
+          '',
+          '**Wholesale zones** (all 40 zones, `zone` as in `/api/nordic`): the day-ahead price, without VAT, taxes or grid fees, converted with the ECB reference rate (`rate`, `rateDate`, `rateSource`) unless `currency=eur`.',
+          '`gb` is the within-day Market Index Price in GBP (`currency=eur` is refused).',
+          '**Denmark** (`zone=dk1|dk2` with `mode`, and `gln` for a `net_` mode): the price of that mode as `/api/forecast` builds it (spot, system and transmission tariff, electricity duty, VAT, and the grid company\'s tariff by date),',
+          'in DKK/kWh (or EUR with `currency=eur`, converted with the ECB rate). The settled days are 15-minute slots; the days after them are the hourly forecast.',
+        ].join('\n'),
+        parameters: [
+          { name: 'zone', in: 'query', schema: { type: 'string', enum: [...NORDIC_ZONES, ...EU_ZONES], default: 'dk1' }, description: 'The bidding zone. Unknown values answer 400. `area` is accepted as an alias.' },
+          { name: 'mode', in: 'query', schema: { type: 'string', enum: PRICE_MODES }, description: 'Denmark only (`dk1`, `dk2`): the price mode, as for `/api/forecast`. Without it a Danish zone is the wholesale price like every other zone. Any other zone with a `mode` answers 400.' },
+          { name: 'gln', in: 'query', schema: { type: 'string' }, description: 'Denmark only: the grid company GLN (13 digits), required by the `net_` modes.' },
+          { name: 'currency', in: 'query', schema: { type: 'string', enum: ['local', 'eur'], default: 'local' }, description: '`local` (default): the zone\'s currency. `eur`: euro.' },
+          { name: 'actualonly', in: 'query', schema: { type: 'string', enum: ['1'] }, description: '`1` leaves out the forecast days (the model\'s own estimate), keeping only settled day-ahead prices.' },
+        ],
+        responses: { '200': { description: '`{ zone, currency, unit, generated, rate?, slots: [{ start, end, price, type, min?, max? }] }`' }, '400': { description: 'Unknown zone, mode or currency; mode on a wholesale zone; a `net_` mode without a valid gln.' }, '404': { description: 'No data for that zone (yet), or no nettarif for the gln.' } },
+      },
+    },
     '/api/shelly/tariff': {
       get: {
         operationId: 'getShellyTariff',
@@ -1614,19 +1764,10 @@ async function handleApi(context) {
     }
     if (!context.env || !context.env.PRICE_CACHE) return fail(503, 'forecast store unavailable');
     try {
-      const [priced, fc, est] = await Promise.all([
-        kvJson(context.env, eu ? `eu-prices-${zone}` : `nordic-forecast-${zone}`, { ttl: 900 }),
-        eu ? kvJson(context.env, `eu-forecast-${zone}`, { ttl: 900 })
-          : NORDIC_SETTLED_OVERLAY.includes(zone) ? kvJson(context.env, `eu-prices-${zone}`, { ttl: 900 }) : null,     // fc = the settled overlay for nl
-        ESTIMATE_ZONES.includes(zone) ? kvJson(context.env, `eu-estimate-${zone}`, { ttl: 300 }) : null,     // the hours of a day that have no price yet (functions/_estimate.js)
-      ]);
-      if (!priced) return fail(404, eu ? `no prices available for ${zone}` : `no forecast available for ${zone}`);
-      // The Nordic feed is indexed by the COPENHAGEN hour for every zone; the API says "the zone's own wall clock", so Finland (an hour ahead) is re-cut
-      // into Helsinki days here, settled and forecast days alike (functions/_localdays.js). The settled overlay (nl) is on Copenhagen's clock: no shift.
-      const raw = eu ? withEstimate(withEuForecast(priced, fc), est, Date.now())
-        : rebucketToLocalDays(overlayNordicSettled(priced, fc), NORDIC_LOCAL_SHIFT[zone] || 0);
+      const feed = await zoneFeed(zone, eu, context.env);
+      if (!feed) return fail(404, eu ? `no prices available for ${zone}` : `no forecast available for ${zone}`);
+      const { raw, info } = feed;
       const fx = await ecbRates();
-      const info = eu ? EU_ZONE_INFO[zone] : NORDIC_ZONE_INFO[zone];
       return jsonResponse({ ...raw, zoneInfo: { ...info,
                             rate: fx.rates[info.currency] ?? info.rate,
                             rateDate: fx.date, rateSource: fx.source } },
@@ -1634,6 +1775,32 @@ async function handleApi(context) {
     } catch (e) {
       console.error(e);
       return fail(500, String(e.message || e));
+    }
+  }
+
+  // ── /api/slots — prices as absolute UTC time slots (zone = any of the 40 zones; dk1/dk2 take `mode` and `gln` like /api/forecast) ───
+  if (seg1 === 'slots') {
+    const zone = (q.get('zone') || q.get('area') || 'dk1').toLowerCase();
+    const eu = EU_ZONES.includes(zone);
+    if (!eu && !NORDIC_ZONES.includes(zone)) return fail(400, `zone must be one of: ${NORDIC_ZONES.join(', ')}, ${EU_ZONES.join(', ')}`);
+    if (!context.env || !context.env.PRICE_CACHE) return fail(503, 'price store unavailable');
+    try {
+      const danish = zone === 'dk1' || zone === 'dk2';
+      if (!danish && (q.get('mode') || q.get('gln'))) return fail(400, 'mode and gln apply to dk1 and dk2 only; other zones are the wholesale price (add VAT, taxes and fees yourself)');
+      if (danish && q.get('gln') && !q.get('mode')) return fail(400, 'gln needs a net_ mode');
+      if (!danish || !q.get('mode')) return await handleZoneSlots(zone, q, request, context.env);     // no mode: the wholesale price, like every other zone
+      const modeParam = q.get('mode');
+      const mode = MODE_ALIASES[modeParam] || modeParam;
+      if (!PRICE_MODE_SET.has(mode)) return fail(400, `unknown mode "${modeParam}". Valid: ${[...PRICE_MODE_SET].join(', ')}`);
+      const gln = q.get('gln') || null;
+      if (mode.startsWith('net_')) {
+        if (!gln) return fail(400, glnNeeded(mode));
+        if (!/^\d{13}$/.test(gln)) return fail(400, 'gln must be 13 digits');
+      }
+      return await handleDkSlots(zone.toUpperCase(), mode, gln, q, request, context.env);
+    } catch (e) {
+      console.error(e);
+      return upstreamFail(e);
     }
   }
 
@@ -2636,6 +2803,28 @@ async function handleForecastArchive(area, issued, request, env) {
 }
 
 async function handleForecast(area, mode, gln, request, env) {
+  const data = await forecastData(area, mode, gln, env);
+  if (data.fail) return data.fail;
+  const { days, modelMeta, enCharges, net } = data;
+  const dkNow = danishNow();
+  return jsonResponse({
+    area,
+    mode,
+    ...(net ? { gln } : {}),
+    generated: fmtUTC(dkNow),
+    // The flat charges the prices above were built with, DKK/kWh excl. VAT, plus the VAT
+    // rate. With `days[].grid_tariff` (net_ modes) this is everything needed to split an
+    // hour's price into its parts: spot = price / (1 + vat) - sys - trans - afg - tariff.
+    charges: data.charges,
+    // null when no model run was fresh and every forecast day is the
+    // weekday-average fallback (source: "heuristic" on those days).
+    model: modelMeta,
+    days,
+  }, { maxAge: ttlFor(days.some(d => d.date === tomorrowDK() && d.type === 'actual'), 1800), request });
+}
+
+/** The days of /api/forecast for a mode, before they are wrapped in a response (also read by /api/slots). `{ fail }` is the error response to return instead. */
+async function forecastData(area, mode, gln, env) {
   const dkNow = danishNow();
   const start = new Date(dkNow.getTime() - 28 * 86_400_000);
   const end   = new Date(dkNow.getTime() + 2 * 86_400_000); // Include tomorrow
@@ -2656,7 +2845,7 @@ async function handleForecast(area, mode, gln, request, env) {
     net ? loadTariffRecords(gln, fmtUTC(new Date(dkNow.getTime() + 12 * 86_400_000)), env) : Promise.resolve([]),
   ]);
   if (net && !tariffRecords.length) {
-    return fail(404, `no nettarif published for gln ${gln}`);
+    return { fail: fail(404, `no nettarif published for gln ${gln}`) };
   }
   // A forecast is about days that have not happened, so the rates in force
   // today are the right ones — but the reduced duty still has to follow the
@@ -2705,19 +2894,11 @@ async function handleForecast(area, mode, gln, request, env) {
   // stable within a caching window and conditional requests can 304.
   if (net) days = applyGridTariff(days, tariffRecords);
 
-  return jsonResponse({
-    area,
-    mode,
-    ...(net ? { gln } : {}),
-    generated: fmtUTC(dkNow),
-    // The flat charges the prices above were built with, DKK/kWh excl. VAT, plus the VAT
-    // rate. With `days[].grid_tariff` (net_ modes) this is everything needed to split an
-    // hour's price into its parts: spot = price / (1 + vat) - sys - trans - afg - tariff.
+  return {
+    days, modelMeta, enCharges, net,
+    // The flat charges the prices were built with, DKK/kWh excl. VAT, plus the VAT rate.
     charges: { sys: +enCharges.sys.toFixed(5), trans: +enCharges.trans.toFixed(5),
                afg: +enCharges.afg.toFixed(5), vat: 0.25 },
-    // null when no model run was fresh and every forecast day is the
-    // weekday-average fallback (source: "heuristic" on those days).
     model: modelMeta,
-    days,
-  }, { maxAge: ttlFor(days.some(d => d.date === tomorrowDK() && d.type === 'actual'), 1800), request });
+  };
 }

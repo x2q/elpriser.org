@@ -112,6 +112,28 @@ def kv_put(key, value, ttl, account, token):
         raise RuntimeError(f"KV put failed for {key}: {resp}")
 
 
+def store_slots(zone, slots, tzname, payload, now, kv, dry):
+    """Write the zone's 15-minute prices next to its hourly ones, as KV `eu-slots-<zone>` (see P.build_slots_payload).
+    Returns a status fragment ('' for a zone without sub-hourly prices). A failure here never undoes the hourly write:
+    it is reported and the hourly prices stand."""
+    slot_payload = P.build_slots_payload(zone, slots, tzname, payload["days"], now.date().isoformat())
+    if slot_payload is None:
+        return ""
+    key = f"eu-slots-{zone}"
+    n = len(slot_payload["slots"])
+    if dry:
+        return f"; would write {key} ({n} slots, {len(P.canonical(slot_payload))} bytes)"
+    try:
+        account, cf_token = kv
+        stored = kv_get(key, account, cf_token)
+        if stored is not None and P.body_hash(stored) == P.body_hash(slot_payload):
+            return f"; {key} unchanged"
+        kv_put(key, slot_payload, KV_TTL, account, cf_token)
+        return f"; wrote {key} ({n} slots)"
+    except Exception as e:
+        return f"; {key} FAILED ({type(e).__name__}): hourly prices stand"
+
+
 # ─── Energy-Charts: the ONE place the price source is read ──────────────────────────────────────
 def fetch_prices(bzn, start, end):
     """The /price response text for bidding zone `bzn`, local dates start..end (ISO strings; the API reads a date in
@@ -152,14 +174,15 @@ def run_zone(zone, now, kv=None, dry=False):
         return f"{zone}: no prices (nothing published for {dates[0]}..{dates[-1]}); KV untouched"
     summary = ", ".join(f"{d['date']} ({sum(1 for p in d['prices'] if p['eur_mwh'] is not None)} h)" for d in payload["days"])
     key = f"eu-prices-{zone}"
+    slots = store_slots(zone, P.parse_price(body), tzname, payload, now, kv, dry)
     if dry:
-        return f"{zone}: {summary}; would write {key} ({len(P.canonical(payload))} bytes); licence: {P.license_info(body)}"
+        return f"{zone}: {summary}; would write {key} ({len(P.canonical(payload))} bytes){slots}; licence: {P.license_info(body)}"
     account, cf_token = kv
     stored = kv_get(key, account, cf_token)
     if stored is not None and P.body_hash(stored) == P.body_hash(payload):
-        return f"{zone}: {summary}; unchanged, no write"
+        return f"{zone}: {summary}; unchanged, no write{slots}"
     kv_put(key, payload, KV_TTL, account, cf_token)
-    return f"{zone}: {summary}; wrote {key} ({len(P.canonical(payload))} bytes)"
+    return f"{zone}: {summary}; wrote {key} ({len(P.canonical(payload))} bytes){slots}"
 
 
 def main(argv=None):

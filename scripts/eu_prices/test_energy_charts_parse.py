@@ -227,7 +227,8 @@ class Job(unittest.TestCase):
         r2 = self.B.run_zone("de", self.now, ("a", "b"))
         self.assertIn("wrote eu-prices-de", r1)
         self.assertIn("unchanged, no write", r2)
-        self.assertEqual(self.puts, [("eu-prices-de", 3 * 86400)])
+        self.assertEqual(self.puts, [("eu-slots-de", 3 * 86400), ("eu-prices-de", 3 * 86400)])      # the 15-minute prices next to the hourly means, each once
+        self.assertIn("eu-slots-de unchanged", r2)
 
     def test_changed_data_is_written_again(self):
         self.B.run_zone("de", self.now, ("a", "b"))
@@ -235,7 +236,35 @@ class Job(unittest.TestCase):
         d["price"][150] += 1
         self.B.fetch_prices = lambda *a: json.dumps(d)
         self.B.run_zone("de", self.now, ("a", "b"))
-        self.assertEqual(len(self.puts), 2)
+        self.assertEqual(len(self.puts), 4)       # hourly + 15-minute record, each written again
+
+    def test_the_15_minute_record_has_the_slots_of_the_kept_days_in_unix_seconds(self):
+        self.B.run_zone("de", self.now, ("a", "b"))
+        rec = self.store["eu-slots-de"]
+        self.assertEqual(set(rec), {"zone", "generated", "unit", "slots"})
+        self.assertEqual((rec["zone"], rec["unit"], rec["generated"]), ("de", "EUR/MWh", "2026-10-26"))
+        self.assertEqual(len(rec["slots"]), 100 + 96 + 96, "25 h + 24 h + 24 h of quarters")
+        self.assertTrue(all(r[1] == 15 and isinstance(r[0], int) for r in rec["slots"]))
+        self.assertEqual([r[0] for r in rec["slots"]], sorted(r[0] for r in rec["slots"]))
+        self.assertEqual(rec["slots"][0][0], int(utc("2026-10-24T22:00Z").timestamp()), "Sunday 2026-10-25 starts at 00:00 CEST = 22:00Z the day before")
+
+    def test_an_hourly_zone_has_no_15_minute_record(self):
+        hourly = doc([int(utc("2026-10-26T00:00Z").timestamp()) + 3600 * i for i in range(24)], [float(i) for i in range(24)])
+        self.B.fetch_prices = lambda *a: hourly
+        self.assertNotIn("eu-slots", self.B.run_zone("fr", self.now, ("a", "b")))
+        self.assertEqual([k for k, _ in self.puts], ["eu-prices-fr"])
+
+    def test_a_failing_15_minute_write_is_reported_and_the_hourly_prices_stand(self):
+        real = self.B.kv_put
+        def put(key, val, ttl, acct, tok):
+            if key.startswith("eu-slots"):
+                raise RuntimeError("KV down")
+            real(key, val, ttl, acct, tok)
+        self.B.kv_put = put
+        r = self.B.run_zone("de", self.now, ("a", "b"))
+        self.assertIn("eu-slots-de FAILED", r)
+        self.assertIn("wrote eu-prices-de", r)
+        self.assertEqual([k for k, _ in self.puts], ["eu-prices-de"])
 
     def test_nothing_published_leaves_kv_alone(self):
         self.B.fetch_prices = lambda *a: ""               # the API's 404
@@ -247,6 +276,7 @@ class Job(unittest.TestCase):
     def test_dry_run_writes_nothing_needs_no_kv_and_shows_the_licence(self):
         r = self.B.run_zone("de", self.now, None, dry=True)
         self.assertIn("would write eu-prices-de", r)
+        self.assertIn("would write eu-slots-de", r)
         self.assertIn("CC BY 4.0", r)
         self.assertEqual(self.puts, [])
 
