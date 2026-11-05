@@ -781,6 +781,19 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .dark .hl-tpl{color:#ffa657}
   .dark .hl-type{color:#ff9e64}
 
+  /* ═══ /elpriser-i-morgen (.im-*) ═══
+     Hand-written: the table is drawn by imorgenHTML() in functions/[[path]].js, which Tailwind never scans. Colours are the --p-* roles of the Pris screen. */
+  .im-page{color:var(--p-ink)}
+  .im-intro{max-width:40rem;margin:.7rem 0 0;font-size:1.05rem;line-height:1.55;color:var(--p-ink2)}
+  .im-wrap{margin-top:1rem;overflow-x:auto;background:var(--p-card);border:1px solid var(--p-line);border-radius:1.25rem}
+  .im-table{width:100%;border-collapse:collapse;font-size:.95rem;font-variant-numeric:tabular-nums}
+  .im-table th,.im-table td{padding:.5rem 1rem;text-align:left;border-top:1px solid var(--p-hair)}
+  .im-table thead th{border-top:0;font-size:.75rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-muted)}
+  .im-table tbody th{font-weight:600;color:var(--p-ink2)}
+  .im-table .im-n{text-align:right;white-space:nowrap}
+  .im-table thead th:not(:first-child){text-align:right}
+  .im-cheap{background:var(--p-lo-bg);color:var(--p-lo-ink);font-weight:700}
+  .im-tag{margin-left:.5rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
   /* ═══ /integrationer (.ig-*) ═══
      Hand-written on purpose: the list is drawn by integrationsHTML() in functions/_integrations.js, which Tailwind never
      scans. Colours are the --p-* roles of the Pris screen; the status chips pair a tint with its own ink in both themes. */
@@ -1517,6 +1530,15 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
      The one overview of plugins, API libraries and the MCP server. The list itself is NOT written here: every item and its
      true install status live in functions/_integrations.js (INTEGRATIONS), and the Function (and server.js in development)
      writes the finished HTML in place of the comment below, so the page reads without JavaScript. -->
+<main style="display:none" data-page="elpriser-i-morgen" class="im-page max-w-4xl mx-auto px-4 py-6">
+  <div class="mb-4">
+    <div class="page-eyebrow">Time for time · DK1 og DK2</div>
+    <h2 class="page-title">Elpriser i morgen</h2>
+    <p class="im-intro">Se i morgens elpris time for time, og hvornår strømmen er billigst. Faktiske børspriser, så snart de er offentliggjort omkring kl. 13.</p>
+  </div>
+  <!--SSR_IMORGEN-->
+</main>
+
 <main style="display:none" data-page="integrationer" class="ig-page max-w-4xl mx-auto px-4 py-6">
   <div class="mb-4">
     <div class="page-eyebrow">Plugins og kode til elpriser.org</div>
@@ -3512,7 +3534,7 @@ function initBehaviorTracking(){
 const PATH_ROUTES={
   '/dk1':'DK1/inkl_alt','/dk2':'DK2/inkl_alt',
   '/tariffer':'tariffer','/automation':'automation','/api':'api','/shelly-tariff':'shelly-tariff',
-  '/om-elpriser':'om-elpriser','/prognose':'prognose','/download':'download',
+  '/om-elpriser':'om-elpriser','/prognose':'prognose','/elpriser-i-morgen':'elpriser-i-morgen','/download':'download',
   '/integrationer':'integrationer',
   '/norden':'norden',
   '/blog':'blog',
@@ -3746,6 +3768,7 @@ function route(){
   if(h==='shelly-tariff'){document.querySelector('[data-page="shelly-tariff"]').classList.add('active');document.title='Shelly Live Tariff — Tibber-kompatibel elpris-JSON';pv('Shelly Live Tariff','/shelly-tariff');loadShellyTariffPage();return;}
   if(h==='download'){document.querySelector('[data-page="download"]').classList.add('active');document.title='Hent Elpriser-appen — til iPhone, iPad og Android, gratis';pv('Hent appen','/download');return;}
   if(isDlPath('/'+h)){document.querySelector('[data-page="download"]').classList.add('active');pv(document.title,'/'+h);return;}   // title, language and chrome are the server's
+  if(h==='elpriser-i-morgen'){document.querySelector('[data-page="elpriser-i-morgen"]').classList.add('active');document.title='Elpriser i morgen — time for time, DK1 og DK2';pv('Elpriser i morgen','/elpriser-i-morgen');return;}
   if(h==='integrationer'){document.querySelector('[data-page="integrationer"]').classList.add('active');document.title='Integrationer og API-biblioteker til elpriser — med status';pv('Integrationer','/integrationer');return;}
   if(h==='om-elpriser'){document.querySelector('[data-page="om-elpriser"]').classList.add('active');document.title='Om elpriser i Danmark — Spotpris, tariffer og afgifter';pv('Om elpriser','/om-elpriser');return;}
   if(h==='blog'){document.querySelector('[data-page="blog"]').classList.add('active');document.title='Blog — Guides og analyser om elpriser';pv('Blog','/blog');return;}

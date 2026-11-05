@@ -88,6 +88,13 @@ const SEO_PAGES = {
     description: 'Elpriser prognose for de næste 7 dage, time for time for DK1 og DK2. Laves dagligt af en maskinlæringsmodel ud fra vejrprognoser for vind og sol. Skifter til faktiske børspriser, når de offentliggøres ca. kl. 13.',
     hash: '#prognose',
   },
+  // The page for the "elpriser i morgen" searches (387 impressions a month on page 2 in Search Console, 2026-10): tomorrow's hourly prices for DK1 and DK2
+  // and nothing else, so it does not compete with /prognose (seven days). Drawn by imorgenHTML from the same feed as the Pris screen.
+  '/elpriser-i-morgen': {
+    title: 'Elpriser i morgen — time for time, DK1 og DK2',
+    description: 'Elpriser i morgen time for time for DK1 og DK2: billigste og dyreste time og gennemsnit. Faktiske børspriser, så snart de offentliggøres ca. kl. 13.',
+    hash: '#elpriser-i-morgen',
+  },
   '/api': {
     title: 'elpriser.org API — Gratis JSON API for danske elpriser',
     description: 'Gratis JSON API for danske elpriser: aktuel pris, time-for-time-priser, 10-dages prognose, CO₂-udledning, nettariffer og Tibber-kompatibel Shelly-tarif. Ingen nøgle, fuld CORS, OpenAPI 3.1.',
@@ -210,7 +217,7 @@ for (const area of ['DK1', 'DK2']) {
 }
 
 const SITEMAP_URLS = [
-  '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/om-elpriser', '/shelly-tariff', '/download',
+  '/', '/dk1', '/dk2', '/tariffer', '/automation', '/api', '/prognose', '/elpriser-i-morgen', '/om-elpriser', '/shelly-tariff', '/download',
   '/integrationer',
   '/blog',
   '/blog/elafgift-2028', '/blog/elafgift-og-spotpris', '/norden', '/blog/hvornaar-er-stroemmen-billigst', '/blog/groennest-og-dyrest',
@@ -865,11 +872,13 @@ export async function onRequest(context) {
     if (url.pathname === '/integrationer') opts.integrationer = true;
     if (page.download) opts.download = page.download;
     if (url.pathname === '/prognose') opts.prognose = true;
+    if (url.pathname === '/elpriser-i-morgen') opts.imorgen = true;
     if (page.zonePage) opts.zonePage = page.zonePage;
     if (page.norden) opts.norden = true;
     if (page.city) { opts.city = page.city; return renderCachedPage(context, url.pathname, page, opts, CITY_SSR_VERSION); }
     if (opts.zonePage || opts.norden) return renderCachedPage(context, url.pathname, page, opts, ZONE_SSR_VERSION);
     if (opts.prognose) return renderCachedPage(context, url.pathname, page, opts, PROGNOSE_SSR_VERSION);
+    if (opts.imorgen) return renderCachedPage(context, url.pathname, page, opts, IMORGEN_SSR_VERSION);
     return renderSPA(context, url.pathname, page, opts);
   }
 
@@ -3277,6 +3286,65 @@ async function renderHomepage(context) {
 const ZONE_SSR_VERSION = 'zone-ssr-v28';
 const CITY_SSR_VERSION = 'city-ssr-v19';
 const PROGNOSE_SSR_VERSION = 'prognose-ssr-v17';
+const IMORGEN_SSR_VERSION = 'imorgen-ssr-v1';
+
+/**
+ * /elpriser-i-morgen: tomorrow's hourly prices for DK1 and DK2 (the feed's "inkl_alt": Energinet's tariffs, elafgift and moms, not the local nettarif), written
+ * from the same days the Pris screen draws. Returns { body, faq, full, dateIso }; `full` is false when tomorrow is missing for either area (the page is then
+ * not cached). Before about 13:00 the day is the model's forecast, and the page says so; once it is settled the same day reads as the real Nord Pool prices.
+ */
+function imorgenHTML(fc1, fc2, todayDk) {
+  const tom = fc => prisDays((fc && fc.days) || [], todayDk, 3)[1] || null;
+  const areas = [['DK1', tom(fc1), fc1], ['DK2', tom(fc2), fc2]];
+  const have = areas.filter(a => a[1] && a[1].ps.some(v => typeof v === 'number'));
+  if (!have.length) return { body: '<p class="text-sm text-gray-600 dark:text-gray-400">Priserne for i morgen er ikke hentet endnu. <a href="/prognose" class="text-brand-500 underline">Se prognosen</a>.</p>', faq: [], full: false };
+  const date = have[0][1].date, dt = new Date(date + 'T12:00:00Z');
+  const dayName = PRIS_I18N.da.wd[dt.getUTCDay()], dateText = `${dayName} den ${dt.getUTCDate()}. ${DA_MONTHS[dt.getUTCMonth()]}`;
+  const settled = have.every(a => a[1].real);
+  const stat = a => {
+    const ps = a[1].ps, idx = ps.map((v, h) => [v, h]).filter(x => typeof x[0] === 'number');
+    const sorted = [...idx].sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+    return { ps, lo: sorted[0], hi: sorted[sorted.length - 1], cheap: sorted.slice(0, 3).map(x => x[1]), avg: idx.reduce((s, x) => s + x[0], 0) / idx.length };
+  };
+  const S = {}; for (const a of have) S[a[0]] = stat(a);
+  const sentence = a => {
+    const s = S[a[0]];
+    const cheap = [...s.cheap].sort((x, y) => x - y).map(h => fcHour(h).replace('kl. ', '')).join(', ');
+    return `<p class="mt-2 text-sm text-gray-800 dark:text-gray-200 leading-relaxed"><strong>${FC_WHERE[a[0]]}:</strong> i gennemsnit ${prisNum(s.avg, 2)} kr/kWh, `
+      + `billigst ${fcHour(s.lo[1])} (${prisNum(s.lo[0], 2)} kr/kWh) og dyrest ${fcHour(s.hi[1])} (${prisNum(s.hi[0], 2)} kr/kWh). De tre billigste timer er kl. ${cheap}.</p>`;
+  };
+  const lead = settled
+    ? `<p class="text-sm text-gray-800 dark:text-gray-200 leading-relaxed"><strong>${prisEsc(dateText)}:</strong> det er de faktiske børspriser fra Nord Pool, offentliggjort i dag omkring kl. 13.</p>`
+    : `<p class="text-sm text-gray-800 dark:text-gray-200 leading-relaxed"><strong>${prisEsc(dateText)}:</strong> børsprisen for i morgen offentliggøres først omkring kl. 13. Indtil da er tallene herunder elpriser.orgs egen prognose, og de erstattes automatisk af de faktiske priser.</p>`;
+  const cols = have.map(a => a[0]);
+  const rows = [];
+  for (let h = 0; h < 24; h++) {
+    const cells = have.map(a => {
+      const v = S[a[0]].ps[h];
+      if (typeof v !== 'number') return '<td class="im-n">–</td>';
+      const cheap = S[a[0]].cheap.includes(h);
+      return `<td class="im-n${cheap ? ' im-cheap' : ''}">${prisNum(v, 2)}${cheap ? '<span class="im-tag">billigst</span>' : ''}</td>`;
+    });
+    rows.push(`<tr><th scope="row">${prisHH(h)}–${prisHH((h + 1) % 24)}</th>${cells.join('')}</tr>`);
+  }
+  const table = `<div class="im-wrap"><table class="im-table"><caption class="sr-only">Elpris i morgen time for time, kr/kWh ${prisEsc(FC_INCL)}</caption>`
+    + `<thead><tr><th scope="col">Kl.</th>${cols.map(c => `<th scope="col">${c === 'DK1' ? 'Vest (DK1)' : 'Øst (DK2)'}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+  const faq = [];
+  faq.push({ q: 'Hvornår kommer elprisen for i morgen?',
+    a: 'Børsprisen for næste døgn bliver kendt omkring kl. 13, når Nord Pools dagen-før-auktion er afgjort. Siden viser de faktiske priser, så snart de er der. Før det er tallene elpriser.orgs egen prognose.' });
+  faq.push({ q: 'Hvad er den billigste time i morgen?',
+    a: have.map(a => `I ${FC_WHERE[a[0]]} er den billigste time ${fcHour(S[a[0]].lo[1])} med ${prisNum(S[a[0]].lo[0], 2)} kr/kWh og den dyreste ${fcHour(S[a[0]].hi[1])} med ${prisNum(S[a[0]].hi[0], 2)} kr/kWh.`).join(' ') + ` Priserne er ${FC_INCL}.` });
+  faq.push({ q: 'Er det prisen på min regning?',
+    a: 'Ikke helt. Prisen her er børsprisen med Energinets tariffer, elafgift og moms, men uden dit netselskabs nettarif og uden dit elselskabs eget tillæg. Vælg dit netselskab på forsiden for prisen med nettarif.' });
+  const body = `${lead}
+      <div class="mt-1">${have.map(sentence).join('')}</div>
+      <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">Priserne er ${FC_INCL}. Kr/kWh.</p>
+      ${table}
+      <p class="mt-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Vil du se prisen hos dit netselskab, så vælg det på <a href="/dk1" class="text-brand-500 underline">Elpris Vest</a> eller <a href="/dk2" class="text-brand-500 underline">Elpris Øst</a>. Flere dage frem finder du på <a href="/prognose" class="text-brand-500 underline">elprisprognosen</a>, og <a href="/blog/hvornaar-er-stroemmen-billigst" class="text-brand-500 underline">her</a> står, hvornår strømmen typisk er billigst.</p>
+      <h2 class="text-xl font-semibold mt-8 mb-3">Ofte stillede spørgsmål</h2>
+      <div class="space-y-2">${faqDetailsHTML(faq)}</div>`;
+  return { body, faq, full: have.length === 2, dateIso: date };
+}
 async function renderCachedPage(context, pathname, meta, opts, version) {
   const cache = caches.default;
   const key = new Request(`https://cache.local/${version}${pathname}`);
@@ -3304,6 +3372,7 @@ const HASH_TO_DATA_PAGE = {
   'download': 'download',
   'integrationer': 'integrationer',
   'prognose': 'prognose',
+  'elpriser-i-morgen': 'elpriser-i-morgen',
   'blog/elafgift-2028': 'blog-elafgift-2028',
   'blog/elafgift-og-spotpris': 'blog-elafgift-og-spotpris',
   'norden': 'norden',
@@ -3540,6 +3609,18 @@ async function renderSPA(context, pathname, meta, opts = {}) {
   }
   if (opts.tariffFacts) {
     html = html.replace('<!--SSR_TARIFF_FACTS-->', await buildTariffFacts(context));
+  }
+  if (opts.imorgen) {
+    const [fc1, fc2] = await Promise.all([fetchNetForecast(context, 'DK1', null), fetchNetForecast(context, 'DK2', null)]);
+    const { todayDk } = danishClock();
+    const im = imorgenHTML(fc1, fc2, todayDk);
+    html = html.replace('<!--SSR_IMORGEN-->', () => im.body);
+    const ld = [{ '@context': 'https://schema.org', '@type': 'WebPage', name: meta.title, description: meta.description, url: pageUrl, inLanguage: 'da',
+        isPartOf: { '@type': 'WebSite', name: 'elpriser.org', url: 'https://elpriser.org' }, dateModified: new Date().toISOString() }];
+    if (im.faq.length) ld.push({ '@context': 'https://schema.org', '@type': 'FAQPage',
+        mainEntity: im.faq.map(x => ({ '@type': 'Question', name: x.q, acceptedAnswer: { '@type': 'Answer', text: x.a } })) });
+    html = html.replace('</head>', () => ld.map(j => `  <script type="application/ld+json">${JSON.stringify(j).replace(/</g, '\\u003c')}</script>`).join('\n') + '\n</head>');
+    if (opts.done) opts.done.full = im.full;
   }
   if (opts.integrationer) {
     // The finished list from the status table (no fetch, nothing live), and the CollectionPage for the items that exist.

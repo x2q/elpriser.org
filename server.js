@@ -396,6 +396,7 @@ const SPA_ROUTES = {
   '/download': '#download',
   '/norden': '#norden',
   '/prognose': '#prognose',
+  '/elpriser-i-morgen': '#elpriser-i-morgen',
   '/api': '#api',
   '/integrationer': '#integrationer',
   '/shelly-tariff': '#shelly-tariff',
