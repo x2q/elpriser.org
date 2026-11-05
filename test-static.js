@@ -1869,7 +1869,7 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
   // (v13: the four new country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v19'/.test(ROUTES), 'city-ssr-v19');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v20'/.test(ROUTES), 'city-ssr-v19');
   // /prognose shares the header and footer too (v4: the four EU country links).
   assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v17'/.test(ROUTES), 'prognose-ssr-v17');
 });
@@ -2312,7 +2312,7 @@ test('cities: the sampling script prints counts only — no address is printed, 
 });
 
 test('cities: one path through SEO entries, sitemap, llms.txt, server.js, the router and the net pages — and no /elpris hub', () => {
-  assert.ok(/import \{ CITIES \} from '\.\/_cities\.js'/.test(ROUTES), 'the function imports the table');
+  assert.ok(/import \{ CITIES, CITY_LOCATION \} from '\.\/_cities\.js'/.test(ROUTES), 'the function imports the table');
   assert.ok(/for \(const c of CITIES\) SEO_PAGES\['\/elpris\/' \+ c\.slug\] = \{ \.\.\.cityMeta\(c\), city: c \}/.test(ROUTES), 'SEO_PAGES entries are generated from the table');
   assert.ok(/\.\.\.CITY_URLS,?\s*\]/.test(ROUTES) && /CITY_URLS = CITIES\.map\(c => '\/elpris\/' \+ c\.slug\)/.test(ROUTES), 'the sitemap spreads the generated URLs');
   assert.ok(/CITY_PATH\.test\(p\)\) return '0\.5'/.test(ROUTES), 'priority 0.5');

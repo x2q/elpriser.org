@@ -1,5 +1,5 @@
 import { activateDataPage, stripInactiveMains, promoteSectionTitle } from './_spa.js';
-import { CITIES } from './_cities.js';
+import { CITIES, CITY_LOCATION } from './_cities.js';
 import { cityLocation } from './_city-location.js';
 import { netLocation, netSourceNote, netAreasGeoJSON } from './_net-location.js';
 import { zoneLocation } from './_zone-location.js';
@@ -3187,7 +3187,8 @@ function cityHTML(c, net, fc, todayDk, nowH) {
   if ((c.other || []).length) who += ` ${daList(c.other.map(x => x.name))} har vi endnu ikke tariffer for.`;
   const head = `<p class="page-eyebrow">${AREA_LABEL[c.area]} · ${net.name}</p><h1 class="page-title">Elpris i ${c.name} i dag — time for time</h1>`;
   const ps = [];
-  ps.push(p(`${c.name} ligger i prisområde ${AREA_LABEL[c.area]} — ${AREA_REGION[c.area]}. ${who}`, 'mt-2'));
+  const region = ({ 'DK-81': 'Region Nordjylland', 'DK-82': 'Region Midtjylland', 'DK-83': 'Region Syddanmark', 'DK-84': 'Region Hovedstaden', 'DK-85': 'Region Sjælland' })[(CITY_LOCATION[c.slug] || {}).region];
+  ps.push(p(`${c.name} ligger i prisområde ${AREA_LABEL[c.area]} — ${AREA_REGION[c.area]}.${region ? ` Byen hører til ${region}.` : ''} ${who}`, 'mt-2'));
   ps.push(`<p class="mt-3"><button type="button" class="gps-light" onclick="openNetDialog()" aria-haspopup="dialog">Er dit netselskab et andet? Skift</button></p>`);
 
   const all = fc ? prisDays(fc.days || [], todayDk) : [];
@@ -3215,7 +3216,31 @@ function cityHTML(c, net, fc, todayDk, nowH) {
   }
   ps.push(p(`Sådan regnes prisen: spotprisen på elbørsen Nord Pool for ${AREA_LABEL[c.area]} plus nettariffen hos ${net.name}, Energinets system- og transmissionstarif, elafgift og 25 % moms. ${link('/om-elpriser', 'Læs mere i Forstå din elpris')}.`));
   const cls = 'text-sm text-gray-600 dark:text-gray-400 leading-relaxed text-left';
-  return { head, body: `<div class="${cls}">${ps.join('')}</div>` };
+  // The same four blocks on every city page (the experiment compares pages, so the added text must not differ by arm): what a typical use costs at today's
+  // cheapest and dearest hour for THIS net company, how the city relates to the others, and two answers. All of it comes from the day's prices and CITIES.
+  const extra = [];
+  const h2 = t => `<h2 class="text-lg font-semibold mt-8 mb-2 text-gray-800 dark:text-gray-200">${t}</h2>`;
+  if (today && ex(0).lo && ex(0).hi) {
+    const lo = ex(0).lo, hi = ex(0).hi;
+    const uses = [['Vaskemaskine', 1], ['Opvaskemaskine', 1.2], ['Tørretumbler', 2.5], ['Elbil, opladning af 30 kWh', 30]];
+    const rows = uses.map(([name, kwh]) => `<tr><th scope="row">${name}</th><td class="im-n">${prisNum(kwh, kwh % 1 ? 1 : 0)} kWh</td><td class="im-n im-cheap">${kr(kwh * lo.p)} kr</td><td class="im-n">${kr(kwh * hi.p)} kr</td></tr>`);
+    extra.push(h2(`Hvad koster strømmen til hverdagen i ${c.name} i dag?`)
+      + p(`Hos ${net.name} koster en kWh i dag fra ${kr(lo.p)} kr (${slot(lo).replace(/ \(.*$/, '')}) til ${kr(hi.p)} kr (${slot(hi).replace(/ \(.*$/, '')}), inkl. nettarif, afgifter og moms. Det svarer til, at et typisk forbrug koster:`, 'mt-1')
+      + `<div class="im-wrap"><table class="im-table"><thead><tr><th scope="col">Hvad</th><th scope="col">Forbrug</th><th scope="col">Billigste time</th><th scope="col">Dyreste time</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`
+      + p(`Flytter du en elbil-opladning på 30 kWh fra dagens dyreste til dens billigste time, sparer du ${kr(30 * (hi.p - lo.p))} kr i ${c.name} i dag. Forbrugstallene er typiske tal, ikke målinger; din egen maskine kan bruge mere eller mindre.`));
+  }
+  const sameNet = CITIES.filter(x => x.slug !== c.slug && x.nets[0].slug === main.slug);
+  const sameArea = CITIES.filter(x => x.slug !== c.slug && x.area === c.area && !sameNet.includes(x));
+  const cityLinks = xs => daList(xs.map(x => link('/elpris/' + x.slug, x.name)));
+  extra.push(h2(`${c.name} og de andre byer`)
+    + p(`${sameNet.length ? `${cityLinks(sameNet)} har også ${link(netPath(main.slug), main.name)} som netselskab, så nettariffen og dermed prisen er den samme der. ` : `${link(netPath(main.slug), main.name)} er netselskab for ${c.name}, men ikke for nogen af de andre byer vi har lavet sider for. `}`
+      + `${sameArea.length ? `Andre byer i ${AREA_LABEL[c.area]}: ${cityLinks(sameArea)}. ` : ''}`
+      + `Se også ${link('/' + c.area.toLowerCase(), 'Elpris ' + AREA_LABEL[c.area])} for hele prisområdet.`, 'mt-1'));
+  extra.push(h2(`Er elprisen den samme i hele ${AREA_LABEL[c.area]}?`)
+    + p(`Børsprisen (spotprisen) er den samme i hele ${AREA_LABEL[c.area]}. Det, der adskiller ${c.name} fra andre byer i området, er nettariffen, som afhænger af netselskabet${varies ? ` — og i ${c.name} af adressen, fordi byen deles af flere netselskaber` : ` (${main.name} i ${c.name})`}. Derfor kan to byer få forskellige priser på samme time.`, 'mt-1'));
+  extra.push(h2(`Hvornår er det billigst at bruge strøm i ${c.name}?`)
+    + p(`Det varierer fra dag til dag med vind, sol og forbrug. Se tallene ovenfor for i dag og i morgen, og ${link('/elpriser-i-morgen', 'elpriserne i morgen')} time for time, så snart børsen har prissat dem. En generel gennemgang står i ${link('/blog/hvornaar-er-stroemmen-billigst', 'Hvornår er strømmen billigst?')}.`, 'mt-1'));
+  return { head, body: `<div class="${cls}">${ps.join('')}${extra.join('')}</div>` };
 }
 
 /** The Danish calendar date and clock hour, whatever zone the Worker runs in. */
@@ -3285,7 +3310,7 @@ async function renderHomepage(context) {
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
 const ZONE_SSR_VERSION = 'zone-ssr-v28';
-const CITY_SSR_VERSION = 'city-ssr-v19';
+const CITY_SSR_VERSION = 'city-ssr-v20';
 const PROGNOSE_SSR_VERSION = 'prognose-ssr-v17';
 const IMORGEN_SSR_VERSION = 'imorgen-ssr-v2';
 
