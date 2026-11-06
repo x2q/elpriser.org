@@ -328,8 +328,12 @@ In English: you may use, quote and summarise this content freely, including in A
 ## Live data API (for AI assistants and agents)
 
 If a user asks "hvad er elprisen lige nu?" or "what's the current Danish
-electricity price?" these endpoints return live JSON. CORS-enabled, no key,
-edge-cached at 1-5 min so calling repeatedly is fine.
+electricity price?" these endpoints return live JSON. CORS-enabled, no key.
+Prices change a few times a day and are cached at the edge, so poll sparingly:
+/api/now and /api/schedule change at the top of each Danish hour (once an hour is enough);
+today's /api/prices is fixed for the day; tomorrow's appear around 12:30-13:00 Danish time
+and never change afterwards; past days are immutable. Honour Cache-Control and, on 503,
+Retry-After. Details: https://elpriser.org/api
 
 **Machine-readable spec**: [/api/openapi.json](https://elpriser.org/api/openapi.json) — OpenAPI 3.1.
 Every \`/api/*\` response also sends \`Link: </api/openapi.json>; rel="describedby"\`.

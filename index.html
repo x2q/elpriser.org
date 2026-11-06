@@ -1821,7 +1821,17 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     <section>
       <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Hovedpunkter</h3>
       <ul class="space-y-1 ml-4 list-disc">
-        <li><strong class="text-gray-700 dark:text-gray-300">Ingen nøgle, ingen rate limit</strong> — Cloudflare-edge cacher 1-5 min, så hyppige kald er gratis.</li>
+        <li><strong class="text-gray-700 dark:text-gray-300">Ingen nøgle, ingen fast rate limit</strong> — Cloudflare-edge cacher svarene, så hyppige kald koster ikke noget. De giver bare det samme svar.</li>
+        <li><strong class="text-gray-700 dark:text-gray-300">Hvor ofte skal du spørge?</strong> Priserne ændrer sig få gange i døgnet:
+          <ul class="ml-4 mt-1 list-disc">
+            <li><code>/api/now</code> og <code>/api/schedule</code> skifter ved hver hele time (<code>Cache-Control: max-age</code> er sekunderne til næste time). Spørg en gang i timen, et minut eller to over, og ikke oftere end hvert 5. minut.</li>
+            <li><code>/api/prices</code> for i dag ligger fast hele dagen: hent den en gang efter midnat. I morgen-priserne offentliggøres omkring kl. 12.30-13.00 og ændres aldrig bagefter: hent dem fra kl. 13, gentag hvert 1-5. minut, til priserne er der, og stop så.</li>
+            <li><code>/api/prices</code> for en dag, der er gået, er uforanderlig: hent den en gang og gem den.</li>
+            <li><code>/api/forecast</code> ændres højst nogle få gange i døgnet: en gang i timen er rigeligt.</li>
+            <li>Respektér <code>Cache-Control</code> og <code>Age</code>, og vent <code>Retry-After</code> sekunder efter et <code>503</code> i stedet for at gentage i en løkke. "Upstream rate limit" betyder, at Energi Data Service afviste vores egen forespørgsel om en dag, der endnu ikke ligger i arkivet. Det går over efter sekunder til minutter.</li>
+            <li>Hver forskellig <code>start</code>/<code>end</code> eller <code>date</code> er sin egen cache-post og rammer oftere Energi Data Service end standardvinduet. Bed om ét interval i stedet for ét kald pr. dag.</li>
+          </ul>
+        </li>
         <li><strong class="text-gray-700 dark:text-gray-300">Fuld CORS</strong> (<code>Access-Control-Allow-Origin: *</code>) — kald direkte fra en webapp uden proxy.</li>
         <li><strong class="text-gray-700 dark:text-gray-300">Send en <code>User-Agent</code></strong> — Cloudflares botbeskyttelse svarer <code>403</code> på Pythons standard-<code>urllib</code> (<code>Python-urllib/3.x</code>). Alt andet virker: <code>curl</code>, <code>requests</code> eller dit eget, fx <code>my-app/1.0</code>. I Python: <code>Request(url, headers={"User-Agent": "my-app/1.0"})</code>.</li>
         <li><strong class="text-gray-700 dark:text-gray-300">OpenAPI 3.1 spec</strong> på <a href="/api/openapi.json" class="text-brand-500 underline">/api/openapi.json</a> — importér i Postman, Bruno eller en ChatGPT/MCP-klient.</li>
