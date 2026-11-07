@@ -478,7 +478,7 @@ for (const [p, w] of Object.entries(ACT)) {
   const fclOk = fclAll > 0 && (hz === 7 || fclAll === fclHidden);
   ok(!/pris-fca|pris-bl|Back-test/.test(l7) && fclOk && !/\b80 ?%/.test(h.replace(/<[^>]*>/g, ' ')) && !/NaN|undefined|\{[a-z]+\}/.test(main), `${p}: med prognose: ingen nøjagtighedslinje under kortet, lav sikkerhed kun i dagslisten på horisont 7, ingen skabelon-rester`);
   ok(!NOFUEL.test(raw.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')), `${p}: med prognose: ingen ord om gas, kul eller brændstof på siden`);
-  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v28${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v24`);
+  ok(!/Nur|nur Day-Ahead/.test(main) && upstream.length === 1 && [...store.keys()].some(k => new RegExp(`cache\\.local/zone-ssr-v29${p}$`).test(k)), `${p}: med prognose: én hentning, cachet under zone-ssr-v24`);
   // the text block says the forecast exists only while there is one; the plain page stays as before
   ok(!plain.page.includes(PL.fcn) && !plain.page.includes('pris-fca') && (plain.page.match(/data-pris-period="/g) || []).length === 0, `${p}: uden prognose i svaret er siden som før (ingen note, ingen periodeknapper)`);
   fcZones = new Set();
@@ -642,7 +642,7 @@ for (const [z, page, label] of [['pt', '/pt/preco-eletricidade', 'PT'], ['ie', '
   const r = await get('/pt/preco-eletricidade'), h = r.page;
   ok(r.status === 200 && upstream.length === 1 && upstream[0] === '/api/nordic?zone=pt', '/pt/preco-eletricidade: 200, og serveren henter kun zonen pt');
   ok(h.includes(`data-hour="${DUB_H}"`) && h.includes(`data-date="${dublinToday}"`), `PT: skærmen er tegnet for Lissabons time (${DUB_H}) og dato (${dublinToday}), ikke Københavns`, (h.match(/data-hour="\d+" data-date="[\d-]+"/) || [])[0]);
-  ok(new RegExp(`class="pris-label">Preço da eletricidade agora · <span class="pris-wd">[a-zç-]+ </span>${String(DUB_H).padStart(2, '0')}:00<`).test(h), 'PT: "terça-feira 12:00" — ingen præposition før timen (à/às skifter med tallet), ugedagen er portugisisk');
+  ok(new RegExp(`class="pris-label">Preço da eletricidade agora · <span class="pris-wd">[a-zçá-]+ </span>${String(DUB_H).padStart(2, '0')}:00<`).test(h), 'PT: "terça-feira 12:00" — ingen præposition før timen (à/às skifter med tallet), ugedagen er portugisisk');
   const expect = nordic('pt').days[1].prices[DUB_H].eur_mwh / 10, all = nordic('pt').days.slice(1).flatMap(d => d.prices.map(p => p.eur_mwh / 10));
   const dec = Math.max(...all) >= 100 ? 0 : Math.max(...all) >= 10 ? 1 : 2;
   ok(new RegExp(`class="pris-now">${expect.toFixed(dec).replace('.', ',')}<`).test(h) && /data-tip="Hoje \d\d:00 · \d+,\d c€\/kWh"/.test(h) && /<td>\d\d:00–\d\d:00<\/td>/.test(h) && /<small>c€ · \d\d:00<\/small>/.test(h), 'PT: prisen nu er EUR/MWh ÷ 10 i c€ med decimalkomma, og tooltips, dagsliste og felter skriver "13:00" og "c€/kWh"', `${expect.toFixed(dec)} vs ${(h.match(/class="pris-now">([^<]*)</) || [])[1]}`);

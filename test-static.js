@@ -1384,7 +1384,7 @@ test('privacy: /privacy is the English policy, shipped beside the Danish one, li
   assert.ok(/href="\/privatliv" hreflang="da"/.test(en) && /href="\/privacy" hreflang="en"/.test(da), 'and have a visible link to each other');
   assert.ok(!/gtag|googletagmanager|<script/.test(en), 'the English policy loads no script either');
   // same facts as the Danish page: every platform/flow word, the date, the numbers
-  for (const w of ['Android', 'iPhone', 'iPad', 'Mac', 'Apple Watch', 'widget', 'App Group', 'Google Analytics', 'Notifications when power is cheapest', 'MCP', 'controllable capacity', 'Cloudflare', 'OpenStreetMap', 'Green Power Denmark', 'Datatilsynet', 'hello@elpriser.org', 'Sandbox Ventures']) assert.ok(text.includes(w), `the English policy must mention "${w}"`);
+  for (const w of ['Android', 'iPhone', 'iPad', 'Mac', 'Apple Watch', 'widget', 'App Group', 'Google Analytics', 'Notifications when power is cheapest', 'MCP', 'controllable capacity', 'Cloudflare', 'OpenStreetMap', 'Green Power Denmark', 'Datatilsynet', 'hello@elpriser.org', 'Sandbox.ventures']) assert.ok(text.includes(w), `the English policy must mention "${w}"`);
   assert.ok(/Last updated 3 November 2026/.test(text) && /Senest opdateret 3\. november 2026/.test(da), 'both carry the same date');
   assert.ok(/five decimals/.test(text) && /about 1 metre/.test(text) && /up to a day/.test(text) && /about 11 metres/.test(text) && /30 days/.test(text) && /90 days/.test(text) && /three months/.test(text), 'the numbers match the Danish page and the code');
   assert.equal((en.match(/<h2>/g) || []).length, (da.match(/<h2>/g) || []).length, 'same number of sections in both languages');
@@ -1405,7 +1405,7 @@ test('terms: /terms (English) and /vilkaar (Danish) are shipped, linked both way
   assert.ok(/href="\/vilkaar" hreflang="da"/.test(en) && /href="\/terms" hreflang="en"/.test(da), 'visible link to the other language');
   assert.ok(/href="\/privacy"/.test(en) && /href="\/privatliv"/.test(da), 'each links its own language of the privacy policy');
   assert.ok(!/gtag|googletagmanager|<script/.test(en + da), 'the terms load no script');
-  for (const w of ['Sandbox Ventures', 'hello@elpriser.org', 'Apple', 'Google', 'Home Assistant']) assert.ok(text.includes(w) && da.includes(w), `both terms mention "${w}"`);
+  for (const w of ['Sandbox.ventures', 'hello@elpriser.org', 'Apple', 'Google', 'Home Assistant']) assert.ok(text.includes(w) && da.includes(w), `both terms mention "${w}"`);
   assert.ok(/Last updated 5 November 2026/.test(text) && /Senest opdateret 5\. november 2026/.test(da), 'both carry the same date');
   assert.equal((en.match(/<h2>/g) || []).length, (da.match(/<h2>/g) || []).length, 'same number of sections in both languages');
   assert.equal((en.match(/<li>/g) || []).length, (da.match(/<li>/g) || []).length, 'same number of list items in both languages');
@@ -1810,7 +1810,7 @@ test('footer: no link list is repeated, and the credits line keeps both external
   // 55 with Tyskland, Frankrig, Polen and Italien (the EU price pages); one more for every country added to PRIS_COUNTRIES (derived: sync-danish-chrome.mjs).
   const nCountries = PRIS.PRIS_PICK.length - 1;
   // 63 since "Integrationer" joined the Smart hjem group.
-  assert.equal(hrefs.length, 63 + nCountries, `footer has ${hrefs.length} links: 19 in the groups and the apps, 31 nets, 10 cities, Norden and ${nCountries} countries, and the two credits`);
+  assert.equal(hrefs.length, 64 + nCountries, `footer has ${hrefs.length} links: 19 in the groups and the apps, 31 nets, 10 cities, Norden and ${nCountries} countries, and the three credits`);
   const legal = FOOTER.match(/<p class="sf-legal">([^]*?)<\/p>/);
   assert.ok(legal, 'credits line');
   assert.ok(/&copy; Elpriser\.org &mdash; Data fra <a href="https:\/\/www\.energidataservice\.dk"[^>]*rel="noopener">Energi Data Service<\/a> \(Energinet\)\. Åbne datasæt på <a href="https:\/\/huggingface\.co\/Elpriser"[^>]*rel="noopener">Hugging Face<\/a>\./.test(legal[1]), 'credits wording and links');
@@ -1855,7 +1855,7 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // v84: the footer and the place dialog list the United Kingdom and Kosovo; Ireland's source is SEMOpx.
   // v85: the Pris screen draws PRIS_EUF (forecast days of the EU zones: band, accuracy line, note) and the llms text says so.
   // v87: the footer's Smart hjem group gained "Integrationer" (/integrationer); zone v25, city v19 and prognose v17 moved with it.
-  assert.ok(/homepage-ssr-v87/.test(ROUTES), 'homepage-ssr-v87');
+  assert.ok(/homepage-ssr-v88/.test(ROUTES), 'homepage-ssr-v88');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
   // (v8: the shared Pris block changed with PRIS_FC.)
   // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
@@ -1864,14 +1864,14 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // (v26: the header button and the footer pill "Hent appen" in the page's language, to the app page in that language.)
   // (v27: the footer's privacy link goes to the English policy, /privacy, instead of the Danish one.)
   // (v28: the logo links to the country's own page, not the Danish front page.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v28'/.test(ROUTES), 'zone-ssr-v28');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v29'/.test(ROUTES), 'zone-ssr-v29');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
   // (v13: the four new country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v21'/.test(ROUTES), 'city-ssr-v19');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v22'/.test(ROUTES), 'city-ssr-v19');
   // /prognose shares the header and footer too (v4: the four EU country links).
-  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v17'/.test(ROUTES), 'prognose-ssr-v17');
+  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v18'/.test(ROUTES), 'prognose-ssr-v18');
 });
 
 

@@ -107,7 +107,7 @@ a Danish word, a missing placeholder in the accuracy line or a word about gas, c
 // CHROME_I18N — the words of the footer and the place dialog
   xx:{home:'elpriser.org <home page>',app:'Get the app' /* the app page of this language: its title as a short button, = getApp in functions/_download_i18n.js */,land:'Countries',place:'Where are you?',area:'Price zone',oth:'Other countries',back:'Back',find:'Search',none:'No results',close:'Close',
     cn:{dk:'…',no:'…',sv:'…',fi:'…',nl:'…',de:'…',fr:'…',pl:'…',it:'…',at:'…',ch:'…',be:'…',ie:'…',cz:'…' /* every country that has a page; one missing falls back to its own name */},
-    privacy:'Privacy' /* links to /privacy (English); in other languages the label ends in " (EN)" */,src:'Source:',and:'and',open:'Open datasets on',
+    privacy:'Privacy' /* links to /privacy (English); in other languages the label ends in " (EN)" */,by:'Elpriser.org is a service developed by' /* then the link Sandbox.ventures; the name stays last, uninflected */,src:'Source:',and:'and',open:'Open datasets on',
     chg:'Changed: hourly means calculated by elpriser.org'},
 ```
 
