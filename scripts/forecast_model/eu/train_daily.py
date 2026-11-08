@@ -24,8 +24,9 @@ fuel_live uses the cache while its newest value is at most 3 days old (carbon: 6
 run WITHOUT fuel under the gate's own `nofuel` horizons, with the log line "FUEL off: <reason>". The job exits 0 otherwise; exit 3 when fewer
 than MIN_ZONES zones were written. The log line "DONE n/26 zones" is the one to alert on.
 
-Level correction is a SHADOW: the published forecast is the model's own; the corrected numbers are archived beside it (`shadow`) and scored by
-monitor.py --field shadow against --field published. EU_FORECAST_LAMBDA=0.5 publishes the correction instead (unset = off).
+Level correction (level_correction.py): in the zones of LC.PUBLISH_ZONES (me mk rs xk al gr) the published forecast is the model's number plus LAMBDA x the mean error of the same
+zone and horizon over the last 14 settled days of the job's OWN archive (LC.PUBLISH_LAMBDA = 0.5; EU_FORECAST_LAMBDA=0 turns it off); the other zones are published as the model made them. The model's own numbers (`uncorrected`) are archived beside the published ones, and
+monitor.py --field uncorrected scores them against --field published.
 EU_FORECAST_NO_FUEL=1 never fetches or reads the fuel inputs (every fuel zone then runs the no-fuel recipe).
 
 Cron (not installed by the repo; see run_daily.sh and docs/forecast-runbook.md): 15 15 * * *  /home/cc/eu-forecast/run_daily.sh
@@ -244,9 +245,9 @@ def main(argv=None):
 
     # ---- publish
     errors = LC.merge_errors(LC.day_errors_from_archive(os.path.join(DIR, "archive"), prices))
-    lam = float(os.environ.get("EU_FORECAST_LAMBDA", "0"))          # what is PUBLISHED; 0 = the uncorrected model (shadow only)
-    log(f"  level correction: {len(errors):,} day errors from the live archive; published lambda={lam}, shadow lambda={LC.LAMBDA}")
-    level_corr = (lambda z, h, d: LC.correction(errors, z, h, d, lam)) if lam > 0 else None
+    lam = float(os.environ.get("EU_FORECAST_LAMBDA", LC.PUBLISH_LAMBDA))          # what is PUBLISHED; 0 = the uncorrected model (shadow only)
+    log(f"  level correction: {len(errors):,} day errors from the live archive; published lambda={lam} in {', '.join(LC.PUBLISH_ZONES) if LC.PUBLISH_ZONES else 'all zones'}, shadow lambda={LC.LAMBDA}")
+    level_corr = (lambda z, h, d: LC.correction(errors, z, h, d, lam) if LC.publishes(z) else 0.0) if lam > 0 else None
     shadow_corr = lambda z, h, d: LC.correction(errors, z, h, d, LC.LAMBDA)
     wrote, skipped, latest = 0, [], {}
     for z in zones:

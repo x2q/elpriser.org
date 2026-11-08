@@ -41,6 +41,11 @@
   "me": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
   "mk": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
   "al": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6], "nofuel": [2, 3, 4, 5, 6]},
-  "xk": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6], "nofuel": [2, 3, 4, 5]}
+  "xk": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]}
+ },
+ "levelCorrection": {
+  "lambda": 0.5,
+  "days": 14,
+  "zones": ["me", "mk", "rs", "xk", "al", "gr"]
  }
 }

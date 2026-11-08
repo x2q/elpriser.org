@@ -17,6 +17,7 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import build_gate as BG          # noqa: E402
+import merge_level_zones as MLZ   # noqa: E402
 import calibrate_bands as CB     # noqa: E402
 import features as F             # noqa: E402
 import forecast as FC            # noqa: E402
@@ -438,6 +439,122 @@ class BuildGate(unittest.TestCase):
         self.assertTrue(acc["zones"]["de"]["fuel"]["2"]["rankOk"])
 
 
+class LevelCorrectionInTheGate(unittest.TestCase):
+    """The backtest behind the gate and the accuracy block is the backtest of the CORRECTED recipe (docs/forecast-balkan-level.md): the same rule the daily job applies."""
+
+    def frame(self, bias_from="2026-03-01", start="2026-01-01", end="2026-04-30"):
+        rows = []
+        for day in pd.date_range(start, end):
+            for h in (2, 3):
+                for hr in range(24):
+                    y = 100.0 + 5 * np.sin(hr / 24 * 6.28)
+                    off = -20.0 if day >= pd.Timestamp(bias_from) else 0.0          # the model runs 20 EUR/MWh too low from March on
+                    rows.append({"zone": "de", "t": day + pd.Timedelta(hours=hr), "date": day, "h": h, "hour": hr, "y": y,
+                                 "lear_r365_g": y + off, "lgb_fuel": y + off, "lear_r365": y + off, "lgb_base": y + off})
+        return pd.DataFrame(rows)
+
+    def test_the_default_is_the_published_lambda_and_zero_leaves_the_model_alone(self):
+        import level_correction as LC
+        self.assertEqual(BG.LEVEL_LAMBDA, LC.PUBLISH_LAMBDA)
+        raw = BG.recipe_columns(self.frame(), 0.0)
+        self.assertTrue((raw["fuel"] == raw["fuel_raw"]).all() and (raw["corr_fuel"] == 0).all())
+
+    def test_the_correction_is_regional_and_only_the_listed_zones_get_it(self):
+        import level_correction as LC
+        self.assertEqual(set(LC.PUBLISH_ZONES), {"me", "mk", "rs", "xk", "al", "gr"})
+        self.assertTrue(LC.publishes("me") and not LC.publishes("de") and not LC.publishes("ee"))
+        self.assertTrue(LC.publishes("de", None), "None = every zone")
+        f = self.frame()
+        f2 = f.assign(zone="me")
+        both = pd.concat([f, f2], ignore_index=True)
+        d = BG.recipe_columns(both, 0.5)                                   # default zones
+        self.assertEqual(float(d.loc[d["zone"] == "de", "corr_fuel"].abs().max()), 0.0)
+        self.assertGreater(float(d.loc[d["zone"] == "me", "corr_fuel"].abs().max()), 5.0)
+        gate, _, _ = BG.build(self.research_like(), None)
+        self.assertEqual(gate["levelCorrection"], {"lambda": LC.PUBLISH_LAMBDA, "days": LC.K_DAYS, "zones": list(LC.PUBLISH_ZONES)})
+
+    def research_like(self):
+        rows = []
+        rng = np.random.default_rng(1)
+        for day in pd.date_range("2026-05-01", "2026-11-02"):
+            for h in (2, 3):
+                for hr in range(24):
+                    y = 80 + 25 * np.sin(hr / 24 * 6.28) + rng.normal(0, 4)
+                    for z in ("de", "me"):
+                        rows.append({"zone": z, "t": day + pd.Timedelta(hours=hr), "date": day, "h": h, "hour": hr, "y": y, "level_7d": 80.0, "b_lag7": y + rng.normal(0, 20), "b_seasonal": y + rng.normal(0, 18),
+                                     "b_persist": y + rng.normal(0, 22), "b_lvlshape": y + rng.normal(0, 14), "lear_r365_g": y + rng.normal(0, 5), "lear_r365": y + rng.normal(0, 5),
+                                     "lgb_fuel": y + rng.normal(0, 5), "lgb_base": y + rng.normal(0, 5)})
+        return pd.DataFrame(rows)
+
+    def test_a_persistent_miss_is_partly_corrected_with_what_was_settled_at_issue(self):
+        d = BG.recipe_columns(self.frame(), 0.5, None)
+        late = d[(d["date"] >= "2026-04-01") & (d["h"] == 2)]
+        self.assertAlmostEqual(float(late["corr_fuel"].mean()), 10.0, delta=0.01)              # lambda 0.5 x the 20 EUR/MWh the model has been missing by
+        self.assertTrue(((late["fuel"] - late["y"]).abs() < (late["fuel_raw"] - late["y"]).abs()).all())
+        early = d[(d["date"] < "2026-02-20") & (d["h"] == 2)]
+        self.assertAlmostEqual(float(early["corr_fuel"].abs().max()), 0.0, places=6)           # nothing to correct yet
+        first = d[(d["h"] == 3) & (d["date"] == "2026-03-01")]                                 # no error of a day after the bias began was settled at issue
+        self.assertAlmostEqual(float(first["corr_fuel"].abs().max()), 0.0, places=6)
+
+    def test_the_band_moves_with_the_point_but_its_offsets_are_the_models_own(self):
+        rng = np.random.default_rng(3)
+        f = self.frame(start="2025-09-01", end="2026-05-31", bias_from="2026-04-01")
+        f["y"] = f["y"] + rng.normal(0, 5, len(f))
+        d = BG.recipe_columns(f, 0.5, None)
+        q = d[["zone", "t", "h", "date", "y"]].assign(q10=d["fuel_raw"] - 8.0, q90=d["fuel_raw"] + 8.0)       # quantile edges that share the model's miss
+        s = BG.attach_correction(q, d)
+        self.assertTrue(np.allclose(s["corr_fuel"].to_numpy(), d["corr_fuel"].to_numpy()))
+        self.assertTrue(np.allclose(s["q10"], q["q10"]), "the quantile edges themselves are not touched: calibrate_bands.py and the weekly refresh never see the correction")
+        self.assertIsNone(BG.attach_correction(None, d))
+        raw = BG.coverage_table(d, "fuel_raw", s)
+        moved = BG.coverage_table(d, "fuel_raw", s, "corr_fuel")
+        self.assertGreater(moved[("de", 2)][0], raw[("de", 2)][0], "with the model 20 too low for two months the shifted band covers more of the days than the unshifted one")
+
+    def test_the_job_publishes_the_default_lambda(self):
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "train_daily.py"), encoding="utf-8") as f:
+            src = f.read()
+        self.assertIn('os.environ.get("EU_FORECAST_LAMBDA", LC.PUBLISH_LAMBDA)', src)
+
+
+class MergeLevelZones(unittest.TestCase):
+    """merge_level_zones.py: only the zones of levelCorrection.zones change, the calibration is not touched, anything that does not fit is refused."""
+
+    def files(self, mark):
+        zones = list(ZONES)
+        gate = {"version": 2, "period": "2025-04-01..2026-11-02", "zones": {z: {"recipe": "ens", "fuel": [2, 3], "nofuel": [2]} for z in zones}}
+        acc = {"version": 2, "period": "2025-04-01..2026-11-02", "zones": {z: {"fuel": {"2": {"gain": 0.2}, "3": {"gain": 0.2}}, "nofuel": {"2": {"gain": 0.2}}} for z in zones}}
+        if mark:
+            gate["levelCorrection"] = {"lambda": 0.5, "days": 14, "zones": ["me", "xk"]}
+            for z in ("me", "xk"):
+                gate["zones"][z] = {"recipe": "ens", "fuel": [2, 3, 4], "nofuel": [2, 3]}
+                acc["zones"][z] = {"fuel": {str(h): {"gain": 0.3} for h in (2, 3, 4)}, "nofuel": {str(h): {"gain": 0.3} for h in (2, 3)}}
+            gate["zones"]["de"] = {"recipe": "ens", "fuel": [2], "nofuel": [2]}                  # a rebuilt zone that is NOT listed: must not be taken over
+        return {"publish_gate.json": gate, "accuracy_eu.json": acc}
+
+    def test_only_the_listed_zones_are_replaced(self):
+        live, new = self.files(False), self.files(True)
+        g, a, zones = MLZ.merge(new, live)
+        self.assertEqual(zones, ["me", "xk"])
+        self.assertEqual(g["zones"]["me"]["fuel"], [2, 3, 4])
+        self.assertEqual(a["zones"]["xk"]["fuel"]["4"], {"gain": 0.3})
+        self.assertEqual(g["zones"]["de"], live["publish_gate.json"]["zones"]["de"], "an unlisted zone stays exactly as it was")
+        self.assertEqual(g["levelCorrection"], new["publish_gate.json"]["levelCorrection"])
+        self.assertEqual(list(g["zones"]), list(ZONES))
+
+    def test_it_refuses_what_does_not_fit(self):
+        live, new = self.files(False), self.files(True)
+        new["publish_gate.json"]["period"] = "2025-04-01..2026-12-01"
+        with self.assertRaises(ValueError):
+            MLZ.merge(new, live)
+        live, new = self.files(False), self.files(True)
+        del new["accuracy_eu.json"]["zones"]["me"]["fuel"]["4"]
+        with self.assertRaises(ValueError):
+            MLZ.merge(new, live)
+        live, new = self.files(False), self.files(False)
+        with self.assertRaises(ValueError):
+            MLZ.merge(new, live)
+
+
 class Artifacts(unittest.TestCase):
     """The checked-in publish_gate.json and accuracy_eu.json: what the lead reviews, kept consistent with the code."""
 
@@ -494,11 +611,18 @@ class Artifacts(unittest.TestCase):
         text = json.dumps(self.acc) + json.dumps(self.gate)
         self.assertNotRegex(text, r"80 ?%")
 
+    def test_the_gate_records_the_level_correction_of_the_job(self):
+        import level_correction as LC
+        self.assertEqual(self.gate["levelCorrection"], {"lambda": LC.PUBLISH_LAMBDA, "days": LC.K_DAYS, "zones": list(LC.PUBLISH_ZONES)})
+
     def test_kosovo_is_gated_like_every_zone_and_has_its_band_offsets(self):
-        """xk (docs/forecast-xk.md): measured with the same code as the others; D+7 did not pass the 5 % rule on the hold-out and is not published."""
+        """xk (docs/forecast-xk.md): measured with the same code as the others. D+7 missed the 5 % rule on the hold-out by 0.05 points before the level correction (docs/forecast-balkan-level.md);
+        with it the rule is met (the cell carries `low`), and it is published like every other cell that passes."""
         self.assertEqual(self.gate["zones"]["xk"]["recipe"], "ens")
-        self.assertEqual(self.gate["zones"]["xk"]["fuel"], [2, 3, 4, 5, 6])
-        self.assertNotIn(7, self.gate["zones"]["xk"]["nofuel"])
+        self.assertEqual(self.gate["zones"]["xk"]["fuel"], [2, 3, 4, 5, 6, 7])
+        c7 = self.acc["zones"]["xk"]["fuel"]["7"]
+        self.assertGreaterEqual(c7["gainHold"], 0.05)
+        self.assertTrue(c7["low"], "since 2026-09-01 the gain is below 10 %: low confidence")
         cal = G.load_calibration(os.path.join(HERE, "calibration_eu.json"))
         for kind in ("quantile", "residual"):
             self.assertIn("xk", cal[kind], kind)
