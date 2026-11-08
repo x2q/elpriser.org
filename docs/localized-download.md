@@ -66,7 +66,7 @@ hour; "Right now" (rating cheap/average/expensive); 2 or 5 days with a forecast 
 statistical model, not an official one); Smart home. Denmark-only things (Your price with the grid company, tariffs, taxes, VAT, finding the grid company
 by position, DK1 and DK2) sit in their own block marked as Denmark only, and outside Denmark the page says the prices are exchange prices without taxes,
 grid fees and supplier margin. No open-model claim, no accuracy figure, no day count other than 2 and 5, no product other than the apps. Status: iPhone, iPad,
-Android phone and tablet live; Mac "coming soon" (with Apple for review); Watch "planned"; reminders and widget "in the next version".
+Android phone and tablet live; Mac live (macOS 1.3.0, 2026-11-08, same App Store page as the iPhone app); Watch live (iOS 1.3.0); reminders and widget "in the next version".
 
 Ways to get the prices without the app: the other languages list the website (the country page in the language), Home Assistant and MCP. Shelly, the API
 and /integrationer are Danish pages and are left to the Danish page.

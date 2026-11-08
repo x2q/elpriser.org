@@ -237,7 +237,7 @@ const CONTENT_LASTMOD = {
   '/api': '2026-07-24',
   '/om-elpriser': '2026-10-17',  // absorbed the Forstå din elpris guide
   '/shelly-tariff': '2026-07-24',
-  '/download': '2026-11-03',
+  '/download': '2026-11-08',
   '/integrationer': '2026-11-03',  // new; bump it when a status in functions/_integrations.js changes
   '/blog/elafgift-2028': '2026-07-24',
   '/blog/elafgift-og-spotpris': '2026-10-17',
@@ -252,7 +252,7 @@ const CONTENT_LASTMOD = {
 // The app page in the other 25 languages, /<code>/download: one entry each (title, description, language and locale come from the text table in
 // functions/_download_i18n.js), the sitemap and a real lastmod. All 26 pages, Danish included, list each other with hreflang (the head of each page and the
 // sitemap below): they are translations of one page, unlike the country pages. Bump the date when the page's content changes.
-const DOWNLOAD_LASTMOD = '2026-11-03';
+const DOWNLOAD_LASTMOD = '2026-11-08';
 for (const l of DL_LANGS) {
   if (l.code === 'da') continue;
   SEO_PAGES[dlPath(l.code)] = downloadMeta(l.code);
@@ -311,7 +311,7 @@ elpriser.org viser den reelle elpris du betaler per kWh i Danmark, opdateret dag
 - [Automation](https://elpriser.org/automation): REST API og kodeeksempler til Home Assistant, Shelly og smart home. Guides: [Shelly](https://elpriser.org/automation#shelly) (script, der henter døgnets plan én gang) og [Home Assistant](https://elpriser.org/automation#home-assistant) (REST-sensor og automation).
 - [Integrationer](https://elpriser.org/integrationer): den ene oversigt over alle plugins, API-biblioteker og MCP-serveren, med den rigtige installationsstatus for hver (Live = ligger i npm, MCP-registret eller HACS’ standardliste; Fra GitHub = installeres direkte fra GitHub; Afventer = ansøgt om optagelse, svar afventes; Kommer = findes ikke endnu). Tjekket den 3. november 2026:
 ${integrationsLlms()}
-- [Hent appen](https://elpriser.org/download): Oversigt over Elpriser-appen med skærmbilleder og funktioner. Gratis, uden konto og uden reklamer. Findes i dag til iPhone og iPad (iOS 18 eller nyere, App Store) og til Android-telefon og -tablet (Android 8 eller nyere, Google Play), med elprisen lige nu, 2 og 5 døgn frem, Din pris med netselskab, tariffer, afgifter og moms, og børspriser for 30 europæiske lande. Kommer: Mac (macOS 15 eller nyere), Apple Watch, påmindelser om billige timer og en widget. Links til [App Store](https://apps.apple.com/dk/app/id6820474476) og [Google Play](https://play.google.com/store/apps/details?id=org.elpriser.app).
+- [Hent appen](https://elpriser.org/download): Oversigt over Elpriser-appen med skærmbilleder og funktioner. Gratis, uden konto og uden reklamer. Findes i dag til iPhone og iPad (iOS 18 eller nyere), Mac (macOS 15 eller nyere) og Apple Watch, alle i App Store, og til Android-telefon og -tablet (Android 8 eller nyere, Google Play), med elprisen lige nu, 2 og 5 døgn frem, Din pris med netselskab, tariffer, afgifter og moms, og børspriser for 30 europæiske lande. Kommer: påmindelser om billige timer og en widget. Links til [App Store](https://apps.apple.com/dk/app/id6820474476) og [Google Play](https://play.google.com/store/apps/details?id=org.elpriser.app).
 ${dlLlmsLine()}
 - [Forstå din elpris](https://elpriser.org/om-elpriser): Hvad elprisen består af (spotpris, nettarif, systemtarif og transmissionstarif, elafgift, moms), DK1 og DK2, hvornår strømmen er billigst, negative priser, sparetips og datakilder.
 - [Hvornår er strømmen billigst](https://elpriser.org/blog/hvornaar-er-stroemmen-billigst): Analyse af 48.594 timers data — døgnets billigste time ligger nu midt på dagen på 68 % af dagene mod 23 % om natten; danske husholdninger flytter forbrug efter et forældet natte-mønster.

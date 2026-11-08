@@ -25,7 +25,7 @@ export const APPS = {
   ipad: 'live',
   androidPhone: 'live',
   androidTablet: 'live',
-  mac: 'soon',          // sent to Apple for review
+  mac: 'live',          // macOS 1.3.0 Ready for Distribution 2026-11-08 (same App Store page as the iPhone app: universal purchase)
   watch: 'live',        // in iOS 1.3.0, live 2026-11-04 (installs from the iPhone app)
   reminders: 'next',    // version 1.3.0
   widget: 'next',
@@ -216,7 +216,7 @@ function cards(t) {
     { key: 'ipad', icon: 'tablet', name: 'nIpad', desc: 'cIpad', os: ['osIpad', FACTS.ios], store: 'apple', aria: 'openIpad', delay: '.05' },
     { key: 'androidPhone', icon: 'phone', name: 'nAndroidPhone', desc: 'cAndroidPhone', os: ['osAndroid', FACTS.android], store: 'play', aria: 'openAndroidPhone', delay: '.1' },
     { key: 'androidTablet', icon: 'tablet', name: 'nAndroidTablet', desc: 'cAndroidTablet', os: ['osAndroid', FACTS.android], store: 'play', aria: 'openAndroidTablet' },
-    { key: 'mac', icon: 'mac', name: 'nMac', desc: 'cMac', os: ['osMac', FACTS.mac], delay: '.05' },
+    { key: 'mac', icon: 'mac', name: 'nMac', desc: 'cMac', os: ['osMac', FACTS.mac], store: 'apple', aria: 'openMac', delay: '.05' },
     { key: 'watch', icon: 'watch', name: 'nWatch', desc: 'cWatch', store: 'apple', aria: 'openWatch', delay: '.1' },
   ];
   const soon = [
@@ -225,7 +225,7 @@ function cards(t) {
   ];
   return `  <!-- ── Overview of all the apps ──
        STATUS SWITCH: each card carries data-status="live | soon | planned | next". The chip text and the store link follow the status: flip it in APPS in functions/_download.js, then run node scripts/sync-download-page.mjs.
-       Today: iPhone, iPad, Android phone and tablet live; Mac soon (with Apple for review); Apple Watch live (it comes with the iPhone app); reminders and widget next (version 1.3.0). -->
+       Today: iPhone, iPad, Mac, Android phone and tablet live (Mac since macOS 1.3.0, 2026-11-08, same App Store page); Apple Watch live (it comes with the iPhone app); reminders and widget next (version 1.3.0). -->
   <section class="dl-sec" aria-labelledby="dlApps">
     <div class="dl-in">
       <div class="dl-head dl-rv"><p class="dl-kicker">${esc(T(t, 'appsKicker'))}</p><h2 class="dl-h" id="dlApps">${heading(T(t, 'appsH'))}</h2>
@@ -281,7 +281,7 @@ function ldFor(code, t, img, url) {
     url,
     description: T(t, 'ldDesc'),
     applicationCategory: 'UtilitiesApplication',
-    operatingSystem: `${T(t, 'osIos', { n: FACTS.ios })}, ${T(t, 'osAndroid', { n: FACTS.android })}`,
+    operatingSystem: `${T(t, 'osIos', { n: FACTS.ios })}, ${T(t, 'osMac', { n: FACTS.mac })}, ${T(t, 'osAndroid', { n: FACTS.android })}`,
     inLanguage: BY_CODE[code].html,
     isAccessibleForFree: true,
     offers: { '@type': 'Offer', price: '0', priceCurrency: da ? 'DKK' : 'EUR' },
@@ -311,7 +311,7 @@ export function downloadMain(code, opts = {}) {
   const head = `<main style="display:none" data-page="download" class="dl-page"${da ? '' : ` data-lang="${code}"`}>
   <!-- Reveal-on-scroll switch. It runs first so the class is on before anything is painted; without JS, with reduced motion or without IntersectionObserver nothing is ever hidden. -->
   ${REVEAL_SCRIPT}
-  <!-- The live apps (iPhone and iPad in App Store, Android phone and tablet on Google Play; the same two store pages), described once. Mac, reminders and widget are not released and are not in the markup below as applications. -->
+  <!-- The live apps (iPhone and iPad in App Store, Android phone and tablet on Google Play; the same two store pages), described once. Reminders and widget are not released and are not in the markup below as applications. -->
   <script type="application/ld+json">${ldBlock(ldFor(code, t, img, url))}</script>
 
   <!-- ── Hero ── -->
