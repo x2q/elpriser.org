@@ -12,6 +12,14 @@ What is published (KV `eu-forecast-<zone>`), and what is not:
 
 Horizon. h = days from the last known price day to the target day, plus one: with tomorrow's auction published, the day after
 tomorrow is h = 2; before it is published, tomorrow is h = 2 (the information state is the same: one unknown day).
+
+Join point. The settled prices the site shows end with TOMORROW's auction (today + 1): every price source behind /api/nordic publishes that and no
+more, and /api/nordic only shows forecast days that follow the last settled day without a hole. The ENTSO-E cache this job trains on is sometimes a
+day ahead of the site on the zones DE and AT (seen on Fridays and Saturdays: the Monday auction was in the cache on Saturday 15:15 UTC, in the site's
+Energy-Charts feed only on Sunday afternoon). Counting h from that later day would start the forecast at today + 3: the API then found a hole at today + 2
+and showed no forecast at all, and h = 7 fell out of the window as well (5 days instead of 6). So the last known day is never taken later than today + 1:
+the model is told one price less than the cache has, which is the same information state as every other zone's, so h keeps the meaning the backtest and the gate
+measured, and the days follow the site's last settled day.
 """
 from datetime import timedelta
 
@@ -63,6 +71,7 @@ def build_rows(zone, p, wx, reg, days, eu, today, days_ahead=7, max_h=MAX_H):
     lk = last_known_day(p)
     if lk is None or lk < today - timedelta(days=1):
         return pd.DataFrame()
+    lk = min(lk, today + timedelta(days=1))          # see "Join point" in the module docstring
     parts = []
     for d, h in target_days(lk, today, days_ahead, max_h):
         idx = pd.date_range(pd.Timestamp(d), periods=24, freq="h")
