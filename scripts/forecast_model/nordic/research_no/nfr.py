@@ -201,6 +201,7 @@ CANDS_LGB = {
     "lrelnox": (NORDIC_BASE + FUEL + XZ + HYD + RES + ["no_swe", "no_p30"], NO, "rel", PARAMS_EU),
     # + cross-zone context only
     "lrel13z": (NORDIC_BASE + FUEL + XZ, NORDIC, "rel", PARAMS_EU),
+    "lrel13lf_s7": ([f for f in NORDIC_BASE if f not in ("reservoir_pct", "reservoir_anom", "nordic_reservoir_anom")] + ["res_pct_lf", "res_anom_lf", "nres_anom_lf"] + FUEL, NORDIC, "rel", dict(PARAMS_EU, random_state=7)),
     "lrel13nb": (NORDIC_BASE + FUEL + XNB, NORDIC, "rel", PARAMS_EU),
     # look-ahead check: the dataset's reservoir columns are normalised with the whole series' maximum and weekly medians (they include the future);
     # these use only what was known (expanding maximum, medians of earlier years, 14 days after the week they describe)
