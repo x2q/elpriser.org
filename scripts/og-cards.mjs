@@ -58,7 +58,7 @@ const DA = {
   '/': { layout: 'duo', phones: 'now', a: 'Elprisen lige nu,', b: 'time for time', sub: 'Inkl. Energinets tariffer, elafgift og moms, og med dit netselskab', chips: ['DK1 Vest', 'DK2 Øst', 'iPhone og Android'] },
   '/dk1': { layout: 'duo', phones: 'now', a: 'Elpris Vest (DK1)', b: 'i dag, time for time', sub: 'Spotpris inkl. Energinets tariffer, elafgift og moms', chips: ['Jylland og Fyn'] },
   '/dk2': { layout: 'duo', phones: 'now', a: 'Elpris Øst (DK2)', b: 'i dag, time for time', sub: 'Spotpris inkl. Energinets tariffer, elafgift og moms', chips: ['Sjælland, Lolland-Falster og Bornholm'] },
-  '/prognose': { layout: 'solo', phones: 'days', a: 'Elpriser prognose', b: '7 dage frem', sub: 'Time for time, DK1 og DK2', chips: ['Opdateres dagligt'] },
+  '/prognose': { layout: 'solo', phones: 'days', a: 'Elpriser prognose', b: '2, 5 eller 7 døgn frem', sub: 'Time for time, DK1 og DK2', chips: ['Opdateres dagligt'] },
   '/elpriser-i-morgen': { layout: 'chart', a: 'Elpriser i morgen,', b: 'time for time', sub: 'Billigste og dyreste time for DK1 og DK2', chips: ['DK1 Vest', 'DK2 Øst'] },
   '/tariffer': { layout: 'solo', phones: 'net', a: 'Nettariffer 2026', b: 'for alle netselskaber', sub: 'Nettarif C pr. kWh: lav-, høj- og spidslast', chips: ['N1', 'Radius', 'Trefor', 'Cerius'] },
   '/automation': { layout: 'chips', a: 'Elpriser til', b: 'Home Assistant og Shelly', sub: 'Gratis API og færdig kode: styr varmepumpe, elbil og vandvarmer efter de billigste timer' },
