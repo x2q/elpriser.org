@@ -1,4 +1,4 @@
-"""The 25 EU price zones of /api/nordic that have no model of their own yet, plus what the model needs to know about
+"""The 26 EU price zones of /api/nordic that have no model of their own yet (xk is Albania's price in 98 % of the hours: docs/forecast-xk.md), plus what the model needs to know about
 each: the ENTSO-E EIC code, the zone's wall clock and the weather points that stand in for the zone.
 
 The zone keys, EIC codes and time zones are the ones of scripts/eu_prices (build_eu_prices.py and
@@ -37,6 +37,7 @@ ZONES = {
     "me":   ("10YCS-CG-TSO---S", "Europe/Podgorica",  [(42.8, 19.2)]),
     "mk":   ("10YMK-MEPSO----8", "Europe/Skopje",     [(41.6, 21.7)]),
     "al":   ("10YAL-KESH-----5", "Europe/Tirane",     [(41.0, 19.9)]),
+    "xk":   ("10Y1001C--00100H", "Europe/Belgrade",   [(42.65, 21.15)]),     # Kosovo: CET, tzdata has no zone of its own; Pristina
 }
 
 # the zones' ISO country codes, for the holiday calendar (it-n -> IT, de -> DE ...)

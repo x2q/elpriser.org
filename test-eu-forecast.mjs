@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * The EU forecast job (scripts/forecast_model/eu): the published recipe (mean of a 365-day ridge and LightGBM, both with gas and carbon inputs; plain
- * LightGBM for EE/LV/LT) for the 25 EU zones of /api/nordic, written to KV `eu-forecast-<zone>` and read by /api/nordic next to the settled prices.
+ * LightGBM for EE/LV/LT) for the 26 EU zones of /api/nordic, written to KV `eu-forecast-<zone>` and read by /api/nordic next to the settled prices.
  * Run: npm run test:eu-forecast   (hermetic; part of test:unit)
  *
  * The Python unit tests (leakage rule, training/scoring parity, metrics, payload) need pandas and numpy; where they are not
@@ -51,12 +51,12 @@ test('the fuel and per-region research code is research only: it never touches K
   assert.ok(!/GIE_API_KEY\s*=\s*["'][^"']+["']/.test(ff), 'no AGSI+ key literal');
 });
 
-test('the model covers the 25 EU zones /api/nordic serves a forecast for: its Energy-Charts, ENTSO-E and SEMOpx zones, not Kosovo and not Great Britain', () => {
+test('the model covers the 26 EU zones /api/nordic serves a forecast for: its Energy-Charts, ENTSO-E and SEMOpx zones (Kosovo since the gate passed for it, docs/forecast-xk.md), not Great Britain', () => {
   const zones = [...read('zones.py').matchAll(/^\s+"([a-z-]+)":\s+\("(10Y[0-9A-Z-]{13})",/gm)].map(m => m[1]);
-  const apiEu = [...apiArray('EU_ZONES_ENERGY_CHARTS'), ...apiArray('EU_ZONES_ENTSOE'), ...apiArray('EU_ZONES_SEMOPX')].filter(z => z !== 'xk');
-  assert.equal(zones.length, 25);
+  const apiEu = [...apiArray('EU_ZONES_ENERGY_CHARTS'), ...apiArray('EU_ZONES_ENTSOE'), ...apiArray('EU_ZONES_SEMOPX')];
+  assert.equal(zones.length, 26);
   assert.deepEqual([...zones].sort(), [...apiEu].sort(), 'the model\'s zone list and the API\'s EU zones differ');
-  assert.ok(!zones.includes('gb') && !zones.includes('xk'));
+  assert.ok(!zones.includes('gb') && zones.includes('xk'));
   const gate = JSON.parse(read('publish_gate.json'));
   assert.deepEqual(Object.keys(gate.zones), zones, 'the gate lists exactly the model\'s zones, in order');
 });

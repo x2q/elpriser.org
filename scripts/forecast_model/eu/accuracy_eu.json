@@ -505,6 +505,23 @@
     "5": {"mae": 31.2, "baseMae": 35.7, "gain": 0.126, "gainHold": 0.083, "gainRecent": 0.038, "bias": -28.1, "baseBias": -18.4, "regret": 10.1, "baseRegret": 12.31, "rankGain": 0.179, "rankOk": true, "coverage": 0.82, "coverageRecent": 0.71, "low": true, "days": 566},
     "6": {"mae": 31.9, "baseMae": 36.1, "gain": 0.117, "gainHold": 0.053, "gainRecent": 0.002, "bias": -31.1, "baseBias": -20.9, "regret": 10.42, "baseRegret": 12.29, "rankGain": 0.152, "rankOk": true, "coverage": 0.82, "coverageRecent": 0.71, "low": true, "days": 566}
    }
+  },
+  "xk": {
+   "recipe": "ens",
+   "showEur": false,
+   "fuel": {
+    "2": {"mae": 28.1, "baseMae": 34.0, "gain": 0.174, "gainHold": 0.146, "gainRecent": 0.12, "bias": -10.1, "baseBias": -8.6, "regret": 8.88, "baseRegret": 12.7, "rankGain": 0.301, "rankOk": true, "coverage": 0.79, "coverageRecent": 0.76, "low": false, "days": 573},
+    "3": {"mae": 29.4, "baseMae": 34.9, "gain": 0.157, "gainHold": 0.116, "gainRecent": 0.078, "bias": -15.7, "baseBias": -10.7, "regret": 9.28, "baseRegret": 12.6, "rankGain": 0.263, "rankOk": true, "coverage": 0.78, "coverageRecent": 0.72, "low": true, "days": 572},
+    "4": {"mae": 30.4, "baseMae": 35.6, "gain": 0.144, "gainHold": 0.102, "gainRecent": 0.051, "bias": -19.5, "baseBias": -13.0, "regret": 9.78, "baseRegret": 12.65, "rankGain": 0.227, "rankOk": true, "coverage": 0.78, "coverageRecent": 0.72, "low": true, "days": 572},
+    "5": {"mae": 31.3, "baseMae": 36.1, "gain": 0.132, "gainHold": 0.088, "gainRecent": 0.028, "bias": -21.5, "baseBias": -15.2, "regret": 10.47, "baseRegret": 12.78, "rankGain": 0.181, "rankOk": true, "coverage": 0.77, "coverageRecent": 0.7, "low": true, "days": 572},
+    "6": {"mae": 32.1, "baseMae": 36.6, "gain": 0.124, "gainHold": 0.062, "gainRecent": -0.0, "bias": -23.5, "baseBias": -17.2, "regret": 10.42, "baseRegret": 12.75, "rankGain": 0.183, "rankOk": true, "coverage": 0.78, "coverageRecent": 0.71, "low": true, "days": 572}
+   },
+   "nofuel": {
+    "2": {"mae": 28.5, "baseMae": 34.0, "gain": 0.161, "gainHold": 0.117, "gainRecent": 0.095, "bias": -16.0, "baseBias": -8.6, "regret": 9.36, "baseRegret": 12.7, "rankGain": 0.264, "rankOk": true, "coverage": 0.81, "coverageRecent": 0.7, "low": true, "days": 573},
+    "3": {"mae": 29.8, "baseMae": 34.9, "gain": 0.146, "gainHold": 0.09, "gainRecent": 0.058, "bias": -21.6, "baseBias": -10.7, "regret": 9.17, "baseRegret": 12.6, "rankGain": 0.272, "rankOk": true, "coverage": 0.81, "coverageRecent": 0.69, "low": true, "days": 572},
+    "4": {"mae": 30.9, "baseMae": 35.6, "gain": 0.131, "gainHold": 0.073, "gainRecent": 0.031, "bias": -25.1, "baseBias": -13.0, "regret": 9.83, "baseRegret": 12.65, "rankGain": 0.223, "rankOk": true, "coverage": 0.81, "coverageRecent": 0.69, "low": true, "days": 572},
+    "5": {"mae": 31.6, "baseMae": 36.1, "gain": 0.124, "gainHold": 0.065, "gainRecent": 0.019, "bias": -27.1, "baseBias": -15.2, "regret": 10.46, "baseRegret": 12.78, "rankGain": 0.182, "rankOk": true, "coverage": 0.81, "coverageRecent": 0.69, "low": true, "days": 572}
+   }
   }
  }
 }

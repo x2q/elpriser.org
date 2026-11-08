@@ -966,9 +966,9 @@ test('/api/openapi.json documents /api/nordic with every zone, the EU forecast d
   for (const z of ['dk1', 'no5', 'se4', 'fi', 'nl', ...EU]) assert.ok(zones.includes(z), `${z} missing from the zone enum`);
   assert.equal(zones.length, 13 + 27);
   for (const z of ['it-cn', 'it-sar', 'uk', 'gb-nir']) assert.ok(!zones.includes(z), `${z} must not be offered`);
-  assert.match(op.description, /\*\*Forecast days for 25 EU zones\*\*/);
+  assert.match(op.description, /\*\*Forecast days for 26 EU zones\*\*/);
   assert.match(op.description, /NOT an official forecast/);
-  assert.match(op.description, /all of the above except `xk` and `gb`/);
+  assert.match(op.description, /all of the above except `gb`/);
   assert.match(op.description, /at least 5 % below that of a simple level-and-shape method out of sample/);
   assert.match(op.description, /`gainRecent`[^\n]*2026-09-01/);
   assert.match(op.description, /not a promised 80 %/);

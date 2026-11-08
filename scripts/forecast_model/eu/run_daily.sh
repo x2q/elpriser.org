@@ -9,7 +9,7 @@
 #
 # One run at a time (flock), lowest CPU priority, at most 2 hours, LightGBM on 8 threads. Credentials come from ~/.config/elpriser.env and are
 # never echoed. Exit codes of train_daily.py: 0 ok, 1 aborted before writing (live weather missing), 2 missing configuration (or no gate file),
-# 3 fewer than 20 zones written. Alert on the log (daily.log): the line "DONE n/25 zones" with n below 20, and "FUEL off:" (the run went on without
+# 3 fewer than 20 zones written. Alert on the log (daily.log): the line "DONE n/26 zones" with n below 20, and "FUEL off:" (the run went on without
 # the gas and carbon inputs: fewer horizons, a different accuracy block; harmless for a day or two, look at it after three).
 set -u
 cd "$(dirname "$0")" || exit 2

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""EU price forecast - the daily job for the 25 EU zones of /api/nordic whose own model this is.
+"""EU price forecast - the daily job for the 26 EU zones of /api/nordic whose own model this is.
 
     cd ~/eu-forecast && set -a && . ~/.config/elpriser.env && set +a && python3 train_daily.py [--dry-run] [--zones de,fr] [--skip-refresh]
 
@@ -22,7 +22,7 @@ Failure policy: a zone that cannot be scored is skipped (its old key expires aft
 a missing live weather forecast aborts the whole run with exit 1 before anything is written; a failing FUEL source never aborts anything:
 fuel_live uses the cache while its newest value is at most 3 days old (carbon: 6, auctions are weekdays only) and otherwise the fuel zones
 run WITHOUT fuel under the gate's own `nofuel` horizons, with the log line "FUEL off: <reason>". The job exits 0 otherwise; exit 3 when fewer
-than MIN_ZONES zones were written. The log line "DONE n/25 zones" is the one to alert on.
+than MIN_ZONES zones were written. The log line "DONE n/26 zones" is the one to alert on.
 
 Level correction is a SHADOW: the published forecast is the model's own; the corrected numbers are archived beside it (`shadow`) and scored by
 monitor.py --field shadow against --field published. EU_FORECAST_LAMBDA=0.5 publishes the correction instead (unset = off).

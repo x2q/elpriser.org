@@ -23,6 +23,7 @@ import forecast as FC            # noqa: E402
 import fuel_features as FUEL     # noqa: E402
 import fuel_live as FL           # noqa: E402
 import gate as G                 # noqa: E402
+import merge_zone as MZ          # noqa: E402
 import monitor as MON            # noqa: E402
 import recipe as RC              # noqa: E402
 from zones import ZONES          # noqa: E402
@@ -492,6 +493,61 @@ class Artifacts(unittest.TestCase):
     def test_no_nominal_80_percent_claim_in_the_files(self):
         text = json.dumps(self.acc) + json.dumps(self.gate)
         self.assertNotRegex(text, r"80 ?%")
+
+    def test_kosovo_is_gated_like_every_zone_and_has_its_band_offsets(self):
+        """xk (docs/forecast-xk.md): measured with the same code as the others; D+7 did not pass the 5 % rule on the hold-out and is not published."""
+        self.assertEqual(self.gate["zones"]["xk"]["recipe"], "ens")
+        self.assertEqual(self.gate["zones"]["xk"]["fuel"], [2, 3, 4, 5, 6])
+        self.assertNotIn(7, self.gate["zones"]["xk"]["nofuel"])
+        cal = G.load_calibration(os.path.join(HERE, "calibration_eu.json"))
+        for kind in ("quantile", "residual"):
+            self.assertIn("xk", cal[kind], kind)
+        self.assertIn("2", cal["quantile"]["xk"])
+
+
+class MergeZone(unittest.TestCase):
+    """merge_zone.py: one new zone's cells are added to the live files, nothing else changes, and anything that does not fit is refused."""
+
+    def files(self, with_xk):
+        base = {"recipe": "ens", "fuel": [2, 3], "nofuel": [2]}
+        cell = {"mae": 10.0, "baseMae": 12.0, "gain": 0.17, "gainHold": 0.1}
+        zones = [k for k in ZONES if k != "xk" or with_xk]
+        gate = {"version": 2, "period": "2025-04-01..2026-11-02", "zones": {k: {**base, "fuel": list(base["fuel"]), "nofuel": list(base["nofuel"])} for k in zones}}
+        acc = {"version": 2, "period": "2025-04-01..2026-11-02", "zones": {k: {"fuel": {"2": dict(cell), "3": dict(cell)}, "nofuel": {"2": dict(cell)}} for k in zones}}
+        cal = {"version": 2, "quantile": {k: {"2": {"lo": -1, "hi": 1}} for k in zones}, "residual": {k: {"2": {"lo": -2, "hi": 2}} for k in zones}}
+        return {"publish_gate.json": gate, "accuracy_eu.json": acc, "calibration_eu.json": cal}
+
+    def test_adds_only_the_zone_and_keeps_the_order(self):
+        live, new = self.files(False), self.files(True)
+        new["publish_gate.json"]["zones"]["xk"]["fuel"] = [2]            # something to tell the new zone's entry from the others
+        new["accuracy_eu.json"]["zones"]["xk"]["fuel"] = {"2": new["accuracy_eu.json"]["zones"]["xk"]["fuel"]["2"]}
+        new["publish_gate.json"]["zones"]["al"]["fuel"] = [2]            # another zone moved in the new research run: must NOT be taken over
+        g, a, c = MZ.merge("xk", new, live)
+        self.assertEqual(list(g["zones"]), list(ZONES))
+        self.assertEqual(g["zones"]["xk"]["fuel"], [2])
+        self.assertEqual(g["zones"]["al"], live["publish_gate.json"]["zones"]["al"])
+        self.assertEqual({k: v for k, v in a["zones"].items() if k != "xk"}, live["accuracy_eu.json"]["zones"])
+        self.assertIn("xk", c["quantile"])
+        self.assertEqual({k: v for k, v in c["residual"].items() if k != "xk"}, live["calibration_eu.json"]["residual"])
+
+    def test_refuses_what_does_not_fit(self):
+        live, new = self.files(False), self.files(True)
+        with self.assertRaisesRegex(ValueError, "already"):
+            MZ.merge("xk", new, new)
+        bad = self.files(True)
+        bad["accuracy_eu.json"]["period"] = "2025-04-01..2026-12-01"
+        with self.assertRaisesRegex(ValueError, "period"):
+            MZ.merge("xk", bad, live)
+        bad = self.files(True)
+        del bad["accuracy_eu.json"]["zones"]["xk"]["fuel"]["3"]
+        with self.assertRaisesRegex(ValueError, "no accuracy cell"):
+            MZ.merge("xk", bad, live)
+        bad = self.files(True)
+        bad["calibration_eu.json"]["residual"].pop("xk")
+        with self.assertRaisesRegex(ValueError, "band offsets"):
+            MZ.merge("xk", bad, live)
+        with self.assertRaisesRegex(ValueError, "zones.py"):
+            MZ.merge("zz", new, live)
 
 
 class TheJob(unittest.TestCase):

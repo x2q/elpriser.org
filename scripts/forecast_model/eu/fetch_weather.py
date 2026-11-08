@@ -118,6 +118,27 @@ def fetch_history(out_dir=DIR, today=None, pause=RAMP_PAUSE, only=None):
             print(f"  saved {p[0]}_{p[1]}: {len(df)} h to {df.time.max():%Y-%m-%d}", flush=True)
 
 
+def fetch_zone_history(zone, out_dir=DIR, today=None, pause=3):
+    """The WHOLE history of one zone's points, nothing else touched. fetch_history groups PER_CALL points to a request, so a zone added to
+    zones.py shares a group with the last points of the zone before it and would make a first run re-fetch (and overwrite) THEIR caches too;
+    run this once for the new zone before the daily job (`python3 fetch_weather.py --zone xk`) and every group is complete again."""
+    today = today or date.today()
+    yesterday = today - timedelta(days=1)
+    pts = [p for p in all_points() if p[0] == zone]
+    if not pts:
+        raise SystemExit(f"{zone} is not in zones.py")
+    frames = {p[1]: [] for p in pts}
+    for s, e in months(PREV_START, yesterday):
+        print(f"history {zone} {s}..{e}", flush=True)
+        for p, loc in zip(pts, _request(pts, s, e)):
+            frames[p[1]].append(_frame(loc))
+        time.sleep(pause)
+    for p in pts:
+        df = pd.concat([f for f in frames[p[1]] if len(f)]).drop_duplicates("time", keep="last").sort_values("time")
+        df.to_parquet(path(p[0], p[1], out_dir), index=False)
+        print(f"  saved {p[0]}_{p[1]}: {len(df)} h to {df.time.max():%Y-%m-%d}", flush=True)
+
+
 def load_zone(zone, n_points, out_dir=DIR):
     """The zone's weather as ONE frame (UTC hours): the mean over its points, columns as PREV_VARS."""
     frames = []
@@ -146,5 +167,8 @@ def live(horizon_days=10):
 
 
 if __name__ == "__main__":
-    fetch_history(only={int(a) for a in sys.argv[1:]} or None)
+    if sys.argv[1:2] == ["--zone"]:
+        fetch_zone_history(sys.argv[2])
+    else:
+        fetch_history(only={int(a) for a in sys.argv[1:]} or None)
     print("WEATHER DONE", flush=True)
