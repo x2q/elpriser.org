@@ -109,12 +109,17 @@ Optional: `EU_FORECAST_JOBS` (LightGBM threads, default 8), `EU_FORECAST_LAMBDA`
 joins, the forecast days and horizons shown, the horizons the gate expects, the age of the run, and PASS / WARN / FAIL / NO MODEL with the reason. Exit code 1 on a FAIL (`--strict`: on a WARN too);
 `--zone de,at` limits it, `--json` prints the verdicts, `--base <url> --today <date>` points it at a local run. Run it after a deploy and whenever a zone page lacks its forecast.
 
+It also prints, per zone, an explicit verdict for **D+2, D+5 and D+7** (the date today + n; the horizons the business lives by, see [forecast-d257-matrix.md](forecast-d257-matrix.md)): `shown`,
+`gate` (blocked-by-gate: the gate or the owner's `forcedOff` does not let the horizon through; documented, never a failure), `due` (before 16:00 UTC the run on the API ends at D+6 because it was made
+before tomorrow's prices were in; the 15:15 run brings D+7), `HIDDEN` (hidden-bug: allowed and missing) and `NO MODEL`. **Exit code 1 when a zone FAILs or lacks one of the three without a gate reason**
+(HIDDEN or NO MODEL). `shown*` = shown without any per-horizon gate or accuracy block (the 13 Nordic zones, which have none).
+
 * **PASS**: the top horizon the gate allows is shown, every horizon shown is allowed and has accuracy numbers, the run is at most one day old. A horizon the gate rejects is listed as
   *not published by design* (today: Albania h7, forced off in `publish_gate.json`) and is never a failure: do not "fix" it, and never lower the 5 % rule to make a row green.
 * **FAIL, "no forecast shown"**: `eu-forecast-<zone>` is missing or older than 3 days, or its first day is not the day after the zone's last settled day. The Worker shows forecast days only without a hole
   after the settled prices (the apps stop at the first missing day), so a run that starts one day late is hidden whole. Look at the zone's last known day in `daily.log` ("h 2,3,..": h counts from it).
 * **FAIL, "allows up to h7 but the API shows h2-6"**: the same one-day shift, seen from the other end (the window ends at today + 7).
-* **NO MODEL**: Kosovo (`xk`) until a model exists.
+* **NO MODEL**: Kosovo (`xk`) until a model exists (it passes the gate offline for D+2..D+6, [forecast-xk.md](forecast-xk.md); the rollout is the owner's decision). It counts as a coverage gap in the exit code.
 * **WARN**: the run is two days old (a night was missed), or the training data stops more than three days ago (a price source froze).
 
 **The weekend shift (found 2026-11-08, fixed in `forecast.py`).** The job trains on ENTSO-E prices, the site's DE and AT prices come from Energy-Charts. On Fridays and Saturdays ENTSO-E already
@@ -122,6 +127,9 @@ held the auction of today + 2 for DE and AT at 15:15 UTC (the Monday auction on 
 today + 3: the Worker found a hole and showed nothing for DE and AT, and h7 fell out of the window (5 days instead of 6). The job now never counts the last known day later than today + 1 (the
 information state of every other zone, so h means what the backtest and the gate measured; `test_eu_forecast.py::test_a_cache_ahead_of_tomorrow_is_joined_at_tomorrow`). If DE or AT are hidden
 again, compare `price_de.parquet`'s last day on the Spark with `eu-prices-de`'s.
+
+The remaining race (the cache is a day ahead of the site's feed, or the site's price job runs after 15:15 UTC) is a price-source question, owned by the `price-sources` work; see
+[forecast-d257-matrix.md](forecast-d257-matrix.md) for the root cause and the forecast-side options that were considered and left out.
 
 ## Rollback
 
