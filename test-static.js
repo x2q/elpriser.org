@@ -2093,7 +2093,7 @@ test('/download: H1, honest copy, two identical store badges with the exact link
   assert.equal(badges.length, 2, 'two badges');
   const [apple, play] = badges;
   assert.equal(apple[2], APPLE_URL); assert.equal(play[2], PLAY_URL);
-  assert.ok(/aria-label="Hent i App Store — iPhone og iPad"/.test(apple[3]), 'App Store accessible name');
+  assert.ok(/aria-label="Hent i App Store — iPhone, iPad og Mac"/.test(apple[3]), 'App Store accessible name');
   assert.ok(/aria-label="Hent på Google Play — Android"/.test(play[3]), 'Google Play accessible name');
   for (const [b, src] of [[apple, '/badges/app-store-da.svg'], [play, '/badges/google-play-da.png']]) {
     assert.ok(/rel="noopener"/.test(b[3]), 'rel=noopener');

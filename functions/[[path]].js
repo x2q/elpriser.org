@@ -62,7 +62,7 @@ const SEO_PAGES = {
   // Titles of the other pages lead with their topic; this one leads with the action.
   '/download': {
     title: 'Hent Elpriser-appen — til iPhone, iPad og Android, gratis',
-    description: 'Elprisen lige nu og de næste 5 døgn, med dit netselskab. Gratis app til iPhone, iPad og Android uden konto og reklamer, i App Store og Google Play.',
+    description: 'Elprisen lige nu og de næste 5 døgn, med dit netselskab. Gratis app til iPhone, iPad, Mac og Android uden konto og reklamer, i App Store og Google Play.',
     hash: '#download',
     download: 'da',   // the other 25 languages are /<code>/download: added from DL_LANGS below the SEO table
   },
