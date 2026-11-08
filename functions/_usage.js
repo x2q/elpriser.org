@@ -73,9 +73,9 @@ export function usageClient(request, query) {
  * Writes one data point. `env.USAGE` is the Analytics Engine binding; without
  * it (local server, tests) this does nothing. Never throws.
  */
-export function recordUsage(env, request, status, random = Math.random) {
+export function recordUsage(env, request, status, random = Math.random, ctx = null) {
   try {
-    if (!env || !env.USAGE || request.method !== 'GET') return false;
+    if (!env || !(env.USAGE || env.GA_API_SECRET) || request.method !== 'GET') return false;
     const u = new URL(request.url);
     const c = usageClient(request, u.searchParams);
     if (!c) return false;
@@ -92,19 +92,52 @@ export function recordUsage(env, request, status, random = Math.random) {
     const where = endpoint === 'nordic' && ZONE.test(zone) ? zone.toUpperCase()
       : area === 'DK1' || area === 'DK2' ? area : '';
     const strat = u.searchParams.get('strategy') || u.searchParams.get('mode') || '';
-    env.USAGE.writeDataPoint({
+    const strategy = WORD.test(strat) ? strat : (strat ? 'other' : '');
+    const cls = status >= 500 ? '5xx' : status >= 400 ? '4xx' : status >= 300 ? '3xx' : '2xx';
+    const reason = status === 400 ? badRequestReason(u.searchParams) : '';
+    if (env.USAGE) env.USAGE.writeDataPoint({
       indexes: [c.client],
-      blobs: [
-        c.client, c.version, c.host, endpoint,
-        where,
-        WORD.test(strat) ? strat : (strat ? 'other' : ''),
-        status >= 500 ? '5xx' : status >= 400 ? '4xx' : status >= 300 ? '3xx' : '2xx',
-        ...(status === 400 ? [badRequestReason(u.searchParams)] : []),
-      ],
+      blobs: [c.client, c.version, c.host, endpoint, where, strategy, cls, ...(status === 400 ? [reason] : [])],
       doubles: [weight],
     });
+    if (env.GA_API_SECRET && ctx && ctx.waitUntil) ctx.waitUntil(sendGa(env, { c, endpoint, where, strategy, cls, reason, weight }));
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * The same anonymous point as one GA4 event (Measurement Protocol), so the apps' and the
+ * integrations' API calls can be read next to the site's page views. Off unless the secret
+ * GA_API_SECRET is set (Admin > Data streams > Measurement Protocol API secrets).
+ *
+ * What GA gets: event `api_request` with client, client_version, host (the platform's version),
+ * endpoint, area (DK1/DK2/zone code), strategy, status_class, reason (only for a 400) and
+ * `weight` (the sampling weight: sum it, do not count the events). The client_id is the fixed
+ * word `api.<client>` — it names an app, never a person or a device, so GA's "users" for these
+ * events are client kinds. No IP, no User-Agent, no gln and no query string is sent: the hit
+ * reaches Google from Cloudflare's edge, not from the caller.
+ * Only requests that reach the Function count: an answer the edge cache serves never does.
+ */
+export function gaPayload(rec) {
+  const { c, endpoint, where, strategy, cls, reason, weight } = rec;
+  const params = { engagement_time_msec: 1, client: c.client, endpoint, status_class: cls, weight };
+  if (c.version) params.client_version = c.version;
+  if (c.host) params.host = c.host;
+  if (where) params.area = where;
+  if (strategy) params.strategy = strategy;
+  if (reason) params.reason = reason;
+  return { client_id: `api.${c.client}`, events: [{ name: 'api_request', params }] };
+}
+
+export async function sendGa(env, rec, doFetch = fetch) {
+  try {
+    const id = env.GA_MEASUREMENT_ID || 'G-3WE5CL1ZTV';
+    const url = `https://www.google-analytics.com/mp/collect?measurement_id=${encodeURIComponent(id)}&api_secret=${encodeURIComponent(env.GA_API_SECRET)}`;
+    const res = await doFetch(url, { method: 'POST', body: JSON.stringify(gaPayload(rec)) });
+    return res.status;
+  } catch {
+    return 0;
   }
 }

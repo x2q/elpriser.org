@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import fs from 'node:fs';
-import { usageClient, recordUsage } from './functions/_usage.js';
+import { usageClient, recordUsage, gaPayload, sendGa } from './functions/_usage.js';
 
 const req = (url, ua) => new Request(url, { headers: ua == null ? {} : { 'user-agent': ua } });
 const sink = () => { const points = []; return { points, env: { USAGE: { writeDataPoint: p => points.push(p) } } }; };
@@ -95,4 +95,34 @@ test('the clients send what the server recognises', () => {
   assert.match(fs.readFileSync(new URL('./ElpriserAndroid/app/src/main/java/org/elpriser/app/data/Api.kt', import.meta.url), 'utf8'), /ElpriserAndroid\/\$\{BuildConfig\.VERSION_NAME\} \(\$\{BuildConfig\.VERSION_CODE\}\)/);
   assert.match(fs.readFileSync(new URL('./ElpriserIOS/Sources/Api.swift', import.meta.url), 'utf8'), /ElpriserIOS\/\\\(version\) \(\\\(build\)\)/);
   assert.match(fs.readFileSync(new URL('./wrangler.toml', import.meta.url), 'utf8'), /binding = "USAGE"/);
+});
+
+test('GA4: off without the secret; with it one anonymous api_request per recognised call, sent after the response', async () => {
+  const waited = [];
+  const ctx = { waitUntil: p => waited.push(p) };
+  const apiReq = () => new Request('https://elpriser.org/api/schedule?area=DK2&strategy=cheapest_n&gln=5790000705184&client=shelly-script-2',
+    { headers: { 'user-agent': 'Shelly/1.4.4', 'cf-connecting-ip': '203.0.113.9' } });
+  assert.equal(recordUsage({}, apiReq(), 200, always, ctx), false);
+  assert.equal(recordUsage({ USAGE: { writeDataPoint() {} } }, apiReq(), 200, always, ctx), true);
+  assert.equal(waited.length, 0, 'no secret, no GA call');
+  const calls = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => { calls.push({ url, init }); return { status: 204 }; };
+  try {
+    assert.equal(recordUsage({ GA_API_SECRET: 's3cret' }, apiReq(), 200, always, ctx), true);   // GA alone is enough
+    assert.equal(recordUsage({ GA_API_SECRET: 's3cret' }, apiReq(), 200, always, null), true);   // no ctx: nothing is sent, nothing breaks
+    await Promise.all(waited);
+  } finally { globalThis.fetch = realFetch; }
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].url, /^https:\/\/www\.google-analytics\.com\/mp\/collect\?measurement_id=G-3WE5CL1ZTV&api_secret=s3cret$/);
+  const body = JSON.parse(calls[0].init.body);
+  assert.deepEqual(body, { client_id: 'api.shelly', events: [{ name: 'api_request', params: { engagement_time_msec: 1, client: 'shelly', endpoint: 'schedule', status_class: '2xx', weight: 1, client_version: 'script 2', host: '1.4.4', area: 'DK2', strategy: 'cheapest_n' } }] });
+  for (const never of ['203.0.113.9', '5790000705184', 'gln', 'Shelly/1.4.4']) assert.ok(!calls[0].init.body.includes(never), `${never} must not reach GA`);
+});
+
+test('GA4: the sampling weight rides along, a 400 carries its reason, a failing GA never throws', async () => {
+  const rec = { c: { client: 'homeassistant', version: '', host: '2026.8.3' }, endpoint: 'prices', where: 'DK1', strategy: '', cls: '4xx', reason: 'gln_missing', weight: 5 };
+  assert.deepEqual(gaPayload(rec).events[0].params, { engagement_time_msec: 1, client: 'homeassistant', endpoint: 'prices', status_class: '4xx', weight: 5, host: '2026.8.3', area: 'DK1', reason: 'gln_missing' });
+  assert.equal(await sendGa({ GA_API_SECRET: 'x', GA_MEASUREMENT_ID: 'G-TEST' }, rec, async url => { assert.ok(url.includes('measurement_id=G-TEST')); throw new Error('network'); }), 0);
+  assert.equal(await sendGa({ GA_API_SECRET: 'x' }, rec, async () => ({ status: 204 })), 204);
 });

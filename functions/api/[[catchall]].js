@@ -1664,7 +1664,7 @@ const OPENAPI_SPEC = {
 // URLs stay fetchable. The plain /api docs page is HTML and stays indexable.
 export async function onRequest(context) {
   const res = await handleApi(context);
-  recordUsage(context.env, context.request, res.status);
+  recordUsage(context.env, context.request, res.status, Math.random, context);
   const hasSubPath = new URL(context.request.url).pathname.split('/').filter(Boolean).length > 1;
   if (!hasSubPath || res.headers.has('X-Robots-Tag')) return res;
   const out = new Response(res.body, res);
