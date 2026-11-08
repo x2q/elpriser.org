@@ -258,10 +258,10 @@ class TestCandidates(unittest.TestCase):
             self.assertEqual(RM.STD_OFFSET[z], off, z)
         self.assertEqual({z for z in RM.ZONE_GROUP}, {z for z in ZONES} | {"no1", "no2", "no3", "no4", "no5", "se1", "se2", "se3", "se4", "fi", "dk1", "dk2", "nl"})
 
-    def test_groups_partition_the_38_zones(self):
+    def test_groups_partition_the_39_zones(self):
         seen = [z for zs in RM.GROUPS.values() for z in zs]
         self.assertEqual(len(seen), len(set(seen)))
-        self.assertEqual(len(seen), 38)
+        self.assertEqual(len(seen), 39)
 
     def test_spread_uses_only_lags_of_a_week_or_more_and_the_last_known_days(self):
         idx = pd.date_range("2026-01-01", periods=24 * 40, freq="h")

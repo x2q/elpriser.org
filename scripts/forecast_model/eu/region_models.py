@@ -25,7 +25,7 @@ GROUPS = {
     "core": ["de", "fr", "nl", "be", "at", "ch", "cz", "pl"],
     "iberia": ["es", "pt"],
     "it-n": ["it-n"],
-    "cee": ["hu", "sk", "ro", "bg", "gr", "hr", "si", "rs", "me", "mk", "al"],
+    "cee": ["hu", "sk", "ro", "bg", "gr", "hr", "si", "rs", "me", "mk", "al", "xk"],
     "baltics": ["ee", "lv", "lt"],
     "ie": ["ie"],
 }
@@ -33,7 +33,7 @@ ZONE_GROUP = {z: g for g, zs in GROUPS.items() for z in zs}
 # standard-time UTC offset of each zone's wall clock; all of Europe changes to summer time on the same two dates, so the
 # difference between two zones' clocks is constant through the year
 STD_OFFSET = {**{z: 1 for z in ["no1", "no2", "no3", "no4", "no5", "se1", "se2", "se3", "se4", "dk1", "dk2", "de", "fr", "nl", "be",
-                                "at", "ch", "cz", "pl", "it-n", "es", "hu", "sk", "hr", "si", "rs", "me", "mk", "al"]},
+                                "at", "ch", "cz", "pl", "it-n", "es", "hu", "sk", "hr", "si", "rs", "me", "mk", "al", "xk"]},
               **{z: 2 for z in ["fi", "gr", "ro", "bg", "ee", "lv", "lt"]}, **{z: 0 for z in ["pt", "ie"]}}
 NAIVE = ["b_lag7", "b_seasonal", "b_persist", "b_lvlshape"]
 HOURS = list(range(24))

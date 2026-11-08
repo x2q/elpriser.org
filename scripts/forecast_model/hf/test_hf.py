@@ -151,7 +151,7 @@ class Cards(unittest.TestCase):
         try:
             EE.strip_gate(EU, d)
             t = CT.eu_zone_table(d)
-            self.assertEqual(len(t.strip().split("\n")), 2 + 25)
+            self.assertEqual(len(t.strip().split("\n")), 2 + 26)
             self.assertIn("| IT-N | ridge + LightGBM | D+2..D+4 |", t)
             self.assertIn("| EE | LightGBM |", t)
         finally:

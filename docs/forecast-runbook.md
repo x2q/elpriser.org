@@ -5,8 +5,8 @@ What runs on the Spark, what it writes, how to start it, how to stop it, what to
 
 ## What it is
 
-One daily job (`train_daily.py`, cron `15 15 * * *`) forecasts the day after tomorrow and up to seven days ahead for the 25 EU zones
-`de fr pl it-n at be ch cz hu si es pt sk gr ro bg hr rs ee lv lt me mk al ie` (not `gb`, not `xk`, not the Nordic zones and NL, which have their
+One daily job (`train_daily.py`, cron `15 15 * * *`) forecasts the day after tomorrow and up to seven days ahead for the 26 EU zones
+`de fr pl it-n at be ch cz hu si es pt sk gr ro bg hr rs ee lv lt me mk al xk ie` (not `gb`; `xk` is Albania's price in 98 % of the hours, see [forecast-xk.md](forecast-xk.md); not the Nordic zones and NL, which have their
 own forecast). Per zone and horizon D+2 .. D+7 it publishes the **recipe** below only where the research backtest says it was at least 5 % better
 (MAE) than the naive "level + shape" method out of sample (the **gate**), with a P10 / P90 band and an honest **accuracy block**.
 
@@ -57,7 +57,7 @@ Optional: `EU_FORECAST_JOBS` (LightGBM threads, default 8), `EU_FORECAST_LAMBDA`
 
 1. Copy the files (above). The tests (`test_*.py`, run by `npm run test:gate`) are not needed on the Spark.
 2. Dry run, writes nothing to KV and takes about 7 minutes (2 minutes with `--skip-refresh`, from the caches; 7.7 GB of memory at the peak): `nice -n 10 python3 train_daily.py --dry-run`. Expect `FUEL on`, a line per zone ("would write ...
-   with band"), and `DONE 25/25 zones`. `forecast_latest.json` holds what would have been published.
+   with band"), and `DONE 26/26 zones`. `forecast_latest.json` holds what would have been published.
 3. One real run by hand: `set -a; . ~/.config/elpriser.env; set +a; nice -n 10 python3 train_daily.py`. Check `https://elpriser.org/api/nordic?zone=de` (settled days, then
    forecast days with `horizon`, a band and `accuracy`) and a Spanish and a Latvian zone; look at the pages (`/de/strompreis`, `/ee/elektri-hind`).
 4. Cron (the existing 11:30/11:45/14:00/14:15 price jobs, the SEMOpx and Elexon lines and the Nordic jobs stay as they are):
@@ -85,7 +85,7 @@ Optional: `EU_FORECAST_JOBS` (LightGBM threads, default 8), `EU_FORECAST_LAMBDA`
 
 ## What to alarm on
 
-* `daily.log`: the last `DONE n/25 zones` line is missing for a day, or n < 20 (also exit code 3). `skipped:` names the zones.
+* `daily.log`: the last `DONE n/26 zones` line is missing for a day, or n < 20 (also exit code 3). `skipped:` names the zones.
 * `FUEL off:` in the log for three days running (a source is blocked or changed its format; the forecast gets less accurate but stays honest).
 * `WARNING: the newest training row is N days old`: a price source froze.
 * Live accuracy: `python3 monitor.py --days 21` (needs the Cloudflare pair): per zone and horizon the live MAE against the backtest's, the live band coverage
@@ -126,7 +126,7 @@ again, compare `price_de.parquet`'s last day on the Spark with `eu-prices-de`'s.
 ## Rollback
 
 * Stop publishing: remove the cron line. The keys expire in 3 days and the API then serves the settled prices alone, exactly as before the forecast existed.
-* At once: delete the keys, `wrangler kv key delete --namespace-id 126700e66e8d4a19b289b0e8afdaff69 eu-forecast-<zone>` for the 25 zones (the API cache is 15 minutes, the page cache a few more); the archive keys can stay.
+* At once: delete the keys, `wrangler kv key delete --namespace-id 126700e66e8d4a19b289b0e8afdaff69 eu-forecast-<zone>` for the 26 zones (the API cache is 15 minutes, the page cache a few more); the archive keys can stay.
 * One zone or horizon only: take it out of `publish_gate.json` (a prefix of horizons, D+2 first), copy the file, and delete that zone's key; the next run does not write it.
 * The site code needs no change for any of this: pages and API are data-driven (a zone without forecast days draws as an actual-prices page).
 

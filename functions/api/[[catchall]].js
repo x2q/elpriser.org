@@ -1522,7 +1522,7 @@ const OPENAPI_SPEC = {
           'Prices of the non-euro countries are in EUR/MWh as published; `zoneInfo.currency` is EUR for all of these.',
           'The data were changed by elpriser.org: the 15- or 30-minute prices are aggregated to hourly means by the zone\'s local clock.',
           '',
-          '**Forecast days for 25 EU zones** (all of the above except `xk` and `gb`): after the last settled day come up to seven `forecast` days, the first one the day after',
+          '**Forecast days for 26 EU zones** (all of the above except `gb`): after the last settled day come up to seven `forecast` days, the first one the day after',
           'the last settled day, with no hole. It is elpriser.org\'s own statistical model (a mean of a rolling linear model and a gradient-boosted tree model, using weather forecasts',
           'and market data as inputs): NOT an official forecast. The production model also takes two further market-price inputs; a variant WITHOUT them is open, weights and',
           'code at https://huggingface.co/Elpriser/eu-price-forecast, and its backtest error is about 3 % higher. A day has `horizon` (days after the last settled day + 1, 2 to 7), `eur_mwh` as the central estimate and',
