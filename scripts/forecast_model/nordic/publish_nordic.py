@@ -42,21 +42,41 @@ def load_calibration(path):
     return (c.get("residual") or {}) if c else None
 
 
+def load_calibration_fallback(path):
+    """The pooled model's bands for the zones that carry a fallback ({} when the file has none)."""
+    c = _load(path)
+    return (c.get("residualFallback") or {}) if c else {}
+
+
 def recipe_of(gate, zone):
     e = (gate or {}).get(zone)
     return e.get("recipe") if isinstance(e, dict) else None
 
 
-def published_horizons(gate, acc, zone):
-    """The horizons to publish: the gate's AND those the accuracy file has numbers for (an unmeasured horizon is not published)."""
+def has_fallback(gate, acc, zone):
+    """True if the zone carries the pooled model's own gate entry AND accuracy cells as a fallback for a day the ensemble cannot run (no usable fuel inputs)."""
     e = (gate or {}).get(zone)
-    cells = ((((acc or {}).get("zones") or {}).get(zone) or {}).get("cells")) or {}
+    z = ((acc or {}).get("zones") or {}).get(zone) or {}
+    return bool(isinstance(e, dict) and isinstance(e.get("fallback"), dict) and e["fallback"].get("recipe") == "pooled" and e["fallback"].get("horizons")
+                and isinstance(z.get("fallback"), dict) and z["fallback"].get("cells"))
+
+
+def published_horizons(gate, acc, zone, fallback=False):
+    """The horizons to publish: the gate's AND those the accuracy file has numbers for (an unmeasured horizon is not published). fallback=True: the pooled
+    model's entry and cells (empty if the zone has none)."""
+    e = (gate or {}).get(zone)
+    z = ((acc or {}).get("zones") or {}).get(zone) or {}
+    if fallback:
+        e, z = ((e or {}).get("fallback") if isinstance(e, dict) else None), (z.get("fallback") or {})
+    cells = z.get("cells") or {}
     return {int(h) for h in (e or {}).get("horizons", []) if str(h) in cells}
 
 
-def accuracy_block(acc, zone, hs):
+def accuracy_block(acc, zone, hs, fallback=False):
     """The `accuracy` object of the payload for the horizons actually published (the EU shape: version, period, baseline, recent, byHorizon), or None."""
     z = ((acc or {}).get("zones") or {}).get(zone) or {}
+    if fallback:
+        z = z.get("fallback") or {}
     cells = z.get("cells") or {}
     by = {str(h): cells[str(h)] for h in sorted(hs) if str(h) in cells}
     if not by:

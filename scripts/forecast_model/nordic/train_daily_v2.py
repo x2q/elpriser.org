@@ -9,10 +9,12 @@ reservoir refresh, the pooled model `pooled`, the old per-zone feed with its set
   1. every zone's forecast days go through publish_gate_nordic.json (the EU rule: >= 5 % better than level+shape on the whole backtest AND the hold-out; a horizon the
      gate does not list is NOT published, and neither is anything behind a gap) and carry `horizon`, a P10-P90 band (calibration_nordic_v2.json) and the zone's
      `accuracy` block (accuracy_nordic.json) in the KV value `nordic-forecast-<zone>`;
-  2. the zones whose gate entry says recipe `ens` (NO1, NO2, NO3, NO5; NO4 passes at no horizon) are forecast by the ENSEMBLE recipe (recipe_nordic.py: 730-day ridge +
-     LightGBM on price - level_7d, gas / carbon inputs, leak-free reservoir features, the 50/50 shape blend) instead of the pooled model;
-  3. the ensemble needs the fuel inputs (MIBGAS gas, EEX carbon, INPUTS only, as in the EU job: eu/fuel_live.py): without usable fuel the `ens` zones publish NO forecast
-     days (their gate was measured with fuel; the pooled model fails the gate there) and the settled days alone are served; the other zones are not affected.
+  2. the zones whose gate entry names an ensemble recipe (recipe_nordic.VARIANTS: ens, ens365, ens_nr, ens_b25; NO1-NO3, NO5, DK1, SE1-SE4 and NL in the table of
+     docs/forecast-nordic-ens.md; NO4 passes at no horizon) are forecast by the ENSEMBLE (recipe_nordic.py: ridge + LightGBM on price - level_7d, gas / carbon inputs,
+     leak-free reservoir features, a shape blend) instead of the pooled model; DK2 and FI keep the pooled model;
+  3. the ensemble needs the fuel inputs (MIBGAS gas, EEX carbon, INPUTS only, as in the EU job: eu/fuel_live.py). On a day without usable fuel (or if the ensemble fails)
+     a zone that carries a `fallback` in the gate / accuracy / calibration files (every ensemble zone except NO1-NO5: the pooled model passes the gate there) is published
+     from the POOLED model with ITS OWN gate entry, accuracy cells and bands (recipe `pooled`); NO1-NO3, NO5 (the pooled model fails the gate) publish settled days only.
 
 Keys written: nordic-forecast-<zone> (TTL 3 days, same keys and shape as before: zone, generated, trainedThrough, unit, days[] + model, recipe, accuracy; forecast days
 have `horizon`) and nordic-forecast-archive-<zone>-<date> (TTL 200 days, for monitoring). Nothing else; never eu-*, never forecast-v3-*.
@@ -60,8 +62,10 @@ def split_days(days):
     return actual, last, pd.DataFrame(rows, columns=["date", "hour", "h", "point"])
 
 
-def ens_points(zones, prices, live, hist_weather, res_lf, table, df, today, jobs, t0):
-    """{zone: DataFrame(date, hour, h, point)} from the ensemble recipe for `zones`, and the date the training data runs to."""
+def ens_points(zone_recipe, prices, live, hist_weather, res_lf, table, df, today, jobs, t0):
+    """{zone: DataFrame(date, hour, h, point)} from the ensemble recipes, `zone_recipe` = {zone: variant name of recipe_nordic.VARIANTS}, and the date the training
+    data runs to. One pooled LightGBM per reservoir flavour in use (the common case: one), one ridge per zone, horizon and variant window."""
+    zones = list(zone_recipe)
     tables = RN.RM.day_tables(prices)
     df = df[df["h"] <= RN.H_MAX].copy()
     df["zone"] = df["zone"].astype(str)
@@ -70,10 +74,12 @@ def ens_points(zones, prices, live, hist_weather, res_lf, table, df, today, jobs
     df = RN.augment(df, prices, tables)
     df = RN.add_reservoir_lf(df, res_lf)
     df = RN.add_fuel(df, table)
-    model, tr = RN.lgb_fit(df[df["y"].notna()], jobs)
-    per_day = pd.to_datetime(tr["t"]).dt.normalize().value_counts()
-    trained_through = per_day[per_day >= 0.5 * per_day.median()].index.max().date()
-    log(f"  LightGBM (rel, fuel) on {len(tr):,} rows through {trained_through} ({time.time() - t0:.0f}s)")
+    trees, trained_through = {}, None
+    for flavour in sorted({RN.VARIANTS[v]["reservoir"] for v in zone_recipe.values()}, reverse=True):
+        trees[flavour], tr = RN.lgb_fit(df[df["y"].notna()], jobs, reservoir=flavour)
+        per_day = pd.to_datetime(tr["t"]).dt.normalize().value_counts()
+        trained_through = trained_through or per_day[per_day >= 0.5 * per_day.median()].index.max().date()
+        log(f"  LightGBM (rel, fuel, {'with' if flavour else 'without'} reservoir) on {len(tr):,} rows through {trained_through} ({time.time() - t0:.0f}s)")
     reg = RN.regional_weather(live, hist_weather, today)
     parts = []
     for z in zones:
@@ -90,10 +96,22 @@ def ens_points(zones, prices, live, hist_weather, res_lf, table, df, today, jobs
     rows = RN.augment(rows, prices, tables)
     rows = RN.add_reservoir_lf(rows, res_lf)
     rows = RN.add_fuel(rows, table)
-    hist = df[df["y"].notna() & df["zone"].isin(zones) & (df["date"] >= rows["date"].min() - pd.Timedelta(days=RN.LEAR_WINDOW_DAYS + 40))]
-    ridge = RN.lear_predict(hist, rows, True)
-    tree = pd.Series(RN.lgb_predict(model, rows), index=rows.index)
-    point = RN.hybrid(rows, RN.point_forecast(ridge, tree))
+    point = np.full(len(rows), np.nan)
+    ridge_gap, tree_gap = pd.Series(False, index=rows.index), pd.Series(False, index=rows.index)
+    for name in sorted(set(zone_recipe.values())):
+        v = RN.VARIANTS[name]
+        vz = [z for z in zones if zone_recipe[z] == name]
+        m = rows["zone"].isin(vz).to_numpy()
+        if not m.any():
+            continue
+        rv = rows[m]
+        hist = df[df["y"].notna() & df["zone"].isin(vz) & (df["date"] >= rv["date"].min() - pd.Timedelta(days=v["window"] + 40))]
+        t1 = time.time()
+        ridge = RN.lear_predict(hist, rv, True, window=v["window"], reservoir=v["reservoir"])
+        log(f"  ridge {name} ({v['window']} days) for {len(vz)} zones ({', '.join(vz)}): {time.time() - t1:.0f}s")
+        tree = pd.Series(RN.lgb_predict(trees[v["reservoir"]], rv, v["reservoir"]), index=rv.index)
+        point[m] = RN.hybrid(rv, RN.point_forecast(ridge, tree), v["blend"])
+        ridge_gap[rv.index], tree_gap[rv.index] = ridge.isna().to_numpy(), tree.isna().to_numpy()
     out = {}
     for z in zones:
         m = (rows["zone"] == z).to_numpy()
@@ -101,7 +119,7 @@ def ens_points(zones, prices, live, hist_weather, res_lf, table, df, today, jobs
             out[z] = rows.loc[m, ["date", "hour", "h"]].assign(point=point[m])
             nan = int((~np.isfinite(point[m])).sum())
             if nan:
-                log(f"  {z}: {nan} hours without an ensemble estimate (ridge gap {int(ridge[m].isna().sum())}, tree gap {int(tree[m].isna().sum())}): those days are dropped")
+                log(f"  {z}: {nan} hours without an ensemble estimate (ridge gap {int(ridge_gap[m].sum())}, tree gap {int(tree_gap[m].sum())}): those days are dropped")
     return out, trained_through
 
 
@@ -126,6 +144,7 @@ def main(argv=None):
         log("publish_gate_nordic.json / accuracy_nordic.json missing or not version 2: nothing is published")
         return 2
     cal = PUB.load_calibration(os.path.join(DIR, "calibration_nordic_v2.json"))
+    cal_fb = PUB.load_calibration_fallback(os.path.join(DIR, "calibration_nordic_v2.json"))
     if cal is None:
         log("  calibration_nordic_v2.json missing or not version 2: days are published WITHOUT a band")
     zones = a.zones.split(",") if a.zones else list(RN.ZONES)
@@ -160,21 +179,28 @@ def main(argv=None):
     old = OLD.score({"md": md}, prices, live, reservoirs, nordic_res, now.date())
 
     # ---- the ensemble for the zones whose recipe is `ens`
-    ens_zones = [z for z in zones if PUB.recipe_of(gate, z) == "ens" and PUB.published_horizons(gate, acc, z)]
-    ens, ens_through = {}, trained_through
+    ens_zones = [z for z in zones if PUB.recipe_of(gate, z) in RN.VARIANTS and PUB.published_horizons(gate, acc, z)]
+    ens, ens_through, ens_ok = {}, trained_through, False
     if ens_zones:
         try:
             import fuel_live as FL
             table, fst = FL.load(FUEL_CACHE, now.date(), refresh=not a.skip_refresh, log=log)
         except Exception as e:
             table, fst = None, {"reason": f"{type(e).__name__}: {e}", "gas_date": None, "eua_date": None}
+        fb_zones = [z for z in ens_zones if PUB.has_fallback(gate, acc, z)]
+        no_fb = [z for z in ens_zones if z not in fb_zones]
         if table is None:
-            log(f"FUEL off: {fst['reason']}: the ensemble zones ({', '.join(ens_zones)}) publish NO forecast days (settled days only)")
+            log(f"FUEL off: {fst['reason']}: {', '.join(no_fb) or 'no zone'} publish NO forecast days (settled days only); "
+                f"{', '.join(fb_zones) or 'no zone'} fall back to the pooled model with its own gate, accuracy and bands")
         else:
             log(f"FUEL on (gas print {fst['gas_date']}, carbon print {fst['eua_date']})")
-            hist_w = {z: OLD.ds.load_weather("actual", z) for z in RN.ZONES}
-            r = pd.read_parquet(os.path.join(DIR, "reservoir_weekly.parquet"))
-            ens, ens_through = ens_points(ens_zones, prices, live, hist_w, RN.reservoir_lf(r), table, df, today, jobs, t0)
+            try:
+                hist_w = {z: OLD.ds.load_weather("actual", z) for z in RN.ZONES}
+                r = pd.read_parquet(os.path.join(DIR, "reservoir_weekly.parquet"))
+                ens, ens_through = ens_points({z: PUB.recipe_of(gate, z) for z in ens_zones}, prices, live, hist_w, RN.reservoir_lf(r), table, df, today, jobs, t0)
+                ens_ok = True
+            except Exception as e:                       # the pooled model's feed below is untouched by a failing ensemble
+                log(f"ENSEMBLE FAILED ({type(e).__name__}: {e}): {', '.join(no_fb) or 'no zone'} publish no forecast days; {', '.join(fb_zones) or 'no zone'} fall back to the pooled model")
 
     # ---- publish
     wrote, skipped, latest = 0, [], {}
@@ -186,15 +212,18 @@ def main(argv=None):
                 skipped.append(z)
                 log(f"  {z}: no settled days, nothing to publish")
                 continue
-            use_ens = rec == "ens"
-            if use_ens:
-                pts, through, model = ens.get(z, pts.iloc[0:0]), ens_through, RN.MODEL_NAME
+            use_ens = rec in RN.VARIANTS
+            fb = use_ens and not ens_ok and PUB.has_fallback(gate, acc, z)       # no ensemble today: this zone's own pooled gate entry, accuracy and bands
+            if use_ens and not fb:
+                pts, through, model, bands = ens.get(z, pts.iloc[0:0]), ens_through, RN.MODEL_NAME, cal
+            elif fb:
+                through, model, rec, bands = trained_through, OLD_MODEL, "pooled", cal_fb
             else:
-                through, model = trained_through, OLD_MODEL
-            hs = PUB.published_horizons(gate, acc, z)
-            fdays = PUB.forecast_days(z, pts, last.date() if hasattr(last, "date") else last, hs, cal)
+                through, model, bands = trained_through, OLD_MODEL, cal
+            hs = PUB.published_horizons(gate, acc, z, fallback=fb)
+            fdays = PUB.forecast_days(z, pts, last.date() if hasattr(last, "date") else last, hs, bands)
             fdays = [d for d in fdays if all(PRICE_SANITY[0] <= p["eur_mwh"] <= PRICE_SANITY[1] for p in d["prices"])]
-            block = PUB.accuracy_block(acc, z, {d["horizon"] for d in fdays}) if fdays else None
+            block = PUB.accuracy_block(acc, z, {d["horizon"] for d in fdays}, fallback=fb) if fdays else None
             if fdays and block is None:
                 log(f"  {z}: no accuracy numbers for the horizons: forecast days not published")
                 fdays = []

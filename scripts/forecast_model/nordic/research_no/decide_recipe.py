@@ -45,6 +45,17 @@ MARGIN, REGRET_TOL, MIN_GAIN = 1.0, 1.0, 5.0
 ZONES = ["dk1", "dk2", "se1", "se2", "se3", "se4", "nl", "fi"]
 
 
+def recipes_from_decision(path, no_zones=("no1", "no2", "no3", "no4", "no5")):
+    """{zone: (recipe name, research column)} for all 13 zones: the decision for the zones it covers, `ens` for the Norwegian zones (docs/forecast-nordic-no.md),
+    `pooled` for any other zone the decision file does not cover. build_gate_nordic.py and calibrate_nordic.py read it (--decision)."""
+    dec = json.load(open(path))["zones"]
+    out = {}
+    for z in SN.NORDIC:
+        n = "ens" if z in no_zones else dec[z]["recipe"] if z in dec else "pooled"
+        out[z] = (n, CANDS[n])
+    return out
+
+
 def cell(sc, z, h, col, period, metric):
     s = sc[(sc["zone"] == z) & (sc["h"] == h) & (sc["period"] == period)].set_index("col")[metric]
     if col not in s or BASE not in s or not s[BASE]:

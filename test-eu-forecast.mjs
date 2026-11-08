@@ -34,7 +34,7 @@ test('python unit tests: test_production.py passes (fuel failure policy, the rid
   assert.match(r.stderr, /Ran \d{2,} tests/, 'the production suite ran suspiciously few tests');
 });
 
-test('python unit tests: nordic/test_nordic_recipe.py passes (the staged Nordic ensemble: leakage rule of the live rows, ridge window, leak-free reservoir, shape blend, gate publishing, the checked-in Nordic gate files obey the 5 % rule)', { skip: havePandas ? false : 'pandas/numpy not installed here' }, () => {
+test('python unit tests: nordic/test_nordic_recipe.py passes (the staged Nordic ensemble and its variants: leakage rule of the live rows, ridge window, leak-free reservoir, shape blend weight, gate publishing with the pooled fallback, the checked-in Nordic gate files obey the 5 % rule and carry the recipe table of the declared rule)', { skip: havePandas ? false : 'pandas/numpy not installed here' }, () => {
   const r = spawnSync('python3', [path.join(ROOT, 'scripts/forecast_model/nordic/test_nordic_recipe.py')], { encoding: 'utf8' });
   assert.equal(r.status, 0, 'test_nordic_recipe.py failed:\n' + r.stdout + r.stderr);
   assert.match(r.stderr, /Ran \d{2,} tests/, 'the Nordic suite ran suspiciously few tests');

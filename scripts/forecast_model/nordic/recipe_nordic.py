@@ -8,7 +8,9 @@
 * the reservoir features are the LEAK-FREE ones (reservoir_lf): the dataset's own columns normalise with the whole series' maximum and weekly medians, which
   contain the future; these use an expanding maximum and the medians of earlier years only, and a reading is used 14 days after the week it describes;
 * hybrid = the model's daily level, intraday shape half its own and half the seasonal profile (the Nordic job's post-processing, unchanged: 50/50).
-It is used for the zones whose gate entry says recipe `ens` (publish_gate_nordic.json); the other zones keep the pooled model of train_daily.py.
+It is used for the zones whose gate entry names a recipe in VARIANTS (publish_gate_nordic.json); the other zones keep the pooled model of train_daily.py.
+The variants are the ones declared before scoring in docs/forecast-nordic-ens.md (research_no/decide_recipe.py picks one per zone by a mechanical rule):
+`ens` (the Norway recipe above), `ens365` (365-day ridge window), `ens_nr` (no reservoir feature in either model), `ens_b25` (25 % seasonal profile in the intraday shape).
 
 Imports from the EU job's modules (flat next to this file on the Spark, see the rollout in the doc): region_models, family_models, fuel_features, calendar_features.
 """
@@ -33,6 +35,11 @@ LEAR_WINDOW_DAYS = 730
 LEAR_MIN_ROWS = 24 * 40
 BLEND = 0.5
 MODEL_NAME = "nordic-ens-v1"
+# the recipe variants (gate entry `recipe`): ridge window in days, reservoir features in the models, share of the seasonal profile in the intraday shape
+VARIANTS = {"ens": {"window": LEAR_WINDOW_DAYS, "reservoir": True, "blend": BLEND},
+            "ens365": {"window": 365, "reservoir": True, "blend": BLEND},
+            "ens_nr": {"window": LEAR_WINDOW_DAYS, "reservoir": False, "blend": BLEND},
+            "ens_b25": {"window": LEAR_WINDOW_DAYS, "reservoir": True, "blend": 0.25}}
 
 NORDIC_BASE = ["zone", "h", "hour", "weekday", "month", "is_weekend", "doy_sin", "doy_cos",
                "lag1", "lag2", "lag3", "lag7", "lag14", "lag21", "lag28", "seasonal4w", "last_day_mean", "level_30d",
@@ -40,8 +47,10 @@ NORDIC_BASE = ["zone", "h", "hour", "weekday", "month", "is_weekend", "doy_sin",
 RES_LF = ["res_pct_lf", "res_anom_lf", "nres_anom_lf"]
 FUEL_FEATS = ["gas", "gas_d7", "gas_d28", "gas_m1_spread", "eua", "eua_d7", "eua_d28", "ccgt_mc", "ccgt_mc_d7", "ccgt_mc_d28", "mc_gap"]
 LGB_FEATS = NORDIC_BASE + RES_LF + FUEL_FEATS
+LGB_FEATS_NR = NORDIC_BASE + FUEL_FEATS                       # the `ens_nr` tree: no reservoir feature at all
 LGB_NULLABLE = set(RES_LF)
 RIDGE_EXTRA = ["res_anom_lf", "nres_anom_lf", "hydro_precip_7d"]
+RIDGE_EXTRA_NR = ["hydro_precip_7d"]
 EXTRA_LAGS = ["d_lag_last", "d_prev", "d_lag7", "d_lag14"]
 LGB_PARAMS = dict(objective="quantile", alpha=0.5, n_estimators=400, num_leaves=63, min_child_samples=60, learning_rate=0.06,
                   subsample=0.6, subsample_freq=1, colsample_bytree=0.8, max_bin=127, verbosity=-1)
@@ -125,25 +134,25 @@ def add_fuel(df, table):
 
 
 # ------------------------------------------------------------------ the ridge
-def ridge_design(df, fuel=True):
-    return RM.design(df, fuel, extra=RIDGE_EXTRA).join(df[EXTRA_LAGS].astype(np.float32))
+def ridge_design(df, fuel=True, reservoir=True):
+    return RM.design(df, fuel, extra=RIDGE_EXTRA if reservoir else RIDGE_EXTRA_NR).join(df[EXTRA_LAGS].astype(np.float32))
 
 
-def lear_predict(history, live, fuel=True, window=LEAR_WINDOW_DAYS, min_rows=LEAR_MIN_ROWS):
+def lear_predict(history, live, fuel=True, window=LEAR_WINDOW_DAYS, min_rows=LEAR_MIN_ROWS, reservoir=True):
     """One ridge per (zone, h) of the live rows, trained on the settled rows of the same zone and h whose target day lies in (T - h - window, T - h], T = the
     first target day of that group (T - h is the day before the last known day: the newest target settled at issue). NaN where there are too few training
     hours or a feature is missing: never a patched value. history / live: augmented rows (zone, h, date, y / b_lvlshape + features)."""
     out = pd.Series(np.nan, index=live.index)
     if live.empty:
         return out
-    Xl = ridge_design(live, fuel)
+    Xl = ridge_design(live, fuel, reservoir)
     for (z, h), g in live.groupby(["zone", "h"]):
         first = g["date"].min()
         end = first - pd.Timedelta(days=int(h))
         tr = history[(history["zone"] == z) & (history["h"] == h) & (history["date"] <= end) & (history["date"] > end - pd.Timedelta(days=window))]
         if len(tr) < min_rows:
             continue
-        Xt = ridge_design(tr, fuel).to_numpy(np.float64)
+        Xt = ridge_design(tr, fuel, reservoir).to_numpy(np.float64)
         yt = (tr["y"] - tr["b_lvlshape"]).to_numpy(np.float64)
         ok = np.isfinite(Xt).all(axis=1) & np.isfinite(yt)
         if ok.sum() < min_rows:
@@ -157,23 +166,28 @@ def lear_predict(history, live, fuel=True, window=LEAR_WINDOW_DAYS, min_rows=LEA
 
 
 # ------------------------------------------------------------------ the tree
+def lgb_feats(reservoir=True):
+    return LGB_FEATS if reservoir else LGB_FEATS_NR
+
+
 def lgb_required(feats=LGB_FEATS):
     return [c for c in feats if not c.startswith("lag") and c not in ("zone", "seasonal4w") and c not in LGB_NULLABLE]
 
 
-def lgb_fit(train, jobs=8, alpha=0.5):
+def lgb_fit(train, jobs=8, alpha=0.5, reservoir=True):
     """The pooled tree on price - level_7d. train: augmented rows with fuel and reservoir columns. Returns (model, rows used)."""
     import lightgbm as lgb
-    tr = train.dropna(subset=lgb_required() + ["y", "level_7d"])
+    feats = lgb_feats(reservoir)
+    tr = train.dropna(subset=lgb_required(feats) + ["y", "level_7d"])
     tr = tr.assign(zone=pd.Categorical(tr["zone"], categories=ZONES))
     m = lgb.LGBMRegressor(n_jobs=jobs, **{**LGB_PARAMS, "alpha": alpha})
-    m.fit(tr[LGB_FEATS], tr["y"] - tr["level_7d"], categorical_feature=["zone"])
+    m.fit(tr[feats], tr["y"] - tr["level_7d"], categorical_feature=["zone"])
     return m, tr
 
 
-def lgb_predict(model, rows):
+def lgb_predict(model, rows, reservoir=True):
     X = rows.assign(zone=pd.Categorical(rows["zone"], categories=ZONES))
-    return model.predict(X[LGB_FEATS]) + rows["level_7d"].to_numpy()
+    return model.predict(X[lgb_feats(reservoir)]) + rows["level_7d"].to_numpy()
 
 
 # ------------------------------------------------------------------ the point forecast
@@ -182,14 +196,14 @@ def point_forecast(ridge, tree):
     return (np.asarray(ridge, dtype=float) + np.asarray(tree, dtype=float)) / 2
 
 
-def hybrid(rows, point):
-    """The Nordic job's shape blend per (zone, date, h): the model's daily mean, half of its own intraday shape plus half of the seasonal4w profile's
-    (shape = deviation from the day's mean). Falls back to the model's own hours where there is no seasonal profile."""
+def hybrid(rows, point, blend=BLEND):
+    """The Nordic job's shape blend per (zone, date, h): the model's daily mean, (1 - blend) of its own intraday shape plus `blend` of the seasonal4w profile's
+    (shape = deviation from the day's mean; blend 0.5 is the production post-processing). Falls back to the model's own hours where there is no seasonal profile."""
     f = rows[["zone", "date", "h", "seasonal4w"]].copy()
     f["p"] = np.asarray(point, dtype=float)
     g = f.groupby(["zone", "date", "h"], sort=False)
     pm, sm = g["p"].transform("mean"), g["seasonal4w"].transform("mean")
-    out = pm + (1 - BLEND) * (f["p"] - pm) + BLEND * (f["seasonal4w"] - sm)
+    out = pm + (1 - blend) * (f["p"] - pm) + blend * (f["seasonal4w"] - sm)
     return out.where(sm.notna(), f["p"]).to_numpy()
 
 

@@ -27,11 +27,13 @@ import region_scores as RS       # noqa: E402
 ZONES = ["dk1", "dk2", "no1", "no2", "no3", "no4", "no5", "se1", "se2", "se3", "se4", "fi", "nl"]
 H_MIN, H_MAX = 2, 8
 MIN_GAIN = 0.05
+POOLED_COL = "p0_hyb"                      # the production model's research column
 
 
-def build(df, recipe_of):
+def build(df, recipe_of, label_of=None):
     """df: research frame with y, b_lvlshape, b_lag7, b_seasonal, b_persist and the recipe columns. recipe_of: zone -> column name.
     Returns (gate, accuracy, notes)."""
+    label_of = label_of or recipe_of
     df = df[df["zone"].isin(ZONES) & df["h"].between(H_MIN, H_MAX)].copy()
     df["pub"] = np.nan
     for z in ZONES:
@@ -41,8 +43,8 @@ def build(df, recipe_of):
     cov = BG.coverage_table(df, "pub")
     gz, az, notes = {}, {}, []
     for z in ZONES:
-        gz[z] = {"recipe": recipe_of[z], "horizons": []}
-        az[z] = {"recipe": recipe_of[z], "showEur": False, "cells": {}}
+        gz[z] = {"recipe": label_of[z], "horizons": []}
+        az[z] = {"recipe": label_of[z], "showEur": False, "cells": {}}
         for h in range(H_MIN, H_MAX + 1):
             r = BG.cell(s, z, h, "pub", cov, "fuel")
             if r is None:
@@ -67,14 +69,28 @@ def main():
     ap.add_argument("--recipe", default="p0_hyb")
     ap.add_argument("--per-zone-recipe", default="")
     ap.add_argument("--out-dir", default=".")
+    ap.add_argument("--decision", default="", help="decision_ens.json of decide_recipe.py: recipe per zone by name (pooled, ens, ens365, ens_nr, ens_b25 ...); the file then says the NAME")
     a = ap.parse_args()
     recipe_of = {z: a.recipe for z in ZONES}
     for kv in filter(None, a.per_zone_recipe.split(",")):
         z, c = kv.split("=")
         recipe_of[z] = c
+    label_of = dict(recipe_of)
+    if a.decision:
+        import decide_recipe as DR
+        rec = DR.recipes_from_decision(a.decision)
+        recipe_of, label_of = {z: rec[z][1] for z in ZONES}, {z: rec[z][0] for z in ZONES}
     import score_nfr as SN                      # materialises 'a+b' (mean) and 'hyb:...' (the Nordic shape blend) columns of nfr_all.parquet
-    df = SN.load(sorted(set(recipe_of.values())), None)
-    gate, acc, notes = build(df, recipe_of)
+    df = SN.load(sorted(set(recipe_of.values()) | {POOLED_COL}), None)
+    gate, acc, notes = build(df, recipe_of, label_of)
+    # FALLBACK: a zone whose recipe is not the pooled model (needs fuel) also carries the pooled model's own gate entry and accuracy cells, built by the same code and rule
+    # (what the job publishes for that zone on a day the fuel inputs are unusable); a zone the pooled model does not pass anywhere (NO1-NO5) has none.
+    if any(recipe_of[z] != POOLED_COL for z in ZONES):
+        gate_p, acc_p, _ = build(df, {z: POOLED_COL for z in ZONES}, {z: "pooled" for z in ZONES})
+        for z in ZONES:
+            if recipe_of[z] != POOLED_COL and gate_p["zones"][z]["horizons"]:
+                gate["zones"][z]["fallback"] = gate_p["zones"][z]
+                acc["zones"][z]["fallback"] = {"recipe": "pooled", "showEur": False, "cells": acc_p["zones"][z]["cells"]}
     with open(os.path.join(a.out_dir, "publish_gate_nordic.json"), "w", encoding="utf-8") as f:
         f.write(G.dumps_compact(gate) + "\n")
     with open(os.path.join(a.out_dir, "accuracy_nordic.json"), "w", encoding="utf-8") as f:
