@@ -215,7 +215,9 @@ for (const [p, w] of Object.entries(PAGES)) {
 // Netherlands, tomorrow's auction not published yet: today is a settled price ("Beursprijs"), only the days after it are "Prognose" - the answer
 // /api/nordic gives once eu-prices-nl is laid over the nordic feed (before it, today was a forecast day on this page).
 {
-  const dayKinds = h => { const t = h.slice(h.indexOf('<tbody')); return [...t.slice(0, t.indexOf('</tbody>')).matchAll(/<td class="(real|fc)">([^<]*)</g)].map(m => m[1] + ':' + m[2]); };
+  // The 5-day table (pp5), not the first <tbody>: the 2-day one holds today and tomorrow only in the first Danish hour of the day (the window is then 48 hours from
+  // 00:00, no half-day third row), so reading it made these two tests fail every night 00:00-01:00. The 5-day table has today + 4 days in every hour.
+  const dayKinds = h => { const t = h.slice(h.indexOf('<tbody class="pp5">')); return [...t.slice(0, t.indexOf('</tbody>')).matchAll(/<td class="(real|fc)">([^<]*)</g)].map(m => m[1] + ':' + m[2]); };
   try {
     store.clear(); nlSettled = 2;
     const k = dayKinds((await get('/nl/stroomprijs')).page);

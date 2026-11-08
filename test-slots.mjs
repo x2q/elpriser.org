@@ -15,7 +15,9 @@ import { ZONE_TZ, tzOffsetMin, localMidnight, hourlySlots, storedSlots, mergeSlo
 
 const DAY = 86_400_000;
 const iso = ms => new Date(ms).toISOString().slice(0, 10);
-const day = n => iso(Date.now() + n * DAY);
+// Today as the API sees it: the Copenhagen date, not the UTC one (they differ 00:00-01:00 CET / 00:00-02:00 CEST, when the feed has already moved on to the new day).
+const cphToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Copenhagen' }).format(new Date());
+const day = n => iso(Date.parse(cphToday() + 'T00:00:00Z') + n * DAY);
 const localHour = (tz, ms) => new Date(ms + tzOffsetMin(tz, ms) * 60000).getUTCHours();
 const flatDay = (date, base = 100) => ({ date, type: 'actual', prices: Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: base + h })) });
 
