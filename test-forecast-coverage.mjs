@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { analyzeZone, zoneLists, kindOf } from './scripts/check-forecast-coverage.mjs';
+import { analyzeZone, zoneLists, kindOf, coverageGap, KEY_HORIZONS } from './scripts/check-forecast-coverage.mjs';
 import { createApi, makeKv } from './tests/upstream.mjs';
 
 const ROOT = import.meta.dirname;
@@ -87,9 +87,12 @@ test('the gate decides: it-n without fuel has only h2-4, so h5-7 are by design a
   assert.deepEqual(r.byDesign, [5, 6, 7]);
 });
 
-test('Kosovo: NO MODEL, not a failure; a forecast there would pass', () => {
+test('Kosovo: NO MODEL without a forecast; with one (live since 2026-11-08) it is an EU zone judged by its gate entry, D+2..D+6, D+7 not published', () => {
   assert.equal(analyzeZone('xk', body('xk', { fc: [] }), ctx).status, 'NO MODEL');
-  assert.equal(analyzeZone('xk', body('xk'), ctx).status, 'PASS');
+  const live = analyzeZone('xk', body('xk', { fc: [2, 3, 4, 5, 6] }), ctx);
+  assert.equal(live.status, 'PASS', live.reasons.join('; '));
+  assert.deepEqual(live.byDesign, [7]);
+  assert.equal(analyzeZone('xk', body('xk'), ctx).status, 'FAIL');         // h7 on the API would be a horizon the gate does not allow
 });
 
 test('Great Britain: horizons 1-7 from its own gate; a Nordic zone needs a gap-free run of at least 6 days', () => {
@@ -104,6 +107,54 @@ test('Great Britain: horizons 1-7 from its own gate; a Nordic zone needs a gap-f
   const short = nordic('no1');
   short.days = short.days.slice(0, 5);
   assert.equal(analyzeZone('no1', short, ctx).status, 'WARN');
+});
+
+// ── D+2 / D+5 / D+7, explicitly, per zone ──
+const cellsOf = r => Object.fromEntries(KEY_HORIZONS.map(n => [n, r.cells[n].status]));
+
+test('D+2, D+5, D+7: shown / blocked-by-gate / no-model / hidden-bug / due, and which of them are a gap (exit code 1)', () => {
+  const late = { ...ctx, hourUtc: 20 }, early = { ...ctx, hourUtc: 9 };
+  // every horizon on the API: shown, no gap
+  const de = analyzeZone('de', body('de'), late);
+  assert.deepEqual(cellsOf(de), { 2: 'shown', 5: 'shown', 7: 'shown' });
+  assert.equal(coverageGap(de), false);
+  assert.equal(de.cells[5].date, day(5));
+  // Albania: D+7 is the owner's `forcedOff` in the gate: documented, not a gap
+  const al = analyzeZone('al', body('al', { fc: [2, 3, 4, 5, 6] }), late);
+  assert.deepEqual(cellsOf(al), { 2: 'shown', 5: 'shown', 7: 'blocked-by-gate' });
+  assert.match(al.cells[7].reason, /forced off/);
+  assert.equal(coverageGap(al), false);
+  // a zone the gate blocks by the numbers (it-n without fuel: h2-4 only) is blocked-by-gate for D+5 and D+7, with the gate's reason
+  const b = body('it-n', { fc: [2, 3, 4] }); b.accuracy.fuel = false;
+  const itn = analyzeZone('it-n', b, late);
+  assert.deepEqual(cellsOf(itn), { 2: 'shown', 5: 'blocked-by-gate', 7: 'blocked-by-gate' });
+  assert.match(itn.cells[5].reason, /under 5 %/);
+  assert.equal(coverageGap(itn), false);
+  // Kosovo without a forecast: no model in production = a gap, not a documented gate reason
+  const xk = analyzeZone('xk', body('xk', { fc: [] }), late);
+  assert.deepEqual(cellsOf(xk), { 2: 'no-model', 5: 'no-model', 7: 'no-model' });
+  assert.equal(coverageGap(xk), true);
+  const xkLive = analyzeZone('xk', body('xk', { fc: [2, 3, 4, 5, 6] }), late);      // the zone as it is live now: D+7 is the gate's, not a gap
+  assert.deepEqual(cellsOf(xkLive), { 2: 'shown', 5: 'shown', 7: 'blocked-by-gate' });
+  assert.equal(coverageGap(xkLive), false);
+  // DE/AT as found on 2026-11-08: the Worker hides the run, so every cell is a hidden-bug (the zone is allowed all of them)
+  const hidden = analyzeZone('de', body('de', { fc: [] }), late);
+  assert.deepEqual(cellsOf(hidden), { 2: 'hidden-bug', 5: 'hidden-bug', 7: 'hidden-bug' });
+  assert.equal(coverageGap(hidden), true);
+  // a window that ends one day early (D+1..D+6): D+7 is "due" before 16:00 UTC (the 15:15 run has not come yet), a hidden-bug after it
+  const short = body('fr', { fc: [1, 2, 3, 4, 5, 6], first: 2 });
+  const frEarly = analyzeZone('fr', short, early);
+  assert.equal(frEarly.cells[7].status, 'due');
+  assert.equal(coverageGap(frEarly), false);
+  assert.equal(analyzeZone('fr', short, late).cells[7].status, 'hidden-bug');
+  // the Nordic zones are shown without a gate: marked ungated
+  const nordic = { zone: 'no5', generated: day(0), trainedThrough: day(-2), days: [-1, 0].map(n => ({ date: day(n), type: 'actual', prices: hours(false) }))
+    .concat([1, 2, 3, 4, 5, 6, 7].map(n => ({ date: day(n), type: 'forecast', prices: hours(false) }))) };
+  const no5 = analyzeZone('no5', nordic, late);
+  assert.deepEqual(cellsOf(no5), { 2: 'shown', 5: 'shown', 7: 'shown' });
+  assert.equal(no5.cells[2].ungated, true);
+  // no answer from the API at all
+  assert.equal(analyzeZone('se3', null, late).cells[7].status, 'hidden-bug');
 });
 
 // ── the real Worker: the case the check was written for (DE and AT, 2026-11-07/08) ──
