@@ -359,6 +359,7 @@ class Runner(unittest.TestCase):
         self.assertIn("compare:", lines[0])
         self.assertIn("2026-11-07 1 h differ", lines[0])
         self.assertIn("2026-11-08 identical", lines[0])
+        self.assertIn("slots differ (2 rows)", lines[0], "the 15-minute rows are compared too")
 
     def test_stored_days_keep_their_15_minute_rows(self):
         self.run_zone({S.ENTSOE: self.full})
@@ -371,6 +372,34 @@ class Runner(unittest.TestCase):
     def test_no_secret_reaches_a_log_line(self):
         calls, lines = self.run_zone({S.ENTSOE: RuntimeError("ENTSO-E HTTP 401")}, now=at("2026-11-08T10:00:00"))
         self.assertFalse(any("securityToken" in l for l in lines))
+
+
+class Measure(unittest.TestCase):
+    def test_windows_and_the_production_job_blackout(self):
+        import measure_first_seen as M
+        self.assertTrue(M.in_window(at("2026-11-09T12:00:00")))
+        self.assertFalse(M.in_window(at("2026-11-09T09:00:00")))
+        self.assertTrue(M.in_window(at("2026-11-09T09:00:00"), start_extra=at("2026-11-09T08:30:00")))
+        self.assertTrue(M.ec_blocked(at("2026-11-09T14:05:00")))
+        self.assertTrue(M.ec_blocked(at("2026-11-09T13:58:00")))
+        self.assertFalse(M.ec_blocked(at("2026-11-09T14:12:00")))
+        self.assertFalse(M.ec_blocked(at("2026-11-09T12:00:00")))
+
+    def test_report_prints_the_first_time_each_source_had_the_day(self):
+        import io
+        import json
+        import measure_first_seen as M
+        import tempfile
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "x.jsonl")
+            with open(p, "w", encoding="utf-8") as f:
+                f.write(json.dumps({"seen_utc": "2026-11-09T12:05:01Z", "zone": "de", "date": "2026-11-10", "source": "entsoe"}) + "\n")
+                f.write(json.dumps({"seen_utc": "2026-11-09T13:35:00Z", "zone": "de", "date": "2026-11-10", "source": "energy-charts", "first_round": True}) + "\n")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                M.report(p)
+        self.assertEqual(buf.getvalue().split(), ["de", "2026-11-10", "entsoe=12:05Z", "energy-charts=<=13:35Z", "omie=-"])
 
 
 class Wiring(unittest.TestCase):

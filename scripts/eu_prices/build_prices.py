@@ -119,8 +119,7 @@ def run_zone(zone, now, fetcher, kv=None, dry=False, crosscheck=False, gate=True
     dates = P.local_dates(now, tzname)
     horizon = S.horizon_end(now)
     key, skey = f"eu-prices-{zone}", f"eu-slots-{zone}"
-    reading = kv is not None
-    stored = kv_read(kv, key) if reading else None
+    stored = kv_read(kv, key) if kv is not None else None
     notes, results, done = [], [], set()
     for src in chain:
         missing = [d for d in dates if d not in done]
@@ -186,7 +185,11 @@ def _store(zone, key, skey, payload, slot_payload, kv, dry, compare, stored):
     n = len(P.canonical(payload))
     ns = f"{len(slot_payload['slots'])} slots" if slot_payload else "no slots"
     if compare:
-        return f"compare: {_vs_stored(stored, payload)}; {skey} {ns}"
+        old = kv_read(kv, skey) if kv is not None else None
+        rows = (old or {}).get("slots")
+        same = "no stored slots" if rows is None else "slots identical" if slot_payload and rows == slot_payload["slots"] else \
+            f"slots differ ({len(set(map(tuple, rows)) ^ set(map(tuple, (slot_payload or {}).get('slots', []))))} rows)"
+        return f"compare: {_vs_stored(stored, payload)}; {skey} {ns}, {same}"
     if dry:
         return f"would write {key} ({n} bytes), {skey} {ns}"
     account, token = kv

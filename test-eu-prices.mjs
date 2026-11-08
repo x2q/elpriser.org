@@ -104,7 +104,7 @@ test('each price source is read in ONE place: Energy-Charts from build_eu_prices
   assert.deepEqual(ecReaders, ['scripts/eu_prices/build_eu_prices.py'], 'the Energy-Charts API is read somewhere else than the one job');
   assert.deepEqual(enReaders, ['scripts/eu_prices/build_entsoe_prices.py'], 'the ENTSO-E API is read somewhere else than the one job');
   // the source-priority job hands the token to build_entsoe_prices.fetch_a44 (the one reader) and masks it in every log line
-  assert.deepEqual(enMentions, ['scripts/eu_prices/build_entsoe_prices.py', 'scripts/eu_prices/build_prices.py'], 'the ENTSO-E token is handled somewhere else than the two jobs');
+  assert.deepEqual(enMentions, ['scripts/eu_prices/build_entsoe_prices.py', 'scripts/eu_prices/build_prices.py', 'scripts/eu_prices/measure_first_seen.py'], 'the ENTSO-E token is handled somewhere else than the two jobs and the first-seen poller (which passes it to build_prices.Fetcher and logs only exception types and messages)');
   assert.ok(/B\.log\([^\n]*\(token, cf_token\)\)/.test(readJob('build_prices.py')) && /BE\.fetch_a44\(self\.token/.test(readJob('build_prices.py')), 'build_prices.py logs without masking the tokens, or reads ENTSO-E itself');
   assert.deepEqual(exReaders, ['scripts/eu_prices/build_elexon_prices.py'], 'Elexon BMRS is read somewhere else than the one job');
   assert.deepEqual(sxReaders, ['scripts/eu_prices/build_semopx_prices.py'], 'SEMOpx is read somewhere else than the one job');
