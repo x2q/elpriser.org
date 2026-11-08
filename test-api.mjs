@@ -445,9 +445,19 @@ async function withClock(offsetMs, fn) {
   try { return await fn(); } finally { Date.now = real; }
 }
 
-test('an unchanged price backup is not rewritten every ten minutes — guards the KV write limit', async () => {
+// Milliseconds to the next Copenhagen midnight: the data windows roll over there, so "unchanged 30 minutes later"
+// is only a fair question when the 30 minutes do not cross it (the test failed every night between 23:30 and 00:00).
+function msToCopenhagenMidnight() {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Copenhagen', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false })
+    .formatToParts(new Date()).map(x => [x.type, +x.value]));
+  return ((24 - (p.hour % 24)) * 3600 - p.minute * 60 - p.second) * 1000;
+}
+
+test('an unchanged price backup is not rewritten every ten minutes — guards the KV write limit', async (t) => {
   // Backups were rewritten once per 10 minutes per key, although a day's published
   // prices do not change. Same body: leave it; renew the 7-day expiry once a day.
+  const later = Math.min(30 * 60_000, msToCopenhagenMidnight() - 60_000);
+  if (later < 11 * 60_000) return t.skip('too close to Copenhagen midnight for an honest "unchanged later" check');
   const kv = makeKv({});
   const urls = [`/api/raw/prices?area=DK1&${range}`, '/api/prices?area=DK1&mode=inkl_alt'];
   const hit = async () => { const api = await createApi({ kv }); for (const u of urls) await api.get(u); };
@@ -456,8 +466,8 @@ test('an unchanged price backup is not rewritten every ten minutes — guards th
   assert.ok(first.includes('raw-prices-backup-DK1'), 'the rolling backup is written the first time');
   assert.ok(first.some(k => k.startsWith('prices-DK1-')), 'the per-window backup is written the first time');
 
-  await withClock(30 * 60_000, hit);
-  assert.deepEqual(kv.ops.put, first, `unchanged data rewritten 30 minutes later: ${kv.ops.put.slice(first.length)}`);
+  await withClock(later, hit);
+  assert.deepEqual(kv.ops.put, first, `unchanged data rewritten ${Math.round(later / 60_000)} minutes later: ${kv.ops.put.slice(first.length)}`);
 
   await withClock(25 * 3600_000, hit);
   assert.ok(kv.ops.put.length > first.length, 'the expiry is never renewed, so the backups would vanish after 7 days');
