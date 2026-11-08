@@ -211,3 +211,8 @@ The live files in `~/nordic` are the ones installed on 2026-11-08 (md5 equal to 
 * Not re-tested: the HF model upload that the old job did (v2 does not publish to the Hub).
 * The Nordic pages do not print the `accuracy` block yet (page change, Worker untouched); the fuel inputs' licence question of `forecast-nordic-no.md` applies to eleven zones now instead of five.
 * The RTX machine was not needed: all runs fit the Spark in minutes.
+
+
+## Owner's regret veto, applied 2026-11-08
+
+The declared rule chose `ens365` for DK1, `ens_nr` for SE1 and SE2, `ens` for SE3 and `ens_b25` for SE4 and NL. The owner judges forecasts by regret of the 3 cheapest hours, which on the hold-out is worse than the pooled model in DK1 (-7.4), NL (-6.6), SE2 (-4.1) and SE3 (-1.7). Those four were put back on the pooled model with `revert_zone_recipe.py dk1 nl se2 se3` (the three files in `scripts/forecast_model/nordic/` carry the result; `research_no/decision_ens.json` keeps the rule's own choice). Only **SE1 (`ens_nr`) and SE4 (`ens_b25`)** run the ensemble. The pinned table in `test_nordic_recipe.py` states the veto. A quarterly rebuild from `decision_ens.json` would bring the four zones back: apply the veto again or revisit it with live accuracy.

@@ -85,29 +85,32 @@ class GateFiles(unittest.TestCase):
         gate, acc = copy.deepcopy({"zones": self.gate}), copy.deepcopy(self.acc)
         with open(os.path.join(HERE, "calibration_nordic_v2.json"), encoding="utf-8") as f:
             cal = json.load(f)
-        before = copy.deepcopy(acc["zones"]["dk1"]["fallback"]["cells"])
-        REV.revert(gate, acc, cal, ["dk1", "nl"])
-        for z in ("dk1", "nl"):
+        before = copy.deepcopy(acc["zones"]["se4"]["fallback"]["cells"])
+        REV.revert(gate, acc, cal, ["se4", "se1"])
+        for z in ("se4", "se1"):
             self.assertEqual(gate["zones"][z], {"recipe": "pooled", "horizons": list(range(2, 9))})
             self.assertEqual(acc["zones"][z]["recipe"], "pooled")
             self.assertNotIn("fallback", acc["zones"][z])
             self.assertEqual(sorted(map(int, acc["zones"][z]["cells"])), list(range(2, 9)))
             self.assertNotIn(z, cal["residualFallback"])
-        self.assertEqual(acc["zones"]["dk1"]["cells"], before)
-        self.assertEqual(PUB.recipe_of(gate["zones"], "dk1"), "pooled")
-        self.assertEqual(gate["zones"]["se3"]["recipe"], self.gate["se3"]["recipe"])          # other zones untouched
+        self.assertEqual(acc["zones"]["se4"]["cells"], before)
+        self.assertEqual(PUB.recipe_of(gate["zones"], "se4"), "pooled")
+        self.assertEqual(gate["zones"]["dk2"]["recipe"], self.gate["dk2"]["recipe"])          # other zones untouched
         with self.assertRaises(ValueError):
             REV.revert(gate, acc, cal, ["no1"])                                                # the pooled model fails the gate in Norway: no fallback
         with self.assertRaises(ValueError):
-            REV.revert(gate, acc, cal, ["dk1"])                                                # already pooled
+            REV.revert(gate, acc, cal, ["se4"])                                                # already pooled
 
     def test_the_recipe_table_is_the_decision_of_the_declared_rule(self):
         # research_no/decision_ens.json is what decide_recipe.py wrote (candidates and rule declared before scoring); the gate file must carry exactly its choice,
         # `ens` for the Norwegian zones (docs/forecast-nordic-no.md), and nothing hand-edited.
         with open(os.path.join(HERE, "research_no", "decision_ens.json"), encoding="utf-8") as f:
             dec = json.load(f)["zones"]
+        # The owner's regret veto (2026-11-08): the declared rule picks by MAE on the select period, but the owner judges by regret of the 3 cheapest hours, and on the hold-out
+        # that is worse than pooled in DK1 (-7.4), NL (-6.6), SE2 (-4.1) and SE3 (-1.7): those four stay pooled (revert_zone_recipe.py). Only SE1 and SE4 follow the rule.
+        VETO = {"dk1", "nl", "se2", "se3"}
         for z in RN.ZONES:
-            want = "ens" if z.startswith("no") else dec[z]["recipe"]
+            want = "ens" if z.startswith("no") else ("pooled" if z in VETO else dec[z]["recipe"])
             self.assertEqual(self.gate[z]["recipe"], want, z)
         self.assertEqual({z: v["recipe"] for z, v in dec.items()},
                          {"dk1": "ens365", "dk2": "pooled", "se1": "ens_nr", "se2": "ens_nr", "se3": "ens", "se4": "ens_b25", "nl": "ens_b25", "fi": "pooled"})
