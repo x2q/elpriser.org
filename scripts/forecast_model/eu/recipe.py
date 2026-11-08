@@ -37,9 +37,9 @@ EXTRA_LAGS = ["d_lag_last", "d_prev", "d_lag7", "d_lag14"]
 # contribution zero) - for at most MAX_IMPUTED of these six per row, and never for weather, calendar, level or fuel features.
 IMPUTABLE = ("shape_persist", "lag7_dev", "d_lag_last", "d_prev", "d_lag7", "d_lag14")
 MAX_IMPUTED = 3
-RECIPES = {"ens": "mean of a 365-day rolling ridge and LightGBM, with gas and carbon inputs, plus a level correction (half of the last 14 settled days' error)",
-           "ens-nofuel": "mean of a 365-day rolling ridge and LightGBM, without fuel inputs, plus a level correction (half of the last 14 settled days' error)",
-           "lgb": "LightGBM, plus a level correction (half of the last 14 settled days' error)"}
+RECIPES = {"ens": "mean of a 365-day rolling ridge and LightGBM, with gas and carbon inputs",
+           "ens-nofuel": "mean of a 365-day rolling ridge and LightGBM, without fuel inputs",
+           "lgb": "LightGBM"}
 MODEL_NAME = "eu-ens-v2"
 
 

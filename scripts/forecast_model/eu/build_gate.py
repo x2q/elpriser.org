@@ -57,11 +57,14 @@ NAIVE = RS.NAIVE
 LEVEL_LAMBDA = LC.PUBLISH_LAMBDA        # the published level correction (level_correction.py); the backtest numbers are those of the CORRECTED recipe
 
 
-def recipe_columns(df, lam=None):
+def recipe_columns(df, lam=None, zones="default"):
     """prod (fuel) and nofuel forecast columns of the research frame, with the published level correction (lam, default level_correction.PUBLISH_LAMBDA) applied the way the
     daily job applies it: shift by lam x the mean day-level error of the same zone and horizon over the last LC.K_DAYS days settled at issue (LC.apply_to_backtest, rolling
-    through the backtest). The uncorrected numbers stay in `fuel_raw` / `nofuel_raw`, the shifts in `corr_fuel` / `corr_nofuel` (the band uses them: calibrate_bands.py)."""
+    through the backtest) in the zones of `zones` (default level_correction.PUBLISH_ZONES, None = every zone) and only there, as the job does. The uncorrected numbers stay in
+    `fuel_raw` / `nofuel_raw`, the shifts in `corr_fuel` / `corr_nofuel` (the band moves with them)."""
     lam = LEVEL_LAMBDA if lam is None else lam
+    zones = LC.PUBLISH_ZONES if isinstance(zones, str) else zones
+    on = df["zone"].astype(str).map(lambda z: LC.publishes(z, zones)).to_numpy()
     bal = df["zone"].isin(RC.BALTICS)
     raw = {"fuel": np.where(bal, df["lgb_base"], 0.5 * (df["lear_r365_g"] + df["lgb_fuel"])),
            "nofuel": np.where(bal, df["lgb_base"], 0.5 * (df["lear_r365"] + df["lgb_base"]))}
@@ -69,7 +72,7 @@ def recipe_columns(df, lam=None):
         df[f"{mode}_raw"] = v
         df[f"corr_{mode}"] = 0.0
         if lam > 0:
-            df[f"corr_{mode}"] = LC.apply_to_backtest(df[["zone", "h", "date", "y"]].assign(p=v), lam, LC.K_DAYS, LC.MIN_DAYS, col="p")
+            df[f"corr_{mode}"] = np.where(on, LC.apply_to_backtest(df[["zone", "h", "date", "y"]].assign(p=v), lam, LC.K_DAYS, LC.MIN_DAYS, col="p"), 0.0)
         df[mode] = v + df[f"corr_{mode}"]
     return df
 
@@ -143,9 +146,9 @@ def attach_correction(quant, df):
     return q
 
 
-def build(df, quant=None, lam=None):
+def build(df, quant=None, lam=None, zones="default"):
     """(gate dict, accuracy dict, report lines) from the research frame (columns: zone t date h y b_lvlshape + the model columns)."""
-    df = recipe_columns(df[df["zone"].isin(list(ZONES)) & df["h"].between(RC.H_MIN, RC.H_MAX)].copy(), lam)
+    df = recipe_columns(df[df["zone"].isin(list(ZONES)) & df["h"].between(RC.H_MIN, RC.H_MAX)].copy(), lam, zones)
     quant = attach_correction(quant, df)
     s = RS.score(df, cols=NAIVE + ["fuel", "nofuel"])
     corr = lam if lam is not None else LEVEL_LAMBDA
@@ -172,7 +175,9 @@ def build(df, quant=None, lam=None):
     meta = {"version": G.VERSION, "built": date.today().isoformat(), "period": period, "model": RC.MODEL_NAME}
     gate = {**meta,
             "rule": "a zone-horizon is published only if the recipe's MAE is at least 5 % below the naive level+shape method on the hold-out (2026-07-01..) and on the whole backtest",
-            "forcedOff": FORCED_OFF, "ownerWeak": OWNER_WEAK, "zones": zones_gate}
+            "forcedOff": FORCED_OFF, "ownerWeak": OWNER_WEAK,
+            "levelCorrection": {"lambda": corr, "days": LC.K_DAYS, "zones": [] if corr <= 0 else list(LC.PUBLISH_ZONES if isinstance(zones, str) else (zones or ZONES))},
+            "zones": zones_gate}
     acc = {**meta, "baseline": "level+shape", "recent": RECENT.strftime("%Y-%m-%d"),
            "recipes": RC.RECIPES, "zones": zones_acc}
     return gate, acc, notes

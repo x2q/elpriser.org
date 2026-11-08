@@ -1,6 +1,6 @@
 {
  "version": 2,
- "built": "2026-11-08",
+ "built": "2026-11-02",
  "period": "2025-04-01..2026-11-02",
  "model": "eu-ens-v2",
  "rule": "a zone-horizon is published only if the recipe's MAE is at least 5 % below the naive level+shape method on the hold-out (2026-07-01..) and on the whole backtest",
@@ -19,7 +19,7 @@
   "de": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
   "fr": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
   "pl": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
-  "it-n": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
+  "it-n": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4]},
   "at": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
   "be": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
   "ch": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
@@ -42,5 +42,10 @@
   "mk": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
   "al": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6], "nofuel": [2, 3, 4, 5, 6]},
   "xk": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]}
+ },
+ "levelCorrection": {
+  "lambda": 0.5,
+  "days": 14,
+  "zones": ["me", "mk", "rs", "xk", "al", "gr"]
  }
 }

@@ -152,7 +152,7 @@ class Cards(unittest.TestCase):
             EE.strip_gate(EU, d)
             t = CT.eu_zone_table(d)
             self.assertEqual(len(t.strip().split("\n")), 2 + 26)
-            self.assertIn("| IT-N | ridge + LightGBM | D+2..D+7 |", t)      # no-fuel horizons of the gate; D+2..D+4 before the level correction (docs/forecast-balkan-level.md)
+            self.assertIn("| IT-N | ridge + LightGBM | D+2..D+4 |", t)
             self.assertIn("| EE | LightGBM |", t)
         finally:
             shutil.rmtree(d)

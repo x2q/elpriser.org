@@ -1,12 +1,13 @@
 """Cell-by-cell comparison of the accuracy / gate files: production (prod_files/), control (gate_ctrl/: production recipe rebuilt on today's 26-zone frame) and candidate (gate_cand/).
-python3 research_balkan/bl_cells.py [out.csv]   -> prints the summary, writes one row per zone, mode and horizon."""
+python3 research_balkan/bl_cells.py out.csv [prod_dir ctrl_dir cand_dir]   -> prints the summary, writes one row per zone, mode and horizon."""
 import json, sys
 import numpy as np, pandas as pd
 
 def load(d):
     return json.load(open(f"{d}/publish_gate.json")), json.load(open(f"{d}/accuracy_eu.json"))
 
-sets = {"prod": load("prod_files"), "ctrl": load("gate_ctrl"), "cand": load("gate_cand")}
+dirs = sys.argv[2:5] if len(sys.argv) > 4 else ["prod_files", "gate_ctrl", "gate_cand"]
+sets = {"prod": load(dirs[0]), "ctrl": load(dirs[1]), "cand": load(dirs[2])}
 rows = []
 for zone in sets["prod"][0]["zones"]:
     for mode in ("fuel", "nofuel"):

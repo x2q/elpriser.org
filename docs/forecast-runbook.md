@@ -22,7 +22,7 @@ KV keys written, nothing else (the job never touches `eu-prices-*`, `nordic-fore
 * `eu-forecast-<zone>`, TTL 3 days: forecast days only (`type: "forecast"`, `horizon`, `min_eur_mwh`/`max_eur_mwh` = P10/P90), `model` `eu-ens-v2`,
   `trainedThrough`, and the `accuracy` block of exactly the horizons published. `/api/nordic` puts them after the settled days (and ignores a run older
   than 3 days, so a job that stops makes the forecast vanish by itself).
-* `eu-forecast-archive-<zone>-<date>`, TTL 200 days: the run as published plus the model's uncorrected numbers and the level-correction shadow, for `monitor.py`.
+* `eu-forecast-archive-<zone>-<date>`, TTL 200 days: the run as published plus the model's uncorrected numbers and the level-correction shadow (the correction applied to every zone), for `monitor.py`; in me mk rs xk al gr the published numbers ARE the corrected ones (half of the mean error of the last 14 settled days of the same horizon, ramping in over about two weeks after a rollout because the archive is its only source).
 
 ## Files
 
@@ -49,7 +49,7 @@ Needs `lightgbm`, `scikit-learn`, `pandas`, `pyarrow`, `openpyxl` (EEX sheets) i
 ## Environment
 
 All from `~/.config/elpriser.env` (sourced by `run_daily.sh`; never echoed): `ENTSOE_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (KV write).
-Optional: `EU_FORECAST_JOBS` (LightGBM threads, default 8), `EU_FORECAST_LAMBDA` (unset = the level correction stays a shadow; `0.5` publishes it),
+Optional: `EU_FORECAST_JOBS` (LightGBM threads, default 8), `EU_FORECAST_LAMBDA` (unset = `level_correction.PUBLISH_LAMBDA`, 0.5, the published level correction of me mk rs xk al gr, see [forecast-balkan-level.md](forecast-balkan-level.md); `0` = the model's own numbers everywhere),
 `EU_FORECAST_NO_FUEL=1` (never fetch or use the gas and carbon inputs).
 `GIE_API_KEY` is **not needed** (storage fill was not measured and is not used).
 
@@ -89,7 +89,7 @@ Optional: `EU_FORECAST_JOBS` (LightGBM threads, default 8), `EU_FORECAST_LAMBDA`
 * `FUEL off:` in the log for three days running (a source is blocked or changed its format; the forecast gets less accurate but stays honest).
 * `WARNING: the newest training row is N days old`: a price source froze.
 * Live accuracy: `python3 monitor.py --days 21` (needs the Cloudflare pair): per zone and horizon the live MAE against the backtest's, the live band coverage
-  (`cover`), and exit 4 with `ALERT` when a cell with 10+ settled days is 1.5 times worse than its backtest. Compare `--field published` with `--field shadow`.
+  (`cover`), and exit 4 with `ALERT` when a cell with 10+ settled days is 1.5 times worse than its backtest. Compare `--field published` with `--field uncorrected` (the model's own numbers; `--field shadow` is the correction applied to every zone).
 * On the site: a zone page without forecast days while `eu-forecast-<zone>` is missing means the key expired (job stopped) or the run was older than 3 days.
 
 ## Refreshing
@@ -119,7 +119,7 @@ before tomorrow's prices were in; the 15:15 run brings D+7), `HIDDEN` (hidden-bu
 * **FAIL, "no forecast shown"**: `eu-forecast-<zone>` is missing or older than 3 days, or its first day is not the day after the zone's last settled day. The Worker shows forecast days only without a hole
   after the settled prices (the apps stop at the first missing day), so a run that starts one day late is hidden whole. Look at the zone's last known day in `daily.log` ("h 2,3,..": h counts from it).
 * **FAIL, "allows up to h7 but the API shows h2-6"**: the same one-day shift, seen from the other end (the window ends at today + 7).
-* **NO MODEL**: Kosovo (`xk`) when the API shows no forecast for it. Kosovo went live in the 15:15 UTC run of 2026-11-08 (D+2..D+6, [forecast-xk.md](forecast-xk.md)); with a forecast on the API it is judged like every EU zone by its `publish_gate.json` entry (D+7 not published: `blocked-by-gate`). Without one it is a coverage gap in the exit code.
+* **NO MODEL**: Kosovo (`xk`) when the API shows no forecast for it. Kosovo went live in the 15:15 UTC run of 2026-11-08 (D+2..D+6 at the time, [forecast-xk.md](forecast-xk.md); D+2..D+7 once the level-corrected gate of [forecast-balkan-level.md](forecast-balkan-level.md) is rolled out); with a forecast on the API it is judged like every EU zone by its `publish_gate.json` entry (D+7 `blocked-by-gate` until the level-corrected gate is installed, shown after). Without one it is a coverage gap in the exit code.
 * **WARN**: the run is two days old (a night was missed), or the training data stops more than three days ago (a price source froze).
 
 **The weekend shift (found 2026-11-08, fixed in `forecast.py`).** The job trains on ENTSO-E prices, the site's DE and AT prices come from Energy-Charts. On Fridays and Saturdays ENTSO-E already

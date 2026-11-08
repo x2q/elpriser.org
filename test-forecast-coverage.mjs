@@ -18,10 +18,6 @@ const gate = readJson('scripts/forecast_model/eu/publish_gate.json');
 const gbGate = readJson('scripts/forecast_model/gb/gb_gate.json');
 const TODAY = '2026-11-08';
 const ctx = { today: TODAY, lists, gate, gbGate };
-// With the level correction (docs/forecast-balkan-level.md) every zone-horizon that exists passes the numbers except Albania's owner-forced D+7, so a cell blocked BY THE NUMBERS
-// (the case these tests pin: it-n without fuel, h2-4 only) is built on a copy of the gate; the real gate is read for everything else.
-const numbersGate = { ...gate, zones: { ...gate.zones, 'it-n': { ...gate.zones['it-n'], nofuel: [2, 3, 4] } } };
-const ctxNumbers = { ...ctx, gate: numbersGate };
 const day = n => new Date(Date.parse(`${TODAY}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const hours = (band = true) => Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: 80 + h, ...(band ? { min_eur_mwh: 60 + h, max_eur_mwh: 100 + h } : {}) }));
 const byHorizon = hs => Object.fromEntries(hs.map(h => [h, { mae: 20, baseMae: 30, gain: 0.3 }]));
@@ -86,7 +82,7 @@ test('a run two days old, a late start (h3) and a stale training set WARN; a fro
 test('the gate decides: it-n without fuel has only h2-4, so h5-7 are by design and h2-4 pass', () => {
   const b = body('it-n', { fc: [2, 3, 4] });
   b.accuracy.fuel = false;
-  const r = analyzeZone('it-n', b, ctxNumbers);
+  const r = analyzeZone('it-n', b, ctx);
   assert.equal(r.status, 'PASS', r.reasons.join('; '));
   assert.deepEqual(r.byDesign, [5, 6, 7]);
 });
@@ -133,7 +129,7 @@ test('D+2, D+5, D+7: shown / blocked-by-gate / no-model / hidden-bug / due, and 
   assert.equal(coverageGap(al), false);
   // a zone the gate blocks by the numbers (it-n without fuel: h2-4 only) is blocked-by-gate for D+5 and D+7, with the gate's reason
   const b = body('it-n', { fc: [2, 3, 4] }); b.accuracy.fuel = false;
-  const itn = analyzeZone('it-n', b, { ...late, gate: numbersGate });
+  const itn = analyzeZone('it-n', b, late);
   assert.deepEqual(cellsOf(itn), { 2: 'shown', 5: 'blocked-by-gate', 7: 'blocked-by-gate' });
   assert.match(itn.cells[5].reason, /under 5 %/);
   assert.equal(coverageGap(itn), false);

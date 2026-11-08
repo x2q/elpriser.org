@@ -9,11 +9,11 @@ forecast) of the same zone and horizon over the target days t' in [t-h+1-K+1, t-
 t is issued - and add LAMBDA x that mean to every hour of t. K = 14 days, LAMBDA = 0.5, at least MIN_DAYS days of evidence;
 otherwise no correction (0.0). Measured on the backtest: -8 % MAE and half the bias in the Sept-Nov regime, -2 % before it.
 
-STATUS (2026-11-08, docs/forecast-balkan-level.md): the correction is PUBLISHED by default (PUBLISH_LAMBDA = 0.5, rollback: set it to 0.0 or export EU_FORECAST_LAMBDA=0).
-The gate and accuracy files are built for the CORRECTED recipe (build_gate.recipe_columns applies this same rule to the backtest), so what the page says it is worth is what it publishes.
-Why it was adopted: since 2026-09-01 the model's level was no better than 'the mean of the last 7 days' in the Balkan zones (the gas-driven price run, docs/forecast-balkan-level.md section 1); the
-rule below, with these constants that were fixed before that work, is the only candidate that moves the level without a new data source. It costs about half a point of gain in
-calm or reverting periods (select period 2025-04..2026-06) and returns 3.5 points in the trending months; the whole backtest is neutral.
+STATUS (staged 2026-11-08 on the branch balkan-level, docs/forecast-balkan-level.md): the correction is PUBLISHED by default in the six zones PUBLISH_ZONES (me mk rs xk al gr) with
+PUBLISH_LAMBDA = 0.5; every other zone keeps the model's own numbers (the correction stays a shadow there). Rollback: PUBLISH_LAMBDA = 0.0 here, or EU_FORECAST_LAMBDA=0 in the environment.
+The gate and accuracy files are built for the CORRECTED recipe in those zones (build_gate.recipe_columns applies this same rule to the backtest), so what the page says it is worth is what it publishes.
+Why: since 2026-09-01 the model's level was no better than 'the mean of the last 7 days' in these zones (docs/forecast-balkan-level.md section 1); this rule, whose constants were fixed before that
+work, is the only candidate that moves the level without a new data source. Applied everywhere it costs the Baltics and DE / PL / FR / CZ / SK 1-4 points on the hold-out, so it is regional.
 
 HISTORY: it was a SHADOW until then. The numbers above come from the backtest, whose model is retrained every two months and so lags a level shift
 more than the live model, which is retrained daily with level_7d as an anchor. Bootstrapping a live correction from backtest
@@ -31,8 +31,16 @@ import pandas as pd
 
 LAMBDA = 0.5
 PUBLISH_LAMBDA = 0.5      # what the daily job PUBLISHES (EU_FORECAST_LAMBDA overrides it; 0 = the model's own numbers, the correction only as a shadow)
+PUBLISH_ZONES = ("me", "mk", "rs", "xk", "al", "gr")      # ... in THESE zones only (a regional recipe, docs/forecast-balkan-level.md section 4); None = every zone
+
+
 K_DAYS = 14
 MIN_DAYS = 3
+
+
+def publishes(zone, zones=PUBLISH_ZONES):
+    """Is the published forecast of `zone` level-corrected? (The shadow in the archive is computed for every zone.)"""
+    return zones is None or zone in zones
 
 
 def day_errors_from_backtest(res, col="p_raw"):

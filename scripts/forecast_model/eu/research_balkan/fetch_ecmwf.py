@@ -23,6 +23,9 @@ t0 = time.time(); done = 0
 order = list(range(w, len(inits), nw))
 if os.environ.get('REVERSE'):
     order = order[::-1]
+if os.environ.get('SHUFFLE'):                  # extra workers late in the backfill: random order, files already there are skipped
+    import random
+    order = list(range(len(inits))); random.Random(w).shuffle(order)
 for k in order:
     it = inits[k]
     name = f"ecmwf/{str(it)[:10]}.npz"
