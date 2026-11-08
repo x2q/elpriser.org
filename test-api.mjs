@@ -617,6 +617,21 @@ test('/api/nordic: a day that is not published yet is simply absent — tomorrow
   assert.ok(!r.body.days.some(d => d.date === day(1)), 'a day that is not in KV must not appear');
 });
 
+test('/api/nordic: the source of each settled day (days[].source, written by the source-priority job) reaches the answer untouched, in /api/slots too', async () => {
+  // yesterday and today from ENTSO-E, tomorrow from Energy-Charts (ENTSO-E had not published it): the answer says so, day by day
+  const f = feed('de', [day(-1), day(0), day(1)]);
+  f.days[0].source = 'entsoe'; f.days[1].source = 'entsoe'; f.days[2].source = 'energy-charts';
+  const api = await createApi({ kv: makeKv({ 'eu-prices-de': f }), ecb: ECB });
+  const r = await api.get('/api/nordic?zone=de');
+  assert.deepEqual(r.body.days.map(d => d.source), ['entsoe', 'entsoe', 'energy-charts']);
+  assert.deepEqual(r.body.days.map(d => d.date), [day(-1), day(0), day(1)]);
+  assert.equal(r.body.days[2].prices.length, 24);
+  // a zone whose KV was written before the layer (no `source`) is served exactly as before
+  const old = await (await createApi({ kv: makeKv({ 'eu-prices-de': feed('de', [day(0)]) }), ecb: ECB })).get('/api/nordic?zone=de');
+  assert.ok(old.body.days.every(d => !('source' in d)));
+  assert.equal((await api.get('/api/slots?zone=de')).status, 200);
+});
+
 test('/api/nordic: a zone without data answers 404 exactly like a Nordic zone without data, and nothing is invented', async () => {
   for (const z of ['it-n', 'se2']) {
     const api = await createApi({ kv: makeKv({}), ecb: ECB });

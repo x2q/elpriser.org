@@ -1710,6 +1710,14 @@ async function startServer() {
     semopx: { text: 'SEMOpx', list: /SEMOpx\.$/, links: [['SEMOpx', 'https://www.semopx.com/market-data/market-results']], not: /Energi Data Service|ENTSO|SMARD|CC BY|BMRS/ },
     elexon: { text: BMRS, list: new RegExp(BMRS + '\\.$'), links: [[BMRS, 'https://www.elexon.co.uk/bsc/data/balancing-mechanism-reporting-agent/copyright-licence-bmrs-data/']], not: /Energi Data Service|ENTSO|SMARD|CC BY|SEMOpx/ },
   };
+  // A zone with several sources (ZONES.src 'entsoe+ec', the order the job reads them in, scripts/eu_prices/price_sources.py) credits every one of them, in that order.
+  CR.omie = { text: 'OMIE', list: /OMIE\.$/, links: [['OMIE', 'https://www.omie.es']], not: /Energi Data Service|ENTSO|SMARD|CC BY|SEMOpx|BMRS/ };
+  const MARK = { ec: /SMARD|CC BY/, entsoe: /ENTSO/, omie: /OMIE/, semopx: /SEMOpx/, elexon: /BMRS/ };
+  for (const combo of ['entsoe+ec', 'ec+entsoe', 'entsoe+omie']) {
+    const parts = combo.split('+'), last = CR[parts[parts.length - 1]];
+    CR[combo] = { text: parts.map(k => CR[k].text).join(', '), list: last.list, links: parts.flatMap(k => CR[k].links),
+      not: new RegExp('Energi Data Service|' + Object.keys(MARK).filter(k => !parts.includes(k)).map(k => MARK[k].source).join('|')) };
+  }
   const CHROME_WORDS = {
     nb: { place: 'Hvor er du?', land: 'Land', privacy: 'Personvern (på engelsk)' },
     sv: { place: 'Var är du?', land: 'Länder', privacy: 'Integritet (på engelska)' },
@@ -2038,7 +2046,7 @@ async function startServer() {
       assert.equal(await page.locator('[data-pris-view]').count(), 0);
       assert.equal(await page.locator('#netDialog [data-zone]').count(), 0, 'one zone: no zone choice');
       const t = await page.evaluate(() => document.querySelector('main[data-page="zone"]').innerText);
-      assert.ok(!FORECAST_WORDS.test(t) && !/NaN|undefined|\børe\b|\bsnt\b|døgn|dygn|vrk|Børspris/.test(t) && (w.src === 'entsoe' || !/ENTSO/.test(t)), t.slice(0, 400));
+      assert.ok(!FORECAST_WORDS.test(t) && !/NaN|undefined|\børe\b|\bsnt\b|døgn|dygn|vrk|Børspris/.test(t) && (String(w.src).split('+').includes('entsoe') || !/ENTSO/.test(t)), t.slice(0, 400));
       if (w.src === 'elexon') assert.ok(/not the day-ahead auction price/.test(t) && /there is no tomorrow/.test(t), 'Great Britain says what the price is: ' + t.slice(0, 300));
       if (w.lang === 'en') assert.ok(!/\d,\d/.test(t) && /\d\.\d/.test(t), 'English writes decimals with a point');
       // The licence: attribution to Bundesnetzagentur | SMARD.de (via Energy-Charts.info), the CC BY 4.0 link, and that the data were changed — in the text block and in the footer.

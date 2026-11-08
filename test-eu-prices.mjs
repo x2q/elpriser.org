@@ -19,7 +19,7 @@ import { spawnSync } from 'node:child_process';
 const ROOT = import.meta.dirname;
 const DIR = path.join(ROOT, 'scripts/eu_prices');
 
-for (const f of ['test_energy_charts_parse.py', 'test_entsoe_parse.py', 'test_elexon_parse.py', 'test_semopx_parse.py']) test(`python unit tests: ${f} passes`, () => {
+for (const f of ['test_energy_charts_parse.py', 'test_entsoe_parse.py', 'test_elexon_parse.py', 'test_semopx_parse.py', 'test_price_sources.py']) test(`python unit tests: ${f} passes`, () => {
   const r = spawnSync('python3', [path.join(DIR, f)], { encoding: 'utf8' });
   assert.equal(r.error, undefined, 'python3 is not available: ' + (r.error && r.error.message));
   assert.equal(r.status, 0, f + ' failed:\n' + r.stdout + r.stderr);
@@ -103,7 +103,9 @@ test('each price source is read in ONE place: Energy-Charts from build_eu_prices
   }
   assert.deepEqual(ecReaders, ['scripts/eu_prices/build_eu_prices.py'], 'the Energy-Charts API is read somewhere else than the one job');
   assert.deepEqual(enReaders, ['scripts/eu_prices/build_entsoe_prices.py'], 'the ENTSO-E API is read somewhere else than the one job');
-  assert.deepEqual(enMentions, ['scripts/eu_prices/build_entsoe_prices.py'], 'the ENTSO-E token is handled somewhere else than the one job');
+  // the source-priority job hands the token to build_entsoe_prices.fetch_a44 (the one reader) and masks it in every log line
+  assert.deepEqual(enMentions, ['scripts/eu_prices/build_entsoe_prices.py', 'scripts/eu_prices/build_prices.py'], 'the ENTSO-E token is handled somewhere else than the two jobs');
+  assert.ok(/B\.log\([^\n]*\(token, cf_token\)\)/.test(readJob('build_prices.py')) && /BE\.fetch_a44\(self\.token/.test(readJob('build_prices.py')), 'build_prices.py logs without masking the tokens, or reads ENTSO-E itself');
   assert.deepEqual(exReaders, ['scripts/eu_prices/build_elexon_prices.py'], 'Elexon BMRS is read somewhere else than the one job');
   assert.deepEqual(sxReaders, ['scripts/eu_prices/build_semopx_prices.py'], 'SEMOpx is read somewhere else than the one job');
   const exj = readJob('build_elexon_prices.py'), sxj = readJob('build_semopx_prices.py');
@@ -116,4 +118,42 @@ test('each price source is read in ONE place: Energy-Charts from build_eu_prices
   assert.ok(/Retry-After/.test(en) && /B\.UA/.test(en), 'the ENTSO-E job does not honour Retry-After / send the User-Agent');
   assert.ok(/raise RuntimeError\(f"ENTSO-E HTTP \{e\.code\}"\)\s+# never the URL/.test(en), 'an ENTSO-E error may carry the URL, and the URL carries the token');
   assert.ok(/B\.log\([^\n]*\(token, cf_token\)\)/.test(en), 'the ENTSO-E job logs without masking the tokens');
+});
+
+test('the source-priority layer: its zone table is the API\'s 25 EU zones, each source is licensed for the zones it serves, and the Worker credits every source of a zone', () => {
+  const api = fs.readFileSync(path.join(ROOT, 'functions/api/[[catchall]].js'), 'utf8'), pj = fs.readFileSync(path.join(ROOT, 'functions/[[path]].js'), 'utf8');
+  const sp = readJob('price_sources.py'), bp = readJob('build_prices.py'), op = readJob('omie_parse.py');
+  const body = sp.slice(sp.indexOf('CHAINS = {'), sp.indexOf('\n}\n', sp.indexOf('CHAINS = {')));
+  const NAME = { ENTSOE: 'entsoe', EC: 'energy-charts', OMIE: 'omie' };
+  const chains = Object.fromEntries([...body.matchAll(/"([a-z-]+)": \[([A-Z, ]+)\]/g)].map(m => [m[1], m[2].split(',').map(x => NAME[x.trim()])]));
+  const ecZones = apiArray(api, 'EU_ZONES_ENERGY_CHARTS'), enZones = apiArray(api, 'EU_ZONES_ENTSOE');
+  assert.deepEqual(Object.keys(chains).sort(), [...ecZones, ...enZones].sort(), 'the job\'s zones are the API\'s Energy-Charts and ENTSO-E zones: the 25 that have a source order');
+  for (const [z, c] of Object.entries(chains)) {
+    assert.ok(c.includes('entsoe'), `${z} has no ENTSO-E in its list`);
+    assert.equal(c.includes('energy-charts'), ecZones.includes(z), `${z}: Energy-Charts only for the zones it licenses CC BY 4.0 (the API's EU_ZONES_ENERGY_CHARTS)`);
+    assert.equal(c.includes('omie'), z === 'es' || z === 'pt', `${z}: OMIE covers Spain and Portugal only`);
+    // the page's credit (ZONES.src) lists exactly these sources, in this order
+    const src = (pj.match(new RegExp(`\\n  (?:'${z}'|${z}):\\{[^\\n]*src:'([a-z+]+)'`)) || [])[1];
+    assert.equal(src, c.map(x => ({ entsoe: 'entsoe', 'energy-charts': 'ec', omie: 'omie' })[x]).join('+'), `${z}: the page credits other sources than the job reads`);
+  }
+  assert.deepEqual(chains.ch, ['energy-charts', 'entsoe'], 'Switzerland: Energy-Charts first (its auction clears before the coupled one and is carried by 11:30 UTC)');
+  assert.deepEqual(chains.de, ['entsoe', 'energy-charts'], 'Germany: ENTSO-E first, the fix for the weekend lag');
+  // Not sources, by the owner\'s rule (EPEX) and the terms (Nord Pool): no code or page of the layer reads them.
+  for (const [name, text] of [['price_sources.py', sp], ['build_prices.py', bp], ['omie_parse.py', op]]) {
+    assert.ok(!/epex/i.test(text.replace(/EPEX-?free/gi, '')), `${name} names EPEX: it is not a source`);
+    assert.ok(!/nordpool|dataportal-api/i.test(text.replace(/Nord Pool's public data portal[^\n]*/g, '')), `${name} reads Nord Pool: its terms forbid it (docs/price-sources.md)`);
+  }
+  assert.ok(/omie\.es/.test(op) && /legal-warning/.test(op), 'omie_parse.py names OMIE\'s terms');
+  // the layer never writes a partial day and records the source of each day
+  assert.ok(/"source": src/.test(sp) && /def day_complete\(/.test(sp) && /def combine\(/.test(sp), 'the layer\'s core functions are missing');
+  assert.ok(/credits OMIE|OMIE/.test(pj) && /function prisCredit\(src\)/.test(pj) && /split\('\+'\)/.test(pj), 'the Worker\'s credit does not take a source list');
+  // OMIE is read in ONE place
+  const omieReaders = [];
+  for (const dir of ['functions', 'scripts/eu_prices']) for (const f of fs.readdirSync(path.join(ROOT, dir), { recursive: true })) {
+    const fp = path.join(ROOT, dir, String(f));
+    if (!fs.statSync(fp).isFile() || !/\.(js|py|mjs)$/.test(fp) || fp.includes('/fixtures/') || /test_[a-z_]+\.py$/.test(fp)) continue;
+    const tx = fs.readFileSync(fp, 'utf8');
+    if (/omie\.es\/en\/file-download/.test(tx) && /urlopen|fetch\(/.test(tx)) omieReaders.push(path.relative(ROOT, fp));
+  }
+  assert.deepEqual(omieReaders, [], 'OMIE is read by a file that also holds its URL: the URL lives in omie_parse.py, the request in build_prices.py');
 });

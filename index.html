@@ -4762,20 +4762,20 @@ var ZONES={
   nl:{name:'NL',city:'Nederland',lang:'nl',cur:'EUR',rate:1,sub:'cent'},
   // The EU zones: actual day-ahead prices, no forecast. `city` is what the zone's text line calls it, `name` the market's own
   // code. Poland converts at the ECB's PLN rate (4.39 only if the response carries none); every other zone is EUR.
-  de:{name:'DE-LU',city:'Deutschland',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
-  fr:{name:'FR',city:'France',lang:'fr',cur:'EUR',rate:1,sub:'c€',src:'ec'},
-  pl:{name:'PL',city:'Polska',lang:'pl',cur:'PLN',rate:4.39,sub:'gr',src:'ec'},
-  'it-n':{name:'IT-Nord',city:'Italia del Nord',lang:'it',cur:'EUR',rate:1,sub:'c€',src:'ec'},
-  at:{name:'AT',city:'Österreich',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
-  ch:{name:'CH',city:'Schweiz',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec'},
-  be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'ec'},
+  de:{name:'DE-LU',city:'Deutschland',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'entsoe+ec'},
+  fr:{name:'FR',city:'France',lang:'fr',cur:'EUR',rate:1,sub:'c€',src:'entsoe+ec'},
+  pl:{name:'PL',city:'Polska',lang:'pl',cur:'PLN',rate:4.39,sub:'gr',src:'entsoe+ec'},
+  'it-n':{name:'IT-Nord',city:'Italia del Nord',lang:'it',cur:'EUR',rate:1,sub:'c€',src:'entsoe+ec'},
+  at:{name:'AT',city:'Österreich',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'entsoe+ec'},
+  ch:{name:'CH',city:'Schweiz',lang:'de',cur:'EUR',rate:1,sub:'ct',src:'ec+entsoe'},
+  be:{name:'BE',city:'België',lang:'nl',cur:'EUR',rate:1,sub:'cent',src:'entsoe+ec'},
   ie:{name:'IE-SEM',city:'Ireland',lang:'en',cur:'EUR',rate:1,sub:'c',shift:-1,src:'semopx'},
-  cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'ec'},
-  es:{name:'ES',city:'España',lang:'es',cur:'EUR',rate:1,sub:'c€',src:'entsoe'},
-  pt:{name:'PT',city:'Portugal',lang:'pt',cur:'EUR',rate:1,sub:'c€',shift:-1,src:'entsoe'},
+  cz:{name:'CZ',city:'Česko',lang:'cs',cur:'EUR',rate:1,sub:'ct',src:'entsoe+ec'},
+  es:{name:'ES',city:'España',lang:'es',cur:'EUR',rate:1,sub:'c€',src:'entsoe+omie'},
+  pt:{name:'PT',city:'Portugal',lang:'pt',cur:'EUR',rate:1,sub:'c€',shift:-1,src:'entsoe+omie'},
   sk:{name:'SK',city:'Slovensko',lang:'sk',cur:'EUR',rate:1,sub:'c',src:'entsoe'},
-  hu:{name:'HU',city:'Magyarország',lang:'hu',cur:'EUR',rate:1,sub:'ct',src:'ec'},
-  si:{name:'SI',city:'Slovenija',lang:'sl',cur:'EUR',rate:1,sub:'c',src:'ec'},
+  hu:{name:'HU',city:'Magyarország',lang:'hu',cur:'EUR',rate:1,sub:'ct',src:'entsoe+ec'},
+  si:{name:'SI',city:'Slovenija',lang:'sl',cur:'EUR',rate:1,sub:'c',src:'entsoe+ec'},
   ro:{name:'RO',city:'România',lang:'ro',cur:'EUR',rate:1,sub:'c€',src:'entsoe',shift:1},
   bg:{name:'BG',city:'България',lang:'bg',cur:'EUR',rate:1,sub:'евроц.',src:'entsoe',shift:1},
   gr:{name:'GR',city:'Ελλάδα',lang:'el',cur:'EUR',rate:1,sub:'c€',src:'entsoe',shift:1},
@@ -4837,42 +4837,42 @@ var PRIS_COUNTRIES={
   'de/strompreis':{lang:'de',cc:'de',zones:['de'],def:'de',act:1,
     name:'Deutschland',da:'Tyskland',loc:'de_DE',qid:'Q183',
     title:'Strompreis aktuell und morgen – Börsenstrompreis Deutschland',
-    desc:'Börsenstrompreis (Day-Ahead) für Deutschland, heute und morgen, in ct/kWh, ohne MwSt., Steuern und Netzentgelte. Quelle: Bundesnetzagentur | SMARD.de',
+    desc:'Börsenstrompreis (Day-Ahead) für Deutschland, heute und morgen, in ct/kWh, ohne MwSt., Steuern, Netzentgelte. Quelle: ENTSO-E, Bundesnetzagentur | SMARD.de',
     tx:{h1:'Strompreis in Deutschland: heute und morgen',
       zonesH:'Strompreis in Deutschland',
       note:'Stundenmittel der Viertelstundenpreise, von elpriser.org berechnet (gegenüber den Originaldaten verändert). Deutschland und Luxemburg bilden eine gemeinsame Gebotszone. Quelle:'}},
   'fr/prix-electricite':{lang:'fr',cc:'fr',zones:['fr'],def:'fr',act:1,
     name:'France',da:'Frankrig',loc:'fr_FR',qid:'Q142',
     title:'Prix de l’électricité aujourd’hui et demain en France',
-    desc:'Prix spot day-ahead en France, heure par heure, aujourd’hui et demain, en c€/kWh, hors TVA, taxes et réseau. Source : Bundesnetzagentur | SMARD.de',
+    desc:'Prix spot day-ahead en France, heure par heure, aujourd’hui et demain, en c€/kWh, hors TVA, taxes et réseau. Source : ENTSO-E, Bundesnetzagentur | SMARD.de',
     tx:{h1:'Prix de l’électricité en France : aujourd’hui et demain',
       zonesH:'Prix de l’électricité en France',
       note:'Moyennes horaires des prix au quart d’heure, calculées par elpriser.org (données modifiées par rapport à l’original). Source :'}},
   'pl/ceny-pradu':{lang:'pl',cc:'pl',zones:['pl'],def:'pl',act:1,
     name:'Polska',da:'Polen',loc:'pl_PL',qid:'Q36',
     title:'Cena prądu dziś i jutro – giełdowa cena energii w Polsce',
-    desc:'Giełdowa cena energii w Polsce (RDN), godzina po godzinie, dziś i jutro, w gr/kWh, bez VAT, podatków i opłat. Źródło: Bundesnetzagentur | SMARD.de',
+    desc:'Giełdowa cena energii w Polsce (RDN), godzina po godzinie, dziś i jutro, w gr/kWh, bez VAT, podatków i opłat. Źródło: ENTSO-E, Bundesnetzagentur | SMARD.de',
     tx:{h1:'Cena prądu w Polsce: dziś i jutro',
       zonesH:'Cena prądu w Polsce',
       note:'Średnie godzinowe z cen kwadransowych, przeliczone z euro według dziennego kursu referencyjnego EBC przez elpriser.org (dane zmienione względem oryginału). Źródło:'}},
   'it/prezzo-luce':{lang:'it',cc:'it',zones:['it-n'],def:'it-n',act:1,
     name:'Italia',da:'Italien',loc:'it_IT',qid:'Q38',
     title:'Prezzo dell’energia elettrica oggi e domani – Italia del Nord',
-    desc:'Prezzo day-ahead dell’energia nel Nord Italia, ora per ora, oggi e domani, in c€/kWh, senza IVA, imposte e rete. Fonte: Bundesnetzagentur | SMARD.de',
+    desc:'Prezzo day-ahead dell’energia nel Nord Italia, orario, oggi e domani, in c€/kWh, senza IVA, imposte, rete. Fonte: ENTSO-E, Bundesnetzagentur | SMARD.de',
     tx:{h1:'Prezzo dell’energia elettrica in Italia del Nord: oggi e domani',
       zonesH:'Prezzo dell’energia elettrica in Italia del Nord',
       note:'Zona di mercato Nord. Medie orarie dei prezzi al quarto d’ora, calcolate da elpriser.org (dati modificati rispetto all’originale). Fonte:'}},
   'at/strompreis':{lang:'de',cc:'at',zones:['at'],def:'at',act:1,
     name:'Österreich',da:'Østrig',loc:'de_AT',qid:'Q40',
     title:'Strompreis aktuell und morgen – Börsenstrompreis Österreich',
-    desc:'Börsenstrompreis (Day-Ahead) für Österreich, heute und morgen, in ct/kWh, ohne MwSt., Steuern und Netzentgelte. Quelle: Bundesnetzagentur | SMARD.de',
+    desc:'Börsenstrompreis (Day-Ahead) für Österreich, heute und morgen, in ct/kWh, ohne MwSt., Steuern, Netzentgelte. Quelle: ENTSO-E, Bundesnetzagentur | SMARD.de',
     tx:{h1:'Strompreis in Österreich: heute und morgen',
       zonesH:'Strompreis in Österreich',
       note:'Stundenmittel der Viertelstundenpreise, von elpriser.org berechnet (gegenüber den Originaldaten verändert). Österreich bildet eine eigene Gebotszone. Quelle:'}},
   'ch/strompreis':{lang:'de',cc:'ch',zones:['ch'],def:'ch',act:1,
     name:'Schweiz',da:'Schweiz',loc:'de_CH',qid:'Q39',
     title:'Strompreis aktuell und morgen – Börsenstrompreis Schweiz',
-    desc:'Börsenstrompreis (Day-Ahead) für die Schweiz, heute und morgen, in Euro-Cent/kWh, ohne MwSt., Abgaben, Netzentgelte. Quelle: Bundesnetzagentur | SMARD.de',
+    desc:'Börsenstrompreis (Day-Ahead) für die Schweiz, heute und morgen, in Cent/kWh, ohne MwSt., Abgaben, Netzkosten. Quelle: Bundesnetzagentur | SMARD.de, ENTSO-E',
     tx:{h1:'Strompreis in der Schweiz: heute und morgen',
       zonesH:'Strompreis in der Schweiz',
       note:'Stundenmittel der Viertelstundenpreise, von elpriser.org berechnet (gegenüber den Originaldaten verändert). Die Schweiz hat eine eigene Gebotszone; die Preise sind in Euro-Cent angegeben, nicht in Rappen. Quelle:',
@@ -4880,14 +4880,14 @@ var PRIS_COUNTRIES={
   'be/stroomprijs':{lang:'nl',cc:'be',zones:['be'],def:'be',act:1,
     name:'België',pick:'België · Belgique',da:'Belgien',loc:'nl_BE',qid:'Q31',
     title:'Stroomprijs vandaag en morgen – beursprijs België',
-    desc:'Beursprijs stroom (day-ahead) in België, per uur, vandaag en morgen, in cent/kWh, zonder btw, heffingen en netkosten. Bron: Bundesnetzagentur | SMARD.de',
+    desc:'Stroomprijs (day-ahead) in België, per uur, vandaag en morgen, in cent/kWh, excl. btw, heffingen, netkosten. Bron: ENTSO-E, Bundesnetzagentur | SMARD.de',
     tx:{h1:'Stroomprijs in België: vandaag en morgen',
       zonesH:'Stroomprijs in België',
       note:'Uurgemiddelden van de kwartierprijzen, berekend door elpriser.org (gegevens gewijzigd ten opzichte van het origineel). Prijzen in euro, uitgedrukt in cent per kWh. Bron:'}},
   'be/prix-electricite':{lang:'fr',cc:'be',zones:['be'],def:'be',act:1,sub:'c€',city:'Belgique',
     name:'Belgique',da:'Belgien',loc:'fr_BE',qid:'Q31',
     title:'Prix de l’électricité aujourd’hui et demain en Belgique',
-    desc:'Prix day-ahead en Belgique, heure par heure, aujourd’hui et demain, en c€/kWh, hors TVA, taxes et réseau. Source : Bundesnetzagentur | SMARD.de',
+    desc:'Prix day-ahead en Belgique, heure par heure, aujourd’hui et demain, en c€/kWh, hors TVA, taxes et réseau. Source : ENTSO-E, Bundesnetzagentur | SMARD.de',
     tx:{h1:'Prix de l’électricité en Belgique : aujourd’hui et demain',
       zonesH:'Prix de l’électricité en Belgique',
       note:'Moyennes horaires des prix au quart d’heure, calculées par elpriser.org (données modifiées par rapport à l’original). Source :'}},
@@ -4901,7 +4901,7 @@ var PRIS_COUNTRIES={
   'cz/ceny-elektriny':{lang:'cs',cc:'cz',zones:['cz'],def:'cz',act:1,
     name:'Česko',da:'Tjekkiet',loc:'cs_CZ',qid:'Q213',
     title:'Cena elektřiny dnes a zítra – burzovní cena v Česku',
-    desc:'Burzovní cena elektřiny (denní trh) v Česku po hodinách, dnes a zítra, v ct/kWh, bez DPH, daní a poplatků. Zdroj: Bundesnetzagentur | SMARD.de',
+    desc:'Burzovní cena elektřiny (denní trh) v Česku po hodinách, dnes a zítra, v ct/kWh, bez DPH, daní a poplatků. Zdroj: ENTSO-E, Bundesnetzagentur | SMARD.de',
     tx:{h1:'Cena elektřiny v Česku: dnes a zítra',
       zonesH:'Cena elektřiny v Česku',
       note:'Hodinové průměry čtvrthodinových cen vypočítal elpriser.org (údaje jsou oproti originálu upraveny). Ceny jsou v eurocentech za kWh, nikoli v korunách. Zdroj:',
@@ -4909,14 +4909,14 @@ var PRIS_COUNTRIES={
   'es/precio-luz':{lang:'es',cc:'es',zones:['es'],def:'es',act:1,
     name:'España',da:'Spanien',loc:'es_ES',qid:'Q29',
     title:'Precio de la luz hoy y mañana – mercado diario en España',
-    desc:'Precio de la luz en España (mercado diario), hora a hora, hoy y mañana, en c€/kWh, sin IVA, impuestos ni peajes. Fuente: ENTSO-E',
+    desc:'Precio de la luz en España (mercado diario), hora a hora, hoy y mañana, en c€/kWh, sin IVA, impuestos ni peajes. Fuente: ENTSO-E, OMIE',
     tx:{h1:'Precio de la luz en España: hoy y mañana',
       zonesH:'Precio de la luz en España',
       note:'Medias horarias de los precios de 15 minutos, calculadas por elpriser.org (datos modificados respecto a los originales). Los precios están en céntimos de euro por kWh. Fuente:'}},
   'pt/preco-eletricidade':{lang:'pt',cc:'pt',zones:['pt'],def:'pt',act:1,
     name:'Portugal',da:'Portugal',loc:'pt_PT',qid:'Q45',
     title:'Preço da eletricidade hoje e amanhã – mercado diário Portugal',
-    desc:'Preço da eletricidade em Portugal (mercado diário), hora a hora, hoje e amanhã, em c€/kWh, sem IVA, impostos nem tarifas de rede. Fonte: ENTSO-E',
+    desc:'Preço da eletricidade em Portugal (mercado diário), hora a hora, hoje e amanhã, em c€/kWh, sem IVA, impostos nem tarifas de rede. Fonte: ENTSO-E, OMIE',
     tx:{h1:'Preço da eletricidade em Portugal: hoje e amanhã',
       zonesH:'Preço da eletricidade em Portugal',
       note:'Médias horárias dos preços de 15 minutos, calculadas por elpriser.org (dados alterados em relação aos originais). Os preços estão em cêntimos de euro por kWh. Fonte:'}},
@@ -4931,7 +4931,7 @@ var PRIS_COUNTRIES={
   'hu/aramar':{lang:'hu',cc:'hu',zones:['hu'],def:'hu',act:1,
     name:'Magyarország',da:'Ungarn',loc:'hu_HU',qid:'Q28',
     title:'Áramár ma és holnap – tőzsdei áramár Magyarországon',
-    desc:'Tőzsdei áramár (másnapi piac) Magyarországon óránként, ma és holnap, ct/kWh-ban, áfa, adók és díjak nélkül. Forrás: Bundesnetzagentur | SMARD.de',
+    desc:'Tőzsdei áramár (másnapi piac) Magyarországon óránként, ma és holnap, ct/kWh-ban, áfa, adók és díjak nélkül. Forrás: ENTSO-E, Bundesnetzagentur | SMARD.de',
     tx:{h1:'Áramár Magyarországon: ma és holnap',
       zonesH:'Áramár Magyarországon',
       note:'A negyedórás árak óránkénti átlagát az elpriser.org számította ki (az adatokat az eredetihez képest módosítottuk). Az árak eurócentben értendők, nem forintban. Forrás:',
@@ -4939,7 +4939,7 @@ var PRIS_COUNTRIES={
   'si/cena-elektrike':{lang:'sl',cc:'si',zones:['si'],def:'si',act:1,
     name:'Slovenija',da:'Slovenien',loc:'sl_SI',qid:'Q215',
     title:'Cena elektrike danes in jutri – borzna cena v Sloveniji',
-    desc:'Borzna cena elektrike (trg za dan vnaprej) v Sloveniji po urah, danes in jutri, v c/kWh, brez DDV, davkov in omrežnine. Vir: Bundesnetzagentur | SMARD.de',
+    desc:'Borzna cena elektrike (dan vnaprej) v Sloveniji po urah, danes in jutri, v c/kWh, brez DDV, davkov, omrežnine. Vir: ENTSO-E, Bundesnetzagentur | SMARD.de',
     tx:{h1:'Cena elektrike v Sloveniji: danes in jutri',
       zonesH:'Cena elektrike v Sloveniji',
       note:'Urna povprečja četrturnih cen je izračunal elpriser.org (podatki so v primerjavi z izvirnikom spremenjeni). Cene so v evrocentih za kWh. Vir:',
@@ -5270,16 +5270,23 @@ function placeHTML(lang,cur,pg){
   };
 }
 
-/** The attribution of the data on an `act` page, by the zone's source (ZONES `src`). 'ec' (default): "Bundesnetzagentur | SMARD.de" (the
- *  licensor), Energy-Charts.info (the API it comes through) and the licence CC BY 4.0, each a link. 'entsoe': the ENTSO-E Transparency
- *  Platform. 'semopx': SEMOpx. 'elexon': the BMRS attribution sentence. The footer and the text block both write it; the change the site makes is said beside it. */
+/** The attribution of the data on an `act` page, by the zone's source list (ZONES `src`: one source, or several joined by '+', the one the day-ahead
+ *  prices are read from first and the fallbacks behind it, scripts/eu_prices/price_sources.py CHAINS; every source a zone may be read from is
+ *  credited, because a day can come from any of them and says so in its `source`). 'ec': "Bundesnetzagentur | SMARD.de" (the licensor),
+ *  Energy-Charts.info (the API it comes through) and the licence CC BY 4.0, each a link. 'entsoe': the ENTSO-E Transparency Platform.
+ *  'omie': OMIE, the Iberian market operator. 'semopx': SEMOpx. 'elexon': the BMRS attribution sentence. The footer and the text block both write
+ *  it; the change the site makes is said beside it. */
 function prisCredit(src){
   var lk=function(href,t){return '<a href="'+href+'" target="_blank" rel="noopener">'+t+'</a>';};
-  if(src==='entsoe')return lk('https://transparency.entsoe.eu','ENTSO-E Transparency Platform');
-  if(src==='semopx')return lk('https://www.semopx.com/market-data/market-results','SEMOpx');
-  // Elexon's licence prescribes this sentence (the caller adds the full stop) and a link to the licence where possible.
-  if(src==='elexon')return lk('https://www.elexon.co.uk/bsc/data/balancing-mechanism-reporting-agent/copyright-licence-bmrs-data/','Contains BMRS data \u00a9 Elexon Limited copyright and database right '+new Date().getUTCFullYear());
-  return lk('https://www.smard.de','Bundesnetzagentur | SMARD.de')+' ('+lk('https://www.energy-charts.info','Energy-Charts.info')+'), '+lk('https://creativecommons.org/licenses/by/4.0/','CC BY 4.0');
+  var one=function(k){
+    if(k==='entsoe')return lk('https://transparency.entsoe.eu','ENTSO-E Transparency Platform');
+    if(k==='omie')return lk('https://www.omie.es','OMIE');
+    if(k==='semopx')return lk('https://www.semopx.com/market-data/market-results','SEMOpx');
+    // Elexon's licence prescribes this sentence (the caller adds the full stop) and a link to the licence where possible.
+    if(k==='elexon')return lk('https://www.elexon.co.uk/bsc/data/balancing-mechanism-reporting-agent/copyright-licence-bmrs-data/','Contains BMRS data \u00a9 Elexon Limited copyright and database right '+new Date().getUTCFullYear());
+    return lk('https://www.smard.de','Bundesnetzagentur | SMARD.de')+' ('+lk('https://www.energy-charts.info','Energy-Charts.info')+'), '+lk('https://creativecommons.org/licenses/by/4.0/','CC BY 4.0');
+  };
+  return String(src||'ec').split('+').map(one).join(', ');
 }
 
 /** A price with d decimals and a comma (the table's `dec` when it has another mark: English "."); never "-0,00". */
