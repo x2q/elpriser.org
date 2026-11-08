@@ -2145,8 +2145,8 @@ function buildForecast(historicalPrices, mode, enCharges) {
     }
   }
 
-  // Build 10-day output (v2 model covers T+9; heuristic fills whatever the
-  // model doesn't overlay, so extending this is harmless for v1-only reads)
+  // Build 10-day output (the v3 model covers T+9; the heuristic fills whatever
+  // the model doesn't overlay, so a missing or stale model run still gives 10 days)
   const days = [];
   for (let dayOffset = 0; dayOffset < 10; dayOffset++) {
     const d = fmtUTC(new Date(dkNow.getTime() + dayOffset * 86_400_000));
@@ -2714,8 +2714,8 @@ async function handleSupplierLookup(lat, lng, request) {
   return jsonResponse(result, { maxAge: 86400, request });
 }
 
-// Overlays a trained-model forecast (written by scripts/forecast_model/train_and_score.py
-// into KV daily) onto the seasonal-heuristic days from buildForecast(). Only replaces
+// Overlays a trained-model forecast (the v3 run written by scripts/forecast_model/v3/train_daily.py
+// into KV `forecast-v3-<area>` daily) onto the seasonal-heuristic days from buildForecast(). Only replaces
 // 'forecast'-type days (the heuristic already handles 'actual' days by reading the
 // real published price) and only when the model's own value for that day isn't null —
 // so a partially-stale or partially-failed model run degrades to the heuristic
@@ -2864,10 +2864,9 @@ async function forecastData(area, mode, gln, env) {
   let days = buildForecast(historicalPrices, baseMode, enCharges);
 
   // Trained-model overlay: best-effort, never blocks or fails the request.
-  // Prefers v2 (Spark-trained: lead-correct weather, hybrid shape, calibrated
-  // bands) over v1 (GitHub Actions), falling through to the heuristic days —
-  // so a dead Spark degrades to v1, and a dead v1 degrades to the heuristic.
-  // Accepts today's or yesterday's run (the daily cron may not have fired yet,
+  // v3 (Spark-trained: lead-correct weather, spatial weather points, hybrid
+  // shape, calibrated bands) over the heuristic days — so a dead Spark degrades
+  // to the heuristic. Accepts today's or yesterday's run (the daily cron may not have fired yet,
   // or DK-local vs. UTC date bucketing may be off by one near midnight).
   let modelMeta = null;
   if (env && env.PRICE_CACHE) {

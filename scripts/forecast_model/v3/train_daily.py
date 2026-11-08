@@ -41,9 +41,10 @@ why the configuration is not symmetric:
 Final: DK1 MAE 178.4 (-4.8% vs the v2-equivalent baseline), hit-rate 69.0%;
 DK2 MAE 189.9 (-5.9%), hit-rate 70.0%. Bands calibrated to ~80% coverage.
 
-KV: forecast-v3-{area}, forecast-v3-monitoring-{area}. Worker fallback chain
-is v3 -> v2 -> v1 -> seasonal heuristic, so deleting the v3 keys is an instant
-rollback.
+KV: forecast-v3-{area}, forecast-v3-archive-{area}-{date}, forecast-v3-monitoring-{area}.
+The Worker reads forecast-v3-{area} and falls back to its seasonal heuristic when
+the key is missing or more than a day old, so deleting the v3 keys is an instant
+rollback (v1 and v2 are retired; their keys are no longer read).
 
 Needs ~/.config/elpriser.env with CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN
 (+ optional HF_TOKEN to publish, ENTSOE_TOKEN for the capacity refresh).
