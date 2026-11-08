@@ -18,6 +18,10 @@ const gate = readJson('scripts/forecast_model/eu/publish_gate.json');
 const gbGate = readJson('scripts/forecast_model/gb/gb_gate.json');
 const TODAY = '2026-11-08';
 const ctx = { today: TODAY, lists, gate, gbGate };
+// With the level correction (docs/forecast-balkan-level.md) every zone-horizon that exists passes the numbers except Albania's owner-forced D+7, so a cell blocked BY THE NUMBERS
+// (the case these tests pin: it-n without fuel, h2-4 only) is built on a copy of the gate; the real gate is read for everything else.
+const numbersGate = { ...gate, zones: { ...gate.zones, 'it-n': { ...gate.zones['it-n'], nofuel: [2, 3, 4] } } };
+const ctxNumbers = { ...ctx, gate: numbersGate };
 const day = n => new Date(Date.parse(`${TODAY}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const hours = (band = true) => Array.from({ length: 24 }, (_, h) => ({ hour: h, eur_mwh: 80 + h, ...(band ? { min_eur_mwh: 60 + h, max_eur_mwh: 100 + h } : {}) }));
 const byHorizon = hs => Object.fromEntries(hs.map(h => [h, { mae: 20, baseMae: 30, gain: 0.3 }]));
@@ -82,17 +86,20 @@ test('a run two days old, a late start (h3) and a stale training set WARN; a fro
 test('the gate decides: it-n without fuel has only h2-4, so h5-7 are by design and h2-4 pass', () => {
   const b = body('it-n', { fc: [2, 3, 4] });
   b.accuracy.fuel = false;
-  const r = analyzeZone('it-n', b, ctx);
+  const r = analyzeZone('it-n', b, ctxNumbers);
   assert.equal(r.status, 'PASS', r.reasons.join('; '));
   assert.deepEqual(r.byDesign, [5, 6, 7]);
 });
 
-test('Kosovo: NO MODEL without a forecast; with one (live since 2026-11-08) it is an EU zone judged by its gate entry, D+2..D+6, D+7 not published', () => {
+test('Kosovo: NO MODEL without a forecast; with one (live since 2026-11-08) it is an EU zone judged by its gate entry: D+2..D+7 since the level correction (D+7 was under the rule by 0.05 points before)', () => {
   assert.equal(analyzeZone('xk', body('xk', { fc: [] }), ctx).status, 'NO MODEL');
-  const live = analyzeZone('xk', body('xk', { fc: [2, 3, 4, 5, 6] }), ctx);
+  const live = analyzeZone('xk', body('xk'), ctx);
   assert.equal(live.status, 'PASS', live.reasons.join('; '));
-  assert.deepEqual(live.byDesign, [7]);
-  assert.equal(analyzeZone('xk', body('xk'), ctx).status, 'FAIL');         // h7 on the API would be a horizon the gate does not allow
+  assert.deepEqual(live.byDesign, []);
+  // a run that still ends at D+6 (the job before the level-correction rollout) is judged as a missing top horizon, never as "by design" or as no model
+  const old = analyzeZone('xk', body('xk', { fc: [2, 3, 4, 5, 6] }), ctx);
+  assert.notEqual(old.status, 'NO MODEL');
+  assert.deepEqual(old.byDesign, []);
 });
 
 test('Great Britain: horizons 1-7 from its own gate; a Nordic zone needs a gap-free run of at least 6 days', () => {
@@ -126,7 +133,7 @@ test('D+2, D+5, D+7: shown / blocked-by-gate / no-model / hidden-bug / due, and 
   assert.equal(coverageGap(al), false);
   // a zone the gate blocks by the numbers (it-n without fuel: h2-4 only) is blocked-by-gate for D+5 and D+7, with the gate's reason
   const b = body('it-n', { fc: [2, 3, 4] }); b.accuracy.fuel = false;
-  const itn = analyzeZone('it-n', b, late);
+  const itn = analyzeZone('it-n', b, { ...late, gate: numbersGate });
   assert.deepEqual(cellsOf(itn), { 2: 'shown', 5: 'blocked-by-gate', 7: 'blocked-by-gate' });
   assert.match(itn.cells[5].reason, /under 5 %/);
   assert.equal(coverageGap(itn), false);
@@ -134,8 +141,8 @@ test('D+2, D+5, D+7: shown / blocked-by-gate / no-model / hidden-bug / due, and 
   const xk = analyzeZone('xk', body('xk', { fc: [] }), late);
   assert.deepEqual(cellsOf(xk), { 2: 'no-model', 5: 'no-model', 7: 'no-model' });
   assert.equal(coverageGap(xk), true);
-  const xkLive = analyzeZone('xk', body('xk', { fc: [2, 3, 4, 5, 6] }), late);      // the zone as it is live now: D+7 is the gate's, not a gap
-  assert.deepEqual(cellsOf(xkLive), { 2: 'shown', 5: 'shown', 7: 'blocked-by-gate' });
+  const xkLive = analyzeZone('xk', body('xk'), late);      // the zone with the level-corrected gate: D+2..D+7, D+7 is no longer the gate's
+  assert.deepEqual(cellsOf(xkLive), { 2: 'shown', 5: 'shown', 7: 'shown' });
   assert.equal(coverageGap(xkLive), false);
   // DE/AT as found on 2026-11-08: the Worker hides the run, so every cell is a hidden-bug (the zone is allowed all of them)
   const hidden = analyzeZone('de', body('de', { fc: [] }), late);

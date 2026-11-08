@@ -41,6 +41,7 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, DIR)
 import family_models as FM        # noqa: E402
 import gate as G                  # noqa: E402
+import level_correction as LC     # noqa: E402
 import recipe as RC               # noqa: E402
 import region_scores as RS        # noqa: E402
 from zones import ZONES           # noqa: E402
@@ -53,24 +54,42 @@ RECENT = RS.T_SHIFT
 NAIVE = RS.NAIVE
 
 
-def recipe_columns(df):
-    """prod (fuel) and nofuel forecast columns of the research frame."""
+LEVEL_LAMBDA = LC.PUBLISH_LAMBDA        # the published level correction (level_correction.py); the backtest numbers are those of the CORRECTED recipe
+
+
+def recipe_columns(df, lam=None):
+    """prod (fuel) and nofuel forecast columns of the research frame, with the published level correction (lam, default level_correction.PUBLISH_LAMBDA) applied the way the
+    daily job applies it: shift by lam x the mean day-level error of the same zone and horizon over the last LC.K_DAYS days settled at issue (LC.apply_to_backtest, rolling
+    through the backtest). The uncorrected numbers stay in `fuel_raw` / `nofuel_raw`, the shifts in `corr_fuel` / `corr_nofuel` (the band uses them: calibrate_bands.py)."""
+    lam = LEVEL_LAMBDA if lam is None else lam
     bal = df["zone"].isin(RC.BALTICS)
-    df["fuel"] = np.where(bal, df["lgb_base"], 0.5 * (df["lear_r365_g"] + df["lgb_fuel"]))
-    df["nofuel"] = np.where(bal, df["lgb_base"], 0.5 * (df["lear_r365"] + df["lgb_base"]))
+    raw = {"fuel": np.where(bal, df["lgb_base"], 0.5 * (df["lear_r365_g"] + df["lgb_fuel"])),
+           "nofuel": np.where(bal, df["lgb_base"], 0.5 * (df["lear_r365"] + df["lgb_base"]))}
+    for mode, v in raw.items():
+        df[f"{mode}_raw"] = v
+        df[f"corr_{mode}"] = 0.0
+        if lam > 0:
+            df[f"corr_{mode}"] = LC.apply_to_backtest(df[["zone", "h", "date", "y"]].assign(p=v), lam, LC.K_DAYS, LC.MIN_DAYS, col="p")
+        df[mode] = v + df[f"corr_{mode}"]
     return df
 
 
-def coverage_table(frame, point_col, quant=None):
+def coverage_table(frame, point_col, quant=None, corr_col=None):
     """{(zone, h): (coverage whole period, coverage since RECENT)} measured rolling out of sample, with the band recipe production uses:
-    quantile edges + offsets (when `quant` is given: a frame with q10 / q90) or the central estimate + residual offsets."""
-    f = frame[["zone", "h", "date", "y", point_col]].copy() if quant is None else quant[["zone", "h", "date", "y", "q10", "q90"]].copy()
+    quantile edges + offsets (when `quant` is given: a frame with q10 / q90) or the central estimate + residual offsets. The offsets are those of the UNCORRECTED model (what
+    calibrate_bands.py / refresh_calibration.sh write, they never see the level correction); when `corr_col` is given the band is then moved by that correction
+    (the column of `frame`, or `corr_fuel` of `quant`), exactly as forecast.build_days moves the band with the published point."""
+    extra = ([corr_col] if quant is None else ["corr_fuel"]) if corr_col else []
+    f = frame[["zone", "h", "date", "y", point_col] + extra].copy() if quant is None else quant[["zone", "h", "date", "y", "q10", "q90"] + extra].copy()
     f = f.dropna().sort_values(["zone", "h", "date"]).reset_index(drop=True)
     if quant is None:
         lo, hi = FM.rolling_residual_band(f, point_col)
     else:
         lo, _ = FM.rolling_residual_band(f, "q10")
         _, hi = FM.rolling_residual_band(f, "q90")
+    if corr_col:
+        shift = f[extra[0]]
+        lo, hi = lo + shift, hi + shift
     f["lo"], f["hi"] = lo, hi
     f = f.dropna(subset=["lo", "hi"])
     f["in"] = ((f["y"] >= f["lo"]) & (f["y"] <= f["hi"])).astype(float)
@@ -115,11 +134,23 @@ def cell(s, zone, h, col, cov, mode):
     return out, passes
 
 
-def build(df, quant=None):
+def attach_correction(quant, df):
+    """The quantile frame with the level correction of the same (zone, t, h) as `corr_fuel` (0 where the recipe frame has no row): the band moves with the point."""
+    if quant is None:
+        return None
+    q = quant.assign(t=pd.to_datetime(quant["t"])).merge(df[["zone", "t", "h", "corr_fuel"]].assign(t=pd.to_datetime(df["t"])), on=["zone", "t", "h"], how="left")
+    q["corr_fuel"] = q["corr_fuel"].fillna(0.0)
+    return q
+
+
+def build(df, quant=None, lam=None):
     """(gate dict, accuracy dict, report lines) from the research frame (columns: zone t date h y b_lvlshape + the model columns)."""
-    df = recipe_columns(df[df["zone"].isin(list(ZONES)) & df["h"].between(RC.H_MIN, RC.H_MAX)].copy())
+    df = recipe_columns(df[df["zone"].isin(list(ZONES)) & df["h"].between(RC.H_MIN, RC.H_MAX)].copy(), lam)
+    quant = attach_correction(quant, df)
     s = RS.score(df, cols=NAIVE + ["fuel", "nofuel"])
-    cov = {m: coverage_table(df, col, quant if m == "fuel" else None) for m, col in (("fuel", "fuel"), ("nofuel", "nofuel"))}
+    corr = lam if lam is not None else LEVEL_LAMBDA
+    cov = {"fuel": coverage_table(df, "fuel_raw", quant, "corr_fuel" if corr > 0 else None),
+           "nofuel": coverage_table(df, "nofuel_raw", None, "corr_nofuel" if corr > 0 else None)}
     zones_gate, zones_acc, notes = {}, {}, []
     for z in ZONES:
         gz = {"recipe": "lgb" if z in RC.BALTICS else "ens", "fuel": [], "nofuel": []}

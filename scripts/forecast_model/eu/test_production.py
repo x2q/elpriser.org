@@ -438,6 +438,56 @@ class BuildGate(unittest.TestCase):
         self.assertTrue(acc["zones"]["de"]["fuel"]["2"]["rankOk"])
 
 
+class LevelCorrectionInTheGate(unittest.TestCase):
+    """The backtest behind the gate and the accuracy block is the backtest of the CORRECTED recipe (docs/forecast-balkan-level.md): the same rule the daily job applies."""
+
+    def frame(self, bias_from="2026-03-01", start="2026-01-01", end="2026-04-30"):
+        rows = []
+        for day in pd.date_range(start, end):
+            for h in (2, 3):
+                for hr in range(24):
+                    y = 100.0 + 5 * np.sin(hr / 24 * 6.28)
+                    off = -20.0 if day >= pd.Timestamp(bias_from) else 0.0          # the model runs 20 EUR/MWh too low from March on
+                    rows.append({"zone": "de", "t": day + pd.Timedelta(hours=hr), "date": day, "h": h, "hour": hr, "y": y,
+                                 "lear_r365_g": y + off, "lgb_fuel": y + off, "lear_r365": y + off, "lgb_base": y + off})
+        return pd.DataFrame(rows)
+
+    def test_the_default_is_the_published_lambda_and_zero_leaves_the_model_alone(self):
+        import level_correction as LC
+        self.assertEqual(BG.LEVEL_LAMBDA, LC.PUBLISH_LAMBDA)
+        raw = BG.recipe_columns(self.frame(), 0.0)
+        self.assertTrue((raw["fuel"] == raw["fuel_raw"]).all() and (raw["corr_fuel"] == 0).all())
+
+    def test_a_persistent_miss_is_partly_corrected_with_what_was_settled_at_issue(self):
+        d = BG.recipe_columns(self.frame(), 0.5)
+        late = d[(d["date"] >= "2026-04-01") & (d["h"] == 2)]
+        self.assertAlmostEqual(float(late["corr_fuel"].mean()), 10.0, delta=0.01)              # lambda 0.5 x the 20 EUR/MWh the model has been missing by
+        self.assertTrue(((late["fuel"] - late["y"]).abs() < (late["fuel_raw"] - late["y"]).abs()).all())
+        early = d[(d["date"] < "2026-02-20") & (d["h"] == 2)]
+        self.assertAlmostEqual(float(early["corr_fuel"].abs().max()), 0.0, places=6)           # nothing to correct yet
+        first = d[(d["h"] == 3) & (d["date"] == "2026-03-01")]                                 # no error of a day after the bias began was settled at issue
+        self.assertAlmostEqual(float(first["corr_fuel"].abs().max()), 0.0, places=6)
+
+    def test_the_band_moves_with_the_point_but_its_offsets_are_the_models_own(self):
+        rng = np.random.default_rng(3)
+        f = self.frame(start="2025-09-01", end="2026-05-31", bias_from="2026-04-01")
+        f["y"] = f["y"] + rng.normal(0, 5, len(f))
+        d = BG.recipe_columns(f, 0.5)
+        q = d[["zone", "t", "h", "date", "y"]].assign(q10=d["fuel_raw"] - 8.0, q90=d["fuel_raw"] + 8.0)       # quantile edges that share the model's miss
+        s = BG.attach_correction(q, d)
+        self.assertTrue(np.allclose(s["corr_fuel"].to_numpy(), d["corr_fuel"].to_numpy()))
+        self.assertTrue(np.allclose(s["q10"], q["q10"]), "the quantile edges themselves are not touched: calibrate_bands.py and the weekly refresh never see the correction")
+        self.assertIsNone(BG.attach_correction(None, d))
+        raw = BG.coverage_table(d, "fuel_raw", s)
+        moved = BG.coverage_table(d, "fuel_raw", s, "corr_fuel")
+        self.assertGreater(moved[("de", 2)][0], raw[("de", 2)][0], "with the model 20 too low for two months the shifted band covers more of the days than the unshifted one")
+
+    def test_the_job_publishes_the_default_lambda(self):
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "train_daily.py"), encoding="utf-8") as f:
+            src = f.read()
+        self.assertIn('os.environ.get("EU_FORECAST_LAMBDA", LC.PUBLISH_LAMBDA)', src)
+
+
 class Artifacts(unittest.TestCase):
     """The checked-in publish_gate.json and accuracy_eu.json: what the lead reviews, kept consistent with the code."""
 
@@ -495,10 +545,13 @@ class Artifacts(unittest.TestCase):
         self.assertNotRegex(text, r"80 ?%")
 
     def test_kosovo_is_gated_like_every_zone_and_has_its_band_offsets(self):
-        """xk (docs/forecast-xk.md): measured with the same code as the others; D+7 did not pass the 5 % rule on the hold-out and is not published."""
+        """xk (docs/forecast-xk.md): measured with the same code as the others. D+7 missed the 5 % rule on the hold-out by 0.05 points before the level correction (docs/forecast-balkan-level.md);
+        with it the rule is met (the cell carries `low`), and it is published like every other cell that passes."""
         self.assertEqual(self.gate["zones"]["xk"]["recipe"], "ens")
-        self.assertEqual(self.gate["zones"]["xk"]["fuel"], [2, 3, 4, 5, 6])
-        self.assertNotIn(7, self.gate["zones"]["xk"]["nofuel"])
+        self.assertEqual(self.gate["zones"]["xk"]["fuel"], [2, 3, 4, 5, 6, 7])
+        c7 = self.acc["zones"]["xk"]["fuel"]["7"]
+        self.assertGreaterEqual(c7["gainHold"], 0.05)
+        self.assertTrue(c7["low"], "since 2026-09-01 the gain is below 10 %: low confidence")
         cal = G.load_calibration(os.path.join(HERE, "calibration_eu.json"))
         for kind in ("quantile", "residual"):
             self.assertIn("xk", cal[kind], kind)
