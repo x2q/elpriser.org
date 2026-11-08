@@ -23,6 +23,7 @@ import calibrate as K             # noqa: E402
 import metrics as M              # noqa: E402
 import kv as KV                  # noqa: E402
 import monitor as MON            # noqa: E402
+import fetch_weather as W        # noqa: E402
 from zones import ZONES          # noqa: E402
 
 
@@ -84,11 +85,11 @@ class Zones(unittest.TestCase):
         en_z = dict((m[0], (m[1], m[2])) for m in re.findall(r'^\s+"([a-z-]+)":\s+\("(10Y[0-9A-Z-]{13})",\s+"([A-Za-z/_]+)"\)', en, re.M))
         ec_z = dict((m[0], m[1]) for m in re.findall(r'^\s+"([a-z-]+)":\s+\("[A-Za-z-]+",\s+"([A-Za-z/_]+)"\)', ec, re.M))
         # the model covers the Energy-Charts and ENTSO-E zones plus Ireland (whose prices the site now takes from SEMOpx; the model keeps
-        # reading the same SEM prices from ENTSO-E) - not Kosovo (no model) and not Great Britain (a within-day index, not a day-ahead price)
-        self.assertEqual(set(ZONES), (set(en_z) | set(ec_z) | {"ie"}) - {"xk"})
+        # reading the same SEM prices from ENTSO-E), Kosovo included since the gate passed for it (see docs/forecast-xk.md) - not Great Britain (a
+        # within-day index, not a day-ahead price)
+        self.assertEqual(set(ZONES), set(en_z) | set(ec_z) | {"ie"})
         for z, (eic, tz) in en_z.items():
-            if z != "xk":
-                self.assertEqual((ZONES[z][0], ZONES[z][1]), (eic, tz), z)
+            self.assertEqual((ZONES[z][0], ZONES[z][1]), (eic, tz), z)
         for z, tz in ec_z.items():
             self.assertEqual(ZONES[z][1], tz, z)
 
@@ -539,6 +540,39 @@ class Monitoring(unittest.TestCase):
         self.assertFalse(bool(MON.drift(few, acc)["alert"].iloc[0]))        # three days: weather, not a broken model
         calm = MON.evaluate([self.archive(dates=dates)], {"de": self.actual(dates, shift=1.0)})
         self.assertFalse(bool(MON.drift(calm, acc)["alert"].iloc[0]))
+
+
+class NewZoneWeather(unittest.TestCase):
+    def test_kosovo_is_a_zone_with_its_own_clock_and_calendar(self):
+        self.assertEqual(ZONES["xk"][0], "10Y1001C--00100H")
+        self.assertEqual(ZONES["xk"][1], "Europe/Belgrade")              # CET/CEST, the zone tzdata lists for XK
+        self.assertTrue(C.is_holiday(date(2026, 2, 17), "XK") and C.is_holiday(date(2026, 4, 9), "XK") and C.is_holiday(date(2026, 12, 25), "XK"))
+        self.assertFalse(C.is_holiday(date(2026, 3, 3), "XK"))
+
+    def test_fetch_zone_history_writes_only_that_zones_files(self):
+        import tempfile
+        calls = []
+
+        def fake_request(pts, s, e):
+            calls.append((len(pts), s, e))
+            idx = pd.date_range(f"{s} 00:00", f"{e} 23:00", freq="h")
+            return [{"hourly": {"time": [t.isoformat() for t in idx], **{v: [1.0] * len(idx) for v in W.PREV_VARS}}} for _ in pts]
+
+        old_req, old_sleep = W._request, W.time.sleep
+        W._request, W.time.sleep = fake_request, lambda *_: None
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                W.fetch_zone_history("xk", out_dir=d, today=date(2025, 1, 10))
+                self.assertEqual(sorted(os.listdir(d)), ["w_prev_xk_0.parquet"])
+                df = pd.read_parquet(os.path.join(d, "w_prev_xk_0.parquet"))
+                self.assertEqual(df["time"].min(), pd.Timestamp(W.PREV_START))
+                self.assertEqual(df["time"].max(), pd.Timestamp("2025-01-09 23:00"))
+                self.assertTrue(df["time"].is_unique)
+                self.assertTrue(all(n == 1 for n, _, _ in calls))        # one point per request: no other zone's point rides along
+                with self.assertRaises(SystemExit):
+                    W.fetch_zone_history("zz", out_dir=d)
+        finally:
+            W._request, W.time.sleep = old_req, old_sleep
 
 
 class NoSecrets(unittest.TestCase):

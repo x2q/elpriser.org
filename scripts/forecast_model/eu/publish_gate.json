@@ -40,6 +40,7 @@
   "ie": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
   "me": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
   "mk": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6, 7], "nofuel": [2, 3, 4, 5, 6, 7]},
-  "al": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6], "nofuel": [2, 3, 4, 5, 6]}
+  "al": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6], "nofuel": [2, 3, 4, 5, 6]},
+  "xk": {"recipe": "ens", "fuel": [2, 3, 4, 5, 6], "nofuel": [2, 3, 4, 5]}
  }
 }
