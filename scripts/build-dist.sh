@@ -44,5 +44,7 @@ cp -R badges "$DIST/badges"
 # /download: the real app screenshots (WebP, 1x and 2x). The page itself is /download (the Function); only /download/img/* is static.
 mkdir -p "$DIST/download"
 cp -R download/img "$DIST/download/img"
+# The share images (og:image / twitter:image), one per page that has its own: /og/<page path>.png (scripts/make-og-images.mjs). Static, kept off the Function by _routes.json.
+cp -R og "$DIST/og"
 
 echo "$DIST: $(find "$DIST" -type f | wc -l | tr -d ' ') files, $(du -sh "$DIST" | cut -f1)"

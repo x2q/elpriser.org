@@ -56,7 +56,9 @@ place dialog are plain HTML in `index.html`; **derive them, never hand-edit**: `
    (the e2e derives them with `prisCn`).
 7. Bump the SSR cache keys when the shared markup changed (`ZONE_SSR_VERSION`, `CITY_SSR_VERSION`, `PROGNOSE_SSR_VERSION`,
    `homepage-ssr-vNN` in `functions/[[path]].js`; `test-static.js` pins them).
-8. `npm run test:gate` and `TZ=UTC npx -y node@22 test-static.js` (CI runs UTC and Node 22).
+8. The page's share image (og:image, 1200 x 630, its headline in the page's language): run `npm run og` (scripts/make-og-images.mjs draws one card per country page from `PRIS_COUNTRIES` and
+   rewrites `functions/_og_manifest.js`), look at `og/xx/<slug>.png`, commit both. `test-og-images.mjs` fails until that is done.
+9. `npm run test:gate` and `TZ=UTC npx -y node@22 test-static.js` (CI runs UTC and Node 22).
 
 ```js
 // ZONES — one line

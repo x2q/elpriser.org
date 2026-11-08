@@ -4,6 +4,7 @@ import { cityLocation } from './_city-location.js';
 import { netLocation, netSourceNote, netAreasGeoJSON } from './_net-location.js';
 import { zoneLocation } from './_zone-location.js';
 import { downloadMain, downloadMeta, dlLang, dlLangOfPath, DL_LANGS, dlPath, dlAlternates, dlSitemapLinks, dlLlmsLine } from './_download.js';
+import { withOgImage } from './_og.js';   // each page's share image (og:image, twitter:image) and its alt text: /og/<page path>.png, the generic /og-image.png otherwise
 import { DL_TEXT } from './_download_i18n.js';   // the app page in 26 languages: one template, one text table, one status table
 import { integrationsHTML, integrationsLd, integrationsLlms, integrationsNames } from './_integrations.js';   // /integrationer: the table of items and their true status is in that file
 
@@ -3265,7 +3266,7 @@ async function renderHomepage(context) {
   const cache = caches.default;
   // Bump the version segment when index.html's homepage markup changes, so a
   // deploy isn't masked by a previous render cached at the same key.
-  const cacheKey = new Request('https://cache.local/homepage-ssr-v88');
+  const cacheKey = new Request('https://cache.local/homepage-ssr-v89');
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -3278,7 +3279,7 @@ async function renderHomepage(context) {
     fetch(`${origin}/api/forecast?area=DK1&mode=inkl_alt`)
       .then(r => (r.ok ? r.json() : null)).catch(() => null),
   ]);
-  let html = await resHtml.text();
+  let html = withOgImage(await resHtml.text(), '/');
   if (dk1 && dk2) {
     const { jsonLd, summary } = buildLivePriceMarkup(dk1, dk2);
     html = html.replace('<!--SSR_LIVE_PRICE_JSONLD-->', jsonLd);
@@ -3314,10 +3315,10 @@ async function renderHomepage(context) {
  *  edge for five minutes like the homepage, each family under a key of its own. Bump the version when index.html's
  *  markup for them changes, so a deploy is not masked by a render cached under the old key. Only a render
  *  that has all its data is kept: a page missing a zone is served once, never remembered. */
-const ZONE_SSR_VERSION = 'zone-ssr-v29';
-const CITY_SSR_VERSION = 'city-ssr-v22';
-const PROGNOSE_SSR_VERSION = 'prognose-ssr-v18';
-const IMORGEN_SSR_VERSION = 'imorgen-ssr-v2';
+const ZONE_SSR_VERSION = 'zone-ssr-v30';
+const CITY_SSR_VERSION = 'city-ssr-v23';
+const PROGNOSE_SSR_VERSION = 'prognose-ssr-v19';
+const IMORGEN_SSR_VERSION = 'imorgen-ssr-v3';
 
 /**
  * /elpriser-i-morgen: tomorrow's hourly prices for DK1 and DK2 (the feed's "inkl_alt": Energinet's tariffs, elafgift and moms, not the local nettarif), written
@@ -3741,6 +3742,7 @@ async function renderSPA(context, pathname, meta, opts = {}) {
     /<meta property="og:url" content="[^"]*">/,
     `<meta property="og:url" content="${pageUrl}">`
   );
+  html = withOgImage(html, pathname);
   html = html.replace(
     /<meta name="twitter:title" content="[^"]*">/,
     `<meta name="twitter:title" content="${meta.title}">`

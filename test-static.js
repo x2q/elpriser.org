@@ -1855,7 +1855,7 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // v84: the footer and the place dialog list the United Kingdom and Kosovo; Ireland's source is SEMOpx.
   // v85: the Pris screen draws PRIS_EUF (forecast days of the EU zones: band, accuracy line, note) and the llms text says so.
   // v87: the footer's Smart hjem group gained "Integrationer" (/integrationer); zone v25, city v19 and prognose v17 moved with it.
-  assert.ok(/homepage-ssr-v88/.test(ROUTES), 'homepage-ssr-v88');
+  assert.ok(/homepage-ssr-v89/.test(ROUTES), 'homepage-ssr-v89');
   // The zone pages share the header and footer and are cached under their own key; it moved with them.
   // (v8: the shared Pris block changed with PRIS_FC.)
   // (v9: the country pages got their own header and footer, and /nl/stroomprijs joined.)
@@ -1864,14 +1864,14 @@ test('footer: the homepage render cache key was bumped with the shared markup', 
   // (v26: the header button and the footer pill "Hent appen" in the page's language, to the app page in that language.)
   // (v27: the footer's privacy link goes to the English policy, /privacy, instead of the Danish one.)
   // (v28: the logo links to the country's own page, not the Danish front page.)
-  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v29'/.test(ROUTES), 'zone-ssr-v29');
+  assert.ok(/ZONE_SSR_VERSION = 'zone-ssr-v30'/.test(ROUTES), 'zone-ssr-v30');
   // The city pages share them too, under a key of their own that starts at v1 (v2: Dinel in the footer and in Aarhus' text; v3: Ravdex, Odense).
   // (v5: Nederland in the footer and the net dialog.)
   // (v6: the four EU country links.)
   // (v13: the four new country links.)
-  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v22'/.test(ROUTES), 'city-ssr-v19');
+  assert.ok(/CITY_SSR_VERSION = 'city-ssr-v23'/.test(ROUTES), 'city-ssr-v19');
   // /prognose shares the header and footer too (v4: the four EU country links).
-  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v18'/.test(ROUTES), 'prognose-ssr-v18');
+  assert.ok(/PROGNOSE_SSR_VERSION = 'prognose-ssr-v19'/.test(ROUTES), 'prognose-ssr-v19');
 });
 
 

@@ -157,7 +157,7 @@ async function main() {
   const assets = [
     ['/style.css', 'text/css'], ['/favicon.ico', 'image'], ['/favicon.svg', 'image/svg'],
     ['/favicon-32.png', 'image/png'], ['/favicon-192.png', 'image/png'],
-    ['/apple-touch-icon.png', 'image/png'], ['/og-image.png', 'image/png'],
+    ['/apple-touch-icon.png', 'image/png'], ['/og-image.png', 'image/png'], ['/og/index.png', 'image/png'], ['/og/de/download.png', 'image/png'],
     ['/og-image', 'image/svg'], ['/sitemap.xml', 'xml'], ['/robots.txt', 'text/plain'],
     ['/llms.txt', 'text/plain'], ['/llms-full.txt', 'text/plain'],
     ['/terms', 'text/html'], ['/vilkaar', 'text/html'], ['/privacy', 'text/html'], ['/privatliv', 'text/html'],

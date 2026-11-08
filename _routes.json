@@ -12,6 +12,7 @@
     "/favicon-512.png",
     "/apple-touch-icon.png",
     "/og-image.png",
+    "/og/*",
     "/manrope.woff2",
     "/badges/*",
     "/download/img/*"
