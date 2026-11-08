@@ -15,7 +15,7 @@
  *    numbers is not published"), and the run must be fresh. A horizon the gate rejects is "not published by design": it is listed, never a failure.
  *  - gb (own job, gb_gate.json, horizons 1-7): the same rules.
  *  - nordic (13 zones, one pooled model, no per-horizon gate): forecast days that follow the last settled day without a hole, at least 6 of them, fresh.
- *  - xk: no model exists yet: NO MODEL (a forecast on the API is a PASS, the day a model is added).
+ *  - xk: no model exists yet: NO MODEL (a forecast on the API makes it an EU zone, judged by its gate entry: it went live 2026-11-08 with D+2..D+6).
  * On top of that every zone gets an explicit verdict for D+2, D+5 and D+7 (the date today + n): shown / blocked-by-gate (documented, not a failure) / due (today's run is not in yet) /
  * hidden-bug / no-model. The exit code is 1 when a zone FAILs OR lacks one of the three without a documented gate reason (a hidden-bug or a no-model).
  * Freshness: the run's `forecastGenerated` (Nordic: `generated`) is at most one day old = PASS, two = WARN (a run was missed), three or more = FAIL
@@ -59,7 +59,7 @@ export const kindOf = (zone, lists) => (lists.nordic.includes(zone) ? 'nordic' :
 /** Judge one zone's /api/nordic answer. `body` is the parsed JSON (or null when the API did not answer), `ctx` = { today, gate, gbGate, lists }.
  *  Pure: no network, no clock. Returns { zone, kind, status: PASS|WARN|FAIL|NO MODEL, ... }. */
 function analyzeZoneBase(zone, body, ctx) {
-  const kind = kindOf(zone, ctx.lists);
+  let kind = kindOf(zone, ctx.lists);
   const res = { zone, kind, status: 'PASS', settledLast: null, first: null, last: null, nDays: 0, horizons: [], expected: [], byDesign: [], generated: null, age: null, trainedThrough: null,
                 reasons: [], notes: [] };
   const fail = r => { res.status = 'FAIL'; res.reasons.push(r); };
@@ -68,6 +68,7 @@ function analyzeZoneBase(zone, body, ctx) {
   const days = body.days.filter(d => d && typeof d.date === 'string' && DATE.test(d.date));
   const settled = days.filter(d => d.type === 'actual').map(d => d.date).sort();
   const fc = days.filter(d => d.type === 'forecast').sort((a, b) => (a.date < b.date ? -1 : 1));
+  if (kind === 'xk' && fc.length) { kind = 'eu'; res.kind = 'eu'; res.notes.push('Kosovo is in production (the API shows a forecast): judged like every EU zone'); }
   res.settledLast = settled.length ? settled[settled.length - 1] : null;
   res.nDays = fc.length;
   res.first = fc.length ? fc[0].date : null;

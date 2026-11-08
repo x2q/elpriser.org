@@ -1,7 +1,7 @@
 # Forecast matrix: zone x D+2 / D+5 / D+7 (40 zones)
 
 Owner's goal (2026-11-08): "We live by producing forecasts for D+2, D+5 and D+7. Make sure we have those forecasts for ALL areas." The site's period views are 2, 5 and 7 days, so D+2, D+5 and D+7 must exist in every zone.
-This is the snapshot of **2026-11-08 about 14:40 UTC, before the 15:15 UTC run** (the live API, the KV keys on the Spark, the checked-in gates), made by `npm run forecast-coverage` (which now prints exactly these verdicts) and a read-only look at KV.
+This is the snapshot of **2026-11-08 15:30 UTC, after the 15:15 UTC run (26 of 26 zones)** (the live API, the KV keys on the Spark, the checked-in gates), made by `npm run forecast-coverage` (which now prints exactly these verdicts) and a read-only look at KV.
 What was tried to get the blocked cells through is in [forecast-d257-experiments.md](forecast-d257-experiments.md).
 
 ## How to read it
@@ -31,46 +31,46 @@ What was tried to get the blocked cells through is in [forecast-d257-experiments
 | fi | Nordic job | shown* | shown* | shown* | 19.5 / 23.0 ; 18.2 / 17.6 ; 17.4 / 14.4 |
 | nl | Nordic job | shown* | shown* | shown* | 19.4 / 21.5 ; 13.5 / 12.7 ; 9.8 / 10.1 |
 | de | EU job | shown | shown | shown | 38.1 / 40.2 ; 27.4 / 29.4 ; 22.4 / 26.3 |
-| fr | EU job | shown | shown | shown (due) | 28.7 / 33.9 ; 17.6 / 24.3 ; 12.8 / 18.9 |
-| pl | EU job | shown | shown | shown (due) | 30.2 / 29.3 ; 24.1 / 24.7 ; 19.0 / 19.9 |
-| it-n | EU job | shown | shown | shown (due) | 28.5 / 25.5 low ; 20.2 / 14.4 low ; 17.3 / 12.2 low |
+| fr | EU job | shown | shown | shown | 28.7 / 33.9 ; 17.6 / 24.3 ; 12.8 / 18.9 |
+| pl | EU job | shown | shown | shown | 30.2 / 29.3 ; 24.1 / 24.7 ; 19.0 / 19.9 |
+| it-n | EU job | shown | shown | shown | 28.5 / 25.5 low ; 20.2 / 14.4 low ; 17.3 / 12.2 low |
 | at | EU job | shown | shown | shown | 33.3 / 33.1 ; 26.2 / 23.2 ; 23.1 / 21.5 |
-| be | EU job | shown | shown | shown (due) | 32.1 / 35.3 ; 25.3 / 27.1 ; 19.6 / 22.0 |
+| be | EU job | shown | shown | shown | 32.1 / 35.3 ; 25.3 / 27.1 ; 19.6 / 22.0 |
 | ch | EU job | shown | shown | shown | 33.6 / 35.6 ; 25.6 / 26.6 ; 22.3 / 23.5 |
-| cz | EU job | shown | shown | shown (due) | 30.0 / 29.7 ; 25.0 / 24.3 ; 21.8 / 21.1 |
-| hu | EU job | shown | shown | shown (due) | 33.0 / 35.7 ; 24.9 / 23.9 ; 22.2 / 21.7 low |
-| si | EU job | shown | shown | shown (due) | 32.9 / 35.1 ; 26.4 / 24.7 ; 25.0 / 23.2 |
-| es | EU job | shown | shown | shown (due) | 30.1 / 30.5 low ; 17.9 / 18.0 ; 11.9 / 13.9 |
-| pt | EU job | shown | shown | shown (due) | 24.3 / 25.7 low ; 12.6 / 13.1 low ; 8.1 / 7.8 low |
-| sk | EU job | shown | shown | shown (due) | 31.1 / 29.8 ; 24.7 / 21.1 low ; 22.3 / 20.4 low |
-| gr | EU job | shown | shown | shown (due) | 26.4 / 25.7 low ; 17.9 / 14.2 low ; 15.4 / 13.8 low |
-| ro | EU job | shown | shown | shown (due) | 31.2 / 37.5 ; 23.4 / 25.5 ; 20.9 / 23.3 low |
-| bg | EU job | shown | shown | shown (due) | 28.2 / 30.6 ; 20.2 / 17.5 ; 17.4 / 15.5 low |
-| hr | EU job | shown | shown | shown (due) | 33.6 / 36.0 ; 26.7 / 25.5 ; 24.1 / 23.1 low |
+| cz | EU job | shown | shown | shown | 30.0 / 29.7 ; 25.0 / 24.3 ; 21.8 / 21.1 |
+| hu | EU job | shown | shown | shown | 33.0 / 35.7 ; 24.9 / 23.9 ; 22.2 / 21.7 low |
+| si | EU job | shown | shown | shown | 32.9 / 35.1 ; 26.4 / 24.7 ; 25.0 / 23.2 |
+| es | EU job | shown | shown | shown | 30.1 / 30.5 low ; 17.9 / 18.0 ; 11.9 / 13.9 |
+| pt | EU job | shown | shown | shown | 24.3 / 25.7 low ; 12.6 / 13.1 low ; 8.1 / 7.8 low |
+| sk | EU job | shown | shown | shown | 31.1 / 29.8 ; 24.7 / 21.1 low ; 22.3 / 20.4 low |
+| gr | EU job | shown | shown | shown | 26.4 / 25.7 low ; 17.9 / 14.2 low ; 15.4 / 13.8 low |
+| ro | EU job | shown | shown | shown | 31.2 / 37.5 ; 23.4 / 25.5 ; 20.9 / 23.3 low |
+| bg | EU job | shown | shown | shown | 28.2 / 30.6 ; 20.2 / 17.5 ; 17.4 / 15.5 low |
+| hr | EU job | shown | shown | shown | 33.6 / 36.0 ; 26.7 / 25.5 ; 24.1 / 23.1 low |
 | rs | EU job | shown | shown | shown | 27.8 / 26.2 ; 19.5 / 14.8 low ; 15.9 / 13.9 low |
-| ee | EU job | shown | shown | shown (due) | 18.5 / 16.9 ; 14.3 / 17.4 ; 12.3 / 13.2 |
-| lv | EU job | shown | shown | shown (due) | 20.0 / 16.2 ; 18.2 / 18.1 ; 15.9 / 13.6 |
-| lt | EU job | shown | shown | shown (due) | 20.4 / 17.3 ; 18.7 / 18.2 ; 16.0 / 12.2 low |
+| ee | EU job | shown | shown | shown | 18.5 / 16.9 ; 14.3 / 17.4 ; 12.3 / 13.2 |
+| lv | EU job | shown | shown | shown | 20.0 / 16.2 ; 18.2 / 18.1 ; 15.9 / 13.6 |
+| lt | EU job | shown | shown | shown | 20.4 / 17.3 ; 18.7 / 18.2 ; 16.0 / 12.2 low |
 | me | EU job | shown | shown | shown | 27.9 / 23.9 low ; 19.4 / 12.8 low ; 17.8 / 10.1 low |
 | mk | EU job | shown | shown | shown | 29.8 / 26.9 low ; 19.1 / 11.7 low ; 16.0 / 10.8 low |
 | al | EU job | shown | shown | blocked-by-gate | 17.5 / 15.7 ; 13.0 / 10.0 low ; not published |
-| xk | none | no-model | no-model | no-model | 17.4 / 14.6 ; 13.2 / 8.8 low ; not published |
+| xk | EU job | shown | shown | blocked-by-gate | 17.4 / 14.6 ; 13.2 / 8.8 low ; not published |
 | gb | gb job | shown | shown | shown | 23.0 / 27.0 ; 17.6 / 20.0 ; 13.9 / 12.6 |
-| ie | EU job | shown | shown | shown (due) | 31.5 / 29.7 ; 21.3 / 19.6 ; 14.6 / 13.7 |
+| ie | EU job | shown | shown | shown | 31.5 / 29.7 ; 21.3 / 19.6 ; 14.6 / 13.7 |
 
-## Counts (2026-11-08 about 14:40 UTC, before the 15:15 UTC run)
+## Counts (2026-11-08 15:30 UTC, after the 15:15 UTC run (26 of 26 zones))
 
 ```
-D+2: {'shown': 39, 'no-model': 1}
-D+5: {'shown': 39, 'no-model': 1}
-D+7: {'shown': 20, 'due': 18, 'blocked-by-gate': 1, 'no-model': 1}
+D+2: {'shown': 40}
+D+5: {'shown': 40}
+D+7: {'shown': 38, 'blocked-by-gate': 2}
 ```
 
 ## What the matrix says
 
 1. **EU job (25 zones) and `gb`:** every cell the gate allows is on the API. `de` and `at` were hidden-bug at the 12:20 UTC snapshot of 2026-11-08 and came back at once when the site's own Energy-Charts prices reached 2026-11-09 (the 14:00 UTC price job): see "de/at" below.
 2. **Blocked by the gate: `al` D+7 only.** It is not blocked by the numbers (5.9 % on the hold-out in the checked-in run, 7.8-8.5 % with the 730-day ridge, [experiments](forecast-d257-experiments.md)) but by `forcedOff` in `publish_gate.json`, the owner's explicit exclusion. Lifting it is the owner's call.
-3. **No model: `xk` (all three).** Offline it passes the gate for D+2..D+6; D+7 fails by 0.05 points in the checked-in run (4.95 %) and passes in four of five re-runs of the same recipe and with a longer ridge window. Not rolled out (the owner has not decided).
+3. **`xk` is live since the 15:15 UTC run of 2026-11-08** (rolled out by the owner, not by this work: `bak-xk-20261108` on the Spark, `DONE 26/26 zones`): D+2 and D+5 shown (D+6 too); **D+7 is blocked-by-gate** (checked-in run 4.95 % on the hold-out, rule 5 %). Before the rollout the matrix had `no-model` for all three of its cells. Offline, D+7 passes in four of five re-runs of the same recipe and with a longer ridge window ([experiments](forecast-d257-experiments.md)).
 4. **The 13 Nordic zones are shown at D+2, D+5 and D+7 with NO gate, no accuracy block and no horizon label.** `nordic-forecast-<zone>` is written by `~/nordic/train_daily.py` (cron 12:40 UTC; `scripts/forecast_model/nordic/train_daily.py`: one pooled LightGBM, days today..today+8, bands from residual quantiles); the Worker joins it without a per-horizon check.
    Measured with the EU gate's own rule on the research backtest of that model (rolling origin 2025-04..2026-10, level+shape baseline): `dk1 dk2 se1-se4 fi nl` pass at D+2, D+5 and D+7 (whole backtest and hold-out both over 5 %); **`no1 no2 no3 no4 no5` fail at every one of the three horizons** (some by a few points, `no5` is 12-20 % WORSE than level+shape),
    which is the honest reading of "the Nordic model has no skill in the hydro zones beyond the seasonal pattern" (its model card says it beats a seasonal baseline on regret). Even the best research recipe of [forecast-per-region.md](forecast-per-region.md) (`ens_lt`) would pass `no3` at D+2/D+5/D+7, `no2` at D+2/D+5, `no1` and `no5` at D+2 only, and `no4` at none.
@@ -98,32 +98,32 @@ D+7: {'shown': 20, 'due': 18, 'blocked-by-gate': 1, 'no-model': 1}
 | fi | 2026-11-08 | 11-10: 11-11: 11-12: 11-13: 11-14: 11-15: 11-16: |
 | nl | 2026-11-08 | 11-10: 11-11: 11-12: 11-13: 11-14: 11-15: 11-16: |
 | de | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
-| fr | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| pl | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| it-n | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
+| fr | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| pl | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| it-n | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
 | at | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
-| be | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
+| be | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
 | ch | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
-| cz | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| hu | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| si | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| es | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| pt | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| sk | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| gr | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| ro | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| bg | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| hr | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
+| cz | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| hu | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| si | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| es | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| pt | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| sk | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| gr | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| ro | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| bg | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| hr | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
 | rs | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
-| ee | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| lv | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
-| lt | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
+| ee | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| lv | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
+| lt | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
 | me | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
 | mk | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
-| al | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 |
+| al | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 |
 | xk | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 |
 | gb | 2026-11-08 | 11-09:1 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
-| ie | 2026-11-08 | 11-09:2 11-10:3 11-11:4 11-12:5 11-13:6 11-14:7 |
+| ie | 2026-11-08 | 11-10:2 11-11:3 11-12:4 11-13:5 11-14:6 11-15:7 |
 
 
 ## de/at: root cause, the cap, what is left
@@ -136,5 +136,5 @@ D+7: {'shown': 20, 'due': 18, 'blocked-by-gate': 1, 'no-model': 1}
 
 ## Coverage check, and what must happen for "all areas"
 
-`npm run forecast-coverage` now ends with the table above and exits 1 when a zone FAILs or lacks one of D+2, D+5, D+7 without a gate reason (hidden-bug, no-model). Today that is `xk` (no model). `al` D+7 is a documented gate reason and passes.
-Decisions for the owner: (1) `xk`: roll out D+2..D+6 as it stands, or wait for D+7 with the 730-day ridge; (2) `al` D+7: lift `forcedOff`; (3) the Nordic zones: leave ungated (and say so), gate them with the EU rule (NO1, NO2, NO4, NO5 would lose horizons), or move them to the EU recipe (`ens_lt`: higher gains than the Nordic job's model in the zones where it passes, e.g. dk1 D+2 30.6 % against 23.0 %; still nothing for NO4); (4) whether to adopt the 730-day ridge for all zones (experiments, section 3).
+`npm run forecast-coverage` now ends with the table above and exits 1 when a zone FAILs or lacks one of D+2, D+5, D+7 without a gate reason (hidden-bug, no-model). After the xk rollout nothing is missing without a reason: `al` D+7 and `xk` D+7 are documented gate reasons and pass.
+Decisions for the owner: (1) `xk` D+7 and `al` D+7: ship the 730-day ridge (and the three-seed LightGBM) through the gate chain, which makes `xk` D+7 pass, and lift `forcedOff` for `al`; (3) the Nordic zones: leave ungated (and say so), gate them with the EU rule (NO1, NO2, NO4, NO5 would lose horizons), or move them to the EU recipe (`ens_lt`: higher gains than the Nordic job's model in the zones where it passes, e.g. dk1 D+2 30.6 % against 23.0 %; still nothing for NO4); (4) whether to adopt the 730-day ridge for all zones (experiments, section 3).

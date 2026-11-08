@@ -119,7 +119,7 @@ before tomorrow's prices were in; the 15:15 run brings D+7), `HIDDEN` (hidden-bu
 * **FAIL, "no forecast shown"**: `eu-forecast-<zone>` is missing or older than 3 days, or its first day is not the day after the zone's last settled day. The Worker shows forecast days only without a hole
   after the settled prices (the apps stop at the first missing day), so a run that starts one day late is hidden whole. Look at the zone's last known day in `daily.log` ("h 2,3,..": h counts from it).
 * **FAIL, "allows up to h7 but the API shows h2-6"**: the same one-day shift, seen from the other end (the window ends at today + 7).
-* **NO MODEL**: Kosovo (`xk`) until a model exists (it passes the gate offline for D+2..D+6, [forecast-xk.md](forecast-xk.md); the rollout is the owner's decision). It counts as a coverage gap in the exit code.
+* **NO MODEL**: Kosovo (`xk`) when the API shows no forecast for it. Kosovo went live in the 15:15 UTC run of 2026-11-08 (D+2..D+6, [forecast-xk.md](forecast-xk.md)); with a forecast on the API it is judged like every EU zone by its `publish_gate.json` entry (D+7 not published: `blocked-by-gate`). Without one it is a coverage gap in the exit code.
 * **WARN**: the run is two days old (a night was missed), or the training data stops more than three days ago (a price source froze).
 
 **The weekend shift (found 2026-11-08, fixed in `forecast.py`).** The job trains on ENTSO-E prices, the site's DE and AT prices come from Energy-Charts. On Fridays and Saturdays ENTSO-E already

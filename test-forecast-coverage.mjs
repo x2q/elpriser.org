@@ -87,9 +87,12 @@ test('the gate decides: it-n without fuel has only h2-4, so h5-7 are by design a
   assert.deepEqual(r.byDesign, [5, 6, 7]);
 });
 
-test('Kosovo: NO MODEL, not a failure; a forecast there would pass', () => {
+test('Kosovo: NO MODEL without a forecast; with one (live since 2026-11-08) it is an EU zone judged by its gate entry, D+2..D+6, D+7 not published', () => {
   assert.equal(analyzeZone('xk', body('xk', { fc: [] }), ctx).status, 'NO MODEL');
-  assert.equal(analyzeZone('xk', body('xk'), ctx).status, 'PASS');
+  const live = analyzeZone('xk', body('xk', { fc: [2, 3, 4, 5, 6] }), ctx);
+  assert.equal(live.status, 'PASS', live.reasons.join('; '));
+  assert.deepEqual(live.byDesign, [7]);
+  assert.equal(analyzeZone('xk', body('xk'), ctx).status, 'FAIL');         // h7 on the API would be a horizon the gate does not allow
 });
 
 test('Great Britain: horizons 1-7 from its own gate; a Nordic zone needs a gap-free run of at least 6 days', () => {
@@ -127,10 +130,13 @@ test('D+2, D+5, D+7: shown / blocked-by-gate / no-model / hidden-bug / due, and 
   assert.deepEqual(cellsOf(itn), { 2: 'shown', 5: 'blocked-by-gate', 7: 'blocked-by-gate' });
   assert.match(itn.cells[5].reason, /under 5 %/);
   assert.equal(coverageGap(itn), false);
-  // Kosovo: no model in production = a gap (the owner has not decided), not a documented gate reason
+  // Kosovo without a forecast: no model in production = a gap, not a documented gate reason
   const xk = analyzeZone('xk', body('xk', { fc: [] }), late);
   assert.deepEqual(cellsOf(xk), { 2: 'no-model', 5: 'no-model', 7: 'no-model' });
   assert.equal(coverageGap(xk), true);
+  const xkLive = analyzeZone('xk', body('xk', { fc: [2, 3, 4, 5, 6] }), late);      // the zone as it is live now: D+7 is the gate's, not a gap
+  assert.deepEqual(cellsOf(xkLive), { 2: 'shown', 5: 'shown', 7: 'blocked-by-gate' });
+  assert.equal(coverageGap(xkLive), false);
   // DE/AT as found on 2026-11-08: the Worker hides the run, so every cell is a hidden-bug (the zone is allowed all of them)
   const hidden = analyzeZone('de', body('de', { fc: [] }), late);
   assert.deepEqual(cellsOf(hidden), { 2: 'hidden-bug', 5: 'hidden-bug', 7: 'hidden-bug' });
