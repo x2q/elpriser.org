@@ -32,8 +32,8 @@ place dialog are plain HTML in `index.html`; **derive them, never hand-edit**: `
 
 1. Check that `/api/nordic?zone=<z>` serves the zone (`EU_ZONES_ENERGY_CHARTS` or `EU_ZONES_ENTSOE` in `functions/api/[[catchall]].js`)
    and note the timezone of the zone's days (`scripts/eu_prices/build_*_prices.py`).
-2. Add the zone to `ZONES` (template below). `src` is `'ec'` (Energy-Charts: Bundesnetzagentur | SMARD.de, CC BY 4.0) or `'entsoe'`
-   (ENTSO-E Transparency Platform), `'semopx'` (SEMOpx day-ahead results: Ireland) or `'elexon'` (Elexon BMRS Market Index Price, within-day: Great Britain)
+2. Add the zone to `ZONES` (template below). `src` lists the sources the zone is read from, in the order of `CHAINS` in `scripts/eu_prices/price_sources.py`, joined by `+`: `'entsoe+ec'` (ENTSO-E Transparency Platform, then
+   Energy-Charts: Bundesnetzagentur | SMARD.de, CC BY 4.0), `'ec+entsoe'`, `'entsoe+omie'` (OMIE), `'entsoe'` alone (docs/price-sources.md), `'semopx'` (SEMOpx day-ahead results: Ireland) or `'elexon'` (Elexon BMRS Market Index Price, within-day: Great Britain)
    — the same job that writes the zone; a test checks it. `shift` is the hours from Copenhagen to the zone's own
    clock (Dublin and London −1, Athens +1, Lisbon −1; CET zones none) — the feed's days are the zone's local days.
    **Great Britain is the one page that is not a day-ahead price and not in euro**: `cur:'GBP',rate:1,sub:'p'` (the feed is already in pounds, `zoneInfo.rate` is 1), `last:1`

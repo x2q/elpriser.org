@@ -389,7 +389,6 @@ async function main() {
   // They need the Spark job (scripts/eu_prices) to have written KV: without data the page still answers 200 but has no screen.
   const llmsTxt = (await get('/llms.txt')).body;
   for (const [p, lang, src] of ACT_PAGES.map(([p, lang]) => [p, lang, PB.ZONES[PB.PRIS_COUNTRIES[p.slice(1)].def].src])) {
-    const entsoe = src === 'entsoe';
     const r = await get(p);
     const page = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<!--[\s\S]*?-->/g, '');
     const main = page.slice(page.indexOf('<main'), page.indexOf('</main>'));
@@ -398,14 +397,13 @@ async function main() {
     const FW = /prognos|vorhersage|prévision|previsi|prognoz|forecast|machine|hugging/i;
     check(!FW.test(one(r.body, /<title>([^<]*)<\/title>/) + one(r.body, /<meta name="description" content="([^"]*)"/)) && (fcMode || !FW.test(main)) && !/\b(gas|mibgas|eex|eua|ttf|carbon|fuel)\b/i.test(main), `${p}: ingen prognose-ord i titel og beskrivelse (og ingen i indholdet uden prognose); aldrig brændstofsord`);
     const foot = page.slice(page.indexOf('<footer'));
-    check(src === 'semopx'
-      ? (main.includes('>SEMOpx</a>') && /SEMOpx/.test(foot) && !/ENTSO|SMARD|CC BY|Energi Data Service|BMRS/.test(main + foot))
-      : src === 'elexon'
-      ? (/>Contains BMRS data © Elexon Limited copyright and database right \d{4}<\/a>/.test(main) && /Contains BMRS data © Elexon Limited/.test(foot) && main.includes('copyright-licence-bmrs-data/') && /not the day-ahead auction price/.test(main) && !/ENTSO|SMARD|CC BY|Energi Data Service|SEMOpx/.test(main + foot))
-      : entsoe
-      ? (main.includes('>ENTSO-E Transparency Platform</a>') && /ENTSO-E Transparency Platform/.test(foot) && !/SMARD|CC BY|Energi Data Service/.test(main + foot))
-      : (main.includes('>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/"') && /Bundesnetzagentur \| SMARD\.de/.test(foot) && !/ENTSO|Energi Data Service/.test(main + foot)),
-      `${p}: kilden er ${{ semopx: 'SEMOpx', elexon: 'Elexon BMRS (attributionssætningen)', entsoe: 'ENTSO-E Transparency Platform' }[src] || 'Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket'} — ikke en anden kilde og ikke EDS`);
+    // a zone with several sources (ZONES.src 'entsoe+ec', 'entsoe+omie') credits each of them; no source outside its list, and never EDS
+    const own = src.split('+'), SEE = { entsoe: [/>ENTSO-E Transparency Platform<\/a>/, /ENTSO-E Transparency Platform/, /ENTSO/], omie: [/>OMIE<\/a>/, /OMIE/, /OMIE/], semopx: [/>SEMOpx<\/a>/, /SEMOpx/, /SEMOpx/],
+      elexon: [/>Contains BMRS data © Elexon Limited copyright and database right \d{4}<\/a>/, /Contains BMRS data © Elexon Limited/, /BMRS/],
+      ec: [/>Bundesnetzagentur \| SMARD\.de<\/a> \(<a href="https:\/\/www\.energy-charts\.info" target="_blank" rel="noopener">Energy-Charts\.info<\/a>\), <a href="https:\/\/creativecommons\.org\/licenses\/by\/4\.0\/"/, /Bundesnetzagentur \| SMARD\.de/, /SMARD|CC BY/] };
+    check(own.every(k => SEE[k][0].test(main) && SEE[k][1].test(foot)) && Object.keys(SEE).filter(k => !own.includes(k)).every(k => !SEE[k][2].test(main + foot)) && !/Energi Data Service/.test(main + foot)
+      && (src !== 'elexon' || (main.includes('copyright-licence-bmrs-data/') && /not the day-ahead auction price/.test(main))),
+      `${p}: kilden er ${own.map(k => ({ semopx: 'SEMOpx', elexon: 'Elexon BMRS (attributionssætningen)', entsoe: 'ENTSO-E Transparency Platform', omie: 'OMIE', ec: 'Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket' })[k]).join(' og ')} — ikke en anden kilde og ikke EDS`);
     // The footer says the data were changed: the first word of the language's `chg` ("Änderung", "Modifié", "Muudatus" …), read from the table.
     const chgWord = PB.CHROME_I18N[lang].chg.split(/\s*[:：]/)[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     check(new RegExp(chgWord).test(page.slice(page.indexOf('<footer'))) && /elpriser\.org/.test(page.slice(page.indexOf('<footer'))), `${p}: fodens kildelinje siger at dataene er ændret`);

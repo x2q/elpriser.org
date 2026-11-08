@@ -393,9 +393,16 @@ const CHANGED = {
   sq: 'Ndryshim: mesataret orare të llogaritura nga elpriser.org',
 };
 // Per source: the credit as the page writes it, what the page must name, and what it must not (another source's name).
-const OTHER = { ec: /ENTSO|SEMOpx|Elexon|BMRS/, entsoe: /SMARD|CC BY|Energy-Charts|SEMOpx|Elexon|BMRS/, semopx: /ENTSO|SMARD|CC BY|Energy-Charts|Elexon|BMRS/, elexon: /ENTSO|SMARD|CC BY|Energy-Charts|SEMOpx/ };
-const NAMED = { ec: /SMARD/, entsoe: /ENTSO-E Transparency Platform/, semopx: /SEMOpx/, elexon: /Contains BMRS data © Elexon Limited copyright and database right \d{4}/ };
-const CREDITS = { ec: CREDIT, entsoe: CREDIT_ENTSOE, semopx: CREDIT_SEMOPX, elexon: CREDIT_ELEXON };
+// A zone with several sources (ZONES.src 'entsoe+ec', 'entsoe+omie': the order the job reads them in) credits every one of them, in that order, joined by ', '.
+const CREDIT_OMIE = '<a href="https://www.omie.es" target="_blank" rel="noopener">OMIE</a>';
+const CR1 = { ec: CREDIT, entsoe: CREDIT_ENTSOE, omie: CREDIT_OMIE, semopx: CREDIT_SEMOPX, elexon: CREDIT_ELEXON };
+const NM1 = { ec: /SMARD/, entsoe: /ENTSO-E Transparency Platform/, omie: />OMIE</, semopx: /SEMOpx/, elexon: /Contains BMRS data © Elexon Limited copyright and database right \d{4}/ };
+const MK1 = { ec: /SMARD|CC BY|Energy-Charts/, entsoe: /ENTSO/, omie: /OMIE/, semopx: /SEMOpx/, elexon: /Elexon|BMRS/ };
+const parts = src => String(src).split('+');
+const OTHER = new Proxy({}, { get: (_, src) => new RegExp(Object.keys(MK1).filter(k => !parts(src).includes(k)).map(k => MK1[k].source).join('|')) });
+const NAMED = new Proxy({}, { get: (_, src) => ({ test: s => parts(src).every(k => NM1[k].test(s)) }) });
+const CREDITS = new Proxy({}, { get: (_, src) => parts(src).map(k => CR1[k]).join(', ') });
+const srcOf = p => PB.ZONES[PB.PRIS_COUNTRIES[p.slice(1)].def].src;
 const X9 = ['dk', ...PB.PRIS_PICK.slice(1).map(c => c[0])];   // the countries of the footer list, in order (the old name said nine; it is every country of PRIS_COUNTRIES)
 for (const [p, w] of Object.entries(ACT)) {
   store.clear(); upstream = []; noTomorrow = false;
@@ -427,10 +434,10 @@ for (const [p, w] of Object.entries(ACT)) {
   ok(!/data-pris-view|pris-seg|Din pris/.test(main), `${p}: ingen Din pris/Spotpris-kontakt`);
   // The honest basis, in the page's language, with the source named and linked.
   const list = h.slice(h.indexOf('<section class="zl"'), h.indexOf('</section>', h.indexOf('<section class="zl"')));
-  const credit = CREDITS[w.src || 'ec'], note = PAGENOTE[p] || PRISNOTE[w.lang];
+  const credit = CREDITS[srcOf(p)], note = PAGENOTE[p] || PRISNOTE[w.lang];
   ok(h.includes(w.cap || PRISCAP[w.lang]) && list.includes(credit.replace(/ target="_blank"/g, '')) === false && list.includes(credit) && list.includes(note), `${p}: billedtekst og tekstblok siger hvad prisen er, at dataene er ændret, og har kilden med licenslink`, list.slice(-420));
   const visible = raw.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '');
-  ok(NAMED[w.src || 'ec'].test(visible) && !OTHER[w.src || 'ec'].test(visible), `${p}: kun kilden ${w.src || 'ec'} nævnes, ingen af de andre kilder`);
+  ok(NAMED[srcOf(p)].test(visible) && !OTHER[srcOf(p)].test(visible), `${p}: kun kilden ${srcOf(p)} nævnes, ingen af de andre kilder`);
   ok(w.zones.every(c => list.includes(`<b>${c}</b>`)) && (list.match(/<li>/g) || []).length === w.zones.length, `${p}: tekstblokken nævner zonen`, list.slice(0, 160));
   ok(new RegExp(`${w.unit}/kWh`).test(list) && new RegExp(`${AVGW(w.lang)} \\S+ [\\d.,]+`).test(list), `${p}: tekstblokken har dagens og morgendagens gennemsnit`);
   ok(!/data-zone="/.test(h.match(/<dialog id="netDialog"[\s\S]*?<\/dialog>/)[0]), `${p}: ingen zonevalg i stedsdialogen (én zone)`);
@@ -438,7 +445,7 @@ for (const [p, w] of Object.entries(ACT)) {
   const hd = h.slice(h.indexOf('<header'), h.indexOf('</header>')), ft = h.slice(h.indexOf('<footer'), h.indexOf('</footer>'));
   const nav = [...ft.matchAll(/<li><a href="([^"]+)"([^>]*)>([^<]+)<\/a><\/li>/g)];
   ok(!/class="site-links"/.test(hd) && nav.length === X9.length && nav.map(m => m[3]).join() === X9.map(c => PB.prisCn(X, c)).join() && nav.filter(m => /aria-current="page"/.test(m[2])).map(m => m[1]).join() === p, `${p}: headeren har ingen landerække; fodens landeliste har ${X9.length} lande på ${w.lang}, den aktuelle er aria-current`, nav.map(m => m[3]).join());
-  ok(ft.includes(`&copy; Elpriser.org &mdash; ${X.src} ${credit} &mdash; ${CHANGED[w.lang]}. ${X.open}`) && !/Energi Data Service|energidataservice/.test(ft + hd) && !OTHER[w.src || 'ec'].test(ft + hd) && ft.includes(X.privacy), `${p}: fodens kilde er ${w.src || 'ec'} (med licenslink) og siger at dataene er ændret — ikke Energi Data Service og ikke den anden kilde`, ft.slice(ft.indexOf('sf-legal')));
+  ok(ft.includes(`&copy; Elpriser.org &mdash; ${X.src} ${credit} &mdash; ${CHANGED[w.lang]}. ${X.open}`) && !/Energi Data Service|energidataservice/.test(ft + hd) && !OTHER[srcOf(p)].test(ft + hd) && ft.includes(X.privacy), `${p}: fodens kilde er ${srcOf(p)} (med licenslink) og siger at dataene er ændret — ikke Energi Data Service og ikke den anden kilde`, ft.slice(ft.indexOf('sf-legal')));
   ok(!/class="tabbar|id="gpsBtn|netDlgDK|Hent appen|Smart hjem/.test(h.replace(/<!--[\s\S]*?-->/g, '')), `${p}: ingen dansk chrome`);
   ok(upstream.length === 1 && upstream.every(x => x.startsWith('/api/nordic?zone=')), `${p}: serveren henter præcis landets zone`, upstream.join(' '));
   const n = upstream.length, again = await get(p);
@@ -759,7 +766,7 @@ function get_dialog(r) { return (r.page.match(/<dialog id="netDialog"[\s\S]*?<\/
   ok(NEW.every(p => sm.includes(`<loc>https://elpriser.org${p}</loc>`) && prio(p) === 0.5 && llms.includes(`https://elpriser.org${p})`) && full.includes(`https://elpriser.org${p})`)), 'sitemap og llms.txt: de nye sider er med, i udenlandsk prioritet');
   const bullet = llms.slice(llms.indexOf('- [Elpriser i Europa]'), llms.indexOf('- [Automation]'));
   const nAct = new Set(Object.values(PB.PRIS_COUNTRIES).filter(c => c.act).map(c => c.cc)).size;
-  ok(bullet.includes(`i ${nAct} europæiske lande`) && /Faktiske børspriser og for de fleste lande desuden en prognose op til en uge frem fra elpriser\.orgs egen statistiske model \(ikke en officiel prognose; den er bedre til at udpege de billigste timer end til at ramme prisniveauet, og de faktiske priser erstatter den\) — uden moms/.test(bullet) && !/ingen prognose|Kun faktiske/.test(bullet) && /Kilde: Bundesnetzagentur \| SMARD\.de via Energy-Charts\.info, licens CC BY 4\.0; Spanien[^:;]*: ENTSO-E Transparency Platform; Irland: SEMOpx \(resultaterne af day-ahead-auktionen\); Storbritannien: Elexon BMRS, Contains BMRS data © Elexon Limited copyright and database right \d{4}; vi har ændret dataene \(timegennemsnit/.test(bullet) && /Storbritannien er undtagelsen: siden viser Market Index Price \(within-day\), altså ikke day-ahead-prisen, kun for i dag og i pund/.test(bullet), 'llms.txt: Europa-punktet siger hvor mange lande, at der for de fleste også er en prognose (ikke officiel, erstattet af de faktiske priser), de to kilder (Irland m.fl.: ENTSO-E) og at dataene er ændret', bullet.slice(0, 700));
+  ok(bullet.includes(`i ${nAct} europæiske lande`) && /Faktiske børspriser og for de fleste lande desuden en prognose op til en uge frem fra elpriser\.orgs egen statistiske model \(ikke en officiel prognose; den er bedre til at udpege de billigste timer end til at ramme prisniveauet, og de faktiske priser erstatter den\) — uden moms/.test(bullet) && !/ingen prognose|Kun faktiske/.test(bullet) && /Kilde: ENTSO-E Transparency Platform \((?:(?!Irland|Storbritannien)[^)])*Kosovo\); Bundesnetzagentur \| SMARD\.de via Energy-Charts\.info, licens CC BY 4\.0 \([^)]*Slovenien; første kilde for Schweiz, ellers reserve\); OMIE \(Spanien og Portugal; reserve\); Irland: SEMOpx \(resultaterne af day-ahead-auktionen\); Storbritannien: Elexon BMRS, Contains BMRS data © Elexon Limited copyright and database right \d{4}; vi har ændret dataene \(timegennemsnit/.test(bullet) && /Storbritannien er undtagelsen: siden viser Market Index Price \(within-day\), altså ikke day-ahead-prisen, kun for i dag og i pund/.test(bullet), 'llms.txt: Europa-punktet siger hvor mange lande, at der for de fleste også er en prognose (ikke officiel, erstattet af de faktiske priser), de to kilder (Irland m.fl.: ENTSO-E) og at dataene er ændret', bullet.slice(0, 700));
   ok(/\[Belgien\]\(https:\/\/elpriser\.org\/be\/stroomprijs\) \(hollandsk, \[fransk\]\(https:\/\/elpriser\.org\/be\/prix-electricite\)\)/.test(bullet) && /\[Irland\]\(https:\/\/elpriser\.org\/ie\/electricity-price\) \(prisområdet SEM: Irland og Nordirland\)/.test(bullet) && /\[Schweiz\]\([^)]*\) \(priserne er i euro, ikke franc\)/.test(bullet) && / og \[[^\]]+\]\(https:\/\/elpriser\.org\/[^)]+\)\.$/.test(bullet.trim()) && !/\{\{/.test(llms + full), 'llms.txt: Belgien med begge sprog, Irland som SEM, Schweiz i euro; ingen ubrugt skabelon');
   // Every country is linked under its Danish name (the page's `da`), at the first page of that country.
   const seenCc = new Set(), unlinked = [];

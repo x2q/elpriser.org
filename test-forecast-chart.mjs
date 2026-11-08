@@ -408,7 +408,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     // The text block names the source and the basis for an EU page, the model for a Nordic one.
     const raws = k => { const r = eu(k, 2, k === 'pl' ? 4.4 : 1); return r; };
     const zl = pctx.prisZoneList('it/prezzo-luce', Object.fromEntries(pctx.PRIS_COUNTRIES['it/prezzo-luce'].zones.map(k => [k, raws(k)])), D0);
-    ok((zl.match(/<li>/g) || []).length === 1 && zl.includes('<a href="https://www.smard.de" target="_blank" rel="noopener">Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</p>') && !/huggingface|entsoe|ENTSO/i.test(zl) && /Fonte:/.test(zl) && /dati modificati/.test(zl), 'IT: én zone i tekstblokken; kilden er Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket, og noten siger at dataene er ændret (ikke modellen, ikke ENTSO-E)');
+    ok((zl.match(/<li>/g) || []).length === 1 && zl.includes('<a href="https://www.smard.de" target="_blank" rel="noopener">Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</p>') && !/huggingface/i.test(zl) && zl.includes('>ENTSO-E Transparency Platform</a>, <a href="https://www.smard.de"') && /Fonte:/.test(zl) && /dati modificati/.test(zl), 'IT: én zone i tekstblokken; kilden er Bundesnetzagentur | SMARD.de med Energy-Charts og CC BY 4.0-linket, og ENTSO-E (zonens første kilde), og noten siger at dataene er ændret (ikke modellen)');
     ok(/huggingface/.test(pctx.prisZoneList('no/strompris', Object.fromEntries(pctx.PRIS_COUNTRIES['no/strompris'].zones.map(k => [k, eu(k, 2, 10)])), D0)), 'NO: tekstblokken peger stadig på modellen');
   }
   // ── The EU pages WITH a forecast (PRIS_EUF): chosen from the data; eight days, 2/5/7, the P10-P90 band, the accuracy line, the honest note ──
@@ -537,7 +537,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
   ok(pctx.ZONES.nl.lang === 'nl' && pctx.ZONES.nl.sub === 'cent' && pctx.ZONES.nl.rate === 1 && pctx.PRIS_COUNTRIES['nl/stroomprijs'].def === 'nl' && pctx.PRIS_COUNTRIES['nl/stroomprijs'].zones.join() === 'nl', 'NL: hollandsk, cent, kurs 1, og landets eneste zone');
   ok(Object.values(pctx.ZONES).every(z => z.lang in L) && Object.values(pctx.PRIS_COUNTRIES).every(c => c.lang in L), 'hver zone og hvert land peger på et sprog der findes');
   // Every country page's zones exist, an `act` page's zones have a data source, and a page's own unit/city override (Belgium in French) is for a single-zone page.
-  ok(Object.values(CT).every(c => c.zones.length && c.zones.every(k => k in pctx.ZONES) && c.zones.includes(c.def) && (!c.act || c.zones.every(k => ['ec', 'entsoe', 'semopx', 'elexon'].includes(pctx.ZONES[k].src))) && (!(c.sub || c.city) || c.zones.length === 1)), 'hvert lands zoner findes, en act-side har en datakilde, og egen enhed/by kun på en side med én zone');
+  ok(Object.values(CT).every(c => c.zones.length && c.zones.every(k => k in pctx.ZONES) && c.zones.includes(c.def) && (!c.act || c.zones.every(k => pctx.ZONES[k].src.split('+').every(s => ['ec', 'entsoe', 'omie', 'semopx', 'elexon'].includes(s)))) && (!(c.sub || c.city) || c.zones.length === 1)), 'hvert lands zoner findes, en act-side har en datakilde, og egen enhed/by kun på en side med én zone');
   // A zone's own clock: Dublin is an hour behind Copenhagen at every instant (the EU changes both clocks together), so its day starts an hour later.
   {
     const zn = (k, d, h) => JSON.stringify(pctx.prisZoneNow(k, d, h));
@@ -550,7 +550,7 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     ok(pctx.prisAt(en, 13) === 'at 13:00' && pctx.prisAt(en, 13, 14) === 'at 13:00–14:00' && pctx.prisAt(de, 13, 14) === 'um 13–14 Uhr' && pctx.prisAt(pctx.PRIS_I18N.da, 3, 4) === 'kl. 03–04' && pctx.prisAt(cs0, 13, 14) === '13:00–14:00', 'prisAt: "at 13:00–14:00" på engelsk, uændret på dansk og tysk, og uden ord før klokkeslættet hvis sproget vil det');
     ok(pctx.prisNum(8.84, 1, en) === '8.8' && pctx.prisNum(-0.001, 2, en) === '0.00' && pctx.prisNum(8.84, 1) === '8,8' && pctx.prisNum(8.84, 1, de) === '8,8' && pctx.prisNum(-0.001, 2) === '0,00', 'prisNum: decimalpunktum når tabellen har dec, ellers komma, og aldrig "-0"');
   }
-  ok(pctx.ZONES.ie.shift === -1 && Object.entries(pctx.ZONES).every(([k, z]) => z.shift === undefined || (Number.isInteger(z.shift) && Math.abs(z.shift) < 3)) && pctx.ZONES.at.src === 'ec' && pctx.ZONES.ie.src === 'semopx' && pctx.ZONES.gb.src === 'elexon' && pctx.ZONES.gb.shift === -1 && pctx.ZONES.gb.cur === 'GBP' && pctx.ZONES.gb.rate === 1 && pctx.ZONES.gb.sub === 'p' && pctx.ZONES.xk.src === 'entsoe' && pctx.ZONES.xk.shift === undefined && pctx.ZONES.be.lang === 'nl', 'Irland går en time efter København og har SEMOpx som kilde; Storbritannien er pund (kurs 1, pence) fra Elexon på Londons ur; Kosovo ENTSO-E på CET; Østrig Energy-Charts');
+  ok(pctx.ZONES.ie.shift === -1 && Object.entries(pctx.ZONES).every(([k, z]) => z.shift === undefined || (Number.isInteger(z.shift) && Math.abs(z.shift) < 3)) && pctx.ZONES.at.src === 'entsoe+ec' && pctx.ZONES.ch.src === 'ec+entsoe' && pctx.ZONES.es.src === 'entsoe+omie' && pctx.ZONES.ie.src === 'semopx' && pctx.ZONES.gb.src === 'elexon' && pctx.ZONES.gb.shift === -1 && pctx.ZONES.gb.cur === 'GBP' && pctx.ZONES.gb.rate === 1 && pctx.ZONES.gb.sub === 'p' && pctx.ZONES.xk.src === 'entsoe' && pctx.ZONES.xk.shift === undefined && pctx.ZONES.be.lang === 'nl', 'Irland går en time efter København og har SEMOpx som kilde; Storbritannien er pund (kurs 1, pence) fra Elexon på Londons ur; Kosovo ENTSO-E på CET; Østrig Energy-Charts');
 
 
   // ── The country pages' chrome: CHROME_I18N has the same keys in all four languages, chromeHTML is the one template ──
@@ -576,7 +576,6 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
     const shared = Object.values(byLand).filter(g => g.length > 1).map(g => g.slice().sort().join('+'));
     ok(new Set(cl.map(l => X[l].place)).size === cl.length && new Set(cl.map(l => X[l].privacy)).size === cl.length && shared.every(s => LANDSHARE.includes(s)) && cl.every(l => new Set(Object.values(X[l].cn)).size === Object.values(X[l].cn).length) && new Set(cl.map(l => JSON.stringify(X[l]))).size === cl.length, 'vælger-, privatlivs- og landeord er forskellige på alle sprog (kun nære sprogpar deler ordet "lande", og hver tabel er sin egen)', shared.join());
     const html = pg => pctx.chromeHTML(pg);
-    const CREDIT_EC = '>Bundesnetzagentur | SMARD.de</a> (<a href="https://www.energy-charts.info" target="_blank" rel="noopener">Energy-Charts.info</a>), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>';
     for (const pg of Object.keys(CT)) {
       const c = html(pg), C = CT[pg], x = X[C.lang], src = C.act ? pctx.ZONES[C.def].src : null;
       ok(!('nav' in c) && c.home === x.home, `${pg}: ingen landerække i headeren (globussen er vælgeren), og logoets navn er på ${C.lang}`);
@@ -584,11 +583,15 @@ const ok = (c, n, d) => { if (c) pass++; else fails.push(`${n}${d ? ' — ' + d 
       ok(c.foot.includes(`<a href="/privacy" hreflang="en">${x.privacy}</a>`) && (c.foot.match(/hreflang/g) || []).length === 1, `${pg}: privatlivslinket peger på /privacy (engelsk) med hreflang="en" og er mærket på ${C.lang}`);
       // The Nordic pages credit ENTSO-E and Energi Data Service; an actual-price page credits its zone's source (Energy-Charts: Bundesnetzagentur | SMARD.de, CC BY 4.0 with the
       // licence link; ENTSO-E: the Transparency Platform) and says the data were changed — and names neither Energi Data Service nor the other source.
+      // A zone with several sources (ZONES.src 'entsoe+ec': the order the job reads them in) credits every one of them, in that order, joined by ', '.
+      const LK = (h, n) => `<a href="${h}" target="_blank" rel="noopener">${n}</a>`;
+      const CR = { ec: LK('https://www.smard.de', 'Bundesnetzagentur | SMARD.de') + ' (' + LK('https://www.energy-charts.info', 'Energy-Charts.info') + '), ' + LK('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0'),
+        entsoe: LK('https://transparency.entsoe.eu', 'ENTSO-E Transparency Platform'), omie: LK('https://www.omie.es', 'OMIE'), semopx: LK('https://www.semopx.com/market-data/market-results', 'SEMOpx'),
+        elexon: 'copyright-licence-bmrs-data/" target="_blank" rel="noopener">Contains BMRS data \u00a9 Elexon Limited copyright and database right ' + new Date().getUTCFullYear() + '</a>' };
+      const MARK = { ec: /SMARD|CC BY/, entsoe: /ENTSO/, omie: /OMIE/, semopx: /SEMOpx/, elexon: /BMRS/ }, own = src ? src.split('+') : [];
       ok(/&copy; Elpriser\.org &mdash; /.test(c.foot) && c.foot.includes('>Hugging Face</a>') && (C.act
-        ? (src === 'ec' ? c.foot.includes(CREDIT_EC + ' &mdash; ' + (C.tx.chg || x.chg)) && !/ENTSO/.test(c.foot)
-          : src === 'semopx' ? c.foot.includes('<a href="https://www.semopx.com/market-data/market-results" target="_blank" rel="noopener">SEMOpx</a> &mdash; ' + (C.tx.chg || x.chg)) && !/SMARD|CC BY|ENTSO/.test(c.foot)
-          : src === 'elexon' ? c.foot.includes('copyright-licence-bmrs-data/" target="_blank" rel="noopener">Contains BMRS data \u00a9 Elexon Limited copyright and database right ' + new Date().getUTCFullYear() + '</a> &mdash; ' + (C.tx.chg || x.chg)) && !/SMARD|CC BY|ENTSO/.test(c.foot)
-          : c.foot.includes('<a href="https://transparency.entsoe.eu" target="_blank" rel="noopener">ENTSO-E Transparency Platform</a> &mdash; ' + (C.tx.chg || x.chg)) && !/SMARD|CC BY/.test(c.foot)) && !c.foot.includes('Energi Data Service')
+        ? c.foot.includes(own.map(k => CR[k]).join(', ') + ' &mdash; ' + (C.tx.chg || x.chg))
+          && Object.keys(MARK).filter(k => !own.includes(k)).every(k => !MARK[k].test(c.foot)) && !c.foot.includes('Energi Data Service')
         : c.foot.includes('>ENTSO-E</a>') && c.foot.includes('>Energi Data Service</a>')), `${pg}: ophavsretslinjen med kilderne`);
       const all = c.foot;
       ok(!/Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Mobilnavigation|Privatliv|Åbne datasæt|Alle guides|Forstå din elpris|id="netChip|class="app-btn|class="tabbar|<dialog/.test(all), `${pg}: ingen dansk chrome, ingen netchip, ingen app-knap`, (all.match(/Smart hjem|Hent appen|Hent til|Netselskab|netselskab|Hovedmenu|Privatliv|Åbne datasæt/) || [])[0]);

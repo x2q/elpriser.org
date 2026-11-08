@@ -637,9 +637,11 @@ test('foreign-area pages: every country page (PRIS_COUNTRIES) has its SEO entry 
     if (C.act) {
       const src = PRIS.ZONES[C.def].src, all = C.title + C.desc + JSON.stringify(C.tx);
       assert.ok(!/prognos|vorhersage|prévision|previsi|prognoz|prediction|forecast|predikc|předpově/i.test(all), `${pg} mentions a forecast`);
-      assert.ok(src === 'ec' ? /Bundesnetzagentur \| SMARD\.de/.test(C.desc) && !/ENTSO/i.test(all) : src === 'entsoe' ? /ENTSO-E/.test(C.desc) && !/SMARD/i.test(all)
-        : src === 'semopx' ? /Source: SEMOpx$/.test(C.desc) && !/ENTSO|SMARD/i.test(all)
-        : src === 'elexon' ? /Elexon BMRS$/.test(C.desc) && /Market Index Price \(within-day\)/.test(C.desc) && /not the day-ahead/i.test(C.desc) && !/ENTSO|SMARD/i.test(all) : false, `${pg} description does not name its source (ZONES.${C.def}.src is ${src})`);
+      // every source of the zone's list is named in the description (a page may be read from any of them), and no source the zone does not use is
+      const NAMED = { ec: /Bundesnetzagentur \| SMARD\.de/, entsoe: /ENTSO-E/, omie: /OMIE/, semopx: /Source: SEMOpx$/, elexon: /Elexon BMRS$/ }, parts = src.split('+');
+      assert.ok(parts.every(k => NAMED[k].test(C.desc)) && Object.keys(NAMED).filter(k => !parts.includes(k) && k !== 'semopx' && k !== 'elexon').every(k => !NAMED[k].test(all)), `${pg} description does not name its sources (ZONES.${C.def}.src is ${src})`);
+      if (src === 'elexon') assert.ok(/Market Index Price \(within-day\)/.test(C.desc) && /not the day-ahead/i.test(C.desc) && !/ENTSO|SMARD/i.test(all), `${pg} must say it is not the day-ahead price`);
+      if (src === 'semopx') assert.ok(!/ENTSO|SMARD/i.test(all), `${pg} names another source`);
     }
   }
 });
@@ -732,10 +734,15 @@ test('EU price pages: settled prices (one period) and, only where the answer has
   // A zone's `src` is the job that writes it: Energy-Charts (CC BY 4.0, named in prisCredit), ENTSO-E, SEMOpx (Ireland) or Elexon BMRS (Great Britain) — the attribution on the page follows it.
   const listOf = n => (API.match(new RegExp(`const ${n} = \\[([^\\]]*)\\]`))[1].match(/'([a-z-]+)'/g) || []).map(x => x.replace(/'/g, ''));
   const ec = listOf('EU_ZONES_ENERGY_CHARTS'), semopx = listOf('EU_ZONES_SEMOPX'), elexon = listOf('EU_ZONES_ELEXON');
+  const SRCPY = fs.readFileSync(path.join(ROOT, 'scripts/eu_prices/price_sources.py'), 'utf8'), NAME = { ENTSOE: 'entsoe', EC: 'energy-charts', OMIE: 'omie' };
+  const CHAINS = Object.fromEntries([...SRCPY.slice(SRCPY.indexOf('CHAINS = {'), SRCPY.indexOf('\n}\n', SRCPY.indexOf('CHAINS = {'))).matchAll(/"([a-z-]+)": \[([A-Z, ]+)\]/g)].map(m => [m[1], m[2].split(',').map(x => NAME[x.trim()])]));
+  assert.equal(Object.keys(CHAINS).length, 25, 'the source table of the job lists the 25 zones that have a source order');
   for (const k of pageZones) {
     const z = PRIS.ZONES[k];
     assert.ok(z && z.name && z.city && z.cur && z.rate > 0 && z.sub && z.lang in PRIS.PRIS_I18N, `ZONES lacks a complete ${k}`);
-    assert.equal(z.src, ec.includes(k) ? 'ec' : semopx.includes(k) ? 'semopx' : elexon.includes(k) ? 'elexon' : 'entsoe', `ZONES.${k}.src is not the job that writes the zone`);
+    // the sources a zone is read from, in order, are the Python table's (scripts/eu_prices/price_sources.py CHAINS); the page credits every one of them
+    const want = semopx.includes(k) ? 'semopx' : elexon.includes(k) ? 'elexon' : (CHAINS[k] || []).map(x => ({ entsoe: 'entsoe', 'energy-charts': 'ec', omie: 'omie' })[x]).join('+');
+    assert.equal(z.src, want, `ZONES.${k}.src is not the source list the job reads the zone from (${want})`);
   }
   // Poland converts at the ECB's PLN rate: the API asks the ECB file for it and sanity-checks it; the page's fallback is the API's.
   assert.ok(/PLN: get\('PLN'\)/.test(API) && /rates\.PLN > 3 && rates\.PLN < 6/.test(API), 'the API does not read and check the ECB PLN rate');

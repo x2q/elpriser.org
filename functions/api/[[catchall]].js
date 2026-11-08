@@ -1050,6 +1050,10 @@ function overlayNordicSettled(feed, settled) {
 // (test-eu-prices.mjs pins that together they list exactly these zones):
 //   Energy-Charts.info, CC BY 4.0 from Bundesnetzagentur | SMARD.de (build_eu_prices.py): de fr pl it-n at be ch cz hu si
 //   ENTSO-E Transparency Platform, documentType A44 (build_entsoe_prices.py):  es pt sk gr ro bg hr rs ee lv lt me mk al xk
+//   Since the source-priority layer (build_prices.py, scripts/eu_prices/price_sources.py CHAINS) these 25 zones are written by ONE job that reads each
+//   zone's sources in order and takes, per day, the first that has the day complete: ENTSO-E first then Energy-Charts for de at fr be pl cz hu si it-n
+//   (ch the other way round), ENTSO-E then OMIE for es and pt, ENTSO-E alone for the rest. Each day carries `source`; the two lists below stay the
+//   zones' licence groups (the page credits, ZONES.src in functions/[[path]].js, name every source in a zone's list).
 //   Elexon BMRS Market Index Data (build_elexon_prices.py): gb. NOT a day-ahead price: the within-day market index, GBP/MWh, no tomorrow.
 //   SEMOpx day-ahead auction results (build_semopx_prices.py): ie (the all-island SEM; was ENTSO-E until 2026-11-02)
 // `it-n` is Italy's bidding zone IT-North only; `xk` is Kosovo; `gb` is Great Britain only (Northern Ireland trades in the SEM, `ie`).
@@ -1513,10 +1517,11 @@ const OPENAPI_SPEC = {
           '',
           '**EU zones** (settled days are `actual`; tomorrow is absent until it is published, about 13:00 CET; `trainedThrough` is null when the answer is settled prices alone, see the end of this text for the forecast):',
           '`de` Germany and Luxembourg (DE-LU), `fr` France, `pl` Poland (`zoneInfo.currency` PLN, so convert with `zoneInfo.rate`), `it-n` Italy, bidding zone North only,',
-          '`at` Austria, `be` Belgium, `ch` Switzerland, `cz` Czechia, `hu` Hungary and `si` Slovenia. Source: Bundesnetzagentur | SMARD.de via Energy-Charts.info,',
-          'licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).',
+          '`at` Austria, `be` Belgium, `ch` Switzerland, `cz` Czechia, `hu` Hungary and `si` Slovenia. Sources, in this order: the ENTSO-E Transparency Platform (day-ahead prices, article 12.1.d), then',
+          'Bundesnetzagentur | SMARD.de via Energy-Charts.info, licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), for a day ENTSO-E has not published or cannot deliver (`ch` the other way round: Energy-Charts first).',
           '`es` Spain, `pt` Portugal, `sk` Slovakia, `gr` Greece, `ro` Romania, `bg` Bulgaria, `hr` Croatia, `rs` Serbia, `ee` Estonia, `lv` Latvia, `lt` Lithuania,',
-          '`me` Montenegro, `mk` North Macedonia, `al` Albania and `xk` Kosovo. Source: ENTSO-E Transparency Platform (day-ahead prices, article 12.1.d).',
+          '`me` Montenegro, `mk` North Macedonia, `al` Albania and `xk` Kosovo. Source: ENTSO-E Transparency Platform (day-ahead prices, article 12.1.d); for `es` and `pt` OMIE (https://www.omie.es, the Iberian market operator) is the second source.',
+          'Every settled day of these zones carries `source` (`entsoe`, `energy-charts` or `omie`): the source that day was read from. A day is published only complete (every quarter hour the market has published); a source that has not published the day, is down or has a hole is skipped for that day and the next one is used.',
           '`ie` Ireland (the all-island Single Electricity Market, Ireland and Northern Ireland). Source: SEMOpx, the day-ahead auction results (its hourly',
           'prices are the means of the market\'s 30-minute prices).',
           'Prices of the non-euro countries are in EUR/MWh as published; `zoneInfo.currency` is EUR for all of these.',
@@ -1560,7 +1565,7 @@ const OPENAPI_SPEC = {
           'Made for consumers that plan against the clock (evcc, schedulers): the zone\'s daylight-saving rule is applied here, once, so a client needs no time zone database and no assumption about the step.',
           '',
           '**Resolution.** The day-ahead market has settled in 15-minute slots since 2025-10-01 and a settled day is returned as 15-minute slots wherever the 15-minute prices are held (the EU zones from the',
-          'Energy-Charts and ENTSO-E jobs, Denmark and the Nordic zones from ENTSO-E). Everything else is returned as the slots it is: the model\'s forecast days hourly, a zone whose source is hourly or half-hourly with that step.',
+          'source-priority job (ENTSO-E, Energy-Charts, OMIE) and the ENTSO-E job, Denmark and the Nordic zones from ENTSO-E). Everything else is returned as the slots it is: the model\'s forecast days hourly, a zone whose source is hourly or half-hourly with that step.',
           'Every slot has its own `start` and `end`, so never assume the step: `end - start` is the slot. Slots are sorted and never overlap.',
           '',
           '**Wholesale zones** (all 40 zones, `zone` as in `/api/nordic`): the day-ahead price, without VAT, taxes or grid fees, converted with the ECB reference rate (`rate`, `rateDate`, `rateSource`) unless `currency=eur`.',
