@@ -103,6 +103,26 @@ Optional: `EU_FORECAST_JOBS` (LightGBM threads, default 8), `EU_FORECAST_LAMBDA`
   Review `git diff` of the gate: a horizon that disappears is a decision, not an accident.
 * `verify_parity.py` compares the production ridge with the research's `lear_r365_g` on the same days (they must agree to the cent).
 
+## Coverage check: does every zone show its forecast?
+
+`npm run forecast-coverage` (`scripts/check-forecast-coverage.mjs`) asks the public API (`/api/nordic?zone=<zone>`, no secrets) for all 40 price zones and prints, per zone, the settled day the forecast
+joins, the forecast days and horizons shown, the horizons the gate expects, the age of the run, and PASS / WARN / FAIL / NO MODEL with the reason. Exit code 1 on a FAIL (`--strict`: on a WARN too);
+`--zone de,at` limits it, `--json` prints the verdicts, `--base <url> --today <date>` points it at a local run. Run it after a deploy and whenever a zone page lacks its forecast.
+
+* **PASS**: the top horizon the gate allows is shown, every horizon shown is allowed and has accuracy numbers, the run is at most one day old. A horizon the gate rejects is listed as
+  *not published by design* (today: Albania h7, forced off in `publish_gate.json`) and is never a failure: do not "fix" it, and never lower the 5 % rule to make a row green.
+* **FAIL, "no forecast shown"**: `eu-forecast-<zone>` is missing or older than 3 days, or its first day is not the day after the zone's last settled day. The Worker shows forecast days only without a hole
+  after the settled prices (the apps stop at the first missing day), so a run that starts one day late is hidden whole. Look at the zone's last known day in `daily.log` ("h 2,3,..": h counts from it).
+* **FAIL, "allows up to h7 but the API shows h2-6"**: the same one-day shift, seen from the other end (the window ends at today + 7).
+* **NO MODEL**: Kosovo (`xk`) until a model exists.
+* **WARN**: the run is two days old (a night was missed), or the training data stops more than three days ago (a price source froze).
+
+**The weekend shift (found 2026-11-08, fixed in `forecast.py`).** The job trains on ENTSO-E prices, the site's DE and AT prices come from Energy-Charts. On Fridays and Saturdays ENTSO-E already
+held the auction of today + 2 for DE and AT at 15:15 UTC (the Monday auction on Saturday); Energy-Charts delivers it a day later. `build_rows` counted h from that later day, so the forecast started at
+today + 3: the Worker found a hole and showed nothing for DE and AT, and h7 fell out of the window (5 days instead of 6). The job now never counts the last known day later than today + 1 (the
+information state of every other zone, so h means what the backtest and the gate measured; `test_eu_forecast.py::test_a_cache_ahead_of_tomorrow_is_joined_at_tomorrow`). If DE or AT are hidden
+again, compare `price_de.parquet`'s last day on the Spark with `eu-prices-de`'s.
+
 ## Rollback
 
 * Stop publishing: remove the cron line. The keys expire in 3 days and the API then serves the settled prices alone, exactly as before the forecast existed.

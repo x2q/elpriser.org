@@ -244,6 +244,30 @@ class Scoring(unittest.TestCase):
         self.assertEqual(r["date"].min(), pd.Timestamp(self.last + timedelta(days=1)))
         self.assertTrue((r["zone"] == "de").all())
 
+    def test_a_cache_ahead_of_tomorrow_is_joined_at_tomorrow(self):
+        # DE/AT on a Friday or Saturday: the cache already holds the auction of today + 2. The site shows settled prices to today + 1 only and
+        # /api/nordic shows a forecast only from the day after them, so the forecast must start at today + 2 with h = 2 and keep h = 7.
+        today = self.last - timedelta(days=2)                 # the synthetic cache ends two days after "today"
+        self.assertEqual(FC.last_known_day(self.prices["de"]), today + timedelta(days=2))
+        r = self.rows(today=today)
+        self.assertEqual(sorted(r["h"].unique()), [2, 3, 4, 5, 6, 7])
+        self.assertEqual(r["date"].min(), pd.Timestamp(today + timedelta(days=2)))
+        self.assertEqual(r["date"].max(), pd.Timestamp(today + timedelta(days=7)))
+        self.assertEqual(len(r), 6 * 24)
+        self.assertTrue(r["lag_last"].notna().all(), "lag_last is the price of today + 1, still known")
+        # the very same rows as a cache that really ends at today + 1: the extra day never reaches a feature
+        short = {z: p[p.index < pd.Timestamp(today + timedelta(days=2))] for z, p in self.prices.items()}
+        days, eu = F.day_table(short)
+        r2 = FC.build_rows("de", short["de"], self.wxl, self.regl, days["de"], eu, today)
+        cols = [c for c in r.columns if c not in ("lag_last",) and not c.startswith(("eu_", "level", "last_day"))]
+        pd.testing.assert_frame_equal(r[cols].reset_index(drop=True), r2[cols].reset_index(drop=True))
+
+    def test_a_cache_at_tomorrow_or_today_is_not_changed_by_the_join_point(self):
+        for ahead in (0, 1):                                   # tomorrow not published yet / published
+            r = self.rows(today=self.last - timedelta(days=ahead))
+            self.assertEqual(sorted(r["h"].unique()), [2, 3, 4, 5, 6, 7])
+            self.assertEqual(r["date"].min(), pd.Timestamp(self.last - timedelta(days=ahead) + timedelta(days=1 + ahead)))
+
     def test_stale_prices_give_no_rows(self):
         self.assertTrue(self.rows(today=self.last + timedelta(days=5)).empty)
 
