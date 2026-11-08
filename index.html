@@ -1436,7 +1436,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       <button onclick="switchExport('shelly')" id="exportBtnShelly" class="tab-btn">Shelly</button>
     </div>
     <div id="exportHA">
-      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">To varianter: <strong>døgnplan</strong> (henter hele døgnets plan én gang og afgør selv resten — enklest og venligst mod API'et) og <strong>Template-automation</strong> (kræver <a href="https://github.com/MTrab/energidataservice" target="_blank" class="text-brand-500 underline">Energi Data Service integration</a>).</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Til dig, der vil mere end de billigste timer. Har du kun brug for prisen eller de billigste timer, er <a href="#home-assistant" class="text-brand-500 underline">integrationen i HACS</a> enklere. Her er to varianter: <strong>døgnplan</strong> (henter hele døgnets plan én gang og afgør selv resten, enklest og venligst mod API'et) og <strong>Template-automation</strong> (kræver <a href="https://github.com/MTrab/energidataservice" target="_blank" class="text-brand-500 underline">Energi Data Service integration</a>).</p>
       <div class="relative"><pre id="exportHACode" class="text-xs bg-gray-50 dark:bg-gray-800 rounded-xl p-4 overflow-x-auto text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap"></pre><button onclick="copyExport('ha')" class="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition">Kopiér</button></div>
     </div>
     <div id="exportShelly" style="display:none">
@@ -1487,23 +1487,45 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     </section>
 
     <section id="home-assistant" class="anchor-sec">
-      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Home Assistant: styr en kontakt efter elprisen</h2>
-      <p>Home Assistant kan hente døgnets plan fra elpriser.org og selv afgøre, om en kontakt skal være tændt i den time, der er nu. Eksporten ovenfor giver færdig konfiguration til det.</p>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Home Assistant: elprisen og de billige timer</h2>
+      <p>Den nemmeste vej er integrationen <strong class="text-gray-800 dark:text-gray-200">Elpriser</strong> i HACS. Du skal ikke skrive YAML for at få priserne, og den spørger kun elpriser.org én gang i timen.</p>
       <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-1">Det skal du bruge</h3>
       <ul class="mt-1 space-y-1 ml-4 list-disc">
-        <li>Home Assistant, hvor du kan redigere <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">configuration.yaml</code> eller en pakkefil.</li>
+        <li>Home Assistant med <a href="https://hacs.xyz" target="_blank" rel="noopener" class="text-brand-500 underline">HACS</a> installeret.</li>
         <li>En kontakt (<code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">switch</code>), der tænder og slukker apparatet, fx en Shelly eller et smart-stik.</li>
       </ul>
       <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-1">Sådan gør du</h3>
       <ol class="mt-1 space-y-1 ml-4 list-decimal">
-        <li>Vælg prisområde, pristype, apparat og strategi i generatoren, og åbn fanen <em>Home Assistant</em>.</li>
-        <li>Kopiér <strong class="text-gray-800 dark:text-gray-200">Option 1</strong> ind i konfigurationen, og ret <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">switch.elpris</code> til din egen kontakt.</li>
-        <li>Tjek konfigurationen under <strong class="text-gray-800 dark:text-gray-200">Udviklerværktøjer → YAML</strong>, og genstart. Så findes <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">sensor.elpris_plan</code> og <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">binary_sensor.elpris_on</code>.</li>
+        <li>Åbn <strong class="text-gray-800 dark:text-gray-200">HACS</strong>, søg efter <em>Elpriser</em>, tryk <em>Download</em>, og genstart Home Assistant. Dukker den ikke op, så tilføj <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">https://github.com/x2q/ha-elpriser</code> som tilpasset repository med kategorien <em>Integration</em>.</li>
+        <li>Gå til <strong class="text-gray-800 dark:text-gray-200">Indstillinger → Enheder og tjenester → Tilføj integration → Elpriser</strong>. Vælg prisområde (DK1 for Jylland og Fyn, DK2 for resten). For Danmark vælger du også pristype og, hvis du vil have den pris, du faktisk betaler, dit netselskab. Pristyper, der begynder med <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">net_</code>, kræver et netselskab.</li>
+        <li>Tryk <em>Indstillinger</em> på integrationen, og sæt <strong class="text-gray-800 dark:text-gray-200">Antal billige timer</strong> til det antal timer i døgnet, apparatet skal køre.</li>
+        <li>Opret en automation, der følger sensoren <em>Billig time nu</em>. Det er hele konfigurationen:</li>
       </ol>
-      <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-1">Hvad konfigurationen gør</h3>
-      <p>En REST-sensor henter døgnets plan fra <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">/api/schedule</code> to gange i døgnet, og en automation henter en frisk plan kort efter midnat med en tilfældig forsinkelse på op til fem minutter. En skabelon-sensor slår den aktuelle time op i planen og er <em>on</em>, når strategien siger tænd. Selve skiftet af kontakten er en automation, der følger den sensor. Der kommer altså ingen nye kald i løbet af døgnet. <strong class="text-gray-800 dark:text-gray-200">Option 2</strong> bruger i stedet integrationen <a href="https://github.com/MTrab/energidataservice" target="_blank" rel="noopener" class="text-brand-500 underline">Energi Data Service</a>, hvis du allerede har den.</p>
-      <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-1">Kun prisen som sensor</h3>
-      <p>Vil du bare vise prisen lige nu i kr/kWh, er det nok med ét kald. Sæt <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">scan_interval</code> til mindst <strong class="text-gray-800 dark:text-gray-200">300 sekunder</strong>, så der spørges højst hvert 5. minut:</p>
+      <div class="mt-2 bg-gray-900 dark:bg-gray-950 rounded-xl p-4 overflow-x-auto">
+        <pre class="text-xs text-green-400"><code>automation:
+  - alias: "Opvaskemaskine i de billigste timer"
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.elpriser_dk1_billig_time_nu
+        to:
+          - "on"
+          - "off"
+    actions:
+      - action: "switch.turn_{{ trigger.to_state.state }}"
+        target:
+          entity_id: switch.din_kontakt</code></pre>
+      </div>
+      <p class="mt-2">Ret <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">switch.din_kontakt</code> til din egen kontakt. Entitetens navn afhænger af sprog og prisområde, så vælg den i automationseditoren.</p>
+      <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-1">Hvad du får</h3>
+      <ul class="mt-1 space-y-1 ml-4 list-disc">
+        <li><code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">Pris nu</code> og <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">Pris næste time</code> i kr/kWh, og dagens laveste, højeste og gennemsnitlige pris.</li>
+        <li><code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">Billigste time starter</code> og <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">Prisniveau</code> (billig, normal eller dyr).</li>
+        <li><code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">Billig time nu</code>, som er tændt i de billigste timer i døgnet. Den bruger du til automationer.</li>
+      </ul>
+      <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-1">Andre strategier end de billigste timer</h3>
+      <p>Integrationen kender de <em>N billigste timer</em> og prisniveauet. Vil du i stedet undgå de dyreste timer eller spidstimer, kan generatoren ovenfor lave en færdig døgnplan under fanen <em>Home Assistant</em>. Den henter hele døgnets plan fra <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">/api/schedule</code> to gange i døgnet og skal ikke bruge integrationen.</p>
+      <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-1">Uden HACS: kun prisen som sensor</h3>
+      <p>Har du ikke HACS, kan du hente prisen med en REST-sensor. Sæt <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">scan_interval</code> til mindst <strong class="text-gray-800 dark:text-gray-200">300 sekunder</strong>, så der spørges højst hvert 5. minut:</p>
       <div class="mt-2 bg-gray-900 dark:bg-gray-950 rounded-xl p-4 overflow-x-auto">
         <pre class="text-xs text-green-400"><code>rest:
   - resource: "https://elpriser.org/api/now?area=DK1&amp;mode=inkl_alt"
@@ -1513,10 +1535,9 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         value_template: "{{ value_json.price | round(2) }}"
         unit_of_measurement: "kr/kWh"</code></pre>
       </div>
-      <p class="mt-2">Til en graf over hele dagen henter <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">/api/prices?area=DK1&amp;mode=inkl_alt</code> alle 24 timepriser i ét svar; en gang i timen er rigeligt.</p>
+      <p class="mt-2">Til en dagsgraf henter <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">/api/prices?area=DK1&amp;mode=inkl_alt</code> alle 24 timepriser; en gang i timen er rigeligt. Bruger du en pristype, der begynder med <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">net_</code> (prisen med dit netselskabs tarif), skal URL'en også have <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs">&amp;gln=</code> og netselskabets 13-cifrede GLN-nummer; uden det svarer API'et med fejlen 400.</p>
       <h3 class="font-bold text-gray-900 dark:text-white mt-4 mb-1">Spørgsmål</h3>
-      <p><strong class="text-gray-800 dark:text-gray-200">Skal jeg bruge Energi Data Service-integrationen?</strong> Nej, Option 1 klarer sig med REST alene.</p>
-      <p class="mt-2"><strong class="text-gray-800 dark:text-gray-200">Hvilket prisområde skal jeg vælge?</strong> DK1 for Jylland og Fyn, DK2 for Sjælland, Lolland-Falster og Bornholm; forsiden finder dit netselskab og dermed området.</p>
+      <p><strong class="text-gray-800 dark:text-gray-200">Hvilket prisområde skal jeg vælge?</strong> DK1 for Jylland og Fyn, DK2 for Sjælland, Lolland-Falster og Bornholm; forsiden finder dit netselskab og dermed området.</p>
     </section>
   </div>
 

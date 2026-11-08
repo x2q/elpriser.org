@@ -35,7 +35,7 @@ ok(new Set(IDS).size === IDS.length, 'table: ids are unique');
 for (const want of ['home-assistant', 'node-red', 'homey', 'evcc', 'openhab', 'esphome', 'shelly', 'python', 'javascript', 'rust', 'go', 'mcp'])
   ok(IDS.includes(want), `table: ${want} is listed`);
 ok(Object.keys(M.STATUS).join() === 'registry,github,applied,soon,site', 'status values: registry, github, applied, soon, site');
-ok(['I registeret', 'Fra GitHub', 'Ansøgt', 'Kommer'].every(l => Object.values(M.STATUS).some(s => s.label === l)), 'the four chips the owner named exist');
+ok(['Live', 'Fra GitHub', 'Afventer', 'Kommer'].every(l => Object.values(M.STATUS).some(s => s.label === l)), 'the four chips the owner named exist');
 const groupIds = M.GROUPS.map(g => g.id);
 for (const i of M.INTEGRATIONS) {
   ok(M.STATUS[i.status], `${i.id}: known status`, i.status);
@@ -55,13 +55,14 @@ ok(code('python') === 'pip install "git+https://github.com/x2q/elpriser-python"'
 ok(code('javascript') === 'npm install elpriser-client', 'javascript: install line from the README');
 ok(code('node-red') === 'npm install node-red-contrib-elpriser', 'node-red: install line from the README');
 ok(/^npx -y elpriser-mcp\nhttps:\/\/elpriser\.org\/mcp$/.test(code('mcp')), 'mcp: npx line and the hosted URL');
-ok(code('home-assistant') === 'https://github.com/x2q/ha-elpriser', 'home-assistant: the custom-repository URL');
+ok(code('home-assistant') === 'Elpriser', 'home-assistant: found by searching HACS for Elpriser');
+ok(M.INTEGRATIONS.find(i => i.id === 'home-assistant').note.includes('https://github.com/x2q/ha-elpriser'), 'home-assistant: the custom-repository URL stays as the fallback');
 ok(code('esphome').includes('github://x2q/esphome-elpriser/elpriser.yaml@main'), 'esphome: the package line');
 ok(code('homey').includes('npx homey app install'), 'homey: install from source');
 ok(M.CURL_EXAMPLE === 'curl "https://elpriser.org/api/now?area=DK1&mode=inkl_alt"', 'the curl example is the /api/now one');
 // No claim the READMEs do not make.
 const ha = M.INTEGRATIONS.find(i => i.id === 'home-assistant');
-ok(ha.status === 'applied' && ha.links.some(l => l.href === 'https://github.com/hacs/default/pull/13196'), 'home-assistant: "Ansøgt", with the HACS pull request');
+ok(ha.status === 'registry' && ha.links.some(l => l.href === 'https://github.com/hacs/default/pull/13196'), 'home-assistant: "Live" (HACS default list, merged 2026-11-04), with the HACS pull request');
 ok(!/upstream|officiel[^t]|godkendt af/i.test(M.INTEGRATIONS.find(i => i.id === 'evcc').note), 'evcc: no claim about becoming part of evcc');
 for (const id of ['homey', 'openhab', 'esphome']) ok(/endnu ikke|ikke afprøvet|Uofficiel/i.test(M.INTEGRATIONS.find(i => i.id === id).note), `${id}: says it has not been run for real yet`);
 

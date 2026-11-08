@@ -1962,7 +1962,7 @@ test('/automation: #shelly and #home-assistant sections with their own headings,
   const gen = m.indexOf('id="exportShellyCode"');
   for (const [id, h2, must] of [
     ['shelly', /Shelly/, [/Scripts → Create Script/, /Run on startup/, /\/api\/schedule/, /én gang/, /5\. minut/]],
-    ['home-assistant', /Home Assistant/, [/configuration\.yaml/, /\/api\/schedule/, /scan_interval/, /300 sekunder/, /5\. minut/]],
+    ['home-assistant', /Home Assistant/, [/HACS/, /Billig time nu/, /x2q\/ha-elpriser/, /\/api\/schedule/, /scan_interval/, /300 sekunder/, /5\. minut/]],
   ]) {
     const a = m.indexOf(`<section id="${id}"`);
     assert.ok(a > gen && gen > 0, `#${id} must exist and sit below the generator and its exports`);
@@ -2457,7 +2457,7 @@ test('/integrationer: one path through the SEO entry, sitemap, route maps, route
   assert.ok(ROUTES.includes('[elpriser.org/integrationer](https://elpriser.org/integrationer)'), 'the "Åbne datasæt og værktøjer" list points to /integrationer');
   // No second copy of a status anywhere else: index.html carries the placeholder, not a list.
   const sec = mainOf('integrationer');
-  assert.ok(!/ig-chip|Fra GitHub|I registeret|Ansøgt/.test(sec), 'the section in index.html holds no status: it is all in functions/_integrations.js');
+  assert.ok(!/ig-chip|Fra GitHub|Live|Afventer/.test(sec), 'the section in index.html holds no status: it is all in functions/_integrations.js');
   assert.ok(fs.existsSync(path.join(ROOT, 'functions', '_integrations.js')), 'functions/_integrations.js exists (an underscore file is no route and ships with functions/)');
   const pj = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
   assert.ok(/&& node test-integrations\.mjs/.test(pj.scripts['test:unit']), 'test-integrations.mjs runs in the gate (test:unit)');

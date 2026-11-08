@@ -8,9 +8,9 @@
  * live: a status is what somebody checked on INTEGRATIONS_CHECKED and wrote down.
  *
  * Status values (STATUS below):
- *   registry  "I registeret"  published on its own registry (npm, the MCP registry) and installed from there
+ *   registry  "Live"          published on its own registry (npm, the MCP registry, the HACS default list) and installed from there
  *   github    "Fra GitHub"    installable from the GitHub repository (tag v0.1.0), not in a registry
- *   applied   "Ansøgt"        submitted to a registry or default list, waiting; works as a custom source meanwhile
+ *   applied   "Afventer"      submitted to a registry or default list, waiting; works as a custom source meanwhile
  *   soon      "Kommer"        planned, does not exist yet: no link, no install line
  *   site      "Fra elpriser.org"  served by this website (the Shelly script)
  *
@@ -21,11 +21,11 @@
 export const INTEGRATIONS_CHECKED = '2026-11-03';
 
 export const STATUS = {
-  registry: { label: 'I registeret', tone: 'ok',
-    text: 'Ligger i et officielt register (npm eller MCP-registret) og installeres derfra.' },
+  registry: { label: 'Live', tone: 'ok',
+    text: 'Ligger i et officielt register (npm, MCP-registret eller HACS’ standardliste) og installeres derfra.' },
   github: { label: 'Fra GitHub', tone: 'brand',
     text: 'Installeres direkte fra GitHub (tag v0.1.0). Ligger ikke i et register endnu.' },
-  applied: { label: 'Ansøgt', tone: 'wait',
+  applied: { label: 'Afventer', tone: 'wait',
     text: 'Ansøgt om optagelse, svar afventes. Virker allerede som tilpasset kilde.' },
   soon: { label: 'Kommer', tone: 'soon',
     text: 'Planlagt, men findes ikke endnu.' },
@@ -63,15 +63,15 @@ export const INTEGRATIONS = [
   {
     id: 'home-assistant', group: 'smart-home', name: 'Home Assistant', platform: 'Integration via HACS',
     blurb: 'Prisen nu og næste time, billigste time og en “billig time nu”-sensor til dine automationer. Virker med Energy-dashboardet.',
-    status: 'applied', version: 'v0.1.1',
+    status: 'registry', version: 'v0.1.3',
     coverage: ZONES40,
-    how: 'I HACS: tre-prikkers menuen, Custom repositories, indsæt adressen nedenfor og vælg kategorien Integration. Tryk Download på Elpriser, genstart Home Assistant, og vælg Settings, Devices & services, Add integration, Elpriser.',
-    codes: [{ label: 'Adresse til HACS', text: 'https://github.com/x2q/ha-elpriser' }],
-    note: 'Ansøgt om optagelse på HACS’ standardliste. Indtil den er godkendt, tilføjer du den som tilpasset repository.',
+    how: 'I HACS: søg efter Elpriser og tryk Download. Genstart Home Assistant, og vælg Settings, Devices & services, Add integration, Elpriser.',
+    codes: [{ label: 'Søg i HACS efter', text: 'Elpriser' }],
+    note: 'Ligger på HACS’ standardliste siden 4. november 2026 (optaget i pull request 13196). Dukker den ikke op ved søgning, så opdatér HACS’ liste, eller tilføj https://github.com/x2q/ha-elpriser som tilpasset repository med kategorien Integration.',
     repo: 'ha-elpriser',
-    llms: 'i HACS: Custom repositories, tilføj https://github.com/x2q/ha-elpriser med kategorien Integration (ansøgt om HACS’ standardliste)',
+    llms: 'i HACS: søg efter Elpriser og tryk Download (på HACS’ standardliste siden 4. november 2026; ellers Custom repositories med https://github.com/x2q/ha-elpriser og kategorien Integration)',
     links: [
-      { label: 'Ansøgningen hos HACS', href: 'https://github.com/hacs/default/pull/13196' },
+      { label: 'Optagelsen hos HACS', href: 'https://github.com/hacs/default/pull/13196' },
       { label: 'Uden installation: REST-sensor', href: '/automation#home-assistant' },
     ],
   },
