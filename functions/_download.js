@@ -27,8 +27,8 @@ export const APPS = {
   androidTablet: 'live',
   mac: 'live',          // macOS 1.3.0 Ready for Distribution 2026-11-08 (same App Store page as the iPhone app: universal purchase)
   watch: 'live',        // in iOS 1.3.0, live 2026-11-04 (installs from the iPhone app)
-  reminders: 'next',    // version 1.3.0
-  widget: 'next',
+  reminders: 'live',    // in iOS and Android 1.3.0 (live since 2026-11-04)
+  widget: 'live',       // iPhone widget in iOS 1.3.0; the Android widget is not built yet
 };
 
 /** The facts every language states. test-static.js checks the counts against i18n/languages.json and the apps. */
@@ -104,16 +104,6 @@ const ldBlock = o => `{\n${Object.entries(o).map(([k, v]) => `  ${JSON.stringify
 // ── The pieces of the page ────────────────────────────────────────────────────────────────────────────────────────────
 const REVEAL_SCRIPT = `<script>(function(){var m=document.currentScript.parentNode;if(!('IntersectionObserver' in window)||(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches))return;m.classList.add('dl-js');function go(){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target);}});},{rootMargin:'0px 0px -6% 0px',threshold:.06});m.querySelectorAll('.dl-rv').forEach(function(el){io.observe(el);});addEventListener('beforeprint',function(){m.querySelectorAll('.dl-rv').forEach(function(el){el.classList.add('is-in');});});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go();})();</script>`;
 const STORE_ORDER_SCRIPT = `<script>(function(){var b=document.currentScript.previousElementSibling,u=navigator.userAgent;if(/Android/i.test(u))b.className+=' is-android';else if(/iPhone|iPad|iPod/.test(u)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))b.className+=' is-ios';})();</script>`;
-const ICON = (inner) => `<svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
-const ICONS = {
-  phone: ICON('<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>'),
-  tablet: ICON('<rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M11 17h2"/>'),
-  mac: ICON('<rect x="5" y="5" width="14" height="10" rx="1.5"/><path d="M3 19h18"/>'),
-  watch: ICON('<rect x="7" y="6.5" width="10" height="11" rx="3"/><path d="M9 6.5l.7-3h4.6l.7 3M9 17.5l.7 3h4.6l.7-3"/>'),
-  bell: ICON('<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>'),
-  widget: ICON('<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>'),
-};
-
 /** One screenshot in its CSS device frame. `img` = { base: '/download/img/x', w, h, dev: 'ios' | 'and' } (files base-360.webp and base-720.webp). */
 function phone(img, { sizes, alt, eager }) {
   const big = img.big || img.w * 2;
@@ -197,45 +187,69 @@ ${frame(img.tablet, `<b>${esc(T(t, 'nAndroidTablet'))}</b> · ${esc(T(t, 'osAndr
   </section>`;
 }
 
-function cards(t) {
+/** The bars of a mini chart: r = expensive, a = average, none = cheap; one height in % per bar. */
+const bars = list => list.map(([c, h]) => `<i${c ? ` class="${c}"` : ''} style="height:${h}%"></i>`).join('');
+const DAY = [['r', 90], ['r', 80], ['a', 60], ['', 45], ['', 40], ['a', 55], ['r', 85], ['r', 70]];
+
+/** One image of a card's device: the 1x/2x pair of the page's screenshots. */
+function cardImg(i, { sizes, alt }) {
+  const big = i.big || i.w * 2;
+  return `<img src="${i.base}-${big}.webp" srcset="${i.base}-${i.w}.webp ${i.w}w, ${i.base}-${big}.webp ${big}w" sizes="${sizes}" width="${i.w}" height="${i.h}" loading="lazy" alt="${esc(alt)}">`;
+}
+
+/**
+ * The scene at the top of a card: the device with the app on it (a real screenshot in a CSS frame), or, where there is no capture of the
+ * thing (Apple Watch, reminders, widget), a drawing built from the app's own words. Everything drawn is aria-hidden; the numbers of a
+ * drawing sit in data-v / data-t and are painted by CSS, so they are not part of the page's text.
+ */
+function stage(t, key, img, da) {
+  const alt = k => T(t, k);
+  switch (key) {
+    case 'iphone': return phone(da ? img.iosNow : img.hero1, { sizes: '150px', alt: alt(da ? 'altIosNow' : 'altHero1') });
+    case 'androidPhone': return phone(da ? img.andNow : img.hero2, { sizes: '150px', alt: alt(da ? 'altAndNow' : 'altHero2') });
+    case 'ipad': return `<div class="dl-dtab">${cardImg(img.ipad, { sizes: '(min-width:960px) 280px, 70vw', alt: alt('altIpad') })}</div>`;
+    case 'androidTablet': return `<div class="dl-dtab">${cardImg(img.tablet, { sizes: '(min-width:960px) 280px, 70vw', alt: alt('altTablet') })}</div>`;
+    case 'mac': return `<div class="dl-mac"><div class="dl-lid">${cardImg(img.mac, { sizes: '(min-width:960px) 300px, 80vw', alt: alt('altMac') })}</div><div class="dl-mbase"></div></div>`;
+    case 'watch': return `<div class="dl-watch" aria-hidden="true"><div class="dl-wcase"><div class="dl-wscr"><span class="dl-wpr" data-v="${esc(T(t, 'mkPrice'))}"></span><span class="dl-wbars">${bars(DAY.slice(0, 7))}</span></div></div></div>`;
+    case 'reminders': return `<div class="dl-notif" aria-hidden="true"><span class="dl-nic"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M13.5 2 5 13.5h5.5L9.5 22 19 9.5h-5.7z"/></svg></span><b>${esc(T(t, 'mkTitle'))}</b><span>${esc(T(t, 'mkLead'))}<br><span class="dl-ct" data-t="${esc(T(t, 'mkLine'))}"></span></span></div>`;
+    case 'widget': return `<div class="dl-wdg" aria-hidden="true"><div class="dl-wsm"><span class="dl-wlab">${esc(T(t, 'mkVerdict'))}</span><span class="dl-wbig" data-v="${esc(T(t, 'mkPrice'))}"></span><span class="dl-wun">${esc(T(t, 'mkUnit'))}</span><span class="dl-wmini">${bars(DAY)}</span></div><div class="dl-wlock"><span class="dl-wl" data-v="${esc(T(t, 'mkPrice'))}"></span><small>${esc(T(t, 'mkUnit'))}</small></div></div>`;
+    default: throw new Error(`no stage for ${key}`);
+  }
+}
+
+function cards(t, img, da) {
   const chip = st => T(t, { live: 'chipLive', soon: 'chipSoon', planned: 'chipPlanned', next: 'chipNext' }[st]);
   const link = (store, aria) => {
     const href = store === 'apple' ? FACTS.appStore : FACTS.play;
     return `          <a class="dl-more" href="${href}" rel="noopener" aria-label="${esc(T(t, aria))}" data-placement="card">${store === 'apple' ? 'App Store' : 'Google Play'} <span aria-hidden="true">&rarr;</span></a>`;
   };
-  const card = ({ key, icon, name, desc, os, store, aria, delay }) => {
+  const card = ({ key, name, desc, os, store, aria, delay }) => {
     const st = APPS[key];
     return `        <li class="dl-card dl-rv" data-status="${st}"${delay ? ` style="--d:${delay}s"` : ''}>
-          ${ICONS[icon]}
+          <div class="dl-stage">${stage(t, key, img, da)}</div>
           <h3>${esc(T(t, name))}</h3><span class="dl-chip">${esc(chip(st))}</span>
           <p>${esc(T(t, desc))}</p>${os ? `\n          <p class="dl-os">${esc(T(t, os[0], { n: os[1] }))}</p>` : ''}${st === 'live' && store ? '\n' + link(store, aria) : ''}
         </li>`;
   };
-  const main = [
-    { key: 'iphone', icon: 'phone', name: 'nIphone', desc: 'cIphone', os: ['osIos', FACTS.ios], store: 'apple', aria: 'openIphone' },
-    { key: 'ipad', icon: 'tablet', name: 'nIpad', desc: 'cIpad', os: ['osIpad', FACTS.ios], store: 'apple', aria: 'openIpad', delay: '.05' },
-    { key: 'androidPhone', icon: 'phone', name: 'nAndroidPhone', desc: 'cAndroidPhone', os: ['osAndroid', FACTS.android], store: 'play', aria: 'openAndroidPhone', delay: '.1' },
-    { key: 'androidTablet', icon: 'tablet', name: 'nAndroidTablet', desc: 'cAndroidTablet', os: ['osAndroid', FACTS.android], store: 'play', aria: 'openAndroidTablet' },
-    { key: 'mac', icon: 'mac', name: 'nMac', desc: 'cMac', os: ['osMac', FACTS.mac], store: 'apple', aria: 'openMac', delay: '.05' },
-    { key: 'watch', icon: 'watch', name: 'nWatch', desc: 'cWatch', store: 'apple', aria: 'openWatch', delay: '.1' },
-  ];
-  const soon = [
-    { key: 'reminders', icon: 'bell', name: 'nReminders', desc: 'cReminders' },
-    { key: 'widget', icon: 'widget', name: 'nWidget', desc: 'cWidget', delay: '.05' },
+  const all = [
+    { key: 'iphone', name: 'nIphone', desc: 'cIphone', os: ['osIos', FACTS.ios], store: 'apple', aria: 'openIphone' },
+    { key: 'ipad', name: 'nIpad', desc: 'cIpad', os: ['osIpad', FACTS.ios], store: 'apple', aria: 'openIpad', delay: '.05' },
+    { key: 'androidPhone', name: 'nAndroidPhone', desc: 'cAndroidPhone', os: ['osAndroid', FACTS.android], store: 'play', aria: 'openAndroidPhone', delay: '.1' },
+    { key: 'androidTablet', name: 'nAndroidTablet', desc: 'cAndroidTablet', os: ['osAndroid', FACTS.android], store: 'play', aria: 'openAndroidTablet' },
+    { key: 'mac', name: 'nMac', desc: 'cMac', os: ['osMac', FACTS.mac], store: 'apple', aria: 'openMac', delay: '.05' },
+    { key: 'watch', name: 'nWatch', desc: 'cWatch', store: 'apple', aria: 'openWatch', delay: '.1' },
+    { key: 'reminders', name: 'nReminders', desc: 'cReminders' },
+    { key: 'widget', name: 'nWidget', desc: 'cWidget', delay: '.05' },
   ];
   return `  <!-- ── Overview of all the apps ──
        STATUS SWITCH: each card carries data-status="live | soon | planned | next". The chip text and the store link follow the status: flip it in APPS in functions/_download.js, then run node scripts/sync-download-page.mjs.
-       Today: iPhone, iPad, Mac, Android phone and tablet live (Mac since macOS 1.3.0, 2026-11-08, same App Store page); Apple Watch live (it comes with the iPhone app); reminders and widget next (version 1.3.0). -->
+       Today (2026-11-08): everything is live. Every card has a scene on top: the app on its device (iPhone, iPad, Android phone and tablet, Mac: real screenshots) or a drawing (Apple Watch, reminders, widget). -->
   <section class="dl-sec" aria-labelledby="dlApps">
     <div class="dl-in">
       <div class="dl-head dl-rv"><p class="dl-kicker">${esc(T(t, 'appsKicker'))}</p><h2 class="dl-h" id="dlApps">${heading(T(t, 'appsH'))}</h2>
         <p class="dl-p">${esc(T(t, 'appsP'))}</p></div>
       <ul class="dl-cards">
-${main.map(card).join('\n')}
-      </ul>
-      <p class="dl-sub dl-rv">${esc(T(t, 'soonLabel'))}</p>
-      <ul class="dl-soon">
-${soon.map(card).join('\n')}
+${all.map(card).join('\n')}
       </ul>
     </div>
   </section>`;
@@ -261,6 +275,7 @@ const DA = {
   price: daImg('iphone-opdeling', 782, 'ios'), days: daImg('iphone-5dage', 782, 'ios'), welcome: daImg('android-velkommen', 720, 'and'),
   netList: daImg('iphone-netselskab', 782, 'ios'), smart: daImg('iphone-smart-hjem', 782, 'ios'),
   ipad: { base: '/download/img/ipad-nu', w: 640, h: 480, big: 1280 }, tablet: { base: '/download/img/android-tablet-nu', w: 640, h: 400, big: 1280 },
+  mac: { base: '/download/img/mac-da', w: 640, h: 407, big: 1280 },
 };
 /** The images of another language, from the manifest the image script writes. */
 function xImg(code) {
@@ -268,6 +283,8 @@ function xImg(code) {
   if (!m) throw new Error(`no screenshots for ${code}`);
   const o = {};
   for (const [slot, v] of Object.entries(m)) o[slot] = { base: `/download/img/${v.dir}/${slot}`, w: v.w, h: v.h, big: v.big, dev: v.dev };
+  // The Mac window exists in Danish and English only; every other language shows the English one (the layout is the same)
+  o.mac = { base: '/download/img/mac-en', w: 640, h: 407, big: 1280 };
   return o;
 }
 
@@ -311,7 +328,7 @@ export function downloadMain(code, opts = {}) {
   const head = `<main style="display:none" data-page="download" class="dl-page"${da ? '' : ` data-lang="${code}"`}>
   <!-- Reveal-on-scroll switch. It runs first so the class is on before anything is painted; without JS, with reduced motion or without IntersectionObserver nothing is ever hidden. -->
   ${REVEAL_SCRIPT}
-  <!-- The live apps (iPhone and iPad in App Store, Android phone and tablet on Google Play; the same two store pages), described once. Reminders and widget are not released and are not in the markup below as applications. -->
+  <!-- The live apps (iPhone, iPad, Mac and Watch in App Store, Android phone and tablet on Google Play; the same two store pages), described once. -->
   <script type="application/ld+json">${ldBlock(ldFor(code, t, img, url))}</script>
 
   <!-- ── Hero ── -->
@@ -345,7 +362,7 @@ export function downloadMain(code, opts = {}) {
       basics(t, true),
       europeBig(t),
       tablets(t, DA),
-      cards(t),
+      cards(t, DA, true),
       ways(t, [['wWeb', '/'], ['wHA', 'https://github.com/x2q/ha-elpriser', 1], ['wShelly', '/automation#shelly'], ['wApi', '/api'], ['wMcp', 'https://github.com/x2q/elpriser-mcp', 1], ['wAll', '/integrationer']]),
       `  <section class="dl-sec" style="padding-top:3rem;padding-bottom:3rem">
     <div class="dl-in">
@@ -361,7 +378,7 @@ export function downloadMain(code, opts = {}) {
       headOnly(t, { k: 'dk', band: true }),
       basics(t, false),
       tablets(t, img),
-      cards(t),
+      cards(t, img, false),
       ways(t, [['wWeb', opts.homeHref || '/'], ['wHA', 'https://github.com/x2q/ha-elpriser', 1], ['wMcp', 'https://github.com/x2q/elpriser-mcp', 1]], true),
       `  <section class="dl-sec" style="padding-top:3rem;padding-bottom:3rem">
     <div class="dl-in">

@@ -106,7 +106,7 @@ const X_ONLY = ['altHero1', 'altHero2', 'altCountry', 'dkK', 'dkH', 'dkP', 'note
     ok(!/\d/.test(JSON.stringify([t.cIphone, t.cAndroidPhone, t.cMac, t.cWatch, t.cReminders, t.cWidget]).replace(/\{\w+\}/g, '')) || /^(da|en)$/.test(c) || /[25]/.test(t.cIphone), `${c}: the cards carry no number the apps do not show`);
   }
   // Nothing is left in another language: a value equal to the Danish or the English one is a translation that was never made, unless it is a product name.
-  const SAME_OK = new Set(['nIphone', 'nIpad', 'nMac', 'nWatch', 'nWidget', 'wHA', 'wMcp', 'wShelly', 'wAll', 'osIos', 'osIpad', 'osAndroid', 'osMac', 'h1', 'metaTitle', 'euK', 'nAndroidPhone', 'nAndroidTablet']);   // Europa, Android-telefon, Android tablet: the same word in the neighbouring language
+  const SAME_OK = new Set(['nIphone', 'nIpad', 'nMac', 'nWatch', 'nWidget', 'wHA', 'wMcp', 'wShelly', 'wAll', 'osIos', 'osIpad', 'osAndroid', 'osMac', 'h1', 'metaTitle', 'euK', 'nAndroidPhone', 'nAndroidTablet', 'mkUnit']);   // Europa, Android-telefon, Android tablet: the same word in the neighbouring language
   for (const c of NON_DA) {
     const t = DL_TEXT[c];
     for (const k of Object.keys(t)) {
@@ -173,9 +173,10 @@ for (const c of CODES) {
   CARDS.forEach(([key, nameKey], i) => {
     const st = D.APPS[key], card = cards[i] || {};
     ok(card.st === st && card.chip === t[STAT[st]] && card.name === t[nameKey], `${p}: ${key} is ${st} (the table), its chip is the language's "${t[STAT[st]]}"`, JSON.stringify(card));
-    ok(st === 'live' ? card.links.length === 1 : card.links.length === 0, `${p}: ${key}: a store link if and only if it is live`);
+    const feature = ['reminders', 'widget'].includes(key);   // features of the apps: live, but no store link of their own
+    ok(st === 'live' && !feature ? card.links.length === 1 : card.links.length === 0, `${p}: ${key}: a store link if and only if it is a live app of its own`);
   });
-  ok(cards.filter(x => x.st === 'live').map(x => x.links[0]).join() === [D.FACTS.appStore, D.FACTS.appStore, D.FACTS.play, D.FACTS.play, D.FACTS.appStore, D.FACTS.appStore].join(), `${p}: the live cards link to the right store`);
+  ok(cards.filter(x => x.st === 'live').map(x => x.links[0]).filter(Boolean).join() === [D.FACTS.appStore, D.FACTS.appStore, D.FACTS.play, D.FACTS.play, D.FACTS.appStore, D.FACTS.appStore].join(), `${p}: the live cards link to the right store`);
   // counts and systems from the facts
   ok(text.includes(String(D.FACTS.langs)) && text.includes(String(D.FACTS.langs - 1)) && text.includes(String(D.FACTS.countries)), `${p}: says ${D.FACTS.langs} languages (${D.FACTS.langs - 1} others) and ${D.FACTS.countries} countries`);
   ok(text.includes(D.FACTS.ios) && text.includes(D.FACTS.android) && text.includes(D.FACTS.mac), `${p}: the minimum systems (${D.FACTS.ios}, ${D.FACTS.android}, ${D.FACTS.mac})`);
@@ -201,7 +202,7 @@ for (const c of CODES) {
   ok((main.match(/<a /g) || []).length >= 9 && text.length > 2500, `${p}: the text and the links are in the HTML`, String(text.length));
   // images
   const imgs = [...main.matchAll(/<img ([^>]*\/download\/img\/[^>]*)>/g)].map(m => m[1]);
-  const expected = c === 'da' ? 11 : 6;
+  const expected = c === 'da' ? 16 : 11;   // the page's own screenshots, plus the five on the cards (iPhone, iPad, Android phone and tablet, Mac)
   ok(imgs.length === expected, `${p}: ${expected} screenshots`, String(imgs.length));
   let eager = 0, first = 0, firstBytes = 0;
   for (const a of imgs) {

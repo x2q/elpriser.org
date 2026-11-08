@@ -889,10 +889,10 @@ for (const [from, to] of Object.entries(OLD)) {
   ok((b.match(/<img [^>]*\/download\/img\/[^>]*width="\d+" height="\d+"/g) || []).length >= 10 && !/\.(png|jpe?g)"/.test(b.match(/<main[\s\S]*<\/main>/)[0].replace(/\/badges\/[^"]+/g, '')), '/download: skærmbillederne er WebP med bredde og højde');
   ok(/"@type": "MobileApplication"/.test(b) && /"featureList"/.test(b) && (b.match(/"@type": "MobileApplication"/g) || []).length === 1, '/download: MobileApplication-markup, én gang');
   const text = b.match(/<main[\s\S]*<\/main>/)[0].replace(/<script[\s\S]*?<\/script>/g, ' ').replace(/<[^>]+>/g, ' ');
-  ok(/Tilgængelig/.test(text) && !/Kommer snart/.test(text) && /Kommer i næste version/.test(text) && !/10 døgn/.test(text), '/download: statuschippene står som tekst, ikke kun som CSS');
+  ok(/Tilgængelig/.test(text) && !/Kommer snart|Kommer i næste version/.test(text) && !/10 døgn/.test(text), '/download: statuschippene står som tekst, ikke kun som CSS');
   store.clear();
   const llms = (await get('/llms.txt')).body, line = (llms.match(/- \[Hent appen\][^\n]*/) || [''])[0];
-  ok(/iPhone og iPad/.test(line) && /Android-telefon og -tablet/.test(line) && /Mac \(macOS 15/.test(line) && /Apple Watch/.test(line) && /Kommer: påmindelser/.test(line) && line.includes('apps.apple.com/dk/app/id6820474476') && line.includes('play.google.com/store/apps/details?id=org.elpriser.app') && !/prognose|Hugging/.test(line), '/download: llms.txt siger hvad der findes og hvad der kommer, med begge butikslinks');
+  ok(/iPhone og iPad/.test(line) && /Android-telefon og -tablet/.test(line) && /Mac \(macOS 15/.test(line) && /Apple Watch/.test(line) && /Med påmindelser om billige timer/.test(line) && line.includes('apps.apple.com/dk/app/id6820474476') && line.includes('play.google.com/store/apps/details?id=org.elpriser.app') && !/prognose|Hugging/.test(line), '/download: llms.txt siger hvad der findes og hvad der kommer, med begge butikslinks');
   const sm = (await get('/sitemap.xml')).body;
   ok(/<loc>https:\/\/elpriser\.org\/download<\/loc>\s*<lastmod>2026-11-08<\/lastmod>/.test(sm), '/download: sitemap med lastmod 2026-11-08');
 }

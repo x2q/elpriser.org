@@ -466,6 +466,49 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   .dl-more:hover{text-decoration:underline;text-underline-offset:3px}
   .dl-more:focus-visible,.dl-way:focus-visible,.dl-page a:focus-visible{outline:2px solid var(--p-brand);outline-offset:3px;border-radius:6px}
   .dl-card .dl-more{margin-top:.75rem}
+  /* the scene at the top of a card: the app on its device (real screenshot in a CSS frame) or a drawing */
+  .dl-stage{align-self:stretch;margin:-1.5rem -1.5rem 1.25rem;height:230px;background:var(--p-seg);border-radius:23px 23px 0 0;display:flex;justify-content:center;align-items:center;overflow:hidden;position:relative}
+  .dl-stage+h3{margin-top:0}
+  .dl-stage .dl-phone{--w:150px;align-self:flex-start;margin-top:26px}
+  .dl-dtab{width:min(80%,290px);padding:8px;border-radius:19px;background:#0b0f1a;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14),0 0 0 1px rgba(14,21,48,.5),0 18px 36px -16px rgba(14,21,48,.45)}
+  .dark .dl-dtab{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.16),0 0 0 1px rgba(255,255,255,.1),0 18px 40px -18px rgba(0,0,0,.8)}
+  .dl-dtab img{display:block;width:100%;height:auto;border-radius:12px;background:var(--p-card)}
+  .dl-mac{width:min(82%,300px);filter:drop-shadow(0 14px 18px rgba(14,21,48,.28))}
+  .dl-lid{background:#0b0f1a;padding:2.2% 2.2% 3%;border-radius:10px 10px 0 0;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.12)}
+  .dl-lid img{display:block;width:100%;height:auto;border-radius:3px;background:var(--p-card)}
+  .dl-mbase{height:9px;margin:0 -5%;background:linear-gradient(#d6dae8,#a9aec6);border-radius:0 0 14px 14px}
+  /* Apple Watch, drawn */
+  .dl-watch{position:relative;width:104px;height:122px}
+  .dl-watch::before,.dl-watch::after{content:"";position:absolute;left:18%;right:18%;height:36%;background:#2b2f4d;border-radius:9px}
+  .dl-watch::before{top:-28%}.dl-watch::after{bottom:-28%}
+  .dl-wcase{position:absolute;inset:0;z-index:1;background:linear-gradient(145deg,#d9dcea,#aeb3c9);border-radius:32px;padding:5px;box-shadow:0 14px 24px -12px rgba(14,21,48,.5)}
+  .dl-wscr{height:100%;background:#000;border-radius:27px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px}
+  .dl-wpr::before{content:attr(data-v);color:#fff;font-weight:800;font-size:27px;line-height:1;font-variant-numeric:tabular-nums}
+  .dl-wbars,.dl-wmini{display:flex;gap:2px;align-items:flex-end}
+  .dl-wbars{height:22px}
+  .dl-wbars i,.dl-wmini i{width:5px;border-radius:1.5px;background:var(--p-lo)}
+  .dl-wmini i{width:auto;flex:1}
+  .dl-wbars i.a,.dl-wmini i.a{background:var(--p-mi)}
+  .dl-wbars i.r,.dl-wmini i.r{background:var(--p-hi)}
+  /* reminder and widget, drawn with the app's own words */
+  .dl-notif{width:min(86%,300px);display:grid;grid-template-columns:34px minmax(0,1fr);gap:2px 10px;padding:12px 14px;background:var(--p-card);border-radius:18px;box-shadow:0 12px 28px -14px rgba(14,21,48,.4),0 0 0 1px var(--p-line);color:var(--p-ink);font-size:.8125rem;line-height:1.35;text-align:left}
+  .dl-nic{grid-row:1/3;width:34px;height:34px;border-radius:9px;background:linear-gradient(145deg,#3b6bff,#1b3fc4);display:grid;place-items:center;color:#fff}
+  .dl-notif b{font-weight:700}
+  .dl-notif>span:last-child{color:var(--p-ink2)}
+  .dl-ct::before{content:attr(data-t)}
+  .dl-wdg{display:flex;gap:12px;align-items:center}
+  .dl-wsm{width:136px;height:136px;padding:12px 13px;box-sizing:border-box;background:var(--p-card);border-radius:24px;box-shadow:0 12px 28px -14px rgba(14,21,48,.4),0 0 0 1px var(--p-line);display:flex;flex-direction:column;justify-content:space-between;text-align:left;color:var(--p-ink);min-width:0}
+  .dl-wlab{display:flex;gap:5px;align-items:center;font-size:.6875rem;font-weight:700;color:var(--p-hi-ink);line-height:1.1}
+  .dl-wlab::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--p-hi)}
+  .dl-wbig::before{content:attr(data-v);font-weight:800;font-size:1.875rem;line-height:1;font-variant-numeric:tabular-nums}
+  .dl-wbig{display:block}
+  .dl-wun{font-size:.625rem;font-weight:600;color:var(--p-muted);margin-top:-6px}
+  .dl-wmini{height:30px}
+  .dl-wlock{width:80px;height:80px;border-radius:50%;background:#0b0f1a;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 12px 28px -14px rgba(14,21,48,.5)}
+  .dl-wl::before{content:attr(data-v);font-weight:800;font-size:1.125rem;line-height:1;font-variant-numeric:tabular-nums}
+  .dl-wlock small{font-size:.5625rem;font-weight:600;opacity:.7;line-height:1}
+  /* eight cards: 3 + 3 + 2, the last two wider */
+  @media (min-width:960px){.dl-cards{grid-template-columns:repeat(6,minmax(0,1fr))}.dl-cards>.dl-card{grid-column:span 2}.dl-cards>.dl-card:nth-last-child(-n+2){grid-column:span 3}}
   .dl-card[data-status="next"],.dl-card[data-status="planned"]{background:transparent;box-shadow:none;border-style:dashed}
   .dl-soon{display:grid;grid-template-columns:minmax(0,1fr);gap:1rem;margin:3rem 0 0;padding:0;list-style:none}
   @media (min-width:700px){.dl-soon{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -1992,7 +2035,7 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 <main style="display:none" data-page="download" class="dl-page">
   <!-- Reveal-on-scroll switch. It runs first so the class is on before anything is painted; without JS, with reduced motion or without IntersectionObserver nothing is ever hidden. -->
   <script>(function(){var m=document.currentScript.parentNode;if(!('IntersectionObserver' in window)||(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches))return;m.classList.add('dl-js');function go(){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target);}});},{rootMargin:'0px 0px -6% 0px',threshold:.06});m.querySelectorAll('.dl-rv').forEach(function(el){io.observe(el);});addEventListener('beforeprint',function(){m.querySelectorAll('.dl-rv').forEach(function(el){el.classList.add('is-in');});});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go();})();</script>
-  <!-- The live apps (iPhone and iPad in App Store, Android phone and tablet on Google Play; the same two store pages), described once. Reminders and widget are not released and are not in the markup below as applications. -->
+  <!-- The live apps (iPhone, iPad, Mac and Watch in App Store, Android phone and tablet on Google Play; the same two store pages), described once. -->
   <script type="application/ld+json">{
   "@context": "https://schema.org",
   "@type": "MobileApplication",
@@ -2146,64 +2189,61 @@ const nu = await elpriser.now({ area: 'DK1' });</pre>
 
   <!-- ── Overview of all the apps ──
        STATUS SWITCH: each card carries data-status="live | soon | planned | next". The chip text and the store link follow the status: flip it in APPS in functions/_download.js, then run node scripts/sync-download-page.mjs.
-       Today: iPhone, iPad, Mac, Android phone and tablet live (Mac since macOS 1.3.0, 2026-11-08, same App Store page); Apple Watch live (it comes with the iPhone app); reminders and widget next (version 1.3.0). -->
+       Today (2026-11-08): everything is live. Every card has a scene on top: the app on its device (iPhone, iPad, Android phone and tablet, Mac: real screenshots) or a drawing (Apple Watch, reminders, widget). -->
   <section class="dl-sec" aria-labelledby="dlApps">
     <div class="dl-in">
       <div class="dl-head dl-rv"><p class="dl-kicker">Alle vores apps</p><h2 class="dl-h" id="dlApps">Én app. <b>Flere skærme.</b></h2>
-        <p class="dl-p">Samme priser, uanset hvor du ser dem. Her er det, der findes i dag, og det, der er på vej.</p></div>
+        <p class="dl-p">Samme priser, uanset hvor du ser dem.</p></div>
       <ul class="dl-cards">
         <li class="dl-card dl-rv" data-status="live">
-          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+          <div class="dl-stage"><div class="dl-phone dl-ios"><img src="/download/img/iphone-nu-720.webp" srcset="/download/img/iphone-nu-360.webp 360w, /download/img/iphone-nu-720.webp 720w" sizes="150px" width="360" height="782" loading="lazy" alt="Elpriser på iPhone: prisen lige nu, 2,90 kr/kWh, vurderet som dyr, og en graf over de næste to døgn."></div></div>
           <h3>iPhone</h3><span class="dl-chip">Tilgængelig</span>
           <p>Prisen lige nu, 2 og 5 døgn frem, Din pris og Spotpris, med dit netselskab.</p>
           <p class="dl-os">iOS 18 eller nyere</p>
           <a class="dl-more" href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Åbn iPhone-appen i App Store" data-placement="card">App Store <span aria-hidden="true">&rarr;</span></a>
         </li>
         <li class="dl-card dl-rv" data-status="live" style="--d:.05s">
-          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M11 17h2"/></svg>
+          <div class="dl-stage"><div class="dl-dtab"><img src="/download/img/ipad-nu-1280.webp" srcset="/download/img/ipad-nu-640.webp 640w, /download/img/ipad-nu-1280.webp 1280w" sizes="(min-width:960px) 280px, 70vw" width="640" height="480" loading="lazy" alt="Elpriser på iPad: prisen lige nu til venstre og en graf over de næste to døgn til højre."></div></div>
           <h3>iPad</h3><span class="dl-chip">Tilgængelig</span>
           <p>Samme app med plads til en stor graf, og menuen i siden.</p>
           <p class="dl-os">iPadOS 18 eller nyere</p>
           <a class="dl-more" href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Åbn iPad-appen i App Store" data-placement="card">App Store <span aria-hidden="true">&rarr;</span></a>
         </li>
         <li class="dl-card dl-rv" data-status="live" style="--d:.1s">
-          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+          <div class="dl-stage"><div class="dl-phone"><img src="/download/img/android-nu-720.webp" srcset="/download/img/android-nu-360.webp 360w, /download/img/android-nu-720.webp 720w" sizes="150px" width="360" height="720" loading="lazy" alt="Elpriser på Android: prisen lige nu, 1,86 kr/kWh, med vurderingen billig lige nu og en graf over dagen."></div></div>
           <h3>Android-telefon</h3><span class="dl-chip">Tilgængelig</span>
           <p>De samme priser og den samme Din pris, med lys og mørk tilstand.</p>
           <p class="dl-os">Android 8 eller nyere</p>
           <a class="dl-more" href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener" aria-label="Åbn Android-appen på Google Play" data-placement="card">Google Play <span aria-hidden="true">&rarr;</span></a>
         </li>
         <li class="dl-card dl-rv" data-status="live">
-          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M11 17h2"/></svg>
+          <div class="dl-stage"><div class="dl-dtab"><img src="/download/img/android-tablet-nu-1280.webp" srcset="/download/img/android-tablet-nu-640.webp 640w, /download/img/android-tablet-nu-1280.webp 1280w" sizes="(min-width:960px) 280px, 70vw" width="640" height="400" loading="lazy" alt="Elpriser på en Android-tablet: prisen lige nu, de næste dage og en graf over dagen."></div></div>
           <h3>Android-tablet</h3><span class="dl-chip">Tilgængelig</span>
           <p>Tilpasset den store skærm, med menuen i siden.</p>
           <p class="dl-os">Android 8 eller nyere</p>
           <a class="dl-more" href="https://play.google.com/store/apps/details?id=org.elpriser.app" rel="noopener" aria-label="Åbn Android-appen til tablet på Google Play" data-placement="card">Google Play <span aria-hidden="true">&rarr;</span></a>
         </li>
         <li class="dl-card dl-rv" data-status="live" style="--d:.05s">
-          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="10" rx="1.5"/><path d="M3 19h18"/></svg>
+          <div class="dl-stage"><div class="dl-mac"><div class="dl-lid"><img src="/download/img/mac-da-1280.webp" srcset="/download/img/mac-da-640.webp 640w, /download/img/mac-da-1280.webp 1280w" sizes="(min-width:960px) 300px, 80vw" width="640" height="407" loading="lazy" alt="Elpriser på Mac: prisen lige nu til venstre og en graf over de næste to døgn til højre."></div><div class="dl-mbase"></div></div></div>
           <h3>Mac</h3><span class="dl-chip">Tilgængelig</span>
           <p>Prisen i menulinjen og et vindue, når du vil se mere.</p>
           <p class="dl-os">macOS 15 eller nyere</p>
           <a class="dl-more" href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Åbn Mac-appen i App Store" data-placement="card">App Store <span aria-hidden="true">&rarr;</span></a>
         </li>
         <li class="dl-card dl-rv" data-status="live" style="--d:.1s">
-          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="6.5" width="10" height="11" rx="3"/><path d="M9 6.5l.7-3h4.6l.7 3M9 17.5l.7 3h4.6l.7-3"/></svg>
+          <div class="dl-stage"><div class="dl-watch" aria-hidden="true"><div class="dl-wcase"><div class="dl-wscr"><span class="dl-wpr" data-v="2,98"></span><span class="dl-wbars"><i class="r" style="height:90%"></i><i class="r" style="height:80%"></i><i class="a" style="height:60%"></i><i style="height:45%"></i><i style="height:40%"></i><i class="a" style="height:55%"></i><i class="r" style="height:85%"></i></span></div></div></div></div>
           <h3>Apple Watch</h3><span class="dl-chip">Tilgængelig</span>
           <p>Prisen på håndleddet, direkte på urskiven.</p>
           <a class="dl-more" href="https://apps.apple.com/dk/app/id6820474476" rel="noopener" aria-label="Åbn Apple Watch-appen i App Store" data-placement="card">App Store <span aria-hidden="true">&rarr;</span></a>
         </li>
-      </ul>
-      <p class="dl-sub dl-rv">På vej i næste version</p>
-      <ul class="dl-soon">
-        <li class="dl-card dl-rv" data-status="next">
-          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
-          <h3>Påmindelser</h3><span class="dl-chip">Kommer i næste version</span>
+        <li class="dl-card dl-rv" data-status="live">
+          <div class="dl-stage"><div class="dl-notif" aria-hidden="true"><span class="dl-nic"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M13.5 2 5 13.5h5.5L9.5 22 19 9.5h-5.7z"/></svg></span><b>Billigste 2 timer</b><span>Starter om 15 min<br><span class="dl-ct" data-t="I dag kl. 02–04 · 1,64 kr/kWh"></span></span></div></div>
+          <h3>Påmindelser</h3><span class="dl-chip">Tilgængelig</span>
           <p>Få besked, når strømmen er billigst. Påmindelserne ligger kun på din telefon: ingen konto og ingen server.</p>
         </li>
-        <li class="dl-card dl-rv" data-status="next" style="--d:.05s">
-          <svg class="dl-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>
-          <h3>Widget</h3><span class="dl-chip">Kommer i næste version</span>
+        <li class="dl-card dl-rv" data-status="live" style="--d:.05s">
+          <div class="dl-stage"><div class="dl-wdg" aria-hidden="true"><div class="dl-wsm"><span class="dl-wlab">Dyr lige nu</span><span class="dl-wbig" data-v="2,98"></span><span class="dl-wun">kr/kWh</span><span class="dl-wmini"><i class="r" style="height:90%"></i><i class="r" style="height:80%"></i><i class="a" style="height:60%"></i><i style="height:45%"></i><i style="height:40%"></i><i class="a" style="height:55%"></i><i class="r" style="height:85%"></i><i class="r" style="height:70%"></i></span></div><div class="dl-wlock"><span class="dl-wl" data-v="2,98"></span><small>kr/kWh</small></div></div></div>
+          <h3>Widget</h3><span class="dl-chip">Tilgængelig</span>
           <p>Prisen lige nu på hjemmeskærmen og låseskærmen på iPhone.</p>
         </li>
       </ul>

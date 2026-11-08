@@ -2122,13 +2122,14 @@ test('/download: the overview — every platform has one card, and its status ch
   assert.deepEqual(cards.map(c => [c.name, c.status, c.chip]), [
     ['iPhone', 'live', 'Tilgængelig'], ['iPad', 'live', 'Tilgængelig'], ['Android-telefon', 'live', 'Tilgængelig'], ['Android-tablet', 'live', 'Tilgængelig'],
     ['Mac', 'live', 'Tilgængelig'], ['Apple Watch', 'live', 'Tilgængelig'],
-    ['Påmindelser', 'next', 'Kommer i næste version'], ['Widget', 'next', 'Kommer i næste version'],
-  ], 'cards, in order, with the status the owner gave (iPhone/iPad/Android live; Mac live since macOS 1.3.0 on 2026-11-08; Watch live since iOS 1.3.0 on 2026-11-04; reminders and widget in the next version)');
+    ['Påmindelser', 'live', 'Tilgængelig'], ['Widget', 'live', 'Tilgængelig'],
+  ], 'cards, in order, with the status the owner gave (iPhone/iPad/Android live; Mac live since macOS 1.3.0 on 2026-11-08; Watch live since iOS 1.3.0 on 2026-11-04; reminders live on iPhone and Android and the widget on iPhone since 1.3.0)');
   for (const c of cards) {
-    if (c.status === 'live') assert.equal(c.links.length, 1, `${c.name}: one store link`);
+    if (c.status === 'live' && !['Påmindelser', 'Widget'].includes(c.name)) assert.equal(c.links.length, 1, `${c.name}: one store link`);
+    else if (['Påmindelser', 'Widget'].includes(c.name)) assert.deepEqual(c.links, [], `${c.name} is a feature of the apps, not a download of its own`);
     else assert.deepEqual(c.links, [], `${c.name} is not released: no download link`);
   }
-  assert.deepEqual(cards.filter(c => c.status === 'live').map(c => c.links[0]), [APPLE_URL, APPLE_URL, PLAY_URL, PLAY_URL, APPLE_URL, APPLE_URL]);
+  assert.deepEqual(cards.filter(c => c.status === 'live').map(c => c.links[0]).filter(Boolean), [APPLE_URL, APPLE_URL, PLAY_URL, PLAY_URL, APPLE_URL, APPLE_URL]);
   // A card link must never take over the badges' accessible names (the badges are the only "Hent i App Store" / "Hent på Google Play" links on the page).
   assert.ok([...m.matchAll(/class="dl-more"[^>]*aria-label="([^"]+)"/g)].every(x => !/^Hent /.test(x[1])), 'card links are named differently from the two badges');
   assert.ok(/<!-- ── Overview of all the apps[\s\S]*STATUS SWITCH: each card carries data-status="live \| soon \| planned \| next"/.test(m), 'the one place that explains the status switch sits above the cards');
@@ -2197,8 +2198,8 @@ test('/download: the reveal is progressive enhancement — content is visible wi
   assert.ok(/\.dl-js \.dl-rv\{opacity:0/.test(css) && /@media \(prefers-reduced-motion:reduce\)\{\.dl-js \.dl-rv\{opacity:1;transform:none/.test(css), 'hidden only under .dl-js, and not at all with reduced motion');
   assert.ok(/'IntersectionObserver' in window/.test(m) && /prefers-reduced-motion:reduce/.test(m) && /classList\.add\('dl-js'\)/.test(m), 'the script checks both before it adds .dl-js');
   assert.ok(/transform:translateY\(26px\)/.test(css) && !/scale\(|rotate\(|blur\(/.test(css.slice(css.indexOf('scroll reveal'))), 'reveal = fade and a short rise, nothing else');
-  // Colours come from the --p-* tokens, which the .dark class remaps; the only literal hex colours are the device frames and the amber chip text (4.5:1 on its light tint).
-  const literals = (css.match(/#[0-9a-fA-F]{3,8}\b/g) || []).filter(h => !['#0b0f1a', '#05070d', '#7a5200', '#000'].includes(h));
+  // Colours come from the --p-* tokens, which the .dark class remaps; the only literal hex colours are the device frames, the drawn Apple Watch and app icon (they look the same in both themes) and the amber chip text (4.5:1 on its light tint).
+  const literals = (css.match(/#[0-9a-fA-F]{3,8}\b/g) || []).filter(h => !['#0b0f1a', '#05070d', '#7a5200', '#000', '#fff', '#d6dae8', '#a9aec6', '#d9dcea', '#aeb3c9', '#2b2f4d', '#3b6bff', '#1b3fc4'].includes(h));
   assert.deepEqual(literals, [], 'literal colours in the /download CSS');
   // Every dl- class the markup uses is defined (a missing one is a silent unstyled block).
   const used = new Set([...m.matchAll(/class="([^"]*)"/g)].flatMap(x => x[1].split(/\s+/)).filter(c => c.startsWith('dl-')));
