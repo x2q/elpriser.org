@@ -207,6 +207,8 @@ CANDS_LGB = {
     # these use only what was known (expanding maximum, medians of earlier years, 14 days after the week they describe)
     "lrel13lf": ([f for f in NORDIC_BASE if f not in ("reservoir_pct", "reservoir_anom", "nordic_reservoir_anom")] + ["res_pct_lf", "res_anom_lf", "nres_anom_lf"] + FUEL, NORDIC, "rel", PARAMS_EU),
     "lrelnonb": (NORDIC_BASE + FUEL + XNB, NO, "rel", PARAMS_EU),
+    # declared for docs/forecast-nordic-ens.md (before any scoring): the same tree WITHOUT any reservoir feature (DK1, DK2, NL have no reservoir series of their own)
+    "lrel13nr": ([f for f in NORDIC_BASE if f not in ("reservoir_pct", "reservoir_anom", "nordic_reservoir_anom")] + FUEL, NORDIC, "rel", PARAMS_EU),
 }
 
 
@@ -266,6 +268,9 @@ CANDS_RIDGE = {
     "r365nb": (365, "nb", None),
     "r730lf": (730, "lf", None),
     "r730nb": (730, "nb", None),
+    # declared for docs/forecast-nordic-ens.md (before any scoring): the leak-free ridge with a 365-day window, and the 730-day ridge without reservoir features
+    "r365lf": (365, "lf", None),
+    "r730nr": (730, "nr", None),
 }
 
 
@@ -293,6 +298,8 @@ def run_ridge(names, jobs):
             X = RM.design(A, False, extra=NORDIC_EXTRA)
         elif fset == "lf":
             X = RM.design(A, True, extra=["res_anom_lf", "nres_anom_lf", "hydro_precip_7d"])
+        elif fset == "nr":
+            X = RM.design(A, True, extra=["hydro_precip_7d"])
         else:
             X = RM.design(A, True, extra=NORDIC_EXTRA)
         X = X.join(A[EXTRA_LAGS].astype(np.float32))

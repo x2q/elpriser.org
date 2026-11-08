@@ -7,6 +7,7 @@ always against level+shape, on the rows where every compared column has a value.
 """
 import argparse
 import os
+import re
 import sys
 
 import numpy as np
@@ -28,11 +29,12 @@ def load(cols, zones=None):
         df = df[df["zone"].isin(zones)]
     import metrics as M
     for c in cols:                                   # "a+b" = the mean of the two columns (an equal-weight ensemble, nothing fitted)
-        expr = c[4:] if c.startswith("hyb:") else c
+        m = re.match(r"hyb(\d+)?:(.*)$", c)         # "hyb:x" = the Nordic job's post-processing: daily level of x, intraday shape 50/50 own and the seasonal profile;
+        expr = m.group(2) if m else c                 # "hyb25:x" / "hyb75:x" = the same with 25 / 75 % seasonal profile
         if "+" in expr:
             df[expr] = df[expr.split("+")].mean(axis=1, skipna=False)
-        if c.startswith("hyb:"):                     # the Nordic job's post-processing: the model's daily level, intraday shape 50/50 own and the seasonal profile
-            df[c] = M.blend(df, expr)
+        if m:
+            df[c] = M.blend(df, expr, int(m.group(1)) / 100 if m.group(1) else 0.5)
     return df
 
 
