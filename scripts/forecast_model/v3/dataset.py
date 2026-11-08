@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """v3 training-set builder — adds spatial coverage and congestion signals.
 
-Same leakage discipline as v2 (see the TIME CONVENTION note there): one row
+Same leakage discipline as v2 (retired; its code is in the git history): one row
 per (area, target hour, horizon 2-9); price lag k only populated when
 k >= h-1; weather taken from the previous-runs archive at lead min(h, 7).
 

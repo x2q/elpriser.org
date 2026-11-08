@@ -284,7 +284,7 @@ async function main() {
   const secret = [
     '/package.json', '/server.js', '/wrangler.toml', '/DESIGN.md',
     '/test-static.js', '/package-lock.json', '/tailwind.config.cjs',
-    '/scripts/forecast_model/train_and_score.py',
+    '/scripts/forecast_model/v3/train_daily.py',
     '/scripts/forecast_model/nordic/fetch_prices.py',
     '/ElpriserIOS/Sources/ElpriserApp.swift',
     '/ElpriserAndroid/app/build.gradle.kts',
