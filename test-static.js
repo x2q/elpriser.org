@@ -2374,23 +2374,27 @@ test('cities: the generator writes data and API figures only — no ten-day hori
 
 // ─── Google Play banner for Android visitors (Apple's is the apple-itunes-app meta, tested above) ───
 const BANNER_SRC = (INDEX.match(/<script>\n\/\/ Google Play banner for Android visitors[\s\S]*?<\/script>/) || [''])[0].replace(/^<script>|<\/script>$/g, '');
-test('app banner: one script, a text in every language a page can have, Android only', () => {
+test('app banner: one script, a text in every language a page can have, Android and desktop Mac only', () => {
   assert.ok(BANNER_SRC.length > 500 && INDEX.split('Google Play banner for Android visitors').length === 2, 'one banner script in index.html');
   const langs = new Set(['da', ...Object.values(PRIS.PRIS_COUNTRIES).map(C => C.lang)]);
   const T = require('node:vm').runInNewContext('(function(){' + BANNER_SRC.match(/var T=\{[\s\S]*?\n  \};/)[0] + ' return T;})()');
   for (const l of langs) assert.ok(T[l] && T[l].length === 3 && T[l].every(s => s && s.length > 1), `banner text for ${l}`);
-  assert.ok(/\/Android\/i\.test\(navigator\.userAgent\)/.test(BANNER_SRC) && /display-mode: standalone/.test(BANNER_SRC) && /\^\(\\\/\[a-z\]\{2\}\)\?\\\/download\$/.test(BANNER_SRC), 'Android only, not in the installed web app, not on /download or /<lang>/download');
+  const M = require('node:vm').runInNewContext('(function(){' + BANNER_SRC.match(/var M=\{[\s\S]*?\n  \};/)[0] + ' return M;})()');
+  for (const l of langs) assert.ok(M[l] && M[l].length > 10 && /Mac/.test(M[l]), `the Mac banner text for ${l}`);
+  assert.ok(/Macintosh/.test(BANNER_SRC) && /navigator\.maxTouchPoints>1/.test(BANNER_SRC) && BANNER_SRC.includes("https://apps.apple.com/dk/app/id6820474476"), 'Mac: desktop Macintosh only (an iPad has touch points), links to the App Store page of the app');
+  assert.ok(BANNER_SRC.includes("data-placement','app-banner'"), 'the store_click listener reads placement app-banner for both links');
+  assert.ok(/\/Android\/i\.test\(navigator\.userAgent\)/.test(BANNER_SRC) && /display-mode: standalone/.test(BANNER_SRC) && /\^\(\\\/\[a-z\]\{2\}\)\?\\\/download\$/.test(BANNER_SRC), 'Android or Mac only, not in the installed web app, not on /download or /<lang>/download');
   assert.ok(/play\.google\.com\/store\/apps\/details\?id=org\.elpriser\.app&hl=/.test(BANNER_SRC), 'links to the Play listing in the page language');
   assert.ok(!/gtag|fetch\(|XMLHttpRequest|sendBeacon/.test(BANNER_SRC), 'no tracking or network call of its own');
 });
-test('app banner: shows on Android in the page language, not on iPhone, not on /download, not when closed', () => {
-  const run = (ua, pathname, lang, closedAt) => {
+test('app banner: shows on Android and on a desktop Mac in the page language, not on iPhone or iPad, not on /download, not when closed', () => {
+  const run = (ua, pathname, lang, closedAt, touch) => {
     const made = [], kv = {}; if (closedAt) kv.appBannerClosed = String(closedAt);
     const el = () => ({ style: {}, children: [], setAttribute() {}, appendChild(c) { this.children.push(c); }, remove() {}, offsetHeight: 56 });
     const body = el(), doc = { readyState: 'complete', documentElement: { lang, classList: { contains: () => false } }, body,
       getElementById: () => null, createElement: () => { const e = el(); made.push(e); return e; }, addEventListener() {} };
     body.appendChild = c => made.push({ appended: c });
-    require('node:vm').runInNewContext(BANNER_SRC, { navigator: { userAgent: ua }, location: { pathname }, document: doc, matchMedia: () => ({ matches: false }),
+    require('node:vm').runInNewContext(BANNER_SRC, { navigator: { userAgent: ua, maxTouchPoints: touch || 0 }, location: { pathname }, document: doc, matchMedia: () => ({ matches: false }),
       localStorage: { getItem: k => kv[k] || null, setItem: (k, v) => { kv[k] = v; } }, Date, encodeURIComponent, setTimeout });
     return { shown: made.some(m => m.appended), links: made.filter(e => e.href).map(e => e.href), texts: made.map(e => e.textContent).filter(Boolean) };
   };
@@ -2400,6 +2404,14 @@ test('app banner: shows on Android in the page language, not on iPhone, not on /
   assert.ok(run(A, '/', 'da').texts.includes('Hent'), 'Danish page');
   assert.ok(run(A, '/rs/cena-struje', 'sr-Latn').links[0].includes('&hl=sr'), 'Serbian page links hl=sr');
   assert.ok(!run(I, '/', 'da').shown, 'not on iPhone (Safari has its own banner)');
+  const MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15', WIN = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36';
+  const mac = run(MAC, '/', 'da');
+  assert.ok(mac.shown && mac.links[0] === 'https://apps.apple.com/dk/app/id6820474476' && mac.texts.includes('Gratis app til Mac – prisen i menulinjen') && mac.texts.includes('Hent'), 'a desktop Mac: App Store link and the Mac text in Danish');
+  assert.ok(run(MAC, '/de/strompreise', 'de').texts.includes('Kostenlose Mac-App – der Preis in der Menüleiste'), 'Mac, German page: German text');
+  assert.ok(!run(MAC, '/', 'da', 0, 5).shown, 'not on an iPad (says Macintosh, has touch points)');
+  assert.ok(!run(WIN, '/', 'da').shown, 'not on Windows');
+  assert.ok(!run(MAC, '/download', 'da').shown && !run(MAC, '/de/download', 'de').shown, 'Mac: not on the app page');
+  assert.ok(!run(MAC, '/', 'da', Date.now() - 864e5).shown, 'Mac: not within 30 days of closing it');
   assert.ok(!run(A, '/download', 'da').shown, 'not on /download');
   assert.ok(!run(A, '/', 'da', Date.now() - 864e5).shown, 'not within 30 days of closing it');
   assert.ok(run(A, '/', 'da', Date.now() - 31 * 864e5).shown, 'again after 30 days');

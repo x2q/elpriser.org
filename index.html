@@ -7064,9 +7064,10 @@ async function renderShellyTariffTable(){
 buildNetDialog();initBehaviorTracking();route();
 </script>
 <script>
-// Google Play banner for Android visitors (Apple's Smart App Banner is the <meta name="apple-itunes-app"> in the head).
-// Android has no native one. Small bar at the bottom, in the page's language, closed for 30 days with the x; never shown in
-// the installed web app, on the app page (/download, /<lang>/download) or to anyone who is not on Android. The only thing stored is the closing date.
+// Google Play banner for Android visitors, and an App Store banner for Mac visitors (Apple's Smart App Banner is the <meta name="apple-itunes-app"> in the head).
+// Android has no native one, and Apple documents the Smart App Banner for iOS only, so a Mac visitor gets this bar too (an iPad does not: iPadOS Safari
+// says "Macintosh" but has touch points, and has Apple's own banner). Small bar at the bottom, in the page's language, closed for 30 days with the x; never shown in
+// the installed web app, on the app page (/download, /<lang>/download) or to anyone who is not on Android or a Mac. The only thing stored is the closing date.
 (function(){
   var T={
     da:['Gratis app – elprisen time for time','Hent','Luk'],
@@ -7097,28 +7098,59 @@ buildNetDialog();initBehaviorTracking();route();
     mk:['Бесплатна апликација – цената на струјата час по час','Инсталирај','Затвори'],
     sq:['Aplikacion falas – çmimi i rrymës orë pas ore','Instalo','Mbyll']
   };
+  var M={
+    da:'Gratis app til Mac – prisen i menulinjen',
+    en:'Free Mac app – the price in the menu bar',
+    de:'Kostenlose Mac-App – der Preis in der Menüleiste',
+    fr:'Appli gratuite pour Mac – le prix dans la barre des menus',
+    nl:'Gratis Mac-app – de prijs in de menubalk',
+    it:'App gratuita per Mac – il prezzo nella barra dei menu',
+    pl:'Darmowa aplikacja na Maca – cena na pasku menu',
+    sv:'Gratis app för Mac – priset i menyraden',
+    nb:'Gratis app for Mac – prisen i menylinjen',
+    fi:'Ilmainen Mac-sovellus – hinta valikkorivillä',
+    cs:'Aplikace pro Mac zdarma – cena na liště nabídek',
+    hu:'Ingyenes Mac-app – az ár a menüsorban',
+    es:'App gratuita para Mac – el precio en la barra de menús',
+    pt:'App gratuita para Mac – o preço na barra de menus',
+    sk:'Bezplatná aplikácia pre Mac – cena v lište ponúk',
+    el:'Δωρεάν εφαρμογή για Mac – η τιμή στη γραμμή μενού',
+    ro:'Aplicație gratuită pentru Mac – prețul în bara de meniu',
+    bg:'Безплатно приложение за Mac – цената в лентата с менюта',
+    hr:'Besplatna aplikacija za Mac – cijena u traci izbornika',
+    'sr-Latn':'Besplatna aplikacija za Mac – cena u traci menija',
+    'sr-ME':'Besplatna aplikacija za Mac – cijena u traci izbornika',
+    sl:'Brezplačna aplikacija za Mac – cena v menijski vrstici',
+    et:'Tasuta Maci rakendus – hind menüüribal',
+    lv:'Bezmaksas lietotne Mac datoram – cena izvēlņu joslā',
+    lt:'Nemokama programėlė „Mac“ – kaina meniu juostoje',
+    mk:'Бесплатна апликација за Mac – цената во лентата со мени',
+    sq:'Aplikacion falas për Mac – çmimi në shiritin e menusë'
+  };
   var KEY='appBannerClosed',DAYS=30;
   function store(f){try{return f(localStorage);}catch(e){return null;}}
   function show(){
-    if(!/Android/i.test(navigator.userAgent)||/^(\/[a-z]{2})?\/download$/.test(location.pathname))return;
+    var android=/Android/i.test(navigator.userAgent),mac=!android&&/Macintosh/.test(navigator.userAgent)&&!(navigator.maxTouchPoints>1);
+    if(!(android||mac)||/^(\/[a-z]{2})?\/download$/.test(location.pathname))return;
     if(matchMedia('(display-mode: standalone)').matches||document.getElementById('app-banner'))return;
     var closed=+store(function(s){return s.getItem(KEY);})||0;
     if(closed&&Date.now()-closed<DAYS*864e5)return;
     var lang=document.documentElement.lang||'da',t=T[lang]||T[lang.split('-')[0]]||T.da,
         hl={'sr-Latn':'sr','sr-ME':'sr',nb:'no'}[lang]||lang.split('-')[0];
-    var bar=document.createElement('div');bar.id='app-banner';bar.setAttribute('role','region');bar.setAttribute('aria-label','Elpriser');
+    var bar=document.createElement('div');bar.id='app-banner';bar.setAttribute('role','region');bar.setAttribute('aria-label','Elpriser');bar.setAttribute('data-placement','app-banner');
     bar.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;align-items:center;gap:10px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));font:14px/1.3 Manrope,system-ui,sans-serif;box-shadow:0 -1px 8px rgba(0,0,0,.15);'+(document.documentElement.classList.contains('dark')?'background:#0b1220;color:#e6edf7;border-top:1px solid #1f2a44':'background:#fff;color:#16202e;border-top:1px solid #e4e8f0');
     var img=document.createElement('img');img.src='/favicon-192.png';img.alt='';img.width=40;img.height=40;img.style.cssText='border-radius:9px;flex:none';
     var txt=document.createElement('div');txt.style.cssText='flex:1;min-width:0';
     var b=document.createElement('strong');b.textContent='Elpriser';b.style.display='block';
-    var sub=document.createElement('span');sub.textContent=t[0];sub.style.cssText='display:block;opacity:.8;font-size:12.5px';
+    var sub=document.createElement('span');sub.textContent=mac?(M[lang]||M[lang.split('-')[0]]||M.da):t[0];sub.style.cssText='display:block;opacity:.8;font-size:12.5px';
     txt.appendChild(b);txt.appendChild(sub);
-    var a=document.createElement('a');a.href='https://play.google.com/store/apps/details?id=org.elpriser.app&hl='+encodeURIComponent(hl)+'&referrer=utm_source%3Delpriser.org%26utm_medium%3Dweb_banner';
+    var a=document.createElement('a');a.href=mac?'https://apps.apple.com/dk/app/id6820474476':'https://play.google.com/store/apps/details?id=org.elpriser.app&hl='+encodeURIComponent(hl)+'&referrer=utm_source%3Delpriser.org%26utm_medium%3Dweb_banner';
     a.rel='noopener';a.textContent=t[1];a.style.cssText='flex:none;background:#1b57f5;color:#fff;font-weight:700;text-decoration:none;padding:9px 16px;border-radius:999px';
     var x=document.createElement('button');x.type='button';x.setAttribute('aria-label',t[2]);x.textContent='×';
     x.style.cssText='flex:none;background:none;border:0;color:inherit;font-size:24px;line-height:1;padding:4px 8px;cursor:pointer';
     x.onclick=function(){bar.remove();document.body.style.paddingBottom='';store(function(s){s.setItem(KEY,String(Date.now()));});};
     bar.appendChild(img);bar.appendChild(txt);bar.appendChild(a);bar.appendChild(x);
+    if(mac)bar.style.paddingLeft=bar.style.paddingRight='max(10px,calc((100% - 760px)/2))';
     document.body.appendChild(bar);
     document.body.style.paddingBottom=bar.offsetHeight+'px';
   }
